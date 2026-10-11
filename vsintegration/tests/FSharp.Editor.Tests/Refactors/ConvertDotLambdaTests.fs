@@ -3,6 +3,7 @@ module FSharp.Editor.Tests.Refactors.ConvertDotLambdaTests
 open System
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
 
@@ -24,6 +25,12 @@ let private refactored (code: string) (marker: string) =
     let document =
         tryRefactor code (caretAt code marker) context (new FSharpConvertDotLambdaRefactoring())
 
+    let parseResults =
+        document.GetFSharpParseResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    Assert.False(parseResults.ParseHadErrors, $"%A{parseResults.Diagnostics}")
+
     (document.GetTextAsync() |> GetTaskResult).ToString()
 
 [<Theory>]
@@ -40,6 +47,8 @@ let private refactored (code: string) (marker: string) =
 [<InlineData("fun x -> x.P", "_.P")>]
 [<InlineData("(fun x -> x.P)", "(_.P)")>]
 [<InlineData("fun x -> x .P", "_ .P")>]
+[<InlineData("fun x -> x (* why *) .P", "_ (* why *) .P")>]
+[<InlineData("List.map (fun x -> x.M(_argument)) xs", "List.map _.M(_argument) xs")>]
 [<InlineData("""List.map (fun x ->
     x.Prop) xs""",
              "List.map _.Prop xs")>]
@@ -54,8 +63,39 @@ let ``Lambda reading a member of its parameter converts to shorthand`` (before: 
 [<InlineData("x.M(_.P)", "x.M(fun x -> x.P)")>]
 [<InlineData("xs |> List.map _.M(x)", "xs |> List.map (fun x1 -> x1.M(x))")>]
 [<InlineData("_.M(_.P)", "fun x -> x.M(_.P)")>]
+[<InlineData("_.Replace(\"a\", \"\"\"x\ny\"\"\")", "fun x -> x.Replace(\"a\", \"\"\"x\ny\"\"\")")>]
 let ``Shorthand converts to lambda`` (before: string, after: string) =
     Assert.Equal(inModule after, refactored (inModule before) "_.")
+
+[<Theory>]
+[<InlineData("_ .P", "fun x -> x .P")>]
+[<InlineData("_ (* why *) .P", "fun x -> x (* why *) .P")>]
+let ``Shorthand keeps what stands between the underscore and the dot`` (before: string, after: string) =
+    Assert.Equal(inModule after, refactored (inModule before) "_ ")
+
+[<Fact>]
+let ``Shorthand whose arguments span multiple lines converts to lambda`` () =
+    let before =
+        """
+module M
+
+let f : string -> string =
+    _.PadLeft(
+        3
+    )
+"""
+
+    let after =
+        """
+module M
+
+let f : string -> string =
+    (fun x -> x.PadLeft(
+        3
+    ))
+"""
+
+    Assert.Equal(after, refactored before "_.")
 
 [<Fact>]
 let ``Nested shorthand converts on its own`` () =
@@ -82,17 +122,24 @@ let ``Nested shorthand converts on its own`` () =
 [<InlineData("fun x -> x[0]")>]
 [<InlineData("fun _ -> 1")>]
 [<InlineData("(fun x -> x.P) y")>]
+[<InlineData("((fun x -> x.P)) y")>]
+[<InlineData("fun x -> (* why *) x.P")>]
+[<InlineData("fun (* why *) x -> x.P")>]
+[<InlineData("fun x -> // why\n    x.P")>]
+[<InlineData("List.map (fun x -> (* why *) x.P) xs")>]
+[<InlineData("fun x -> x.CompareTo(_arg1)")>]
 [<InlineData("<@ fun x -> x.P @>")>]
+[<InlineData("<@ _.P @>")>]
+[<InlineData("_.Trim()\n            .Length")>]
+[<InlineData("_.Replace(\"a\",\n        \"b\").Trim()")>]
 [<InlineData("1 + 2")>]
 let ``No action`` (binding: string) =
     let code = inModule binding
     use context = TestContext.CreateWithCode code
 
     let marker =
-        if binding.IndexOf("fun", StringComparison.Ordinal) >= 0 then
-            "fun"
-        else
-            "+"
+        [ "fun"; "_."; "+" ]
+        |> List.find (fun marker -> binding.IndexOf(marker, StringComparison.Ordinal) >= 0)
 
     Assert.Empty(tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertDotLambdaRefactoring()))
 

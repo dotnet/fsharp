@@ -48,17 +48,41 @@ module private DotLambdaConversion =
         Seq.initInfinite (fun i -> if i = 0 then "x" else $"x{i}")
         |> Seq.find (fun name -> not (List.exists (hasName name) used))
 
+    /// Whether the name is one the compiler gives the parameter of `_.`: a use of an outer value with it would bind to that parameter.
+    let isGeneratedArgumentName (ident: Ident) =
+        let prefix = "_arg"
+        let name = ident.idText
+
+        let rec isDigitsFrom i =
+            i = name.Length || (Char.IsDigit name[i] && isDigitsFrom (i + 1))
+
+        name.Length > prefix.Length
+        && name.StartsWith(prefix, StringComparison.Ordinal)
+        && isDigitsFrom prefix.Length
+
+    let hasCommentIn (comments: CommentTrivia list) (m: range) =
+        comments
+        |> List.exists (fun (CommentTrivia.LineComment comment | CommentTrivia.BlockComment comment) -> Range.rangeContainsRange m comment)
+
+    /// The line the chain ends on, not counting what its argument brackets hold. A chain that goes on below `_` is
+    /// offside once it is the body of a lambda that starts further right; what the brackets hold is valid on any line.
+    let rec lastLineOutsideArguments (expr: SynExpr) =
+        match expr with
+        | SynExpr.App(flag = ExprAtomicFlag.Atomic; funcExpr = func) -> lastLineOutsideArguments func
+        | SynExpr.DotGet(longDotId = longDotId) -> longDotId.Range.EndLine
+        | SynExpr.DotIndexedGet(dotRange = dot) -> dot.EndLine
+        | _ -> expr.Range.EndLine
+
     let isInQuotation (path: SyntaxVisitorPath) =
         path
         |> List.exists (function
             | SyntaxNode.SynExpr(SynExpr.Quote _) -> true
             | _ -> false)
 
-    let isAppliedDirectly (lambda: SynExpr) (path: SyntaxVisitorPath) =
+    let rec isAppliedDirectly (expr: SynExpr) (path: SyntaxVisitorPath) =
         match path with
-        | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) as paren) :: SyntaxNode.SynExpr(SynExpr.App(funcExpr = func)) :: _ ->
-            obj.ReferenceEquals(inner, lambda) && obj.ReferenceEquals(func, paren)
-        | SyntaxNode.SynExpr(SynExpr.App(funcExpr = func)) :: _ -> obj.ReferenceEquals(func, lambda)
+        | SyntaxNode.SynExpr(SynExpr.Paren _ as paren) :: outer -> isAppliedDirectly paren outer
+        | SyntaxNode.SynExpr(SynExpr.App(funcExpr = func)) :: _ -> obj.ReferenceEquals(func, expr)
         | _ -> false
 
     let isBlankBetween (sourceText: SourceText) start finish =
@@ -93,21 +117,23 @@ module private DotLambdaConversion =
         let name = parameterNameFor body
         let lambda = $"fun {name} -> {name}"
 
-        let underscoreStart =
-            RoslynHelpers.FSharpRangeToTextSpan(sourceText, trivia.UnderscoreRange).Start
-
-        let dotStart =
-            RoslynHelpers.FSharpRangeToTextSpan(sourceText, trivia.DotRange).Start
+        let underscore =
+            RoslynHelpers.FSharpRangeToTextSpan(sourceText, trivia.UnderscoreRange)
 
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren _) :: _
-        | SyntaxNode.SynBinding _ :: _ -> TextChange(TextSpan.FromBounds(underscoreStart, dotStart), lambda)
+        | SyntaxNode.SynBinding _ :: _ -> TextChange(underscore, lambda)
         | _ ->
             let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
-            let chain = sourceText.ToString(TextSpan.FromBounds(dotStart, span.End))
+            let chain = sourceText.ToString(TextSpan.FromBounds(underscore.End, span.End))
             TextChange(span, $"({lambda}{chain})")
 
     let tryFind (sourceText: SourceText) (position: pos) (parseTree: ParsedInput) =
+        let comments =
+            match parseTree with
+            | ParsedInput.ImplFile file -> file.Trivia.CodeComments
+            | ParsedInput.SigFile file -> file.Trivia.CodeComments
+
         (position, parseTree)
         ||> ParsedInput.tryPickLast (fun path node ->
             match node with
@@ -116,10 +142,14 @@ module private DotLambdaConversion =
                 parsedData = Some([ SynPat.Named(ident = SynIdent(parameter, _); isThisVal = false; accessibility = None) ], body)) as lambda) when
                 not (isInQuotation path) && not (isAppliedDirectly lambda path)
                 ->
+                let identifiers = identifiersIn body
+
                 match tryPopUnaryArg body with
                 | ValueSome(struct (root, _)) when
                     hasName parameter.idText root
-                    && (identifiersIn body |> List.filter (hasName parameter.idText) |> List.length) = 1
+                    && (identifiers |> List.filter (hasName parameter.idText) |> List.length) = 1
+                    && not (List.exists isGeneratedArgumentName identifiers)
+                    && not (hasCommentIn comments (Range.withEnd root.idRange.End lambda.Range))
                     ->
                     Some
                         {
@@ -131,6 +161,8 @@ module private DotLambdaConversion =
 
             | SyntaxNode.SynExpr(SynExpr.DotLambda(expr = body; range = range; trivia = trivia)) when
                 not body.IsArbExprAndThusAlreadyReportedError
+                && not (isInQuotation path)
+                && lastLineOutsideArguments body = range.StartLine
                 ->
                 Some
                     {
