@@ -17,18 +17,32 @@ module internal ProjectFiltering =
             not (String.IsNullOrEmpty path)
             && String.Equals(Path.GetFileName path, assemblyFileName, StringComparison.OrdinalIgnoreCase)
 
-        // A consumer references the copy in its own output rather than the file the producer writes, so the
-        // name is what identifies the assembly. It stops identifying it once another project of the solution
-        // produces one named the same, and then only the path the declaring project writes to will do.
-        let nameIsAmbiguous =
+        let samePath (path: string) (other: string) =
+            String.Equals(path, other, StringComparison.OrdinalIgnoreCase)
+
+        // The output paths of each project that produces an assembly of this name. The target frameworks of a
+        // multi-targeted project are projects of their own that share its project file: they are one producer,
+        // writing the assembly once per target.
+        let producers =
             solution.Projects
             |> Seq.filter (fun project -> sameFileName project.OutputFilePath)
-            |> Seq.truncate 2
-            |> Seq.length > 1
+            |> Seq.groupBy _.FilePath
+            |> Seq.map (fun (_, targets) -> targets |> Seq.map _.OutputFilePath |> Seq.toArray)
+            |> Seq.toArray
+
+        // A consumer references the copy in its own output rather than the file the producer writes, so the
+        // name is what identifies the assembly. It stops identifying it once another project of the solution
+        // produces one named the same, and then only the paths the declaring project writes to will do.
+        let nameIsAmbiguous = producers.Length > 1
+
+        let declaringOutputs =
+            producers
+            |> Array.tryFindV (Array.exists (samePath assemblyFilePath))
+            |> ValueOption.defaultValue [| assemblyFilePath |]
 
         let isTheAssembly (path: string) =
             if nameIsAmbiguous then
-                String.Equals(path, assemblyFilePath, StringComparison.OrdinalIgnoreCase)
+                declaringOutputs |> Array.exists (samePath path)
             else
                 sameFileName path
 
