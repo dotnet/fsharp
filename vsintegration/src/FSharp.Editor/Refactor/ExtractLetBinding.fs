@@ -70,6 +70,7 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                         options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
                     let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpExtractLetBindingRefactoring)
+                    let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof FSharpExtractLetBindingRefactoring)
                     let names = usedNames parseResults.ParseTree
 
                     let literalLines =
@@ -80,7 +81,12 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                         | anchor :: _ ->
                             let name = uniqueName "extracted" names
 
-                            match tryDeclareInFront sourceText target anchor $"let {name}" name indentSize literalLines with
+                            let header =
+                                match tryFunctionTypeText checkResults target with
+                                | ValueSome functionType -> $"let {name}: {functionType}"
+                                | ValueNone -> $"let {name}"
+
+                            match tryDeclareInFront sourceText target anchor header name indentSize literalLines with
                             | ValueSome changes -> register context sourceText (SR.ExtractToLetBinding()) "let" changes
                             | ValueNone -> ()
                         | [] -> ()
@@ -92,9 +98,10 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
 
                     if isLiteralConstant constant then
                         let name = uniqueName "ExtractedConstant" names
+                        let attribute = literalAttributeAt checkResults target.Expr.Range.Start
 
                         match
-                            tryDeclareInFrontOfModuleLet sourceText target [ "[<Literal>]" ] $"let {name}" name indentSize literalLines
+                            tryDeclareInFrontOfModuleLet sourceText target [ $"[<{attribute}>]" ] $"let {name}" name indentSize literalLines
                         with
                         | ValueSome changes -> register context sourceText (SR.ExtractToLiteral()) "literal" changes
                         | ValueNone -> ()
