@@ -2536,6 +2536,7 @@ module ParsedInput =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
             | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls; range = range; trivia = trivia) ->
+                let (SynComponentInfo(attributes = attributes)) = compInfo
                 let ident = compInfo.LongIdent
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
@@ -2553,16 +2554,32 @@ module ParsedInput =
                         |> ValueOption.map _.Column
                         |> ValueOption.defaultValue (range.StartColumn + 4)
 
+                    let bodyStartsOnHeaderLine =
+                        match firstDeclStart with
+                        | ValueSome start -> start.Line = headerLine
+                        | ValueNone -> false
+
                     // The open goes on the line below this one. A body that starts on the header's own
                     // line (`module M = let x = 1`) is entered at its first declaration instead, since
                     // the line below the header may already be past the use the open has to precede.
                     let lineAboveBody =
-                        match firstDeclStart with
-                        | ValueSome start when start.Line = headerLine -> headerLine - 1
-                        | _ -> headerLine
+                        if bodyStartsOnHeaderLine then
+                            headerLine - 1
+                        else
+                            headerLine
 
-                    doRange NestedModule fullIdent lineAboveBody moduleBodyIndentation
-                    List.iter (walkSynModuleDecl fullIdent) decls
+                    // A use on the line the header shares with the body is in that body or in an attribute
+                    // of the module, which the enclosing scope resolves. The line alone cannot tell the two
+                    // apart, and an open in the enclosing scope serves both.
+                    let mayBeInAttribute =
+                        bodyStartsOnHeaderLine
+                        && currentLine = headerLine
+                        && attributes
+                           |> List.exists (fun attributeList -> attributeList.Range.EndLine = headerLine)
+
+                    if headerLine <= currentLine && not mayBeInAttribute then
+                        doRange NestedModule fullIdent lineAboveBody moduleBodyIndentation
+                        List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
             | _ -> ()
