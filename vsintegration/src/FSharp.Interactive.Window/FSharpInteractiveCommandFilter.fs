@@ -13,49 +13,49 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 
-/// What the user asked to send.
 type internal SendToInteractiveKind =
     | Selection
     | Line
 
-/// The shell delivers both send-to-interactive commands in the same group, so recognising one
-/// means checking the group and the identifier together.
+    member kind.Status =
+        match kind with
+        | Selection -> OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED
+        | Line ->
+            OLECMDF.OLECMDF_SUPPORTED
+            ||| OLECMDF.OLECMDF_ENABLED
+            ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
+
 [<AutoOpen>]
 module private InteractiveCommand =
 
-    let (|SendSelection|SendLine|NotOurs|) (group: Guid, commandId: uint32) =
-        if group <> VSConstants.VsStd11 then NotOurs
-        elif commandId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then SendSelection
-        elif commandId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then SendLine
-        else NotOurs
+    [<return: Struct>]
+    let (|SendToInteractive|_|) (group: Guid, commandId: uint32) =
+        match group = VSConstants.VsStd11, enum<VSConstants.VSStd11CmdID> (int commandId) with
+        | true, VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive -> ValueSome Selection
+        | true, VSConstants.VSStd11CmdID.ExecuteLineInInteractive -> ValueSome Line
+        | _ -> ValueNone
 
-/// The text an editor command sends, and where it came from.
 type internal EditorSubmission =
     {
         Text: string
-
-        /// The file the text came from, so that the session reports diagnostics against it.
         SourcePath: string
 
-        /// One-based, matching the line numbering the compiler reports.
+        /// One-based, as the compiler numbers lines.
         StartLine: int
     }
 
 module internal EditorSubmission =
 
-    let private lineOfCaret (view: ITextView) =
-        view.Caret.Position.BufferPosition.GetContainingLine()
-
-    /// The selection, or the caret's line when there is none. Sending a line also advances the
-    /// caret, which is what makes repeated Alt+Enter walk down a script.
-    let read (documentFactory: ITextDocumentFactoryService) (view: ITextView) kind =
+    /// Sending a line also advances the caret, which is what makes repeated Alt+Enter walk down a script.
+    let read (documentFactory: ITextDocumentFactoryService) (view: ITextView) (kind: SendToInteractiveKind) =
         let selection = view.Selection
+        let sendsLine = kind.IsLine || selection.IsEmpty
 
-        let span, advanceCaret =
-            match kind with
-            | Line -> (lineOfCaret view).Extent, true
-            | Selection when selection.IsEmpty -> (lineOfCaret view).Extent, true
-            | Selection -> SnapshotSpan(selection.Start.Position, selection.End.Position), false
+        let span =
+            if sendsLine then
+                view.Caret.Position.BufferPosition.GetContainingLine().Extent
+            else
+                SnapshotSpan(selection.Start.Position, selection.End.Position)
 
         let text = span.GetText()
 
@@ -67,34 +67,26 @@ module internal EditorSubmission =
                 | true, document -> document.FilePath
                 | _ -> ""
 
-            if advanceCaret then
-                let snapshot = view.TextSnapshot
-                let next = span.Start.GetContainingLine().LineNumber + 1
+            let snapshot = view.TextSnapshot
+            let line = span.Start.GetContainingLine().LineNumber
 
-                if next < snapshot.LineCount then
-                    let start = snapshot.GetLineFromLineNumber(next).Start
-                    view.Caret.MoveTo start |> ignore
-                    view.Selection.Clear()
+            if sendsLine && line + 1 < snapshot.LineCount then
+                view.Caret.MoveTo(snapshot.GetLineFromLineNumber(line + 1).Start) |> ignore
+                selection.Clear()
 
             ValueSome
                 {
                     Text = text
                     SourcePath = sourcePath
-                    StartLine = span.Start.GetContainingLine().LineNumber + 1
+                    StartLine = line + 1
                 }
 
-/// Routes the editor's send-to-interactive commands to the F# Interactive window.
 type internal FSharpInteractiveCommandFilter
-    (provider: FSharpVsInteractiveWindowProvider, documentFactory: ITextDocumentFactoryService, view: ITextView) as this =
+    (provider: FSharpVsInteractiveWindowProvider, documentFactory: ITextDocumentFactoryService, view: ITextView) =
 
     let mutable nextTarget: IOleCommandTarget | null = null
 
-    let send kind =
-        match EditorSubmission.read documentFactory view kind with
-        | ValueNone -> ()
-        | ValueSome submission -> provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.StartLine)
-
-    member _.AttachToViewAdapter(viewAdapter: IVsTextView) =
+    member this.AttachToViewAdapter(viewAdapter: IVsTextView) =
         match viewAdapter.AddCommandFilter this with
         | VSConstants.S_OK, next -> nextTarget <- next
         | errorCode, _ -> ErrorHandler.ThrowOnFailure errorCode |> ignore
@@ -103,13 +95,13 @@ type internal FSharpInteractiveCommandFilter
 
         member _.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             match pguidCmdGroup, nCmdId with
-            | SendSelection ->
-                send Selection
+            | SendToInteractive kind ->
+                EditorSubmission.read documentFactory view kind
+                |> ValueOption.iter (fun submission ->
+                    provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.StartLine))
+
                 VSConstants.S_OK
-            | SendLine ->
-                send Line
-                VSConstants.S_OK
-            | NotOurs ->
+            | _ ->
                 match nextTarget with
                 | null -> VSConstants.E_FAIL
                 | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
@@ -117,33 +109,22 @@ type internal FSharpInteractiveCommandFilter
         member _.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
             let group = pguidCmdGroup
 
-            let status (commandId: uint32) =
-                match group, commandId with
-                | SendSelection -> ValueSome(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
-                | SendLine ->
-                    ValueSome(
-                        OLECMDF.OLECMDF_SUPPORTED
-                        ||| OLECMDF.OLECMDF_ENABLED
-                        ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
-                    )
-                | NotOurs -> ValueNone
-
-            let commands = int cCmds
-
-            let rec allOurs i =
-                i >= commands || ((status prgCmds[i].cmdID).IsSome && allOurs (i + 1))
+            let statuses =
+                Array.init (int cCmds) (fun i ->
+                    match group, prgCmds[i].cmdID with
+                    | SendToInteractive kind -> ValueSome kind.Status
+                    | _ -> ValueNone)
 
             let result =
-                if commands > 0 && allOurs 0 then
+                if statuses.Length > 0 && statuses |> Array.forall _.IsSome then
                     VSConstants.S_OK
                 else
                     match nextTarget with
                     | null -> VSConstants.E_FAIL
                     | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
 
-            for i in 0 .. commands - 1 do
-                status prgCmds[i].cmdID
-                |> ValueOption.iter (fun flags -> prgCmds[i].cmdf <- uint32 flags)
+            statuses
+            |> Array.iteri (fun i status -> status |> ValueOption.iter (fun flags -> prgCmds[i].cmdf <- uint32 flags))
 
             result
 

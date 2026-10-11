@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.IO.Pipes
@@ -16,41 +17,44 @@ open FSharp.Compiler.Interactive.Protocol
 
 type InteractiveHostOptions =
     {
-        /// Where the session starts, and so which `global.json` names its SDK: the solution folder
-        /// while a solution is open.
+        /// `dotnet fsi` takes its SDK from the `global.json` nearest this folder.
         InitialWorkingDirectory: string
-
-        /// The user's own arguments, from Tools, Options.
         UserArguments: string
-
         DebugMode: bool
         LanguageVersionPreview: bool
         UICultureLcid: int
     }
 
-/// Where the F# Interactive behind a session came from.
 [<RequireQualifiedAccess>]
 type internal FsiOrigin =
-    /// Named by `FSHARP_INTERACTIVE_PATH`.
     | Override
-    /// `dotnet fsi`, the SDK the working directory's `global.json` selects.
     | Sdk
-    /// The .NET build of fsi installed with Visual Studio, for SDKs that predate its JSON-RPC server.
+    /// The .NET fsi installed with Visual Studio, for SDKs that predate the JSON-RPC server.
     | VisualStudio
+
+    /// Names the one F# Interactive to run: a repository's build, for developing either end of the protocol.
+    static member OverrideVariable = "FSHARP_INTERACTIVE_PATH"
 
     member this.Description =
         match this with
-        | Override -> "FSHARP_INTERACTIVE_PATH"
+        | Override -> FsiOrigin.OverrideVariable
         | Sdk -> ".NET SDK"
         | VisualStudio -> "Visual Studio"
 
-/// One way to start F# Interactive.
 type internal FsiCandidate =
     {
         Origin: FsiOrigin
         Executable: string
         LeadingArguments: string list
     }
+
+    member this.DescribeEarlyExit(output: string, exitCode: int) =
+        if output.IndexOf("install or update .NET", StringComparison.Ordinal) >= 0 then
+            $"The F# Interactive from {this.Origin.Description} needs a .NET runtime that is not installed; see the message above."
+        else
+            let commandLine = String.Join(" ", this.Executable :: this.LeadingArguments)
+
+            $"The F# Interactive from {this.Origin.Description} ({commandLine}) exited with code {exitCode} before the session was established."
 
 module internal FsiLocator =
 
@@ -60,30 +64,19 @@ module internal FsiLocator =
         else
             "dotnet"
 
-    /// The `dotnet` a shell would run: the one Visual Studio was told about, else the first on
-    /// `PATH`, else the machine-wide install.
-    let findDotnetHost () =
-        match Environment.GetEnvironmentVariable "DOTNET_HOST_PATH" with
-        | path when not (String.IsNullOrEmpty path) && File.Exists path -> path
-        | _ ->
+    let private hostsOnSearchPath () =
+        match Environment.GetEnvironmentVariable "PATH" with
+        | null -> Seq.empty
+        | searchPath ->
+            searchPath.Split([| Path.PathSeparator |], StringSplitOptions.RemoveEmptyEntries)
+            |> Seq.choose (fun directory ->
+                // Path.Combine rejects an entry holding characters a path cannot.
+                try
+                    Some(Path.Combine(directory.Trim(' ', '"'), hostExecutable))
+                with :? ArgumentException ->
+                    None)
 
-        let onPath =
-            match Environment.GetEnvironmentVariable "PATH" with
-            | null -> None
-            | searchPath ->
-                searchPath.Split([| Path.PathSeparator |], StringSplitOptions.RemoveEmptyEntries)
-                |> Array.choose (fun directory ->
-                    // An entry with characters a path cannot hold is somebody else's problem.
-                    try
-                        Some(Path.Combine(directory.Trim(' ', '"'), hostExecutable))
-                    with _ ->
-                        None)
-                |> Array.tryFind File.Exists
-
-        match onPath with
-        | Some host -> host
-        | None ->
-
+    let private machineWideHost () =
         let programFiles =
             match Environment.GetEnvironmentVariable "ProgramW6432" with
             | path when not (String.IsNullOrEmpty path) -> path
@@ -91,25 +84,25 @@ module internal FsiLocator =
 
         Path.Combine(programFiles, "dotnet", hostExecutable)
 
-    /// Names the one F# Interactive to run, instead of the SDK's or the one installed with Visual
-    /// Studio: a build from a repository, for developing either end of the protocol.
-    [<Literal>]
-    let OverrideVariable = "FSHARP_INTERACTIVE_PATH"
+    let private findDotnetHost () =
+        seq {
+            Environment.GetEnvironmentVariable "DOTNET_HOST_PATH"
+            yield! hostsOnSearchPath ()
+        }
+        |> Seq.tryFind File.Exists
+        |> Option.defaultWith machineWideHost
 
-    /// Where the Microsoft.FSharp.Compiler setup package puts the .NET build of fsi, relative to this
-    /// assembly's folder.
+    /// Where the Microsoft.FSharp.Compiler setup package puts the .NET fsi, relative to this assembly.
     let private bundledRelativePath = Path.Combine("Tools", "Interactive", "fsi.dll")
 
-    /// A build of fsi from a repository runs on the .NET that repository provisions, which is often
-    /// newer than any machine-wide install, so look for that host beside it before falling back.
+    /// A repository's fsi runs on the .NET that repository provisions, often newer than any
+    /// machine-wide install, so that host is looked for beside it first.
     let private hostFor (fsiPath: string) =
-        let executable = hostExecutable
-
         let rec search (directory: DirectoryInfo | null) =
             match directory with
             | null -> findDotnetHost ()
             | directory ->
-                let candidate = Path.Combine(directory.FullName, ".dotnet", executable)
+                let candidate = Path.Combine(directory.FullName, ".dotnet", hostExecutable)
 
                 if File.Exists candidate then
                     candidate
@@ -118,23 +111,22 @@ module internal FsiLocator =
 
         search (DirectoryInfo(Path.GetDirectoryName fsiPath))
 
+    let private onHost origin (host: string) leadingArguments =
+        if File.Exists host then
+            Result.Ok
+                {
+                    Origin = origin
+                    Executable = host
+                    LeadingArguments = leadingArguments
+                }
+        else
+            Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
+
     let private tryOverride () =
-        match Environment.GetEnvironmentVariable OverrideVariable with
+        match Environment.GetEnvironmentVariable FsiOrigin.OverrideVariable with
         | path when not (String.IsNullOrWhiteSpace path) && File.Exists path ->
             if Path.GetExtension(path).Equals(".dll", StringComparison.OrdinalIgnoreCase) then
-                let host = hostFor path
-
-                if File.Exists host then
-                    ValueSome(
-                        Result.Ok
-                            {
-                                Origin = FsiOrigin.Override
-                                Executable = host
-                                LeadingArguments = [ "exec"; path ]
-                            }
-                    )
-                else
-                    ValueSome(Result.Error(VFSIstrings.SR.couldNotFindFsiExe host))
+                ValueSome(onHost FsiOrigin.Override (hostFor path) [ "exec"; path ])
             else
                 ValueSome(
                     Result.Ok
@@ -162,101 +154,38 @@ module internal FsiLocator =
             else
                 ValueNone
 
-    /// What to try, in order. Apart from the override this is `dotnet fsi` first: the host resolves the
-    /// SDK from the `global.json` nearest the directory the session starts in, so a session started in
-    /// the solution folder runs the same compiler bits as `dotnet build` there. An SDK too old for the
-    /// JSON-RPC server rejects the option and exits, and the fsi installed with Visual Studio is next.
+    /// In the order to try them: an SDK too old for the JSON-RPC server rejects the option and
+    /// exits, and the fsi installed with Visual Studio is next.
     let candidates () =
         match tryOverride () with
-        | ValueSome(Result.Ok candidate) -> Result.Ok [ candidate ]
-        | ValueSome(Result.Error message) -> Result.Error message
+        | ValueSome overridden -> overridden |> Result.map List.singleton
         | ValueNone ->
+            let host = findDotnetHost ()
 
-        let host = findDotnetHost ()
+            onHost FsiOrigin.Sdk host [ "fsi" ]
+            |> Result.map (fun sdk -> [ sdk; yield! tryBundled host |> ValueOption.toList ])
 
-        if File.Exists host then
-            Result.Ok
-                [
-                    {
-                        Origin = FsiOrigin.Sdk
-                        Executable = host
-                        LeadingArguments = [ "fsi" ]
-                    }
-                    yield! tryBundled host |> ValueOption.toList
-                ]
-        else
-            Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
+module private SessionProcess =
 
-/// One live F# Interactive process together with the control channel to it.
-[<Sealed>]
-type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, rpc: JsonRpc, initialization: InitializeResult) =
-
-    member _.Origin = origin
-    member _.Process = session
-    member _.Rpc = rpc
-    member _.Initialization = initialization
-
-    /// The process evaluating code, which under `dotnet fsi` is not the one that was launched.
-    member _.EvaluatingProcessId = initialization.processId
-
-    member _.IsAlive =
+    let quietly (action: unit -> unit) =
         try
-            not session.HasExited
-        with _ ->
-            false
-
-    member _.Dispose() =
-        // Closing the channel is how the session learns its host is gone; killing covers one that
-        // is wedged and no longer reading.
-        try
-            rpc.Dispose()
+            action ()
         with _ ->
             ()
 
-        try
-            pipe.Dispose()
-        with _ ->
-            ()
-
-        try
+    let kill (session: Process) =
+        quietly (fun () ->
             if not session.HasExited then
-                session.Kill()
-        with _ ->
-            ()
+                session.Kill())
 
+    let exitCode (session: Process) =
         try
-            session.Dispose()
+            session.ExitCode
         with _ ->
-            ()
+            0
 
-/// What became of a session that finished its handshake.
-type private SessionInstallation =
-    | Installed of previous: RemoteSession voption
-    | ExitedBeforeInstall of previous: RemoteSession voption
-    | Closed
-
-/// Owns the F# Interactive process behind the window.
-[<Sealed>]
-type internal InteractiveHostClient(clientProcessId: int) =
-
-    let stateLock = obj ()
-    let startGate = new SemaphoreSlim(1, 1)
-    let mutable current: RemoteSession voption = ValueNone
-    let mutable disposed = false
-
-    let outputReceived = Event<string>()
-    let errorOutputReceived = Event<string>()
-    let processExited = Event<int>()
-    let sessionStarted = Event<RemoteSession>()
-
-    // The F# Interactive that last started in each working directory, tried first next time, so a
-    // reset does not pay again for an SDK that turned out to predate the JSON-RPC server. Paths on
-    // Windows are case-insensitive.
-    let workedIn =
-        System.Collections.Generic.Dictionary<string, FsiOrigin>(StringComparer.OrdinalIgnoreCase)
-
-    // Read as characters rather than lines: a script prompting with `printf "name? "` writes no
-    // newline, and waiting for one would hide the prompt.
+    // Read as characters, not lines: a script prompting with `printf "name? "` writes no newline,
+    // and waiting for one would hide the prompt.
     let pump (reader: StreamReader) (report: string -> unit) =
         let thread =
             Thread(
@@ -279,46 +208,40 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         thread.Start()
 
-    let quoteIfNeeded (argument: string) =
-        // .NET Framework has no Contains overload taking a comparison, hence IndexOf.
+    let private quoteIfNeeded (argument: string) =
         if
-            argument.IndexOf(" ", StringComparison.Ordinal) >= 0
+            argument.IndexOf ' ' >= 0
             && not (argument.StartsWith("\"", StringComparison.Ordinal))
         then
             $"\"{argument}\""
         else
             argument
 
-    let createStartInfo (options: InteractiveHostOptions) (candidate: FsiCandidate) (pipeName: string) =
-        let arguments = ResizeArray<string>()
-        let addSwitch (switch: string) = arguments.Add(quoteIfNeeded switch)
+    let startInfo (options: InteractiveHostOptions) (candidate: FsiCandidate) (pipeName: string) (clientProcessId: int) =
+        let arguments =
+            [
+                yield! candidate.LeadingArguments |> List.map quoteIfNeeded
+                "--nologo"
+                $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
+                $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
+                $"--fsi-server-lcid:{options.UICultureLcid}"
 
-        for argument in candidate.LeadingArguments do
-            addSwitch argument
+                // A fragment holding any number of switches, hence unquoted.
+                if not (String.IsNullOrWhiteSpace options.UserArguments) then
+                    options.UserArguments.Trim()
 
-        addSwitch "--nologo"
-        addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
-        addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
-        addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"
+                if options.DebugMode then
+                    "--optimize-"
+                    "--debug+"
 
-        // A command-line fragment holding any number of switches, so it goes on unquoted and before
-        // the switches the window insists on for debugging.
-        if not (String.IsNullOrWhiteSpace options.UserArguments) then
-            arguments.Add(options.UserArguments.Trim())
+                if options.LanguageVersionPreview then
+                    "--langversion:preview"
 
-        if options.DebugMode then
-            addSwitch "--optimize-"
-            addSwitch "--debug+"
-
-        if options.LanguageVersionPreview then
-            addSwitch "--langversion:preview"
-
-        // Last, because for each of these the last occurrence wins: the user's own arguments must not
-        // be able to move the pipe or name another process as the owner, which would leave the session
-        // running after this one closes. The owner is named on the command line, so that a session
-        // whose host dies before the handshake exits instead of waiting on the pipe forever.
-        addSwitch $"{CommandLine.ServerOption}{pipeName}"
-        addSwitch $"--fsi-server-client-pid:{clientProcessId}"
+                // Last, where the last occurrence wins: the user's arguments must not move the pipe or
+                // name another owner, which would leave the session running after this host closes.
+                $"{CommandLine.ServerOption}{pipeName}"
+                $"--fsi-server-client-pid:{clientProcessId}"
+            ]
 
         let startInfo =
             ProcessStartInfo(
@@ -338,57 +261,116 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         startInfo
 
-    /// One attempt to start a session with one F# Interactive. What the process prints is held back
-    /// until the handshake succeeds: an SDK too old for the server prints an error the user need not
-    /// see when the next candidate starts fine. `Error(exitedEarly, message, release)` hands the
-    /// held output back to the caller, who shows it only when nothing else is left to try.
+[<Sealed>]
+type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, rpc: JsonRpc, initialization: InitializeResult) =
+
+    member _.Origin = origin
+    member _.Rpc = rpc
+    member _.Initialization = initialization
+    member _.ExitCode = SessionProcess.exitCode session
+
+    member _.IsAlive =
+        try
+            not session.HasExited
+        with _ ->
+            false
+
+    member _.Dispose() =
+        // Closing the channel tells the session its host is gone; the kill covers one too wedged to notice.
+        SessionProcess.quietly rpc.Dispose
+        SessionProcess.quietly pipe.Dispose
+        SessionProcess.kill session
+        SessionProcess.quietly session.Dispose
+
+/// What a starting session prints, kept back until its handshake: an SDK too old for the server
+/// prints an error nobody needs to see once the next candidate has started.
+[<Sealed>]
+type private HeldOutput(forward: bool -> string -> unit) =
+
+    let held = ResizeArray<struct (bool * string)>()
+    let mutable holding = true
+
+    member _.Report (isError: bool) (text: string) =
+        let passes =
+            lock held (fun () ->
+                if holding then
+                    held.Add(struct (isError, text))
+
+                not holding)
+
+        if passes then
+            forward isError text
+
+    member _.Release() =
+        let pending =
+            lock held (fun () ->
+                holding <- false
+                let pending = held.ToArray()
+                held.Clear()
+                pending)
+
+        for struct (isError, text) in pending do
+            forward isError text
+
+    member _.Text =
+        lock held (fun () -> String.Join("", held |> Seq.map (fun struct (_, text) -> text)))
+
+[<Sealed>]
+type internal InteractiveHostClient(clientProcessId: int) =
+
+    let stateLock = obj ()
+    let startGate = new SemaphoreSlim(1, 1)
+    let mutable current: RemoteSession voption = ValueNone
+    let mutable disposed = false
+
+    let outputReceived = Event<string>()
+    let errorOutputReceived = Event<string>()
+    let processExited = Event<int>()
+    let sessionStarted = Event<RemoteSession>()
+
+    // The origin that last started in each working directory, tried first next time: a reset does
+    // not pay again for an SDK that turned out to predate the JSON-RPC server.
+    let workedIn = Dictionary<string, FsiOrigin>(StringComparer.OrdinalIgnoreCase)
+
+    let forward isError (text: string) =
+        if isError then
+            errorOutputReceived.Trigger text
+        else
+            outputReceived.Trigger text
+
+    let tryCurrent () =
+        lock stateLock (fun () -> current |> ValueOption.filter _.IsAlive)
+
+    let takeCurrent () =
+        lock stateLock (fun () ->
+            let previous = current
+            current <- ValueNone
+            previous)
+
+    let reportExit (remote: RemoteSession) =
+        let wasCurrent =
+            lock stateLock (fun () ->
+                match current with
+                | ValueSome running when obj.ReferenceEquals(running, remote) ->
+                    current <- ValueNone
+                    true
+                | _ -> false)
+
+        if wasCurrent then
+            processExited.Trigger remote.ExitCode
+
     let startAttemptAsync (options: InteractiveHostOptions) (candidate: FsiCandidate) (cancellationToken: CancellationToken) =
         task {
-            let sessionId = Guid.NewGuid().ToString "N"
-            let pipeName = $"FSharpInteractive.{sessionId}"
-            let startInfo = createStartInfo options candidate pipeName
+            let pipeName = $"FSharpInteractive.{Guid.NewGuid():N}"
+            let output = HeldOutput forward
 
-            let outputLock = obj ()
-            let held = ResizeArray<struct (bool * string)>()
-            let mutable holding = true
+            let session =
+                new Process(StartInfo = SessionProcess.startInfo options candidate pipeName clientProcessId, EnableRaisingEvents = true)
 
-            let report isError (text: string) =
-                lock outputLock (fun () ->
-                    if holding then
-                        held.Add(struct (isError, text))
-                        ValueNone
-                    else
-                        ValueSome text)
-                |> ValueOption.iter (if isError then errorOutputReceived.Trigger else outputReceived.Trigger)
-
-            let release () =
-                let pending =
-                    lock outputLock (fun () ->
-                        holding <- false
-                        let pending = held.ToArray()
-                        held.Clear()
-                        pending)
-
-                for struct (isError, text) in pending do
-                    if isError then
-                        errorOutputReceived.Trigger text
-                    else
-                        outputReceived.Trigger text
-
-            let heldText () =
-                lock outputLock (fun () -> String.Join("", held |> Seq.map (fun struct (_, text) -> text)))
-
-            let session = new Process(StartInfo = startInfo, EnableRaisingEvents = true)
-
-            // Without this a session that dies before the handshake leaves the connect below
-            // waiting forever. Attached before the start, so an exit that comes first is not missed.
+            // A session that dies before the handshake would leave the connect below waiting forever.
+            // Attached before the start, so that an exit that comes first is not missed.
             use exitedDuringConnect = new CancellationTokenSource()
-
-            session.Exited.Add(fun _ ->
-                try
-                    exitedDuringConnect.Cancel()
-                with _ ->
-                    ())
+            session.Exited.Add(fun _ -> SessionProcess.quietly exitedDuringConnect.Cancel)
 
             let started =
                 try
@@ -399,126 +381,119 @@ type internal InteractiveHostClient(clientProcessId: int) =
             if not started then
                 return Result.Error(false, VFSIstrings.SR.couldNotFindFsiExe candidate.Executable, ignore)
             else
+                SessionProcess.pump session.StandardOutput (output.Report false)
+                SessionProcess.pump session.StandardError (output.Report true)
 
-            pump session.StandardOutput (report false)
-            pump session.StandardError (report true)
+                use connectCancellation =
+                    CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, exitedDuringConnect.Token)
 
-            use connectCancellation =
-                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, exitedDuringConnect.Token)
-
-            // The session admits only its own user to the pipe. The .NET Framework client cannot ask
-            // for the same check of the server's identity (PipeOptions.CurrentUserOnly is .NET Core
-            // 2.1+), so the unguessable pipe name is what stands between the window and a squatter.
-            let pipe =
-                new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous)
-
-            try
-                do! pipe.ConnectAsync connectCancellation.Token
-
-                let rpc = new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
-                rpc.StartListening()
-
-                let! handshake =
-                    rpc.InvokeWithCancellationAsync<InitializeResult>(Methods.Initialize, cancellationToken = cancellationToken)
-
-                let remote = RemoteSession(candidate.Origin, session, pipe, rpc, handshake)
-
-                session.Exited.Add(fun _ ->
-                    let wasCurrent =
-                        lock stateLock (fun () ->
-                            match current with
-                            | ValueSome running when obj.ReferenceEquals(running, remote) ->
-                                current <- ValueNone
-                                true
-                            | _ -> false)
-
-                    if wasCurrent then
-                        processExited.Trigger(
-                            try
-                                session.ExitCode
-                            with _ ->
-                                0
-                        ))
-
-                release ()
-                return Result.Ok remote
-            with e ->
-                pipe.Dispose()
+                // The session admits only its own user to the pipe. A .NET Framework client cannot check
+                // the server's identity in turn (PipeOptions.CurrentUserOnly is .NET Core 2.1+), so the
+                // unguessable pipe name is what stands between the window and a squatter.
+                let pipe =
+                    new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous)
 
                 try
-                    if not session.HasExited then
-                        session.Kill()
-                with _ ->
-                    ()
+                    do! pipe.ConnectAsync connectCancellation.Token
 
-                // A session that exits before the handshake usually rejected the command line: an
-                // fsi too old to know the protocol option, or a runtime that is not installed.
-                let exitedEarly = session.HasExited
+                    let rpc =
+                        new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
 
-                // The pumps may still be draining what the process wrote just before it exited.
-                if exitedEarly then
-                    do! Task.Delay 200
+                    rpc.StartListening()
 
-                let detail =
-                    if not exitedEarly then
-                        e.Message
-                    elif heldText().IndexOf("install or update .NET", StringComparison.Ordinal) >= 0 then
-                        $"The F# Interactive from {candidate.Origin.Description} needs a .NET runtime that is not installed; see the message above."
-                    else
-                        let commandLine = String.Join(" ", candidate.Executable :: candidate.LeadingArguments)
+                    let! handshake =
+                        rpc.InvokeWithCancellationAsync<InitializeResult>(Methods.Initialize, cancellationToken = cancellationToken)
 
-                        $"The F# Interactive from {candidate.Origin.Description} ({commandLine}) exited with code {session.ExitCode} before the session was established."
+                    let remote = RemoteSession(candidate.Origin, session, pipe, rpc, handshake)
+                    session.Exited.Add(fun _ -> reportExit remote)
+                    output.Release()
+                    return Result.Ok remote
+                with e ->
+                    pipe.Dispose()
+                    SessionProcess.kill session
 
-                return Result.Error(exitedEarly, detail, release)
+                    // An exit before the handshake usually means the command line was rejected: an fsi too
+                    // old to know the protocol option, or a runtime that is not installed.
+                    let exitedEarly = session.HasExited
+
+                    // The pumps may still be draining what the process wrote just before it exited.
+                    if exitedEarly then
+                        do! Task.Delay 200
+
+                    let detail =
+                        if exitedEarly then
+                            candidate.DescribeEarlyExit(output.Text, session.ExitCode)
+                        else
+                            e.Message
+
+                    return Result.Error(exitedEarly, detail, output.Release)
         }
 
-    /// Try each F# Interactive in turn, the one that last worked here first, and keep the first that
-    /// completes the handshake. Only a process that exits before the handshake moves on to the next:
-    /// any other failure is a problem with this session, not with the choice of fsi.
+    /// Only a process that exits before the handshake moves on to the next candidate: any other
+    /// failure is a problem with this session, not with the choice of fsi.
     let startAsync (options: InteractiveHostOptions) (cancellationToken: CancellationToken) =
         task {
             match FsiLocator.candidates () with
             | Result.Error message -> return Result.Error message
             | Result.Ok candidates ->
+                let key = options.InitialWorkingDirectory
 
-            let key = options.InitialWorkingDirectory
+                let mutable remaining =
+                    match lock workedIn (fun () -> workedIn.TryGetValue key) with
+                    | true, origin -> candidates |> List.sortBy (fun candidate -> candidate.Origin <> origin)
+                    | _ -> candidates
 
-            let ordered =
-                match lock workedIn (fun () -> workedIn.TryGetValue key) with
-                | true, origin ->
-                    [
-                        yield! candidates |> List.filter (fun c -> c.Origin = origin)
-                        yield! candidates |> List.filter (fun c -> c.Origin <> origin)
-                    ]
-                | _ -> candidates
+                // A loop, not a recursive task: `let rec` inside resumable code cannot be compiled
+                // statically (FS3511).
+                let failures = ResizeArray<string>()
+                let mutable started = ValueNone
 
-            // A loop rather than a recursive task: `let rec` inside resumable code cannot be compiled
-            // statically (FS3511).
-            let failures = ResizeArray<string>()
-            let mutable remaining = ordered
-            let mutable outcome = ValueNone
-
-            while outcome.IsNone do
-                match remaining with
-                | [] -> outcome <- ValueSome(Result.Error(String.Join(Environment.NewLine, failures)))
-                | candidate :: rest ->
-                    remaining <- rest
+                while started.IsNone && not remaining.IsEmpty do
+                    let candidate = remaining.Head
+                    remaining <- remaining.Tail
 
                     match! startAttemptAsync options candidate cancellationToken with
                     | Result.Ok remote ->
                         lock workedIn (fun () -> workedIn[key] <- candidate.Origin)
                         sessionStarted.Trigger remote
-                        outcome <- ValueSome(Result.Ok remote)
+                        started <- ValueSome remote
                     | Result.Error(exitedEarly, detail, release) ->
                         lock workedIn (fun () -> workedIn.Remove key |> ignore)
                         failures.Add detail
 
-                        if not exitedEarly || rest.IsEmpty then
+                        if not exitedEarly || remaining.IsEmpty then
                             release ()
-                            outcome <- ValueSome(Result.Error(String.Join(Environment.NewLine, failures)))
+                            remaining <- []
 
-            return outcome.Value
+                return
+                    match started with
+                    | ValueSome remote -> Result.Ok remote
+                    | ValueNone -> Result.Error(String.Join(Environment.NewLine, failures))
         }
+
+    /// The exit handler reports an exit only for the current session, so a session that exited
+    /// before this point is caught here instead, under the same lock.
+    let install (started: RemoteSession) =
+        let struct (previous, failure) =
+            lock stateLock (fun () ->
+                if disposed then
+                    struct (ValueNone, ValueSome "The interactive window was closed while the session was starting.")
+                else
+                    let previous = takeCurrent ()
+
+                    if started.IsAlive then
+                        current <- ValueSome started
+                        struct (previous, ValueNone)
+                    else
+                        struct (previous, ValueSome $"F# Interactive exited with code {started.ExitCode} as the session started."))
+
+        previous |> ValueOption.iter _.Dispose()
+
+        match failure with
+        | ValueNone -> Result.Ok started
+        | ValueSome message ->
+            started.Dispose()
+            Result.Error message
 
     member _.OutputReceived = outputReceived.Publish
 
@@ -527,135 +502,69 @@ type internal InteractiveHostClient(clientProcessId: int) =
     /// Raised when the session goes away without being asked to.
     member _.ProcessExited = processExited.Publish
 
-    /// Raised with the handshake of every session that comes up, so the window can say what it is
-    /// talking to.
     member _.SessionStarted = sessionStarted.Publish
 
-    member _.IsRunning =
-        lock stateLock (fun () -> current |> ValueOption.exists (fun session -> session.IsAlive))
-
-    member _.EvaluatingProcessId =
-        lock stateLock (fun () -> current |> ValueOption.map (fun session -> session.EvaluatingProcessId))
-
-    member _.Initialization =
-        lock stateLock (fun () -> current |> ValueOption.map (fun session -> session.Initialization))
-
-    member private _.TryCurrent() =
-        lock stateLock (fun () -> current |> ValueOption.filter (fun session -> session.IsAlive))
-
-    /// Starting is serialised: two callers arriving together would each launch an fsi, and one of
-    /// the two would be killed moments later having done nothing but start up.
-    member this.EnsureStartedAsync(options, ?cancellationToken) : Task<Result<RemoteSession, string>> =
+    /// Serialised: two callers arriving together would each launch an fsi, one of them only to be
+    /// killed moments later.
+    member _.EnsureStartedAsync(options, ?cancellationToken) : Task<Result<RemoteSession, string>> =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         task {
-            match this.TryCurrent() with
+            match tryCurrent () with
             | ValueSome running -> return Result.Ok running
             | ValueNone ->
                 do! startGate.WaitAsync cancellationToken
 
                 try
-                    match this.TryCurrent() with
+                    match tryCurrent () with
                     | ValueSome running -> return Result.Ok running
                     | ValueNone ->
-                        match! startAsync options cancellationToken with
-                        | Result.Error message -> return Result.Error message
-                        | Result.Ok started ->
-                            // The session's exit handler reports an exit only once the session is
-                            // current, so one that exited before this point is caught here instead,
-                            // under the same lock.
-                            let installation =
-                                lock stateLock (fun () ->
-                                    if disposed then
-                                        Closed
-                                    else
-                                        let previous = current
-
-                                        if started.IsAlive then
-                                            current <- ValueSome started
-                                            Installed previous
-                                        else
-                                            current <- ValueNone
-                                            ExitedBeforeInstall previous)
-
-                            match installation with
-                            | Closed ->
-                                started.Dispose()
-                                return Result.Error "The interactive window was closed while the session was starting."
-                            | ExitedBeforeInstall previous ->
-                                previous |> ValueOption.iter (fun session -> session.Dispose())
-
-                                let exitCode =
-                                    try
-                                        started.Process.ExitCode
-                                    with _ ->
-                                        0
-
-                                started.Dispose()
-                                return Result.Error $"F# Interactive exited with code {exitCode} as the session started."
-                            | Installed previous ->
-                                previous |> ValueOption.iter (fun session -> session.Dispose())
-                                return Result.Ok started
+                        let! outcome = startAsync options cancellationToken
+                        return outcome |> Result.bind install
                 finally
                     startGate.Release() |> ignore
         }
 
     member this.ResetAsync(options, ?cancellationToken) =
-        let previous =
-            lock stateLock (fun () ->
-                let previous = current
-                current <- ValueNone
-                previous)
-
-        previous |> ValueOption.iter (fun session -> session.Dispose())
-
+        takeCurrent () |> ValueOption.iter _.Dispose()
         this.EnsureStartedAsync(options, ?cancellationToken = cancellationToken)
 
-    member private this.InvokeAsync(method: string, parameters: obj, cancellationToken) =
+    member _.ExecuteAsync(code: string, origin: struct (string * int) voption, ?cancellationToken) =
+        let request =
+            match origin with
+            | ValueSome(struct (sourcePath, startLine)) ->
+                {
+                    code = code
+                    sourcePath = sourcePath
+                    startLine = Nullable startLine
+                }
+            | ValueNone ->
+                {
+                    code = code
+                    sourcePath = null
+                    startLine = Nullable()
+                }
+
         task {
-            match this.TryCurrent() with
+            match tryCurrent () with
             | ValueNone -> return Result.Error "No F# Interactive session is running."
             | ValueSome session ->
                 try
                     let! result =
-                        session.Rpc.InvokeWithParameterObjectAsync<ExecutionResult>(method, parameters, cancellationToken)
+                        session.Rpc.InvokeWithParameterObjectAsync<ExecutionResult>(
+                            Methods.Execute,
+                            request,
+                            defaultArg cancellationToken CancellationToken.None
+                        )
 
                     return Result.Ok result
                 with e ->
                     return Result.Error e.Message
         }
 
-    /// `sourcePath` and `startLine` make the session report diagnostics against the user's own file
-    /// when the text came from an editor selection.
-    member this.ExecuteAsync(code: string, ?sourcePath: string, ?startLine: int, ?cancellationToken) =
-        let request =
-            {
-                code = code
-                sourcePath = Option.toObj sourcePath
-                startLine =
-                    match startLine with
-                    | Some line -> Nullable line
-                    | None -> Nullable()
-            }
-
-        this.InvokeAsync(Methods.Execute, request, defaultArg cancellationToken CancellationToken.None)
-
-    member this.ExecuteFileAsync(path: string, ?cancellationToken) =
-        this.InvokeAsync(Methods.ExecuteFile, { path = path }, defaultArg cancellationToken CancellationToken.None)
-
-    member this.SetPathsAsync(includePaths: string[], workingDirectory: string, ?cancellationToken) =
-        this.InvokeAsync(
-            Methods.SetPaths,
-            {
-                includePaths = includePaths
-                workingDirectory = workingDirectory
-            },
-            defaultArg cancellationToken CancellationToken.None
-        )
-
-    member this.InterruptAsync() =
+    member _.InterruptAsync() =
         task {
-            match this.TryCurrent() with
+            match tryCurrent () with
             | ValueNone -> return false
             | ValueSome session ->
                 try
@@ -667,12 +576,9 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
     interface IDisposable with
         member _.Dispose() =
-            let previous =
-                lock stateLock (fun () ->
-                    disposed <- true
-                    let previous = current
-                    current <- ValueNone
-                    previous)
+            lock stateLock (fun () ->
+                disposed <- true
+                takeCurrent ())
+            |> ValueOption.iter _.Dispose()
 
-            previous |> ValueOption.iter (fun session -> session.Dispose())
             startGate.Dispose()

@@ -6,7 +6,7 @@ open System.ComponentModel.Composition
 
 open Microsoft.VisualStudio.FSharp.Interactive
 
-/// Hands the interactive window the lexer this assembly compiles against.
+/// Apart from the factory, which is also compiled into tests that have no MEF to reference.
 [<Export(typeof<ILexicalScannerFactory>)>]
 type internal FSharpLexicalScannerFactoryExport() =
     inherit FSharpLexicalScannerFactory()

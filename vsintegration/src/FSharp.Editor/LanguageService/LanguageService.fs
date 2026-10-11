@@ -347,8 +347,6 @@ type internal FSharpPackage() as this =
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
 
-                    // The "F# Interactive" command opens the window built on the interactive window
-                    // package rather than the legacy tool window.
                     let interactiveWindow =
                         exportProvider.GetExport<FSharp.Interactive.FSharpVsInteractiveWindowProvider>().Value
 

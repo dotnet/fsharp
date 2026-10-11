@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Tests for the rule that decides whether Enter submits an interaction or adds another line.
-///
-/// The rule is what a user feels on every keystroke, and it is easy to get subtly wrong: a bracket
-/// inside a string, a terminator inside a comment, a line that merely looks finished. The analysis
-/// is lexical so that it can run on the UI thread, which makes these cases worth pinning down.
+/// The rule that decides whether Enter submits an interaction or adds another line.
 module FSharp.Compiler.Interactive.Server.Tests.SubmissionAnalysisTests
 
 open Xunit
@@ -12,7 +8,6 @@ open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Interactive
 
-// The lexer the Visual Studio tooling runs on, which the window is handed rather than compiling against.
 let private scanners = FSharpLexicalScannerFactory() :> ILexicalScannerFactory
 
 let private assertComplete text =
@@ -62,8 +57,6 @@ let ``an unterminated string or comment takes another line`` () =
 
 [<Fact>]
 let ``brackets and terminators inside a string do not count`` () =
-    // The contents of a literal are not code, so neither the brackets nor the ';;' in these change
-    // whether the submission is finished.
     assertComplete "let s = \"([{\""
     assertComplete "let s = \"a;;b\""
 

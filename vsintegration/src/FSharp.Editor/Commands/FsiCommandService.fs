@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -37,8 +37,6 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     interface IOleCommandTarget with
         member x.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
-            // Sending a selection or a line is handled by the interactive window; only debugging a
-            // selection still goes to the legacy one.
             if
                 pguidCmdGroup = Guids.guidInteractive
                 && nCmdId = uint32 Guids.cmdIDDebugSelection
