@@ -29,7 +29,6 @@ type InteractiveHostOptions =
 type internal FsiOrigin =
     | Override
     | Sdk
-    /// The .NET fsi installed with Visual Studio, for SDKs that predate the JSON-RPC server.
     | VisualStudio
 
     /// Names the one F# Interactive to run: a repository's build, for developing either end of the protocol.
@@ -58,11 +57,7 @@ type internal FsiCandidate =
 
 module internal FsiLocator =
 
-    let private hostExecutable =
-        if Environment.OSVersion.Platform = PlatformID.Win32NT then
-            "dotnet.exe"
-        else
-            "dotnet"
+    let private hostExecutable = "dotnet.exe"
 
     let private hostsOnSearchPath () =
         match Environment.GetEnvironmentVariable "PATH" with
@@ -111,14 +106,16 @@ module internal FsiLocator =
 
         search (DirectoryInfo(Path.GetDirectoryName fsiPath))
 
+    let private candidate origin (executable: string) leadingArguments =
+        {
+            Origin = origin
+            Executable = executable
+            LeadingArguments = leadingArguments
+        }
+
     let private onHost origin (host: string) leadingArguments =
         if File.Exists host then
-            Result.Ok
-                {
-                    Origin = origin
-                    Executable = host
-                    LeadingArguments = leadingArguments
-                }
+            Result.Ok(candidate origin host leadingArguments)
         else
             Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
 
@@ -128,14 +125,7 @@ module internal FsiLocator =
             if Path.GetExtension(path).Equals(".dll", StringComparison.OrdinalIgnoreCase) then
                 ValueSome(onHost FsiOrigin.Override (hostFor path) [ "exec"; path ])
             else
-                ValueSome(
-                    Result.Ok
-                        {
-                            Origin = FsiOrigin.Override
-                            Executable = path
-                            LeadingArguments = []
-                        }
-                )
+                ValueSome(Result.Ok(candidate FsiOrigin.Override path []))
         | _ -> ValueNone
 
     let private tryBundled (host: string) =
@@ -145,12 +135,7 @@ module internal FsiLocator =
             let fsi = Path.Combine(directory, bundledRelativePath)
 
             if File.Exists fsi then
-                ValueSome
-                    {
-                        Origin = FsiOrigin.VisualStudio
-                        Executable = host
-                        LeadingArguments = [ "exec"; fsi ]
-                    }
+                ValueSome(candidate FsiOrigin.VisualStudio host [ "exec"; fsi ])
             else
                 ValueNone
 
@@ -178,35 +163,18 @@ module private SessionProcess =
             if not session.HasExited then
                 session.Kill())
 
-    let exitCode (session: Process) =
-        try
-            session.ExitCode
-        with _ ->
-            0
-
     // Read as characters, not lines: a script prompting with `printf "name? "` writes no newline,
     // and waiting for one would hide the prompt.
     let pump (reader: StreamReader) (report: string -> unit) =
-        let thread =
-            Thread(
-                (fun () ->
-                    let buffer = Array.zeroCreate<char> 1024
+        let read () =
+            let buffer = Array.zeroCreate<char> 1024
+            let mutable count = reader.Read(buffer, 0, buffer.Length)
 
-                    try
-                        let rec loop () =
-                            let count = reader.Read(buffer, 0, buffer.Length)
+            while count > 0 do
+                report (String(buffer, 0, count))
+                count <- reader.Read(buffer, 0, buffer.Length)
 
-                            if count > 0 then
-                                report (String(buffer, 0, count))
-                                loop ()
-
-                        loop ()
-                    with _ ->
-                        ()),
-                IsBackground = true
-            )
-
-        thread.Start()
+        Thread((fun () -> quietly read), IsBackground = true).Start()
 
     let private quoteIfNeeded (argument: string) =
         if
@@ -267,7 +235,12 @@ type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, r
     member _.Origin = origin
     member _.Rpc = rpc
     member _.Initialization = initialization
-    member _.ExitCode = SessionProcess.exitCode session
+
+    member _.ExitCode =
+        try
+            session.ExitCode
+        with _ ->
+            0
 
     member _.IsAlive =
         try
@@ -282,8 +255,8 @@ type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, r
         SessionProcess.kill session
         SessionProcess.quietly session.Dispose
 
-/// What a starting session prints, kept back until its handshake: an SDK too old for the server
-/// prints an error nobody needs to see once the next candidate has started.
+/// What a starting session prints, kept back until its handshake: the error of a candidate that
+/// was rejected is noise once the next one has started.
 [<Sealed>]
 type private HeldOutput(forward: bool -> string -> unit) =
 
@@ -328,8 +301,8 @@ type internal InteractiveHostClient(clientProcessId: int) =
     let processExited = Event<int>()
     let sessionStarted = Event<RemoteSession>()
 
-    // The origin that last started in each working directory, tried first next time: a reset does
-    // not pay again for an SDK that turned out to predate the JSON-RPC server.
+    // The origin that last started in each working directory is tried first next time, so that a
+    // reset does not start a rejected candidate again.
     let workedIn = Dictionary<string, FsiOrigin>(StringComparer.OrdinalIgnoreCase)
 
     let forward isError (text: string) =
@@ -412,8 +385,6 @@ type internal InteractiveHostClient(clientProcessId: int) =
                     pipe.Dispose()
                     SessionProcess.kill session
 
-                    // An exit before the handshake usually means the command line was rejected: an fsi too
-                    // old to know the protocol option, or a runtime that is not installed.
                     let exitedEarly = session.HasExited
 
                     // The pumps may still be draining what the process wrote just before it exited.
@@ -531,19 +502,14 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
     member _.ExecuteAsync(code: string, origin: struct (string * int) voption, ?cancellationToken) =
         let request =
-            match origin with
-            | ValueSome(struct (sourcePath, startLine)) ->
-                {
-                    code = code
-                    sourcePath = sourcePath
-                    startLine = Nullable startLine
-                }
-            | ValueNone ->
-                {
-                    code = code
-                    sourcePath = null
-                    startLine = Nullable()
-                }
+            {
+                code = code
+                sourcePath = origin |> ValueOption.map (fun struct (path, _) -> path) |> ValueOption.toObj
+                startLine =
+                    origin
+                    |> ValueOption.map (fun struct (_, line) -> line)
+                    |> ValueOption.toNullable
+            }
 
         task {
             match tryCurrent () with
