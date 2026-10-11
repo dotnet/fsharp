@@ -28,10 +28,10 @@ type private CodeQualifiedName = Microsoft.VisualStudio.Progression.CodeSchema.C
 type private ProgressionNodeCategories = Microsoft.VisualStudio.Progression.CodeSchema.NodeCategories
 type private ProgressionLinkCategories = Microsoft.VisualStudio.Progression.LinkCategories
 
-/// The code schema was shaped for C# and VB, so it has nowhere to record that a frame came from a
+/// The code schema was shaped for C# and VB and has nowhere to record that a frame came from a
 /// module, a union, an active pattern or an inline function. A property carries its own schema, so
-/// declaring them here is enough for them to reach the Properties pane and DGML styles - the schema
-/// itself is never handed to a graph, the way Roslyn's `RoslynGraphProperties` did it.
+/// declaring them here is enough for them to reach the Properties pane and DGML styles; the schema
+/// itself is never handed to a graph, as with Roslyn's `RoslynGraphProperties`.
 [<RequireQualifiedAccess>]
 module internal FSharpGraphSchema =
 
@@ -50,9 +50,6 @@ module internal FSharpGraphSchema =
     let IsFunction = declare "FSharpProperty_IsFunction"
     let IsInline = declare "FSharpProperty_IsInline"
     let IsMutable = declare "FSharpProperty_IsMutable"
-
-    /// The frame came from a compiler-generated closure class, so the node names the binding the
-    /// lambda or local function was lifted out of rather than anything the user can point at.
     let IsLifted = declare "FSharpProperty_IsLifted"
 
 /// Resolves the F# frames of a debugger call stack shown on a Code Map. The debugger contributes
@@ -76,9 +73,8 @@ type internal FSharpGraphProvider() =
 
             componentModel.GetService<VisualStudioWorkspace>()
 
-    /// The assembly the debugger named as the frame's module, which it leaves empty on accessors and
-    /// on module initialization. The Uri is relative (`ClassLibrary.dll`) for workspace assemblies
-    /// and absolute for external ones.
+    /// The debugger leaves the module empty on accessors and on module initialization. The Uri is
+    /// relative (`ClassLibrary.dll`) for workspace assemblies and absolute for external ones.
     let moduleAssemblyOf (frame: CallStackMethodNode) =
         match frame.Module with
         | null -> ValueNone
@@ -91,38 +87,30 @@ type internal FSharpGraphProvider() =
 
             ValueSome(Path.GetFileNameWithoutExtension modulePath)
 
-    let isFrameNode (node: GraphNode) =
-        node.HasCategory ProgressionNodeCategories.CallStackFrame
+    let isFSharpCoreMethod (methodNode: GraphNode) =
+        FSharpCallStackPlan.isFSharpCoreModule (moduleAssemblyOf (CallStackMethodNode methodNode))
 
-    /// The links by which frames claim this method node - one per frame, and in an accumulated map
-    /// that is more than one.
+    /// The links by which frames claim a method node: in an accumulated map, more than one.
     let frameLinksOf (methodNode: GraphNode) =
         methodNode.IncomingLinks
-        |> Seq.filter (fun link -> link.HasCategory ProgressionLinkCategories.References && isFrameNode link.Source)
+        |> Seq.filter (fun link ->
+            link.HasCategory ProgressionLinkCategories.References
+            && link.Source.HasCategory ProgressionNodeCategories.CallStackFrame)
 
-    let framesOf (methodNode: GraphNode) =
-        frameLinksOf methodNode |> Seq.map _.Source
-
-    /// The source position the debugger resolved for a frame - the only usable anchor for a startup
-    /// frame, whose name (`$Demo.$Demo`) points at the file rather than the construct.
-    ///
-    /// It cannot be read off the method node this action hands us: the pipeline stamps
-    /// `CodeNodeProperties.SourceLocation` on those in its `AddSourceLocations` step, which runs
-    /// after this handler. The frame nodes carry it already, and their `StartLine` is 1-based, the
-    /// same base an FCS range uses.
+    /// The position the debugger resolved for a frame. It is read off the frame nodes: the pipeline
+    /// stamps `CodeNodeProperties.SourceLocation` on a method node only in `AddSourceLocations`,
+    /// which runs after this handler. A frame's `StartLine` is 1-based, as an FCS range is.
     let frameSourcePosition (methodNode: GraphNode) =
-        framesOf methodNode
-        |> Seq.choose (fun node ->
-            let frame = CallStackFrameNode node
+        frameLinksOf methodNode
+        |> Seq.chooseV (fun link ->
+            let frame = CallStackFrameNode link.Source
 
             match frame.FileName with
             | null
-            | "" -> None
-            | file -> Some { File = file; Line = frame.StartLine })
+            | "" -> ValueNone
+            | file -> ValueSome { File = file; Line = frame.StartLine })
         |> FSharpCallStackPlan.positionOf
 
-    /// A startup frame carries no module, so its owning assembly is read from the project the source
-    /// file belongs to instead.
     let assemblyNameForFile (file: string) =
         workspace.Value.CurrentSolution.GetDocumentIdsWithFilePath file
         |> Seq.tryHeadV
@@ -179,10 +167,9 @@ type internal FSharpGraphProvider() =
 
         SourceLocation(Uri(range.FileName), Position(range.StartLine - 1, range.StartColumn), Position(range.EndLine - 1, range.EndColumn))
 
-    /// Checks every reported assembly concurrently, each one exactly once for the whole stack.
-    /// `ActionManager` runs the action on a `JobQueue` worker, so blocking here never reaches the
-    /// UI - but the handler returns void and the platform continues into the next pipeline step the
-    /// moment it does, so the graph has to be complete before we return.
+    /// Checks every reported assembly concurrently, each one exactly once for the whole stack. The
+    /// handler returns void and the platform continues into the next pipeline step the moment it
+    /// does, so the graph has to be complete before this returns.
     let resolveAll (context: ActionContext) (framesByAssembly: struct (string * ParsedFrame array) array) =
         cancellableTask {
             let! ambient = CancellableTask.getCancellationToken ()
@@ -203,11 +190,9 @@ type internal FSharpGraphProvider() =
 
                 return
                     framesByAssembly
-                    |> Array.map (fun struct (_, frames) -> frames |> Array.map (fun _ -> ValueNone))
+                    |> Array.map (fun struct (_, frames) -> Array.create frames.Length ValueNone)
         }
 
-    /// The modifiers the Properties pane shows and the map's styles can filter on. Only the flags
-    /// that hold are written, so a node carries no misleading `false`s.
     /// The graph properties a trait sets. A lifted frame sets two: `IsAnonymous` is how the built-in
     /// provider marks a C# lambda, and the map's styles key off it.
     let propertiesOf =
@@ -236,11 +221,6 @@ type internal FSharpGraphProvider() =
         | Inline -> [ FSharpGraphSchema.IsInline ]
         | Mutable -> [ FSharpGraphSchema.IsMutable ]
 
-    let describeTraits (node: GraphNode) traits =
-        for frameTrait in traits do
-            for property in propertiesOf frameTrait do
-                node.SetValue(property, true) |> ignore
-
     /// `CallStackEntry` belongs to the Architecture Explorer, not to a schema this provider can
     /// reference, so it is looked up by id in whichever schema the map document already carries.
     let callStackEntryCategory (graph: Graph) =
@@ -253,28 +233,19 @@ type internal FSharpGraphProvider() =
     /// Mirrors what the built-in C#/VB resolver does for a frame it recognises: create the method
     /// node, give it a source location, and link the frame to it - all inside a graph transaction.
     let attachResolvedMethod (graph: Graph) (frameNode: GraphNode) keepsDeclaration (resolved: ResolvedFrame) =
-        // The compiled name identifies the node, but the source name is what reads well: an operator
-        // is `(>=>)`, not `op_GreaterEqualsGreater`, and a constructor is its type, not `.ctor`.
-        let typeName () =
-            match resolved.TypeChain with
-            | [||] -> ValueNone
-            | chain ->
-                let struct (name, _) = Array.last chain
-                ValueSome name
-
+        // The compiled name identifies the node; the label is the source name, and for a
+        // constructor its type.
         let label =
-            if resolved.Traits.Contains Constructor then
-                typeName () |> ValueOption.defaultValue ".ctor"
-            else
-                resolved.DisplayName
+            match Array.tryLast resolved.TypeChain with
+            | Some(struct (typeName, _)) when resolved.Traits.Contains Constructor -> typeName
+            | None when resolved.Traits.Contains Constructor -> ".ctor"
+            | _ -> resolved.DisplayName
 
         use transaction = new GraphTransactionScope()
 
-        // A frame is always a method invocation, and the pipeline enforces that: `ReferencesMethodNode`
-        // only follows a link whose target carries `Method`, and the next step declares every frame
-        // without one unresolved - replacing the node and the label with `get`, `set` or `$Demo`.
-        // What the member really is rides along as a category beside `Method`, plus the accessor
-        // traits `describeTraits` writes, which is how C# frames render a property getter too.
+        // The pipeline follows a frame's link only to a node that carries `Method`, and its next
+        // step declares every frame without one unresolved. What the member really is rides along
+        // as a second category, which is how a C# frame renders a property getter too.
         let methodNode =
             graph.Nodes.GetOrCreate(resolvedNodeId resolved, label, CodeNodeCategories.Method)
 
@@ -283,15 +254,10 @@ type internal FSharpGraphProvider() =
         | ResolvedProperty -> methodNode.AddCategory CodeNodeCategories.Property |> ignore
         | ResolvedEvent -> methodNode.AddCategory CodeNodeCategories.Event |> ignore
 
-        // The declaration. Where the frame names a file, `AddSourceLocations` overwrites this with
-        // the line that was executing - a call stack navigates to the call, not to the declaration -
-        // and it writes once per node for the life of the map, guarded by the category it adds. The
-        // C# resolver sets the declaration here and is overwritten the same way.
-        //
-        // A startup frame is the exception: the line the debugger reports for it is the source
-        // range of a method the compiler wrote for the whole file, which lands on the blank line
-        // above the type whose initializer is running. The declaration is the only place it can
-        // navigate to, so the category is added here and the platform leaves it alone.
+        // The declaration. `AddSourceLocations` overwrites it with the line that was executing,
+        // once per node and guarded by the `SourceLocation` category, as it does for C#. For a
+        // startup frame that line belongs to a method the compiler wrote for the whole file, so the
+        // category is added here and the platform leaves the declaration alone.
         let location = sourceLocationOf resolved
         methodNode.SetValue(CodeNodeProperties.SourceLocation, location) |> ignore
 
@@ -299,21 +265,21 @@ type internal FSharpGraphProvider() =
             methodNode.AddCategory CodeNodeCategories.SourceLocation |> ignore
 
         // `SourceLocation` alone lands navigation on the start of the line; the identifier location
-        // is the one carrying the column, so the caret reaches the declaration itself.
+        // is the one carrying the column.
         methodNode.SetValue(CodeNodeProperties.IdentifierSourceLocation, location)
         |> ignore
 
-        describeTraits methodNode resolved.Traits
+        for frameTrait in resolved.Traits do
+            for property in propertiesOf frameTrait do
+                methodNode.SetValue(property, true) |> ignore
 
-        // The built-in resolver dispatches on this, so a node that does not carry it reads as
-        // language-less to anything walking the map later.
+        // The built-in resolver dispatches on the language of a node.
         methodNode.SetValue(CodeSchemaProperties.Language, FSharpConstants.FSharpLanguageName)
         |> ignore
 
-        // Double-clicking a plain `CodeSchema_Method` runs that category's default action - follow
-        // outgoing `Calls` links - and a call-stack map has none, so the node looks dead. Navigation
-        // comes from `CallStackEntry`, which is what the resolved C# and VB nodes carry. It cannot be
-        // copied off the frame: the platform adds it further down the pipeline, after this handler.
+        // A plain `CodeSchema_Method` follows outgoing `Calls` links on double-click, and a
+        // call-stack map has none. Navigation comes from `CallStackEntry`, which the platform adds
+        // to the frame only after this handler, so it cannot be copied off it.
         callStackEntryCategory graph
         |> ValueOption.iter (fun category -> methodNode.AddCategory category |> ignore)
 
@@ -326,9 +292,7 @@ type internal FSharpGraphProvider() =
         cancellableTask {
             let graph = context.Graph
 
-            // Every input frame we can parse, with the source position the debugger resolved for it -
-            // the only anchor a module-less startup frame has. `UnhandledInputNodes` already excludes
-            // nodes another provider claimed.
+            // `UnhandledInputNodes` already excludes nodes another provider claimed.
             let parsedFrames =
                 [|
                     for frameNode in context.UnhandledInputNodes() do
@@ -336,9 +300,7 @@ type internal FSharpGraphProvider() =
 
                         match FSharpStackFrameNameParser.parse frame.FunctionName with
                         | ValueNone ->
-                            // A name we cannot take apart is still a name we can place, and
-                            // FSharp.Core's belongs off the map whether or not it reads.
-                            if FSharpCallStackPlan.isFSharpCoreModule (moduleAssemblyOf frame) then
+                            if isFSharpCoreMethod frameNode then
                                 yield frameNode, ValueNone, FoldAsExternalCode
                         | ValueSome parsed ->
                             let facts =
@@ -353,10 +315,8 @@ type internal FSharpGraphProvider() =
                             yield frameNode, ValueSome facts, FSharpCallStackPlan.decide assemblyNameForFile facts
                 |]
 
-            // What the debug engine handed us, before anything is resolved. A position here belongs to
-            // the PDB of the running build, while the resolver reads the file the workspace has open:
-            // when the two disagree the answer is a construct on the same line of a different version
-            // of the source, and this line is the only place that shows it.
+            // A position belongs to the PDB of the running build, while the resolver reads the file
+            // the workspace has open. This trace is the only place a disagreement between them shows.
             for methodNode, facts, action in parsedFrames do
                 let position =
                     match facts |> ValueOption.bind _.Frame.SourcePosition with
@@ -365,40 +325,23 @@ type internal FSharpGraphProvider() =
 
                 Trace.WriteLine $"[FSharpCodeMap] {CallStackMethodNode(methodNode).FunctionName} at {position} -> {action}"
 
-            // FSharp.Core's plumbing is external code that Just My Code did not filter out: it ships
-            // with SourceLink, so the debugger counts it as ours and the pipeline's first step keeps
-            // its frames.
+            // What folds a frame away is reaching no method node: `BuildResultLinks` joins the ends of
+            // a run of such frames by the one indirect link it labels "External Code". So folding is
+            // cutting the frame loose from its method node, and nothing here creates or re-points a link.
             //
-            // What folds a frame away is reaching no method node from it. `BuildResultLinks` walks
-            // the chain of `Calls` links and draws one link per frame that reaches one, joining the
-            // ends of a run of frames that do not by a single indirect link it labels "External
-            // Code" - the same link it draws over everything else the debugger folded. So the whole
-            // operation is cutting the frame loose from its method node: the chain of `Calls` links
-            // keeps the exact shape the pipeline gave it, nothing here creates or re-points a link,
-            // and the hop over FSharp.Core is drawn by the code that draws every other hop. What is
-            // left behind - the method node and the grey one the pipeline will pair with it - is in
-            // no `CallStack*Call` link and so is not in the result graph.
-            //
-            // The whole graph is walked for this, not only the nodes handed to this action: the
-            // pipeline remembers every method node it has seen for the rest of the debug session and
-            // hands a provider only the new ones, while the frame links are rebuilt on every stop.
-            // Folding only what was handed over folds each FSharp.Core frame once per session and
-            // leaves it standing every time after.
+            // The whole graph is walked, not only the nodes handed to this action: the pipeline hands
+            // a provider only the method nodes new to the debug session, while it rebuilds the frame
+            // links on every stop.
             let foldedAway =
-                let byModule =
-                    graph.Nodes.GetByCategory ProgressionNodeCategories.CallStackMethod
-                    |> Seq.filter (fun methodNode ->
-                        FSharpCallStackPlan.isFSharpCoreModule (moduleAssemblyOf (CallStackMethodNode methodNode)))
+                seq {
+                    yield!
+                        graph.Nodes.GetByCategory ProgressionNodeCategories.CallStackMethod
+                        |> Seq.filter isFSharpCoreMethod
 
-                let byDecision =
-                    parsedFrames
-                    |> Seq.choose (fun (methodNode, _, action) ->
-                        if action = FoldAsExternalCode then
-                            Some methodNode
-                        else
-                            None)
-
-                Seq.append byModule byDecision
+                    for methodNode, _, action in parsedFrames do
+                        if action.IsFoldAsExternalCode then
+                            methodNode
+                }
                 |> Seq.distinct
                 |> Seq.collect frameLinksOf
                 |> Seq.toArray
@@ -412,42 +355,32 @@ type internal FSharpGraphProvider() =
                 folding.Complete()
 
             let byAssembly =
-                [|
-                    for frameNode, facts, action in parsedFrames do
-                        match action, facts with
-                        | ResolveIn assembly, ValueSome facts -> yield assembly, frameNode, facts.Frame
-                        | ResolveIn _, ValueNone
-                        | FoldAsExternalCode, _
-                        | LeaveUnresolved, _ -> ()
-                |]
-                |> Seq.groupBy (fun (assembly, _, _) -> assembly)
-                |> Seq.map (fun (assembly, group) -> assembly, group |> Seq.map (fun (_, frameNode, frame) -> frameNode, frame))
-                |> Seq.toArray
+                parsedFrames
+                |> Array.chooseV (fun (frameNode, facts, action) ->
+                    match action, facts with
+                    | ResolveIn assembly, ValueSome facts -> ValueSome struct (assembly, frameNode, facts.Frame)
+                    | _ -> ValueNone)
+                |> Array.groupBy (fun struct (assembly, _, _) -> assembly)
 
             let! resolutions =
                 byAssembly
-                |> Array.map (fun (assemblyName, group) -> struct (assemblyName, group |> Seq.map snd |> Seq.toArray))
+                |> Array.map (fun (assembly, group) -> struct (assembly, group |> Array.map (fun struct (_, _, frame) -> frame)))
                 |> resolveAll context
 
             let mutable resolvedCount = 0
 
             for (_, group), results in Seq.zip byAssembly resolutions do
-                for (frameNode, frame), resolved in Seq.zip group results do
+                for struct (_, frameNode, frame), resolved in Seq.zip group results do
                     match resolved with
                     | ValueNone -> ()
                     | ValueSome resolved ->
-                        let keepsDeclaration =
-                            match frame.Member with
-                            | FrameStartupCode -> true
-                            | _ -> false
-
                         try
-                            attachResolvedMethod graph frameNode keepsDeclaration resolved
+                            attachResolvedMethod graph frameNode frame.Member.IsFrameStartupCode resolved
                             context.AddHandled frameNode
                             resolvedCount <- resolvedCount + 1
                         with e ->
-                            // An unresolvable frame is expected - it stays a grey unresolved node, and
-                            // one bad frame must not abandon the rest of the stack.
+                            // One bad frame must not abandon the rest of the stack: it stays a grey
+                            // unresolved node.
                             Trace.WriteLine $"[FSharpCodeMap] frame failed: {e.Message}"
 
             Trace.WriteLine $"[FSharpCodeMap] ResolveCallStack: {resolvedCount}/{parsedFrames.Length} F# frames resolved"
@@ -461,13 +394,10 @@ type internal FSharpGraphProvider() =
         member _.Initialize(_serviceProvider: IServiceProvider) =
             Trace.WriteLine "[FSharpCodeMap] FSharpGraphProvider.Initialize"
 
-            // The handler contract is synchronous: `ActionManager` runs it on a `JobQueue` worker
-            // and continues into the next pipeline step the moment it returns, so the graph must be
-            // complete by then. `JoinableTaskFactory.Run` is the same blocking bridge the built-in
-            // C#/VB provider uses for this action.
-            //
-            // Nothing this provider does may take the map down with it: a stack it cannot resolve
-            // has to degrade to unresolved nodes, which is exactly the state it started in.
+            // `ActionManager` runs the handler on a `JobQueue` worker and continues into the next
+            // pipeline step the moment it returns, so it blocks until the graph is complete - the
+            // same bridge the built-in C#/VB provider uses. A stack it cannot resolve has to degrade
+            // to unresolved nodes, the state it started in, rather than take the map down.
             Actions.ResolveCallStack.ActionHandlers.Add(
                 ActionHandler(fun context ->
                     try
