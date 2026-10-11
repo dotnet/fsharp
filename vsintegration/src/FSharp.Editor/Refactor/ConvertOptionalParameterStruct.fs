@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Features
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -43,8 +44,21 @@ module private OptionalParameterConversion =
 
     let private isSame (expr: SynExpr) (other: SynExpr) = obj.ReferenceEquals(expr, other)
 
+    let private isInFSharpCore (entityFullName: string) (symbol: FSharpSymbol) =
+        let declaringEntityName =
+            match symbol with
+            | :? FSharpUnionCase as case -> case.DeclaringEntity.TryFullName
+            | :? FSharpMemberOrFunctionOrValue as value -> value.DeclaringEntity |> Option.bind _.TryFullName
+            | _ -> None
+
+        match declaringEntityName with
+        | Some name ->
+            String.Equals(name, entityFullName, StringComparison.Ordinal)
+            && String.Equals(symbol.Assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal)
+        | None -> false
+
     /// Whether the long identifier resolves to a value or union case of the FSharp.Core entity with the compiled full name.
-    let isFSharpCoreSymbol
+    let private isFSharpCoreSymbol
         (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
         (entityFullName: string)
@@ -58,18 +72,48 @@ module private OptionalParameterConversion =
 
             match checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, names) with
             | None -> false
-            | Some symbolUse ->
-                let declaringEntityName =
-                    match symbolUse.Symbol with
-                    | :? FSharpUnionCase as case -> case.DeclaringEntity.TryFullName
-                    | :? FSharpMemberOrFunctionOrValue as value -> value.DeclaringEntity |> Option.bind _.TryFullName
-                    | _ -> None
+            | Some symbolUse -> isInFSharpCore entityFullName symbolUse.Symbol
 
-                match declaringEntityName with
-                | Some name ->
-                    String.Equals(name, entityFullName, StringComparison.Ordinal)
-                    && String.Equals(symbolUse.Symbol.Assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal)
-                | None -> false
+    /// Whether the names, written at the position, can only resolve to a value or union case of the FSharp.Core entity
+    /// with the compiled full name: completion lists every candidate in scope, the shadowed ones included.
+    let private wouldBeFSharpCoreSymbol
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (entityFullName: string)
+        (names: string list)
+        (at: pos)
+        =
+        match List.rev names with
+        | [] -> false
+        | name :: qualifier ->
+            let partialName =
+                {
+                    QualifyingIdents = List.rev qualifier
+                    PartialIdent = ""
+                    EndColumn = at.Column
+                    LastDotPos = None
+                }
+
+            let options =
+                { FSharpCodeCompletionOptions.Default with
+                    SuggestObsoleteSymbols = true
+                }
+
+            let candidates =
+                checkResults.GetDeclarationListSymbols(
+                    None,
+                    at.Line,
+                    sourceText.Lines[Line.toZ at.Line].ToString(),
+                    partialName,
+                    options = options
+                )
+                |> Seq.concat
+                |> Seq.filter (fun candidate -> String.Equals(candidate.Symbol.DisplayName, name, StringComparison.Ordinal))
+                |> Seq.toArray
+
+            candidates.Length > 0
+            && candidates
+               |> Array.forall (fun candidate -> isInFSharpCore entityFullName candidate.Symbol)
 
     let private optionType (isStruct: bool) =
         if isStruct then
@@ -83,6 +127,33 @@ module private OptionalParameterConversion =
         else
             "Microsoft.FSharp.Core.OptionModule"
 
+    let private operators (_isStruct: bool) = "Microsoft.FSharp.Core.Operators"
+
+    /// `Some` ⟷ `ValueSome`, `Option` ⟷ `ValueOption`, `defaultArg` ⟷ `defaultValueArg`.
+    let private counterpart (isStruct: bool) (ident: Ident) =
+        match isStruct, ident.idText with
+        | false, "defaultArg" -> "defaultValueArg"
+        | true, "defaultValueArg" -> "defaultArg"
+        | false, name -> "Value" + name
+        | true, name -> name.Substring "Value".Length
+
+    /// Whether the long identifier resolves to the FSharp.Core entity of this option kind,
+    /// and to the entity of the other kind once its first identifier is replaced by its counterpart.
+    let private convertsInFSharpCore
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (isStruct: bool)
+        (entityOf: bool -> string)
+        (longIdent: Ident list)
+        =
+        match longIdent with
+        | [] -> false
+        | first :: rest ->
+            let counterparts = counterpart isStruct first :: (rest |> List.map _.idText)
+
+            isFSharpCoreSymbol checkResults sourceText (entityOf isStruct) longIdent
+            && wouldBeFSharpCoreSymbol checkResults sourceText (entityOf (not isStruct)) counterparts first.idRange.Start
+
     let private isOperator (name: string) (expr: SynExpr) =
         match expr with
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ operator ])) -> hasText name operator
@@ -95,31 +166,31 @@ module private OptionalParameterConversion =
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ ident ])) -> ValueSome ident
         | _ -> ValueNone
 
-    /// Functions of both option modules that take the option last and return the same type for either kind.
+    /// Functions of both option modules that take the option last and return the same type for either kind,
+    /// with the number of their arguments.
     let private moduleFunctions =
-        set
+        Map
             [
-                "contains"
-                "count"
-                "defaultValue"
-                "defaultWith"
-                "exists"
-                "forall"
-                "get"
-                "isNone"
-                "isSome"
-                "iter"
-                "toArray"
-                "toList"
-                "toNullable"
-                "toObj"
+                "contains", 2
+                "count", 1
+                "defaultValue", 2
+                "defaultWith", 2
+                "exists", 2
+                "forall", 2
+                "get", 1
+                "isNone", 1
+                "isSome", 1
+                "iter", 2
+                "toArray", 1
+                "toList", 1
+                "toNullable", 1
+                "toObj", 1
             ]
 
     let private isStructAttribute (attribute: SynAttribute) =
-        attribute.Target.IsNone
-        && match List.tryLast attribute.TypeName.LongIdent with
-           | Some name -> hasText "Struct" name || hasText "StructAttribute" name
-           | None -> false
+        match List.tryLast attribute.TypeName.LongIdent with
+        | Some name -> hasText "Struct" name || hasText "StructAttribute" name
+        | None -> false
 
     let rec private tryOptionalVal (pat: SynPat) =
         match pat with
@@ -180,12 +251,23 @@ module private OptionalParameterConversion =
         | SynExpr.App(isInfix = false; funcExpr = funcExpr) -> functionOf funcExpr
         | _ -> expr
 
-    let private tryModuleQualifier (isFSharpCore: string -> Ident list -> bool) (isStruct: bool) (func: SynExpr) =
+    let rec private argumentCount (expr: SynExpr) =
+        match expr with
+        | SynExpr.App(isInfix = false; funcExpr = funcExpr) -> argumentCount funcExpr + 1
+        | _ -> 0
+
+    /// Whether the next argument of the application is the option that the module function takes last.
+    let private takesOptionNext (name: Ident) (func: SynExpr) =
+        match moduleFunctions.TryGetValue name.idText with
+        | true, arity -> argumentCount func + 1 = arity
+        | _ -> false
+
+    let private tryModuleQualifier (checkResults: FSharpCheckFileResults) (sourceText: SourceText) (isStruct: bool) (func: SynExpr) =
         match functionOf func with
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ qualifier; name ])) when
             hasText (if isStruct then "ValueOption" else "Option") qualifier
-            && moduleFunctions.Contains name.idText
-            && isFSharpCore (optionModule isStruct) [ qualifier; name ]
+            && takesOptionNext name func
+            && convertsInFSharpCore checkResults sourceText isStruct optionModule [ qualifier; name ]
             ->
             ValueSome [ qualifier ]
         | _ -> ValueNone
@@ -196,22 +278,33 @@ module private OptionalParameterConversion =
         else
             hasText "Some" ident || hasText "None" ident
 
-    let private tryClauseHeads (isFSharpCore: string -> Ident list -> bool) (isStruct: bool) (clauses: SynMatchClause list) =
+    let private tryClauseHeads
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (isStruct: bool)
+        (clauses: SynMatchClause list)
+        =
         (ValueSome [], clauses)
         ||> List.fold (fun heads (SynMatchClause(pat = pat)) ->
             match heads, pat with
             | ValueSome heads, (SynPat.LongIdent(longDotId = SynLongIdent(id = [ head ])) | SynPat.Named(ident = SynIdent(head, _))) when
                 isCase isStruct head
                 ->
-                if isFSharpCore (optionType isStruct) [ head ] then
+                if convertsInFSharpCore checkResults sourceText isStruct optionType [ head ] then
                     ValueSome(head :: heads)
                 else
                     ValueNone
-            | ValueSome heads, (SynPat.Wild _ | SynPat.Named _) -> ValueSome heads
+            | ValueSome heads, SynPat.Wild _ -> ValueSome heads
             | _ -> ValueNone)
 
     /// The identifiers to rename for one use of the parameter in the member body, when the use keeps its type.
-    let private tryUseRenames (isFSharpCore: string -> Ident list -> bool) (isStruct: bool) (node: SynExpr) (path: SyntaxVisitorPath) =
+    let private tryUseRenames
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (isStruct: bool)
+        (node: SynExpr)
+        (path: SyntaxVisitorPath)
+        =
         match node, path with
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = _ :: property :: _)), _ when
             hasText "IsSome" property
@@ -222,17 +315,21 @@ module private OptionalParameterConversion =
         | _, SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = SingleIdent func; argExpr = arg)) :: _ when
             isSame arg node
             && hasText (if isStruct then "defaultValueArg" else "defaultArg") func
-            && isFSharpCore "Microsoft.FSharp.Core.Operators" [ func ]
+            && convertsInFSharpCore checkResults sourceText isStruct operators [ func ]
             ->
             ValueSome [ func ]
         | _, SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arg)) :: _ when isSame arg node ->
-            tryModuleQualifier isFSharpCore isStruct func
+            tryModuleQualifier checkResults sourceText isStruct func
         | _,
-          SyntaxNode.SynExpr(SynExpr.App(isInfix = true; funcExpr = pipe; argExpr = arg)) :: SyntaxNode.SynExpr(SynExpr.App(
-              isInfix = false; argExpr = func)) :: _ when isSame arg node && isOperator "op_PipeRight" pipe ->
-            tryModuleQualifier isFSharpCore isStruct func
+          SyntaxNode.SynExpr(SynExpr.App(isInfix = true; funcExpr = SingleIdent pipe; argExpr = arg)) :: SyntaxNode.SynExpr(SynExpr.App(
+              isInfix = false; argExpr = func)) :: _ when
+            isSame arg node
+            && hasText "op_PipeRight" pipe
+            && isFSharpCoreSymbol checkResults sourceText (operators isStruct) [ pipe ]
+            ->
+            tryModuleQualifier checkResults sourceText isStruct func
         | _, SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses)) :: _ when isSame scrutinee node ->
-            tryClauseHeads isFSharpCore isStruct clauses
+            tryClauseHeads checkResults sourceText isStruct clauses
         | _ -> ValueNone
 
     let private tryUseNode (parseTree: ParsedInput) (useRange: range) =
@@ -248,25 +345,23 @@ module private OptionalParameterConversion =
             | _ -> None)
 
     /// The identifiers to rename in the member body, when every use of the parameter keeps its type.
-    let tryBodyRenames (isFSharpCore: string -> Ident list -> bool) (parseTree: ParsedInput) (isStruct: bool) (uses: range seq) =
+    let tryBodyRenames
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (parseTree: ParsedInput)
+        (isStruct: bool)
+        (uses: range seq)
+        =
         (ValueSome [], uses)
         ||> Seq.fold (fun renames useRange ->
             match renames, tryUseNode parseTree useRange with
             | ValueSome renames, Some(node, path) ->
-                tryUseRenames isFSharpCore isStruct node path
+                tryUseRenames checkResults sourceText isStruct node path
                 |> ValueOption.map (fun more -> [ yield! more; yield! renames ])
             | _ -> ValueNone)
 
-    /// `Some` ⟷ `ValueSome`, `Option` ⟷ `ValueOption`, `defaultArg` ⟷ `defaultValueArg`.
     let private renamed (sourceText: SourceText) (isStruct: bool) (ident: Ident) =
-        let text =
-            match isStruct, ident.idText with
-            | false, "defaultArg" -> "defaultValueArg"
-            | true, "defaultValueArg" -> "defaultArg"
-            | false, name -> "Value" + name
-            | true, name -> name.Substring "Value".Length
-
-        TextChange(spanOf sourceText ident.idRange, text)
+        TextChange(spanOf sourceText ident.idRange, counterpart isStruct ident)
 
     let private attributeRemoval (sourceText: SourceText) (list: SynAttributeList) (attribute: SynAttribute) =
         match list.Attributes with
@@ -324,30 +419,57 @@ module private OptionalParameterConversion =
                 argExpr = value) when isOperator "op_Equality" equals && hasText name argumentName -> Some value
             | _ -> None)
 
-    let private valueChanges (isFSharpCore: string -> Ident list -> bool) (sourceText: SourceText) (isStruct: bool) (value: SynExpr) =
+    let private valueChanges (checkResults: FSharpCheckFileResults) (sourceText: SourceText) (isStruct: bool) (value: SynExpr) =
         let valueSpan = spanOf sourceText value.Range
         let conversion = if isStruct then "toOption" else "ofOption"
         let inverse = if isStruct then "ofOption" else "toOption"
 
         match functionOf value, value with
-        | SingleIdent head, _ when isCase isStruct head && isFSharpCore (optionType isStruct) [ head ] ->
+        | SingleIdent head, _ when
+            isCase isStruct head
+            && convertsInFSharpCore checkResults sourceText isStruct optionType [ head ]
+            ->
             [ renamed sourceText isStruct head ]
-        | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ qualifier; name ])), SynExpr.App(isInfix = false; argExpr = inner) when
+        | _,
+          SynExpr.App(
+              isInfix = false; funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent(id = [ qualifier; name ])) as func; argExpr = inner) when
             hasText "ValueOption" qualifier
             && hasText inverse name
-            && isFSharpCore (optionModule true) [ qualifier; name ]
+            && isFSharpCoreSymbol checkResults sourceText (optionModule true) [ qualifier; name ]
             ->
-            [ TextChange(valueSpan, sourceText.ToString(spanOf sourceText inner.Range)) ]
-        | _ when isAtomic value -> [ TextChange(TextSpan(valueSpan.Start, 0), $"ValueOption.{conversion} ") ]
-        | _ ->
+            let innerStart = (spanOf sourceText inner.Range).Start
+
+            let trivia =
+                sourceText.ToString(TextSpan.FromBounds((spanOf sourceText func.Range).End, innerStart))
+
             [
-                TextChange(TextSpan(valueSpan.Start, 0), $"ValueOption.{conversion} (")
-                TextChange(TextSpan(valueSpan.End, 0), ")")
+                TextChange(TextSpan.FromBounds(valueSpan.Start, innerStart), trivia.TrimStart())
             ]
+        | _ ->
+            let wrapper =
+                if wouldBeFSharpCoreSymbol checkResults sourceText (optionModule true) [ "ValueOption"; conversion ] value.Range.Start then
+                    $"ValueOption.{conversion}"
+                else
+                    $"Microsoft.FSharp.Core.ValueOption.{conversion}"
+
+            if isAtomic value then
+                [ TextChange(TextSpan(valueSpan.Start, 0), $"{wrapper} ") ]
+            else
+                [
+                    TextChange(TextSpan(valueSpan.Start, 0), $"{wrapper} (")
+                    TextChange(TextSpan(valueSpan.End, 0), ")")
+                ]
+
+    /// Whether the function of a call ends at the position, with or without its type arguments.
+    let private endsAt (position: pos) (func: SynExpr) =
+        Position.posEq func.Range.End position
+        || match func with
+           | SynExpr.TypeApp(expr = callee) -> Position.posEq callee.Range.End position
+           | _ -> false
 
     /// Changes to the `?name = value` arguments of the call whose function ends at the use of the member.
     let callSiteChanges
-        (isFSharpCore: string -> Ident list -> bool)
+        (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
         (parseTree: ParsedInput)
         (isStruct: bool)
@@ -358,17 +480,81 @@ module private OptionalParameterConversion =
             (useRange.Start, parseTree)
             ||> ParsedInput.tryPickLast (fun _ node ->
                 match node with
-                | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arguments)) when
-                    Position.posEq func.Range.End useRange.End
-                    ->
+                | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arguments)) when endsAt useRange.End func ->
                     Some arguments
                 | _ -> None)
 
         match arguments with
         | Some arguments ->
             optionalArgumentValues name arguments
-            |> List.collect (valueChanges isFSharpCore sourceText isStruct)
+            |> List.collect (valueChanges checkResults sourceText isStruct)
         | None -> []
+
+    let private isOptionType (isStruct: bool) (ty: FSharpType) =
+        ty.HasTypeDefinition
+        && match ty.TypeDefinition.TryFullName with
+           | Some name -> String.Equals(name, optionType isStruct, StringComparison.Ordinal)
+           | None -> false
+
+    let rec private typeParametersIn (ty: FSharpType) : FSharpType seq =
+        if ty.IsGenericParameter then
+            Seq.singleton ty
+        else
+            ty.GenericArguments |> Seq.collect typeParametersIn
+
+    /// Whether the other overload has the signature the member gets once the parameter changes its option kind.
+    let private hasConvertedSignature (parameter: Parameter) (mfv: FSharpMemberOrFunctionOrValue) (other: FSharpMemberOrFunctionOrValue) =
+        let typeParameters =
+            mfv.CurriedParameterGroups
+            |> Seq.concat
+            |> Seq.collect (fun own -> typeParametersIn own.Type)
+            |> Seq.toArray
+
+        // Each overload has method type parameters of its own, so they are matched by position.
+        let ownTypeParameters =
+            [
+                for ownParameter, otherParameter in Seq.zip mfv.GenericParameters other.GenericParameters do
+                    match typeParameters |> Array.tryFindV (fun ty -> ty.GenericParameter = ownParameter) with
+                    | ValueSome ty -> otherParameter, ty
+                    | ValueNone -> ()
+            ]
+
+        let becomes (own: FSharpParameter) (other: FSharpParameter) =
+            let ownType = own.Type.StripAbbreviations()
+
+            let otherType = other.Type.Instantiate(ownTypeParameters).StripAbbreviations()
+
+            match own.Name with
+            | Some name when String.Equals(name, parameter.Ident.idText, StringComparison.Ordinal) ->
+                isOptionType (not parameter.IsStruct) otherType
+                && otherType.GenericArguments[0] = ownType.GenericArguments[0]
+            | _ -> otherType = ownType
+
+        other.GenericParameters.Count = mfv.GenericParameters.Count
+        && other.CurriedParameterGroups.Count = mfv.CurriedParameterGroups.Count
+        && (mfv.CurriedParameterGroups, other.CurriedParameterGroups)
+           ||> Seq.forall2 (fun own others -> own.Count = others.Count && Seq.forall2 becomes own others)
+
+    /// Whether another overload already has the signature the member gets once the parameter changes its option kind.
+    let collidesWithOverload (parameter: Parameter) (mfv: FSharpMemberOrFunctionOrValue) =
+        match mfv.DeclaringEntity with
+        | Some entity ->
+            let overloads =
+                entity.MembersFunctionsAndValues
+                |> Seq.filter (fun other ->
+                    String.Equals(other.LogicalName, mfv.LogicalName, StringComparison.Ordinal)
+                    && other.IsInstanceMember = mfv.IsInstanceMember)
+                |> Seq.toArray
+
+            // The members listed by the entity share its type parameters; the symbol at a definition has copies of them.
+            match overloads |> Array.tryFindV _.IsEffectivelySameAs(mfv) with
+            | ValueSome own ->
+                overloads
+                |> Array.exists (fun other ->
+                    not (obj.ReferenceEquals(other, own))
+                    && hasConvertedSignature parameter own other)
+            | ValueNone -> false
+        | None -> false
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertOptionalParameterStruct"); Shared>]
 type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstructor>] () =
@@ -384,7 +570,7 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
         let line = sourceText.Lines[Line.toZ ident.idRange.EndLine].ToString()
         checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, [ ident.idText ])
 
-    static let isConvertibleMember (symbol: FSharpSymbol) =
+    static let isConvertibleMember (parameter: OptionalParameterConversion.Parameter) (symbol: FSharpSymbol) =
         match symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
             not (
@@ -392,8 +578,35 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                 || mfv.IsDispatchSlot
                 || mfv.IsConstructor
                 || mfv.IsExtensionMember
+                || OptionalParameterConversion.collidesWithOverload parameter mfv
             )
         | _ -> false
+
+    /// Whether the project and the F# projects that depend on it can call members with value option parameters.
+    static let supportsValueOptions (project: Project) =
+        cancellableTask {
+            let solution = project.Solution
+
+            let projectIds =
+                [
+                    project.Id
+                    yield! solution.GetProjectDependencyGraph().GetProjectsThatTransitivelyDependOnThisProject project.Id
+                ]
+
+            let mutable isSupported = true
+
+            for projectId in projectIds do
+                let candidate = solution.GetProject projectId
+
+                if isSupported && candidate.IsFSharp then
+                    let! _, _, parsingOptions, _ = candidate.GetFSharpCompilationOptionsAsync()
+
+                    isSupported <-
+                        LanguageVersion(parsingOptions.LangVersionText).SupportsFeature
+                            LanguageFeature.SupportValueOptionsAsOptionalParameters
+
+            return isSupported
+        }
 
     override _.ComputeRefactoringsAsync context =
         cancellableTask {
@@ -411,12 +624,13 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                 match OptionalParameterConversion.tryParameter caret parseResults.ParseTree with
                 | ValueNone -> ()
                 | ValueSome parameter ->
-                    let! _, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpConvertOptionalParameterStructRefactoring)
+                    let! isSupported =
+                        if parameter.IsStruct then
+                            CancellableTask.singleton true
+                        else
+                            supportsValueOptions document.Project
 
-                    if
-                        parameter.IsStruct
-                        || LanguageVersion(langVersion).SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters
-                    then
+                    if isSupported then
                         let! _, checkResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertOptionalParameterStructRefactoring)
 
@@ -424,7 +638,7 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                             tryGetSymbolUse checkResults sourceText parameter.MemberName,
                             tryGetSymbolUse checkResults sourceText parameter.Ident
                         with
-                        | Some memberUse, Some parameterUse when isConvertibleMember memberUse.Symbol ->
+                        | Some memberUse, Some parameterUse when isConvertibleMember parameter memberUse.Symbol ->
                             let uses =
                                 checkResults.GetUsesOfSymbolInFile(parameterUse.Symbol, cancellationToken = cancellationToken)
                                 // Named arguments at call sites are uses of the parameter too; only the body is rewritten here.
@@ -436,7 +650,8 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
 
                             match
                                 OptionalParameterConversion.tryBodyRenames
-                                    (OptionalParameterConversion.isFSharpCoreSymbol checkResults sourceText)
+                                    checkResults
+                                    sourceText
                                     parseResults.ParseTree
                                     parameter.IsStruct
                                     uses
@@ -451,7 +666,7 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                                 let definitionChanges =
                                     OptionalParameterConversion.definitionChanges sourceText parameter renames
 
-                                let changedSolution =
+                                let changedSolution () =
                                     cancellableTask {
                                         let! cancellationToken = CancellableTask.getCancellationToken ()
                                         let! memberUses = SymbolHelpers.getSymbolUses memberUse document checkResults
@@ -480,7 +695,7 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                                                     for _, useRange in documentUses do
                                                         yield!
                                                             OptionalParameterConversion.callSiteChanges
-                                                                (OptionalParameterConversion.isFSharpCoreSymbol useCheckResults text)
+                                                                useCheckResults
                                                                 text
                                                                 useParseResults.ParseTree
                                                                 parameter.IsStruct
@@ -502,7 +717,7 @@ type internal FSharpConvertOptionalParameterStructRefactoring [<ImportingConstru
                                     CodeAction.Create(
                                         title,
                                         Func<CancellationToken, Task<Solution>>(fun cancellationToken ->
-                                            CancellableTask.start cancellationToken changedSolution),
+                                            CancellableTask.start cancellationToken (changedSolution ())),
                                         title
                                     )
 
