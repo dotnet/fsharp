@@ -154,9 +154,7 @@ type StringText(str: string) =
                     sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
         member _.GetChecksum() =
-            let bytes = Array.zeroCreate<byte> 16
-            Md5Hasher.hashStringInto str (Span bytes)
-            ImmutableCollectionsMarshal.AsImmutableArray<byte>(bytes)
+            ImmutableCollectionsMarshal.AsImmutableArray<byte>(Md5Hasher.hashString str)
 
 module SourceText =
 
@@ -190,9 +188,7 @@ module SourceTextNew =
             member _.GetSubTextFromRange(x) = sourceText.GetSubTextFromRange(x)
 
             member _.GetChecksum() =
-                let bytes = Array.zeroCreate<byte> 16
-                Md5Hasher.hashStringInto (!!sourceText.ToString()) (Span bytes)
-                ImmutableCollectionsMarshal.AsImmutableArray<byte>(bytes)
+                ImmutableCollectionsMarshal.AsImmutableArray<byte>(Md5Hasher.hashString (!!sourceText.ToString()))
         }
 
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository

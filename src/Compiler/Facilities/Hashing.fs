@@ -50,29 +50,18 @@ module internal Md5Hasher =
 
     let empty = Array.empty
 
-    /// Computes the MD5 hash of a string directly into a caller-allocated 16-byte buffer,
-    /// avoiding the extra allocation of an intermediate hash-result array.
-    /// The UTF8 encoding buffer is rented from the shared ArrayPool to avoid allocating
-    /// a byte array the size of the input string on every call.
-    let hashStringInto (s: string) (destination: Span<byte>) =
+    let hashString (s: string) =
         let encoding = System.Text.Encoding.UTF8
         let byteCount = encoding.GetByteCount(s)
         let rented = System.Buffers.ArrayPool<byte>.Shared.Rent(byteCount)
 
         try
             encoding.GetBytes(s, 0, s.Length, rented, 0) |> ignore
-            let hash = md5.Value.ComputeHash(rented, 0, byteCount)
-            hash.CopyTo(destination)
+            md5.Value.ComputeHash(rented, 0, byteCount)
         finally
             System.Buffers.ArrayPool<byte>.Shared.Return(rented)
 
-    /// Computes the MD5 hash of a string and returns it as a hex string (matching the format of
-    /// `toString`), without allocating an intermediate byte array for the UTF8-encoded input
-    /// (only the 16-byte hash result is allocated).
-    let hashStringToString (s: string) =
-        let bytes = Array.zeroCreate<byte> 16
-        hashStringInto s (Span bytes)
-        BitConverter.ToString(bytes)
+    let hashStringToString (s: string) = hashString s |> BitConverter.ToString
 
     let addBytes (bytes: byte array) (s: byte array) =
 
