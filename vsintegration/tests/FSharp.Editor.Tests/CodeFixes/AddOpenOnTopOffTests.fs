@@ -205,6 +205,23 @@ let ``Fixes FS0039 for missing opens - nested module declared on one line`` () =
 
     Assert.Equal(expected, actual)
 
+[<Theory>] // The open has to stay in `Module1`, the scope of the use, and not enter `Module2`
+[<InlineData("let x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n")>]
+[<InlineData("[<Obsolete>] module Module2 = let y = 1\n")>]
+let ``Fixes FS0039 for missing opens - the use is not in the nested module declared on one line`` (declarations: string) =
+    let code = "module Module1\n" + declarations
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode = "module Module1\n\nopen System\n\n" + declarations
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
     let code =
