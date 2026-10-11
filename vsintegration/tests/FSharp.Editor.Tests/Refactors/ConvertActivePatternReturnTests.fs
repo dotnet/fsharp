@@ -162,6 +162,18 @@ module M
 let rec (|A|_|) x = if x > 0 then Some () else None
 and [<return: Struct>] (|B|_|) x = if x < 0 then ValueSome () else ValueNone
 """)>]
+[<InlineData("""
+module M
+
+let (|Even|_|) x = if x % 2 = 0 then ``Some`` () else ``None``
+""",
+             "(|Even",
+             """
+module M
+
+[<return: Struct>]
+let (|Even|_|) x = if x % 2 = 0 then ValueSome () else ValueNone
+""")>]
 let ``Option-returning active pattern converts to a struct one`` (before: string, marker: string, after: string) =
     Assert.Equal(after, refactored before marker)
 
@@ -200,6 +212,47 @@ let (|Even|_|) x = if x % 2 = 0 then ValueSome () else ValueNone
 module M
 
 [<CompiledName("EvenPattern")>]
+let (|Even|_|) x = if x % 2 = 0 then Some () else None
+""")>]
+[<InlineData("""
+module M
+
+let (|Even|_|) x = if x % 2 = 0 then ``ValueSome`` () else ``ValueNone``
+""",
+             """
+module M
+
+let (|Even|_|) x = if x % 2 = 0 then Some () else None
+""")>]
+[<InlineData("""
+module M
+
+[<
+    return: Struct
+>]
+let (|Even|_|) x = if x % 2 = 0 then ValueSome () else ValueNone
+""",
+             """
+module M
+
+let (|Even|_|) x = if x % 2 = 0 then Some () else None
+""")>]
+[<InlineData("""
+module M
+
+type StructAttribute() =
+    inherit System.Attribute()
+
+[<return: Struct>]
+let (|Even|_|) x = if x % 2 = 0 then ValueSome () else ValueNone
+""",
+             """
+module M
+
+type StructAttribute() =
+    inherit System.Attribute()
+
+[<return: Struct>]
 let (|Even|_|) x = if x % 2 = 0 then Some () else None
 """)>]
 let ``Struct active pattern converts to an option-returning one`` (before: string, after: string) =
@@ -310,6 +363,47 @@ module M
 
 let failwith (_: string) = Some 0
 let (|P|_|) x = if x > 0 then Some x else failwith "negative"
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+let ValueSome x = ValueSome (x + 10)
+let (|P|_|) x = Some x
+printfn "%d" (match 1 with P x -> x | _ -> -1)
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+let Some x = ValueSome (x + 10)
+let (|P|_|) x = ValueSome x
+printfn "%d" (match 1 with P x -> x | _ -> -1)
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+type option<'T> = 'T list Microsoft.FSharp.Core.option
+let (|P|_|) x : int option = Some [x]
+printfn "%A" (match 1 with P xs -> xs | _ -> [])
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+type StructAttribute() =
+    inherit System.Attribute()
+
+let (|P|_|) x = if x > 0 then Some x else None
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+let (|P|_|) x = Some x
+let result: int option = (|P|_|) 1
+printfn "%A" result
 """,
              "(|P")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
