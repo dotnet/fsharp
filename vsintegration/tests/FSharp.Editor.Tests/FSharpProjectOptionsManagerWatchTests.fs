@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Immutable
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Xunit
@@ -158,4 +159,38 @@ module FSharpProjectOptionsManagerWatchTests =
 
             Assert.True options.IsSome
             Assert.Equal<string list>([ otherDll ], watchedFiles watcher)
+        }
+
+    [<Fact>]
+    let ``A reference Roslyn swapped loses its stamp although its change notification was missed`` () : Task =
+        task {
+            let path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".dll")
+            File.Copy(referenceDll, path)
+
+            try
+                let project = createProject [ path ]
+                let _, manager = createManager project
+                let! _ = manager.TryGetOptionsByProject(project, CancellationToken.None)
+
+                let stale = manager.ReferenceStamps.GetLastWriteTimeUtc path
+
+                // The file changes and no notification arrives: the tracker answers what it remembers.
+                let fresh = stale + TimeSpan.FromSeconds 2.
+                File.SetLastWriteTimeUtc(path, fresh)
+                Assert.Equal(stale, manager.ReferenceStamps.GetLastWriteTimeUtc path)
+
+                // Roslyn saw the change and put a new reference at the same path.
+                let workspace = project.Solution.Workspace
+
+                Assert.True(
+                    workspace.TryApplyChanges(
+                        workspace.CurrentSolution.WithProjectMetadataReferences(project.Id, [ metadataReference path ])
+                    )
+                )
+
+                let! _ = manager.TryGetOptionsByProject(workspace.CurrentSolution.GetProject project.Id, CancellationToken.None)
+
+                Assert.Equal(fresh, manager.ReferenceStamps.GetLastWriteTimeUtc path)
+            finally
+                File.Delete path
         }
