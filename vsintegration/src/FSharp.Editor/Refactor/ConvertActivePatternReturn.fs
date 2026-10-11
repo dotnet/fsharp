@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
@@ -31,6 +32,7 @@ module private ActivePatternReturnConversion =
     [<NoComparison; NoEquality>]
     type Target =
         {
+            Name: Ident
             IsStruct: bool
             Cases: Ident list
             Raises: Ident list
@@ -43,7 +45,8 @@ module private ActivePatternReturnConversion =
     let private spanOf (sourceText: SourceText) (m: range) =
         RoslynHelpers.FSharpRangeToTextSpan(sourceText, m)
 
-    /// Whether the long identifier resolves to a value or union case of the FSharp.Core entity with the compiled full name.
+    /// Whether the long identifier resolves to the FSharp.Core entity with the compiled full name, to an abbreviation
+    /// FSharp.Core gives it, or to a value or union case of it.
     let isFSharpCoreSymbol
         (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
@@ -59,19 +62,23 @@ module private ActivePatternReturnConversion =
             match checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, names) with
             | None -> false
             | Some symbolUse ->
-                let declaringEntityName =
+                let entityName =
                     match symbolUse.Symbol with
                     | :? FSharpUnionCase as case -> case.DeclaringEntity.TryFullName
                     | :? FSharpMemberOrFunctionOrValue as value -> value.DeclaringEntity |> Option.bind _.TryFullName
+                    | :? FSharpEntity as entity when entity.IsFSharpAbbreviation && entity.AbbreviatedType.HasTypeDefinition ->
+                        entity.AbbreviatedType.TypeDefinition.TryFullName
+                    | :? FSharpEntity as entity -> entity.TryFullName
                     | _ -> None
 
-                match declaringEntityName with
+                match entityName with
                 | Some name ->
                     String.Equals(name, entityFullName, StringComparison.Ordinal)
                     && String.Equals(symbolUse.Symbol.Assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal)
                 | None -> false
 
-    /// Whether the cases and raising functions of the target are the FSharp.Core ones their names suggest.
+    /// Whether the cases, the raising functions and the annotated return type of the target are the FSharp.Core ones
+    /// their names suggest.
     let isFromFSharpCore (isFSharpCore: string -> Ident list -> bool) (target: Target) =
         let optionType =
             if target.IsStruct then
@@ -84,6 +91,20 @@ module private ActivePatternReturnConversion =
            |> List.forall (fun raise ->
                isFSharpCore "Microsoft.FSharp.Core.Operators" [ raise ]
                || isFSharpCore "Microsoft.FSharp.Core.ExtraTopLevelOperators" [ raise ])
+        && (match target.Annotation with
+            | Annotation.Head head -> isFSharpCore optionType [ head ]
+            | Annotation.Absent
+            | Annotation.Unsupported -> true)
+
+    /// The target without its `Struct` return attribute when that resolves to another type than the FSharp.Core one:
+    /// a value option makes the pattern struct by itself, and such an attribute is not the conversion's to remove.
+    let withResolvedStructAttribute (isFSharpCore: string -> Ident list -> bool) (target: Target) =
+        { target with
+            StructAttribute =
+                target.StructAttribute
+                |> ValueOption.filter (fun struct (_, attribute) ->
+                    isFSharpCore "Microsoft.FSharp.Core.StructAttribute" attribute.TypeName.LongIdent)
+        }
 
     /// Whether the name is a case or type of a value option (true) or of an option (false).
     let private structnessOf (name: string) =
@@ -97,6 +118,76 @@ module private ActivePatternReturnConversion =
         | "voption"
         | "ValueOption" -> ValueSome true
         | _ -> ValueNone
+
+    /// The name with the `Value`/`v` prefix removed or added: `Some` ⟷ `ValueSome`, `option` ⟷ `voption`.
+    let private counterpartOf (isStruct: bool) (name: string) =
+        let prefix = if Char.IsLower name[0] then "v" else "Value"
+
+        if isStruct then
+            name.Substring prefix.Length
+        else
+            prefix + name
+
+    /// Whether the cases and the attribute the conversion writes resolve, where it writes them, to the FSharp.Core ones:
+    /// a definition in scope can shadow `ValueSome` or `StructAttribute` the way it can shadow `Some`.
+    let resolvesToFSharpCore (checkResults: FSharpCheckFileResults) (target: Target) =
+        let fsharpCore =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> List.tryFind (fun assembly -> String.Equals(assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal))
+
+        let tryEntity (name: string) =
+            fsharpCore
+            |> Option.bind (fun assembly -> assembly.Contents.FindEntityByPath [ "Microsoft"; "FSharp"; "Core"; name ])
+
+        let resolvesAt (m: range) (symbol: FSharpSymbol) =
+            checkResults.IsRelativeNameResolvableFromSymbol(m.Start, [], symbol)
+
+        let writtenOptionType =
+            if target.IsStruct then
+                "FSharpOption`1"
+            else
+                "FSharpValueOption`1"
+
+        let casesResolve =
+            match tryEntity writtenOptionType with
+            | Some optionType ->
+                target.Cases
+                |> List.forall (fun case ->
+                    let name = counterpartOf target.IsStruct case.idText
+
+                    optionType.UnionCases
+                    |> Seq.exists (fun unionCase ->
+                        String.Equals(unionCase.Name, name, StringComparison.Ordinal)
+                        && resolvesAt case.idRange unionCase))
+            | None -> false
+
+        let attributeResolves =
+            target.IsStruct
+            || not target.IsModuleLevel
+            || (match tryEntity "StructAttribute" with
+                | Some attribute -> resolvesAt target.Keyword.Range attribute
+                | None -> false)
+
+        casesResolve && attributeResolves
+
+    /// Whether the file uses the active pattern as a function value: such a use sees the return type change, which a
+    /// match on the pattern does not.
+    let isUsedAsValue
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (cancellationToken: CancellationToken)
+        (target: Target)
+        =
+        let m = target.Name.idRange
+        let line = sourceText.Lines[Line.toZ m.EndLine].ToString()
+
+        checkResults.GetSymbolUsesAtLocation(m.EndLine, m.EndColumn, line, [ target.Name.idText ])
+        |> List.exists (fun symbolUse ->
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as value ->
+                checkResults.GetUsesOfSymbolInFile(value, cancellationToken = cancellationToken)
+                |> Array.exists (fun valueUse -> not valueUse.IsFromDefinition)
+            | _ -> false)
 
     let private raisingFunctions =
         set
@@ -241,6 +332,7 @@ module private ActivePatternReturnConversion =
                     | annotation ->
                         ValueSome
                             {
+                                Name = name
                                 IsStruct = isStruct
                                 Cases = cases
                                 Raises = raises
@@ -260,15 +352,8 @@ module private ActivePatternReturnConversion =
         | 0 -> Environment.NewLine
         | length -> sourceText.ToString(TextSpan(line.End, length))
 
-    /// Adds or removes the `Value`/`v` prefix: `Some` ⟷ `ValueSome`, `option` ⟷ `voption`.
     let private renamed (sourceText: SourceText) (isStruct: bool) (ident: Ident) =
-        let start = (spanOf sourceText ident.idRange).Start
-        let prefix = if Char.IsLower ident.idText[0] then "v" else "Value"
-
-        if isStruct then
-            TextChange(TextSpan(start, prefix.Length), "")
-        else
-            TextChange(TextSpan(start, 0), prefix)
+        TextChange(spanOf sourceText ident.idRange, counterpartOf isStruct ident.idText)
 
     let private structAttributeInsertion (sourceText: SourceText) (target: Target) =
         let keyword = target.Keyword.Range
@@ -285,12 +370,16 @@ module private ActivePatternReturnConversion =
         match list.Attributes with
         | [ _ ] ->
             let listSpan = spanOf sourceText list.Range
-            let line = sourceText.Lines.GetLineFromPosition listSpan.Start
-            let before = sourceText.ToString(TextSpan.FromBounds(line.Start, listSpan.Start))
-            let after = sourceText.ToString(TextSpan.FromBounds(listSpan.End, line.End))
+            let firstLine = sourceText.Lines.GetLineFromPosition listSpan.Start
+            let lastLine = sourceText.Lines.GetLineFromPosition listSpan.End
+
+            let before =
+                sourceText.ToString(TextSpan.FromBounds(firstLine.Start, listSpan.Start))
+
+            let after = sourceText.ToString(TextSpan.FromBounds(listSpan.End, lastLine.End))
 
             if String.IsNullOrWhiteSpace before && String.IsNullOrWhiteSpace after then
-                TextSpan.FromBounds(line.Start, line.EndIncludingLineBreak)
+                TextSpan.FromBounds(firstLine.Start, lastLine.EndIncludingLineBreak)
             else
                 TextSpan(listSpan.Start, listSpan.Length + after.Length - after.TrimStart().Length)
         | attributes ->
@@ -360,10 +449,16 @@ type internal FSharpConvertActivePatternReturnRefactoring [<ImportingConstructor
                         let! _, checkResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertActivePatternReturnRefactoring)
 
+                        let isFSharpCore =
+                            ActivePatternReturnConversion.isFSharpCoreSymbol checkResults sourceText
+
+                        let target =
+                            ActivePatternReturnConversion.withResolvedStructAttribute isFSharpCore target
+
                         if
-                            ActivePatternReturnConversion.isFromFSharpCore
-                                (ActivePatternReturnConversion.isFSharpCoreSymbol checkResults sourceText)
-                                target
+                            ActivePatternReturnConversion.isFromFSharpCore isFSharpCore target
+                            && ActivePatternReturnConversion.resolvesToFSharpCore checkResults target
+                            && not (ActivePatternReturnConversion.isUsedAsValue checkResults sourceText cancellationToken target)
                         then
                             let title =
                                 if target.IsStruct then
