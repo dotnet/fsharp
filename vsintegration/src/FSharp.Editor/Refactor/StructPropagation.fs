@@ -46,11 +46,8 @@ let private symbolUseAt (source: Source) (ident: Ident) =
     let line = source.Text.Lines[Line.toZ ident.idRange.EndLine].ToString()
     source.Check.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, [ ident.idText ])
 
-/// Whether the type is or contains a generic type parameter, which other calls may instantiate with another form.
-let rec private involvesTypeParameter (ty: FSharpType) =
-    ty.IsGenericParameter || ty.GenericArguments |> Seq.exists involvesTypeParameter
-
-/// Whether the declared type of the parameter at the position involves a generic type parameter.
+/// Whether the parameter at the position is declared a generic type parameter itself, which other calls may
+/// instantiate with another form. A tuple or an anonymous record of generic parts keeps its own form in every call.
 let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int) (index: int voption) =
     if group >= mfv.CurriedParameterGroups.Count then
         false
@@ -58,9 +55,9 @@ let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int)
         let parameters = mfv.CurriedParameterGroups[group]
 
         match index with
-        | ValueSome index when index < parameters.Count -> involvesTypeParameter parameters[index].Type
+        | ValueSome index when index < parameters.Count -> parameters[index].Type.IsGenericParameter
         | ValueSome _ -> false
-        | ValueNone -> parameters |> Seq.exists (fun parameter -> involvesTypeParameter parameter.Type)
+        | ValueNone -> parameters.Count = 1 && parameters[0].Type.IsGenericParameter
 
 let rec private tryPatternIdent (pat: SynPat) =
     match pat with
@@ -466,11 +463,11 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
         | Some symbolUse when (tryDeclarationDocument symbolUse.Symbol).IsSome ->
             let isValue =
                 match symbolUse.Symbol with
-                | :? FSharpField as field -> not (involvesTypeParameter field.FieldType)
+                | :? FSharpField as field -> not field.FieldType.IsGenericParameter
                 | :? FSharpMemberOrFunctionOrValue as mfv ->
                     not mfv.IsFunction
                     && not mfv.IsMember
-                    && not (mfv.FullTypeSafe |> Option.exists involvesTypeParameter)
+                    && not (mfv.FullTypeSafe |> Option.exists _.IsGenericParameter)
                 | _ -> false
 
             if isValue then
@@ -483,7 +480,7 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
             match functionUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when
                 (mfv.IsFunction || mfv.IsMember)
-                && not (involvesTypeParameter mfv.ReturnParameter.Type)
+                && not mfv.ReturnParameter.Type.IsGenericParameter
                 ->
                 this.Enqueue (keyOf "R" functionUse.Symbol) (Slot.Result(functionUse, source))
             | _ -> ()

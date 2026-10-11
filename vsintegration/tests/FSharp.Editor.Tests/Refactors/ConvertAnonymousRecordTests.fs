@@ -526,6 +526,30 @@ let b = identity<{| B: int |}> {| B = 2 |}
     Assert.Equal(structs, refactored reference "A = 1")
     Assert.Equal(reference, refactored structs "A = 1")
 
+[<Fact>]
+let ``Generic field does not stop the conversion`` () =
+    let reference =
+        """
+module M
+
+let make value = {| Value = value |}
+let a: {| Value: int |} = make 1
+let b: {| Value: string |} = make "s"
+"""
+
+    let structs =
+        """
+module M
+
+let make value = struct {| Value = value |}
+let a: struct {| Value: int |} = make 1
+let b: struct {| Value: string |} = make "s"
+"""
+
+    for marker in [ "Value = value"; "Value: int" ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
 [<Theory>]
 [<InlineData("\nmodule M\n\nlet x = id<_>{| A = 1 |}\n", "\nmodule M\n\nlet x = id<_> struct {| A = 1 |}\n")>]
 [<InlineData("\nmodule M\n\nlet x = id{| A = 1 |}\n", "\nmodule M\n\nlet x = id struct {| A = 1 |}\n")>]

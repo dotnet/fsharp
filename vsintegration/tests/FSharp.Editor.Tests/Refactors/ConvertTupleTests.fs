@@ -686,6 +686,38 @@ let ``Named argument converts with the parameter it names`` (reference: string, 
         Assert.Equal(structs, refactored reference marker)
         Assert.Equal(reference, refactored structs marker)
 
+[<Theory>]
+[<InlineData("""
+module M
+
+let pair a b = (a, b)
+let (x, y) = pair 1 2
+""",
+             "x, y",
+             """
+module M
+
+let pair a b = struct (a, b)
+let struct (x, y) = pair 1 2
+""")>]
+[<InlineData("""
+module M
+
+let first (a, b) = a
+let one = first (1, 2)
+""",
+             "1, 2",
+             """
+module M
+
+let first struct (a, b) = a
+let one = first struct (1, 2)
+""")>]
+let ``Tuple of generic elements converts with the function it goes through`` (reference: string, useMarker: string, structs: string) =
+    for marker in [ "a, b"; useMarker ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
 [<Fact>]
 let ``Comment between struct and its parenthesis is kept`` () =
     let code =
