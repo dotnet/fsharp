@@ -265,27 +265,24 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
     static let classifyWholeFile (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
         cancellableTask {
             match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
-            | ValueNone -> return ValueNone
-            | ValueSome(struct (_, checkResults)) ->
+            // Results without type information come from an aborted check and classify to nothing;
+            // remembering that would pin the version to no colours.
+            | ValueSome(struct (_, checkResults)) when checkResults.HasFullTypeCheckInfo ->
                 let classificationData =
                     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                // Every checked file resolves at least its enclosing module - an implicit one as a
-                // zero-width item - so nothing here means the classification itself failed (an
-                // aborted check, or SemanticClassification.fs recovering with an empty array).
-                // Remembering that would pin the version to no colours.
-                if classificationData.Length = 0 then
-                    return ValueNone
-                else
-                    let classification =
-                        {
-                            Version = version
-                            Text = sourceText
-                            Lookup = itemToSemanticClassificationLookup classificationData
-                        }
+                // A checked file can have nothing to classify - `namespace global` over declarations
+                // an inactive #if hides - and that is the answer for this version.
+                let classification =
+                    {
+                        Version = version
+                        Text = sourceText
+                        Lookup = itemToSemanticClassificationLookup classificationData
+                    }
 
-                    remember document.Id classification
-                    return ValueSome classification
+                remember document.Id classification
+                return ValueSome classification
+            | _ -> return ValueNone
         }
 
     // An instance its last waiter has just abandoned refuses to be joined; the next pass replaces it.
