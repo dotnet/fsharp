@@ -345,14 +345,19 @@ type C() =
     Assert.Equal<string list>([ extractToLocalFunction ], titlesFor code "this.Length + 1")
 
 [<Theory>]
-[<InlineData("let inline f (x: int) = x + 1", false)>]
-[<InlineData("let inline internal f (x: int) = x + 1", false)>]
-[<InlineData("let inline private f (x: int) = x + 1", true)>]
-[<InlineData("let f (x: int) = x + 1", true)>]
-let ``Module function is offered unless a more accessible inline function would call it`` (declaration: string, offered: bool) =
+[<InlineData("let inline f (x: int) = x + 1", "Extract to module function", false)>]
+[<InlineData("let inline internal f (x: int) = x + 1", "Extract to module function", false)>]
+[<InlineData("let inline private f (x: int) = x + 1", "Extract to module function", true)>]
+[<InlineData("let f (x: int) = x + 1", "Extract to module function", true)>]
+[<InlineData("type T() =\n    member inline this.M(x: int) = x + 1", "Extract to private member", false)>]
+[<InlineData("type T() =\n    member inline private this.M(x: int) = x + 1", "Extract to private member", true)>]
+[<InlineData("type T() =\n    member this.M(x: int) = x + 1", "Extract to private member", true)>]
+let ``Private function or member is offered unless a more accessible inline one would call it``
+    (declaration: string, title: string, offered: bool)
+    =
     let titles = titlesFor $"module M\n\n{declaration}\n" "x + 1"
 
-    Assert.Equal(offered, List.contains extractToModuleFunction titles)
+    Assert.Equal(offered, List.contains title titles)
     Assert.Contains(extractToLocalFunction, titles)
 
 [<Theory>]
