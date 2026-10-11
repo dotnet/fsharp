@@ -6,8 +6,12 @@ open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
+open Xunit
+
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
 
 open FSharp.Editor.Tests.Helpers
@@ -97,3 +101,31 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
     }
     |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result
+
+let caretAt (code: string) (marker: string) =
+    code.IndexOf(marker, StringComparison.Ordinal)
+
+let textOf (document: Document) =
+    (document.GetTextAsync() |> GetTaskResult).ToString()
+
+let errorsOf (document: Document) =
+    let _, checkResults =
+        document.GetFSharpParseAndCheckResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    checkResults.Diagnostics
+    |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+let refactorAt (provider: 'T :> CodeRefactoringProvider) (context: TestContext) (code: string) (marker: string) =
+    tryRefactor code (caretAt code marker) context provider
+
+/// The code after the provider's refactoring at the marker, which must leave it without errors.
+let refactoredBy (provider: 'T :> CodeRefactoringProvider) (code: string) (marker: string) =
+    use context = TestContext.CreateWithCode code
+    let document = refactorAt provider context code marker
+    Assert.Empty(errorsOf document)
+    textOf document
+
+let actionsBy (provider: 'T :> CodeRefactoringProvider) (code: string) (marker: string) =
+    use context = TestContext.CreateWithCode code
+    tryGetRefactoringActions code (caretAt code marker) context provider
