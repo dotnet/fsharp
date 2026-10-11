@@ -1804,5 +1804,5 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3924,chkNativePtrStackallocInHandler,"'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded."
 3925,optInlineMemberCannotUseBase,"An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined."
 featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expression handler"
-3925,tcConstantInterpolatedStringHole,"This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers."
+3925,tcConstantInterpolatedStringHole,"This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers."
 featureConstantInterpolatedStrings,"interpolated strings in constant expressions"
