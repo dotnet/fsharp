@@ -1,7 +1,5 @@
 namespace Internal.Utilities.Hashing
 
-open System
-
 /// Tools for hashing things with MD5 into a string that can be used as a cache key.
 module internal Md5StringHasher =
 
@@ -27,12 +25,12 @@ module internal Md5Hasher =
 
     val empty: 'a array
 
-    /// Computes the MD5 hash of a string directly into a caller-allocated 16-byte buffer,
-    /// avoiding the extra allocation of an intermediate hash-result array.
-    val hashStringInto: s: string -> destination: Span<byte> -> unit
+    /// Computes the MD5 hash of the UTF-8 encoding of a string. The encoded bytes go to a buffer rented from
+    /// the shared ArrayPool, and the result is the array that the hash algorithm returns, so this function
+    /// allocates no array of its own.
+    val hashString: s: string -> byte array
 
-    /// Computes the MD5 hash of a string and returns it as a hex string, without allocating
-    /// an intermediate byte array for the UTF8-encoded input (only the 16-byte hash result is allocated).
+    /// Computes the MD5 hash of the UTF-8 encoding of a string as a hex string in the format of `toString`.
     val hashStringToString: s: string -> string
 
     val addBytes: bytes: byte array -> s: byte array -> byte array
