@@ -27,8 +27,14 @@ open Microsoft.VisualStudio.TextManager.Interop
 
 /// Runs an action once no trigger has arrived for the given delay.
 [<Sealed>]
-type internal Debouncer(delay: TimeSpan, action: unit -> Task<unit>) =
+type internal Debouncer(wait: CancellationToken -> Task, action: unit -> Task<unit>) =
     let mutable pending: CancellationTokenSource | null = null
+
+    // Dispose and a newer Trigger take the source out first: a run that finds it gone must not start its action.
+    let tryTake (cts: CancellationTokenSource) =
+        obj.ReferenceEquals(Interlocked.CompareExchange(&pending, null, cts), cts)
+
+    new(delay: TimeSpan, action: unit -> Task<unit>) = new Debouncer((fun token -> Task.Delay(delay, token)), action)
 
     member _.Trigger() : Task =
         let cts = new CancellationTokenSource()
@@ -42,8 +48,11 @@ type internal Debouncer(delay: TimeSpan, action: unit -> Task<unit>) =
 
         backgroundTask {
             try
-                do! Task.Delay(delay, token)
-                do! action ()
+                do! wait token
+
+                if tryTake cts then
+                    cts.Dispose()
+                    do! action ()
             with :? OperationCanceledException ->
                 ()
         }

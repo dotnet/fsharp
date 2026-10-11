@@ -14,18 +14,18 @@ open FSharp.Editor.Tests.Helpers
 
 module ProjectOptionsReactorTests =
 
-    let private countingDebouncer delay =
+    let private countingAction () =
         let calls = ref 0
 
-        let debouncer =
-            new Debouncer(
-                delay,
-                fun () ->
-                    Interlocked.Increment(&calls.contents) |> ignore
-                    Task.FromResult()
-            )
+        let action () =
+            Interlocked.Increment(&calls.contents) |> ignore
+            Task.FromResult()
 
-        debouncer, (fun () -> Volatile.Read(&calls.contents))
+        action, (fun () -> Volatile.Read(&calls.contents))
+
+    let private countingDebouncer (delay: TimeSpan) =
+        let action, calls = countingAction ()
+        new Debouncer(delay, action), calls
 
     [<Fact>]
     let ``Rapid triggers run the action once`` () : Task =
@@ -58,6 +58,39 @@ module ProjectOptionsReactorTests =
             let pending = debouncer.Trigger()
 
             (debouncer :> IDisposable).Dispose()
+            do! pending
+
+            Assert.Equal(0, calls ())
+        }
+
+    [<Fact>]
+    let ``Disposing after the delay has elapsed keeps the action from starting`` () : Task =
+        task {
+            let delayElapsed =
+                TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+            let disposed =
+                TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+            let action, calls = countingAction ()
+
+            let debouncer =
+                new Debouncer(
+                    (fun token ->
+                        task {
+                            do! Task.Delay(TimeSpan.FromMilliseconds 10., token)
+                            delayElapsed.SetResult()
+                            do! disposed.Task
+                        }
+                        :> Task),
+                    action
+                )
+
+            let pending = debouncer.Trigger()
+            do! delayElapsed.Task
+
+            (debouncer :> IDisposable).Dispose()
+            disposed.SetResult()
             do! pending
 
             Assert.Equal(0, calls ())
