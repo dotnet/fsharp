@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 /// Stands in for the token EnqueueWatchingFile hands back: IsActive defaults to true (the mock's
 /// watch is live the moment it is created) so most tests do not need to think about it; tests
 /// exercising the pending/failed states flip it through the owning context's SetActive.
-type private MockWatchedFile(onDispose: unit -> unit) =
+type internal MockWatchedFile(onDispose: unit -> unit) =
     let mutable isActive = true
 
     member _.SetActive value = isActive <- value
@@ -24,7 +24,7 @@ type private MockWatchedFile(onDispose: unit -> unit) =
         member _.IsActive = isActive
         member _.Dispose() = onDispose ()
 
-type private MockFileChangeContext() =
+type internal MockFileChangeContext() =
     let fileChanged = Event<string>()
     let watched = ResizeArray<string>()
     let tokens = Dictionary<string, MockWatchedFile>(StringComparer.OrdinalIgnoreCase)
@@ -45,7 +45,7 @@ type private MockFileChangeContext() =
 
         member _.Dispose() = watched.Clear()
 
-type private MockFileChangeWatcher() =
+type internal MockFileChangeWatcher() =
     let mutable context: MockFileChangeContext voption = ValueNone
 
     member _.Context = context
@@ -133,8 +133,6 @@ type private RecordingFileChangeService() =
 
 module FileChangeWatcherTests =
 
-    let private testDelay = TimeSpan.FromMilliseconds 50.
-
     let private batchDelay = TimeSpan.FromMilliseconds 100.
 
     let private noDirectories = ImmutableArray<WatchedDirectory>.Empty
@@ -166,7 +164,7 @@ module FileChangeWatcherTests =
     [<Fact>]
     let ``Tracker ref-counts subscriptions per path`` () =
         let watcher = MockFileChangeWatcher()
-        use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+        use tracker = new FSharpReferenceChangeTracker(watcher)
 
         tracker.StartWatchingReference @"C:\x\a.dll"
         tracker.StartWatchingReference @"C:\x\a.dll"
@@ -181,49 +179,54 @@ module FileChangeWatcherTests =
         Assert.Equal<string list>([ @"C:\x\b.dll" ], watcher.Context.Value.WatchedFiles)
 
     [<Fact>]
-    let ``Tracker debounces bursts into a single callback for watched paths only`` () =
+    let ``A change notification for an unwatched path is ignored`` () =
         let watcher = MockFileChangeWatcher()
-        let calls = ResizeArray<string>()
-        use signal = new ManualResetEventSlim(false)
+        let stat = ResizeArray<string>()
 
         use tracker =
             new FSharpReferenceChangeTracker(
                 watcher,
-                (fun path ->
-                    lock calls (fun () -> calls.Add path)
-                    signal.Set()),
-                testDelay
+                fun path ->
+                    stat.Add path
+                    DateTime.UtcNow
             )
 
+        let stamps = tracker :> IReferenceStamps
         tracker.StartWatchingReference @"C:\x\a.dll"
-        let context = watcher.Context.Value
 
-        context.Fire @"C:\x\a.dll"
-        context.Fire @"C:\x\a.dll"
-        context.Fire @"C:\x\unwatched.dll"
+        stamps.GetLastWriteTimeUtc @"C:\x\a.dll" |> ignore
+        watcher.Context.Value.Fire @"C:\x\unwatched.dll"
 
-        Assert.True(signal.Wait(TimeSpan.FromSeconds 10.))
-        // Allow a trailing duplicate timer to fire if one was pending.
-        Thread.Sleep(testDelay + testDelay)
+        // The watched path keeps its cached stamp; the unwatched one is stat'd on every read.
+        stamps.GetLastWriteTimeUtc @"C:\x\a.dll" |> ignore
+        stamps.GetLastWriteTimeUtc @"C:\x\unwatched.dll" |> ignore
+        stamps.GetLastWriteTimeUtc @"C:\x\unwatched.dll" |> ignore
 
-        Assert.Equal<string list>([ @"C:\x\a.dll" ], lock calls (fun () -> List.ofSeq calls))
+        Assert.Equal<string list>([ @"C:\x\a.dll"; @"C:\x\unwatched.dll"; @"C:\x\unwatched.dll" ], List.ofSeq stat)
 
     [<Fact>]
-    let ``Disposed tracker ignores further changes`` () =
+    let ``Disposed tracker stats directly and ignores notifications`` () =
         let watcher = MockFileChangeWatcher()
-        let mutable called = false
+        let stat = ResizeArray<string>()
 
         let tracker =
-            new FSharpReferenceChangeTracker(watcher, (fun _ -> called <- true), testDelay)
+            new FSharpReferenceChangeTracker(
+                watcher,
+                fun path ->
+                    stat.Add path
+                    DateTime.UtcNow
+            )
 
+        let stamps = tracker :> IReferenceStamps
         tracker.StartWatchingReference @"C:\x\a.dll"
         let context = watcher.Context.Value
         (tracker :> IDisposable).Dispose()
 
         context.Fire @"C:\x\a.dll"
-        Thread.Sleep(testDelay + testDelay)
+        stamps.GetLastWriteTimeUtc @"C:\x\a.dll" |> ignore
+        stamps.GetLastWriteTimeUtc @"C:\x\a.dll" |> ignore
 
-        Assert.False called
+        Assert.Equal<string list>([ @"C:\x\a.dll"; @"C:\x\a.dll" ], List.ofSeq stat)
 
     [<Fact>]
     let ``Consecutive file watches are advised in one service call`` () =
@@ -371,7 +374,7 @@ module FileChangeWatcherTests =
     let ``Watched path is served from the cache until a change notification`` () =
         withTempFile (fun path ->
             let watcher = MockFileChangeWatcher()
-            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            use tracker = new FSharpReferenceChangeTracker(watcher)
             let stamps = tracker :> IReferenceStamps
 
             tracker.StartWatchingReference path
@@ -387,7 +390,7 @@ module FileChangeWatcherTests =
     let ``Unwatched path is stat'd on every read`` () =
         withTempFile (fun path ->
             let watcher = MockFileChangeWatcher()
-            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            use tracker = new FSharpReferenceChangeTracker(watcher)
             let stamps = tracker :> IReferenceStamps
 
             Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
@@ -399,7 +402,7 @@ module FileChangeWatcherTests =
     let ``Invalidate drops the cached stamp`` () =
         withTempFile (fun path ->
             let watcher = MockFileChangeWatcher()
-            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            use tracker = new FSharpReferenceChangeTracker(watcher)
             let stamps = tracker :> IReferenceStamps
 
             tracker.StartWatchingReference path
@@ -413,7 +416,7 @@ module FileChangeWatcherTests =
     let ``Stopping the last watch on a path falls back to stat`` () =
         withTempFile (fun path ->
             let watcher = MockFileChangeWatcher()
-            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            use tracker = new FSharpReferenceChangeTracker(watcher)
             let stamps = tracker :> IReferenceStamps
 
             tracker.StartWatchingReference path
@@ -431,7 +434,7 @@ module FileChangeWatcherTests =
     let ``A pending watch always stats fresh; caching begins only once it becomes active`` () =
         withTempFile (fun path ->
             let watcher = MockFileChangeWatcher()
-            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            use tracker = new FSharpReferenceChangeTracker(watcher)
             let stamps = tracker :> IReferenceStamps
 
             tracker.StartWatchingReference path
@@ -450,3 +453,142 @@ module FileChangeWatcherTests =
 
             File.SetLastWriteTimeUtc(path, t0)
             Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
+
+    /// A stat source that counts its calls and runs `duringStat` in the middle of each one, i.e.
+    /// while the tracker's lock is not held.
+    let private countingStat (duringStat: string -> unit) =
+        let count = ref 0
+
+        let stat (path: string) =
+            Interlocked.Increment &count.contents |> ignore
+            duringStat path
+            File.GetLastWriteTimeUtc path
+
+        count, stat
+
+    [<Fact>]
+    let ``A change reported while a stat is in flight is not cached`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            let fireDuringStat = ref false
+
+            let count, stat =
+                countingStat (fun _ ->
+                    if fireDuringStat.Value then
+                        watcher.Context.Value.Fire path)
+
+            use tracker = new FSharpReferenceChangeTracker(watcher, stat)
+            let stamps = tracker :> IReferenceStamps
+            tracker.StartWatchingReference path
+
+            fireDuringStat.Value <- true
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+            fireDuringStat.Value <- false
+
+            // The value read before the change was not stored: this read stats again and sees the new time.
+            File.SetLastWriteTimeUtc(path, t1)
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path)
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path)
+            Assert.Equal(2, count.Value))
+
+    [<Fact>]
+    let ``Invalidate while a stat is in flight is not cached`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            let invalidateDuringStat = ref false
+            let stamps = ref ValueNone
+
+            let count, stat =
+                countingStat (fun _ ->
+                    if invalidateDuringStat.Value then
+                        stamps.Value
+                        |> ValueOption.iter (fun (stamps: IReferenceStamps) -> stamps.Invalidate path))
+
+            use tracker = new FSharpReferenceChangeTracker(watcher, stat)
+            stamps.Value <- ValueSome(tracker :> IReferenceStamps)
+            tracker.StartWatchingReference path
+
+            invalidateDuringStat.Value <- true
+            Assert.Equal(t0, stamps.Value.Value.GetLastWriteTimeUtc path)
+            invalidateDuringStat.Value <- false
+
+            File.SetLastWriteTimeUtc(path, t1)
+            Assert.Equal(t1, stamps.Value.Value.GetLastWriteTimeUtc path)
+            Assert.Equal(t1, stamps.Value.Value.GetLastWriteTimeUtc path)
+            Assert.Equal(2, count.Value))
+
+    [<Fact>]
+    let ``Restarting the watch while a stat is in flight leaves the new watch cold`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            let restartDuringStat = ref false
+            let tracker = ref ValueNone
+
+            let count, stat =
+                countingStat (fun _ ->
+                    if restartDuringStat.Value then
+                        tracker.Value
+                        |> ValueOption.iter (fun (tracker: FSharpReferenceChangeTracker) ->
+                            tracker.StopWatchingReference path
+                            tracker.StartWatchingReference path))
+
+            use created = new FSharpReferenceChangeTracker(watcher, stat)
+            tracker.Value <- ValueSome created
+            let stamps = created :> IReferenceStamps
+            created.StartWatchingReference path
+
+            restartDuringStat.Value <- true
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+            restartDuringStat.Value <- false
+
+            // The entry the stat was taken for is gone; the new one stats for itself, then caches.
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+            Assert.Equal(2, count.Value))
+
+    [<Fact>]
+    let ``Concurrent cold readers both stat and the stamp is then served from the cache`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use barrier = new Barrier(2)
+            let meetInStat = ref true
+            let met = ref true
+
+            let count, stat =
+                countingStat (fun _ ->
+                    if meetInStat.Value && not (barrier.SignalAndWait(TimeSpan.FromSeconds 5.)) then
+                        met.Value <- false)
+
+            use tracker = new FSharpReferenceChangeTracker(watcher, stat)
+            let stamps = tracker :> IReferenceStamps
+            tracker.StartWatchingReference path
+
+            // Two readers meet inside the stat, which they can only do if neither holds the tracker's lock there.
+            Parallel.Invoke((fun () -> stamps.GetLastWriteTimeUtc path |> ignore), (fun () -> stamps.GetLastWriteTimeUtc path |> ignore))
+
+            Assert.True met.Value
+            Assert.Equal(2, count.Value)
+
+            meetInStat.Value <- false
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+            Assert.Equal(2, count.Value))
+
+    [<Fact>]
+    let ``The stat does not hold the tracker lock`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            let stamps = ref ValueNone
+            let otherPathReachable = ref false
+
+            let _, stat =
+                countingStat (fun _ ->
+                    stamps.Value
+                    |> ValueOption.iter (fun (stamps: IReferenceStamps) ->
+                        otherPathReachable.Value <- Task.Run(fun () -> stamps.Invalidate @"C:\x\other.dll").Wait(TimeSpan.FromSeconds 1.)))
+
+            use tracker = new FSharpReferenceChangeTracker(watcher, stat)
+            stamps.Value <- ValueSome(tracker :> IReferenceStamps)
+            tracker.StartWatchingReference path
+
+            Assert.Equal(t0, stamps.Value.Value.GetLastWriteTimeUtc path)
+            Assert.True otherPathReachable.Value)
