@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
-/// How the lexer classifies a token, reduced to what the window colours or reasons about.
 [<RequireQualifiedAccess>]
 type internal LexicalKind =
     | Keyword
@@ -15,7 +14,7 @@ type internal LexicalKind =
     | InactiveCode
     | Other
 
-/// A token on one line: where it starts and how many characters it spans.
+/// A token within the line that was scanned.
 [<Struct>]
 type internal LexicalToken =
     {
@@ -24,18 +23,16 @@ type internal LexicalToken =
         Length: int
     }
 
-/// Scans text a line at a time, carrying the lexer's state from one line to the next.
+    member token.IsWithin(line: string) =
+        token.Start >= 0 && token.Start + token.Length <= line.Length
+
+/// Carries the lexer's state from one scanned line to the next.
 type internal ILexicalScanner =
 
-    /// Appends the tokens of the next line to <paramref name="tokens"/>.
     abstract ScanLine: line: string * tokens: ResizeArray<LexicalToken> -> unit
 
-    /// Whether what has been scanned so far ends inside a string or comment that goes on into the
-    /// next line.
     abstract EndsInsideMultiLineConstruct: bool
 
-/// The source of scanners. The window colours text and judges when a submission is complete, but
-/// leaves the lexer to the host: the F# tooling in Visual Studio already runs on one, and the
-/// session's own compiler is the SDK's, started as a separate process.
+/// Implemented by FSharp.Editor, so that this assembly needs no reference to the compiler.
 type internal ILexicalScannerFactory =
     abstract CreateScanner: unit -> ILexicalScanner

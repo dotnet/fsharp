@@ -6,8 +6,6 @@ open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.FSharp.Interactive
 
-/// The lexer the F# tooling in Visual Studio runs on, offered to the interactive window, which
-/// colours its input and output and judges when a submission is complete without compiling against it.
 type internal FSharpLexicalScanner() =
 
     static let tokenizer = FSharpSourceTokenizer([], Some "stdin.fsx", None)
@@ -36,24 +34,22 @@ type internal FSharpLexicalScanner() =
             let mutable scanning = true
 
             while scanning do
-                match lineTokenizer.ScanToken state with
-                | Some token, nextState ->
-                    state <- nextState
+                let token, nextState = lineTokenizer.ScanToken state
+                state <- nextState
 
+                match token with
+                | Some token ->
                     tokens.Add
                         {
                             Kind = kindOf token.ColorClass
                             Start = token.LeftColumn
                             Length = token.FullMatchedLength
                         }
-                | None, nextState ->
-                    state <- nextState
-                    scanning <- false
+                | None -> scanning <- false
 
-        // The lexer state carries more than "inside a string or comment", so comparing it against
-        // the initial state says nothing. Tokenizing an identifier with the state the text left
-        // behind does: inside an unterminated string or comment the probe comes back coloured as
-        // part of that construct.
+        // The lexer state carries more than "inside a string or comment", so comparing it with the
+        // initial state says nothing. An identifier tokenized with that state does: inside an
+        // unterminated construct it comes back coloured as part of it.
         member _.EndsInsideMultiLineConstruct =
             match (tokenizer.CreateLineTokenizer probeIdentifier).ScanToken state with
             | Some token, _ ->

@@ -6,12 +6,9 @@
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
-    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <Nullable>enable</Nullable>
-    <!-- The window does not compile against the F# compiler: the session's compiler is the SDK's,
-         run as a separate process, and the lexer the window colours with is the host's (see
-         LexicalScanning.fs). FSharp.VS.FSI below references the compiler for the old window, and
-         must not hand it on. -->
+    <!-- FSharp.VS.FSI below references the F# compiler, which this assembly must not compile
+         against: the lexer comes from its host (LexicalScanning.fs). -->
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
@@ -20,9 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The protocol types, shared with F# Interactive so that the two ends cannot drift apart.
-         Roslyn does the same with an assembly both sides reference; fsi exposes no public surface
-         to reference, so the source is shared instead. -->
+    <!-- Shared as source: fsi exposes no assembly for both ends of the protocol to reference. -->
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
@@ -38,20 +33,16 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
-    <!-- For the resource strings the existing F# Interactive window already localises. They move
-         here when that window is retired. -->
+    <!-- For the localised strings and the options of the existing F# Interactive window. -->
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.InteractiveWindow" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <!-- Hosts the interactive window as a Visual Studio tool window. -->
     <PackageReference Include="Microsoft.VisualStudio.VsInteractiveWindow" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <!-- Visual Studio loads StreamJsonRpc itself, and Roslyn's packages force its version here, so
-         the reference is compile-time only. -->
     <PackageReference Include="StreamJsonRpc" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 

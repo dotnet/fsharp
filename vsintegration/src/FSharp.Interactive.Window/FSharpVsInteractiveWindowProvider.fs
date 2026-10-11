@@ -16,8 +16,6 @@ open Microsoft.VisualStudio.Utilities
 
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 
-/// Identities the window is registered and addressed by. Public so that they are declared once and
-/// referenced, rather than repeated by every component that needs them.
 module InteractiveWindowGuids =
 
     /// Visual Studio persists the window's place in the layout under this, so it must not change
@@ -29,66 +27,51 @@ module InteractiveWindowGuids =
 
     let FSharpLanguageServiceId = Guids.guidFsharpLanguageService
 
-    /// FSharp.Editor declares this too, but it sits above this project and cannot be referenced
-    /// from here, so the name is repeated rather than shared.
+    /// The same as FSharpConstants.FSharpContentTypeName in FSharp.Editor, which sits above this
+    /// project and cannot be referenced from here.
     [<Literal>]
     let FSharpContentTypeName = "F#"
 
-/// Reads the session settings the existing Tools, Options page writes.
 module internal InteractiveHostOptionsFactory =
 
-    /// The folder `dotnet fsi` is run from: the open solution's, whose `global.json` then picks the
-    /// SDK; the user's profile when nothing is open. Read on the UI thread, where the window's
-    /// evaluator calls in.
-    let private startDirectory () =
-        let solutionDirectory =
-            try
-                match ServiceProvider.GlobalProvider.GetService typeof<SVsSolution> with
-                | :? IVsSolution as solution ->
-                    let hr, directory, _, _ = solution.GetSolutionInfo()
-
-                    if
-                        ErrorHandler.Succeeded hr
-                        && not (String.IsNullOrEmpty directory)
-                        && Directory.Exists directory
-                    then
-                        ValueSome directory
-                    else
-                        ValueNone
+    /// Called on the UI thread, where the window's evaluator calls in.
+    let private solutionDirectory () =
+        try
+            match ServiceProvider.GlobalProvider.GetService typeof<SVsSolution> with
+            | :? IVsSolution as solution ->
+                match solution.GetSolutionInfo() with
+                | hr, directory, _, _ when ErrorHandler.Succeeded hr && Directory.Exists directory -> ValueSome directory
                 | _ -> ValueNone
-            with _ ->
-                ValueNone
-
-        match solutionDirectory with
-        | ValueSome directory -> directory
-        | ValueNone -> Environment.GetFolderPath Environment.SpecialFolder.UserProfile
+            | _ -> ValueNone
+        with _ ->
+            ValueNone
 
     let create () =
         {
-            InitialWorkingDirectory = startDirectory ()
+            InitialWorkingDirectory =
+                solutionDirectory ()
+                |> ValueOption.defaultWith (fun () -> Environment.GetFolderPath Environment.SpecialFolder.UserProfile)
             UserArguments = SessionsProperties.fsiArgs
             DebugMode = SessionsProperties.fsiDebugMode
             LanguageVersionPreview = SessionsProperties.fsiPreview
             UICultureLcid = Thread.CurrentThread.CurrentUICulture.LCID
         }
 
-/// Creates and owns the F# Interactive tool window.
 [<Export(typeof<FSharpVsInteractiveWindowProvider>)>]
 [<Sealed>]
 type internal FSharpVsInteractiveWindowProvider
     [<ImportingConstructor>]
-    (
-        windowFactory: IVsInteractiveWindowFactory,
-        contentTypeRegistry: IContentTypeRegistryService,
-        scanners: ILexicalScannerFactory
-    ) =
+    (windowFactory: IVsInteractiveWindowFactory, contentTypeRegistry: IContentTypeRegistryService, scanners: ILexicalScannerFactory) =
 
     let mutable window: IVsInteractiveWindow | null = null
     let mutable evaluator: FSharpInteractiveEvaluator voption = ValueNone
 
-    member this.Create(instanceId: int) =
+    member _.Create(instanceId: int) =
         let host = new InteractiveHostClient(Process.GetCurrentProcess().Id)
-        let created = new FSharpInteractiveEvaluator(host, InteractiveHostOptionsFactory.create, scanners)
+
+        let created =
+            new FSharpInteractiveEvaluator(host, InteractiveHostOptionsFactory.create, scanners)
+
         evaluator <- ValueSome created
 
         let toolWindow =
@@ -108,6 +91,7 @@ type internal FSharpVsInteractiveWindowProvider
         )
 
         let interactiveWindow = toolWindow.InteractiveWindow
+
         interactiveWindow.TextView.Closed.Add(fun _ ->
             (created :> IDisposable).Dispose()
 
@@ -118,6 +102,7 @@ type internal FSharpVsInteractiveWindowProvider
             match evaluator with
             | ValueSome current when obj.ReferenceEquals(current, created) -> evaluator <- ValueNone
             | _ -> ())
+
         interactiveWindow.InitializeAsync() |> ignore
         toolWindow
 
@@ -130,16 +115,10 @@ type internal FSharpVsInteractiveWindowProvider
         toolWindow.Show focus
         toolWindow
 
-    /// Send text an editor command picked up, showing the window without taking focus from the
-    /// document the user is still typing in.
+    /// Shows the window without taking focus from the document the user is still typing in.
     member this.SubmitFromEditor(text: string, sourcePath: string, startLine: int) =
         let toolWindow = this.Open(0, focus = false)
 
-        evaluator
-        |> ValueOption.iter _.SetNextSubmissionOrigin(sourcePath, startLine)
+        evaluator |> ValueOption.iter _.SetNextSubmissionOrigin(sourcePath, startLine)
 
         toolWindow.InteractiveWindow.SubmitAsync [| text |] |> ignore
-
-    member _.Window = window
-
-    member _.Evaluator = evaluator

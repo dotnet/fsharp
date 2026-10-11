@@ -38,7 +38,6 @@ module Methods =
     [<Literal>]
     let Shutdown = "fsi/shutdown"
 
-/// How a host asks for this protocol, at the point where there is no protocol yet to ask over.
 module CommandLine =
     [<Literal>]
     let ServerOption = "--fsi-server-jsonrpc:"
