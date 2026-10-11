@@ -28,7 +28,7 @@ module private OptionalParameterDefaultValueConversion =
     type Form =
         /// `?x: T`
         | FSharp of optionalValRange: range
-        /// `[<Optional; DefaultParameterValue(c)>] x: T`, with the attribute lists holding only those attributes.
+        /// `[<Optional; DefaultParameterValue(c)>] x: T`, the parameter having no other attribute.
         | DotNet of lists: SynAttributeList list * defaultValue: SynExpr voption
 
     [<NoComparison; NoEquality>]
@@ -84,11 +84,60 @@ module private OptionalParameterDefaultValueConversion =
 
     let private operators = "Microsoft.FSharp.Core.Operators"
 
+    /// How to write a value or union case of FSharp.Core at the position: by its name where that resolves to it,
+    /// and with its namespace and its module or type where the name means something else.
+    let private coreName
+        (checkResults: FSharpCheckFileResults)
+        (compiledContainer: string)
+        (container: string)
+        (name: string)
+        (position: pos)
+        =
+        let isNamed (symbolName: string) =
+            String.Equals(symbolName, name, StringComparison.Ordinal)
+
+        let isInScope (symbol: FSharpSymbol) =
+            checkResults.IsRelativeNameResolvableFromSymbol(position, [], symbol)
+
+        let entity =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> List.tryPick (fun assembly ->
+                if String.Equals(assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal) then
+                    assembly.Contents.FindEntityByPath [ "Microsoft"; "FSharp"; "Core"; compiledContainer ]
+                else
+                    None)
+
+        let resolves =
+            match entity with
+            | Some entity when entity.IsFSharpUnion ->
+                entity.UnionCases
+                |> Seq.exists (fun case -> isNamed case.Name && isInScope case)
+            | Some entity ->
+                entity.MembersFunctionsAndValues
+                |> Seq.exists (fun value -> isNamed value.DisplayName && isInScope value)
+            | None -> false
+
+        if resolves then
+            name
+        else
+            $"Microsoft.FSharp.Core.{container}.{name}"
+
     [<return: Struct>]
     let private (|SingleIdent|_|) (expr: SynExpr) =
         match expr with
         | SynExpr.Ident ident
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ ident ])) -> ValueSome ident
+        | _ -> ValueNone
+
+    /// The identifiers of a name, qualified or not, and the last of them.
+    [<return: Struct>]
+    let private (|Name|_|) (expr: SynExpr) =
+        match expr with
+        | SynExpr.Ident ident -> ValueSome(struct ([ ident ], ident))
+        | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids)) ->
+            match List.tryLast ids with
+            | Some last -> ValueSome(struct (ids, last))
+            | None -> ValueNone
         | _ -> ValueNone
 
     let private isAttribute (names: string list) (attribute: SynAttribute) =
@@ -123,20 +172,16 @@ module private OptionalParameterDefaultValueConversion =
             let isOptionalAttribute attribute =
                 isOptional attribute || isDefaultParameterValue attribute
 
-            let lists =
-                attributes
-                |> List.filter (fun list -> List.exists isOptionalAttribute list.Attributes)
-
-            let listed = lists |> List.collect _.Attributes
+            let listed = attributes |> List.collect _.Attributes
 
             if not (List.exists isOptional listed && List.forall isOptionalAttribute listed) then
                 ValueNone
             else
                 match List.tryFind isDefaultParameterValue listed with
-                | None -> ValueSome(Form.DotNet(lists, ValueNone))
+                | None -> ValueSome(Form.DotNet(attributes, ValueNone))
                 | Some attribute ->
                     match attribute.ArgExpr with
-                    | SynExpr.Paren(expr = SynExpr.Const _ as constant) -> ValueSome(Form.DotNet(lists, ValueSome constant))
+                    | SynExpr.Paren(expr = SynExpr.Const _ as constant) -> ValueSome(Form.DotNet(attributes, ValueSome constant))
                     | _ -> ValueNone
 
     let rec private tryMember (path: SyntaxVisitorPath) =
@@ -173,22 +218,22 @@ module private OptionalParameterDefaultValueConversion =
         | Search.Found parameter -> parameter
         | Search.Searching -> ValueNone
 
-    /// Whether the constant can be the `DefaultParameterValue` of a parameter of the named type.
-    let private isConstantOfType (typeText: string) (constant: SynConst) =
-        match typeText, constant with
-        | ("int" | "int32"), SynConst.Int32 _
-        | "int64", SynConst.Int64 _
-        | "int16", SynConst.Int16 _
-        | "sbyte", SynConst.SByte _
-        | "byte", SynConst.Byte _
-        | "uint16", SynConst.UInt16 _
-        | "uint32", SynConst.UInt32 _
-        | "uint64", SynConst.UInt64 _
-        | ("float" | "double"), SynConst.Double _
-        | ("float32" | "single"), SynConst.Single _
-        | "bool", SynConst.Bool _
-        | "char", SynConst.Char _
-        | "string", SynConst.String _ -> true
+    /// Whether the constant can be the `DefaultParameterValue` of a parameter of the type with the full name.
+    let isConstantOfType (typeFullName: string option) (constant: SynConst) =
+        match typeFullName, constant with
+        | Some "System.Int32", SynConst.Int32 _
+        | Some "System.Int64", SynConst.Int64 _
+        | Some "System.Int16", SynConst.Int16 _
+        | Some "System.SByte", SynConst.SByte _
+        | Some "System.Byte", SynConst.Byte _
+        | Some "System.UInt16", SynConst.UInt16 _
+        | Some "System.UInt32", SynConst.UInt32 _
+        | Some "System.UInt64", SynConst.UInt64 _
+        | Some "System.Double", SynConst.Double _
+        | Some "System.Single", SynConst.Single _
+        | Some "System.Boolean", SynConst.Bool _
+        | Some "System.Char", SynConst.Char _
+        | Some "System.String", SynConst.String _ -> true
         | _ -> false
 
     let private tryUseNode (parseTree: ParsedInput) (useRange: range) =
@@ -207,12 +252,12 @@ module private OptionalParameterDefaultValueConversion =
     let private tryDefaultArgUse (isFSharpCore: string -> Ident list -> bool) (parseTree: ParsedInput) (useRange: range) =
         match tryUseNode parseTree useRange with
         | Some(node,
-               SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = SingleIdent func; argExpr = arg) as inner) :: SyntaxNode.SynExpr(SynExpr.App(
+               SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = Name(func, name); argExpr = arg) as inner) :: SyntaxNode.SynExpr(SynExpr.App(
                    isInfix = false; funcExpr = funcExpr; argExpr = (SynExpr.Const _ as defaultValue)) as application) :: rest) when
             isSame arg node
-            && hasText "defaultArg" func
+            && hasText "defaultArg" name
             && isSame funcExpr inner
-            && isFSharpCore operators [ func ]
+            && isFSharpCore operators func
             ->
             ValueSome(struct (application, defaultValue, rest))
         | _ -> ValueNone
@@ -252,56 +297,6 @@ module private OptionalParameterDefaultValueConversion =
         | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> pats |> List.exists (hasOptionalValBefore position)
         | _ -> false
 
-    /// `?x: T` with every use being `defaultArg x c` becomes `[<Optional; DefaultParameterValue(c)>] x: T`,
-    /// unless a `?` parameter before it would then precede a non-optional one (FS1212).
-    let tryToDotNetChanges
-        (isFSharpCore: string -> Ident list -> bool)
-        (sourceText: SourceText)
-        (parseTree: ParsedInput)
-        (parameter: Parameter)
-        (optionalValRange: range)
-        (uses: range list)
-        =
-        let (SynBinding(headPat = headPat)) = parameter.MemberBinding
-
-        let found =
-            (ValueSome [], uses)
-            ||> List.fold (fun found useRange ->
-                match found, tryDefaultArgUse isFSharpCore parseTree useRange with
-                | ValueSome found, ValueSome defaultArgUse -> ValueSome(defaultArgUse :: found)
-                | _ -> ValueNone)
-
-        let textOf (expr: SynExpr) =
-            sourceText.ToString(spanOf sourceText expr.Range)
-
-        let typeText =
-            sourceText.ToString(spanOf sourceText parameter.TypeName.Range).Trim()
-
-        let attributeText =
-            match found with
-            | ValueSome [] -> ValueSome "[<Optional>] "
-            | ValueSome(struct (_, (SynExpr.Const(constant, _) as defaultValue), _) :: others) when
-                isConstantOfType typeText constant
-                && others
-                   |> List.forall (fun struct (_, other, _) -> String.Equals(textOf other, textOf defaultValue, StringComparison.Ordinal))
-                ->
-                ValueSome $"[<Optional; DefaultParameterValue({textOf defaultValue})>] "
-            | _ -> ValueNone
-
-        match found, attributeText with
-        | ValueSome found, ValueSome attributeText when not (hasOptionalValBefore optionalValRange.Start headPat) ->
-            [
-                TextChange(TextSpan((spanOf sourceText optionalValRange).Start, 1), attributeText)
-
-                for struct (application, _, path) in found do
-                    match tryShadowingLine sourceText parameter.Ident.idText application path with
-                    | ValueSome line -> TextChange(line, "")
-                    | ValueNone -> TextChange(spanOf sourceText application.Range, parameter.Ident.idText)
-            ]
-            |> List.sortBy _.Span.Start
-            |> ValueSome
-        | _ -> ValueNone
-
     let private interopServices = [ "System"; "Runtime"; "InteropServices" ]
 
     let rec private tryContainerRange (path: SyntaxVisitorPath) =
@@ -330,19 +325,67 @@ module private OptionalParameterDefaultValueConversion =
                    | ValueNone -> false
                | _ -> false)
 
-    let withInteropServicesOpen (parseTree: ParsedInput) (memberName: Ident) (text: SourceText) =
-        if hasInteropServicesOpenAt memberName.idRange.Start parseTree then
-            text
-        else
-            let insertionContext =
-                FSharp.Compiler.EditorServices.ParsedInput.FindNearestPointToInsertOpenDeclaration
-                    memberName.idRange.StartLine
-                    parseTree
-                    (List.toArray interopServices)
-                    FSharp.Compiler.EditorServices.OpenStatementInsertionPoint.TopLevel
+    /// `?x: T` with every use being `defaultArg x c` becomes `[<Optional; DefaultParameterValue(c)>] x: T`,
+    /// unless a `?` parameter before it would then precede a non-optional one (FS1212).
+    /// The attributes carry their namespace where no `open` of it is in scope.
+    let tryToDotNetChanges
+        (isFSharpCore: string -> Ident list -> bool)
+        (sourceText: SourceText)
+        (parseTree: ParsedInput)
+        (parameter: Parameter)
+        (parameterTypeName: string option)
+        (optionalValRange: range)
+        (uses: range list)
+        =
+        let (SynBinding(headPat = headPat)) = parameter.MemberBinding
 
-            OpenDeclarationHelper.insertOpenDeclaration text insertionContext (String.Join(".", interopServices))
-            |> fst
+        let found =
+            (ValueSome [], uses)
+            ||> List.fold (fun found useRange ->
+                match found, tryDefaultArgUse isFSharpCore parseTree useRange with
+                | ValueSome found, ValueSome defaultArgUse -> ValueSome(defaultArgUse :: found)
+                | _ -> ValueNone)
+
+        let textOf (expr: SynExpr) =
+            sourceText.ToString(spanOf sourceText expr.Range)
+
+        let attributes =
+            match found with
+            | ValueSome [] -> ValueSome [ "Optional" ]
+            | ValueSome(struct (_, (SynExpr.Const(constant, _) as defaultValue), _) :: others) when
+                isConstantOfType parameterTypeName constant
+                && others
+                   |> List.forall (fun struct (_, other, _) -> String.Equals(textOf other, textOf defaultValue, StringComparison.Ordinal))
+                ->
+                ValueSome [ "Optional"; $"DefaultParameterValue({textOf defaultValue})" ]
+            | _ -> ValueNone
+
+        match found, attributes with
+        | ValueSome found, ValueSome attributes when not (hasOptionalValBefore optionalValRange.Start headPat) ->
+            let qualifier =
+                if hasInteropServicesOpenAt parameter.MemberName.idRange.Start parseTree then
+                    ""
+                else
+                    String.Join(".", interopServices) + "."
+
+            let attributeText =
+                attributes
+                |> Seq.map (fun attribute -> qualifier + attribute)
+                |> String.concat "; "
+
+            let name = sourceText.ToString(spanOf sourceText parameter.Ident.idRange)
+
+            [
+                TextChange(TextSpan((spanOf sourceText optionalValRange).Start, 1), $"[<{attributeText}>] ")
+
+                for struct (application, _, path) in found do
+                    match tryShadowingLine sourceText parameter.Ident.idText application path with
+                    | ValueSome line -> TextChange(line, "")
+                    | ValueNone -> TextChange(spanOf sourceText application.Range, name)
+            ]
+            |> List.sortBy _.Span.Start
+            |> ValueSome
+        | _ -> ValueNone
 
     let private leadingSpaces (line: TextLine) =
         let text = line.ToString()
@@ -359,9 +402,33 @@ module private OptionalParameterDefaultValueConversion =
         let after = sourceText.ToString(TextSpan.FromBounds(listSpan.End, line.End))
         TextSpan(listSpan.Start, listSpan.Length + after.Length - after.TrimStart().Length)
 
+    let rec private startOfWhiteSpaceBefore (sourceText: SourceText) (position: int) =
+        if position > 0 && Char.IsWhiteSpace sourceText[position - 1] then
+            startOfWhiteSpaceBefore sourceText (position - 1)
+        else
+            position
+
+    let rec private isOptionalVal (pat: SynPat) =
+        match pat with
+        | SynPat.OptionalVal _ -> true
+        | SynPat.Paren(pat = inner)
+        | SynPat.Typed(pat = inner)
+        | SynPat.Attrib(pat = inner) -> isOptionalVal inner
+        | _ -> false
+
+    let rec private hasRequiredAfter (position: pos) (pat: SynPat) =
+        match pat with
+        | SynPat.Paren(pat = inner) -> hasRequiredAfter position inner
+        | SynPat.Tuple(elementPats = pats) ->
+            pats
+            |> List.exists (fun pat -> Position.posGt pat.Range.Start position && not (isOptionalVal pat))
+        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> pats |> List.exists (hasRequiredAfter position)
+        | _ -> false
+
     /// `[<Optional; DefaultParameterValue(c)>] x: T` becomes `?x: T` with `let x = defaultArg x c` starting the body,
-    /// or `[<Struct>] ?x: T` with `let x = defaultValueArg x c`.
+    /// or `[<Struct>] ?x: T` with `let x = defaultValueArg x c`, unless a non-optional parameter follows it (FS1212).
     let tryToFSharpChanges
+        (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
         (indentSize: int)
         (parameter: Parameter)
@@ -369,7 +436,7 @@ module private OptionalParameterDefaultValueConversion =
         (defaultValue: SynExpr voption)
         (asStruct: bool)
         =
-        let name = parameter.Ident.idText
+        let name = sourceText.ToString(spanOf sourceText parameter.Ident.idRange)
 
         let defaultText =
             match defaultValue with
@@ -382,9 +449,7 @@ module private OptionalParameterDefaultValueConversion =
             else
                 struct ("?", "defaultArg")
 
-        let declaration = $"let {name} = {defaultFunction} {name} {defaultText}"
-
-        let (SynBinding(expr = body; returnInfo = returnInfo; trivia = trivia)) =
+        let (SynBinding(headPat = headPat; expr = body; returnInfo = returnInfo; trivia = trivia)) =
             parameter.MemberBinding
 
         let body =
@@ -392,6 +457,10 @@ module private OptionalParameterDefaultValueConversion =
             | Some _, SynExpr.Typed(expr = inner) -> inner
             | _ -> body
 
+        let defaultFunction =
+            coreName checkResults "Operators" "Operators" defaultFunction body.Range.Start
+
+        let declaration = $"let {name} = {defaultFunction} {name} {defaultText}"
         let memberLine = sourceText.Lines[Line.toZ trivia.LeadingKeyword.Range.StartLine]
         let lineBreak = lineBreakOf sourceText memberLine
 
@@ -400,19 +469,21 @@ module private OptionalParameterDefaultValueConversion =
             | Some equals when body.Range.StartLine > equals.EndLine ->
                 let line = sourceText.Lines[Line.toZ body.Range.StartLine]
                 ValueSome(TextChange(TextSpan(line.Start, 0), $"{String(' ', body.Range.StartColumn)}{declaration}{lineBreak}"))
-            | Some equals when body.Range.StartLine = body.Range.EndLine ->
+            | Some _ when body.Range.StartLine = body.Range.EndLine ->
                 let indent = String(' ', leadingSpaces memberLine + indentSize)
+                let bodyStart = (spanOf sourceText body.Range).Start
 
+                // A comment between `=` and the body stays on the member line.
                 ValueSome(
                     TextChange(
-                        TextSpan.FromBounds((spanOf sourceText equals).End, (spanOf sourceText body.Range).Start),
+                        TextSpan.FromBounds(startOfWhiteSpaceBefore sourceText bodyStart, bodyStart),
                         $"{lineBreak}{indent}{declaration}{lineBreak}{indent}"
                     )
                 )
             | _ -> ValueNone
 
-        bodyChange
-        |> ValueOption.map (fun bodyChange ->
+        match bodyChange with
+        | ValueSome bodyChange when not (hasRequiredAfter parameter.Ident.idRange.End headPat) ->
             [
                 for list in lists do
                     TextChange(listRemoval sourceText list, "")
@@ -420,7 +491,9 @@ module private OptionalParameterDefaultValueConversion =
                 TextChange(TextSpan((spanOf sourceText parameter.Ident.idRange).Start, 0), prefix)
                 bodyChange
             ]
-            |> List.sortBy _.Span.Start)
+            |> List.sortBy _.Span.Start
+            |> ValueSome
+        | _ -> ValueNone
 
     let private isOperator (name: string) (expr: SynExpr) =
         match expr with
@@ -460,15 +533,22 @@ module private OptionalParameterDefaultValueConversion =
             | _ -> None)
 
     /// `Some v` becomes `ValueSome v`, `None` becomes `ValueNone`, and any other option goes through `ValueOption.ofOption`.
-    let private valueOptionChanges (isFSharpCore: string -> Ident list -> bool) (sourceText: SourceText) (value: SynExpr) =
+    let private valueOptionChanges (checkResults: FSharpCheckFileResults) (sourceText: SourceText) (value: SynExpr) =
         let valueSpan = spanOf sourceText value.Range
 
         match functionOf value with
         | SingleIdent head when
             (hasText "Some" head || hasText "None" head)
-            && isFSharpCore "Microsoft.FSharp.Core.FSharpOption`1" [ head ]
+            && isFSharpCoreSymbol checkResults sourceText "Microsoft.FSharp.Core.FSharpOption`1" [ head ]
             ->
-            [ TextChange(TextSpan((spanOf sourceText head.idRange).Start, 0), "Value") ]
+            let case = if hasText "Some" head then "ValueSome" else "ValueNone"
+
+            [
+                TextChange(
+                    spanOf sourceText head.idRange,
+                    coreName checkResults "FSharpValueOption`1" "ValueOption" case head.idRange.Start
+                )
+            ]
         | _ when isAtomic value -> [ TextChange(TextSpan(valueSpan.Start, 0), "ValueOption.ofOption ") ]
         | _ ->
             [
@@ -479,7 +559,7 @@ module private OptionalParameterDefaultValueConversion =
     /// Changes to the `?name = value` arguments of the call whose function ends at the use of the member,
     /// for the parameter becoming a `[<Struct>] ?name`.
     let callSiteChanges
-        (isFSharpCore: string -> Ident list -> bool)
+        (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
         (parseTree: ParsedInput)
         (name: string)
@@ -498,7 +578,7 @@ module private OptionalParameterDefaultValueConversion =
         match arguments with
         | Some arguments ->
             optionalArgumentValues name arguments
-            |> List.collect (valueOptionChanges isFSharpCore sourceText)
+            |> List.collect (valueOptionChanges checkResults sourceText)
         | None -> []
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertOptionalParameterDefaultValue"); Shared>]
@@ -526,17 +606,102 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
             )
         | _ -> false
 
-    /// `[<Optional>]` alone passes `Missing.Value` for an omitted `obj`, not the `Unchecked.defaultof` that `?` would give.
-    static let isObject (symbol: FSharpSymbol) =
+    static let hasFullName (fullName: string) (entity: FSharpEntity) =
+        match entity.TryFullName with
+        | Some name -> String.Equals(name, fullName, StringComparison.Ordinal)
+        | None -> false
+
+    static let isAttribute (fullName: string) (attribute: FSharpAttribute) =
+        hasFullName fullName attribute.AttributeType
+
+    static let isInteropOptional =
+        isAttribute "System.Runtime.InteropServices.OptionalAttribute"
+
+    static let isInteropDefaultParameterValue =
+        isAttribute "System.Runtime.InteropServices.DefaultParameterValueAttribute"
+
+    static let isByRefLike (definition: FSharpEntity) =
+        definition.IsByRef
+        || definition.Attributes
+           |> Seq.exists (isAttribute "System.Runtime.CompilerServices.IsByRefLikeAttribute")
+
+    static let tryTypeDefinition (fsharpType: FSharpType) =
+        let stripped = fsharpType.StripAbbreviations()
+
+        if stripped.HasTypeDefinition then
+            ValueSome stripped.TypeDefinition
+        else
+            ValueNone
+
+    /// The full name of `T` for the symbol of a `?x: T` parameter.
+    static let tryOptionalValueTypeName (symbol: FSharpSymbol) =
         match symbol with
         | :? FSharpMemberOrFunctionOrValue as parameter ->
-            let parameterType = parameter.FullType.StripAbbreviations()
+            let arguments = parameter.FullType.StripAbbreviations().GenericArguments
 
-            parameterType.HasTypeDefinition
-            && match parameterType.TypeDefinition.TryFullName with
-               | Some name -> String.Equals(name, "System.Object", StringComparison.Ordinal)
-               | None -> false
-        | _ -> false
+            match arguments |> Seq.tryHeadV |> ValueOption.bind tryTypeDefinition with
+            | ValueSome definition -> definition.TryFullName
+            | ValueNone -> None
+        | _ -> None
+
+    static let tryParameterSymbol (memberSymbol: FSharpSymbol) (name: string) =
+        match memberSymbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            mfv.CurriedParameterGroups
+            |> Seq.concat
+            |> Seq.tryFindV (fun candidate ->
+                match candidate.Name with
+                | Some candidateName -> String.Equals(candidateName, name, StringComparison.Ordinal)
+                | None -> false)
+        | _ -> ValueNone
+
+    /// Whether `?x` can replace the attributes of the parameter: they are the `OptionalAttribute` and at most the
+    /// `DefaultParameterValueAttribute` of `System.Runtime.InteropServices`, the default value is one the compiler
+    /// passes for a parameter of this type, and an option of the type can exist.
+    static let isDotNetOptional (parameter: FSharpParameter) (defaultValue: SynExpr voption) =
+        let attributes = parameter.Attributes
+
+        attributes |> Seq.exists isInteropOptional
+        && attributes
+           |> Seq.forall (fun attribute -> isInteropOptional attribute || isInteropDefaultParameterValue attribute)
+        && match tryTypeDefinition parameter.Type, defaultValue with
+           | ValueSome definition, _ when isByRefLike definition -> false
+           // `[<Optional>]` alone passes `Missing.Value` for an omitted `obj`, not the `Unchecked.defaultof` that `?` would give.
+           | ValueSome definition, ValueNone -> not (hasFullName "System.Object" definition)
+           | ValueSome definition, ValueSome(SynExpr.Const(constant, _)) ->
+               OptionalParameterDefaultValueConversion.isConstantOfType definition.TryFullName constant
+           | ValueNone, ValueNone -> true
+           | _ -> false
+
+    /// Whether the project and the F# projects that depend on it take a value option for a `?` parameter,
+    /// which a caller compiled for an earlier language version cannot pass.
+    static let supportsStructOptionalParameters (project: Project) =
+        cancellableTask {
+            let solution = project.Solution
+
+            let projects =
+                [
+                    project
+
+                    for id in solution.GetProjectDependencyGraph().GetProjectsThatTransitivelyDependOnThisProject project.Id do
+                        let dependent = solution.GetProject id
+
+                        if dependent.IsFSharp then
+                            dependent
+                ]
+
+            let mutable isSupported = true
+
+            for candidate in projects do
+                if isSupported then
+                    let! _, _, parsingOptions, _ = candidate.GetFSharpCompilationOptionsAsync()
+
+                    isSupported <-
+                        LanguageVersion(parsingOptions.LangVersionText).SupportsFeature
+                            LanguageFeature.SupportValueOptionsAsOptionalParameters
+
+            return isSupported
+        }
 
     override _.ComputeRefactoringsAsync context =
         cancellableTask {
@@ -581,6 +746,7 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                         sourceText
                                         parseResults.ParseTree
                                         parameter
+                                        (tryOptionalValueTypeName parameterUse.Symbol)
                                         optionalValRange
                                         uses
                                 with
@@ -588,37 +754,27 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                     let title = SR.UseDotNetOptionalParameter()
 
                                     let changedDocument =
-                                        cancellableTask {
-                                            let changed =
-                                                sourceText.WithChanges changes
-                                                |> OptionalParameterDefaultValueConversion.withInteropServicesOpen
-                                                    parseResults.ParseTree
-                                                    parameter.MemberName
-
-                                            return document.WithText changed
-                                        }
+                                        cancellableTask { return document.WithText(sourceText.WithChanges changes) }
 
                                     context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
                                 | ValueNone -> ()
                             | None -> ()
                         | OptionalParameterDefaultValueConversion.Form.DotNet(lists, defaultValue) ->
-                            let isOmittedObject =
-                                defaultValue.IsNone
-                                && match tryGetSymbolUse checkResults sourceText parameter.Ident with
-                                   | Some parameterUse -> isObject parameterUse.Symbol
-                                   | None -> true
+                            let isConvertible =
+                                match tryParameterSymbol memberUse.Symbol parameter.Ident.idText with
+                                | ValueSome parameterSymbol -> isDotNetOptional parameterSymbol defaultValue
+                                | ValueNone -> false
 
-                            if not isOmittedObject then
+                            if isConvertible then
                                 let! options = document.GetOptionsAsync cancellationToken
-
-                                let! _, langVersion =
-                                    document.GetFsharpParsingOptionsAsync(nameof FSharpConvertOptionalParameterDefaultValueRefactoring)
+                                let! isStructSupported = supportsStructOptionalParameters document.Project
 
                                 let indentSize =
                                     options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
                                 let tryChanges (asStruct: bool) =
                                     OptionalParameterDefaultValueConversion.tryToFSharpChanges
+                                        checkResults
                                         sourceText
                                         indentSize
                                         parameter
@@ -637,9 +793,7 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                 | ValueNone -> ()
 
                                 match tryChanges true with
-                                | ValueSome definitionChanges when
-                                    LanguageVersion(langVersion).SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters
-                                    ->
+                                | ValueSome definitionChanges when isStructSupported ->
                                     let title = SR.UseFSharpStructOptionalParameter()
 
                                     // `?x = Some 1` passes an option to `[<Optional>] x`; a struct `?x` takes a value option instead.
@@ -672,9 +826,7 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                                         for _, useRange in documentUses do
                                                             yield!
                                                                 OptionalParameterDefaultValueConversion.callSiteChanges
-                                                                    (OptionalParameterDefaultValueConversion.isFSharpCoreSymbol
-                                                                        useCheckResults
-                                                                        text)
+                                                                    useCheckResults
                                                                     text
                                                                     useParseResults.ParseTree
                                                                     parameter.Ident.idText
