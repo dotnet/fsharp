@@ -582,12 +582,14 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         Assert.True task.IsCanceled
 
     // Defines can disable every declaration of a file whose text stays the same; the lookup computed
-    // before no longer describes it. The check still classifies the file's implicit module, so the
-    // result is a new answer, not the "nothing" that falls back to the last good lookup.
-    [<Fact>]
-    member _.``Semantic classification of a file whose every declaration went inactive drops their colours``() =
-        let source = "#if FOO\nlet mutable x = 1\nx <- 2\n#endif"
-
+    // before no longer describes it. An implicit module is still classified, while under
+    // `namespace global` nothing is: an empty result of a successful check is the new answer too.
+    [<Theory>]
+    [<InlineData("#if FOO\nlet mutable x = 1\nx <- 2\n#endif", FSharpClassificationTypes.MutableVar)>]
+    [<InlineData("namespace global\n#if FOO\ntype T = class end\n#endif", ClassificationTypeNames.ClassName)>]
+    member _.``Semantic classification of a file whose every declaration went inactive drops their colours``
+        (source: string, inactiveClassification: string)
+        =
         let withFoo =
             { RoslynTestHelpers.DefaultProjectOptions with
                 OtherOptions = [| "--define:FOO" |]
@@ -599,7 +601,7 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         let document = solution.Workspace.CurrentSolution.GetDocument documentId
         let text = sourceTextOf document
 
-        Assert.Contains(FSharpClassificationTypes.MutableVar, classify document (TextSpan(0, text.Length)) |> List.map _.ClassificationType)
+        Assert.Contains(inactiveClassification, classify document (TextSpan(0, text.Length)) |> List.map _.ClassificationType)
 
         clearProjectOptions document
         RoslynTestHelpers.SetProjectOptions document.Project.Id document.Project.Solution RoslynTestHelpers.DefaultProjectOptions
@@ -609,7 +611,12 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
             classify reopened (TextSpan(0, (sourceTextOf reopened).Length))
             |> List.map _.ClassificationType
 
-        Assert.DoesNotContain(FSharpClassificationTypes.MutableVar, afterwards)
+        Assert.DoesNotContain(inactiveClassification, afterwards)
+
+        Assert.True(
+            isCached FSharpClassificationService.OpenedDocumentsSemanticClassificationCache reopened,
+            "The answer of a successful check must be cached, whatever it holds."
+        )
 
     // The service re-emits the last good lookup through this: a cancellation raised inside the
     // classification while the caller's token is still live is a superseded check, not the caller leaving.
