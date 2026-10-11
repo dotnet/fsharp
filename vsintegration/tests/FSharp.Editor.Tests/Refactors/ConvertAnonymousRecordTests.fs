@@ -347,11 +347,161 @@ let person = struct {| A = 1 |}
 let alias = person
 let typed: struct {| A: int |} = alias
 """)>]
+[<InlineData("""
+module M
+
+let (person: {| A: int |}) = {| A = 1 |}
+let typed: {| A: int |} = person
+""",
+             """
+module M
+
+let (person: struct {| A: int |}) = struct {| A = 1 |}
+let typed: struct {| A: int |} = person
+""")>]
 let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
     Assert.Equal(structs, refactored reference "A = 1")
     Assert.Equal(reference, refactored structs "A = 1")
     Assert.Equal(structs, refactored reference "A: int")
     Assert.Equal(reference, refactored structs "A: int")
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let size (p: {| Size: int |}) = p.Size
+let total = (size) {| Size = 1 |}
+""",
+             """
+module M
+
+let size (p: struct {| Size: int |}) = p.Size
+let total = (size) struct {| Size = 1 |}
+""")>]
+[<InlineData("""
+module M
+
+let make () = {| Size = 1 |}
+let copy: {| Size: int |} = (make) ()
+""",
+             """
+module M
+
+let make () = struct {| Size = 1 |}
+let copy: struct {| Size: int |} = (make) ()
+""")>]
+[<InlineData("""
+module M
+
+let size = fun (p: {| Size: int |}) -> p.Size
+let total = size {| Size = 1 |}
+""",
+             """
+module M
+
+let size = fun (p: struct {| Size: int |}) -> p.Size
+let total = size struct {| Size = 1 |}
+""")>]
+[<InlineData("""
+module M
+
+let make = fun () -> {| Size = 1 |}
+let copy: {| Size: int |} = make ()
+""",
+             """
+module M
+
+let make = fun () -> struct {| Size = 1 |}
+let copy: struct {| Size: int |} = make ()
+""")>]
+[<InlineData("""
+module M
+
+let make () = {| Size = 1 |}
+let alias = make
+let copy: {| Size: int |} = alias ()
+""",
+             """
+module M
+
+let make () = struct {| Size = 1 |}
+let alias = make
+let copy: struct {| Size: int |} = alias ()
+""")>]
+[<InlineData("""
+module M
+
+let grow (by: int) (p: {| Size: int |}) = p.Size + by
+let growOne = grow 1
+let total = growOne {| Size = 1 |}
+""",
+             """
+module M
+
+let grow (by: int) (p: struct {| Size: int |}) = p.Size + by
+let growOne = grow 1
+let total = growOne struct {| Size = 1 |}
+""")>]
+let ``Function in parentheses, bound as a lambda, aliased or partly applied converts with its calls`` (reference: string, structs: string) =
+    for marker in [ "Size = 1"; "Size: int" ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
+[<Theory>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Size(p: {| Size: int |}) = p.Size
+
+let total = C().Size({| Size = 1 |})
+""",
+             """
+module M
+
+type C() =
+    member _.Size(p: struct {| Size: int |}) = p.Size
+
+let total = C().Size(struct {| Size = 1 |})
+""")>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Grow(p: {| Size: int |}, by: int) = p.Size + by
+
+let small = {| Size = 1 |}
+let total = C().Grow(p = small, by = 1)
+""",
+             """
+module M
+
+type C() =
+    member _.Grow(p: struct {| Size: int |}, by: int) = p.Size + by
+
+let small = struct {| Size = 1 |}
+let total = C().Grow(p = small, by = 1)
+""")>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Grow(by: int, p: {| Size: int |}) = p.Size + by
+
+let total = C().Grow(p = {| Size = 1 |}, by = 1)
+""",
+             """
+module M
+
+type C() =
+    member _.Grow(by: int, p: struct {| Size: int |}) = p.Size + by
+
+let total = C().Grow(p = struct {| Size = 1 |}, by = 1)
+""")>]
+let ``Member parameter converts with the arguments given for it by position or by name`` (reference: string, structs: string) =
+    for marker in [ "Size = 1"; "Size: int" ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
 
 [<Fact>]
 let ``Generic parameter stops the conversion`` () =
@@ -377,9 +527,10 @@ let b = identity<{| B: int |}> {| B = 2 |}
     Assert.Equal(reference, refactored structs "A = 1")
 
 [<Theory>]
+[<InlineData("\nmodule M\n\nlet x = id<_>{| A = 1 |}\n", "\nmodule M\n\nlet x = id<_> struct {| A = 1 |}\n")>]
 [<InlineData("\nmodule M\n\nlet x = id{| A = 1 |}\n", "\nmodule M\n\nlet x = id struct {| A = 1 |}\n")>]
 [<InlineData("\nmodule M\n\nlet f́ x = x\nlet y = f́{| A = 1 |}\n", "\nmodule M\n\nlet f́ x = x\nlet y = f́ struct {| A = 1 |}\n")>]
-let ``Struct keyword is separated from a name the record follows`` (before: string, after: string) =
+let ``Struct keyword is separated from a name or type arguments the record follows`` (before: string, after: string) =
     Assert.Equal(after, refactored before "A = 1")
 
 [<Theory>]
