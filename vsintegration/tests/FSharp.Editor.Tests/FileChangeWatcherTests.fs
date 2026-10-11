@@ -30,21 +30,28 @@ type internal MockFileChangeContext() =
     let watched = ResizeArray<string>()
     let tokens = Dictionary<string, MockWatchedFile>(StringComparer.OrdinalIgnoreCase)
 
-    member _.WatchedFiles = List.ofSeq watched
+    // The reactor watches and unwatches on its agent's thread while a test reads the list on its own.
+    member _.WatchedFiles = lock watched (fun () -> List.ofSeq watched)
     member _.Fire path = fileChanged.Trigger path
-    member _.SetActive(path, active) = tokens[path].SetActive active
+
+    member _.SetActive(path, active) =
+        (lock watched (fun () -> tokens[path])).SetActive active
 
     interface IFSharpFileChangeContext with
         [<CLIEvent>]
         member _.FileChanged = fileChanged.Publish
 
         member _.EnqueueWatchingFile path =
-            watched.Add path
-            let token = new MockWatchedFile(fun () -> watched.Remove path |> ignore)
-            tokens[path] <- token
+            let token =
+                new MockWatchedFile(fun () -> lock watched (fun () -> watched.Remove path |> ignore))
+
+            lock watched (fun () ->
+                watched.Add path
+                tokens[path] <- token)
+
             token :> IFSharpWatchedFile
 
-        member _.Dispose() = watched.Clear()
+        member _.Dispose() = lock watched watched.Clear
 
 type internal MockFileChangeWatcher() =
     let mutable context: MockFileChangeContext voption = ValueNone
@@ -559,7 +566,7 @@ module FileChangeWatcherTests =
 
             let count, stat =
                 countingStat (fun _ ->
-                    if meetInStat.Value && not (barrier.SignalAndWait(TimeSpan.FromSeconds 5.)) then
+                    if meetInStat.Value && not (barrier.SignalAndWait(TimeSpan.FromSeconds 30.)) then
                         met.Value <- false)
 
             use tracker = new FSharpReferenceChangeTracker(watcher, stat)
@@ -567,7 +574,17 @@ module FileChangeWatcherTests =
             tracker.StartWatchingReference path
 
             // Two readers meet inside the stat, which they can only do if neither holds the tracker's lock there.
-            Parallel.Invoke((fun () -> stamps.GetLastWriteTimeUtc path |> ignore), (fun () -> stamps.GetLastWriteTimeUtc path |> ignore))
+            // Each gets a thread of its own: in a full test run the pool can take longer to start work than any timeout.
+            let readers =
+                [|
+                    for _ in 1..2 -> Thread((fun () -> stamps.GetLastWriteTimeUtc path |> ignore), IsBackground = true)
+                |]
+
+            for reader in readers do
+                reader.Start()
+
+            for reader in readers do
+                reader.Join()
 
             Assert.True met.Value
             Assert.Equal(2, count.Value)
@@ -587,7 +604,12 @@ module FileChangeWatcherTests =
                 countingStat (fun _ ->
                     stamps.Value
                     |> ValueOption.iter (fun (stamps: IReferenceStamps) ->
-                        otherPathReachable.Value <- Task.Run(fun () -> stamps.Invalidate @"C:\x\other.dll").Wait(TimeSpan.FromSeconds 1.)))
+                        // A thread of its own: in a full test run the pool can take longer to start work than any timeout.
+                        let other =
+                            Thread((fun () -> stamps.Invalidate @"C:\x\other.dll"), IsBackground = true)
+
+                        other.Start()
+                        otherPathReachable.Value <- other.Join(TimeSpan.FromSeconds 30.)))
 
             use tracker = new FSharpReferenceChangeTracker(watcher, stat)
             stamps.Value <- ValueSome(tracker :> IReferenceStamps)
