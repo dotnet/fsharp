@@ -95,11 +95,17 @@ let private emitLibrary (root: string) (pathMap: string list) =
     let projectDir = Directory.CreateDirectory(Path.Combine(root, "src", "Domain")).FullName
     File.WriteAllText(Path.Combine(projectDir, "Library.fs"), "module Library\n\nlet f x = x + 1\n")
 
+    // The arguments are joined into one command line, where a reference under "Program Files" or a root with a
+    // space in it would fall apart
+    let quoted (option: string) = $"\"{option}\""
+
     let result =
         runFscProcessIn projectDir [
             "--target:library"
-            yield! CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
-            yield! pathMap
+            for option in CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions do
+                quoted option
+            for option in pathMap do
+                quoted option
             "-o:Library.dll"
             "Library.fs"
         ]
