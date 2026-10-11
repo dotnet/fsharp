@@ -56,11 +56,24 @@ let rec private stripParenPats (pat: SynPat) =
     | SynPat.Paren(pat = inner) -> stripParenPats inner
     | _ -> pat
 
-/// The name of the function applied by the expression, and how many arguments are applied before it.
+/// `name = value`, the form of a named argument.
+[<return: Struct>]
+let private (|NameEqualsValue|_|) (expr: SynExpr) =
+    match expr with
+    | SynExpr.App(
+        isInfix = false
+        funcExpr = SynExpr.App(
+            isInfix = true; funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent(id = [ operator ])); argExpr = SynExpr.Ident name)
+        argExpr = value) when String.Equals(operator.idText, "op_Equality", StringComparison.Ordinal) -> ValueSome(struct (name, value))
+    | _ -> ValueNone
+
+/// The name of the function applied by the expression, in parentheses or not, and how many arguments are applied
+/// before it.
 let rec private tryCallee (expr: SynExpr) (applied: int) =
     match expr with
     | SynExpr.App(isInfix = false; funcExpr = funcExpr) -> tryCallee funcExpr (applied + 1)
-    | SynExpr.TypeApp(expr = inner) -> tryCallee inner applied
+    | SynExpr.TypeApp(expr = inner)
+    | SynExpr.Paren(expr = inner) -> tryCallee inner applied
     | SynExpr.Ident ident -> ValueSome(struct (ident, applied))
     | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids))
     | SynExpr.DotGet(longDotId = SynLongIdent(id = ids)) ->
@@ -69,14 +82,21 @@ let rec private tryCallee (expr: SynExpr) (applied: int) =
         | None -> ValueNone
     | _ -> ValueNone
 
+/// The function reference a binding's body is, with the arguments applied to it: `let alias = f` and
+/// `let partial = f x` forward to `f`.
+let rec private tryForwarded (body: SynExpr) =
+    match body with
+    | SynExpr.Typed(expr = inner) -> tryForwarded inner
+    | _ -> tryCallee body 0
+
 /// The application of a function reference to all of its curried argument groups.
 let rec private tryApplication (node: SynExpr) (path: SyntaxVisitorPath) (remaining: int) =
     if remaining = 0 then
         ValueSome(struct (node, path))
     else
         match path with
-        | SyntaxNode.SynExpr(SynExpr.TypeApp(expr = inner) as typeApp) :: rest when isSame inner node ->
-            tryApplication typeApp rest remaining
+        | SyntaxNode.SynExpr(SynExpr.TypeApp(expr = inner) | SynExpr.Paren(expr = inner) as wrapper) :: rest when isSame inner node ->
+            tryApplication wrapper rest remaining
         | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = funcExpr) as app) :: rest when isSame funcExpr node ->
             tryApplication app rest (remaining - 1)
         | _ -> ValueNone
@@ -84,7 +104,8 @@ let rec private tryApplication (node: SynExpr) (path: SyntaxVisitorPath) (remain
 /// The argument a function reference is applied to in the given curried group.
 let rec private tryArgument (node: SynExpr) (path: SyntaxVisitorPath) (group: int) =
     match path with
-    | SyntaxNode.SynExpr(SynExpr.TypeApp(expr = inner) as typeApp) :: rest when isSame inner node -> tryArgument typeApp rest group
+    | SyntaxNode.SynExpr(SynExpr.TypeApp(expr = inner) | SynExpr.Paren(expr = inner) as wrapper) :: rest when isSame inner node ->
+        tryArgument wrapper rest group
     | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = funcExpr; argExpr = argument) as app) :: rest when isSame funcExpr node ->
         if group = 0 then
             ValueSome(struct (argument, SyntaxNode.SynExpr app :: rest))
@@ -92,17 +113,45 @@ let rec private tryArgument (node: SynExpr) (path: SyntaxVisitorPath) (group: in
             tryArgument app rest (group - 1)
     | _ -> ValueNone
 
-/// The function and the position of the parameter a pattern in a binding's head declares.
-let rec private tryParameterPosition (pat: SynPat) (path: SyntaxVisitorPath) =
+/// The name a function reference is bound to without being applied to all of its arguments, and how many it is
+/// applied to: `let alias = f` and `let partial = f x`.
+let rec private tryForwardingBinding (node: SynExpr) (path: SyntaxVisitorPath) (applied: int) =
     match path with
-    | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args)) :: SyntaxNode.SynBinding _ :: _ ->
-        let found =
-            args
-            |> List.indexed
-            |> List.tryFind (fun (_, arg) -> containsRange arg.Range pat.Range)
+    | SyntaxNode.SynExpr(SynExpr.TypeApp(expr = inner) | SynExpr.Paren(expr = inner) | SynExpr.Typed(expr = inner) as wrapper) :: rest when
+        isSame inner node
+        ->
+        tryForwardingBinding wrapper rest applied
+    | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = funcExpr) as app) :: rest when isSame funcExpr node ->
+        tryForwardingBinding app rest (applied + 1)
+    | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) :: _ when isSame body node ->
+        tryPatternIdent headPat |> ValueOption.map (fun name -> struct (name, applied))
+    | _ -> ValueNone
 
-        match found, List.tryLast ids with
-        | Some(group, arg), Some name ->
+/// The lambda an expression is, through parentheses and a type annotation: its parameter patterns, its body and the
+/// path to them.
+let rec private tryLambda (expr: SynExpr) (path: SyntaxVisitorPath) =
+    match expr with
+    | SynExpr.Paren(expr = inner)
+    | SynExpr.Typed(expr = inner) -> tryLambda inner (SyntaxNode.SynExpr expr :: path)
+    | SynExpr.Lambda(parsedData = Some(args, body)) -> ValueSome(struct (args, body, SyntaxNode.SynExpr expr :: path))
+    | _ -> ValueNone
+
+/// The name a lambda is bound to, through parentheses and a type annotation: `let f = fun x -> x`.
+let rec private tryLambdaOwner (lambda: SynExpr) (path: SyntaxVisitorPath) =
+    match path with
+    | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) | SynExpr.Typed(expr = inner) as wrapper) :: rest when isSame inner lambda ->
+        tryLambdaOwner wrapper rest
+    | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) :: _ when isSame body lambda -> tryPatternIdent headPat
+    | _ -> ValueNone
+
+/// The function and the position of the parameter a pattern in a binding's head, or among the parameters of the
+/// lambda a name is bound to, declares.
+let rec private tryParameterPosition (pat: SynPat) (path: SyntaxVisitorPath) =
+    let positionIn (args: SynPat list) (name: Ident) =
+        args
+        |> List.indexed
+        |> List.tryFindV (fun (_, arg) -> containsRange arg.Range pat.Range)
+        |> ValueOption.map (fun (group, arg) ->
             let index =
                 match stripParenPats arg with
                 | SynPat.Tuple(elementPats = elements) ->
@@ -114,15 +163,25 @@ let rec private tryParameterPosition (pat: SynPat) (path: SyntaxVisitorPath) =
                     | None -> ValueNone
                 | _ -> ValueNone
 
-            ValueSome(struct (name, group, index))
-        | _ -> ValueNone
+            struct (name, group, index))
+
+    match path with
+    | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args)) :: SyntaxNode.SynBinding _ :: _ ->
+        match List.tryLast ids with
+        | Some name -> positionIn args name
+        | None -> ValueNone
+    | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(args, _)) as lambda) :: rest ->
+        match tryLambdaOwner lambda rest with
+        | ValueSome name -> positionIn args name
+        | ValueNone -> ValueNone
     | _ :: rest -> tryParameterPosition pat rest
     | [] -> ValueNone
 
-/// The expression a tuple pattern takes apart: the right-hand side of its binding or the matched expression.
+/// The expression a tuple pattern takes apart, through parentheses and a type annotation: the right-hand side of its
+/// binding or the matched expression.
 let rec private tryMatchedExpression (pat: SynPat) (path: SyntaxVisitorPath) =
     match path with
-    | SyntaxNode.SynPat(SynPat.Paren _ as paren) :: rest -> tryMatchedExpression paren rest
+    | SyntaxNode.SynPat(SynPat.Paren _ | SynPat.Typed _ as wrapper) :: rest -> tryMatchedExpression wrapper rest
     | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) :: _ when isSame headPat pat -> ValueSome(struct (body, path))
     | SyntaxNode.SynMatchClause(SynMatchClause(pat = clausePat)) :: SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee) as matchExpr) :: rest when
         isSame clausePat pat
@@ -130,17 +189,33 @@ let rec private tryMatchedExpression (pat: SynPat) (path: SyntaxVisitorPath) =
         ValueSome(struct (scrutinee, SyntaxNode.SynExpr matchExpr :: rest))
     | _ -> ValueNone
 
-/// The function and the curried group of which the pattern is the whole argument, parenthesized or (a struct tuple) not.
+/// The type annotations on a pattern, through the parentheses around it: `((a, b): int * int)`.
+let rec private annotationsOn (pat: SynPat) (path: SyntaxVisitorPath) =
+    match path with
+    | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> annotationsOn paren rest
+    | SyntaxNode.SynPat(SynPat.Typed(pat = inner; targetType = annotation) as typed) :: rest when isSame inner pat ->
+        annotation :: annotationsOn typed rest
+    | _ -> []
+
+/// The function and the curried group of which the pattern is the whole argument, through parentheses and a type
+/// annotation or (a struct tuple) with neither. The function can be a name bound to a lambda.
 let private tryWholeArgument (pat: SynPat) (path: SyntaxVisitorPath) =
-    let struct (argument, headPath) =
+    let rec outermost (pat: SynPat) (path: SyntaxVisitorPath) =
         match path with
-        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> struct (paren, rest)
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) | SynPat.Typed(pat = inner) as wrapper) :: rest when isSame inner pat ->
+            outermost wrapper rest
         | _ -> struct (pat, path)
+
+    let struct (argument, headPath) = outermost pat path
 
     match headPath with
     | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args)) :: SyntaxNode.SynBinding _ :: _ ->
         match List.tryFindIndex (isSame argument) args, List.tryLast ids with
         | Some group, Some name -> ValueSome(struct (name, group))
+        | _ -> ValueNone
+    | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(args, _)) as lambda) :: rest ->
+        match List.tryFindIndex (isSame argument) args, tryLambdaOwner lambda rest with
+        | Some group, ValueSome name -> ValueSome(struct (name, group))
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -179,26 +254,32 @@ let private tryRecordFieldValue (tree: ParsedInput) (useRange: range) =
                 | _ -> None)
         | _ -> None)
 
-/// The pattern declaring a parameter of the function declared at the range: its whole curried argument, or one
-/// element of an argument that is a tuple of parameters.
+/// The body of the binding that gives the name declared at the range its value, `let name = body`, and the path to it.
+let private tryNamedBinding (tree: ParsedInput) (declaration: range) =
+    (ValueNone, tree)
+    ||> ParsedInput.fold (fun found path node ->
+        match found, node with
+        | ValueNone, SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) when
+            tryPatternIdent headPat
+            |> ValueOption.exists (fun ident -> Position.posEq ident.idRange.Start declaration.Start)
+            ->
+            ValueSome(struct (body, node :: path))
+        | _ -> found)
+
+/// The pattern declaring a parameter of the function declared at the range, a function or a name bound to a lambda:
+/// its whole curried argument, or one element of an argument that is a tuple of parameters.
 let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group: int) (index: int voption) =
     let pathTo (pat: SynPat) (parentPath: SyntaxVisitorPath) =
         match pat with
         | SynPat.Paren _ -> SyntaxNode.SynPat pat :: parentPath
         | _ -> parentPath
 
-    (ValueNone, tree)
-    ||> ParsedInput.fold (fun found path node ->
-        match found, node with
-        | ValueNone,
-          SyntaxNode.SynBinding(SynBinding(
-              headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args) as headPat)) when
-            group < args.Length
-            && List.tryLast ids
-               |> Option.exists (fun ident -> Position.posEq ident.idRange.Start declaration.Start)
-            ->
+    let parameterIn (args: SynPat list) (argsPath: SyntaxVisitorPath) =
+        if group >= args.Length then
+            ValueNone
+        else
             let argument = List.item group args
-            let argumentPath = pathTo argument (SyntaxNode.SynPat headPat :: node :: path)
+            let argumentPath = pathTo argument argsPath
 
             match stripParenPats argument, index with
             | SynPat.Tuple(elementPats = elements) as tuple, ValueSome index when index < elements.Length ->
@@ -206,12 +287,87 @@ let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group:
                 ValueSome(struct (stripParenPats element, pathTo element (SyntaxNode.SynPat tuple :: argumentPath)))
             | _, ValueSome _ -> ValueNone
             | parameter, ValueNone -> ValueSome(struct (parameter, argumentPath))
+
+    (ValueNone, tree)
+    ||> ParsedInput.fold (fun found path node ->
+        match found, node with
+        | ValueNone,
+          SyntaxNode.SynBinding(SynBinding(
+              headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args) as headPat)) when
+            List.tryLast ids
+            |> Option.exists (fun ident -> Position.posEq ident.idRange.Start declaration.Start)
+            ->
+            parameterIn args (SyntaxNode.SynPat headPat :: node :: path)
         | _ -> found)
+    |> ValueOption.orElseWith (fun () ->
+        tryNamedBinding tree declaration
+        |> ValueOption.bind (fun struct (body, bodyPath) -> tryLambda body bodyPath)
+        |> ValueOption.bind (fun struct (args, _, argsPath) -> parameterIn args argsPath))
 
 let private annotationChanges (sourceText: SourceText) (toStruct: bool) (annotation: SynType) =
     match stripParenTypes annotation with
     | SynType.Tuple _ as tuple -> typeChanges sourceText toStruct true tuple
     | _ -> []
+
+let private hasName (name: string) (parameter: FSharpParameter) =
+    match parameter.Name with
+    | Some parameterName -> String.Equals(parameterName, name, StringComparison.Ordinal)
+    | None -> false
+
+/// The name an argument can give for the parameter of a method at the position.
+let private tryParameterName (symbol: FSharpSymbol) (group: int) (index: int voption) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMember && group < mfv.CurriedParameterGroups.Count ->
+        let parameters = mfv.CurriedParameterGroups[group]
+
+        match index with
+        | ValueSome index when index < parameters.Count -> parameters[index].Name
+        | ValueNone when parameters.Count = 1 -> parameters[0].Name
+        | _ -> None
+    | _ -> None
+
+/// The value an argument gives a parameter: the part of an argument list given for it by name, else the one at its
+/// position, or the whole argument when the parameter is not one of a tuple of parameters.
+let private tryArgumentValue (parameterName: string option) (index: int voption) (argument: SynExpr) (argumentPath: SyntaxVisitorPath) =
+    let struct (elements, elementsPath) =
+        match argument with
+        | SynExpr.Paren(expr = SynExpr.Tuple(exprs = exprs) as tuple) ->
+            struct (exprs, SyntaxNode.SynExpr tuple :: SyntaxNode.SynExpr argument :: argumentPath)
+        | SynExpr.Paren(expr = inner) -> struct ([ inner ], SyntaxNode.SynExpr argument :: argumentPath)
+        | _ -> struct ([], argumentPath)
+
+    let named =
+        match parameterName with
+        | Some parameterName ->
+            elements
+            |> Seq.tryPickV (fun element ->
+                match element with
+                | NameEqualsValue(struct (name, value)) when String.Equals(name.idText, parameterName, StringComparison.Ordinal) ->
+                    ValueSome(struct (value, SyntaxNode.SynExpr element :: elementsPath))
+                | _ -> ValueNone)
+        | None -> ValueNone
+
+    match named, index, argument with
+    | ValueSome _, _, _ -> named
+    | ValueNone, ValueSome index, SynExpr.Paren(expr = SynExpr.Tuple(exprs = exprs)) when index < exprs.Length ->
+        ValueSome(struct (List.item index exprs, elementsPath))
+    | ValueNone, ValueSome _, _ -> ValueNone
+    | ValueNone, ValueNone, _ -> ValueSome(struct (argument, argumentPath))
+
+/// How many curried arguments a function takes: its parameter groups or, for a function value, the arrows of its type.
+let private groupCount (mfv: FSharpMemberOrFunctionOrValue) =
+    let rec arrows (ty: FSharpType) =
+        if ty.IsFunctionType then
+            1 + arrows ty.GenericArguments[1]
+        else
+            0
+
+    if mfv.CurriedParameterGroups.Count > 0 then
+        mfv.CurriedParameterGroups.Count
+    else
+        match mfv.FullTypeSafe with
+        | Some ty -> max 1 (arrows ty)
+        | None -> 1
 
 type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
     let sources = Dictionary<DocumentId, Source>()
@@ -323,6 +479,35 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             | _ -> ()
         | _ -> ()
 
+    /// Enqueues the parameter of a method that an argument names: `M(name = value)`.
+    member this.EnqueueNamedParameter (source: Source) (methodName: Ident) (group: int) (parameterName: Ident) =
+        match symbolUseAt source methodName with
+        | Some methodUse ->
+            match methodUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMember && group < mfv.CurriedParameterGroups.Count ->
+                let parameters = mfv.CurriedParameterGroups[group]
+
+                match parameters |> Seq.tryFindIndexV (hasName parameterName.idText) with
+                | ValueSome _ when parameters.Count = 1 -> this.EnqueueParameter source methodName group ValueNone
+                | ValueSome index -> this.EnqueueParameter source methodName group (ValueSome index)
+                | ValueNone -> ()
+            | _ -> ()
+        | None -> ()
+
+    /// The function a binding's body forwards to, with the arguments the body applies to it: a function reference
+    /// applied to fewer arguments than the function takes.
+    member _.TryForwarded (source: Source) (body: SynExpr) =
+        match tryForwarded body with
+        | ValueSome(struct (callee, applied)) ->
+            match symbolUseAt source callee with
+            | Some calleeUse ->
+                match calleeUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv when (mfv.IsFunction || mfv.IsMember) && applied < groupCount mfv ->
+                    ValueSome(struct (callee, applied))
+                | _ -> ValueNone
+            | None -> ValueNone
+        | ValueNone -> ValueNone
+
     /// A value of the changing kind flows into a pattern.
     member this.IntoPattern (source: Source) (pat: SynPat) (path: SyntaxVisitorPath) =
         match pat with
@@ -368,6 +553,20 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             ->
             this.Retarget source container rest
             this.FlowOut source container rest
+        | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(_, body)) as lambda) :: rest when isSame body node ->
+            match tryLambdaOwner lambda rest with
+            | ValueSome name -> this.EnqueueResult source name
+            | ValueNone -> ()
+        | SyntaxNode.SynExpr(NameEqualsValue(struct (parameterName, value))) :: rest when isSame value node ->
+            match rest with
+            | SyntaxNode.SynExpr(SynExpr.Tuple _) :: SyntaxNode.SynExpr(SynExpr.Paren _ as paren) :: SyntaxNode.SynExpr(SynExpr.App(
+                isInfix = false; funcExpr = funcExpr; argExpr = argument)) :: _
+            | SyntaxNode.SynExpr(SynExpr.Paren _ as paren) :: SyntaxNode.SynExpr(SynExpr.App(
+                isInfix = false; funcExpr = funcExpr; argExpr = argument)) :: _ when isSame argument paren ->
+                match tryCallee funcExpr 0 with
+                | ValueSome(struct (methodName, group)) -> this.EnqueueNamedParameter source methodName group parameterName
+                | ValueNone -> ()
+            | _ -> ()
         | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = funcExpr; argExpr = argument)) :: _ when isSame argument node ->
             match tryCallee funcExpr 0 with
             | ValueSome(struct (name, group)) -> this.EnqueueParameter source name group ValueNone
@@ -437,7 +636,9 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         ((), source.Tree)
         ||> ParsedInput.fold (fun () path node ->
             match node with
-            | SyntaxNode.SynBinding(SynBinding(headPat = SynPat.Named(ident = SynIdent(ident, _)); expr = body)) when isDeclared ident ->
+            | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) when
+                tryPatternIdent headPat |> ValueOption.exists isDeclared
+                ->
                 this.Retarget source body (node :: path)
             | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses)) when
                 clauses
@@ -457,7 +658,8 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                     | _ -> ()
             | _ -> ())
 
-    /// Changes the declared or inferred result of a function.
+    /// Changes the declared or inferred result of a function, of a name bound to a lambda, or of the function a name
+    /// forwards to.
     member this.DefineResult (source: Source) (declaration: range) =
         ((), source.Tree)
         ||> ParsedInput.fold (fun () path node ->
@@ -468,6 +670,16 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                 ->
                 this.Retarget source body (node :: path)
             | _ -> ())
+
+        match tryNamedBinding source.Tree declaration with
+        | ValueSome(struct (body, bodyPath)) ->
+            match tryLambda body bodyPath with
+            | ValueSome(struct (_, result, resultPath)) -> this.Retarget source result resultPath
+            | ValueNone ->
+                match this.TryForwarded source body with
+                | ValueSome(struct (callee, _)) -> this.EnqueueResult source callee
+                | ValueNone -> ()
+        | ValueNone -> ()
 
     member this.ProcessSymbol (symbolUse: FSharpSymbolUse) (source: Source) =
         cancellableTask {
@@ -496,7 +708,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             | ValueSome(struct (declaration, document)), (:? FSharpMemberOrFunctionOrValue as mfv) ->
                 let! definition = this.Load document
                 this.DefineResult definition declaration
-                let groups = max 1 mfv.CurriedParameterGroups.Count
+                let groups = groupCount mfv
                 let! uses = SymbolHelpers.getSymbolUses functionUse source.Document source.Check
 
                 for useDocument, useRange in uses do
@@ -507,7 +719,10 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                         | Some(node, path) ->
                             match tryApplication node path groups with
                             | ValueSome(struct (application, rest)) -> this.FlowOut useSource application rest
-                            | ValueNone -> ()
+                            | ValueNone ->
+                                match tryForwardingBinding node path 0 with
+                                | ValueSome(struct (name, applied)) when applied < groups -> this.EnqueueResult useSource name
+                                | _ -> ()
                         | None -> ()
             | _ -> ()
         }
@@ -518,18 +733,32 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             | ValueSome(struct (declaration, document)) ->
                 let! definition = this.Load document
 
-                match tryParameterPattern definition.Tree declaration group index with
-                | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when isParameterList parameter parameterPath -> ()
-                | ValueSome(struct (parameter, parameterPath)) ->
-                    match parameter with
-                    | SynPat.Typed(targetType = annotation) -> this.Add definition (annotationChanges definition.Text toStruct annotation)
-                    | SynPat.Tuple _ -> this.AddOrFail definition (tryPatChanges definition.Text toStruct parameter parameterPath)
-                    | _ -> ()
+                let isFound =
+                    match tryParameterPattern definition.Tree declaration group index with
+                    | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when isParameterList parameter parameterPath -> false
+                    | ValueSome(struct (parameter, parameterPath)) ->
+                        match parameter with
+                        | SynPat.Typed _ -> this.IntoPattern definition parameter parameterPath
+                        | SynPat.Tuple _ -> this.AddOrFail definition (tryPatChanges definition.Text toStruct parameter parameterPath)
+                        | _ -> ()
 
-                    match tryPatternIdent parameter with
-                    | ValueSome ident -> this.EnqueueSymbol definition ident
-                    | ValueNone -> ()
+                        match tryPatternIdent parameter with
+                        | ValueSome ident -> this.EnqueueSymbol definition ident
+                        | ValueNone -> ()
 
+                        true
+                    | ValueNone ->
+                        match tryNamedBinding definition.Tree declaration with
+                        | ValueSome(struct (body, _)) ->
+                            match this.TryForwarded definition body with
+                            | ValueSome(struct (callee, applied)) ->
+                                this.EnqueueParameter definition callee (group + applied) index
+                                true
+                            | ValueNone -> false
+                        | ValueNone -> false
+
+                if isFound then
+                    let parameterName = tryParameterName functionUse.Symbol group index
                     let! uses = SymbolHelpers.getSymbolUses functionUse source.Document source.Check
 
                     for useDocument, useRange in uses do
@@ -538,17 +767,17 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
 
                             match tryUseNode useSource.Tree useRange with
                             | Some(node, path) ->
-                                match tryArgument node path group, index with
-                                | ValueSome(struct (SynExpr.Paren(expr = SynExpr.Tuple(exprs = exprs) as tuple) as argument, argumentPath)),
-                                  ValueSome index when index < exprs.Length ->
-                                    this.Retarget
-                                        useSource
-                                        (List.item index exprs)
-                                        (SyntaxNode.SynExpr tuple :: SyntaxNode.SynExpr argument :: argumentPath)
-                                | ValueSome(struct (argument, argumentPath)), ValueNone -> this.Retarget useSource argument argumentPath
-                                | _ -> ()
+                                match tryArgument node path group with
+                                | ValueSome(struct (argument, argumentPath)) ->
+                                    match tryArgumentValue parameterName index argument argumentPath with
+                                    | ValueSome(struct (value, valuePath)) -> this.Retarget useSource value valuePath
+                                    | ValueNone -> ()
+                                | ValueNone ->
+                                    match tryForwardingBinding node path 0 with
+                                    | ValueSome(struct (name, applied)) when applied <= group ->
+                                        this.EnqueueParameter useSource name (group - applied) index
+                                    | _ -> ()
                             | None -> ()
-                | ValueNone -> ()
             | ValueNone -> ()
         }
 
@@ -559,6 +788,9 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             this.FlowOut source tuple path
         | CaretNode.Pat(tuple, path) ->
             this.AddOrFail source (tryPatChanges source.Text toStruct tuple path)
+
+            for annotation in annotationsOn tuple path do
+                this.Add source (annotationChanges source.Text toStruct annotation)
 
             match tryMatchedExpression tuple path, tryWholeArgument tuple path with
             | ValueSome(struct (matched, matchedPath)), _ -> this.Retarget source matched matchedPath
@@ -572,7 +804,12 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                 | Annotated.Pattern(SynPat.Typed(pat = inner) as pat, path) ->
                     match tryPatternIdent inner with
                     | ValueSome ident -> this.EnqueueSymbol source ident
-                    | ValueNone -> ()
+                    | ValueNone ->
+                        this.IntoPattern source inner (SyntaxNode.SynPat pat :: path)
+
+                        match tryMatchedExpression pat path with
+                        | ValueSome(struct (matched, matchedPath)) -> this.Retarget source matched matchedPath
+                        | ValueNone -> ()
 
                     match tryParameterPosition pat path with
                     | ValueSome(struct (name, group, index)) -> this.EnqueueParameter source name group index
