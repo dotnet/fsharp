@@ -161,12 +161,29 @@ module internal FSharpProjectSnapshotSerialization =
 open FSharpProjectSnapshotSerialization
 open System.Collections.Concurrent
 
+/// The project snapshots built for the transparent compiler, kept per Roslyn project. Every entry holds the
+/// `Project` it was built from, and through it the whole `Solution`, and `latest` is never trimmed, so an
+/// entry has to go when its project leaves the workspace.
+[<RequireQualifiedAccess>]
+module internal ProjectSnapshotCache =
+
+    let snapshots =
+        AsyncMemoize<ProjectId, Project, FSharpProjectSnapshot>(1000, 500, "SnapshotCache")
+
+    /// What the last snapshot of each project was built from, for the next one to reuse.
+    let latest =
+        ConcurrentDictionary<ProjectId, Project * VersionStamp * Set<string> * FSharpProjectOptions * FSharpProjectSnapshot>()
+
+    let removeProject (projectId: ProjectId) =
+        snapshots.Clear(fun key -> key = projectId)
+        latest.TryRemove projectId |> ignore
+
+    let clear () =
+        snapshots.Clear()
+        latest.Clear()
+
 [<AutoOpen>]
 module private CheckerExtensions =
-
-    let snapshotCache = AsyncMemoize(1000, 500, "SnapshotCache")
-
-    let latestSnapshots = ConcurrentDictionary<_, _>()
 
     let exist xs = xs |> Seq.isEmpty |> not
 
@@ -241,7 +258,7 @@ module private CheckerExtensions =
             let! referenceVersions = getReferencedProjectVersions project
 
             let updatedSnapshot =
-                match project.IsTransparentCompilerSnapshotReuseEnabled, latestSnapshots.TryGetValue project.Id with
+                match project.IsTransparentCompilerSnapshotReuseEnabled, ProjectSnapshotCache.latest.TryGetValue project.Id with
                 | true, (true, (_, _, oldReferenceVersions, _, _)) when referenceVersions <> oldReferenceVersions ->
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
@@ -362,7 +379,7 @@ module private CheckerExtensions =
             let latestSnapshotData =
                 project, projectVersion, referenceVersions, options, newSnapshot
 
-            latestSnapshots.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
+            ProjectSnapshotCache.latest.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
             |> ignore
 
             return newSnapshot
@@ -377,16 +394,26 @@ module private CheckerExtensions =
                 member _.GetLabel() = project.FilePath
             }
 
-        snapshotCache.Get(
-            key,
-            async {
-                let! ct = Async.CancellationToken
+        async {
+            let! snapshot =
+                ProjectSnapshotCache.snapshots.Get(
+                    key,
+                    async {
+                        let! ct = Async.CancellationToken
 
-                return!
-                    createProjectSnapshot snapshotAccumulatorOpt project options ct
-                    |> Async.AwaitTask
-            }
-        )
+                        return!
+                            createProjectSnapshot snapshotAccumulatorOpt project options ct
+                            |> Async.AwaitTask
+                    }
+                )
+
+            // Stored first and checked after: a project that left the workspace while its snapshot was being
+            // built is dropped here, or by the workspace's own handler if it leaves after this check.
+            if not (project.Solution.Workspace.CurrentSolution.ContainsProject project.Id) then
+                ProjectSnapshotCache.removeProject project.Id
+
+            return snapshot
+        }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
         getOrCreateSnapshotForProject document.Project (Some options) None
