@@ -8,6 +8,8 @@ open System.Text
 
 open Microsoft.CodeAnalysis.Text
 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
@@ -18,8 +20,9 @@ open FSharp.Compiler.Tokenization
 type Anchor =
     /// An expression that is a statement of its block.
     | Statement of start: pos
-    /// The body of a binding, match clause, branch or lambda, after the keyword ending at keywordEnd.
-    | Clause of keywordEnd: pos * body: range
+    /// The body of a binding, match clause, branch or lambda, after the keyword ending at keywordEnd. No line of the
+    /// body can start left of column limit, where the construct that sets its offside line starts.
+    | Clause of keywordEnd: pos * body: range * limit: int
 
 [<NoComparison; NoEquality>]
 type ExtractionTarget =
@@ -178,8 +181,10 @@ let usedNames (parseTree: ParsedInput) =
         | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)))
         | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ident :: _)))
         | SyntaxNode.SynExpr(SynExpr.NamedIndexedPropertySet(longDotId = SynLongIdent(id = ident :: _)))
-        | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _)))
-        | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ident :: _))) -> names.Add ident.idText |> ignore
+        | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _))) -> names.Add ident.idText |> ignore
+        | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = idents))) ->
+            for ident in idents do
+                names.Add ident.idText |> ignore
         | _ -> ()
 
         names)
@@ -263,7 +268,7 @@ let private isMethodArgument (path: SyntaxVisitorPath) =
     | SyntaxNode.SynExpr(SynExpr.Tuple _) :: SyntaxNode.SynExpr(SynExpr.Paren _) :: call -> isCall call
     | _ -> false
 
-let private isExtractableShape (expr: SynExpr) (path: SyntaxVisitorPath) =
+let rec private isExtractableShape (expr: SynExpr) (path: SyntaxVisitorPath) =
     match expr with
     | SynExpr.App(isInfix = true)
     | SynExpr.Ident _
@@ -296,6 +301,7 @@ let private isExtractableShape (expr: SynExpr) (path: SyntaxVisitorPath) =
     | SynExpr.DotIndexedSet _
     | SynExpr.NamedIndexedPropertySet _
     | SynExpr.DotNamedIndexedPropertySet _ -> false
+    | SynExpr.Paren(expr = inner) -> isExtractableShape inner (SyntaxNode.SynExpr expr :: path)
     | SynExpr.LetOrUse letOrUse -> not letOrUse.IsBang
     | SynExpr.Tuple _ -> not (isMethodArgument path)
     | SynExpr.App(isInfix = false; funcExpr = SynExpr.App(isInfix = true; funcExpr = equals; argExpr = SynExpr.Ident _)) when
@@ -308,9 +314,13 @@ let private isInExcludedContext (expr: SynExpr) (path: SyntaxVisitorPath) =
     let rec loop (child: SyntaxNode) (path: SyntaxVisitorPath) =
         match path, child with
         | [], _ -> false
-        | SyntaxNode.SynExpr(SynExpr.InterpolatedString _ | SynExpr.Quote _ | SynExpr.Lazy _) :: _, _ -> true
+        | SyntaxNode.SynExpr(SynExpr.InterpolatedString _ | SynExpr.Quote _ | SynExpr.Lazy _ | SynExpr.Assert _) :: _, _ -> true
         | SyntaxNode.SynExpr(SynExpr.While(whileExpr = condition) | SynExpr.WhileBang(whileExpr = condition)) :: _, SyntaxNode.SynExpr expr when
             isSame condition expr
+            ->
+            true
+        | SyntaxNode.SynExpr(SynExpr.App(funcExpr = SynExpr.Ident operator; argExpr = operand)) :: _, SyntaxNode.SynExpr expr when
+            hasName "nameof" operator && isSame operand expr
             ->
             true
         | SyntaxNode.SynMatchClause(SynMatchClause(whenExpr = Some guard)) :: _, SyntaxNode.SynExpr expr when isSame guard expr -> true
@@ -401,7 +411,7 @@ let private isFunctionBinding (binding: SynBinding) =
     | SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _))) -> true
     | _ -> false
 
-let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (grandparent: SyntaxNode voption) =
+let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (grandparent: SyntaxNode voption) (limit: int) =
     match parent, child with
     | SyntaxNode.SynExpr(SynExpr.Sequential _), SyntaxNode.SynExpr expr -> ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse), SyntaxNode.SynExpr expr when isSame letOrUse.Body expr ->
@@ -409,27 +419,43 @@ let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (grandparent: Synt
     | SyntaxNode.SynExpr(SynExpr.For(doBody = body) | SynExpr.ForEach(bodyExpr = body) | SynExpr.While(doExpr = body) | SynExpr.TryWith(
         tryExpr = body) | SynExpr.TryFinally(tryExpr = body) | SynExpr.ComputationExpr(expr = body)),
       SyntaxNode.SynExpr expr when isSame body expr -> ValueSome(Anchor.Statement expr.Range.Start)
+    | SyntaxNode.SynExpr(SynExpr.TryFinally(finallyExpr = body)), SyntaxNode.SynExpr expr when isSame body expr ->
+        ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynModule(SynModuleDecl.Expr _), SyntaxNode.SynExpr expr -> ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynBinding(SynBinding(expr = rhs; trivia = trivia) as binding), SyntaxNode.SynExpr expr when isSame rhs expr ->
         match grandparent, trivia.EqualsRange with
         | ValueSome(SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse)), _ when not letOrUse.IsRecursive && not (isFunctionBinding binding) ->
             ValueSome(Anchor.Statement letOrUse.Range.Start)
-        | _, Some equals -> ValueSome(Anchor.Clause(equals.End, expr.Range))
+        | _, Some equals -> ValueSome(Anchor.Clause(equals.End, expr.Range, limit))
         | _ -> ValueNone
     | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = result; trivia = trivia)), SyntaxNode.SynExpr expr when isSame result expr ->
         match trivia.ArrowRange with
-        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range))
+        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range, limit))
         | None -> ValueNone
     | SyntaxNode.SynExpr(SynExpr.IfThenElse(thenExpr = thenExpr; elseExpr = elseExpr; trivia = trivia)), SyntaxNode.SynExpr expr ->
         match elseExpr, trivia.ElseKeyword with
-        | _ when isSame thenExpr expr -> ValueSome(Anchor.Clause(trivia.ThenKeyword.End, expr.Range))
-        | Some elseExpr, Some elseKeyword when isSame elseExpr expr -> ValueSome(Anchor.Clause(elseKeyword.End, expr.Range))
+        | _ when isSame thenExpr expr -> ValueSome(Anchor.Clause(trivia.ThenKeyword.End, expr.Range, limit))
+        | Some elseExpr, Some elseKeyword when isSame elseExpr expr -> ValueSome(Anchor.Clause(elseKeyword.End, expr.Range, limit))
         | _ -> ValueNone
     | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(_, body); trivia = trivia)), SyntaxNode.SynExpr expr when isSame body expr ->
         match trivia.ArrowRange with
-        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range))
+        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range, limit))
         | None -> ValueNone
     | _ -> ValueNone
+
+/// The column where the innermost `let`, `match`, `try`, `if` or loop of the path starts. An `if` after `else` continues
+/// the `if` it belongs to.
+let rec private limitColumn (path: SyntaxVisitorPath) =
+    match path with
+    | [] -> 0
+    | SyntaxNode.SynExpr(SynExpr.IfThenElse _ as nested) :: (SyntaxNode.SynExpr(SynExpr.IfThenElse(elseExpr = Some elseExpr)) :: _ as rest) when
+        isSame elseExpr nested
+        ->
+        limitColumn rest
+    | SyntaxNode.SynBinding(SynBinding(trivia = trivia)) :: _ -> trivia.LeadingKeyword.Range.StartColumn
+    | SyntaxNode.SynExpr(SynExpr.Match(range = m) | SynExpr.MatchBang(range = m) | SynExpr.TryWith(range = m) | SynExpr.TryFinally(range = m) | SynExpr.IfThenElse(
+        range = m) | SynExpr.For(range = m) | SynExpr.ForEach(range = m) | SynExpr.While(range = m)) :: _ -> m.StartColumn
+    | _ :: rest -> limitColumn rest
 
 /// The places a declaration used by the expression can go, innermost first.
 let anchorsOf (expr: SynExpr) (path: SyntaxVisitorPath) =
@@ -442,15 +468,40 @@ let anchorsOf (expr: SynExpr) (path: SyntaxVisitorPath) =
                 | node :: _ -> ValueSome node
                 | [] -> ValueNone
 
-            match anchorOf child parent grandparent with
+            match anchorOf child parent grandparent (limitColumn path) with
             | ValueSome anchor -> anchor :: loop parent rest
             | ValueNone -> loop parent rest
 
     loop (SyntaxNode.SynExpr expr) path
 
+let rec private hasInferredTypeVariable (ty: FSharpType) =
+    if ty.IsGenericParameter then
+        ty.GenericParameter.IsCompilerGenerated
+    else
+        not ty.IsMeasureType
+        && ty.GenericArguments |> Seq.exists hasInferredTypeVariable
+
+/// The type the checker gave the expression at the range, as the source can write it. Unavailable when the type has a
+/// variable that inference introduced, which has no name in the source.
+let tryTypeText (checkResults: FSharpCheckFileResults) (m: range) =
+    match checkResults.TryGetCapturedType m, checkResults.TryGetCapturedDisplayContext m with
+    | Some ty, Some displayContext when not (hasInferredTypeVariable ty) -> ValueSome(ty.Format displayContext)
+    | _ -> ValueNone
+
+/// `Literal`, with its namespace where the name alone does not reach the FSharp.Core attribute from the position.
+let literalAttributeAt (checkResults: FSharpCheckFileResults) (position: pos) =
+    let attribute =
+        checkResults.ProjectContext.GetReferencedAssemblies()
+        |> List.tryPick _.Contents.FindEntityByPath([ "Microsoft"; "FSharp"; "Core"; "LiteralAttribute" ])
+
+    match attribute with
+    | Some attribute when not (checkResults.IsRelativeNameResolvableFromSymbol(position, [], attribute)) ->
+        "global.Microsoft.FSharp.Core.Literal"
+    | _ -> "Literal"
+
 let isLiteralConstant (expr: SynExpr) =
     match expr with
-    | SynExpr.Const((SynConst.Bool _ | SynConst.SByte _ | SynConst.Byte _ | SynConst.Int16 _ | SynConst.UInt16 _ | SynConst.Int32 _ | SynConst.UInt32 _ | SynConst.Int64 _ | SynConst.UInt64 _ | SynConst.IntPtr _ | SynConst.UIntPtr _ | SynConst.Single _ | SynConst.Double _ | SynConst.Char _ | SynConst.String _),
+    | SynExpr.Const((SynConst.Bool _ | SynConst.SByte _ | SynConst.Byte _ | SynConst.Int16 _ | SynConst.UInt16 _ | SynConst.Int32 _ | SynConst.UInt32 _ | SynConst.Int64 _ | SynConst.UInt64 _ | SynConst.Single _ | SynConst.Double _ | SynConst.Decimal _ | SynConst.Char _ | SynConst.String _),
                     _) -> true
     | _ -> false
 
@@ -552,12 +603,12 @@ let tryDeclareInFront
 
     match anchor with
     | Anchor.Statement start when isLineLeading sourceText start -> inFrontOfLine start
-    | Anchor.Clause(_, body) when isLineLeading sourceText body.Start -> inFrontOfLine body.Start
-    | Anchor.Clause(keywordEnd, body) when keywordEnd.Line = body.StartLine && restOfLineIsClosers sourceText body.End ->
+    | Anchor.Clause(body = body) when isLineLeading sourceText body.Start -> inFrontOfLine body.Start
+    | Anchor.Clause(keywordEnd, body, limit) when keywordEnd.Line = body.StartLine && restOfLineIsClosers sourceText body.End ->
         let keywordLine = lines[Line.toZ keywordEnd.Line]
         let keywordEndOffset = keywordLine.Start + keywordEnd.Column
         let bodySpan = textSpanOf sourceText body
-        let newIndent = leadingSpaces sourceText keywordLine + indentSize
+        let newIndent = max (leadingSpaces sourceText keywordLine) limit + indentSize
         let shift = newIndent - body.StartColumn
 
         let continuation =
@@ -604,7 +655,8 @@ let tryDeclareInFront
     | _ -> ValueNone
 
 /// Changes that declare `header = <selection>`, preceded by the attribute lines, in front of the module-level let
-/// containing the selection, and put replacement where the selection was.
+/// containing the selection, and put replacement where the selection was. Unavailable when that let does not start its
+/// line, as in `module M = let f () = 1`.
 let tryDeclareInFrontOfModuleLet
     (sourceText: SourceText)
     (target: ExtractionTarget)
@@ -615,7 +667,7 @@ let tryDeclareInFrontOfModuleLet
     (literalLines: HashSet<int>)
     =
     match tryEnclosingModuleLet target.Path with
-    | Some(struct (SynBinding(xmlDoc = xmlDoc), declaration)) ->
+    | Some(struct (SynBinding(xmlDoc = xmlDoc), declaration)) when isLineLeading sourceText declaration.Start ->
         let firstLine =
             if xmlDoc.IsEmpty then
                 declaration.StartLine
@@ -637,4 +689,4 @@ let tryDeclareInFrontOfModuleLet
                 TextChange(TextSpan(line.Start, 0), $"{attributeLines}{padding indent}{declaration}{lineBreak}{lineBreak}")
                 TextChange(target.Replaced, replacement)
             ])
-    | None -> ValueNone
+    | _ -> ValueNone
