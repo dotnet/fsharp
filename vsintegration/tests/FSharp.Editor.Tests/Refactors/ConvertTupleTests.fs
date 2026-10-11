@@ -62,6 +62,17 @@ module M
 
 let pairs: list<struct (int * int)> = []
 """)>]
+[<InlineData("""
+module M
+
+let pair = Some (1, 2)
+""",
+             "1, 2",
+             """
+module M
+
+let pair = Some struct (1, 2)
+""")>]
 let ``Tuple that flows nowhere else converts on its own`` (before: string, marker: string, after: string) =
     Assert.Equal(after, refactored before marker)
     Assert.Equal(before, refactored after marker)
@@ -196,27 +207,35 @@ let ``Tuple argument of a curried function or member converts with its calls`` (
     Assert.Equal(structs, refactored reference marker)
     Assert.Equal(reference, refactored structs marker)
 
-[<Fact>]
-let ``Struct keyword is separated from a name the parenthesis follows`` () =
-    let code =
-        """
+[<Theory>]
+[<InlineData("""
 module M
 
 let add(a, b) c = a + b + c
 
 let total = add (1, 2) 3
-"""
-
-    Assert.Equal(
-        """
+""",
+             "a, b",
+             """
 module M
 
 let add struct (a, b) c = a + b + c
 
 let total = add struct (1, 2) 3
+""")>]
+[<InlineData("""
+module M
+
+let nothing = ignore<_>(1, 2)
 """,
-        refactored code "a, b"
-    )
+             "1, 2",
+             """
+module M
+
+let nothing = ignore<_> struct (1, 2)
+""")>]
+let ``Struct keyword is separated from a name or type arguments the parenthesis follows`` (code: string, marker: string, after: string) =
+    Assert.Equal(after, refactored code marker)
 
 [<Fact>]
 let ``Value declared in another file converts there`` () =
@@ -289,8 +308,11 @@ let first = fst pair
 
     Assert.Equal(5, (errorsOf document |> Array.exactlyOne).StartLine)
 
-[<Fact>]
-let ``Return type converts the result and the patterns taking it apart`` () =
+[<Theory>]
+[<InlineData("int * int")>]
+[<InlineData("0, 0")>]
+[<InlineData("x, y")>]
+let ``Return type converts the result and the patterns taking it apart`` (marker: string) =
     let reference =
         """
 module M
@@ -307,8 +329,8 @@ let origin () : struct (int * int) = struct (0, 0)
 let struct (x, y) = origin ()
 """
 
-    Assert.Equal(structs, refactored reference "int * int")
-    Assert.Equal(reference, refactored structs "int * int")
+    Assert.Equal(structs, refactored reference marker)
+    Assert.Equal(reference, refactored structs marker)
 
 [<Fact>]
 let ``Record field converts its values and the patterns on it`` () =
@@ -430,6 +452,240 @@ let ``Value converts through the names it is bound to again`` (reference: string
     Assert.Equal(structs, refactored reference "a, b")
     Assert.Equal(reference, refactored structs "a, b")
 
+[<Theory>]
+[<InlineData("int * int")>]
+[<InlineData("a, b")>]
+let ``Annotated value in parentheses converts with its initializer`` (marker: string) =
+    let reference =
+        """
+module M
+
+let (pair: int * int) = (1, 2)
+let (a, b) = pair
+"""
+
+    let structs =
+        """
+module M
+
+let (pair: struct (int * int)) = struct (1, 2)
+let struct (a, b) = pair
+"""
+
+    Assert.Equal(structs, refactored reference marker)
+    Assert.Equal(reference, refactored structs marker)
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let ((a, b): int * int) = (1, 2)
+""",
+             """
+module M
+
+let (struct (a, b): struct (int * int)) = struct (1, 2)
+""")>]
+[<InlineData("""
+module M
+
+let pair = (1, 2)
+let total = match pair with | ((a, b): int * int) -> a + b
+""",
+             """
+module M
+
+let pair = struct (1, 2)
+let total = match pair with | (struct (a, b): struct (int * int)) -> a + b
+""")>]
+[<InlineData("""
+module M
+
+let sum ((a, b): int * int) = a + b
+
+let total = sum (1, 2)
+""",
+             """
+module M
+
+let sum (struct (a, b): struct (int * int)) = a + b
+
+let total = sum struct (1, 2)
+""")>]
+[<InlineData("""
+module M
+
+let sum = fun ((a, b): int * int) -> a + b
+
+let total = sum (1, 2)
+""",
+             """
+module M
+
+let sum = fun (struct (a, b): struct (int * int)) -> a + b
+
+let total = sum struct (1, 2)
+""")>]
+let ``Annotated tuple pattern converts with its annotation and the value it takes apart`` (reference: string, structs: string) =
+    for marker in [ "a, b"; "int * int"; "1, 2" ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let sum (a, b) = a + b
+let value = (sum) (1, 2)
+""",
+             """
+module M
+
+let sum struct (a, b) = a + b
+let value = (sum) struct (1, 2)
+""")>]
+[<InlineData("""
+module M
+
+let make () = (1, 2)
+let (a, b) = (make) ()
+""",
+             """
+module M
+
+let make () = struct (1, 2)
+let struct (a, b) = (make) ()
+""")>]
+[<InlineData("""
+module M
+
+let sum = fun (a, b) -> a + b
+let value = sum (1, 2)
+""",
+             """
+module M
+
+let sum = fun struct (a, b) -> a + b
+let value = sum struct (1, 2)
+""")>]
+[<InlineData("""
+module M
+
+let make = fun () -> (1, 2)
+let (a, b) = make ()
+""",
+             """
+module M
+
+let make = fun () -> struct (1, 2)
+let struct (a, b) = make ()
+""")>]
+[<InlineData("""
+module M
+
+let make () = (1, 2)
+let alias = make
+let (a, b) = alias ()
+""",
+             """
+module M
+
+let make () = struct (1, 2)
+let alias = make
+let struct (a, b) = alias ()
+""")>]
+[<InlineData("""
+module M
+
+let scale (factor: int) (a, b) = a * factor + b
+let double = scale 2
+let scaled = double (1, 2)
+""",
+             """
+module M
+
+let scale (factor: int) struct (a, b) = a * factor + b
+let double = scale 2
+let scaled = double struct (1, 2)
+""")>]
+let ``Function in parentheses, bound as a lambda, aliased or partly applied converts with its calls`` (reference: string, structs: string) =
+    for marker in [ "1, 2"; "a, b" ] do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
+[<Theory>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Sum(p: int * int, n: int) =
+        let (a, b) = p
+        a + b + n
+
+let pair = (1, 2)
+let value = C().Sum(p = pair, n = 0)
+""",
+             """
+module M
+
+type C() =
+    member _.Sum(p: struct (int * int), n: int) =
+        let struct (a, b) = p
+        a + b + n
+
+let pair = struct (1, 2)
+let value = C().Sum(p = pair, n = 0)
+""",
+             "1, 2|int * int")>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Sum(n: int, p: int * int) =
+        let (a, b) = p
+        a + b + n
+
+let value = C().Sum(p = (1, 2), n = 0)
+""",
+             """
+module M
+
+type C() =
+    member _.Sum(n: int, p: struct (int * int)) =
+        let struct (a, b) = p
+        a + b + n
+
+let value = C().Sum(p = struct (1, 2), n = 0)
+""",
+             "1, 2|int * int")>]
+[<InlineData("""
+module M
+
+type C() =
+    member _.Twice(p: int * int) =
+        let (a, b) = p
+        (a + b) * 2
+
+let pair = (1, 2)
+let value = C().Twice(p = pair)
+""",
+             """
+module M
+
+type C() =
+    member _.Twice(p: struct (int * int)) =
+        let struct (a, b) = p
+        (a + b) * 2
+
+let pair = struct (1, 2)
+let value = C().Twice(p = pair)
+""",
+             "1, 2")>]
+let ``Named argument converts with the parameter it names`` (reference: string, structs: string, markers: string) =
+    for marker in markers.Split '|' do
+        Assert.Equal(structs, refactored reference marker)
+        Assert.Equal(reference, refactored structs marker)
+
 [<Fact>]
 let ``Comment between struct and its parenthesis is kept`` () =
     let code =
@@ -509,4 +765,43 @@ type Point(x: int, y: int) =
     new(x: int, y: int, z: int) = Point(x + z, y)
 """,
              "z: int")>]
+[<InlineData("""
+module M
+
+type Point(x: int, y: int) =
+    member _.X = x
+""",
+             "x: int")>]
+[<InlineData("""
+module M
+
+type Calc() =
+    member _.Sum(p: int * int) = fst p
+""",
+             "int * int")>]
+[<InlineData("""
+module M
+
+type Calc() =
+    member _.Add(a: int, b: int) = a + b
+
+let total = (Calc().Add) (1, 2)
+""",
+             "1, 2")>]
+[<InlineData("""
+module M
+
+type U = U of (int * int)
+
+let value = U(1, 2)
+""",
+             "1, 2")>]
+[<InlineData("""
+module M
+
+let pair =
+    1,
+    2
+""",
+             "1,")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
