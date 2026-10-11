@@ -52,6 +52,14 @@ type internal OpenDocumentClassification =
 
 type internal ClassifyWholeFile = CancellationToken -> Task<OpenDocumentClassification voption>
 
+/// The classification kept for a document, and where the computation that produced it stands in the
+/// order the document's computations started.
+type internal KeptClassification =
+    {
+        Generation: int64
+        Classification: OpenDocumentClassification
+    }
+
 /// One classification of a document version, shared by every request that arrives while it runs.
 /// The computation starts with the first waiter and is cancelled only when the last one leaves; once
 /// it is, nobody can join it any more.
@@ -231,22 +239,36 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
     // cannot answer (project loading or reloading, a superseded check) it is re-emitted rather than
     // answering "nothing", which would strip the colours the user already sees.
     static let openDocumentClassifications =
-        ConditionalWeakTable<DocumentId, OpenDocumentClassification>()
+        ConditionalWeakTable<DocumentId, KeptClassification>()
 
     static let inFlightClassifications =
         ConcurrentDictionary<DocumentId, InFlightClassification>()
 
-    static let remember (documentId: DocumentId) (classification: OpenDocumentClassification) =
+    static let classificationGenerations = ref 0L
+
+    // A request for another version replaces the classification in flight without cancelling it, so
+    // the replaced one can still finish, and finish last. What a later-started one has kept stays.
+    static let remember (documentId: DocumentId) (generation: int64) (classification: OpenDocumentClassification) =
         // net472 has no ConditionalWeakTable.AddOrUpdate.
         lock openDocumentClassifications (fun () ->
-            openDocumentClassifications.Remove documentId |> ignore
-            openDocumentClassifications.Add(documentId, classification))
+            match openDocumentClassifications.TryGetValue documentId with
+            | true, kept when kept.Generation > generation -> ()
+            | _ ->
+                openDocumentClassifications.Remove documentId |> ignore
+
+                openDocumentClassifications.Add(
+                    documentId,
+                    {
+                        Generation = generation
+                        Classification = classification
+                    }
+                ))
 
     static let tryGetRemembered (documentId: DocumentId) =
         // Under the writer's lock: between its Remove and Add the entry is briefly missing.
         lock openDocumentClassifications (fun () ->
             match openDocumentClassifications.TryGetValue documentId with
-            | true, classification -> ValueSome classification
+            | true, kept -> ValueSome kept.Classification
             | _ -> ValueNone)
 
     // Only for the text it was computed from: the lookup names positions, so against edited text it
@@ -273,17 +295,23 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 // A checked file can have nothing to classify - `namespace global` over declarations
                 // an inactive #if hides - and that is the answer for this version.
-                let classification =
-                    {
-                        Version = version
-                        Text = sourceText
-                        Lookup = itemToSemanticClassificationLookup classificationData
-                    }
-
-                remember document.Id classification
-                return ValueSome classification
+                return
+                    ValueSome
+                        {
+                            Version = version
+                            Text = sourceText
+                            Lookup = itemToSemanticClassificationLookup classificationData
+                        }
             | _ -> return ValueNone
         }
+
+    static let classifyAndRemember (documentId: DocumentId) (generation: int64) (classifyWholeFile: ClassifyWholeFile) : ClassifyWholeFile =
+        fun cancellationToken ->
+            task {
+                let! classification = classifyWholeFile cancellationToken
+                classification |> ValueOption.iter (remember documentId generation)
+                return classification
+            }
 
     // An instance its last waiter has just abandoned refuses to be joined; the next pass replaces it.
     static let rec joinClassification (documentId: DocumentId) (version: ClassificationVersion) start cancellationToken =
@@ -304,28 +332,35 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     // Requests for the same version that overlap - split views, the taggers above and below the
     // viewport - share one classification instead of each walking the whole file.
-    static let classifyOpenDocument (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
+    static let classifyOpenDocument (documentId: DocumentId) (version: ClassificationVersion) (classifyWholeFile: ClassifyWholeFile) =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
 
             let start () =
-                InFlightClassification(version, classifyWholeFile document version sourceText)
+                let generation = Interlocked.Increment classificationGenerations
+                InFlightClassification(version, classifyAndRemember documentId generation classifyWholeFile)
 
             let struct (inFlight, work) =
-                joinClassification document.Id version start cancellationToken
+                joinClassification documentId version start cancellationToken
 
             try
                 return! work
             finally
                 // A waiter that leaves early keeps the entry for those still waiting.
                 if inFlight.IsCompleted || inFlight.IsCancelled then
-                    (inFlightClassifications :> ICollection<KeyValuePair<_, _>>).Remove(KeyValuePair(document.Id, inFlight))
+                    (inFlightClassifications :> ICollection<KeyValuePair<_, _>>).Remove(KeyValuePair(documentId, inFlight))
                     |> ignore
         }
 
     // Which store a document lands in is not observable from its classifications - a miss only costs
     // a recheck - so tests reach them directly to tell the branches apart.
     static member internal OpenDocumentClassifications = openDocumentClassifications
+
+    /// Classifies through the given computation instead of the checker, so a test decides when each
+    /// version's classification finishes.
+    static member internal ClassifyOpenDocument(documentId, version, classifyWholeFile, cancellationToken) =
+        classifyOpenDocument documentId version classifyWholeFile
+        |> CancellableTask.start cancellationToken
 
     static member internal UnopenedDocumentsSemanticClassificationCache =
         unopenedDocumentsSemanticClassificationCache
@@ -479,7 +514,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            match! classifyOpenDocument document version sourceText with
+                            match! classifyOpenDocument document.Id version (classifyWholeFile document version sourceText) with
                             | ValueSome classification -> addSemanticClassificationByLookup sourceText textSpan classification.Lookup result
                             | ValueNone -> addLastGood document.Id sourceText textSpan result
                 }

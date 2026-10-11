@@ -74,7 +74,7 @@ type SemanticClassificationServiceTests() =
 
     let isRemembered (document: Document) =
         match FSharpClassificationService.OpenDocumentClassifications.TryGetValue document.Id with
-        | true, classification -> classification.Version = versionOf document
+        | true, kept -> kept.Classification.Version = versionOf document
         | _ -> false
 
     let someVersion () =
@@ -731,6 +731,47 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         |> ignore
 
         Assert.True((inFlight.TryJoin CancellationToken.None).IsNone)
+
+    // A request for a newer version replaces the classification in flight for an older one without
+    // cancelling it, so the older one can finish last. What it found must not replace what the newer
+    // one kept, or the next request for the newer version walks the whole file again.
+    [<Fact>]
+    member _.``A classification finishing after the one that replaced it leaves the newer result kept``() =
+        let document = openDocument "let x = 1"
+        let text = sourceTextOf document
+        let newerVersion = versionOf document
+        let olderVersion = someVersion ()
+
+        let start version (gate: TaskCompletionSource<OpenDocumentClassification voption>) =
+            FSharpClassificationService.ClassifyOpenDocument(document.Id, version, (fun _ -> gate.Task), CancellationToken.None)
+
+        let finish
+            version
+            (gate: TaskCompletionSource<OpenDocumentClassification voption>)
+            (work: Task<OpenDocumentClassification voption>)
+            =
+            gate.SetResult(
+                ValueSome
+                    {
+                        Version = version
+                        Text = text
+                        Lookup = Dictionary()
+                    }
+            )
+
+            work.GetAwaiter().GetResult() |> ignore
+
+        let olderGate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let newerGate = TaskCompletionSource<OpenDocumentClassification voption>()
+        let older = start olderVersion olderGate
+        let newer = start newerVersion newerGate
+
+        finish newerVersion newerGate newer
+        finish olderVersion olderGate older
+
+        Assert.True(isRemembered document, "The newer version's classification must still be the one kept.")
+        // The kept lookup is empty; a third computation would go to the checker and classify `x`.
+        Assert.Empty(classify document (TextSpan(0, text.Length)))
 
     // Defines can disable every declaration of a file whose text stays the same; the lookup computed
     // before no longer describes it. An implicit module is still classified, while under
