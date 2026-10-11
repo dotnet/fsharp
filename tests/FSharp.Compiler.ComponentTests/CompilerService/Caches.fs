@@ -37,13 +37,10 @@ let private createIdleCache useMailbox =
 [<InlineData(true)>]
 let ``Idle cache and contents are collected without explicit disposal`` useMailbox =
     let references = createIdleCache useMailbox
+    GC.Collect()
     let collected =
         System.Threading.SpinWait.SpinUntil(
-            (fun () ->
-                GC.Collect()
-                GC.WaitForPendingFinalizers()
-                GC.Collect()
-                not references.Cache.IsAlive && not references.Payload.IsAlive),
+            (fun () -> not references.Cache.IsAlive && not references.Payload.IsAlive),
             shouldNeverTimeout)
     collected |> shouldBeTrue
 
