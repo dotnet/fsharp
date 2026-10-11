@@ -91,9 +91,12 @@ let ``a project's path map reaches its ranges after a sibling without one filled
 
 /// Compiles the library from its own directory, as a build does: the assembly records that directory as the one it
 /// was compiled in.
-let private emitLibrary (root: string) (pathMap: string list) =
+let private emitLibrary (root: string) (pathMap: string list) (withSignature: bool) =
     let projectDir = Directory.CreateDirectory(Path.Combine(root, "src", "Domain")).FullName
     File.WriteAllText(Path.Combine(projectDir, "Library.fs"), "module Library\n\nlet f x = x + 1\n")
+
+    if withSignature then
+        File.WriteAllText(Path.Combine(projectDir, "Library.fsi"), "module Library\n\nval f: x: int -> int\n")
 
     // The arguments are joined into one command line, where a reference under "Program Files" or a root with a
     // space in it would fall apart
@@ -107,6 +110,8 @@ let private emitLibrary (root: string) (pathMap: string list) =
             for option in pathMap do
                 quoted option
             "-o:Library.dll"
+            if withSignature then
+                "Library.fsi"
             "Library.fs"
         ]
 
@@ -115,16 +120,18 @@ let private emitLibrary (root: string) (pathMap: string list) =
 
 /// Read back through the path map, a declaration names the file the library was compiled from, whatever the map.
 /// The compiler writes each name under a path map with the mapped directory it compiled in at its start; a #line
-/// name, which compilers before F# 10 wrote instead, is relative to that directory.
+/// name, which compilers before F# 10 wrote instead, is relative to that directory. With a signature, the module
+/// is read from the one file and the implementation of its function is in the other.
 [<Theory>]
-[<InlineData("")>]
-[<InlineData(".")>]
-[<InlineData("/_/")>]
-let ``a declaration in a referenced assembly names the file it was compiled from`` (mappedRoot: string) : Task =
+[<InlineData("", false)>]
+[<InlineData(".", false)>]
+[<InlineData(".", true)>]
+[<InlineData("/_/", false)>]
+let ``a declaration in a referenced assembly names the file it was compiled from`` (mappedRoot: string) (withSignature: bool) : Task =
     task {
         let root = TestFramework.createTemporaryDirectory().FullName
         let pathMap = if mappedRoot = "" then [] else [ $"--pathmap:{root}={mappedRoot}" ]
-        let projectDir = emitLibrary root pathMap
+        let projectDir = emitLibrary root pathMap withSignature
 
         let usageLine = "let _ = Library.f 1"
         let source = $"module Consumer\n{usageLine}\n"
@@ -148,10 +155,12 @@ let ``a declaration in a referenced assembly names the file it was compiled from
         let endOfName = usageLine.Length - " 1".Length
         let names = [ "Library"; "f" ]
 
-        let declaration =
-            match checkResults.GetDeclarationLocation(2, endOfName, usageLine, names) with
+        let declarationOf (preferSignature: bool) =
+            match checkResults.GetDeclarationLocation(2, endOfName, usageLine, names, preferSignature) with
             | FindDeclResult.DeclFound range -> range
             | result -> failwith $"expected the declaration of Library.f, got %A{result}"
+
+        let declaration = declarationOf false
 
         // Since F# 10 the compiler writes the real file for a #line directive, so the name an older one wrote is
         // resolved against this assembly's recorded directory directly
@@ -175,4 +184,62 @@ let ``a declaration in a referenced assembly names the file it was compiled from
 
         Assert.Equal(Path.Combine(projectDir, "Library.fs"), compiledFrom declaration.FileName)
         Assert.Equal(Path.Combine(projectDir, "Original.fs"), compiledFrom fromLineDirective)
+
+        if withSignature then
+            Assert.Equal(Path.Combine(projectDir, "Library.fsi"), compiledFrom (declarationOf true).FileName)
+    }
+
+/// PathMapFSharp9.dll, next to this file, is what the F# 9 compiler (FSharp.Compiler.Service 43.9.300) made of
+///
+///     module Library
+///
+///     let ordinary x = x + 1
+///
+///     #line 1 ".\src\Domain\Original.fs"
+///     let fromLine x = x + 2
+///
+///     module Nested =
+///         let fromLineNested x = x + 3
+///
+/// in a root's src\Domain, with --pathmap:root=. and --deterministic+. Before F# 10 the compiler named whatever
+/// follows a #line directive by the directive: here that name starts with the mapped directory, as the name of
+/// the compiled file does, and yet is relative to it.
+[<Theory>]
+[<InlineData("ordinary", @".\src\Domain\Library.fs", false)>]
+[<InlineData("fromLine", @".\src\Domain\Original.fs", true)>]
+[<InlineData("Nested.fromLineNested", @".\src\Domain\Original.fs", true)>]
+let ``a #line name an older compiler wrote keeps the directory that the name of a compiled file already starts with``
+    (name: string)
+    (recorded: string)
+    (keepsDirectory: bool)
+    : Task =
+    task {
+        let usageLine = $"let _ = Library.{name}"
+        let source = $"module Consumer\n{usageLine} 1\n"
+        let consumer = Path.Combine(TestFramework.createTemporaryDirectory().FullName, "Consumer.fs")
+        File.WriteAllText(consumer, source)
+
+        let options =
+            let defaults = CompilerAssert.DefaultProjectOptions(TargetFramework.Current)
+
+            { defaults with
+                SourceFiles = [| consumer |]
+                OtherOptions = [| yield! defaults.OtherOptions; $"""-r:{Path.Combine(__SOURCE_DIRECTORY__, "PathMapFSharp9.dll")}""" |] }
+
+        let! _, answer = FSharpChecker.Create().ParseAndCheckFileInProject(consumer, 0, SourceText.ofString source, options)
+
+        let checkResults =
+            match answer with
+            | FSharpCheckFileAnswer.Succeeded checkResults -> checkResults
+            | FSharpCheckFileAnswer.Aborted -> failwith "the check was aborted"
+
+        let declaration =
+            match checkResults.GetDeclarationLocation(2, usageLine.Length, $"{usageLine} 1", "Library" :: List.ofArray (name.Split '.')) with
+            | FindDeclResult.DeclFound range -> range
+            | result -> failwith $"expected the declaration of Library.{name}, got %A{result}"
+
+        let expected =
+            if keepsDirectory then Path.Combine(@".\src\Domain", recorded) else recorded
+
+        Assert.Equal(expected, declaration.FileName)
     }
