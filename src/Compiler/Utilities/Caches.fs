@@ -205,16 +205,17 @@ type EvictionQueueMessage<'Entity, 'Store> =
     | Add of 'Entity * 'Store
     | Update of 'Entity
 
-type EvictionProcessor<'Message> =
-    static let instance =
+module EvictionProcessor =
+    // Shared work queue for all caches running in EvictionMode.MailboxProcessor.
+    let private agent =
         MailboxProcessor.Start(
             (fun inbox ->
                 let rec processNext () =
                     async {
-                        let! struct (handle, message: 'Message) = inbox.Receive()
+                        let! work = inbox.Receive()
 
                         try
-                            handle message
+                            work ()
                         with _ ->
                             () // Think where to report a failure.
 
@@ -224,7 +225,7 @@ type EvictionProcessor<'Message> =
                 processNext ())
         )
 
-    static member Instance = instance
+    let post = agent.Post
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
@@ -306,7 +307,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         lock evictionQueue <| fun () -> processEvictionMessage msg
 
     let queued msg =
-        EvictionProcessor<_>.Instance.Post(struct (processEvictionMessage, msg))
+        EvictionProcessor.post <| fun () -> processEvictionMessage msg
 
     let post =
         match options.EvictionMode with
