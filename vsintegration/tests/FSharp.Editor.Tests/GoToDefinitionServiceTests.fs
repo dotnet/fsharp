@@ -196,7 +196,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
             { SyntheticProject.Create(
                   "App",
                   { sourceFile "App" [ "Library" ] with
-                      ExtraSource = "let mapped = List.map id [ 1 ]"
+                      ExtraSource = "let mapped = List.map id [ 1 ]\nlet again = ModuleLibrary.f 2"
                   }
               ) with
                 DependsOn = [ library ]
@@ -210,16 +210,17 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let private documentId path =
             solution.GetDocumentIdsWithFilePath path |> Seq.exactlyOne
 
-        let appDocument =
+        /// The app document of the stale snapshot, holding the text `edit` makes of the saved one.
+        let appDocumentWith (edit: string -> string) =
             let appId = documentId appPath
 
             let savedText =
-                solution.GetDocument(appId).GetTextAsync(CancellationToken.None).Result
+                solution.GetDocument(appId).GetTextAsync(CancellationToken.None).Result.ToString()
 
-            solution
-                .RemoveDocument(documentId libraryPath)
-                .WithDocumentText(appId, SourceText.From($"{savedText}{Environment.NewLine}{unsavedEdit}"))
-                .GetDocument(appId)
+            solution.RemoveDocument(documentId libraryPath).WithDocumentText(appId, SourceText.From(edit savedText)).GetDocument(appId)
+
+        let appDocument =
+            appDocumentWith (fun saved -> $"{saved}{Environment.NewLine}{unsavedEdit}")
 
         let appSourceText = appDocument.GetTextAsync(CancellationToken.None).Result
 
@@ -270,20 +271,41 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         | Some(SymbolScope.Projects(projects, _)) -> Assert.Contains(StaleSnapshot.library.Name, projects |> List.map _.Name)
         | scope -> failwith $"expected a project scope, got %A{scope}"
 
-    [<Fact>]
-    let ``rename from a snapshot that predates the declaring document edits the documents of that snapshot`` () =
-        let document = StaleSnapshot.appDocument
+    [<Theory>]
+    [<InlineData("", "")>]
+    [<InlineData("", "\n// not saved yet")>]
+    [<InlineData("(* x *) ", "")>]
+    let ``rename from a snapshot that predates the declaring document edits the documents of that snapshot``
+        (insertedBeforeUse: string, appended: string)
+        =
+        let useOfF = "ModuleLibrary.f"
+
+        let document =
+            StaleSnapshot.appDocumentWith (fun saved -> saved.Replace($"= {useOfF}", $"= {insertedBeforeUse}{useOfF}") + appended)
+
         let snapshot = document.Project.Solution
 
+        let originText = document.GetTextAsync(CancellationToken.None).Result.ToString()
+
+        let position =
+            originText.LastIndexOf(useOfF, StringComparison.Ordinal) + useOfF.Length - 1
+
         let renameInfo =
-            InlineRenameService().GetRenameInfoAsync(document, StaleSnapshot.positionOf "ModuleLibrary.f", CancellationToken.None).Result
+            InlineRenameService().GetRenameInfoAsync(document, position, CancellationToken.None).Result
 
         Assert.NotNull renameInfo
 
         let locations =
             renameInfo.FindRenameLocationsAsync(false, false, CancellationToken.None).Result
 
-        Assert.All(locations.Locations, (fun location -> Assert.Same(snapshot, location.Document.Project.Solution)))
+        Assert.Equal(2, locations.Locations.Count)
+
+        Assert.All(
+            locations.Locations,
+            (fun location ->
+                Assert.Same(snapshot, location.Document.Project.Solution)
+                Assert.Equal("f", location.Document.GetTextAsync(CancellationToken.None).Result.ToString location.TextSpan))
+        )
 
         let newSolution =
             locations.GetReplacementsAsync("g", CancellationToken.None).Result.NewSolution
@@ -299,8 +321,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let renamedText =
             newSolution.GetDocument(document.Id).GetTextAsync(CancellationToken.None).Result.ToString()
 
-        Assert.Contains("ModuleLibrary.g", renamedText)
-        Assert.EndsWith(StaleSnapshot.unsavedEdit, renamedText)
+        Assert.Equal(originText.Replace(useOfF, "ModuleLibrary.g"), renamedText)
 
     [<Fact>]
     let ``goto definition from a signature reaches the implementation its own target instance compiles`` () =

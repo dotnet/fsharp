@@ -102,6 +102,35 @@ type internal InlineRenameInfo
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 
+    /// The search reads the text the workspace holds for a document, so the ranges it finds are ranges of that
+    /// text. Where the rename's solution holds another text, the uses are found in the text the rename edits.
+    let usesInTextOf (document: Document) (text: SourceText) (found: range[]) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+            let! searchedThisText =
+                match document.Project.Solution.Workspace.CurrentSolution.GetDocument document.Id with
+                | null -> CancellableTask.singleton false
+                | searched ->
+                    cancellableTask {
+                        let! searchedText = searched.GetTextAsync cancellationToken
+                        return text.ContentEquals searchedText
+                    }
+
+            if searchedThisText then
+                return found
+            else
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameInfo))
+
+                return
+                    checkFileResults.GetUsesOfSymbolInFile(
+                        symbolUse.Symbol,
+                        relatedSymbolKinds = RelatedSymbolUseKind.All,
+                        cancellationToken = cancellationToken
+                    )
+                    |> Array.map _.Range
+        }
+
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
     override _.TriggerSpan = triggerSpan
@@ -165,6 +194,7 @@ type internal InlineRenameInfo
                                 cancellableTask {
                                     let! cancellationToken = CancellableTask.getCancellationToken ()
                                     let! sourceText = document.GetTextAsync(cancellationToken)
+                                    let! symbolUses = usesInTextOf document sourceText symbolUses
 
                                     return
                                         [|
