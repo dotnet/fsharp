@@ -165,6 +165,35 @@ let g = [ 1; (2..3) ]
               (Error 751, Line 15, Col 15, Line 15, Col 19, "Incomplete expression or invalid use of indexer syntax") ]
 
     [<Fact>]
+    let ``A yielded or returned range gives no type error for a builder that takes an element`` () =
+        FSharp
+            """
+module M
+
+type WithYieldFrom() =
+    member _.Yield(x: int) = [ x ]
+    member _.YieldFrom(xs: seq<int>) = List.ofSeq xs
+    member _.Return(x: int) = [ x ]
+    member _.Delay(f: unit -> int list) = f ()
+
+type WithoutYieldFrom() =
+    member _.Yield(x: int) = [ x ]
+    member _.Delay(f: unit -> int list) = f ()
+
+let splicing = WithYieldFrom()
+let single = WithoutYieldFrom()
+let a = splicing { yield 1..3 }
+let b = splicing { return 1..3 }
+let c = single { yield 1..3 }
+"""
+        |> typecheckWithPreview
+        |> shouldFail
+        |> withDiagnostics
+            [ (Error 3925, Line 16, Col 26, Line 16, Col 30, rangeIsNotASingleValue)
+              (Error 3925, Line 17, Col 27, Line 17, Col 31, rangeIsNotASingleValue)
+              (Error 3925, Line 18, Col 24, Line 18, Col 28, rangeIsNotASingleValue) ]
+
+    [<Fact>]
     let ``A splice uses the range operator in scope`` () =
         FSharp
             """
