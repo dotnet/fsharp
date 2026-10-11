@@ -140,13 +140,13 @@ let private tryPatChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynP
         | _ -> ValueNone
     | _ -> ValueNone
 
-/// Whether the tuple pattern is the parameter list of a member or constructor: its only argument, parenthesized or
+/// Whether the pattern is the parameter list of a member or constructor: its only argument, parenthesized or
 /// (a struct tuple) not.
-let private isParameterList (tuple: SynPat) (path: SyntaxVisitorPath) =
+let private isParameterList (pat: SynPat) (path: SyntaxVisitorPath) =
     let struct (argument, headPath) =
         match path with
-        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner tuple -> struct (paren, rest)
-        | _ -> struct (tuple, path)
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> struct (paren, rest)
+        | _ -> struct (pat, path)
 
     match headPath with
     | SyntaxNode.SynPat(SynPat.LongIdent(argPats = SynArgPats.Pats [ only ])) :: SyntaxNode.SynBinding(SynBinding(
@@ -165,6 +165,7 @@ let kind: StructKind =
                 match pat with
                 | SynPat.Tuple _ -> not (isParameterList pat path)
                 | _ -> false
+        IsParameterList = isParameterList
         IsType =
             function
             | SynType.Tuple _ -> true
