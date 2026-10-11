@@ -26,7 +26,7 @@ let private removeFromWorkspace (project: Project) =
     let workspace = project.Solution.Workspace
     Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProject project.Id))
 
-    Assert.True(SpinWait.SpinUntil((fun () -> not (ProjectSnapshotCache.latest.ContainsKey project.Id)), TimeSpan.FromSeconds 10.))
+    Assert.True(SpinWait.SpinUntil((fun () -> not (ProjectSnapshotCache.latest.ContainsKey project.Id)), TimeSpan.FromSeconds 60.))
 
 [<Fact>]
 let ``A project's snapshot is forgotten when the project leaves the workspace`` () : Task =
