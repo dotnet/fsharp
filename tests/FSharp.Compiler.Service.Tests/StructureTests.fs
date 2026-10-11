@@ -686,3 +686,69 @@ let x = 4
     (6, 0, 7, 9), (6, 0, 7, 9)
     (8, 0, 10, 6), (8, 0, 10, 6)
 ]
+
+/// The lines of the source as the editor passes them: slices of the one string it holds, line breaks left out.
+let private lineSlices (source: string) =
+    [| let mutable start = 0
+       while start <= source.Length do
+           let lineEnd =
+               match source.IndexOf('\n', start) with
+               | -1 -> source.Length
+               | lineBreak -> lineBreak
+           let length =
+               if lineEnd > start && source[lineEnd - 1] = '\r' then lineEnd - start - 1 else lineEnd - start
+           yield System.MemoryExtensions.AsMemory(source, start, length)
+           start <- lineEnd + 1 |]
+
+[<Fact>]
+let ``Line slices of one string give the same ranges as a string per line``() =
+    // What the scan reads off the line text: the blank line between two opens, the indentation and the
+    // trailing whitespace of comment groups, and the length of the last line of a directive section.
+    let source =
+        [ "module M\r\n"
+          "open System\n"
+          "  \t \r\n"
+          "open System.IO\n"
+          "\r\n"
+          "    // an indented comment  \r\n"
+          "    // its second line \t \n"
+          "\n"
+          "/// Doc, first line\r\n"
+          "/// second line   \n"
+          "let f x =\r\n"
+          "    x\n"
+          "\r\n"
+          "#if DEBUG\n"
+          "let g = 1  \r\n"
+          "let h = 2\t \n"
+          "#else\r\n"
+          "let g = 2\n"
+          "let h = 3   \r\n"
+          "#endif\n" ]
+        |> String.concat ""
+
+    let slices = lineSlices source
+    let ast = parseSourceCode(fileName, source)
+
+    let describe (scopeRanges: seq<ScopeRange>) =
+        let getRange (r: range) = (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
+        [ for sr in scopeRanges -> sr.Scope, sr.Collapse, getRange sr.Range, getRange sr.CollapseRange ]
+
+    let fromSlices = getOutliningRangesFromLineSlices slices ast |> describe
+    let fromStrings = getOutliningRanges (slices |> Array.map string) ast |> describe
+
+    Assert.Equal<(Scope * Collapse * Range * Range) list>(fromStrings, fromSlices)
+
+    let readOffTheText =
+        [ for scope, _, range, _ in fromSlices do
+            match scope with
+            | Scope.Open | Scope.Comment | Scope.XmlDocComment | Scope.HashDirective -> yield scope, range
+            | _ -> () ]
+
+    Assert.Equal<(Scope * Range) list>(
+        [ Scope.Open, (2, 0, 4, 14)
+          Scope.HashDirective, (14, 0, 16, 11)
+          Scope.HashDirective, (17, 0, 20, 6)
+          Scope.Comment, (6, 4, 7, 22)
+          Scope.XmlDocComment, (9, 0, 10, 15) ],
+        readOffTheText)
