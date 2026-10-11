@@ -68,6 +68,13 @@ module FSharpProjectOptionsManagerWatchTests =
     let private metadataReference path =
         MetadataReference.CreateFromFile path :> MetadataReference
 
+    /// Reference watching serves the snapshot-reuse guard, so the reactor only watches when that guard runs.
+    let private snapshotReuseOptions =
+        { AdvancedOptions.Default with
+            UseTransparentCompiler = true
+            TransparentCompilerSnapshotReuse = true
+        }
+
     let private createProject (references: string list) =
         let projectId = ProjectId.CreateNewId()
 
@@ -79,6 +86,7 @@ module FSharpProjectOptionsManagerWatchTests =
                 .WithMetadataReferences(references |> List.map metadataReference)
 
         let solution = RoslynTestHelpers.CreateSolution [ projectInfo ]
+        RoslynTestHelpers.SetEditorOptions solution snapshotReuseOptions
         solution.GetProject projectId
 
     let private createManager (project: Project) =
@@ -105,6 +113,25 @@ module FSharpProjectOptionsManagerWatchTests =
 
             Assert.True options.IsSome
             Assert.Equal<string list>([ referenceDll ], watchedFiles watcher)
+        }
+
+    [<Fact>]
+    let ``References are not watched when snapshot reuse is off`` () : Task =
+        task {
+            let project = createProject [ referenceDll ]
+
+            RoslynTestHelpers.SetEditorOptions
+                project.Solution
+                { snapshotReuseOptions with
+                    TransparentCompilerSnapshotReuse = false
+                }
+
+            let watcher, manager = createManager project
+
+            let! options = manager.TryGetOptionsByProject(project, CancellationToken.None)
+
+            Assert.True options.IsSome
+            Assert.Empty(watchedFiles watcher)
         }
 
     [<Fact>]
