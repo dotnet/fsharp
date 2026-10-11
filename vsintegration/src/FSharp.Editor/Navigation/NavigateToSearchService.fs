@@ -56,6 +56,11 @@ type internal FSharpNavigateToSearchService
     /// seen set with `NavigateToSearchResultComparer`, which already collapses results by file path and span.
     let cache = ConcurrentDictionary<NavigableItemsKey, NavigableItemsEntry>()
 
+    /// The parses of documents whose options are kept per document rather than per project - a standalone
+    /// script, a file outside any project - and so name no key in `cache`. Each is kept under its own
+    /// document and answers for nothing else.
+    let documentCache = ConcurrentDictionary<DocumentId, NavigableItemsEntry>()
+
     /// The key for a parse that does not depend on the defines. Not a define set any instance can have,
     /// since defines are identifiers — an instance with none of its own must not read this entry as its own.
     [<Literal>]
@@ -67,6 +72,7 @@ type internal FSharpNavigateToSearchService
             <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
+                    documentCache.Clear()
 
     let dependsOnDefines (parseTree: ParsedInput) =
         match parseTree with
@@ -84,8 +90,22 @@ type internal FSharpNavigateToSearchService
             // another instance wrote under what it really parsed with must not answer for it.
             | null, _
             | _, ValueNone ->
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                return NavigateTo.GetNavigableItems parseResults.ParseTree
+                match documentCache.TryGetValue document.Id with
+                | true, entry when entry.Version = currentVersion -> return entry.Items
+                | _ ->
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                    let items = NavigateTo.GetNavigableItems parseResults.ParseTree
+
+                    // A project's first parse is what makes it produce its options, and the next search keys the
+                    // document by them: only a document that still has none is kept under its own id.
+                    if document.TryGetFSharpParsingOptionsData().IsNone then
+                        documentCache[document.Id] <-
+                            {
+                                Version = currentVersion
+                                Items = items
+                            }
+
+                    return items
             | path, ValueSome(struct (documentDefines, langVersion)) ->
                 let defines = documentDefines |> String.concat ";"
 
