@@ -70,31 +70,44 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                         options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
                     let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpExtractLetBindingRefactoring)
+                    let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof FSharpExtractLetBindingRefactoring)
                     let names = usedNames parseResults.ParseTree
 
                     let literalLines =
                         linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
+
+                    let content =
+                        match target.Expr with
+                        | SynExpr.Paren(expr = inner) -> inner
+                        | expr -> expr
 
                     if isSelected then
                         match anchorsOf target.Expr target.Path with
                         | anchor :: _ ->
                             let name = uniqueName "extracted" names
 
-                            match tryDeclareInFront sourceText target anchor $"let {name}" name indentSize literalLines with
+                            let functionType =
+                                match content with
+                                | SynExpr.Lambda _
+                                | SynExpr.MatchLambda _ -> tryTypeText checkResults target.Expr.Range
+                                | _ -> ValueNone
+
+                            let header =
+                                match functionType with
+                                | ValueSome functionType -> $"let {name}: {functionType}"
+                                | ValueNone -> $"let {name}"
+
+                            match tryDeclareInFront sourceText target anchor header name indentSize literalLines with
                             | ValueSome changes -> register context sourceText (SR.ExtractToLetBinding()) "let" changes
                             | ValueNone -> ()
                         | [] -> ()
 
-                    let constant =
-                        match target.Expr with
-                        | SynExpr.Paren(expr = inner) -> inner
-                        | expr -> expr
-
-                    if isLiteralConstant constant then
+                    if isLiteralConstant content then
                         let name = uniqueName "ExtractedConstant" names
+                        let attribute = literalAttributeAt checkResults target.Expr.Range.Start
 
                         match
-                            tryDeclareInFrontOfModuleLet sourceText target [ "[<Literal>]" ] $"let {name}" name indentSize literalLines
+                            tryDeclareInFrontOfModuleLet sourceText target [ $"[<{attribute}>]" ] $"let {name}" name indentSize literalLines
                         with
                         | ValueSome changes -> register context sourceText (SR.ExtractToLiteral()) "literal" changes
                         | ValueNone -> ()
