@@ -13,6 +13,8 @@ open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
@@ -30,6 +32,7 @@ module private NamespaceModuleConversion =
             namespaceIsRecursive: bool *
             namespaceKeyword: range *
             opens: range list *
+            moduleAttributes: SynAttributes *
             moduleIdent: Ident *
             moduleIsRecursive: bool *
             moduleKeyword: range *
@@ -49,6 +52,23 @@ module private NamespaceModuleConversion =
     let restOfLineIsBlank (sourceText: SourceText) (m: range) =
         let position = (spanOf sourceText m).End
         isBlank sourceText position (sourceText.Lines.GetLineFromPosition position).End
+
+    /// Whether what follows on the line is at most a line comment, which can move together with what stands before it.
+    let restOfLineIsBlankOrLineComment (sourceText: SourceText) (m: range) =
+        let position = (spanOf sourceText m).End
+
+        let rest =
+            sourceText.ToString(TextSpan.FromBounds(position, (sourceText.Lines.GetLineFromPosition position).End)).AsSpan().TrimStart()
+
+        rest.IsEmpty || rest.StartsWith("//".AsSpan(), StringComparison.Ordinal)
+
+    /// Whether an `#if` stands on or above the line. The tree shows only what the active branches hold, so a
+    /// declaration or an `open` in another branch there would go unseen and stay above the root module.
+    let private hasConditionalDirectiveThrough (line: int) (directives: ConditionalDirectiveTrivia list) =
+        directives
+        |> List.exists (function
+            | ConditionalDirectiveTrivia.If(range = m) -> m.StartLine <= line
+            | _ -> false)
 
     /// The declarations of a namespace are a single nested module, optionally preceded by `open`s that would
     /// apply equally to a root module: moving them into it changes nothing they resolve against.
@@ -73,11 +93,12 @@ module private NamespaceModuleConversion =
                              isRecursive = namespaceIsRecursive
                              kind = SynModuleOrNamespaceKind.DeclaredNamespace
                              decls = decls
-                             trivia = namespaceTrivia) ])) ->
+                             trivia = namespaceTrivia) ]
+            trivia = fileTrivia)) ->
             match tryOpensBeforeNestedModule decls with
             | Some(opens,
                    SynModuleDecl.NestedModule(
-                       moduleInfo = moduleInfo
+                       moduleInfo = (SynComponentInfo(attributes = moduleAttributes) as moduleInfo)
                        isRecursive = moduleIsRecursive
                        decls = (firstDeclaration :: _ as declarations)
                        range = moduleRange
@@ -90,6 +111,8 @@ module private NamespaceModuleConversion =
                     && firstDeclaration.Range.StartLine > equals.EndLine
                     && Position.posEq moduleRange.End (List.last declarations).Range.End
                     && restOfLineIsBlank sourceText (List.last namespacePath).idRange
+                    && List.forall (restOfLineIsBlankOrLineComment sourceText) opens
+                    && not (hasConditionalDirectiveThrough equals.EndLine fileTrivia.ConditionalDirectives)
                     ->
                     ValueSome(
                         Nested(
@@ -97,6 +120,7 @@ module private NamespaceModuleConversion =
                             namespaceIsRecursive,
                             namespaceKeyword,
                             opens,
+                            moduleAttributes,
                             moduleIdent,
                             moduleIsRecursive,
                             moduleKeyword,
@@ -124,6 +148,41 @@ module private NamespaceModuleConversion =
             | _ -> ValueNone
 
         | _ -> ValueNone
+
+    /// The first identifier of each dotted name in the attributes: what they look up in the scope they stand in.
+    let private headIdentifiers (attributes: SynAttributes) =
+        [
+            for list in attributes do
+                for attribute in list.Attributes do
+                    yield! List.truncate 1 attribute.TypeName.LongIdent
+
+                    yield!
+                        ([], [ SyntaxNode.SynExpr attribute.ArgExpr ])
+                        ||> SyntaxNodes.fold (fun heads _ node ->
+                            match node with
+                            | SyntaxNode.SynExpr(SynExpr.Ident head)
+                            | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = head :: _)))
+                            | SyntaxNode.SynType(SynType.LongIdent(SynLongIdent(id = head :: _))) -> head :: heads
+                            | _ -> heads)
+        ]
+
+    /// Whether the attributes mean the same at the position as where they stand. A root module's attributes are
+    /// checked above the `open`s that move below its header, so a name one of those brings into scope is lost to them.
+    let attributesResolveAt (checkResults: FSharpCheckFileResults) (sourceText: SourceText) (position: pos) (attributes: SynAttributes) =
+        headIdentifiers attributes
+        |> List.forall (fun head ->
+            // Only the operators of FSharp.Core make a constant, and those need no `open`.
+            PrettyNaming.IsLogicalOpName head.idText
+            || (let line = sourceText.Lines[Line.toZ head.idRange.EndLine].ToString()
+
+                match checkResults.GetSymbolUseAtLocation(head.idRange.EndLine, head.idRange.EndColumn, line, [ head.idText ]) with
+                | Some symbolUse ->
+                    match symbolUse.Symbol with
+                    // A named argument sets a property or a field of the attribute.
+                    | :? FSharpField -> true
+                    | :? FSharpMemberOrFunctionOrValue as value when value.IsMember && not value.IsConstructor -> true
+                    | symbol -> checkResults.IsRelativeNameResolvableFromSymbol(position, [], symbol)
+                | None -> false))
 
     let isOnHeader (caretLine: int) shape =
         match shape with
@@ -189,7 +248,8 @@ module private NamespaceModuleConversion =
         loop state
 
     /// Lines inside multi-line string literals of the branches of `#if` the defines leave inactive. Each run of
-    /// inactive lines between two directives is lexed as the code it is when its branch is taken.
+    /// inactive lines between two directives is lexed as the code it is when its branch is taken, where a line
+    /// that reads like a directive inside a string is part of that string.
     let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
         let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
         let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
@@ -199,8 +259,11 @@ module private NamespaceModuleConversion =
         for line in sourceText.Lines do
             let text = line.ToString()
 
-            if isSkipped fileState && not (isSkippedDirective text) then
-                if continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState) then
+            let isInString =
+                continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState)
+
+            if isSkipped fileState && (isInString || not (isSkippedDirective text)) then
+                if isInString then
                     lines.Add line.LineNumber |> ignore
 
                 branchState <- scanLine branchTokenizer text branchState
@@ -321,7 +384,10 @@ module private NamespaceModuleConversion =
                 if not (List.isEmpty opens) then
                     let openText =
                         opens
-                        |> List.map (fun m -> sourceText.ToString(spanOf sourceText m))
+                        |> List.map (fun m ->
+                            let span = spanOf sourceText m
+
+                            sourceText.ToString(TextSpan.FromBounds(span.Start, lines.GetLineFromPosition(span.End).End)).TrimEnd())
                         |> String.concat lineBreak
 
                     TextChange(TextSpan(lines[headerLine].EndIncludingLineBreak, 0), $"{lineBreak}{openText}{lineBreak}{lineBreak}")
@@ -382,34 +448,52 @@ type internal FSharpConvertNamespaceModuleRefactoring [<ImportingConstructor>] (
                     NamespaceModuleConversion.isOnHeader caretLine shape
                     && not (hasSignatureFile document)
                     ->
-                    let title = NamespaceModuleConversion.title shape
+                    let! attributesKeepTheirMeaning =
+                        match shape with
+                        | NamespaceModuleConversion.Nested(
+                            namespaceKeyword = namespaceKeyword; opens = _ :: _; moduleAttributes = (_ :: _ as moduleAttributes)) ->
+                            cancellableTask {
+                                let! _, checkResults =
+                                    document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertNamespaceModuleRefactoring)
 
-                    let changedDocument =
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
-                            let! options = document.GetOptionsAsync cancellationToken
+                                return
+                                    NamespaceModuleConversion.attributesResolveAt
+                                        checkResults
+                                        sourceText
+                                        namespaceKeyword.End
+                                        moduleAttributes
+                            }
+                        | _ -> CancellableTask.singleton true
 
-                            let indentSize =
-                                options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
+                    if attributesKeepTheirMeaning then
+                        let title = NamespaceModuleConversion.title shape
 
-                            TelemetryReporter.ReportSingleEvent(
-                                TelemetryEvents.RefactoringActivated,
-                                [| "name", box (nameof FSharpConvertNamespaceModuleRefactoring) |]
-                            )
+                        let changedDocument =
+                            cancellableTask {
+                                let! cancellationToken = CancellableTask.getCancellationToken ()
+                                let! options = document.GetOptionsAsync cancellationToken
 
-                            let! defines, langVersion =
-                                document.GetFsharpParsingOptionsAsync(nameof FSharpConvertNamespaceModuleRefactoring)
+                                let indentSize =
+                                    options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
-                            let literalLines =
-                                NamespaceModuleConversion.linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
+                                TelemetryReporter.ReportSingleEvent(
+                                    TelemetryEvents.RefactoringActivated,
+                                    [| "name", box (nameof FSharpConvertNamespaceModuleRefactoring) |]
+                                )
 
-                            let changes =
-                                NamespaceModuleConversion.changes sourceText literalLines indentSize shape
+                                let! defines, langVersion =
+                                    document.GetFsharpParsingOptionsAsync(nameof FSharpConvertNamespaceModuleRefactoring)
 
-                            return document.WithText(sourceText.WithChanges changes)
-                        }
+                                let literalLines =
+                                    NamespaceModuleConversion.linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
 
-                    context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
+                                let changes =
+                                    NamespaceModuleConversion.changes sourceText literalLines indentSize shape
+
+                                return document.WithText(sourceText.WithChanges changes)
+                            }
+
+                        context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
                 | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
