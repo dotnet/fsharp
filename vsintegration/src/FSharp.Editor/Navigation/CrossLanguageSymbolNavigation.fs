@@ -56,15 +56,10 @@ type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, sy
                     let! targetSource = targetDoc.GetTextAsync(cancellationToken)
                     let gtd = GoToDefinition(metadataAsSource)
 
-                    let (|Signature|Implementation|) filepath =
-                        if isSignatureFile filepath then
-                            Signature
-                        else
-                            Implementation
-
-                    match targetPath with
-                    | Signature -> return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange)
-                    | Implementation -> return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange)
+                    if isSignatureFile targetPath then
+                        return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange)
+                    else
+                        return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange)
             }
             |> CancellableTask.start cancellationToken
 
