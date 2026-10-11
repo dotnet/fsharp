@@ -201,22 +201,29 @@ type CachedEntity<'Key, 'Value> =
     override this.ToString() = $"{this.Key}"
 
 [<Struct>]
-type EvictionQueueMessage<'Key, 'Value when 'Key: not null> =
-    | Add of CachedEntity<'Key, 'Value> * ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>
-    | Update of CachedEntity<'Key, 'Value>
+type EvictionQueueMessage<'Entity, 'Store> =
+    | Add of 'Entity * 'Store
+    | Update of 'Entity
 
-type EvictionProcessor<'Key, 'Value when 'Key: not null> =
+type EvictionProcessor<'Message> =
     static let instance =
         MailboxProcessor.Start(
             (fun inbox ->
                 let rec processNext () =
                     async {
-                        let! struct(handle, message: EvictionQueueMessage<'Key, 'Value>) = inbox.Receive()
-                        try handle message with _ -> () // Think where to report a failure.
+                        let! struct (handle, message: 'Message) = inbox.Receive()
+
+                        try
+                            handle message
+                        with _ ->
+                            () // Think where to report a failure.
+
                         return! processNext ()
                     }
 
-                processNext ()))
+                processNext ())
+        )
+
     static member Instance = instance
 
 [<Sealed; NoComparison; NoEquality>]
@@ -240,7 +247,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     let capacity = options.TotalCapacity - headroom
 
     let mutable store =
-        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+        ConcurrentDictionary(Environment.ProcessorCount, capacity, options.Comparer)
 
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
@@ -255,7 +262,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     // In such case we rebuild the store to remove dead keys.
     let rebuildStore () =
         let newStore =
-            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+            ConcurrentDictionary(Environment.ProcessorCount, capacity, options.Comparer)
 
         for entity in evictionQueue do
             newStore.TryAdd(entity.Key, entity) |> ignore
@@ -264,7 +271,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
     let processEvictionMessage msg =
         match msg with
-        | EvictionQueueMessage.Add(entity, target) when isNull entity.Node.List ->
+        | EvictionQueueMessage.Add(entity: CachedEntity<_, _>, target) when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
             // store has been rebuilt while this message was in the queue.
             if store <> target then
@@ -299,7 +306,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         lock evictionQueue <| fun () -> processEvictionMessage msg
 
     let queued msg =
-        EvictionProcessor<'Key, 'Value>.Instance.Post(struct(processEvictionMessage, msg))
+        EvictionProcessor<_>.Instance.Post(struct (processEvictionMessage, msg))
 
     let post =
         match options.EvictionMode with
@@ -371,7 +378,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         else
             CacheMetrics.Update &tags
             post (EvictionQueueMessage.Update result)
-
 
 #if DEBUG
     // Shows the totals aggregated for this cache's name. Populated only while a metrics listener
