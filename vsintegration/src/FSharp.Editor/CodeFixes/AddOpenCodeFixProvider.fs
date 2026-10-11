@@ -161,37 +161,79 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             None
 
     // What an extension member has to extend to apply to a value of this type: the type itself, one of
-    // its base types or one of its interfaces.
-    let getExtensibleDefinitionNames (ty: FSharpType) =
-        let names = HashSet<string>(StringComparer.Ordinal)
+    // its base types or one of its interfaces. Each is kept under the name of its definition and with
+    // the type arguments the value's type gives it.
+    let getExtensibleTypes (ty: FSharpType) =
+        let types = ResizeArray<struct (string * FSharpType)>()
+        let baseTypeNames = HashSet<string>(StringComparer.Ordinal)
 
         let rec addWithBaseTypes (ty: FSharpType) =
             match tryGetDefinitionName ty with
-            | Some name when names.Add name -> ty.BaseType |> Option.iter addWithBaseTypes
+            | Some name when baseTypeNames.Add name ->
+                types.Add(struct (name, ty))
+                ty.BaseType |> Option.iter addWithBaseTypes
             | _ -> ()
 
         addWithBaseTypes ty
 
         for implemented in ty.AllInterfaces do
-            tryGetDefinitionName implemented
-            |> Option.iter (fun name -> names.Add name |> ignore)
+            match tryGetDefinitionName implemented with
+            | Some name -> types.Add(struct (name, implemented))
+            | None -> ()
 
-        names
+        types
 
-    // The type an extension member extends: the one an F# member is declared on, or the first parameter
-    // of a C#-style method. None when that parameter is a type parameter, which every type satisfies.
-    let tryGetExtendedDefinitionName (extension: FSharpMemberOrFunctionOrValue) =
-        if extension.IsExtensionMember then
-            extension.ApparentEnclosingEntity |> Option.bind _.TryFullName
-        else
-            match extension.CurriedParameterGroups |> Seq.tryHead |> Option.bind Seq.tryHead with
-            | Some thisParameter when not thisParameter.Type.IsGenericParameter -> tryGetDefinitionName thisParameter.Type
-            | _ -> None
+    // Whether a type argument an extension is written with accepts the one the receiver has. Type
+    // arguments are invariant: two named types have to share a definition and have arguments that match
+    // in turn. A type parameter on either side accepts anything, and other types are not compared.
+    let rec typeArgumentMatches (extended: FSharpType) (actual: FSharpType) =
+        extended.IsGenericParameter
+        || actual.IsGenericParameter
+        || match tryGetDefinitionName extended, tryGetDefinitionName actual with
+           | Some extendedName, Some actualName ->
+               String.Equals(extendedName, actualName, StringComparison.Ordinal)
+               && typeArgumentsMatch extended actual
+           | None, None -> true
+           | _ -> false
 
-    let extendsAny (extensibleNames: HashSet<string> voption) (extension: FSharpMemberOrFunctionOrValue) =
-        match extensibleNames, tryGetExtendedDefinitionName extension with
-        | ValueSome names, Some extended -> names.Contains extended
-        | _ -> true
+    and typeArgumentsMatch (extended: FSharpType) (actual: FSharpType) =
+        let extendedArguments = extended.ErasedType.GenericArguments
+        let actualArguments = actual.ErasedType.GenericArguments
+
+        extendedArguments.Count = actualArguments.Count
+        && Seq.forall2 typeArgumentMatches extendedArguments actualArguments
+
+    // Whether one of the receiver's types is the type a C#-style extension method is written for. A type
+    // with no named definition, such as an array or a tuple, is not compared.
+    let isAnyOf (extensibleTypes: ResizeArray<struct (string * FSharpType)>) (extended: FSharpType) =
+        match tryGetDefinitionName extended with
+        | Some extendedName ->
+            extensibleTypes.Exists(fun struct (name, ty) ->
+                String.Equals(name, extendedName, StringComparison.Ordinal)
+                && typeArgumentsMatch extended ty)
+        | None -> true
+
+    // Whether an extension member applies to a receiver of these types. An F# member extends a type
+    // definition, whatever its type arguments. A C#-style method extends the type of its first parameter,
+    // and when that is a type parameter, every type the parameter's coercion constraints let through.
+    let extendsAny (extensibleTypes: ResizeArray<struct (string * FSharpType)> voption) (extension: FSharpMemberOrFunctionOrValue) =
+        match extensibleTypes with
+        | ValueNone -> true
+        | ValueSome types ->
+            if extension.IsExtensionMember then
+                match extension.ApparentEnclosingEntity |> Option.bind _.TryFullName with
+                | Some extendedName -> types.Exists(fun struct (name, _) -> String.Equals(name, extendedName, StringComparison.Ordinal))
+                | None -> true
+            else
+                match extension.CurriedParameterGroups |> Seq.tryHead |> Option.bind Seq.tryHead with
+                | Some thisParameter when thisParameter.Type.IsGenericParameter ->
+                    thisParameter.Type.GenericParameter.Constraints
+                    |> Seq.forall (fun typeConstraint ->
+                        not typeConstraint.IsCoercesToConstraint
+                        || typeConstraint.CoercesToTarget.IsGenericParameter
+                        || isAnyOf types typeConstraint.CoercesToTarget)
+                | Some thisParameter -> isAnyOf types thisParameter.Type
+                | None -> true
 
     let moduleExtensionMembers =
         ConditionalWeakTable<FSharpEntity, FSharpMemberOrFunctionOrValue[]>()
@@ -235,11 +277,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         (name: string)
         (symbols: AssemblySymbol[])
         =
-        let extensibleNames =
+        let extensibleTypes =
             match receiver with
-            | MemberReceiver.Value(ValueSome ty) -> ValueSome(getExtensibleDefinitionNames ty)
+            | MemberReceiver.Value(ValueSome ty) -> ValueSome(getExtensibleTypes ty)
             | MemberReceiver.Value ValueNone -> ValueNone
-            | MemberReceiver.Type entity -> ValueSome(getExtensibleDefinitionNames (entity.AsType()))
+            | MemberReceiver.Type entity -> ValueSome(getExtensibleTypes (entity.AsType()))
 
         let isNamed (symbol: FSharpSymbol) =
             String.Equals(symbol.DisplayNameCore, name, StringComparison.Ordinal)
@@ -249,18 +291,18 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         let appliesToReceiver (extension: FSharpMemberOrFunctionOrValue) =
             extension.IsInstanceMember = receiver.IsValue
             && extension.IsAccessible(accessibilityRights)
-            && extendsAny extensibleNames extension
+            && extendsAny extensibleTypes extension
 
         // The assembly content lists one of a class's overloads, and they can extend different types.
         let anyOverloadExtends (method: FSharpMemberOrFunctionOrValue) =
-            match extensibleNames, method.DeclaringEntity with
+            match extensibleTypes, method.DeclaringEntity with
             | ValueSome _, Some staticClass ->
                 staticClass.TryGetMembersFunctionsAndValues()
                 |> Seq.exists (fun overload ->
                     isNamed overload
                     && isCSharpStyleExtension overload
-                    && extendsAny extensibleNames overload)
-            | _ -> extendsAny extensibleNames method
+                    && extendsAny extensibleTypes overload)
+            | _ -> extendsAny extensibleTypes method
 
         [|
             for symbol in symbols do

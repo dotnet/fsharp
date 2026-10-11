@@ -67,6 +67,58 @@ let span (numbers: int[]) = numbers.AsSpan()
 
     Assert.Equal<string list>([ "open System" ], messages code)
 
+[<Theory>] // `Shout` extends `IEnumerable<string>`, which a sequence of numbers is not
+[<InlineData("string", true)>]
+[<InlineData("int", false)>]
+let ``Offers a C# extension method only for the type arguments it extends`` (elementType: string, isOffered: bool) =
+    let code =
+        $"""namespace Lib
+
+open System.Collections.Generic
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type SequenceExtensions =
+    [<Extension>]
+    static member Shout(words: IEnumerable<string>) = words |> Seq.map (fun word -> word.ToUpper())
+
+namespace App
+
+module Use =
+    let loud (xs: seq<{elementType}>) = xs.Shout()
+"""
+
+    let expected = if isOffered then [ "open Lib" ] else []
+
+    Assert.Equal<string list>(expected, messages code)
+
+[<Theory>] // `Release` extends every `'T` that is an `IDisposable`, which a number is not
+[<InlineData("System.IO.MemoryStream", true)>]
+[<InlineData("int", false)>]
+let ``Offers a C# extension method on a type parameter only for a type that meets its constraints``
+    (receiverType: string, isOffered: bool)
+    =
+    let code =
+        $"""namespace Lib
+
+open System
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type DisposableExtensions =
+    [<Extension>]
+    static member Release<'T when 'T :> IDisposable>(resource: 'T) = resource.Dispose()
+
+namespace App
+
+module Use =
+    let release (x: {receiverType}) = x.Release()
+"""
+
+    let expected = if isOffered then [ "open Lib" ] else []
+
+    Assert.Equal<string list>(expected, messages code)
+
 [<Fact>]
 let ``Offers only the modules whose extension member extends the receiver`` () =
     let code =
