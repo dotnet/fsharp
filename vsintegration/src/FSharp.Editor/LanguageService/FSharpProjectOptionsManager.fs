@@ -149,8 +149,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     // The '-r:' set of each project is watched for the reference stamps the snapshot-reuse
     // guard reads; invalidating the FCS build on a change is Roslyn's job (it swaps the
     // MetadataReference and bumps Project.Version, which reaches tryComputeOptions).
-    let referenceChangeTracker =
-        new FSharpReferenceChangeTracker(fileChangeWatcher, ignore)
+    let referenceChangeTracker = new FSharpReferenceChangeTracker(fileChangeWatcher)
 
     // Updated by the agent and cleared by ClearAllCaches on the solution-close thread; every
     // read-diff-write goes under this lock so the two cannot unbalance the tracker's ref counts.

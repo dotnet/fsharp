@@ -82,7 +82,17 @@ type private WatchedReference =
         Token: IFSharpWatchedFile
         mutable Count: int
         mutable Stamp: DateTime voption
+        /// Bumped whenever the stamp is dropped. A stat taken under an older generation is discarded
+        /// when it comes to be stored, so a value read before a change can never shadow the change.
+        mutable Generation: int
     }
+
+/// What a stamp read finds under the lock, before any I/O happens.
+[<Struct; RequireQualifiedAccess>]
+type private StampLookup =
+    | Cached of stamp: DateTime
+    | Cold of entry: WatchedReference * generation: int
+    | Unwatched
 
 [<AutoOpen>]
 module private FileChangeWatcherImpl =
@@ -106,10 +116,6 @@ module private FileChangeWatcherImpl =
     /// Empirically strong batching window during high activity (solution open/close); see
     /// Roslyn's FileChangeWatcher.
     let defaultBatchingDelay = TimeSpan.FromMilliseconds 500.
-
-    /// Delay between the last observed change to a path and the callback: a rebuild typically
-    /// writes a temp file then renames, producing several rapid notifications.
-    let defaultNotificationDelay = TimeSpan.FromSeconds 2.
 
 [<Sealed>]
 type internal FSharpWatchedFileToken() =
@@ -395,13 +401,13 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
         member _.DirectoryChanged _ = VSConstants.E_NOTIMPL
 
-/// Ref-counted, debounced watching of reference assemblies (or any other off-workspace files),
-/// modelled on Roslyn's ReferenceFileChangeTracker. Multiple projects watching the same dll
-/// share one subscription; bursts of writes produce a single callback per path. The last-write
-/// stamp of a path lives inside its watch entry, so a cached stamp is only ever served while a
-/// change notification can still reach it.
+/// Ref-counted watching of reference assemblies (or any other off-workspace files), modelled on
+/// Roslyn's ReferenceFileChangeTracker without its change callback: a change only drops the path's
+/// cached last-write stamp, which consumers read through IReferenceStamps. Multiple projects
+/// watching the same dll share one subscription. The stamp lives inside the watch entry, so a
+/// cached stamp is only ever served while a change notification can still reach it.
 [<Sealed>]
-type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, onChanged: string -> unit, notificationDelay: TimeSpan) =
+type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, getLastWriteTimeUtc: string -> DateTime) =
 
     let gate = obj ()
     let mutable disposed = false
@@ -409,7 +415,9 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
     let watchedFiles =
         Dictionary<string, WatchedReference>(StringComparer.OrdinalIgnoreCase)
 
-    let pendingTimers = Dictionary<string, Timer>(StringComparer.OrdinalIgnoreCase)
+    let dropStamp (entry: WatchedReference) =
+        entry.Stamp <- ValueNone
+        entry.Generation <- entry.Generation + 1
 
     // On each platform there is a place framework reference assemblies live; these rarely change
     // but account for most watched paths, so cover them with directory watches up front.
@@ -445,41 +453,16 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
         lazy
             (let ctx = watcher.CreateContext(defaultWatchedDirectories ())
 
+             // Directory watches cover whole trees; a path nobody watches has no entry and costs a lookup.
              ctx.FileChanged.Add(fun path ->
-                 let fire (_: obj) =
-                     let isWatched =
-                         lock gate (fun () ->
-                             match pendingTimers.TryGetValue path with
-                             | true, timer ->
-                                 pendingTimers.Remove path |> ignore
-                                 timer.Dispose()
-                             | _ -> ()
-
-                             watchedFiles.ContainsKey path)
-
-                     if isWatched then
-                         onChanged path
-
                  lock gate (fun () ->
-                     // Directory watches cover whole trees; only debounce paths someone watches.
                      match watchedFiles.TryGetValue path with
-                     | true, entry when not disposed ->
-                         entry.Stamp <- ValueNone
-
-                         let timer =
-                             match pendingTimers.TryGetValue path with
-                             | true, timer -> timer
-                             | _ ->
-                                 let timer = new Timer(fire, null, Timeout.Infinite, Timeout.Infinite)
-                                 pendingTimers[path] <- timer
-                                 timer
-
-                         timer.Change(notificationDelay, Timeout.InfiniteTimeSpan) |> ignore
+                     | true, entry -> dropStamp entry
                      | _ -> ()))
 
              ctx)
 
-    new(watcher, onChanged) = new FSharpReferenceChangeTracker(watcher, onChanged, defaultNotificationDelay)
+    new(watcher) = new FSharpReferenceChangeTracker(watcher, IO.File.GetLastWriteTimeUtc)
 
     /// Starts watching a path, ref-counted. Call StopWatchingReference exactly once per start.
     member _.StartWatchingReference(fullFilePath: string) =
@@ -493,6 +476,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
                             Token = context.Value.EnqueueWatchingFile fullFilePath
                             Count = 1
                             Stamp = ValueNone
+                            Generation = 0
                         })
 
     member _.StopWatchingReference(fullFilePath: string) =
@@ -507,21 +491,41 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
 
     interface IReferenceStamps with
         member _.GetLastWriteTimeUtc fullFilePath =
-            lock gate (fun () ->
-                match watchedFiles.TryGetValue fullFilePath with
-                | true, entry when entry.Token.IsActive ->
-                    match entry.Stamp with
-                    | ValueSome stamp -> stamp
-                    | ValueNone ->
-                        let stamp = IO.File.GetLastWriteTimeUtc fullFilePath
-                        entry.Stamp <- ValueSome stamp
-                        stamp
-                | _ -> IO.File.GetLastWriteTimeUtc fullFilePath)
+            // The stat runs outside the lock: the same lock serves every change notification from the
+            // watched roots, and a slow disk must not hold those up. The entry and its generation pin
+            // what the stat was taken for; a notification or Invalidate in between bumps the generation,
+            // and the value is returned but not stored.
+            let lookup =
+                lock gate (fun () ->
+                    match watchedFiles.TryGetValue fullFilePath with
+                    | true, entry when entry.Token.IsActive ->
+                        match entry.Stamp with
+                        | ValueSome stamp -> StampLookup.Cached stamp
+                        | ValueNone -> StampLookup.Cold(entry, entry.Generation)
+                    | _ -> StampLookup.Unwatched)
+
+            match lookup with
+            | StampLookup.Cached stamp -> stamp
+            | StampLookup.Unwatched -> getLastWriteTimeUtc fullFilePath
+            | StampLookup.Cold(entry, generation) ->
+                let stamp = getLastWriteTimeUtc fullFilePath
+
+                lock gate (fun () ->
+                    match watchedFiles.TryGetValue fullFilePath with
+                    | true, current when
+                        obj.ReferenceEquals(current, entry)
+                        && current.Generation = generation
+                        && current.Token.IsActive
+                        ->
+                        current.Stamp <- ValueSome stamp
+                    | _ -> ())
+
+                stamp
 
         member _.Invalidate fullFilePath =
             lock gate (fun () ->
                 match watchedFiles.TryGetValue fullFilePath with
-                | true, entry -> entry.Stamp <- ValueNone
+                | true, entry -> dropStamp entry
                 | _ -> ())
 
     member _.Dispose() =
@@ -529,11 +533,6 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, on
             if not disposed then
                 disposed <- true
                 watchedFiles.Clear()
-
-                for KeyValue(_, timer) in pendingTimers do
-                    timer.Dispose()
-
-                pendingTimers.Clear()
 
                 if context.IsValueCreated then
                     context.Value.Dispose())
