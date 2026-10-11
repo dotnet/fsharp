@@ -1,43 +1,19 @@
 module FSharp.Editor.Tests.Refactors.ConvertTupleTests
 
-open System
-
-open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
 
-open FSharp.Compiler.Diagnostics
-
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
-let private caretAt (code: string) (marker: string) =
-    code.IndexOf(marker, StringComparison.Ordinal)
-
-let private textOf (document: Document) =
-    (document.GetTextAsync() |> GetTaskResult).ToString()
-
-let private errorsOf (document: Document) =
-    let _, checkResults =
-        document.GetFSharpParseAndCheckResultsAsync "test"
-        |> CancellableTask.runSynchronouslyWithoutCancellation
-
-    checkResults.Diagnostics
-    |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
-
 let private refactorIn (context: TestContext) (code: string) (marker: string) =
-    tryRefactor code (caretAt code marker) context (new FSharpConvertTupleRefactoring())
+    refactorAt (new FSharpConvertTupleRefactoring()) context code marker
 
 let private refactored (code: string) (marker: string) =
-    use context = TestContext.CreateWithCode code
-    let document = refactorIn context code marker
-    Assert.Empty(errorsOf document)
-    textOf document
+    refactoredBy (new FSharpConvertTupleRefactoring()) code marker
 
 let private actionsAt (code: string) (marker: string) =
-    use context = TestContext.CreateWithCode code
-    tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertTupleRefactoring())
+    actionsBy (new FSharpConvertTupleRefactoring()) code marker
 
 [<Theory>]
 [<InlineData("""
