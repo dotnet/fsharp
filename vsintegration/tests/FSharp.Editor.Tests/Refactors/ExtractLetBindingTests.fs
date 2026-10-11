@@ -680,6 +680,32 @@ let f: string option -> int =
     let extracted: string option -> int = function Some x -> x.Length | None -> 0
     extracted
 """)>]
+[<InlineData("""
+module M
+
+let f (xs: string list) = xs |> List.map (fun x -> x.Length)
+""",
+             "fun x -> x.Length",
+             """
+module M
+
+let f (xs: string list) =
+    let extracted: string -> int = fun x -> x.Length
+    xs |> List.map (extracted)
+""")>]
+[<InlineData("""
+module M
+
+let f (xs: System.Collections.Generic.List<string>) = xs.ConvertAll(fun x -> x.Length)
+""",
+             "(fun x -> x.Length)",
+             """
+module M
+
+let f (xs: System.Collections.Generic.List<string>) =
+    let extracted: string -> int = fun x -> x.Length
+    xs.ConvertAll(extracted)
+""")>]
 let ``Extracted function expression keeps the type its context gave it`` (code: string, selected: string, expected: string) =
     let result = extracted extractToLetBinding code selected
 
