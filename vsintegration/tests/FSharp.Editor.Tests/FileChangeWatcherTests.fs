@@ -11,6 +11,7 @@ open System.Threading.Tasks
 open Xunit
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 /// Stands in for the token EnqueueWatchingFile hands back: IsActive defaults to true (the mock's
 /// watch is live the moment it is created) so most tests do not need to think about it; tests
@@ -130,6 +131,8 @@ type private RecordingFileChangeService() =
         member _.FilterDirectoryChangesAsync(cookie, extensions, _) =
             record (FilteredDir(cookie, List.ofArray extensions))
             Task.CompletedTask
+
+#nowarn "57" // ReferenceOnDisk is part of the experimental FCS snapshot API
 
 module FileChangeWatcherTests =
 
@@ -592,3 +595,82 @@ module FileChangeWatcherTests =
 
             Assert.Equal(t0, stamps.Value.Value.GetLastWriteTimeUtc path)
             Assert.True otherPathReachable.Value)
+
+    type private RecordingStamps() =
+        let invalidated = ResizeArray<string>()
+
+        member _.Invalidated = List.ofSeq invalidated
+
+        interface IReferenceStamps with
+            member _.GetLastWriteTimeUtc _ = failwith "not expected"
+            member _.Invalidate path = invalidated.Add path
+
+    let private reference path stamp : ReferenceOnDisk = { Path = path; LastModified = stamp }
+
+    [<Fact>]
+    let ``Equal reference lists are unchanged and invalidate nothing`` () =
+        let stamps = RecordingStamps()
+        let references = [ reference @"C:\x\a.dll" t0; reference @"C:\x\b.dll" t0 ]
+
+        Assert.False(ReferenceStamps.changed stamps references references)
+        Assert.Empty stamps.Invalidated
+
+    [<Fact>]
+    let ``A different stamp on the same path is a change that invalidates only that path`` () =
+        let stamps = RecordingStamps()
+
+        let previous =
+            [
+                reference @"C:\x\a.dll" t0
+                reference @"C:\x\b.dll" t0
+                reference @"C:\x\c.dll" t0
+            ]
+
+        let current =
+            [
+                reference @"C:\x\a.dll" t0
+                reference @"C:\x\b.dll" t1
+                reference @"C:\x\c.dll" t0
+            ]
+
+        Assert.True(ReferenceStamps.changed stamps current previous)
+        Assert.Equal<string list>([ @"C:\x\b.dll" ], stamps.Invalidated)
+
+    [<Fact>]
+    let ``Two stale stamps are both invalidated`` () =
+        let stamps = RecordingStamps()
+
+        let previous =
+            [
+                reference @"C:\x\a.dll" t0
+                reference @"C:\x\b.dll" t0
+                reference @"C:\x\c.dll" t0
+            ]
+
+        let current =
+            [
+                reference @"C:\x\a.dll" t1
+                reference @"C:\x\b.dll" t0
+                reference @"C:\x\c.dll" t1
+            ]
+
+        Assert.True(ReferenceStamps.changed stamps current previous)
+        Assert.Equal<string list>([ @"C:\x\a.dll"; @"C:\x\c.dll" ], stamps.Invalidated)
+
+    [<Fact>]
+    let ``A different number of references is a change that invalidates nothing`` () =
+        let stamps = RecordingStamps()
+        let previous = [ reference @"C:\x\a.dll" t0; reference @"C:\x\b.dll" t0 ]
+        let current = [ reference @"C:\x\a.dll" t0 ]
+
+        Assert.True(ReferenceStamps.changed stamps current previous)
+        Assert.Empty stamps.Invalidated
+
+    [<Fact>]
+    let ``A different path at the same position is a change that invalidates nothing`` () =
+        let stamps = RecordingStamps()
+        let previous = [ reference @"C:\x\a.dll" t0; reference @"C:\x\b.dll" t0 ]
+        let current = [ reference @"C:\x\a.dll" t0; reference @"C:\x\c.dll" t1 ]
+
+        Assert.True(ReferenceStamps.changed stamps current previous)
+        Assert.Empty stamps.Invalidated
