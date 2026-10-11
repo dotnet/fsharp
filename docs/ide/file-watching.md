@@ -49,7 +49,8 @@ What the workspace does *not* cover:
 ## Consumers
 
 **Reference stamps.** `FSharpProjectOptionsReactor` watches the `-r:` set of every project it
-computes options for, diffed on recompute so an unchanged set touches nothing. The tracker keeps
+computes options for, diffed on recompute so an unchanged set touches nothing, and only while the
+transparent compiler and snapshot reuse are both on: nothing else reads the stamps. The tracker keeps
 each path's last-write stamp inside its watch entry, serves it only while the watch is active, and
 drops it on the raw change notification. The stat that refills a dropped stamp runs outside the
 tracker's lock: the same lock serves every notification from the watched roots, and a slow disk
