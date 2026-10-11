@@ -1,89 +1,178 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Every call shape a debugger stack can take in F#, in one compiled file. The tests run a scenario,
-/// take the frame names the runtime reports for it, and put those through the frame parser and the
-/// call stack resolver - so the corpus is observed rather than written by hand.
+/// Every call shape an F# stack can take, compiled into the test assembly and embedded in it as text:
+/// a test runs a scenario and resolves the frames the runtime reports against this very source.
 ///
-/// Nothing here is `private`: a private binding never reaches the assembly signature the resolver
-/// reads, and every frame in this file is meant to resolve.
+/// Nothing a scenario runs through is `private`: a private binding never reaches the assembly
+/// signature the resolver reads.
 module FSharp.Editor.Tests.CodeMap.CallStackSample
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Threading
 open System.Threading.Tasks
 
-/// This file's own text, embedded beside the compiled copy, so a test can hand a workspace exactly
-/// the source the captured frames were compiled from.
 let sourceText () =
     let assembly = Assembly.GetExecutingAssembly()
 
     let name =
         assembly.GetManifestResourceNames()
-        |> Array.find (fun name -> name.EndsWith("CallStackSample.fs", StringComparison.Ordinal))
+        |> Array.find (fun name -> name.EndsWith(__SOURCE_FILE__, StringComparison.Ordinal))
 
     use stream = assembly.GetManifestResourceStream name
     use reader = new StreamReader(stream)
     reader.ReadToEnd()
 
-/// This module's own compiled type. Everything the scenarios build - closures, state machines, the
-/// types declared below - is nested inside it, which is what tells its frames apart from the test
-/// runner's.
-[<Literal>]
-let private SampleType = "FSharp.Editor.Tests.CodeMap.CallStackSample"
+/// 1-based, as the line of a stack frame and of an FCS range is.
+let lineIn (text: string) (snippet: string) =
+    1
+    + (text.Split '\n'
+       |> Array.findIndex (fun line -> line.IndexOf(snippet, StringComparison.Ordinal) >= 0))
 
-[<Literal>]
-let private FSharpCore = "FSharp.Core"
+let private withoutArity (name: string) =
+    match name.IndexOf '`' with
+    | -1 -> name
+    | i -> name.Substring(0, i)
 
-let mutable private lastFrames: struct (string * int) array = [||]
-let mutable private lastPlumbingFrames: string array = [||]
+let private inAngles (arguments: Type seq) =
+    match
+        arguments
+        |> Seq.map (fun t -> if t.IsGenericParameter then t.Name else t.FullName)
+        |> String.concat ", "
+    with
+    | "" -> ""
+    | arguments -> $"<{arguments}>"
 
-/// The frames of the scenario that ran last, innermost first: the name the runtime reports and the
-/// line it sits on, which is what a debug engine hands the provider.
-let frames () = lastFrames
+/// The name as reflection spells it, with `+` between nested types.
+let reflectedName (method: MethodBase) =
+    $"{method.DeclaringType.FullName}.{method.Name}"
 
-/// The frames of that same stack that belong to FSharp.Core: the plumbing a pipeline, a computation
-/// expression or an event runs through. Every one of them has to be folded off the map rather than
-/// resolved, and there are more of them than the names suggest - `List.map` alone contributes two.
-let plumbingFrames () = lastPlumbingFrames
+/// The name as a debugger's call stack spells it, which is the spelling a Code Map receives and the
+/// one no test can observe: instantiations in angle brackets, a constructor named after its type,
+/// an accessor as a trailing `.get` or `.set`.
+let debuggerName (method: MethodBase) =
+    let rec typeName (t: Type) =
+        let inherited =
+            if t.IsNested then
+                t.DeclaringType.GetGenericArguments().Length
+            else
+                0
 
-/// Every scenario funnels here, so one call captures exactly the stack that scenario built: the
-/// shapes the provider has to resolve, and beside them the FSharp.Core plumbing it has to fold away.
+        let name =
+            withoutArity t.Name + inAngles (t.GetGenericArguments() |> Seq.skip inherited)
+
+        match t.Namespace with
+        | _ when t.IsNested -> $"{typeName t.DeclaringType}.{name}"
+        | null -> name
+        | ns -> $"{ns}.{name}"
+
+    let declaringType = method.DeclaringType
+
+    let accessor =
+        declaringType.GetProperties(
+            BindingFlags.Instance
+            ||| BindingFlags.Static
+            ||| BindingFlags.Public
+            ||| BindingFlags.NonPublic
+        )
+        |> Seq.tryPick (fun property ->
+            if method.Equals property.GetMethod then
+                Some $"{property.Name}.get"
+            elif method.Equals property.SetMethod then
+                Some $"{property.Name}.set"
+            else
+                None)
+
+    let memberName =
+        match accessor, method with
+        | Some accessor, _ -> accessor
+        | None, :? ConstructorInfo -> withoutArity declaringType.Name
+        | None, _ when method.IsGenericMethod -> method.Name + inAngles (method.GetGenericArguments())
+        | None, _ -> method.Name
+
+    $"{typeName declaringType}.{memberName}"
+
+type CapturedFrame =
+    {
+        Method: MethodBase
+        Line: int
+        /// What a stack trace prints for the frame, from the type name to the closing parenthesis.
+        Printed: string
+    }
+
+    member frame.Spellings =
+        [ frame.Printed; reflectedName frame.Method; debuggerName frame.Method ]
+
+type CapturedStack =
+    {
+        /// The frames a scenario put on the stack from this file, innermost first.
+        Own: CapturedFrame array
+        /// The FSharp.Core frames a pipeline, a computation expression or an event runs through.
+        Plumbing: CapturedFrame array
+    }
+
+let private sample = typeof<CapturedStack>.DeclaringType
+let private nothing = { Own = [||]; Plumbing = [||] }
+let mutable private lastStack = nothing
+let private gate = obj ()
+
+/// A scenario is any parameterless function of this module that returns `int`.
+let scenarios () =
+    sample.GetMethods(BindingFlags.Public ||| BindingFlags.Static)
+    |> Array.filter (fun method ->
+        method.ReturnType = typeof<int>
+        && method.GetParameters().Length = 0
+        && not method.IsSpecialName)
+    |> Array.map _.Name
+
+/// Runs a scenario and hands back the stack it built - one at a time, because the capture is shared.
+let run (scenario: string) =
+    Monitor.Enter gate
+
+    try
+        lastStack <- nothing
+        sample.GetMethod(scenario).Invoke(null, [||]) |> ignore
+        lastStack
+    finally
+        Monitor.Exit gate
+
+let rec private outermost (t: Type) =
+    if t.IsNested then outermost t.DeclaringType else t
+
+/// Every scenario funnels here, so one call captures exactly the stack that scenario built.
 let sink (scenario: string) =
-    let declarationOf (frame: StackFrame) =
-        match frame.GetMethod() with
-        | null -> ValueNone
-        | method ->
-            match method.DeclaringType with
-            | null -> ValueNone
-            | declaringType ->
-                match declaringType.FullName with
-                | null -> ValueNone
-                | fullName -> ValueSome(struct (declaringType, $"{fullName}.{method.Name}"))
-
-    let stack = StackTrace(true).GetFrames()
-
-    lastFrames <-
-        stack
+    let frames =
+        StackTrace(1, true).GetFrames()
         |> Array.choose (fun frame ->
-            match declarationOf frame with
-            | ValueSome(struct (declaringType, name)) when
-                declaringType.FullName = SampleType
-                || declaringType.FullName.StartsWith(SampleType + "+", StringComparison.Ordinal)
-                ->
-                Some(struct (name, frame.GetFileLineNumber()))
-            | _ -> None)
+            match frame.GetMethod() with
+            | null -> None
+            | method ->
+                match method.DeclaringType with
+                | null -> None
+                | declaringType ->
+                    let text = StackTrace(frame).ToString()
 
-    lastPlumbingFrames <-
-        stack
-        |> Array.choose (fun frame ->
-            match declarationOf frame with
-            | ValueSome(struct (declaringType, name)) when
-                String.Equals(declaringType.Assembly.GetName().Name, FSharpCore, StringComparison.Ordinal)
-                ->
-                Some name
-            | _ -> None)
+                    let start =
+                        text.IndexOf(declaringType.FullName.Replace('+', '.'), StringComparison.Ordinal)
+
+                    Some
+                        {
+                            Method = method
+                            Line = frame.GetFileLineNumber()
+                            Printed = text.Substring(start, text.IndexOf(')', start) + 1 - start)
+                        })
+
+    lastStack <-
+        {
+            Own =
+                frames
+                |> Array.filter (fun frame -> outermost frame.Method.DeclaringType = sample && frame.Method.Name <> nameof run)
+            Plumbing =
+                frames
+                |> Array.filter (fun frame -> frame.Method.DeclaringType.Assembly = typeof<unit>.Assembly)
+        }
 
     scenario.Length
 
@@ -108,12 +197,13 @@ let nestedClosures () =
 
     outer 3
 
-let localFunctions (n: int) =
+let localFunctions () =
     let helperTwo _k = sink "local functions"
     let helperOne k = helperTwo (k + 1)
-    helperOne n
+    helperOne 1
 
 let genericFunction<'T> (_value: 'T) = sink "generic function"
+let genericFunctionCall () = genericFunction 42
 
 let (>=>) a b =
     sink "custom operator" |> ignore
@@ -167,10 +257,8 @@ let asyncBody () =
     }
     |> Async.RunSynchronously
 
-/// Two levels, and a stop in each. The inner body runs on a thread-pool thread; the outer one is
-/// resumed after `let!` by the inner task completing, so its frame is a continuation too. The last
-/// hop out, `GetResult`, is a blocking wait rather than an await: whoever is parked on it is on
-/// another thread, and no continuation leads back there - `taskBody` itself is never on the stack.
+/// The outer task is resumed after `let!` by the inner one completing, so its body is on the stack
+/// as a continuation; `taskBody` itself, parked on `GetResult`, never is.
 let taskBody () =
     let inner () =
         task {
@@ -218,8 +306,6 @@ type Worker(seed: int) =
 
     static member StaticEntry() = sink "static member"
 
-/// A delegate call reaches the lambda through `Invoke` on a generated type, so the frame the
-/// debugger reports for the body is a closure rather than anything the user named.
 type Callback = delegate of int -> int
 
 let throughDelegate (callback: Callback) = callback.Invoke 1
@@ -227,14 +313,9 @@ let throughDelegate (callback: Callback) = callback.Invoke 1
 let delegateCall () =
     throughDelegate (Callback(fun _ -> sink "delegate call"))
 
-/// An event adds a second indirection: the handler runs through `MulticastDelegate.Invoke`, and the
-/// accessors the compiler writes for `[<CLIEvent>]` are the only `add_`/`remove_` frames F# produces.
 type Publisher() =
     let fired = Event<int>()
 
-    /// An event is never a frame a debugger stops in. F# reads `p.Fired` by building an `IEvent`
-    /// over `add_Fired`/`remove_Fired` rather than by calling the getter, C# subscribes through the
-    /// same accessors, and those hold no user code. What reaches the stack is the handler.
     [<CLIEvent>]
     member _.Fired = fired.Publish
 
@@ -254,24 +335,21 @@ type Runner() =
     interface IRunner with
         member _.Run _name = sink "interface implementation"
 
-/// Declared immediately before `Initialized` on purpose: a frame in one of these two types must be
-/// answered with the type it is actually in. Reading a stale line once answered a frame in
-/// `Initialized` with `Box`, because `Box` is the nearest declaration above the wrong line.
+/// Declared immediately before `Initialized`: a line in one of the two must be answered with the
+/// type it is in, not with the nearest declaration above it.
 type Box<'T>(_value: 'T) =
     member _.Unwrap() =
         // Nothing is declared on the line below, so a frame there can only be placed by its type.
         sink "generic type member"
 
 type Initialized(seed: int) =
-    /// Private, and so absent from the assembly signature: a frame landing on this line can only be
-    /// named after the type whose static constructor runs it.
+    /// Private, and so absent from the assembly signature.
     static let staticState = 7
 
     let state = sink "constructor" + seed
     member _.State = state + staticState
 
-/// A module and a type of the same name, which is what makes the compiler add the `Module` suffix
-/// the resolver has to undo.
+/// A module and a type of the same name make the compiler add the `Module` suffix.
 type Collision = { Value: int }
 
 module Collision =
@@ -279,6 +357,10 @@ module Collision =
 
 module Startup =
     let initialized = 3
+
+    /// A module-level binding runs in the method the compiler writes to initialize the file, which
+    /// is the one method a debugger reports for every initializer in it.
+    let initializer = MethodBase.GetCurrentMethod()
 
 type Shape =
     | Circle of radius: float
@@ -301,7 +383,6 @@ type Point =
         sink "record member" |> ignore
         sqrt (this.X * this.X + this.Y * this.Y)
 
-/// The zero-argument entry points the tests call, so a scenario is one function to invoke.
 let worker = Worker 10
 
 let instanceMember () = worker.Start()
@@ -315,6 +396,6 @@ let staticMember () = Worker.StaticEntry()
 let interfaceImplementation () = (Runner() :> IRunner).Run "x"
 let genericTypeMember () = Box<string>("s").Unwrap()
 let constructors () = Initialized(1).State
+let moduleAndTypeCollision () = Collision.helper ()
 let unionMember () = int ((Shape.Circle 1.0).Area())
 let recordMember () = int ({ X = 3.0; Y = 4.0 }.Norm())
-let genericFunctionScenario () = genericFunction 42

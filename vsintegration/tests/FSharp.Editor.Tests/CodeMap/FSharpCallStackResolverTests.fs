@@ -1,186 +1,221 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The frames a running scenario cannot produce, resolved against the same source `CallStackSample`
-/// is compiled from: the spellings only a debug engine uses, the ones that need a source position
-/// rather than a name, and the identity a resolved frame has to carry.
-///
-/// Everything a scenario *can* produce is covered end to end by `FSharpCallStackSampleTests`.
+/// Runs the scenarios of `CallStackSample` and resolves the frames the runtime reports for them
+/// against the source they were compiled from, so a change in how the compiler names anything
+/// fails here rather than on a map.
 module FSharp.Editor.Tests.CodeMap.FSharpCallStackResolverTests
 
-open System
+open System.Reflection
+open Microsoft.CodeAnalysis
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 open FSharp.Editor.Tests.Helpers
 
-[<Literal>]
-let private Sample = "FSharp.Editor.Tests.CodeMap.CallStackSample"
-
 let private source = CallStackSample.sourceText ()
-
-/// The resolver reports declaration ranges, so expectations are pinned to the source line a
-/// construct is written on rather than to a hard-coded number.
-let private lineIn (text: string) (snippet: string) =
-    let lines = text.Replace("\r\n", "\n").Split('\n')
-
-    match
-        lines
-        |> Array.tryFindIndexV (fun line -> line.IndexOf(snippet, StringComparison.Ordinal) >= 0)
-    with
-    | ValueSome i -> i + 1
-    | ValueNone -> failwith $"snippet not found in the sample: %s{snippet}"
-
-let private lineOf = lineIn source
-
+let private lineOf = CallStackSample.lineIn source
 let private solution = lazy RoslynTestHelpers.CreateSolution source
 
-let private resolveParsed (frame: ParsedFrame) =
-    let solution = solution.Value
-    let project = solution.Projects |> Seq.exactlyOne
+let private parse (spelling: string) =
+    match FSharpStackFrameNameParser.parse spelling with
+    | ValueSome frame -> frame
+    | ValueNone -> failwith $"frame name did not parse: %s{spelling}"
 
-    FSharpCallStackResolver.tryResolve solution.Workspace project.AssemblyName frame
+let private resolveIn (solution: Solution) assemblyName (frame: ParsedFrame) =
+    FSharpCallStackResolver.tryResolve solution.Workspace assemblyName frame
     |> CancellableTask.runSynchronouslyWithoutCancellation
 
-let private resolve (frameName: string) =
-    match FSharpStackFrameNameParser.parse frameName with
-    | ValueNone -> failwith $"frame name did not parse: %s{frameName}"
-    | ValueSome frame -> resolveParsed frame
+/// Resolves a frame the way the provider does: its parsed name, and the line a debugger reports
+/// for it when it reports one.
+let private resolveAt (solution: Solution) line (frame: ParsedFrame) =
+    let project = solution.Projects |> Seq.exactlyOne
 
-/// A `<StartupCode$…>` frame names the file rather than the construct, so the line the debugger
-/// reports is the only anchor. The provider reads it off the frame node and fills it in here.
-let private startupFrame () =
-    match FSharpStackFrameNameParser.parse $"<StartupCode$Sample>.$%s{Sample}" with
-    | ValueNone -> failwith "the startup frame did not parse"
-    | ValueSome frame -> frame
+    let position =
+        if line > 0 then
+            ValueSome
+                {
+                    File = (project.Documents |> Seq.exactlyOne).FilePath
+                    Line = line
+                }
+        else
+            ValueNone
 
-let private resolveStartupAt (snippet: string) =
-    let document =
-        solution.Value.Projects |> Seq.exactlyOne |> _.Documents |> Seq.exactlyOne
+    resolveIn solution project.AssemblyName { frame with SourcePosition = position }
 
-    resolveParsed
-        { startupFrame () with
-            SourcePosition =
-                ValueSome
-                    {
-                        File = document.FilePath
-                        Line = lineOf snippet
-                    }
+/// Every spelling of a captured frame has to resolve, and all of them to the same declaration.
+let private resolve (frame: CallStackSample.CapturedFrame) =
+    match
+        frame.Spellings
+        |> List.map (parse >> resolveAt solution.Value frame.Line)
+        |> List.distinct
+    with
+    | [ ValueSome resolved ] -> resolved
+    | answers -> failwith $"%A{frame.Spellings} on line %d{frame.Line} resolved to %d{answers.Length} different answers"
+
+/// The innermost frame of a scenario's stack that was executing the line `snippet` is written on.
+let private frameOn (snippet: string) (scenario: string) =
+    (CallStackSample.run scenario).Own
+    |> Array.find (fun frame -> frame.Line = lineOf snippet)
+
+let scenarios: obj array seq =
+    CallStackSample.scenarios () |> Seq.map (fun scenario -> [| box scenario |])
+
+[<Theory>]
+[<MemberData(nameof scenarios)>]
+let ``Every frame of a scenario resolves`` (scenario: string) =
+    let stack = CallStackSample.run scenario
+    Assert.NotEmpty stack.Own
+
+    for frame in stack.Own do
+        resolve frame |> ignore
+
+[<Theory>]
+[<InlineData(nameof CallStackSample.moduleAndTypeCollision, "sink \"module and type collision\"", "let helper ()")>]
+[<InlineData(nameof CallStackSample.nestedModules, "sink \"nested modules\"", "let deeplyNested")>]
+[<InlineData(nameof CallStackSample.genericTypeMember, "sink \"generic type member\"", "member _.Unwrap")>]
+let ``A frame resolves to the line its declaration is written on`` (scenario: string) (snippet: string) (declaration: string) =
+    Assert.Equal(lineOf declaration, (frameOn snippet scenario |> resolve).DeclarationRange.StartLine)
+
+[<Theory>]
+[<InlineData(nameof CallStackSample.moduleFunctions, "sink \"module functions\"")>]
+[<InlineData(nameof CallStackSample.staticMember, "sink \"static member\"")>]
+let ``A frame naming no member of its type stays unresolved`` (scenario: string) (snippet: string) =
+    let frame =
+        { parse (frameOn snippet scenario).Printed with
+            Member = FrameMethod "noSuchMember"
         }
 
-/// Frame names whose path the resolver has to take apart, rather than constructs a scenario would
-/// exercise anyway: a module renamed by a collision, modules nested three deep, a generic type.
-let frames: obj[] list =
-    [
-        [| $"%s{Sample}.CollisionModule.helper"; "let helper ()" |]
-        [| $"%s{Sample}.Outer.Middle.Inner.deeplyNested"; "let deeplyNested" |]
-        [| $"%s{Sample}.Box`1.Unwrap"; "member _.Unwrap" |]
-    ]
-
-[<Theory>]
-[<MemberData(nameof frames)>]
-let ``Frame resolves to the declaring source line`` (frameName: string) (snippet: string) =
-    match resolve frameName with
-    | ValueNone -> failwith $"expected %s{frameName} to resolve"
-    | ValueSome resolved -> Assert.Equal(lineOf snippet, resolved.DeclarationRange.StartLine)
-
-[<Theory>]
-[<InlineData("noSuchFunction")>]
-[<InlineData("Worker.NoSuchMember")>]
-let ``Unknown frames stay unresolved`` (member': string) =
-    Assert.True((resolve $"%s{Sample}.%s{member'}").IsNone)
+    Assert.True (resolveAt solution.Value 0 frame).IsNone
 
 [<Fact>]
 let ``Frames from another assembly are not resolved`` () =
-    let frame = (FSharpStackFrameNameParser.parse $"%s{Sample}.moduleFunctions").Value
+    let frame =
+        frameOn "sink \"module functions\"" (nameof CallStackSample.moduleFunctions)
 
-    let resolved =
-        FSharpCallStackResolver.tryResolve solution.Value.Workspace "SomeOtherAssembly" frame
-        |> CancellableTask.runSynchronouslyWithoutCancellation
+    Assert.True (resolveIn solution.Value "SomeOtherAssembly" (parse frame.Printed)).IsNone
 
-    Assert.True resolved.IsNone
-
-/// A debug engine spells an accessor with a trailing segment, where metadata - and so the frame a
-/// running scenario produces - spells it `get_Computed`.
-[<Fact>]
-let ``The debug engine's spelling of a getter resolves as a property`` () =
-    match resolve $"%s{Sample}.Worker.Computed.get" with
-    | ValueNone -> failwith "expected the getter to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ResolvedProperty, resolved.Kind)
-        Assert.Equal(lineOf "member _.Computed", resolved.DeclarationRange.StartLine)
-
-[<Fact>]
-let ``The debug engine's spelling of a setter resolves as a property`` () =
-    match resolve $"%s{Sample}.Worker.Tuned.set" with
-    | ValueNone -> failwith "expected the setter to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ResolvedProperty, resolved.Kind)
-        Assert.Equal(lineOf "member _.Tuned", resolved.DeclarationRange.StartLine)
-
-/// The accessors the compiler writes for `[<CLIEvent>]` are the only `add_`/`remove_` frames F#
-/// produces, and no scenario can stop inside one - they contain no user code. They are what makes a
-/// node an event rather than a method.
 [<Theory>]
-[<InlineData("add_Fired")>]
-[<InlineData("remove_Fired")>]
-let ``An event accessor resolves as an event`` (accessor: string) =
-    match resolve $"%s{Sample}.Publisher.%s{accessor}" with
-    | ValueNone -> failwith $"expected %s{accessor} to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ResolvedEvent, resolved.Kind)
-        Assert.Equal(lineOf "member _.Fired", resolved.DeclarationRange.StartLine)
+[<InlineData(nameof CallStackSample.propertyGetter, "sink \"property getter\"", "Computed")>]
+[<InlineData(nameof CallStackSample.propertySetter, "sink \"property setter\"", "Tuned")>]
+let ``An accessor resolves as its property`` (scenario: string) (snippet: string) (property: string) =
+    let accessor = frameOn snippet scenario |> resolve
+
+    Assert.Equal(ResolvedProperty, accessor.Kind)
+    Assert.Equal(property, accessor.DisplayName)
+    Assert.Equal(lineOf $"member _.%s{property}", accessor.DeclarationRange.StartLine)
+
+let private fired = typeof<CallStackSample.Publisher>.GetEvent "Fired"
+
+/// An accessor of a `[<CLIEvent>]` holds no user code, so no scenario can stop in one and its name
+/// is read off the compiled event instead.
+[<Fact>]
+let ``An event accessor resolves as an event`` () =
+    for accessor in [ fired.GetAddMethod(); fired.GetRemoveMethod() ] do
+        match CallStackSample.reflectedName accessor |> parse |> resolveAt solution.Value 0 with
+        | ValueNone -> failwith $"expected %s{accessor.Name} to resolve"
+        | ValueSome resolved ->
+            Assert.Equal(ResolvedEvent, resolved.Kind)
+            Assert.Equal(lineOf "member _.Fired", resolved.DeclarationRange.StartLine)
+
+[<Fact>]
+let ``An event accessor is never a frame of its handler's stack`` () =
+    let stack =
+        (CallStackSample.run (nameof CallStackSample.eventHandler)).Own
+        |> Array.map _.Method
+
+    Assert.DoesNotContain(fired.GetAddMethod() :> MethodBase, stack)
+    Assert.DoesNotContain(fired.GetRemoveMethod() :> MethodBase, stack)
+
+[<Fact>]
+let ``A method that raises an event stays a method`` () =
+    let fire =
+        frameOn "member _.Fire()" (nameof CallStackSample.eventHandler) |> resolve
+
+    Assert.Equal(ResolvedMethod, fire.Kind)
+    Assert.DoesNotContain(PropertyGet, fire.Traits)
+    Assert.DoesNotContain(PropertySet, fire.Traits)
+
+[<Theory>]
+[<InlineData(nameof CallStackSample.nestedClosures, "let inner () = sink", "inner")>]
+[<InlineData(nameof CallStackSample.taskBody, "sink \"task continuation\"", "outer")>]
+let ``A closure lifted from a named binding is labelled with that name`` (scenario: string) (snippet: string) (label: string) =
+    Assert.Equal(label, (frameOn snippet scenario |> resolve).DisplayName)
+
+/// The compiler names these closures by a phrase of its own, and the function that opened an
+/// `async` block is not on the stack to say whose body it is.
+[<Theory>]
+[<InlineData(nameof CallStackSample.asyncBody, "sink \"async body\"")>]
+[<InlineData(nameof CallStackSample.pipelineLambdas, "sink \"pipeline lambdas\"")>]
+let ``A computation expression body or a pipeline stage is labelled by its function`` (scenario: string) (snippet: string) =
+    Assert.StartsWith($"%s{scenario}@", (frameOn snippet scenario |> resolve).DisplayName)
 
 [<Fact>]
 let ``Sibling closures stay distinct nodes`` () =
-    let line = lineOf "let inner () = sink"
+    let closures =
+        (CallStackSample.run (nameof CallStackSample.nestedClosures)).Own
+        |> Array.filter _.Method.DeclaringType.IsNested
 
-    let identityOf frameName =
-        match resolve frameName with
-        | ValueNone -> failwith $"expected %s{frameName} to resolve"
-        | ValueSome resolved -> resolved.MemberName
+    Assert.Equal(3, closures.Length)
 
-    let first = identityOf $"%s{Sample}.inner@%d{line}.Invoke"
-    let second = identityOf $"%s{Sample}.inner@%d{line}-1.Invoke"
-
-    Assert.NotEqual(first, second)
-    Assert.Equal(ValueSome $"inner@%d{line}", first)
+    for closure in closures do
+        Assert.Equal(ValueSome closure.Method.DeclaringType.Name, (resolve closure).MemberName)
 
 [<Fact>]
 let ``Resolved identity separates namespace from the type chain`` () =
-    match resolve $"%s{Sample}.Outer.Middle.Inner.deeplyNested" with
-    | ValueNone -> failwith "expected the nested-module frame to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ValueSome "FSharp.Editor.Tests.CodeMap", resolved.Namespace)
+    let resolved =
+        frameOn "sink \"nested modules\"" (nameof CallStackSample.nestedModules)
+        |> resolve
 
-        Assert.Equal<struct (string * int)>(
-            [|
-                struct ("CallStackSample", 0)
-                struct ("Outer", 0)
-                struct ("Middle", 0)
-                struct ("Inner", 0)
-            |],
-            resolved.TypeChain
-        )
+    Assert.Equal(ValueSome "FSharp.Editor.Tests.CodeMap", resolved.Namespace)
+
+    Assert.Equal<struct (string * int)>(
+        [|
+            struct ("CallStackSample", 0)
+            struct ("Outer", 0)
+            struct ("Middle", 0)
+            struct ("Inner", 0)
+        |],
+        resolved.TypeChain
+    )
 
 [<Fact>]
 let ``Generic type carries its arity in the type chain`` () =
-    match resolve $"%s{Sample}.Box`1.Unwrap" with
-    | ValueNone -> failwith "expected the generic-type frame to resolve"
-    | ValueSome resolved -> Assert.Equal<struct (string * int)>([| struct ("CallStackSample", 0); struct ("Box", 1) |], resolved.TypeChain)
+    let resolved =
+        frameOn "sink \"generic type member\"" (nameof CallStackSample.genericTypeMember)
+        |> resolve
+
+    Assert.Equal<struct (string * int)>([| struct ("CallStackSample", 0); struct ("Box", 1) |], resolved.TypeChain)
+
+/// A debugger prints the instantiation a frame runs in, whose type arguments carry dots of their own.
+[<Fact>]
+let ``A frame of a closed generic type resolves to the member of its definition`` () =
+    let unwrap = typeof<CallStackSample.Box<string>>.GetMethod "Unwrap"
+
+    match CallStackSample.debuggerName unwrap |> parse |> resolveAt solution.Value 0 with
+    | ValueNone -> failwith "expected the closed instantiation to resolve"
+    | ValueSome resolved -> Assert.Equal(lineOf "member _.Unwrap", resolved.DeclarationRange.StartLine)
+
+/// The frame of the method that initializes the sample's file, as a debugger spells it. It names
+/// the file rather than a construct, so the line reported with it is what places it.
+let private startupFrame =
+    lazy (CallStackSample.debuggerName CallStackSample.Startup.initializer |> parse)
+
+let private resolveStartupOn (snippet: string) =
+    resolveAt solution.Value (lineOf snippet) startupFrame.Value
 
 [<Fact>]
 let ``Module initialization resolves to the binding on the line`` () =
-    match resolveStartupAt "let initialized" with
+    match resolveStartupOn "let initialized" with
     | ValueNone -> failwith "expected the module initializer to resolve"
     | ValueSome resolved ->
         Assert.Equal("initialized", resolved.DisplayName)
         Assert.Equal(lineOf "let initialized", resolved.DeclarationRange.StartLine)
 
-/// A private `static let` runs in its type's static constructor and never reaches the assembly
-/// signature, so the enclosing type is the closest name the signature can offer.
+/// A private `static let` never reaches the assembly signature, so the enclosing type is the
+/// closest name the signature can offer.
 [<Fact>]
 let ``A private static let resolves to its type's static constructor`` () =
-    match resolveStartupAt "static let staticState" with
+    match resolveStartupOn "static let staticState" with
     | ValueNone -> failwith "expected the static initializer to resolve"
     | ValueSome resolved ->
         Assert.Equal("Initialized", resolved.DisplayName)
@@ -188,29 +223,30 @@ let ``A private static let resolves to its type's static constructor`` () =
         Assert.Contains(Static, resolved.Traits)
         Assert.Contains(Constructor, resolved.Traits)
 
-/// `Box` is declared immediately before `Initialized`, so "the nearest declaration above the line"
-/// is only the right answer while the line itself is right. A line read off a frame belonging to a
-/// different run put a frame from `Initialized` several lines higher, and the nearest declaration
-/// above *there* is `Box` - which is how a static initializer came to be labelled `Box` on a map.
-/// Both sides of that boundary are pinned here.
 [<Theory>]
 [<InlineData("sink \"generic type member\"", "Box")>]
 [<InlineData("static let staticState", "Initialized")>]
 let ``A line is answered with the type it is in, not the one before it`` (snippet: string) (expected: string) =
-    match resolveStartupAt snippet with
+    match resolveStartupOn snippet with
     | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
     | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
 
-/// Module initialization is named after its file rather than after any construct, so a frame with
-/// no line has nothing to resolve to. That is what frames disagreeing now leaves behind, and a grey
-/// node is the honest answer where guessing produced `Box`.
 [<Fact>]
 let ``A startup frame with no position stays unresolved`` () =
-    Assert.True (resolveParsed (startupFrame ())).IsNone
+    Assert.True (resolveAt solution.Value 0 startupFrame.Value).IsNone
 
-/// A generic type, then the blank line, doc comment and attribute belonging to the type after it.
-/// Those lines are inside no entity: FCS reports an entity's own line and its members' lines, and
-/// nothing claims the trivia between two declarations.
+/// Every initializer of a file runs in one method, so the line is all that tells two of them apart.
+[<Fact>]
+let ``Two initializers in one startup method resolve to different identities`` () =
+    let moduleInitializer = (resolveStartupOn "let initialized").Value
+    let staticInitializer = (resolveStartupOn "static let staticState").Value
+
+    Assert.NotEqual<string>(moduleInitializer.DisplayName, staticInitializer.DisplayName)
+    Assert.NotEqual(moduleInitializer.MemberName, staticInitializer.MemberName)
+    Assert.NotEqual<struct (string * int)>(moduleInitializer.TypeChain, staticInitializer.TypeChain)
+    Assert.DoesNotContain(Constructor, moduleInitializer.Traits)
+    Assert.Contains(Constructor, staticInitializer.Traits)
+
 [<Literal>]
 let private TypesSeparatedByTrivia =
     """
@@ -234,127 +270,21 @@ type Initialized(seed: int) =
     static member StaticState = staticState
 """
 
-let private resolveStartupIn (text: string) (snippet: string) =
-    let solution = RoslynTestHelpers.CreateSolution text
-    let project = solution.Projects |> Seq.exactlyOne
-    let document = project.Documents |> Seq.exactlyOne
-
-    let frame =
-        { startupFrame () with
-            SourcePosition =
-                ValueSome
-                    {
-                        File = document.FilePath
-                        Line = lineIn text snippet
-                    }
-        }
-
-    FSharpCallStackResolver.tryResolve solution.Workspace project.AssemblyName frame
-    |> CancellableTask.runSynchronouslyWithoutCancellation
-
-/// The demo's static initializer reached the map labelled `Box` - the generic type declared above
-/// `Initialized`, which has no static constructor at all. Every line from the one after `Box`'s last
-/// member down to `Initialized`'s own is a line the answer must not be `Box` on.
+/// FCS reports an entity's own line and its members' lines, so nothing claims the blank line, the
+/// doc comment and the attribute between two declarations: they go to the declaration below them.
+/// `linesBelow` reaches the blank line, which holds nothing to search for.
 [<Theory>]
-[<InlineData("/// Doc comment belonging to Initialized.", "Initialized")>]
-[<InlineData("[<Sealed>]", "Initialized")>]
-[<InlineData("static let staticState", "Initialized")>]
-[<InlineData("let state = Helpers.sink \"constructor\"", "Initialized")>]
-let ``Trivia between two types is answered with the type below it`` (snippet: string) (expected: string) =
-    match resolveStartupIn TypesSeparatedByTrivia snippet with
-    | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
+[<InlineData("member _.Unwrap", 0, "Unwrap")>]
+[<InlineData("member _.Unwrap", 1, "Initialized")>]
+[<InlineData("/// Doc comment belonging to Initialized.", 0, "Initialized")>]
+[<InlineData("[<Sealed>]", 0, "Initialized")>]
+[<InlineData("type Initialized", 0, "``.ctor``")>]
+[<InlineData("static let staticState", 0, "Initialized")>]
+[<InlineData("let state = Helpers.sink \"constructor\"", 0, "Initialized")>]
+[<InlineData("static member StaticState", 0, "StaticState")>]
+let ``A line is answered with the member on it, else with the type that owns it`` (snippet: string) (linesBelow: int) (expected: string) =
+    let line = CallStackSample.lineIn TypesSeparatedByTrivia snippet + linesBelow
+
+    match resolveAt (RoslynTestHelpers.CreateSolution TypesSeparatedByTrivia) line startupFrame.Value with
+    | ValueNone -> failwith $"expected line %d{line} to resolve"
     | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
-
-/// The blank line between `Box`'s last member and `Initialized`'s doc comment, addressed by number
-/// because it holds nothing to search for.
-[<Fact>]
-let ``The blank line between two types is answered with the type below it`` () =
-    let blank = lineIn TypesSeparatedByTrivia "member _.Unwrap" + 1
-
-    let solution = RoslynTestHelpers.CreateSolution TypesSeparatedByTrivia
-    let project = solution.Projects |> Seq.exactlyOne
-    let document = project.Documents |> Seq.exactlyOne
-
-    let frame =
-        { startupFrame () with
-            SourcePosition =
-                ValueSome
-                    {
-                        File = document.FilePath
-                        Line = blank
-                    }
-        }
-
-    match
-        FSharpCallStackResolver.tryResolve solution.Workspace project.AssemblyName frame
-        |> CancellableTask.runSynchronouslyWithoutCancellation
-    with
-    | ValueNone -> failwith "expected the blank line to resolve"
-    | ValueSome resolved -> Assert.Equal("Initialized", resolved.DisplayName)
-
-/// A line that is a member's own is answered with that member, not with the type around it.
-[<Theory>]
-[<InlineData("member _.Unwrap", "Unwrap")>]
-[<InlineData("type Initialized", "``.ctor``")>]
-[<InlineData("static member StaticState", "StaticState")>]
-let ``A member's own line is answered with the member`` (snippet: string) (expected: string) =
-    match resolveStartupIn TypesSeparatedByTrivia snippet with
-    | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
-    | ValueSome resolved -> Assert.Equal(expected, resolved.DisplayName)
-
-/// `Fire` raises an event; it is not one, and it is not a property either. Only the `add_`/`remove_`
-/// accessors beside it are events, and a stack that goes through both must tell them apart.
-[<Fact>]
-let ``A method that raises an event stays a method`` () =
-    match resolve $"%s{Sample}.Publisher.Fire" with
-    | ValueNone -> failwith "expected Fire to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ResolvedMethod, resolved.Kind)
-        Assert.DoesNotContain(PropertyGet, resolved.Traits)
-        Assert.DoesNotContain(PropertySet, resolved.Traits)
-
-/// A file's module-level bindings and the `static let` of a type declared in it all run in the one
-/// `<StartupCode$…>.$File.$File()` method the compiler writes per file. The debugger reports the same
-/// frame name for every one of them, so the line is the only thing that tells them apart - and two
-/// different lines must not resolve to the same identity.
-[<Fact>]
-let ``Two initializers in one startup method resolve to different identities`` () =
-    let identityOf snippet =
-        match resolveStartupAt snippet with
-        | ValueNone -> failwith $"expected the line of %s{snippet} to resolve"
-        | ValueSome resolved -> resolved
-
-    let moduleInitializer = identityOf "let initialized"
-    let staticInitializer = identityOf "static let staticState"
-
-    Assert.True(
-        moduleInitializer.DisplayName <> staticInitializer.DisplayName,
-        $"both initializers were named %s{moduleInitializer.DisplayName}"
-    )
-
-    Assert.True(
-        moduleInitializer.MemberName <> staticInitializer.MemberName,
-        $"both initializers claim the member %A{moduleInitializer.MemberName}"
-    )
-
-    Assert.True(
-        moduleInitializer.TypeChain <> staticInitializer.TypeChain,
-        $"both initializers claim the type chain %A{moduleInitializer.TypeChain}"
-    )
-
-    Assert.DoesNotContain(Constructor, moduleInitializer.Traits)
-    Assert.Contains(Constructor, staticInitializer.Traits)
-
-/// `Fired` is the event, `Fire` beside it the method that raises it. The compiler exposes an
-/// `[<CLIEvent>]` through a getter as well as through `add_`/`remove_`, so the member found by name
-/// carries both `IsProperty` and `IsEvent` - and whichever of the two is answered, it is an event.
-[<Theory>]
-[<InlineData("Fired")>]
-[<InlineData("get_Fired")>]
-[<InlineData("Fired.get")>]
-let ``The event itself resolves as an event`` (member': string) =
-    match resolve $"%s{Sample}.Publisher.%s{member'}" with
-    | ValueNone -> failwith $"expected %s{member'} to resolve"
-    | ValueSome resolved ->
-        Assert.Equal(ResolvedEvent, resolved.Kind)
-        Assert.Equal(lineOf "member _.Fired", resolved.DeclarationRange.StartLine)
