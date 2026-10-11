@@ -7811,18 +7811,20 @@ and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, 
     let holeText (fill: Expr) (formatting: SynInterpolationFormatting) (mHole: range) =
         let invalidHole () =
             errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
-            ""
+            ValueNone
 
         match formatting with
         | SynInterpolationFormatting.DotNet(None, None) when isStringTy g (tyOfExpr g fill) ->
             match EvalLiteralExprOrAttribArg g fill with
-            | Expr.Const(Const.String text, _, _) -> text
+            | Expr.Const(Const.String text, _, _) -> ValueSome text
             | Expr.Const(Const.Zero, _, _) -> invalidHole ()
-            | _ -> "" // EvalLiteralExprOrAttribArg has reported that the hole is not a constant
+            | _ -> ValueNone // EvalLiteralExprOrAttribArg has reported that the hole is not a constant
         | _ -> invalidHole ()
 
     let text = Text.StringBuilder()
     let mutable tpenvAcc = tpenv
+    // Only the first hole that breaks a rule is reported; later holes are still type-checked.
+    let mutable holesAreConstant = true
 
     for part in parts do
         match part with
@@ -7830,7 +7832,11 @@ and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, 
         | SynInterpolatedStringPart.FillExpr(synFill, formatting) ->
             let fill, tpenvAfter = TcExprFlex2 cenv (NewInferenceType g) env false tpenvAcc synFill
             tpenvAcc <- tpenvAfter
-            text.Append(holeText fill formatting synFill.Range) |> ignore
+
+            if holesAreConstant then
+                match holeText fill formatting synFill.Range with
+                | ValueSome hole -> text.Append(hole: string) |> ignore
+                | ValueNone -> holesAreConstant <- false
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkString g m (text.ToString()), tpenvAcc)
 

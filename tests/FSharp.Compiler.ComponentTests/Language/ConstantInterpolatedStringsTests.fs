@@ -2,6 +2,7 @@
 
 namespace Language
 
+open System.IO
 open Xunit
 open FSharp.Test.Compiler
 
@@ -88,6 +89,42 @@ let item = getItem 1
         |> shouldSucceed
 
     [<Fact>]
+    let ``A type provider static argument can be a constant interpolated string`` () =
+        let providerPath =
+            Path.Combine(__SOURCE_DIRECTORY__, "../../fsharp/typeProviders/staticStringParameter/provider.fsx")
+
+        let provider =
+            Fsx $"""#load @"{providerPath}" """
+            |> withName "StaticStringParameterProvider"
+            |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
+
+        Fsx(
+            $"#r @\"{provider.OutputPath.Value}\"\n"
+            + """
+[<Literal>]
+let Root = "api/v2"
+
+let fromConst = Provided.Text<const ($"{Root}/items")>.Value
+
+[<Literal>]
+let ItemById = $"{Root}/items/{{id}}"
+
+let fromLiteral = Provided.Text<ItemById>.Value
+
+if fromConst <> "api/v2/items" || fromLiteral <> "api/v2/items/{id}" then
+    failwith $"Unexpected static arguments: '{fromConst}', '{fromLiteral}'"
+"""
+        )
+#if NETCOREAPP
+        |> withOptions [ "--usesdkrefs-" ]
+#endif
+        |> withLangVersionPreview
+        |> eval
+        |> shouldSucceed
+
+    [<Fact>]
     let ``Each hole must be a non-null constant string without alignment or format specifiers`` () =
         preview """
 module Program
@@ -114,11 +151,36 @@ let E = $"{NoValue}/x"
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3925, Line 13, Col 13, Line 13, Col 20, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 15, Col 12, Line 15, Col 16, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 17, Col 14, Line 17, Col 18, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 13, Col 13, Line 13, Col 20, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 15, Col 12, Line 15, Col 16, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 17, Col 14, Line 17, Col 18, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
             (Error 267, Line 19, Col 12, Line 19, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 3925, Line 21, Col 12, Line 21, Col 19, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 21, Col 12, Line 21, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+        ]
+
+    [<Fact>]
+    let ``Only the first hole that breaks a rule is reported`` () =
+        preview """
+module Program
+
+[<Literal>]
+let Version = 2
+let dir = "data"
+
+[<Literal>]
+let A = $"{Version}{Version}"
+[<Literal>]
+let B = $"{dir}{Version}"
+[<Literal>]
+let C = $"{Version}{missing}"
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3925, Line 9, Col 12, Line 9, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 267, Line 11, Col 12, Line 11, Col 15, "This is not a valid constant expression or custom attribute value")
+            (Error 39, Line 13, Col 21, Line 13, Col 28, "The value or constructor 'missing' is not defined.")
+            (Error 3925, Line 13, Col 12, Line 13, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
         ]
 
     [<Fact>]
