@@ -109,9 +109,33 @@ type private SingleFileCacheEntry =
         Subscription: ConnectionPointSubscription
     }
 
+module internal PEReferenceVersion =
+
+    // Source generators come only from analyzer references. Which of those carry one is known to Roslyn's
+    // out-of-process host alone: asking here would load the generators into Visual Studio.
+    let private mayRunSourceGenerators (project: Project) =
+        let solution = project.Solution
+
+        let hasAnalyzerReferences (projectId: ProjectId) =
+            match solution.GetProject projectId with
+            | null -> false
+            | dependency -> dependency.AnalyzerReferences.Count > 0
+
+        project.AnalyzerReferences.Count > 0
+        || solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(project.Id)
+           |> Seq.exists hasAnalyzerReferences
+
+    /// The version a referenced project's in-memory PE reference is kept for. A source generator can turn an
+    /// edit that leaves the dependent semantic version standing into different declarations.
+    let getAsync (referencedProject: Project) (ct: CancellationToken) =
+        if mayRunSourceGenerators referencedProject then
+            referencedProject.GetDependentVersionAsync(ct)
+        else
+            referencedProject.GetDependentSemanticVersionAsync(ct)
+
 /// <summary>
-/// The in-memory PE reference of a referenced project, kept while the project's dependent
-/// semantic version is unchanged. Roslyn recreates
+/// The in-memory PE reference of a referenced project, kept while the project's
+/// <c>PEReferenceVersion</c> is unchanged. Roslyn recreates
 /// <see cref="T:Microsoft.CodeAnalysis.Compilation"/> instances freely - on every solution fork,
 /// and under memory pressure because it holds the final compilation weakly - and a reference
 /// created per instance carries a fresh stamp that invalidates every FCS cache keyed on it.
@@ -403,7 +427,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                     FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
                         elif referencedProject.SupportsCompilation then
-                            let! version = referencedProject.GetDependentSemanticVersionAsync(ct)
+                            let! version = PEReferenceVersion.getAsync referencedProject ct
 
                             match tryGetPEReference referencedProject version with
                             | ValueSome peRef -> referencedProjects.Add peRef
