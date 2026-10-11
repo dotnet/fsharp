@@ -53,7 +53,7 @@ let private titlesAt (code: string) (span: TextSpan) =
 
     tryGetRefactoringActionsForSpan code span context (new FSharpExtractFunctionRefactoring())
     |> Seq.map _.Title
-    |> List.ofSeq
+    |> Seq.toList
 
 let private titlesFor (code: string) (selected: string) =
     titlesAt code (selectionOf code selected)
@@ -228,17 +228,218 @@ let counter () =
 
     Assert.Empty(titlesAt code (TextSpan.FromBounds(start, finish)))
 
-[<Fact>]
-let ``No action when the selection reads a byref parameter`` () =
-    let code =
-        """
+[<Theory>]
+[<InlineData("""
 module M
 
 let incr (x: byref<int>) =
     x <- x + 1
+""",
+             "x + 1")>]
+[<InlineData("""
+module M
+
+[<Struct; System.Runtime.CompilerServices.IsByRefLike>]
+type Window =
+    val Length: int
+
+type Buffer = Window
+
+let size (buffer: Buffer) =
+    buffer.Length + 1
+""",
+             "buffer.Length + 1")>]
+[<InlineData("""
+module M
+
+let f () =
+    let identity x = x
+    (identity 1, identity "s")
+""",
+             "(identity 1, identity \"s\")")>]
+[<InlineData("""
+module M
+
+let f () =
+    let mutable n = 0
+    let read = (fun () -> n)
+    n <- 1
+    read ()
+""",
+             "(fun () -> n)")>]
+[<InlineData("""
+module M
+
+let f (xs: string list) =
+    let mutable n = 0
+    let tails = xs |> Seq.map _.Substring(n)
+    n <- 1
+    tails
+""",
+             "xs |> Seq.map _.Substring(n)")>]
+let ``No action when a value the selection reads cannot become a parameter`` (code: string, selected: string) =
+    Assert.Empty(titlesFor code selected)
+
+[<Fact>]
+let ``Mutable local read at once becomes a parameter`` () =
+    let code =
+        """
+module M
+
+let f () =
+    let mutable n = 0
+    n <- 1
+    printfn "%d" (n + 1)
 """
 
-    Assert.Empty(titlesFor code "x + 1")
+    Assert.Equal<string list>([ extractToLocalFunction; extractToModuleFunction ], titlesFor code "n + 1")
+
+[<Fact>]
+let ``Type parameters stay in the scope that declares them`` () =
+    let moduleFunction =
+        """
+module M
+
+let f<'T> () = typeof<'T>
+"""
+
+    let methodOfGenericType =
+        """
+module M
+
+type C<'T>() =
+    member this.M<'U>() = (typeof<'T>, typeof<'U>)
+"""
+
+    Assert.Equal<string list>([ extractToLocalFunction ], titlesFor moduleFunction "typeof<'T>")
+    Assert.Equal<string list>([ extractToLocalFunction; extractToPrivateMember ], titlesFor methodOfGenericType "typeof<'T>")
+    Assert.Equal<string list>([ extractToLocalFunction ], titlesFor methodOfGenericType "typeof<'U>")
+
+[<Fact>]
+let ``No local function for a selection using this of a struct`` () =
+    let code =
+        """
+module M
+
+[<Struct>]
+type S =
+    val X: int
+    new(x) = { X = x }
+    member this.M() = this.X + 1
+"""
+
+    Assert.Equal<string list>([ extractToPrivateMember ], titlesFor code "this.X + 1")
+
+[<Fact>]
+let ``No private member where a local hides the self identifier`` () =
+    let code =
+        """
+module M
+
+type C() =
+    member this.M() =
+        let this = "abc"
+        this.Length + 1
+"""
+
+    Assert.Equal<string list>([ extractToLocalFunction ], titlesFor code "this.Length + 1")
+
+[<Theory>]
+[<InlineData("let inline f (x: int) = x + 1", false)>]
+[<InlineData("let inline internal f (x: int) = x + 1", false)>]
+[<InlineData("let inline private f (x: int) = x + 1", true)>]
+[<InlineData("let f (x: int) = x + 1", true)>]
+let ``Module function is offered unless a more accessible inline function would call it`` (declaration: string, offered: bool) =
+    let titles = titlesFor $"module M\n\n{declaration}\n" "x + 1"
+
+    Assert.Equal(offered, List.contains extractToModuleFunction titles)
+    Assert.Contains(extractToLocalFunction, titles)
+
+[<Theory>]
+[<InlineData("""
+module M
+
+type ``My Type``() =
+    static member M() = 1 + 2
+""",
+             """
+module M
+
+type ``My Type``() =
+    static member M() = ``My Type``.ExtractedMethod()
+    static member private ExtractedMethod() = 1 + 2
+""")>]
+[<InlineData("""
+module M
+
+type T() =
+    member ``the self``.M() = 1 + 2
+""",
+             """
+module M
+
+type T() =
+    member ``the self``.M() = ``the self``.ExtractedMethod()
+    member private ``the self``.ExtractedMethod() = 1 + 2
+""")>]
+[<InlineData("""
+module M
+
+type T() =
+    member this.ExtractedMethod() = 0
+    member this.M() = 1 + 2
+""",
+             """
+module M
+
+type T() =
+    member this.ExtractedMethod() = 0
+    member this.M() = this.ExtractedMethod1()
+    member private this.ExtractedMethod1() = 1 + 2
+""")>]
+let ``Private member is named and called as its type allows`` (code: string, expected: string) =
+    Assert.Equal(expected, extracted extractToPrivateMember code "1 + 2")
+
+[<Fact>]
+let ``Call that is the receiver of an assignment is parenthesized`` () =
+    let code =
+        """
+module M
+
+let f () =
+    System.Text.StringBuilder("abc").Length <- 0
+"""
+
+    let expected =
+        """
+module M
+
+let f () =
+    let extractedFunction () = System.Text.StringBuilder("abc")
+    (extractedFunction ()).Length <- 0
+"""
+
+    Assert.Equal(expected, extracted extractToLocalFunction code "System.Text.StringBuilder(\"abc\")")
+
+[<Fact>]
+let ``Argument of an overloaded method is annotated when needed`` () =
+    let code =
+        """
+module M
+
+let f (x: int64) = System.Math.Abs x
+"""
+
+    let expected =
+        """
+module M
+
+let f (x: int64) =
+    let extractedFunction (x: int64) = System.Math.Abs x
+    extractedFunction x
+"""
+
+    Assert.Equal(expected, extractedWith ParameterAnnotationSetting.WhenNeeded extractToLocalFunction code "System.Math.Abs x")
 
 [<Fact>]
 let ``Lines inside a multi-line string in an inactive branch are not re-indented`` () =

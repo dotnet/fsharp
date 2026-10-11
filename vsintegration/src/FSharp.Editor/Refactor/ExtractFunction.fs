@@ -29,7 +29,24 @@ module private FunctionExtraction =
         {
             Name: string
             Type: string
+            IsMutable: bool
             Uses: range list
+        }
+
+    /// What the selection takes from the code around it.
+    [<NoComparison; NoEquality>]
+    type Captures =
+        {
+            /// The values read from the scope, in order of first use.
+            Parameters: Parameter list
+            UsesThis: bool
+            /// The `this` of a struct is a byref, which a closure cannot capture.
+            UsesStructThis: bool
+            UsesBase: bool
+            /// Where the type parameters the selection names are declared.
+            TypeParameters: range list
+            /// Where the names of the methods and constructors the selection calls end.
+            MethodNameEnds: HashSet<pos>
         }
 
     let private padding (width: int) = String(' ', width)
@@ -43,17 +60,28 @@ module private FunctionExtraction =
             | _ -> None)
 
     let private isByRefLike (fullType: FSharpType) =
-        fullType.HasTypeDefinition
-        && (fullType.TypeDefinition.IsByRef
-            || fullType.TypeDefinition.Attributes
+        let stripped = fullType.StripAbbreviations()
+
+        stripped.HasTypeDefinition
+        && (stripped.TypeDefinition.IsByRef
+            || stripped.TypeDefinition.Attributes
                |> Seq.exists (fun attribute ->
                    String.Equals(attribute.AttributeType.CompiledName, "IsByRefLikeAttribute", StringComparison.Ordinal)))
 
-    /// The values the selection reads from its scope, in order of first use, and whether it uses this or base;
-    /// ValueNone when a captured value has no type or a byref-like one.
+    let private isStruct (fullType: FSharpType) =
+        let stripped = fullType.StripAbbreviations()
+
+        stripped.HasTypeDefinition
+        && (stripped.TypeDefinition.IsByRef || stripped.TypeDefinition.IsValueType)
+
+    /// What the selection takes from its scope; ValueNone when a value it reads cannot become a parameter: one that has
+    /// no type or a byref-like one, or a generic function, which a parameter would fix to one instance.
     let tryCaptures (checkResults: FSharpCheckFileResults) (selection: range) (scope: range) (cancellationToken: CancellationToken) =
         let parameters = Dictionary<range, Parameter>(Range.comparer)
+        let typeParameters = ResizeArray<range>()
+        let methodNameEnds = HashSet<pos>()
         let mutable usesThis = false
+        let mutable usesStructThis = false
         let mutable usesBase = false
         let mutable capturable = true
 
@@ -63,7 +91,9 @@ module private FunctionExtraction =
                 && Range.rangeContainsRange selection symbolUse.Range
             then
                 match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as value when value.IsMemberThisValue || value.IsConstructorThisValue -> usesThis <- true
+                | :? FSharpMemberOrFunctionOrValue as value when value.IsMemberThisValue || value.IsConstructorThisValue ->
+                    usesThis <- true
+                    usesStructThis <- usesStructThis || (value.FullTypeSafe |> Option.exists isStruct)
                 | :? FSharpMemberOrFunctionOrValue as value when value.IsBaseValue -> usesBase <- true
                 | :? FSharpMemberOrFunctionOrValue as value when not value.IsModuleValueOrMember ->
                     match symbolUse.Symbol.DeclarationLocation with
@@ -77,14 +107,20 @@ module private FunctionExtraction =
                                 { parameter with
                                     Uses = symbolUse.Range :: parameter.Uses
                                 }
-                        | (false, _), Some fullType when not (isByRefLike fullType) ->
+                        | (false, _), Some fullType when not (isByRefLike fullType) && value.GenericParameters.Count = 0 ->
                             parameters[declaration] <-
                                 {
                                     Name = value.DisplayName
                                     Type = fullType.FormatWithConstraints symbolUse.DisplayContext
+                                    IsMutable = value.IsMutable
                                     Uses = [ symbolUse.Range ]
                                 }
                         | (false, _), _ -> capturable <- false
+                    | _ -> ()
+                | :? FSharpMemberOrFunctionOrValue as value when value.IsMember -> methodNameEnds.Add symbolUse.Range.End |> ignore
+                | :? FSharpGenericParameter ->
+                    match symbolUse.Symbol.DeclarationLocation with
+                    | Some declaration when not (Range.rangeContainsRange selection declaration) -> typeParameters.Add declaration
                     | _ -> ()
                 | _ -> ()
 
@@ -94,9 +130,38 @@ module private FunctionExtraction =
                 |> List.map (fun m -> struct (m.StartLine, m.StartColumn))
                 |> List.min
 
-            ValueSome(struct (parameters.Values |> Seq.sortBy firstUse |> List.ofSeq, usesThis, usesBase))
+            ValueSome
+                {
+                    Parameters = parameters.Values |> Seq.sortBy firstUse |> Seq.toList
+                    UsesThis = usesThis
+                    UsesStructThis = usesStructThis
+                    UsesBase = usesBase
+                    TypeParameters = Seq.toList typeParameters
+                    MethodNameEnds = methodNameEnds
+                }
         else
             ValueNone
+
+    /// Whether the selection reads a captured mutable local inside a function or other delayed code. That code sees the
+    /// assignments made before it runs, where a parameter would keep the value passed to the call.
+    let readsMutableLater (expr: SynExpr) (parameters: Parameter list) =
+        let delayed =
+            (ResizeArray<range>(), [ SyntaxNode.SynExpr expr ])
+            ||> SyntaxNodes.fold (fun delayed _ node ->
+                match node with
+                | SyntaxNode.SynExpr(SynExpr.Lambda(range = m) | SynExpr.DotLambda(range = m) | SynExpr.MatchLambda(range = m) | SynExpr.Lazy(
+                    range = m) | SynExpr.ObjExpr(range = m) | SynExpr.ComputationExpr(range = m)) -> delayed.Add m
+                | SyntaxNode.SynBinding(SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _))) as binding) ->
+                    delayed.Add binding.RangeOfBindingWithRhs
+                | _ -> ()
+
+                delayed)
+
+        parameters
+        |> List.exists (fun parameter ->
+            parameter.IsMutable
+            && parameter.Uses
+               |> List.exists (fun m -> delayed |> Seq.exists (fun code -> Range.rangeContainsRange code m)))
 
     /// Whether the selection assigns to one of the captured values, which a parameter could not carry back.
     let assignsParameter (expr: SynExpr) (parameters: Parameter list) =
@@ -113,12 +178,22 @@ module private FunctionExtraction =
         parameters
         |> List.exists (fun parameter -> parameter.Uses |> List.exists (fun m -> assigned.Contains m.Start))
 
+    let rec private identifierArguments (argument: SynExpr) =
+        match argument with
+        | SynExpr.Ident ident -> [ ident ]
+        | SynExpr.Paren(expr = inner) -> identifierArguments inner
+        | SynExpr.Tuple(exprs = arguments) -> arguments |> List.collect identifierArguments
+        | _ -> []
+
     /// Positions of identifiers whose type inference cannot tell from their use alone: receivers of a member or indexer
-    /// access and operands of an operator.
-    let positionsNeedingType (expr: SynExpr) =
+    /// access, operands of an operator and arguments of a method or constructor, which can have overloads.
+    let positionsNeedingType (expr: SynExpr) (methodNameEnds: HashSet<pos>) =
         (HashSet<pos>(), [ SyntaxNode.SynExpr expr ])
         ||> SyntaxNodes.fold (fun positions _ node ->
             match node with
+            | SyntaxNode.SynExpr(SynExpr.App(funcExpr = method; argExpr = argument)) when methodNameEnds.Contains method.Range.End ->
+                for ident in identifierArguments argument do
+                    positions.Add ident.idRange.Start |> ignore
             | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = head :: _ :: _)))
             | SyntaxNode.SynExpr(SynExpr.DotGet(expr = SynExpr.Ident head))
             | SyntaxNode.SynExpr(SynExpr.DotIndexedGet(objectExpr = SynExpr.Ident head))
@@ -162,11 +237,15 @@ module private FunctionExtraction =
         let arguments = parameters |> List.map _.Name |> String.concat ", "
         $"({arguments})"
 
-    /// Whether a function application put where the selection was needs parentheses to stay one argument.
+    /// Whether a function application put where the selection was needs parentheses to stay one argument or the
+    /// receiver of an assignment.
     let needsParentheses (target: ExtractionTarget) =
         match target.Expr, target.Path with
         | SynExpr.Paren _, _ when target.Replaced = target.Content -> false
         | _, SyntaxNode.SynExpr(SynExpr.App _ | SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.TypeApp _) :: _ -> true
+        | expr,
+          SyntaxNode.SynExpr(SynExpr.DotSet(targetExpr = receiver) | SynExpr.DotIndexedSet(objectExpr = receiver) | SynExpr.DotNamedIndexedPropertySet(
+              targetExpr = receiver)) :: _ -> obj.ReferenceEquals(expr, receiver)
         | _ -> false
 
     let isInRecursiveModuleLet (path: SyntaxVisitorPath) =
@@ -174,6 +253,32 @@ module private FunctionExtraction =
         |> List.exists (function
             | SyntaxNode.SynModule(SynModuleDecl.Let(isRecursive = true)) -> true
             | _ -> false)
+
+    let private isPrivate (binding: SynBinding) =
+        match binding with
+        | SynBinding(accessibility = Some(SynAccess.Private _))
+        | SynBinding(headPat = SynPat.LongIdent(accessibility = Some(SynAccess.Private _)))
+        | SynBinding(headPat = SynPat.Named(accessibility = Some(SynAccess.Private _))) -> true
+        | _ -> false
+
+    /// Whether the selection is in an inline module-level function or member that is not private. Its body cannot
+    /// call anything less accessible than it is.
+    let rec isInExposedInline (path: SyntaxVisitorPath) =
+        match path with
+        | [] -> false
+        | SyntaxNode.SynBinding(SynBinding(isInline = isInline) as binding) :: (SyntaxNode.SynModule _ | SyntaxNode.SynMemberDefn _) :: _ ->
+            isInline && not (isPrivate binding)
+        | _ :: rest -> isInExposedInline rest
+
+    /// Whether a pattern in the member binds the name, which hides a self identifier of that name.
+    let private bindsName (name: string) (binding: SynBinding) =
+        (false, [ SyntaxNode.SynBinding binding ])
+        ||> SyntaxNodes.fold (fun found _ node ->
+            match node with
+            | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _)))
+            | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = [ ident ]))) ->
+                found || String.Equals(ident.idText, name, StringComparison.Ordinal)
+            | _ -> found)
 
     /// The member of a class, record or union that contains the selection, outside interface implementations and
     /// object expressions.
@@ -189,15 +294,17 @@ module private FunctionExtraction =
         loop path
 
     /// The start of the new member's declaration and the receiver it is called on: the self identifier of an instance
-    /// member, or the name of a non-generic type for a static member.
+    /// member, unless a local of the member hides it, or the name of a non-generic type for a static member.
     let tryMemberCallee (binding: SynBinding) (info: SynComponentInfo) =
         match binding, info with
         | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ self; _ ]))), _ when
             not (self.idText.StartsWith("_", StringComparison.Ordinal))
+            && not (bindsName self.idText binding)
             ->
-            ValueSome(struct ($"member private {self.idText}.", self.idText))
+            let self = PrettyNaming.NormalizeIdentifierBackticks self.idText
+            ValueSome(struct ($"member private {self}.", self))
         | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ]))), SynComponentInfo(typeParams = None) ->
-            ValueSome(struct ("static member private ", (List.last info.LongIdent).idText))
+            ValueSome(struct ("static member private ", PrettyNaming.NormalizeIdentifierBackticks (List.last info.LongIdent).idText))
         | _ -> ValueNone
 
     /// Changes that declare `header = <selection>` right after the member and call it where the selection was.
@@ -279,9 +386,11 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                 (positionOf sourceText target.Content.End)
 
                         match FunctionExtraction.tryCaptures checkResults selection scope cancellationToken with
-                        | ValueSome(struct (parameters, usesThis, usesBase)) when
-                            not (FunctionExtraction.assignsParameter target.Expr parameters)
+                        | ValueSome captures when
+                            not (FunctionExtraction.assignsParameter target.Expr captures.Parameters)
+                            && not (FunctionExtraction.readsMutableLater target.Expr captures.Parameters)
                             ->
+                            let parameters = captures.Parameters
                             let! options = document.GetOptionsAsync cancellationToken
 
                             let indentSize =
@@ -293,8 +402,12 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                 linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
 
                             let names = usedNames parseResults.ParseTree
-                            let needingType = FunctionExtraction.positionsNeedingType target.Expr
+
+                            let needingType =
+                                FunctionExtraction.positionsNeedingType target.Expr captures.MethodNameEnds
+
                             let setting = document.Project.FSharpExtractFunctionParameterAnnotations
+                            let inExposedInline = FunctionExtraction.isInExposedInline target.Path
 
                             let annotate (parameter: FunctionExtraction.Parameter) =
                                 match setting with
@@ -316,7 +429,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                 else
                                     application
 
-                            if not usesBase then
+                            if not (captures.UsesBase || captures.UsesStructThis) then
                                 match anchorsOf target.Expr target.Path with
                                 | anchor :: _ ->
                                     match tryDeclareInFront sourceText target anchor $"let {header}" call indentSize literalLines with
@@ -324,7 +437,15 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                     | ValueNone -> ()
                                 | [] -> ()
 
-                            if not (usesThis || usesBase || FunctionExtraction.isInRecursiveModuleLet target.Path) then
+                            if
+                                not (
+                                    captures.UsesThis
+                                    || captures.UsesBase
+                                    || inExposedInline
+                                    || not captures.TypeParameters.IsEmpty
+                                    || FunctionExtraction.isInRecursiveModuleLet target.Path
+                                )
+                            then
                                 match
                                     tryDeclareInFrontOfModuleLet sourceText target [] $"let private {header}" call indentSize literalLines
                                 with
@@ -332,7 +453,11 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                 | ValueNone -> ()
 
                             match FunctionExtraction.tryEnclosingMember target.Path with
-                            | ValueSome(struct (binding, memberRange, info)) ->
+                            | ValueSome(struct (binding, memberRange, info)) when
+                                not inExposedInline
+                                && captures.TypeParameters
+                                   |> List.forall (fun declaration -> not (Range.rangeContainsRange memberRange declaration))
+                                ->
                                 match FunctionExtraction.tryMemberCallee binding info with
                                 | ValueSome(struct (prefix, receiver)) ->
                                     let memberName = uniqueName "ExtractedMethod" names
@@ -356,7 +481,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                     | ValueSome changes -> register context sourceText (SR.ExtractToPrivateMember()) "member" changes
                                     | ValueNone -> ()
                                 | ValueNone -> ()
-                            | ValueNone -> ()
+                            | _ -> ()
                         | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
