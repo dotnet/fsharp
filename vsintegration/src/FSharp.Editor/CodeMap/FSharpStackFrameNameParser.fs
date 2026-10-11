@@ -40,9 +40,8 @@ type internal ParsedFrame =
         Path: FramePathSegment array
         Member: FrameMember
         MethodGenericArity: int
-        /// The position the debugger resolved for this frame, which the provider fills in - the name
-        /// alone locates nothing for module initialization (`$Demo.$Demo` names the file) and lies
-        /// for a state machine's closure, which the compiler numbers from line 1.
+        /// Filled in by the provider. The name alone does not place module initialization, whose
+        /// frame names the file, nor a state machine's closure, which the compiler numbers from line 1.
         SourcePosition: SourcePosition voption
     }
 
@@ -152,7 +151,7 @@ module internal FSharpStackFrameNameParser =
                 GenericArity = arity
             }
 
-    /// Reads `digits` spanning [start, stop), rejecting an empty or non-numeric run.
+    /// Reads the digits spanning [start, stop), rejecting an empty or non-numeric run.
     let private digitsIn (segment: string) start stop =
         if start >= stop then
             ValueNone
@@ -210,16 +209,13 @@ module internal FSharpStackFrameNameParser =
         |> Seq.toList
 
     let private classifyMember (segment: string) =
-        if PrettyNaming.IsActivePatternName segment then
-            FrameActivePattern(activePatternCases segment)
-        elif segment.StartsWith("get_", StringComparison.Ordinal) then
-            FramePropertyGetter(segment.Substring 4)
-        elif segment.StartsWith("set_", StringComparison.Ordinal) then
-            FramePropertySetter(segment.Substring 4)
-        else
-            FrameMethod segment
+        match segment with
+        | _ when PrettyNaming.IsActivePatternName segment -> FrameActivePattern(activePatternCases segment)
+        | _ when segment.StartsWith("get_", StringComparison.Ordinal) -> FramePropertyGetter(segment.Substring 4)
+        | _ when segment.StartsWith("set_", StringComparison.Ordinal) -> FramePropertySetter(segment.Substring 4)
+        | _ -> FrameMethod segment
 
-    /// `name` is the raw frame name, e.g. `GateC.Library.outer@47-1.Invoke` or `Ns.Type..ctor`.
+    /// `frameName` is the raw frame name, e.g. `GateC.Library.outer@47-1.Invoke` or `Ns.Type..ctor`.
     let parse (frameName: string) : ParsedFrame voption =
         if String.IsNullOrWhiteSpace frameName then
             ValueNone
@@ -236,12 +232,9 @@ module internal FSharpStackFrameNameParser =
                 else
                     name, ValueNone
 
-            let segments = splitPath name
-
-            match segments with
+            match splitPath name with
             | [||] -> ValueNone
             | segments ->
-                // Flexible so the branches below can pass either the segment array or a filtered seq.
                 let frameWithArity (path: #seq<string>) frameMember memberArity =
                     ValueSome
                         {
@@ -254,47 +247,50 @@ module internal FSharpStackFrameNameParser =
                 let frame path frameMember =
                     frameWithArity path frameMember methodGenericArity
 
-                let isStartupCode =
-                    segments
-                    |> Array.exists (fun segment -> segment.StartsWith(startupCodePrefix, StringComparison.Ordinal))
+                let isStartupCode (segment: string) =
+                    segment.StartsWith(startupCodePrefix, StringComparison.Ordinal)
 
-                let closureIndex =
-                    segments
-                    |> Array.tryFindIndexBackV (fun segment -> (parseClosureOrigin segment).IsSome)
+                let innermostClosure =
+                    seq {
+                        for i in segments.Length - 1 .. -1 .. 0 do
+                            match parseClosureOrigin segments.[i] with
+                            | ValueSome origin -> struct (i, origin)
+                            | ValueNone -> ()
+                    }
+                    |> Seq.tryHeadV
 
-                match constructorMember, isStartupCode, closureIndex with
+                match constructorMember, Array.exists isStartupCode segments, innermostClosure with
                 | ValueSome constructorMember, _, _ -> frame segments constructorMember
                 | ValueNone, true, _ ->
                     let declaringModule =
                         segments
-                        |> Seq.filter (fun segment -> not (segment.StartsWith(startupCodePrefix, StringComparison.Ordinal)))
+                        |> Seq.filter (isStartupCode >> not)
                         |> Seq.map _.TrimStart('$')
                         |> Seq.filter (fun segment ->
                             not (String.IsNullOrEmpty segment)
                             && not (segment.EndsWith("@", StringComparison.Ordinal)))
 
                     frame declaringModule FrameStartupCode
-                | ValueNone, false, ValueSome i ->
-                    let origin = (parseClosureOrigin segments.[i]).Value
-                    frame (Seq.truncate i segments) (FrameClosureBody origin)
+                | ValueNone, false, ValueSome(struct (i, origin)) -> frame (Seq.truncate i segments) (FrameClosureBody origin)
                 | ValueNone, false, ValueNone ->
                     let lastName, lastArity = dropAngleArguments (Array.last segments)
                     let memberArity = max methodGenericArity lastArity
-                    let path = Seq.truncate (segments.Length - 1) segments
+                    let hasOwner = segments.Length >= 2
 
                     let previousName =
-                        if segments.Length >= 2 then
-                            (dropAngleArguments segments.[segments.Length - 2] |> fst)
+                        if hasOwner then
+                            dropAngleArguments segments.[segments.Length - 2] |> fst
                         else
                             ""
 
+                    let path = Seq.truncate (segments.Length - 1) segments
+                    let ownerPath = Seq.truncate (segments.Length - 2) segments
+
                     // The debug engine prints a constructor as `Type.Type` and an accessor as a
                     // trailing `.get`/`.set` segment, unlike the `..ctor`/`get_` metadata shapes.
-                    if String.Equals(lastName, previousName, StringComparison.Ordinal) then
+                    match lastName with
+                    | _ when String.Equals(lastName, previousName, StringComparison.Ordinal) ->
                         frameWithArity path FrameConstructor memberArity
-                    elif lastName = "get" && segments.Length >= 2 then
-                        frameWithArity (Seq.truncate (segments.Length - 2) segments) (FramePropertyGetter previousName) memberArity
-                    elif lastName = "set" && segments.Length >= 2 then
-                        frameWithArity (Seq.truncate (segments.Length - 2) segments) (FramePropertySetter previousName) memberArity
-                    else
-                        frameWithArity path (classifyMember lastName) memberArity
+                    | "get" when hasOwner -> frameWithArity ownerPath (FramePropertyGetter previousName) memberArity
+                    | "set" when hasOwner -> frameWithArity ownerPath (FramePropertySetter previousName) memberArity
+                    | _ -> frameWithArity path (classifyMember lastName) memberArity

@@ -20,9 +20,7 @@ type internal ResolvedFrameKind =
     | ResolvedProperty
     | ResolvedEvent
 
-/// Something true of a frame that the Properties pane shows and the map's styles can filter on. A
-/// frame carries the traits it genuinely has and nothing else, so there is no way to spell "it is
-/// not a constructor" - and no way to leave a field of a wide record accidentally set.
+/// Something true of a frame that the Properties pane shows and the map's styles can filter on.
 type internal FrameTrait =
     | Public
     | Internal
@@ -96,9 +94,6 @@ module internal FSharpCallStackResolver =
         else
             ValueNone
 
-    /// A frame name flattens namespaces, modules and nested types into one dotted path, and an
-    /// explicit interface implementation puts the interface name inside the member name. Both are
-    /// undone by trying every split of the path, longest entity path first.
     /// `FindEntityByPath` looks entities up by their mangled names, so a generic segment must keep
     /// its arity suffix (`Box`1`), which the frame parser split off.
     let private mangledName (segment: FramePathSegment) =
@@ -107,21 +102,28 @@ module internal FSharpCallStackResolver =
         else
             $"{segment.Name}`{segment.GenericArity}"
 
+    /// A frame name flattens namespaces, modules and nested types into one dotted path, and an
+    /// explicit interface implementation puts the interface name inside the member name. Both are
+    /// undone by trying every split of the path, longest entity path first.
     let private entityPathCandidates (path: FramePathSegment array) (memberName: string voption) =
         seq {
             for split in path.Length .. -1 .. 1 do
                 let entityNames = path |> Seq.truncate split |> Seq.map mangledName |> Seq.toArray
-                let trailing = path |> Seq.skip split |> Seq.map _.Name |> Seq.toArray
+
+                let memberNames =
+                    [|
+                        yield! path |> Seq.skip split |> Seq.map _.Name
+                        yield! ValueOption.toArray memberName
+                    |]
 
                 let qualifiedMember =
-                    match memberName with
-                    | ValueSome name -> ValueSome(String.Join(".", [| yield! trailing; yield name |]))
-                    | ValueNone when trailing.Length = 0 -> ValueNone
-                    | ValueNone -> ValueSome(String.Join(".", trailing))
+                    if memberNames.Length = 0 then
+                        ValueNone
+                    else
+                        ValueSome(String.Join(".", memberNames))
 
                 yield struct (entityNames, qualifiedMember)
 
-                // Only worth a second candidate when a segment actually carries the suffix.
                 if entityNames |> Array.exists (stripModuleSuffix >> ValueOption.isSome) then
                     let unsuffixed =
                         entityNames
@@ -192,14 +194,11 @@ module internal FSharpCallStackResolver =
 
     /// The line a closure class is named after, except for the ones a state machine lifts out of a
     /// `task` body: the compiler numbers those from line 1, where no declaration can be found. There
-    /// the line the debugger reports for the frame is the honest one.
+    /// the line the debugger reports for the frame is used.
     let private closureLine (frame: ParsedFrame) (origin: ClosureOrigin) (entity: FSharpEntity) =
-        match tryFindDeclarationAbove origin.Line entity with
-        | ValueSome _ -> origin.Line
-        | ValueNone ->
-            match frame.SourcePosition with
-            | ValueSome position -> position.Line
-            | ValueNone -> origin.Line
+        match tryFindDeclarationAbove origin.Line entity, frame.SourcePosition with
+        | ValueNone, ValueSome position -> position.Line
+        | _ -> origin.Line
 
     let private stripArity (compiledName: string) =
         match compiledName.IndexOf '`' with
@@ -238,98 +237,77 @@ module internal FSharpCallStackResolver =
         else
             ResolvedMethod
 
-    let private declaringKind (m: FSharpMemberOrFunctionOrValue) =
-        match m.DeclaringEntity with
-        | Some entity -> entity.IsFSharpUnion, entity.IsFSharpRecord, entity.IsFSharpExceptionDeclaration
-        | None -> false, false, false
-
-    let private isInline (m: FSharpMemberOrFunctionOrValue) =
-        match m.InlineAnnotation with
-        | FSharpInlineAnnotation.AlwaysInline
-        | FSharpInlineAnnotation.AggressiveInline -> true
-        | _ -> false
-
-    let private traitsOf (m: FSharpMemberOrFunctionOrValue) =
-        let isUnion, isRecord, isException = declaringKind m
-
+    let private traitsWhere (traits: (bool * FrameTrait) list) =
         set
             [
-                if m.Accessibility.IsPublic then
-                    Public
-                if m.Accessibility.IsInternal then
-                    Internal
-                if m.Accessibility.IsPrivate then
-                    Private
-                // A module-level function compiles to a static method even though F# has no `static`
-                // keyword for it, so instance membership is the honest test.
-                if not m.IsInstanceMember then
-                    Static
-                if m.GenericParameters.Count > 0 then
-                    Generic
-                if m.IsConstructor then
-                    Constructor
-                if PrettyNaming.IsLogicalOpName m.CompiledName then
-                    Operator
-                if m.IsExtensionMember then
-                    Extension
-                if m.IsDispatchSlot then
-                    Abstract
-                if m.IsCompilerGenerated then
-                    CompilerGenerated
-                if m.IsPropertyGetterMethod then
-                    PropertyGet
-                if m.IsPropertySetterMethod then
-                    PropertySet
-                if isUnion then
-                    Union
-                if isRecord then
-                    Record
-                if isException then
-                    Exception
-                if m.IsActivePattern then
-                    ActivePattern
-                if m.IsUnionCaseTester then
-                    UnionCaseTester
-                if m.IsFunction then
-                    Function
-                if isInline m then
-                    Inline
-                if m.IsMutable then
-                    Mutable
+                for holds, frameTrait in traits do
+                    if holds then
+                        frameTrait
+            ]
+
+    let private traitsOf (m: FSharpMemberOrFunctionOrValue) =
+        let isDeclaredIn (kind: FSharpEntity -> bool) = m.DeclaringEntity |> Option.exists kind
+
+        let isInline =
+            match m.InlineAnnotation with
+            | FSharpInlineAnnotation.AlwaysInline
+            | FSharpInlineAnnotation.AggressiveInline -> true
+            | _ -> false
+
+        traitsWhere
+            [
+                m.Accessibility.IsPublic, Public
+                m.Accessibility.IsInternal, Internal
+                m.Accessibility.IsPrivate, Private
+                // A module-level function compiles to a static method though F# has no `static`
+                // keyword for it, so instance membership is the test.
+                not m.IsInstanceMember, Static
+                m.GenericParameters.Count > 0, Generic
+                m.IsConstructor, Constructor
+                PrettyNaming.IsLogicalOpName m.CompiledName, Operator
+                m.IsExtensionMember, Extension
+                m.IsDispatchSlot, Abstract
+                m.IsCompilerGenerated, CompilerGenerated
+                m.IsPropertyGetterMethod, PropertyGet
+                m.IsPropertySetterMethod, PropertySet
+                isDeclaredIn _.IsFSharpUnion, Union
+                isDeclaredIn _.IsFSharpRecord, Record
+                isDeclaredIn _.IsFSharpExceptionDeclaration, Exception
+                m.IsActivePattern, ActivePattern
+                m.IsUnionCaseTester, UnionCaseTester
+                m.IsFunction, Function
+                isInline, Inline
+                m.IsMutable, Mutable
             ]
 
     let private entityTraits (entity: FSharpEntity) =
-        set
+        traitsWhere
             [
-                if entity.Accessibility.IsPublic then
-                    Public
-                if entity.Accessibility.IsInternal then
-                    Internal
-                if entity.Accessibility.IsPrivate then
-                    Private
-                if entity.IsFSharpModule then
-                    Static
-                if entity.GenericParameters.Count > 0 then
-                    Generic
-                if entity.IsFSharpModule then
-                    Module
-                if entity.IsFSharpUnion then
-                    Union
-                if entity.IsFSharpRecord then
-                    Record
-                if entity.IsFSharpExceptionDeclaration then
-                    Exception
-                if entity.IsMeasure then
-                    Measure
+                entity.Accessibility.IsPublic, Public
+                entity.Accessibility.IsInternal, Internal
+                entity.Accessibility.IsPrivate, Private
+                entity.IsFSharpModule, Static
+                entity.GenericParameters.Count > 0, Generic
+                entity.IsFSharpModule, Module
+                entity.IsFSharpUnion, Union
+                entity.IsFSharpRecord, Record
+                entity.IsFSharpExceptionDeclaration, Exception
+                entity.IsMeasure, Measure
             ]
 
-    /// The line of the type or module that owns a source line. An entity's own range covers nothing
-    /// but its name, so a line inside a member body belongs to no entity and a line in the blank
-    /// space, doc comment or attributes between two declarations belongs to both by proximity -
-    /// which is how a static initializer came to be answered with the generic type above it. The
-    /// parse tree has the range of each declaration in full, so the line is answered by the
-    /// innermost declaration that actually contains it, and trivia, contained by none, is answered
-    /// by the declaration below it, which is what the trivia was written for.
+    let private memberResolution (entity: FSharpEntity) (m: FSharpMemberOrFunctionOrValue) =
+        {
+            Range = m.DeclarationLocation
+            Entity = entity
+            MemberName = ValueSome m.CompiledName
+            Kind = kindOf m
+            Traits = traitsOf m
+            DisplayName = m.DisplayName
+        }
+
+    /// The range of the type or module declaration that owns a source line. An entity's own range
+    /// covers nothing but its name, so the parse tree answers: the innermost declaration containing
+    /// the line, and for the trivia between two declarations, contained by none, the one below it.
     let private declarationOwning (shape: NavigationItems) line =
         let declarations =
             shape.Declarations
@@ -352,11 +330,9 @@ module internal FSharpCallStackResolver =
 
         containing |> ValueOption.orElseWith below |> ValueOption.map _.Range
 
-    /// A `<StartupCode$…>.$Demo.$Demo` frame names the file, not the construct: its path is useless,
-    /// but the debugger reports the source line the initializer is running. Resolve by that position -
-    /// the public binding written on the line (`initialized`), else the type or module whose static
-    /// initializer owns it (`Initialized`); private `static let` bindings are absent from the public
-    /// signature, so the enclosing entity is the closest honest name.
+    /// A `<StartupCode$…>.$Demo.$Demo` frame names the file, not the construct, so it is resolved by
+    /// the line the debugger reports: the public binding written on it, else the type or module
+    /// whose initializer owns it - a private `static let` is absent from the signature.
     let private tryResolveByPosition (position: SourcePosition) (declaration: range) (signature: FSharpAssemblySignature) =
         let sameFile (r: range) =
             String.Equals(r.FileName, position.File, StringComparison.OrdinalIgnoreCase)
@@ -376,22 +352,12 @@ module internal FSharpCallStackResolver =
             |> Seq.collect (fun entity ->
                 entity.TryGetMembersFunctionsAndValues()
                 |> Seq.map (fun m -> struct (entity, m)))
-            |> Seq.filter (fun struct (_, m) ->
+            |> Seq.tryFindV (fun struct (_, m) ->
                 sameFile m.DeclarationLocation
                 && m.DeclarationLocation.StartLine = position.Line)
-            |> Seq.tryHeadV
 
         match bindingOnLine with
-        | ValueSome(struct (entity, m)) ->
-            ValueSome
-                {
-                    Range = m.DeclarationLocation
-                    Entity = entity
-                    MemberName = ValueSome m.CompiledName
-                    Kind = kindOf m
-                    Traits = traitsOf m
-                    DisplayName = m.DisplayName
-                }
+        | ValueSome(struct (entity, m)) -> ValueSome(memberResolution entity m)
         | ValueNone ->
             // The declaration's own entity: the outermost one written inside its range, since
             // anything nested starts further down.
@@ -400,12 +366,11 @@ module internal FSharpCallStackResolver =
                 sameFile entity.DeclarationLocation
                 && declaration.StartLine <= entity.DeclarationLocation.StartLine
                 && entity.DeclarationLocation.StartLine <= declaration.EndLine)
-            |> Seq.sortBy (fun entity -> entity.DeclarationLocation.StartLine)
+            |> Seq.sortBy _.DeclarationLocation.StartLine
             |> Seq.tryHeadV
             |> ValueOption.map (fun entity ->
-                // A private `static let` runs in the type's static constructor; naming that as the
-                // enclosing type is honest, and marking it a static ctor gives it the ctor glyph
-                // instead of a class one and keeps it distinct from the instance ctor's `.ctor` node.
+                // A private `static let` runs in the type's static constructor, which also gives the
+                // node a constructor glyph and keeps it apart from the instance constructor's `.ctor`.
                 {
                     Range = entity.DeclarationLocation
                     Entity = entity
@@ -421,16 +386,13 @@ module internal FSharpCallStackResolver =
         let line = closureLine frame origin entity
 
         let enclosing =
-            match qualifiedMember with
-            | ValueSome name ->
-                tryFindMember frame name entity
-                |> ValueOption.orElseWith (fun () -> tryFindDeclarationAbove line entity)
-            | ValueNone -> tryFindDeclarationAbove line entity
+            qualifiedMember
+            |> ValueOption.bind (fun name -> tryFindMember frame name entity)
+            |> ValueOption.orElseWith (fun () -> tryFindDeclarationAbove line entity)
 
         // A `task` builder's resumption thunk is numbered from line 1 and carries no sequence points,
-        // so neither its name nor the debugger places it. It is still the user's binding by name, and
-        // leaving it unresolved would put a bare `Invoke` on the map, so it falls back to the
-        // declaration that contains it.
+        // so neither its name nor the debugger places it: it falls back to the declaring entity
+        // rather than reach the map as a bare `Invoke`.
         let struct (host, hostName, traits, anchor) =
             match enclosing with
             | ValueSome m -> struct (m.DeclarationLocation, m.DisplayName, traitsOf m |> Set.add Lifted, line)
@@ -439,12 +401,10 @@ module internal FSharpCallStackResolver =
 
                 struct (host, entity.DisplayName, entityTraits entity |> Set.add Lifted, host.StartLine)
 
-        // `outer`, `inner` and `work` name a real binding and read well on their own. A synthesized
-        // name - `Pipe #1 input at line 97` for a computation expression body or a pipeline stage -
-        // names nothing, and the function the body belongs to may be absent from the stack entirely:
-        // an `async` block runs from FSharp.Core, so nothing else on the map says `asyncBody`. Taking
-        // the enclosing declaration alone would collide with that function's own node where it *is*
-        // on the stack, as a pipeline's is, so the line comes with it.
+        // A synthesized name - `Pipe #1 input at line 97` for a computation expression body or a
+        // pipeline stage - names nothing, and the function it belongs to may not be on the stack:
+        // an `async` block runs from FSharp.Core. The line keeps it apart from that function's own
+        // node where it is on the stack, as a pipeline's is.
         let displayName =
             if origin.EnclosingName.IndexOf ' ' >= 0 then
                 $"%s{hostName}@%d{anchor}"
@@ -461,20 +421,7 @@ module internal FSharpCallStackResolver =
                 DisplayName = displayName
             }
 
-    let private resolveMember (frame: ParsedFrame) (entity: FSharpEntity) name =
-        tryFindMember frame name entity
-        |> ValueOption.map (fun m ->
-            {
-                Range = m.DeclarationLocation
-                Entity = entity
-                MemberName = ValueSome m.CompiledName
-                Kind = kindOf m
-                Traits = traitsOf m
-                DisplayName = m.DisplayName
-            })
-
-    /// A frame name flattens the declaring path, so the entity it names is found by trying every
-    /// split of that path; within the entity it is the frame's own shape that says what to look for.
+    /// Within the entity it is the frame's own shape that says what to look for.
     let private tryResolveByName (frame: ParsedFrame) (signature: FSharpAssemblySignature) =
         entityPathCandidates frame.Path (memberName frame.Member)
         |> Seq.tryPickV (fun struct (entityPath, qualifiedMember) ->
@@ -483,7 +430,7 @@ module internal FSharpCallStackResolver =
             | Some entity ->
                 match frame.Member, qualifiedMember with
                 | FrameClosureBody origin, _ -> resolveClosure frame origin entity qualifiedMember
-                | _, ValueSome name -> resolveMember frame entity name
+                | _, ValueSome name -> tryFindMember frame name entity |> ValueOption.map (memberResolution entity)
                 | _, ValueNone -> ValueNone)
 
     /// Module initialization names the file rather than a construct, so only the debugger's position
@@ -516,23 +463,25 @@ module internal FSharpCallStackResolver =
                     let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
                     let! results = checker.ParseAndCheckProject(options)
 
-                    // Only a startup frame is placed by its line rather than its name, and only that
-                    // needs the shape of the file it landed in.
+                    // Only a startup frame is placed by its line, and only that needs the shape of
+                    // the file it landed in.
                     let shapes = Dictionary<string, NavigationItems>(StringComparer.OrdinalIgnoreCase)
 
-                    for file in
+                    let startupFiles =
                         frames
-                        |> Seq.choose (fun frame ->
+                        |> Seq.chooseV (fun frame ->
                             match frame.Member, frame.SourcePosition with
-                            | FrameStartupCode, ValueSome position -> Some position.File
-                            | _ -> None)
-                        |> Seq.distinct do
+                            | FrameStartupCode, ValueSome position -> ValueSome position.File
+                            | _ -> ValueNone)
+                        |> Seq.distinct
+
+                    for file in startupFiles do
                         match
                             project.Documents
-                            |> Seq.tryFind (fun d -> String.Equals(d.FilePath, file, StringComparison.OrdinalIgnoreCase))
+                            |> Seq.tryFindV (fun d -> String.Equals(d.FilePath, file, StringComparison.OrdinalIgnoreCase))
                         with
-                        | None -> ()
-                        | Some document ->
+                        | ValueNone -> ()
+                        | ValueSome document ->
                             let! parseResults = document.GetFSharpParseResultsAsync "FSharpCallStackResolver"
                             shapes.[file] <- Navigation.getNavigation parseResults.ParseTree
 
