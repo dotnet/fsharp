@@ -125,6 +125,35 @@ type private FSharpProjectOptionsMessage =
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
+/// One lock for everything the reactor publishes outside its agent's own serialization: the options
+/// cache, the single-file cache and the reference watches. Closing the solution bumps the epoch and
+/// clears them in the same critical section, and a computation that started before the close finds
+/// the epoch moved when it comes to publish, so old-solution work can never re-add an entry or a
+/// watch behind it. Nothing that blocks (I/O, COM, FCS) may run inside the lock.
+[<Sealed>]
+type internal PublicationGate() =
+    let gate = obj ()
+    let mutable epoch = 0
+
+    member _.Current = lock gate (fun () -> epoch)
+
+    member _.Run(action: unit -> 'T) = lock gate action
+
+    /// Moves to the next epoch and runs `clear` in the same critical section.
+    member _.Bump(clear: unit -> 'T) =
+        lock gate (fun () ->
+            epoch <- epoch + 1
+            clear ())
+
+    /// Runs `publish` only if no Bump happened since `captured` was read.
+    member _.TryPublish(captured: int, publish: unit -> unit) =
+        lock gate (fun () ->
+            if epoch = captured then
+                publish ()
+                true
+            else
+                false)
+
 [<Sealed>]
 type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatcher: IFSharpFileChangeWatcher) =
     let cancellationTokenSource = new CancellationTokenSource()
@@ -146,13 +175,18 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
     let scriptUpdatedEvent = Event<FSharpProjectOptions>()
 
-    // The '-r:' set of each project is watched for the reference stamps the snapshot-reuse
-    // guard reads; invalidating the FCS build on a change is Roslyn's job (it swaps the
-    // MetadataReference and bumps Project.Version, which reaches tryComputeOptions).
-    let referenceChangeTracker = new FSharpReferenceChangeTracker(fileChangeWatcher)
+    let disposeSingleFileCacheEntry ({ Subscription = subscription }: SingleFileCacheEntry) =
+        subscription |> ValueOption.iter _.Dispose()
 
-    // Updated by the agent and cleared by ClearAllCaches on the solution-close thread; every
-    // read-diff-write goes under this lock so the two cannot unbalance the tracker's ref counts.
+    // Each project's '-r:' set is watched for the reference stamps the snapshot-reuse guard reads.
+    // Roslyn watches only MetadataReferences and invalidates those itself by bumping Project.Version;
+    // a project reference's output dll is a ProjectReference to Roslyn and is watched only here.
+    let referenceChangeTracker = new FSharpReferenceChangeTracker(fileChangeWatcher)
+    let referenceStamps = referenceChangeTracker :> IReferenceStamps
+
+    let publication = PublicationGate()
+
+    // Guarded by `publication`, like every write that adds to `cache` or `singleFileCache`.
     let referenceWatches = Dictionary<ProjectId, HashSet<string>>()
 
     let referencePaths (projectOptions: FSharpProjectOptions) =
@@ -164,48 +198,52 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
         paths
 
-    let watchReferenceFiles (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
+    // Callers hold `publication`.
+    let watchReferenceFilesNoLock (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
         let paths = referencePaths projectOptions
 
-        lock referenceWatches (fun () ->
-            match referenceWatches.TryGetValue projectId with
-            | true, previous ->
-                for path in previous do
-                    if not (paths.Contains path) then
-                        referenceChangeTracker.StopWatchingReference path
+        match referenceWatches.TryGetValue projectId with
+        | true, previous ->
+            for path in previous do
+                if not (paths.Contains path) then
+                    referenceChangeTracker.StopWatchingReference path
 
-                for path in paths do
-                    if not (previous.Contains path) then
-                        referenceChangeTracker.StartWatchingReference path
-            | _ ->
-                for path in paths do
+            for path in paths do
+                if not (previous.Contains path) then
                     referenceChangeTracker.StartWatchingReference path
+        | _ ->
+            for path in paths do
+                referenceChangeTracker.StartWatchingReference path
 
-            if paths.Count > 0 then
-                referenceWatches[projectId] <- paths
-            else
-                referenceWatches.Remove projectId |> ignore)
+        if paths.Count > 0 then
+            referenceWatches[projectId] <- paths
+        else
+            referenceWatches.Remove projectId |> ignore
+
+    // Callers hold `publication`.
+    let clearReferenceWatchesNoLock (projectId: ProjectId) =
+        match referenceWatches.TryGetValue projectId with
+        | true, paths ->
+            referenceWatches.Remove projectId |> ignore
+
+            for path in paths do
+                referenceChangeTracker.StopWatchingReference path
+        | _ -> ()
 
     let clearReferenceWatches (projectId: ProjectId) =
-        lock referenceWatches (fun () ->
-            match referenceWatches.TryGetValue projectId with
-            | true, paths ->
-                referenceWatches.Remove projectId |> ignore
+        publication.Run(fun () -> clearReferenceWatchesNoLock projectId)
 
-                for path in paths do
-                    referenceChangeTracker.StopWatchingReference path
-            | _ -> ())
+    // Callers hold `publication`.
+    let clearAllReferenceWatchesNoLock () =
+        for KeyValue(_, paths) in referenceWatches do
+            for path in paths do
+                referenceChangeTracker.StopWatchingReference path
 
-    let clearAllReferenceWatches () =
-        lock referenceWatches (fun () ->
-            for KeyValue(_, paths) in referenceWatches do
-                for path in paths do
-                    referenceChangeTracker.StopWatchingReference path
-
-            referenceWatches.Clear())
+        referenceWatches.Clear()
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
+        let epoch = publication.Current
 
         match weakPEReferences.TryGetValue comp with
         | true, fsRefProj -> fsRefProj
@@ -229,7 +267,11 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
                             if result.Success then
                                 strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
-                                lastSuccessfulCompilations.[projectId] <- comp
+
+                                // Not under the gate: FCS threads must not queue behind a solution close.
+                                if publication.Current = epoch then
+                                    lastSuccessfulCompilations.[projectId] <- comp
+
                                 ms.Position <- 0L
                                 ms :> Stream |> Some
                             else
@@ -269,6 +311,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
     let rec tryComputeOptionsBySingleScriptOrFile (document: Document) userOpName =
         cancellableTask {
+            let epoch = publication.Current
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
             let textViewAndCaret () : (IVsTextView * Position) voption = document.TryGetTextViewAndCaretPos()
@@ -364,21 +407,23 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                         Subscription = subscription
                     }
 
-                singleFileCache.AddOrUpdate(
-                    document.Id, // The key to the cache
-                    (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
-                    (fun _ _ value -> value), // Function to update the value if the key exists
-                    {
-                        Project = document.Project
-                        FileStamp = fileStamp
-                        ParsingOptions = parsingOptions
-                        ProjectOptions = projectOptions
-                        Subscription = ValueNone
-                    } // The value to add or update
-                )
-                |> ignore
+                // The subscription is a COM advise and stays outside the gate.
+                let entry =
+                    addToCacheAndSubscribe
+                        {
+                            Project = document.Project
+                            FileStamp = fileStamp
+                            ParsingOptions = parsingOptions
+                            ProjectOptions = projectOptions
+                            Subscription = ValueNone
+                        }
 
-                return ValueSome struct (parsingOptions, projectOptions)
+                if publication.TryPublish(epoch, fun () -> singleFileCache.[document.Id] <- entry) then
+                    return ValueSome struct (parsingOptions, projectOptions)
+                else
+                    // The solution closed while this was computing; the document went with it.
+                    disposeSingleFileCacheEntry entry
+                    return ValueNone
 
             | true,
               {
@@ -389,10 +434,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
               } ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     match singleFileCache.TryRemove(document.Id) with
-                    | true,
-                      {
-                          Subscription = ValueSome subscription
-                      } -> subscription.Dispose()
+                    | true, entry -> disposeSingleFileCacheEntry entry
                     | _ -> ()
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
@@ -413,6 +455,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     let rec tryComputeOptions (project: Project) =
         cancellableTask {
             let projectId = project.Id
+            let epoch = publication.Current
             let! ct = CancellableTask.getCancellationToken ()
 
             match cache.TryGetValue(projectId) with
@@ -520,10 +563,21 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
                             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                            cache.[projectId] <- struct (project, parsingOptions, projectOptions)
-                            watchReferenceFiles projectId projectOptions
+                            let published =
+                                publication.TryPublish(
+                                    epoch,
+                                    fun () ->
+                                        cache.[projectId] <- struct (project, parsingOptions, projectOptions)
+                                        watchReferenceFilesNoLock projectId projectOptions
+                                )
 
-                            return ValueSome struct (parsingOptions, projectOptions)
+                            if published then
+                                return ValueSome struct (parsingOptions, projectOptions)
+                            else
+                                // The solution closed while this was computing: undo the FCS side of it and
+                                // answer as for a project that is not in the workspace.
+                                checker.ClearCache([ projectOptions ], userOpName = "tryComputeOptions")
+                                return ValueNone
 
             | true, struct (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project ct then
@@ -611,14 +665,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                     clearReferenceWatches projectId
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true,
-                      {
-                          ProjectOptions = projectOptions
-                          Subscription = subscription
-                      } ->
+                    | true, entry ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
-                        checker.ClearCache([ projectOptions ])
-                        subscription |> ValueOption.iter (fun handler -> handler.Dispose())
+                        checker.ClearCache([ entry.ProjectOptions ])
+                        disposeSingleFileCacheEntry entry
                     | _ -> ()
         }
 
@@ -649,17 +699,25 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
         | _ -> None
 
     member _.ClearAllCaches() =
-        commandLineOptions.Clear()
-        legacyProjectSites.Clear()
-        cache.Clear()
-        singleFileCache.Clear()
-        lastSuccessfulCompilations.Clear()
+        let singleFileEntries =
+            publication.Bump(fun () ->
+                commandLineOptions.Clear()
+                legacyProjectSites.Clear()
+                cache.Clear()
+                lastSuccessfulCompilations.Clear()
+                clearAllReferenceWatchesNoLock ()
 
-        clearAllReferenceWatches ()
+                let entries = singleFileCache.Values |> Seq.toArray
+                singleFileCache.Clear()
+                entries)
+
+        // A subscription's Dispose is a COM unadvise; it stays outside the gate.
+        for entry in singleFileEntries do
+            disposeSingleFileCacheEntry entry
 
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
 
-    member _.ReferenceStamps = referenceChangeTracker :> IReferenceStamps
+    member _.ReferenceStamps = referenceStamps
 
     interface IDisposable with
         member _.Dispose() =

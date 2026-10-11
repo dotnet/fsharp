@@ -88,6 +88,7 @@
     <Compile Include="EditorFormattingServiceTests.fs" />
     <Compile Include="RoslynSourceTextTests.fs" />
     <Compile Include="FileChangeWatcherTests.fs" />
+    <Compile Include="FSharpProjectOptionsManagerWatchTests.fs" />
     <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
