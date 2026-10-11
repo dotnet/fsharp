@@ -65,7 +65,7 @@ type internal FSharpConvertTupleRefactoring [<ImportingConstructor>] () =
                         }
 
                 match found with
-                | ValueSome caretNode when not (isInQuotation caretNode) ->
+                | ValueSome caretNode when not (isInQuotation caretNode) && canChange sourceText caretNode ->
                     let title =
                         if isStructNode caretNode then
                             SR.ConvertToReferenceTuple()

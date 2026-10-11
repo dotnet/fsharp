@@ -107,7 +107,8 @@ let isIdentifierCharBefore (sourceText: SourceText) (position: int) =
         | UnicodeCategory.Format -> true
         | _ -> last = '\''
 
-/// Whether text inserted at the position would run into the name or closing bracket before it: `f(a, b)`.
+/// Whether text inserted at the position would run into the name, closing bracket or type arguments before it:
+/// `f(a, b)`, `f<int>(a, b)`.
 let needsSpaceBefore (sourceText: SourceText) (position: int) =
     isIdentifierCharBefore sourceText position
     || position > 0
@@ -115,7 +116,8 @@ let needsSpaceBefore (sourceText: SourceText) (position: int) =
           | '`'
           | ')'
           | ']'
-          | '}' -> true
+          | '}'
+          | '>' -> true
           | _ -> false
 
 /// The position of the `(` that, with its `)`, encloses only the span and blanks.
@@ -196,8 +198,9 @@ let typeChanges (sourceText: SourceText) (toStruct: bool) (isWholeAnnotation: bo
                 [ TextChange(keyword, "") ]
     | _ -> []
 
-/// Whether the applied expression names a method or constructor that takes one argument list, or a union case of
-/// several fields: its parenthesized argument is an argument list. A name that does not resolve counts as one.
+/// Whether the applied expression names a method or constructor that takes one argument list, a union case of
+/// several fields, or a union case whose only field is declared a tuple: its parenthesized argument is an argument
+/// list, or a tuple of the kind the field declares. A name that does not resolve counts as one.
 let callsMethod (sourceText: SourceText) (checkResults: FSharpCheckFileResults) (funcExpr: SynExpr) =
     let rec tryName (expr: SynExpr) =
         match expr with
@@ -207,7 +210,8 @@ let callsMethod (sourceText: SourceText) (checkResults: FSharpCheckFileResults) 
             match List.tryLast ids with
             | Some ident -> ValueSome ident
             | None -> ValueNone
-        | SynExpr.TypeApp(expr = inner) -> tryName inner
+        | SynExpr.TypeApp(expr = inner)
+        | SynExpr.Paren(expr = inner) -> tryName inner
         | _ -> ValueNone
 
     match tryName funcExpr with
@@ -223,7 +227,9 @@ let callsMethod (sourceText: SourceText) (checkResults: FSharpCheckFileResults) 
                 && not mfv.IsProperty
                 && not mfv.IsEvent
                 && mfv.CurriedParameterGroups.Count <= 1
-            | :? FSharpUnionCase as unionCase -> unionCase.Fields.Count > 1
+            | :? FSharpUnionCase as unionCase ->
+                unionCase.Fields.Count > 1
+                || unionCase.Fields |> Seq.exists _.FieldType.IsTupleType
             | :? FSharpEntity -> true
             | _ -> false
         | None -> true
@@ -238,13 +244,13 @@ let isArgumentList (callsMethod: SynExpr -> bool) (tuple: SynExpr) (path: Syntax
         isInfix = false; funcExpr = funcExpr; argExpr = arg)) :: _ when isSame inner tuple && isSame arg paren -> callsMethod funcExpr
     | _ -> false
 
-/// Whether the tuple pattern is the parameter list of a member or constructor: its only argument, parenthesized or
+/// Whether the pattern is the parameter list of a member or constructor: its only argument, parenthesized or
 /// (a struct tuple) not.
-let isParameterList (tuple: SynPat) (path: SyntaxVisitorPath) =
+let isParameterList (pat: SynPat) (path: SyntaxVisitorPath) =
     let struct (argument, headPath) =
         match path with
-        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner tuple -> struct (paren, rest)
-        | _ -> struct (tuple, path)
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> struct (paren, rest)
+        | _ -> struct (pat, path)
 
     match headPath with
     | SyntaxNode.SynPat(SynPat.LongIdent(argPats = SynArgPats.Pats [ only ])) :: SyntaxNode.SynBinding(SynBinding(
@@ -340,6 +346,27 @@ let isStructNode (node: CaretNode) =
     | CaretNode.Type(tuple = SynType.Tuple(isStruct = isStruct)) -> isStruct
     | _ -> false
 
+/// Whether the path shows a lambda parameter a second time. For a parameter that is not a plain name the parser puts
+/// a match in the lambda's body, and the traversal walks that too; there the pattern has lost the parentheses and
+/// the annotation around it.
+let private isLambdaParameterAgain (pat: SynPat) (path: SyntaxVisitorPath) =
+    let rec lambdaArgs (path: SyntaxVisitorPath) =
+        match path with
+        | SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr(SynExpr.Match _) :: rest -> lambdaArgs rest
+        | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(args, _))) :: _ -> args
+        | _ -> []
+
+    let rec abovePatterns (path: SyntaxVisitorPath) =
+        match path with
+        | SyntaxNode.SynPat _ :: rest -> abovePatterns rest
+        | _ -> path
+
+    match abovePatterns path with
+    | SyntaxNode.SynMatchClause _ :: _ as clausePath ->
+        lambdaArgs clausePath
+        |> List.exists (fun arg -> Range.rangeContainsRange arg.Range pat.Range)
+    | _ -> false
+
 /// The innermost tuple expression, pattern or annotated tuple type under the caret.
 let tryCaretNode (callsMethod: SynExpr -> bool) (caret: pos) (parseTree: ParsedInput) =
     let annotationAt (annotation: SynType) (annotated: Annotated) =
@@ -351,11 +378,13 @@ let tryCaretNode (callsMethod: SynExpr -> bool) (caret: pos) (parseTree: ParsedI
         match node with
         | SyntaxNode.SynExpr(SynExpr.Tuple(range = m) as tuple) when containsPos m caret && not (isArgumentList callsMethod tuple path) ->
             ValueSome(CaretNode.Expr(tuple, path))
+        | SyntaxNode.SynPat pat when containsPos pat.Range caret && isLambdaParameterAgain pat path -> found
         | SyntaxNode.SynPat(SynPat.Tuple(range = m) as tuple) when containsPos m caret && not (isParameterList tuple path) ->
             ValueSome(CaretNode.Pat(tuple, path))
         | SyntaxNode.SynPat(SynPat.Typed(targetType = annotation) as pat) when containsPos annotation.Range caret ->
-            annotationAt annotation (Annotated.Pattern(pat, path))
-            |> ValueOption.orElse found
+            match annotationAt annotation (Annotated.Pattern(pat, path)) with
+            | ValueSome(CaretNode.Type(isWholeAnnotation = true)) when isParameterList pat path -> found
+            | node -> node |> ValueOption.orElse found
         | SyntaxNode.SynExpr(SynExpr.Typed(targetType = annotation) as expr) when containsPos annotation.Range caret ->
             annotationAt annotation (Annotated.Expression(expr, path))
             |> ValueOption.orElse found
@@ -372,3 +401,12 @@ let tryCaretNode (callsMethod: SynExpr -> bool) (caret: pos) (parseTree: ParsedI
                 | _ -> ValueNone)
             |> ValueOption.orElse found
         | _ -> found)
+
+/// Whether the tuple under the caret can change in place, which a tuple over several lines without parentheses cannot.
+let canChange (sourceText: SourceText) (node: CaretNode) =
+    let toStruct = not (isStructNode node)
+
+    match node with
+    | CaretNode.Expr(tuple, path) -> (tryExprChanges sourceText toStruct tuple path).IsSome
+    | CaretNode.Pat(tuple, path) -> (tryPatChanges sourceText toStruct tuple path).IsSome
+    | CaretNode.Type _ -> true
