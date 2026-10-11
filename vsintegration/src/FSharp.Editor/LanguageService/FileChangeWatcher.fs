@@ -14,6 +14,8 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+
 open CancellableTasks
 
 // Push-based file watching for FSharp.Editor, modelled on Roslyn's
@@ -539,3 +541,28 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
     interface IDisposable with
         member this.Dispose() = this.Dispose()
+
+#nowarn "57" // ReferenceOnDisk is part of the experimental FCS snapshot API
+
+/// The `ReferencesOnDisk` comparison behind snapshot reuse, keeping the stamp cache honest as it goes.
+[<RequireQualifiedAccess>]
+module internal ReferenceStamps =
+
+    /// Whether `current` differs from `previous`. A same-path pair with different stamps means one
+    /// side is behind, so that path's cached stamp is dropped and the next read re-stats it; any
+    /// difference in the path lists is a reference-set change and leaves the stamps alone.
+    let changed (stamps: IReferenceStamps) (current: ReferenceOnDisk list) (previous: ReferenceOnDisk list) =
+        let rec walk changed current previous =
+            match current, previous with
+            | [], [] -> changed
+            | c :: current, p :: previous ->
+                if not (String.Equals(c.Path, p.Path, StringComparison.Ordinal)) then
+                    true
+                elif c.LastModified <> p.LastModified then
+                    stamps.Invalidate c.Path
+                    walk true current previous
+                else
+                    walk changed current previous
+            | _ -> true
+
+        walk false current previous

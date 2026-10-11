@@ -224,21 +224,11 @@ module private CheckerExtensions =
                     }
         ]
 
-    // A snapshot's own ReferencesOnDisk come from FCS stat'ing the files, so a mismatch with the
-    // cached stamps means one side is behind; dropping the stamps costs one re-stat instead of a
-    // rebuild on every future Project instance after a missed notification.
     let referencesOnDiskChanged (project: Project) (oldSnapshot: FSharpProjectSnapshot) options =
         let stamps =
             project.Solution.GetFSharpWorkspaceService().FSharpProjectOptionsManager.ReferenceStamps
 
-        let current = getOnDiskReferences stamps options
-        let changed = current <> oldSnapshot.ProjectSnapshot.ReferencesOnDisk
-
-        if changed then
-            for reference in current do
-                stamps.Invalidate reference.Path
-
-        changed
+        ReferenceStamps.changed stamps (getOnDiskReferences stamps options) oldSnapshot.ProjectSnapshot.ReferencesOnDisk
 
     let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
