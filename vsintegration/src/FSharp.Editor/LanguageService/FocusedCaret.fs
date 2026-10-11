@@ -70,6 +70,10 @@ type internal FocusedCaretTracker() =
                     textView.Caret.PositionChanged.Subscribe(fun _ ->
                         if textView.HasAggregateFocus then
                             publish ())
+                    // An edit that moves the caret raises no PositionChanged; the layout it causes is the only notice.
+                    textView.LayoutChanged.Subscribe(fun args ->
+                        if args.NewSnapshot <> args.OldSnapshot && textView.HasAggregateFocus then
+                            publish ())
                     textView.GotAggregateFocus.Subscribe publish
                     textView.LostAggregateFocus.Subscribe(fun _ -> focusedCaret.Update None)
                 ]
