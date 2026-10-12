@@ -4431,10 +4431,13 @@ let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintIn
     | None ->
         let css = CreateCodegenState tcVal g amap
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        // Failed probes must not persist provisional solutions in generic inline bodies.
-        NoTrace.CollectThenUndoOrCommit
-            (fun (res: OperationResult<_>) -> res.IsOkResult)
-            (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
+        if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            // Failed probes must not persist provisional solutions in generic inline bodies.
+            NoTrace.CollectThenUndoOrCommit
+                (fun (res: OperationResult<_>) -> res.IsOkResult)
+                (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
+        else
+            SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
