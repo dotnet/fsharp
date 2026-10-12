@@ -5,6 +5,15 @@ CloudTest machine, builds and deploys the PR's F# VSIX, then runs the Apex tests
 It avoids the dependency skew of older preinstalled CI images. The chosen VS drop
 must still support the PR's package pins; a recent drop is not a compatibility guarantee.
 
+Before checking out source, the bootstrap uses `DartLab.Modules.Git`'s `Install-Git`
+to copy the Git distribution bundled with the selected DartLab Production package
+to `C:\Test\Git`. No separate installer or latest-version download is used.
+Bootstrap and `run-apex.ps1` each prepend `C:\Test\Git\cmd` to their process PATH;
+the Apex build and test children inherit it. CloudTest operations run in independent
+processes, so setup does not rely on a previous operation's PATH changes.
+Provisioning failures, an unusable Git executable, or a missing installation stop
+the run rather than falling back to an unverified machine installation.
+
 ## Requesting a run
 
 Post **`/dart <sha>`** or **`/pr-val <sha>`** as the entire comment on an open
@@ -96,10 +105,14 @@ Local regression commands (no product build or DartLab access required):
 ```powershell
 pwsh -NoProfile -File .github\scripts\pr-validation.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\SetupPrValidation.Tests.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexGit.Tests.ps1
 ```
 
 The script tests use temporary local Git repositories and a mocked GitHub PR response.
 They cover merge identity, ref races, closed/changed PRs and failure before checkout.
+The Git provisioning tests run offline with the installer boundary mocked. They
+cover missing initial PATH, independent Apex process setup, build/test child PATH
+inheritance, and provisioning failures without changing machine-wide PATH.
 The PowerShell 7 tests run the Actions helper offline with a fake HTTP boundary.
 They cover command syntax, authorization of the original commenter (also on reruns),
 private membership lookup with the separate App token, the queued snapshot and PR feedback.

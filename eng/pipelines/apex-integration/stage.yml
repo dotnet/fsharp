@@ -127,6 +127,11 @@ stages:
       displayName: Verify and check out PR snapshot
       scriptBlock: |
         $ErrorActionPreference = 'Stop'
+        Import-Module DartLab.Modules.Git -ErrorAction Stop
+        Install-Git -InstallationDirectory 'C:\Test\Git' -Scope Process
+        $env:PATH = "C:\Test\Git\cmd;$env:PATH"
+        & 'C:\Test\Git\cmd\git.exe' --version
+        if ($LASTEXITCODE -ne 0) { throw 'The provisioned DartLab Git is not usable.' }
         $sourceRoot = 'C:\Test\FSharp'
         if (Test-Path -LiteralPath $sourceRoot) {
             throw "$sourceRoot already exists; refusing to reuse an unverified checkout."

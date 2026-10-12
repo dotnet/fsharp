@@ -7,6 +7,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$gitDirectory = 'C:\Test\Git\cmd'
+if (-not (Test-Path -LiteralPath (Join-Path $gitDirectory 'git.exe') -PathType Leaf)) {
+    throw 'DartLab Git was not provisioned before running Apex.'
+}
+$env:PATH = "$gitDirectory;$env:PATH"
+
 $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 Set-Location $repositoryRoot
 
