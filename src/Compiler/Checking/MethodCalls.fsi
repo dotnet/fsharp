@@ -507,14 +507,6 @@ val GenWitnessExpr:
 val GenWitnessExprLambda:
     amap: ImportMap -> g: TcGlobals -> m: range -> traitInfo: TraitConstraintInfo -> Choice<TraitConstraintInfo, Expr>
 
-/// Generate the arguments passed for a set of (solved) traits in non-generic code
-val GenWitnessArgs:
-    amap: ImportMap ->
-    g: TcGlobals ->
-    m: range ->
-    traitInfos: TraitConstraintInfo list ->
-        Choice<TraitConstraintInfo, Expr> list
-
 #if !NO_TYPEPROVIDERS
 module ProvidedMethodCalls =
     val BuildInvokerExpressionForProvidedMethodCall:

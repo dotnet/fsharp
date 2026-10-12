@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $setup = Join-Path $PSScriptRoot '..\setup-pr-validation.ps1'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("fsharp-pr-validation-" + [Guid]::NewGuid())
-$git = (Get-Command git -CommandType Application).Source
+$git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
 $previousGlobalConfig = $env:GIT_CONFIG_GLOBAL
 $previousSystemConfig = $env:GIT_CONFIG_NOSYSTEM
 
