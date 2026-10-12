@@ -3183,8 +3183,11 @@ let main _ =
         |> shouldSucceed
 
     // https://github.com/dotnet/fsharp/issues/15987
-    [<Fact>]
-    let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` () =
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("preview")>]
+    [<InlineData("10.0")>]
+    let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` (version: string) =
         FSharp """
 module Test
 
@@ -3204,6 +3207,7 @@ if resultFloat <> 0.0 then failwith $"Expected 0.0 but got {resultFloat}"
 if resultDecimal <> 0M then failwith $"Expected 0M but got {resultDecimal}"
 if resultInt <> 0 then failwith $"Expected 0 but got {resultInt}"
 """
+        |> withLangVersion version
         |> asExe
         |> compileAndRun
         |> shouldSucceed
