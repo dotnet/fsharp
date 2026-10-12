@@ -210,22 +210,18 @@ module EvictionProcessor =
     let private agent =
         MailboxProcessor.Start(
             (fun inbox ->
-                let execute f =
-                    try
-                        f ()
-                    with _ ->
-                        () // Think where to report a failure.
-
                 let rec loop () =
                     async {
                         let! work = inbox.Receive()
-                        execute work
+                        work ()
                         return! loop ()
                     }
 
                 loop ()),
             cancellationToken = CancellationToken.None
         )
+
+    let Error = agent.Error
 
     let post = agent.Post
 

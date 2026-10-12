@@ -53,6 +53,9 @@ module internal CacheOptions =
     /// Set eviction mode to NoEviction.
     val withNoEviction: CacheOptions<'Key> -> CacheOptions<'Key>
 
+module internal EvictionProcessor =
+    val Error: IEvent<exn>
+
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null> =
     new: options: CacheOptions<'Key> * ?name: string -> Cache<'Key, 'Value>
