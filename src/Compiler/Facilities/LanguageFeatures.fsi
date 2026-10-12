@@ -11,7 +11,6 @@ type LanguageFeature =
     | WitnessPassing
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | AttributesToRightOfModuleKeyword
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop
