@@ -11,7 +11,7 @@ For per-PR changelog entries, use the [release-notes skill](../SKILL.md#version)
 - Store research, validation projects, and logs in session storage. Commit maintained fixtures only within explicit or agreed task scope.
 - Do not delete existing author files without approval.
 - Work directly by default. Use bounded, grouped research only when needed or requested, not one sub-agent per PR.
-- Do not prescribe models or a review panel.
+- Do not hardcode models or an automatic review panel. Honor an explicitly requested review setup.
 - Do not generate whole-.NET metadata, schemas, or branch sets unless the task requires those publication contracts.
 
 ## 2. Prove release inclusion
@@ -55,7 +55,9 @@ Resolve release tags to commit SHAs for each comparison:
 - Use established feature names in headings and the opening table of contents. Keep both in the same order.
 - Explain concrete benefits positively in the body. Match predecessor proportions, not a fixed highlight quota or one-sentence cap.
 - Read implementation tests for meaningful capability scenarios. Adapt illustrative source-tested examples, not only the smallest syntax example.
-- Do not use negative tests, source conditions, or an unshipped test builder as positive capability proof.
+- Do not treat negative or skipped tests, or unmet source conditions, as proof of successful behavior.
+- A validated prototype or test-only integration can demonstrate shipped enabling capability. Label the integration as prototype or test-only.
+- Do not present that integration as shipped stock-library support or guarantee its future release.
 - State a library-author-first audience near the feature introduction.
 - Distinguish shipped compiler mechanics and enabling APIs from stock-library support and prototype integrations.
 - Explain the adoption path without dismissing foundations or promising integrations that do not ship.
@@ -99,7 +101,8 @@ Resolve release tags to commit SHAs for each comparison:
 - Inspect supplied packages, article references, assets, and provenance before import. Do not execute package code.
 - Import only the approved article and required media. Exclude archives, datasets, generators, extra READMEs, and scripts unless requested.
 - Check SVGs for scripts and external content. Verify alt text and repository media paths.
-- Preserve navigation-only milestone indexes and other component links. Do not add index highlights or invent a new `index.md`.
+- Preserve navigation-only milestone indexes by default. Change that convention only on explicit user request.
+- Preserve other component links. Use the actual index, such as `README.md`, rather than inventing `index.md`.
 - Check relative article links, anchors, the table of contents, and media references.
 - After renames or deletions, repair affected references.
 - Use Markdown links for every issue and PR reference.
