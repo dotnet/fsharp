@@ -147,9 +147,15 @@ type SynMatchClauseTrivia =
     {
         ArrowRange: range option
         BarRange: range option
+        WhenKeyword: range option
     }
 
-    static member Zero: SynMatchClauseTrivia = { ArrowRange = None; BarRange = None }
+    static member Zero: SynMatchClauseTrivia =
+        {
+            ArrowRange = None
+            BarRange = None
+            WhenKeyword = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynEnumCaseTrivia =

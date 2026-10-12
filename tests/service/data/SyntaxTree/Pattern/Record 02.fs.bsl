@@ -17,7 +17,8 @@ ImplFile
                             (4,11--4,16), Wild (4,15--4,16), None)], (4,2--4,18)),
                      None, Const (Unit, (4,22--4,24)), (4,2--4,24), Yes,
                      { ArrowRange = Some (4,19--4,21)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,24),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,24),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,9--3,13) }), (3,0--4,24))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
