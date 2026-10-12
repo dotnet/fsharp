@@ -1,6 +1,8 @@
 # Presentation reproduction
 
-Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the same old/new comparison on .NET Framework, and retained IDE managed heap. The callback table compares only old and new across all eight length-four kernels, including unchanged controls.
+Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The application table uses short F# snippets, comparing old and new with four-element collections.
+
+Publish `article.md` and the three SVGs; keep the data and generation files as local working material. The article retains PR links but no supplementary-data links.
 
 ## Regenerate without running benchmarks
 
@@ -13,15 +15,19 @@ node .\docs\fsharp11-performance\presentation\generate.mjs --check
 
 The generator resolves inputs relative to itself, so it also works from another current directory. It only writes `article.md`, `compiler-allocation.svg`, `runtime-allocation.svg`, `ide-retained-heap.svg` and `chart-data.json` in this directory. Authored prose stays outside `generated` markers in the article; keep those markers when editing. `--check` writes nothing and fails on stale output, missing data, changed sample counts, inconsistent published medians or wrong portable percentage denominators.
 
-`chart-data.json` preserves exact byte medians, decimal GB/MB display values and reduction percentages, with JSON pointers back to each source value. It includes SHA-256 hashes of input evidence bytes and a hash of the generator after LF normalization, plus payload identities, counts, the chronological PR inventory and the explicitly discussed RAM/CPU regressions. Generated text is compared after LF normalization so checking works with either Git checkout line-ending convention. There are no generated timestamps, locale-dependent number formats, random numbers, or moving source references.
+`chart-data.json` preserves exact byte medians, decimal GB/MB display values and reduction percentages, with JSON pointers back to each source value. It includes the displayed F# snippets alongside their original case labels, SHA-256 hashes of input evidence bytes and a hash of the generator after LF normalization, plus payload identities, counts, the chronological PR inventory and the explicitly discussed RAM/CPU regressions. Generated text is compared after LF normalization so checking works with either Git checkout line-ending convention. There are no generated timestamps, locale-dependent number formats, random numbers, or moving source references.
 
 Scalar values come from each campaign's `scalar_statistics` and are cross-checked against its 12 non-warmup observations per cell. Application medians are checked against the three launch records. Reductions use **100 times (1 minus the candidate median divided by the released compiler median)**; positive means less allocation/retention. Both RC1 and source-built percentages use the released baseline. They are not medians of round-paired ratios. The Framework comparison keeps both compiler generations on Framework. No means across projects or pooled cohorts are reported.
 
-The SVGs have white backgrounds, zero baselines, directly labeled GB/MB values, accessible titles/descriptions and companion Markdown tables. GB means 1,000,000,000 bytes; MB means 1,000,000 bytes. The original raw datasets and their GiB/MiB tables are unchanged. SDK 10/old is slate, RC1 is blue, and source-built/new is teal.
+The SVGs have white backgrounds, zero baselines, directly labeled GB/MB values, accessible titles/descriptions and companion Markdown tables. The original raw datasets and their GiB/MiB tables are unchanged. SDK 10/old is slate, RC1 is blue, and source-built/new is teal.
 
 Only allocation **bar widths** scale per project: each project's largest value fills the available width, and the other versions use that same within-project scale. Displayed values are never converted into an index. The IDE chart uses a shared 0-600 MB scale. The Framework chart has only the released and source-built compiler on Framework, not the full runtime-control matrix.
 
 The opening PR count is calculated from audited mainline ancestry and merge dates, not all search hits. Every distinct mainline PR is listed separately in merge order, with one checked RC1 membership cut-line; experimental-branch merges are excluded from that count. The wider runtime controls, application sizes and all historical observations remain linked rather than being rewritten to match the narrower presentation.
+
+`function-inlining.json` records the public API inventory, source commits and implementation/signature blob IDs. It identifies existing List/Array functions gaining `inline` plus `InlineIfLambda`, including the already-inline `Array.init` gaining the attribute; already-optimized parameters and new APIs such as `partitionWith` are excluded. This is not a claim that their results or user-supplied functions allocate nothing.
+
+The partial-application example was compiled serially with SDK 10, RC1 and the source-built compiler against the same SDK 10 Core and references. The existing IL inspector found one function-object construction site in old/RC1 output and none in the new output; the example also passed `None` and two `Some` checks. The plain-variable partial-application control was already closure-free, which is why the article uses a captured property value and does not claim that all partial applications previously failed to inline. Sources, DLLs and IL inventories are preserved under the recorded artifact root in `article-checks`; the accepted record is `captured-value-verification.json`.
 
 ## Frozen inputs, separate experiments
 
