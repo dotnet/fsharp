@@ -587,7 +587,7 @@ let ``Event is classified as event name for VS highlighting`` () =
         let! client = initializeLanguageServer None
         let legend = getSemanticTokensLegend client
         let source =
-            "open System\ntype T() =\n    let ev = new Event<EventHandler, EventArgs>()\n    [<CLIEvent>]\n    member _.(*1*)MyEvent = ev.Publish"
+            "open System\ntype T() =\n    let ev = new Event<EventHandler, EventArgs>()\n    [<CLIEvent>]\n    member _.(*1*)MyEvent = ev.Publish\nlet subscribe (t: T) = t.(*2*)MyEvent.Add(fun _ -> ())"
 
         let cleanSource, markerPositions = stripMarkers source
         let fileOnDisk = setupSingleFileProject client cleanSource
@@ -595,9 +595,10 @@ let ``Event is classified as event name for VS highlighting`` () =
         Assert.NotNull(result)
 
         let tokens = decodeSemanticTokens legend result.Data
-        let token = findTokenAtMarker markerPositions "(*1*)" tokens
-        Assert.True(token.IsSome, "Expected a token for 'MyEvent'")
-        Assert.Equal("event name", token.Value.TokenType)
+        for marker in [ "(*1*)"; "(*2*)" ] do
+            let token = findTokenAtMarker markerPositions marker tokens
+            Assert.True(token.IsSome, $"Expected a token for 'MyEvent' at {marker}")
+            Assert.Equal("event name", token.Value.TokenType)
     }
 
 // ---------------------------------------------------------------------------

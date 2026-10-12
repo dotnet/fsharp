@@ -16,6 +16,7 @@
 		<!-- Direct dependency with no transitive floor and no central PackageVersion, so pin it explicitly. -->
 		<PackageReference Include="StreamJsonRpc" VersionOverride="2.26.10" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Extensions" />
+		<PackageReference Include="System.Text.Json" />
 	</ItemGroup>
 
 	<ItemGroup>

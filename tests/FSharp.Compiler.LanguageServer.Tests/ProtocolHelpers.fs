@@ -7,6 +7,7 @@ open FSharp.Compiler.LanguageServer
 open StreamJsonRpc
 open System.IO
 open System.Diagnostics
+open System.Text.Json
 
 open Microsoft.VisualStudio.LanguageServer.Protocol
 open Nerdbank.Streams
@@ -34,8 +35,7 @@ let createLanguageServer (workspace: FSharpWorkspace) (config: FSharpLanguageSer
         | Some cfg -> FSharpLanguageServer.Create(LspLogger Trace.TraceInformation, workspace, config = cfg)
         | None -> FSharpLanguageServer.Create(workspace)
 
-    let formatter = new JsonMessageFormatter()
-    VSExtensionUtilities.AddVSExtensionConverters(formatter.JsonSerializer)
+    let formatter = createConfiguredFormatter ()
 
     let messageHandler =
         new HeaderDelimitedMessageHandler(inputStream, outputStream, formatter)
@@ -56,7 +56,7 @@ let createLanguageServer (workspace: FSharpWorkspace) (config: FSharpLanguageSer
     jsonRpc.StartListening()
 
     task {
-        let! response = jsonRpc.InvokeAsync<InitializeResult>("initialize", initializeParams)
+        let! response = jsonRpc.InvokeWithParameterObjectAsync<InitializeResult>("initialize", initializeParams)
         return TestRpcClient(jsonRpc, rpcTrace, workspace, response)
     }
 
@@ -71,25 +71,25 @@ let cleanCode = "let x = 1"
 let notMutableCode = "let x = 1\nx <- 2"
 
 let openDocument (client: TestRpcClient) (fileUri: Uri) (content: string) (version: int) =
-    client.JsonRpc.NotifyAsync(
+    client.JsonRpc.NotifyWithParameterObjectAsync(
         Methods.TextDocumentDidOpenName,
         DidOpenTextDocumentParams(
             TextDocument = TextDocumentItem(Uri = fileUri, LanguageId = "F#", Version = version, Text = content)))
 
 let changeDocument (client: TestRpcClient) (fileUri: Uri) (content: string) (version: int) =
-    client.JsonRpc.NotifyAsync(
+    client.JsonRpc.NotifyWithParameterObjectAsync(
         Methods.TextDocumentDidChangeName,
         DidChangeTextDocumentParams(
             TextDocument = VersionedTextDocumentIdentifier(Uri = fileUri, Version = version),
             ContentChanges = [| TextDocumentContentChangeEvent(Text = content) |]))
 
 let closeDocument (client: TestRpcClient) (fileUri: Uri) =
-    client.JsonRpc.NotifyAsync(
+    client.JsonRpc.NotifyWithParameterObjectAsync(
         Methods.TextDocumentDidCloseName,
         DidCloseTextDocumentParams(TextDocument = TextDocumentIdentifier(Uri = fileUri)))
 
 let pullDiagnosticResponse (client: TestRpcClient) (fileUri: Uri) =
-    client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
         Methods.TextDocumentDiagnosticName,
         DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileUri)))
 
@@ -112,7 +112,7 @@ let openAndPullDiagnostics (client: TestRpcClient) (fileUri: Uri) (content: stri
     }
 
 let pullVsDiagnosticsRaw(client: TestRpcClient) (fileUri: Uri) =
-    client.JsonRpc.InvokeWithParameterObjectAsync<Newtonsoft.Json.Linq.JToken>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<JsonElement>(
         Methods.TextDocumentDiagnosticName,
         DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileUri)))
 
@@ -122,28 +122,20 @@ let openAndPullVsDiagnosticsRaw (client: TestRpcClient) (fileUri: Uri) (content:
         return! pullVsDiagnosticsRaw client fileUri
     }
 
-let getVsDiagnosticItems (response: Newtonsoft.Json.Linq.JToken) =
-    let items = response["items"]
-    Assert.True(items <> null, "Expected 'items' property in diagnostic response")
-    items :?> Newtonsoft.Json.Linq.JArray
+let getVsDiagnosticItems (response: JsonElement) =
+    response.GetProperty("items").EnumerateArray() |> Seq.toArray
 
-let getVsProjects (diagnosticItem: Newtonsoft.Json.Linq.JToken) =
-    let projects = diagnosticItem["_vs_projects"]
-    Assert.True(projects <> null, "Expected '_vs_projects' property in VS diagnostic")
-    projects :?> Newtonsoft.Json.Linq.JArray
+let getVsProjects (diagnosticItem: JsonElement) =
+    diagnosticItem.GetProperty("_vs_projects").EnumerateArray() |> Seq.toArray
 
-let getVsProjectName (project: Newtonsoft.Json.Linq.JToken) =
-    let name = project["_vs_projectName"]
-    Assert.True(name <> null, "Expected '_vs_projectName' property in project info")
-    name.ToString()
+let getVsProjectName (project: JsonElement) =
+    project.GetProperty("_vs_projectName").GetString()
 
-let getVsProjectIdentifier (project: Newtonsoft.Json.Linq.JToken) =
-    let id = project["_vs_projectIdentifier"]
-    Assert.True(id <> null, "Expected '_vs_projectIdentifier' property in project info")
-    id.ToString()
+let getVsProjectIdentifier (project: JsonElement) =
+    project.GetProperty("_vs_projectIdentifier").GetString()
 
 let getProjectContexts (client: TestRpcClient) (fileUri: Uri) =
-    client.JsonRpc.InvokeAsync<VSProjectContextList>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<VSProjectContextList>(
         "textDocument/_vs_getProjectContexts",
         VSGetProjectContextsParams(TextDocument = TextDocumentItem(Uri = fileUri)))
 
@@ -158,7 +150,7 @@ let setupMultiProjectFile (client: TestRpcClient) (content: string) (projectName
 
 let requestCodeActions (client: TestRpcClient) (fileUri: Uri) (line: int) =
     let range = Range(Start = Position(Line = line, Character = 0), End = Position(Line = line, Character = 999))
-    client.JsonRpc.InvokeAsync<CodeAction array>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<CodeAction array>(
         Methods.TextDocumentCodeActionName,
         CodeActionParams(
             TextDocument = TextDocumentIdentifier(Uri = fileUri),
@@ -174,19 +166,19 @@ let openAndRequestCodeActions (client: TestRpcClient) (fileUri: Uri) (content: s
     }
 
 let pullSemanticTokensFull (client: TestRpcClient) (fileUri: Uri) =
-    client.JsonRpc.InvokeAsync<SemanticTokens>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<SemanticTokens>(
         Methods.TextDocumentSemanticTokensFullName,
         SemanticTokensParams(TextDocument = TextDocumentIdentifier(Uri = fileUri)))
 
 let pullSemanticTokensFullInContext (client: TestRpcClient) (fileUri: Uri) (projectContext: VSProjectContext) =
-    client.JsonRpc.InvokeAsync<SemanticTokens>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<SemanticTokens>(
         Methods.TextDocumentSemanticTokensFullName,
         SemanticTokensParams(TextDocument = VSTextDocumentIdentifier(Uri = fileUri, ProjectContext = projectContext)))
 
 let pullDiagnosticsInContext (client: TestRpcClient) (fileUri: Uri) (projectContext: VSProjectContext) =
     task {
         let! response =
-            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+            client.JsonRpc.InvokeWithParameterObjectAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
                 Methods.TextDocumentDiagnosticName,
                 DocumentDiagnosticParams(TextDocument = VSTextDocumentIdentifier(Uri = fileUri, ProjectContext = projectContext)))
         return response.First
@@ -218,7 +210,7 @@ let setupMultiTargetLikeProject (client: TestRpcClient) (content: string) (share
     fileOnDisk, pidA, pidB
 
 let pullSemanticTokensRange (client: TestRpcClient) (fileUri: Uri) (range: Range) =
-    client.JsonRpc.InvokeAsync<SemanticTokens>(
+    client.JsonRpc.InvokeWithParameterObjectAsync<SemanticTokens>(
         Methods.TextDocumentSemanticTokensRangeName,
         SemanticTokensRangeParams(TextDocument = TextDocumentIdentifier(Uri = fileUri), Range = range))
 

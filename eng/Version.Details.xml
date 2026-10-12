@@ -18,6 +18,10 @@
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>ad616f42ced6d62a1926a19641bd0c4353d185c3</Sha>
     </Dependency>
+    <Dependency Name="Microsoft.CommonLanguageServerProtocol.Framework" Version="5.12.0-1.26428.6">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
+    </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.14.0-1.26557.1">
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>04b3076a13a7fb376613cb17003059000db1beaa</Sha>
@@ -74,6 +78,12 @@
     <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.15">
       <Uri>https://github.com/dotnet/dotnet</Uri>
       <Sha>295ff616832ba1f8b192f8178c4188a133affe93</Sha>
+    </Dependency>
+    <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
+    <Dependency Name="System.Text.Json" Version="10.0.10">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>

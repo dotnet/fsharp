@@ -128,6 +128,25 @@ Will be packaged with FsLSP and available as a dotnet tool (?)
 
 It should always target the latest .NET runtime.
 
+#### Transport and serialization
+
+The standalone server uses header-delimited JSON-RPC on standard input/output; logs
+are written to standard error. The Visual Studio host uses the same protocol over
+an in-memory duplex stream. Both use `SystemTextJsonFormatter`, and CLaSP receives
+the formatter's `JsonSerializerOptions` so request deserialization uses the same
+converters as the transport.
+
+The protocol packages supply System.Text.Json attributes and converters for URIs,
+sum types, and other LSP values. Local converters preserve the five Visual Studio
+extension mappings (diagnostics, locations, server capabilities, symbol information,
+and text-document identifiers), including diagnostic project information and
+`_vs_projectContext`. LSP requests and notifications carry a single parameter object,
+not a positional argument array.
+
+CLaSP is centrally managed through `eng/Packages.props` and tracked as a Roslyn
+dependency in `eng/Version.Details.xml` and `eng/Version.Details.props`, with the same
+version and source commit as the other Roslyn packages.
+
 #### Workspace State Management
 
 This part of the library is responsible for keeping track of the current workspace state. The internal workspace model is used to create requests for FCS. It needs to make sure the internal state doesn't get out of sync with what's in the editor and on disk.

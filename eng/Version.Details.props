@@ -25,6 +25,7 @@ This file should be imported by eng/Versions.props
     <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26527.2</optimizationwindows_ntx64MIBCRuntimePackageVersion>
     <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26527.2</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
+    <MicrosoftCommonLanguageServerProtocolFrameworkPackageVersion>5.12.0-1.26428.6</MicrosoftCommonLanguageServerProtocolFrameworkPackageVersion>
     <MicrosoftCodeAnalysisPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisPackageVersion>
     <MicrosoftCodeAnalysisCompilersPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisCompilersPackageVersion>
     <MicrosoftCodeAnalysisCSharpPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisCSharpPackageVersion>
@@ -33,6 +34,8 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisFeaturesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>5.14.0-1.26557.1</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.14.0-1.26557.1</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
+    <!-- dotnet-runtime dependencies -->
+    <SystemTextJsonPackageVersion>10.0.10</SystemTextJsonPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
@@ -56,6 +59,7 @@ This file should be imported by eng/Versions.props
     <optimizationwindows_ntx64MIBCRuntimeVersion>$(optimizationwindows_ntx64MIBCRuntimePackageVersion)</optimizationwindows_ntx64MIBCRuntimeVersion>
     <optimizationwindows_ntx86MIBCRuntimeVersion>$(optimizationwindows_ntx86MIBCRuntimePackageVersion)</optimizationwindows_ntx86MIBCRuntimeVersion>
     <!-- dotnet-roslyn dependencies -->
+    <MicrosoftCommonLanguageServerProtocolFrameworkVersion>$(MicrosoftCommonLanguageServerProtocolFrameworkPackageVersion)</MicrosoftCommonLanguageServerProtocolFrameworkVersion>
     <MicrosoftCodeAnalysisVersion>$(MicrosoftCodeAnalysisPackageVersion)</MicrosoftCodeAnalysisVersion>
     <MicrosoftCodeAnalysisCompilersVersion>$(MicrosoftCodeAnalysisCompilersPackageVersion)</MicrosoftCodeAnalysisCompilersVersion>
     <MicrosoftCodeAnalysisCSharpVersion>$(MicrosoftCodeAnalysisCSharpPackageVersion)</MicrosoftCodeAnalysisCSharpVersion>
@@ -64,5 +68,7 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftVisualStudioLanguageServicesExternalAccessVersion>$(MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion)</MicrosoftVisualStudioLanguageServicesExternalAccessVersion>
+    <!-- dotnet-runtime dependencies -->
+    <SystemTextJsonVersion>$(SystemTextJsonPackageVersion)</SystemTextJsonVersion>
   </PropertyGroup>
 </Project>

@@ -272,11 +272,11 @@ let ``Diagnostics include project information`` () =
         let fileOnDisk = setupMultiProjectFile client notMutableCode [ projectName ]
         let! response = openAndPullVsDiagnosticsRaw client fileOnDisk notMutableCode
         let items = getVsDiagnosticItems response
-        Assert.True(items.Count > 0, "Expected at least one diagnostic")
+        Assert.True(items.Length > 0, "Expected at least one diagnostic")
         for item in items do
             let projects = getVsProjects item
             Assert.NotNull(projects)
-            Assert.True(projects.Count > 0, "Expected at least one project in _vs_projects")
+            Assert.True(projects.Length > 0, "Expected at least one project in _vs_projects")
             let projName = getVsProjectName projects[0]
             Assert.Equal(projectName, projName)
     }
@@ -289,7 +289,7 @@ let ``Diagnostics project identifier matches project context id format`` () =
         let fileOnDisk = setupMultiProjectFile client notMutableCode [ projectName ]
         let! response = openAndPullVsDiagnosticsRaw client fileOnDisk notMutableCode
         let items = getVsDiagnosticItems response
-        Assert.True(items.Count > 0, "Expected at least one diagnostic")
+        Assert.True(items.Length > 0, "Expected at least one diagnostic")
         let! contexts = getProjectContexts client fileOnDisk
         Assert.True(contexts.ProjectContexts.Length > 0, "Expected at least one project context")
 
@@ -308,7 +308,7 @@ let ``Diagnostics for file in multiple projects include all project names`` () =
         let fileOnDisk = setupMultiProjectFile client content [ "ProjectAlpha"; "ProjectBeta" ]
         let! response = openAndPullVsDiagnosticsRaw client fileOnDisk content
         let items = getVsDiagnosticItems response
-        Assert.True(items.Count > 0, "Expected at least one diagnostic")
+        Assert.True(items.Length > 0, "Expected at least one diagnostic")
         let firstItem = items[0]
         let vsProjects = getVsProjects firstItem
         let projNames = [| for p in vsProjects -> getVsProjectName p |] |> Array.sort
@@ -324,7 +324,7 @@ let ``VS diagnostics for file not in any project return empty items`` () =
         let fileOnDisk = sourceFileOnDisk notMutableCode
         let! response = openAndPullVsDiagnosticsRaw client fileOnDisk notMutableCode
         let items = getVsDiagnosticItems response
-        Assert.Equal(0, items.Count)
+        Assert.Equal(0, items.Length)
     }
 
 [<Fact>]

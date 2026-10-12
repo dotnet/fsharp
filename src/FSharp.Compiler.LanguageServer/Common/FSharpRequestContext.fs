@@ -29,7 +29,7 @@ type FShapRequestContextFactory(lspServices: ILspServices) =
 
     override _.CreateRequestContextAsync<'TRequestParam>
         (
-            _queueItem: IQueueItem<FSharpRequestContext>,
+            _queueItem: QueueItem<FSharpRequestContext>,
             _methodHandler: IMethodHandler,
             _requestParam: 'TRequestParam,
             _cancellationToken: CancellationToken

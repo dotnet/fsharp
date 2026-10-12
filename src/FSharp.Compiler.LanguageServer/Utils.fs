@@ -36,6 +36,7 @@ module Utils =
             None
         else
             let parts = contextId.Split('|', 3)
+
             if parts.Length = 3 then
                 Some(FSharpProjectIdentifier(parts[2], parts[1]))
             else
@@ -62,20 +63,32 @@ module Utils =
 
     let LspLogger (output: string -> unit) =
         { new ILspLogger with
-            member this.LogEndContext(message: string, ``params``: obj array) : unit =
-                output $"EndContext :: {message} %A{``params``}"
+            member _.CreateContext(context: string) =
+                output $"StartContext :: {context}"
+
+                { new IDisposable with
+                    member _.Dispose() = output $"EndContext :: {context}"
+                }
+
+            member _.CreateLanguageContext(language: string | null) =
+                output $"StartLanguageContext :: {language}"
+
+                { new IDisposable with
+                    member _.Dispose() =
+                        output $"EndLanguageContext :: {language}"
+                }
+
+            member _.LogDebug(message: string, ``params``: obj array) : unit =
+                output $"DEBUG :: {message} %A{``params``}"
 
             member this.LogError(message: string, ``params``: obj array) : unit =
                 output $"ERROR :: {message} %A{``params``}"
 
-            member this.LogException(``exception``: exn, message: string, ``params``: obj array) : unit =
+            member this.LogException(``exception``: exn, message: string | null, ``params``: obj array) : unit =
                 output $"EXCEPTION :: %A{``exception``} {message} %A{``params``}"
 
             member this.LogInformation(message: string, ``params``: obj array) : unit =
                 output $"INFO :: {message} %A{``params``}"
-
-            member this.LogStartContext(message: string, ``params``: obj array) : unit =
-                output $"StartContext :: {message} %A{``params``}"
 
             member this.LogWarning(message: string, ``params``: obj array) : unit =
                 output $"WARNING :: {message} %A{``params``}"
@@ -100,6 +113,7 @@ type FSharpDiagnosticExtensions =
             | FSharpDiagnosticSeverity.Warning -> DiagnosticSeverity.Warning
             | FSharpDiagnosticSeverity.Info -> DiagnosticSeverity.Information
             | FSharpDiagnosticSeverity.Hidden -> DiagnosticSeverity.Hint
+
         VSDiagnostic(
             Range = this.Range.ToLspRange(),
             Severity = severity,

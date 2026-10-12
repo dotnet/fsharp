@@ -25,6 +25,29 @@ let private substringOfRange (source: string) (r: Range) =
     let line = lines[r.StartLine - 1]
     line.Substring(r.StartColumn, r.EndColumn - r.StartColumn)
 
+[<Theory>]
+[<InlineData("let", "member _.MyEvent", "t.MyEvent")>]
+[<InlineData("static let", "static member MyEvent", "T.MyEvent")>]
+let ``CLI event declarations and uses are classified as events`` (binding: string) (memberDeclaration: string) (eventUse: string) =
+    task {
+        let source =
+            $"""module Test
+open System
+type T() =
+    {binding} ev = new Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    {memberDeclaration} = ev.Publish
+let subscribe (t: T) = {eventUse}.Add(fun _ -> ())
+"""
+        let! items = getClassifications source
+        let events =
+            items
+            |> Array.filter (fun item -> (substringOfRange source item.Range).EndsWith("MyEvent", System.StringComparison.Ordinal))
+        Assert.Equal(2, events.Length)
+        for item in events do
+            Assert.Equal(SemanticClassificationType.Event, item.Type)
+    }
+
 /// (#15290 regression) Copy-and-update record fields must not be classified as type names.
 /// Before the fix, Item.Types was registered with mWholeExpr and ItemOccurrence.Use, producing
 /// a wide type classification that overshadowed the correct RecordField classification.

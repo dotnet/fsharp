@@ -1,24 +1,17 @@
 ﻿namespace FSharp.Compiler.LanguageServer.Common
 
 open Microsoft.CommonLanguageServerProtocol.Framework
-open System
-open StreamJsonRpc
 open System.Threading.Tasks
 open Microsoft.Extensions.DependencyInjection
 
 #nowarn "3261"
 
-type LspServiceLifeCycleManager() =
+type LspServiceLifeCycleManager(logger: ILspLogger) =
 
-    interface ILifeCycleManager with
-        member _.ShutdownAsync(_message: string) =
-            task {
-                try
-                    printfn "Shutting down"
-                with
-                | :? ObjectDisposedException
-                | :? ConnectionLostException -> ()
-            }
+    interface IOnServerShutdown with
+        member _.ShutdownAsync() =
+            logger.LogInformation("Shutting down")
+            Task.CompletedTask
 
         member _.ExitAsync() = Task.CompletedTask
 

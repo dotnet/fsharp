@@ -1,6 +1,7 @@
 module LanguageServer.Protocol
 
 open System
+open System.Text.Json
 open Xunit
 
 open FSharp.Compiler.LanguageServer
@@ -10,6 +11,45 @@ open FSharp.Compiler.CodeAnalysis.Workspace
 open LanguageServer.ProtocolHelpers
 
 #nowarn "57"
+
+[<Fact>]
+let ``Protocol formatter round trips all VS base type mappings`` () =
+    let options = (createConfiguredFormatter ()).JsonSerializerOptions
+    let uri = Uri("file:///c:/project%20name/file%23name.fs")
+    let range = Range(Start = Position(Line = 1, Character = 2), End = Position(Line = 3, Character = 4))
+
+    let values =
+        [ Diagnostic(Range = range, Message = "diagnostic") :> obj, typeof<Diagnostic>, typeof<VSDiagnostic>
+          Location(Uri = uri, Range = range) :> obj, typeof<Location>, typeof<VSLocation>
+          ServerCapabilities() :> obj, typeof<ServerCapabilities>, typeof<VSServerCapabilities>
+          SymbolInformation(Name = "symbol", Kind = SymbolKind.Function, Location = Location(Uri = uri, Range = range)) :> obj,
+          typeof<SymbolInformation>,
+          typeof<VSSymbolInformation>
+          TextDocumentIdentifier(Uri = uri) :> obj, typeof<TextDocumentIdentifier>, typeof<VSTextDocumentIdentifier> ]
+
+    for value, baseType, extensionType in values do
+        let json = JsonSerializer.Serialize(value, baseType, options)
+        let result = JsonSerializer.Deserialize(json, baseType, options)
+        Assert.NotNull(result)
+        Assert.Equal(extensionType, result.GetType())
+        use original = JsonDocument.Parse(json)
+        use roundTripped = JsonDocument.Parse(JsonSerializer.Serialize(result, baseType, options))
+
+        for property in original.RootElement.EnumerateObject() do
+            Assert.True(JsonElement.DeepEquals(property.Value, roundTripped.RootElement.GetProperty(property.Name)))
+
+[<Fact>]
+let ``Protocol formatter preserves VS project context and document URI`` () =
+    let options = (createConfiguredFormatter ()).JsonSerializerOptions
+    let uri = Uri("file:///c:/project%20name/file%23name.fs")
+    let context = VSProjectContext(Id = "project-id", Label = "project", Kind = VSProjectKind.CSharp)
+    let identifier = VSTextDocumentIdentifier(Uri = uri, ProjectContext = context)
+    let json = JsonSerializer.Serialize<TextDocumentIdentifier>(identifier, options)
+    let result = Assert.IsType<VSTextDocumentIdentifier>(JsonSerializer.Deserialize<TextDocumentIdentifier>(json, options))
+    Assert.Equal(uri, result.Uri)
+    Assert.Equal(context.Id, result.ProjectContext.Id)
+    Assert.Equal(context.Label, result.ProjectContext.Label)
+    Assert.Null(JsonSerializer.Deserialize<TextDocumentIdentifier>("null", options))
 
 [<Fact>]
 let ``The server can process the initialization message`` () =
@@ -70,4 +110,3 @@ let ``Server capabilities include text document sync`` () =
         Assert.True(syncOptions.Change.HasValue, "TextDocumentSync should specify a Change kind")
         Assert.Equal(TextDocumentSyncKind.Full, syncOptions.Change.Value)
     }
-
