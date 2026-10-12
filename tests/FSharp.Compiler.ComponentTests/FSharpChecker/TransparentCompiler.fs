@@ -1236,6 +1236,21 @@ let private getText (file: ProjectSnapshot.FSharpFileSnapshot) =
         return source.GetSubTextString(0, source.Length)
     }
 
+/// An ISourceText that is not an ISourceTextNew and does not override ToString.
+let private plainSourceText (text: string) =
+    let inner = SourceText.ofString text
+    { new ISourceText with
+        member _.Item with get index = inner[index]
+        member _.GetLineString(lineIndex) = inner.GetLineString(lineIndex)
+        member _.GetLineCount() = inner.GetLineCount()
+        member _.GetLastCharacterPosition() = inner.GetLastCharacterPosition()
+        member _.GetSubTextString(start, length) = inner.GetSubTextString(start, length)
+        member _.SubTextEquals(target, startIndex) = inner.SubTextEquals(target, startIndex)
+        member _.Length = inner.Length
+        member _.ContentEquals(sourceText) = inner.ContentEquals(sourceText)
+        member _.CopyTo(sourceIndex, destination, destinationIndex, count) = inner.CopyTo(sourceIndex, destination, destinationIndex, count)
+        member _.GetSubTextFromRange(range) = inner.GetSubTextFromRange(range) }
+
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
@@ -1251,13 +1266,16 @@ let ``GetProjectSnapshotFromScript uses the document source of the checker`` use
     }
 
 [<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``A custom document source gives a file the same version until its text changes`` useTransparentCompiler =
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``A custom document source gives a file the same version until its text changes`` useTransparentCompiler usePlainSourceText =
     task {
         let a, b = createScriptThatLoadsFile ()
         let mutable textOfB = "let inEditor = 1"
-        let getSource fileName = async { return if fileName = b then Some(SourceText.ofString textOfB) else None }
+        let toSourceText = if usePlainSourceText then plainSourceText else SourceText.ofString
+        let getSource fileName = async { return if fileName = b then Some(toSourceText textOfB) else None }
         let documentSource = Some(DocumentSource.Custom getSource)
         let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
 
