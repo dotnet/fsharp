@@ -1477,12 +1477,16 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<InlineData(false, false)>]
-    [<InlineData(false, true)>]
-    [<InlineData(true, false)>]
-    [<InlineData(true, true)>]
+    [<InlineData(false, false, false)>]
+    [<InlineData(false, false, true)>]
+    [<InlineData(false, true, false)>]
+    [<InlineData(false, true, true)>]
+    [<InlineData(true, false, false)>]
+    [<InlineData(true, false, true)>]
+    [<InlineData(true, true, false)>]
+    [<InlineData(true, true, true)>]
     [<Theory>]
-    let ``Issue 20577 preserves stateful conditional fold callbacks`` (optimize: bool, useList: bool) =
+    let ``Issue 20577 preserves stateful conditional fold callbacks`` (optimize: bool, useList: bool, completed: bool) =
         let source = $"""
 module RuntimeAsyncConditionalFoldTest
 
@@ -1490,34 +1494,46 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open RuntimeTaskBuilder.RuntimeTask
 
+[<NoCompilerInlining>]
 let run deduplicate (ready: Task<int>) =
     runtimeTask {{
         let! initial = ready
-        let folder =
-            if deduplicate then
-                let seen = HashSet<int>()
-                fun total item -> if seen.Add item then total + item else total
-            else
-                fun total item -> total + item
-
         return
-            {if useList then "List.fold folder initial [ 1; 1; 2 ]" else "Array.fold folder initial [| 1; 1; 2 |]"}
+            {if useList then "List.fold" else "Array.fold"}
+                (if deduplicate then
+                     let seen = HashSet<int>()
+                     fun total item -> if seen.Add item then total + item else total
+                 else
+                     fun total item -> total + item)
+                initial
+                {if useList then "[ 1; 1; 2 ]" else "[| 1; 1; 2 |]"}
     }}
 
 [<EntryPoint>]
 let main _ =
+    let completed = {if completed then "true" else "false"}
     for deduplicate in [ true; false ] do
         let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+        if completed then gate.SetResult 0
         let work = run deduplicate gate.Task
-        if work.IsCompleted then failwith "Expected suspension"
-        gate.SetResult 0
+        if not completed then
+            if work.IsCompleted then failwith "Expected suspension"
+            gate.SetResult 0
         let expected = if deduplicate then 3 else 4
         if work.GetAwaiter().GetResult() <> expected then failwith "Callback state was lost"
     0
 """
 
-        FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-        |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncConditionalFoldTest.fs" source)
+        let library =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
+            |> asLibrary
+            |> withName "RuntimeTaskLibrary"
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+            |> withOptimization optimize
+
+        FSharp source
+        |> withReferences [ library ]
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
         |> withOptimization optimize
