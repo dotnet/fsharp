@@ -405,6 +405,8 @@
     <Compile Include="Checking\RelatedSymbolUse.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
     <Compile Include="Checking\NameResolution.fs" />
+    <Compile Include="Checking\TraitConstraintScope.fsi" />
+    <Compile Include="Checking\TraitConstraintScope.fs" />
     <Compile Include="Checking\SignatureConformance.fsi" />
     <Compile Include="Checking\SignatureConformance.fs" />
     <Compile Include="Checking\MethodOverrides.fsi" />

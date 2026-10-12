@@ -3369,15 +3369,8 @@ type System.Double with
         |> asExe
         |> withLangVersionPreview
         |> compile
-        // The RFC example (docs/RFC_Changes.md) cannot compile: the (+) in each extension operator body
-        // self-resolves to the operator being defined, constraining 'T to the same numeric type and
-        // preventing cross-type addition (e.g., int + double). This is a known limitation.
         |> shouldFail
         |> withDiagnostics [
-            (Warning 64, Line 21, Col 61, Line 21, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'single'.")
-            (Error 1, Line 21, Col 79, Line 21, Col 80, "The type 'single' does not support the operator 'widen_to_single'")
-            (Warning 64, Line 25, Col 61, Line 25, Col 62, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'double'.")
-            (Error 1, Line 25, Col 79, Line 25, Col 80, "The type 'double' does not support the operator 'widen_to_double'")
             (Error 1, Line 28, Col 6, Line 28, Col 8, "The type 'int64' does not match the type 'int'")
             (Error 1, Line 28, Col 15, Line 28, Col 28, "Type mismatch. Expecting a
     'int64 -> 'a'    
@@ -3401,8 +3394,8 @@ Known return type: double
 Known type parameters: < int64 , float >
 
 Available overloads:
- - static member System.Double.(+) : a: double * b: double -> double // Argument 'a' doesn't match
  - static member System.Double.(+)<^T when ^T: (static member widen_to_double: ^T -> double)> : a: ^T * b: double -> double // Argument 'a' doesn't match
+ - static member System.Double.(+)<^T when ^T: (static member widen_to_double: ^T -> double)> : a: double * b: ^T -> double // Argument 'a' doesn't match
  - static member System.Int64.(+)<^T when ^T: (static member widen_to_int64: ^T -> int64)> : a: ^T * b: int64 -> int64 // Argument 'a' doesn't match
  - static member System.Int64.(+)<^T when ^T: (static member widen_to_int64: ^T -> int64)> : a: int64 * b: ^T -> int64 // Argument 'b' doesn't match")
         ]

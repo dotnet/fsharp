@@ -2722,9 +2722,13 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
 
-/// Non-generic marker interface for storing in TraitConstraintInfo.
+/// Non-generic interface for storing in TraitConstraintInfo.
 /// The actual typed contract is ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader>.
-type ITraitContext = interface end
+type ITraitContext =
+    abstract Remap:
+        remapType: (TType -> TType) *
+        remapValRef: (ValRef -> ValRef) *
+        remapTyconStamp: (Stamp -> Stamp) -> ITraitContext
 
 /// Generic typed interface for trait context operations.
 /// 'AccessRights = AccessorDomain, 'MethodInfo = MethInfo, 'InfoReader = InfoReader at use sites.
