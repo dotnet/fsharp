@@ -12,7 +12,6 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | CSharpExtensionAttributeNotRequired
-    | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
