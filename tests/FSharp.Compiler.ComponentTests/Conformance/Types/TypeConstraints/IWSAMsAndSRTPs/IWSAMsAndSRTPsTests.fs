@@ -3224,6 +3224,7 @@ let main _ =
     [<InlineData("default")>]
     [<InlineData("preview")>]
     [<InlineData("10.0")>]
+    [<InlineData("11.0")>]
     let ``Issue 15987 - SRTP overload resolution returns correct value for typed argument`` (version: string) =
         FSharp """
 module Test
