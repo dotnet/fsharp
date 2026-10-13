@@ -876,6 +876,30 @@ let ``What happens if bootstrapInfoStatic needs to be recomputed`` _ =
     }
 
 
+[<Fact>]
+let ``Parsing a file does not type check the referenced projects`` () =
+    let library = SyntheticProject.Create("library", sourceFile "Library" [])
+
+    let project =
+        { SyntheticProject.Create(sourceFile "First" []) with DependsOn = [library] }
+        |> updateFile "First" (addDependency "Library")
+
+    // A private checker because we subscribe to FileChecked.
+    let checker = FSharpChecker.Create(useTransparentCompiler = true)
+    let checkedFiles = ConcurrentQueue<string>()
+    checker.FileChecked.Add(fun (fileName, _) -> checkedFiles.Enqueue fileName)
+
+    async {
+        do! saveProject project false checker
+        let options = project.GetProjectOptions checker
+        let! snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem)
+        let! parseResults = checker.ParseFile(getFilePath project (project.Find "First"), snapshot)
+        Assert.False parseResults.ParseHadErrors
+    }
+    |> Async.RunSynchronously
+
+    Assert.Empty checkedFiles
+
 module ParsedInputHashing =
 
     let source = """
