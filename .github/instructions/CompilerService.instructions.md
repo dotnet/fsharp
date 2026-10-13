@@ -8,7 +8,6 @@ applyTo:
 
 These folders are Pack B of `@vsintegration-reviewer`. Invoke that agent for a review. Do not restate its CHECK list here.
 
-- This API is host-neutral. No VS, MEF, JTF, or Roslyn types. Service must not depend on `vsintegration`.
-- A public signature change is a break even when the private representation is unchanged.
-- Cache identity is a semantic stamp of one project, not object identity.
+- No VS, MEF, JTF, or Roslyn types in these folders. Service must not reference `vsintegration`.
+- Public signature, cache identity, and stale results are Pack B checks. Do not restate them here.
 - `@expert-reviewer` still owns type checking, IL, pickle, and FSharp.Core. Do not add those rules here.
