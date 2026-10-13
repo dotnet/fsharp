@@ -73,7 +73,7 @@ type FSharpLanguageServer
         ?config: FSharpLanguageServerConfig
     ) =
 
-    inherit SystemTextJsonLanguageServer<FSharpRequestContext>(jsonRpc, serializerOptions)
+    inherit CancellableSystemTextJsonLanguageServer<FSharpRequestContext>(jsonRpc, serializerOptions)
 
     let config = defaultArg config FSharpLanguageServerConfig.Default
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
@@ -90,6 +90,7 @@ type FSharpLanguageServer
         let _ =
             serviceCollection
                 .AddSingleton(initialWorkspace)
+                .AddSingleton(jsonRpc)
                 .AddSingleton<ContextHolder>()
                 .AddSingleton<FSharpLanguageServerConfig>(config)
                 .AddSingleton<IMethodHandler, InitializeHandler<InitializeParams, InitializeResult, FSharpRequestContext>>()
@@ -99,6 +100,7 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, SemanticTokensHandler>()
                 .AddSingleton<IMethodHandler, CodeActionHandler>()
                 .AddSingleton<IMethodHandler, ProjectContextsHandler>()
+                .AddSingleton<IMethodHandler, ActiveProjectContextHandler>()
                 .AddSingleton<ILspLogger>(logger)
                 .AddSingleton<ILspTelemetry>(NullTelemetry.Instance)
                 .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()

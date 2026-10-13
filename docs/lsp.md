@@ -143,6 +143,19 @@ and text-document identifiers), including diagnostic project information and
 `_vs_projectContext`. LSP requests and notifications carry a single parameter object,
 not a positional argument array.
 
+Visual Studio's existing F# navigation bar changes Roslyn's active document
+context rather than the LSP client's navigation-bar context. The in-process
+editor forwards those changes to `textDocument/fsharp/setActiveProjectContext`,
+with the document URI, project file and output file. Semantic-token requests
+without `_vs_projectContext` use that per-document selection; explicit request
+contexts still take precedence. Changed selections request
+`workspace/semanticTokens/refresh` when supported by the client, and closing the
+document clears the selection. Inactive conditional-compilation regions are
+returned as `excluded code` tokens.
+Mutating notifications and context changes cancel and drain earlier read
+requests so a completed request cannot reapply classifications from the previous
+context. A failed refresh is logged and leaves the selection unchanged for retry.
+
 CLaSP is centrally managed through `eng/Packages.props` and tracked as a Roslyn
 dependency in `eng/Version.Details.xml` and `eng/Version.Details.props`, with the same
 version and source commit as the other Roslyn packages.

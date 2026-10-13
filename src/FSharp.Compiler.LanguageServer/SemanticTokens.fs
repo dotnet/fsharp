@@ -65,6 +65,7 @@ module LspSemanticTokens =
             SemanticTokenTypes.String
             SemanticTokenTypes.Number
             SemanticTokenTypes.Operator
+            "excluded code"
             classNameTokenType
             structNameTokenType
             enumNameTokenType
@@ -163,6 +164,7 @@ module LspSemanticTokens =
         | FSharpTokenColorKind.String -> Some SemanticTokenTypes.String
         | FSharpTokenColorKind.Number -> Some SemanticTokenTypes.Number
         | FSharpTokenColorKind.Operator -> Some SemanticTokenTypes.Operator
+        | FSharpTokenColorKind.InactiveCode -> Some "excluded code"
         | _ ->
             match token.CharClass with
             | FSharpTokenCharKind.Keyword -> Some SemanticTokenTypes.Keyword

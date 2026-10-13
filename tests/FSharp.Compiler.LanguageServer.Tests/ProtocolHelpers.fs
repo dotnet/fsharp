@@ -27,7 +27,7 @@ type TestRpcClient(jsonRpc, rpcTrace, workspace, initializeResult: InitializeRes
 
     member _.RpcTrace = rpcTrace.ToString()
 
-let createLanguageServer (workspace: FSharpWorkspace) (config: FSharpLanguageServerConfig option) =
+let createLanguageServerWithClient (workspace: FSharpWorkspace) (config: FSharpLanguageServerConfig option) (configureClient: JsonRpc -> unit) =
     let rpcTrace = new StringWriter()
 
     let (inputStream, outputStream), server =
@@ -50,15 +50,24 @@ let createLanguageServer (workspace: FSharpWorkspace) (config: FSharpLanguageSer
         InitializeParams(
             ProcessId = Process.GetCurrentProcess().Id,
             RootUri = Uri("file:///c:/temp"),
+            Capabilities =
+                ClientCapabilities(
+                    Workspace =
+                        WorkspaceClientCapabilities(
+                            SemanticTokens = SemanticTokensWorkspaceSetting(RefreshSupport = true))),
             InitializationOptions = None
         )
 
+    configureClient jsonRpc
     jsonRpc.StartListening()
 
     task {
         let! response = jsonRpc.InvokeWithParameterObjectAsync<InitializeResult>("initialize", initializeParams)
         return TestRpcClient(jsonRpc, rpcTrace, workspace, response)
     }
+
+let createLanguageServer workspace config =
+    createLanguageServerWithClient workspace config ignore
 
 let initializeLanguageServer (workspace) =
     let workspace = defaultArg workspace (FSharpWorkspace())
@@ -191,19 +200,21 @@ let setupMultiTargetLikeProject (client: TestRpcClient) (content: string) (share
     let fileOnDisk = sourceFileOnDisk content
     let dir = System.IO.Path.GetDirectoryName(fileOnDisk.LocalPath)
     let projectFileName = System.IO.Path.Combine(dir, sharedProjectFileName)
+    let compilerOutputA = System.IO.Path.Combine(dir, "obj", $"out.{defineA}.dll")
+    let compilerOutputB = System.IO.Path.Combine(dir, "obj", $"out.{defineB}.dll")
 
     let configA =
         ProjectConfig(
             projectFileName,
             outputFileName = Some (System.IO.Path.Combine(dir, $"out.{defineA}.dll")),
             referencesOnDisk = [],
-            otherOptions = [ $"--define:{defineA}" ])
+            otherOptions = [ $"--define:{defineA}"; $"-o:{compilerOutputA}" ])
     let configB =
         ProjectConfig(
             projectFileName,
             outputFileName = Some (System.IO.Path.Combine(dir, $"out.{defineB}.dll")),
             referencesOnDisk = [],
-            otherOptions = [ $"--define:{defineB}" ])
+            otherOptions = [ $"--define:{defineB}"; $"-o:{compilerOutputB}" ])
 
     let pidA = client.Workspace.Projects.AddOrUpdate(configA, [ fileOnDisk.LocalPath ])
     let pidB = client.Workspace.Projects.AddOrUpdate(configB, [ fileOnDisk.LocalPath ])

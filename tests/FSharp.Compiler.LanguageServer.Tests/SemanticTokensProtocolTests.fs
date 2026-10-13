@@ -6,11 +6,98 @@ open Xunit
 open Microsoft.VisualStudio.LanguageServer.Protocol
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.LanguageServer
+open FSharp.Compiler.LanguageServer.Handlers
 
 open LanguageServer.ProtocolHelpers
 open LanguageServer.SemanticTokensHelpers
 
 #nowarn "57"
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Legacy navbar context switches refresh and classify both frameworks without source changes`` (rangeRequest: bool) =
+    task {
+        let mutable refreshCount = 0
+        let mutable failRefresh = true
+        let! client =
+            createLanguageServerWithClient (FSharpWorkspace()) None (fun rpc ->
+                rpc.AddLocalRpcMethod(
+                    "workspace/semanticTokens/refresh",
+                    Action(fun () ->
+                        if failRefresh then
+                            failwith "Simulated refresh failure"
+                        refreshCount <- refreshCount + 1)))
+
+        let content =
+            """module M
+#if NET8_0
+let onlyOnNet8 x = x
+let result = onlyOnNet8 8
+#else
+let onlyOnNet9 x = x
+let result = onlyOnNet9 9
+#endif
+"""
+
+        let file, net8, net9 = setupMultiTargetLikeProject client content "multitarget.fsproj" "NET8_0" "NET9_0"
+        do! openDocument client file content 1
+        let legend = getSemanticTokensLegend client
+        let defaultIdentifier = client.Workspace.Query.GetProjectSnapshotForFile(file) |> Option.get |> _.Identifier
+        let! failedRefresh =
+            client.JsonRpc.InvokeWithParameterObjectAsync<bool>(
+                "textDocument/fsharp/setActiveProjectContext",
+                {
+                    Uri = file
+                    ProjectFileName = net8.ProjectFileName
+                    OutputFileName = net8.OutputFileName
+                })
+        Assert.False(failedRefresh)
+        failRefresh <- false
+
+        for index, identifier in [ net8; net9; net8; net9; net8; net9 ] |> List.indexed do
+            let parameters =
+                {
+                    Uri = file
+                    ProjectFileName = identifier.ProjectFileName
+                    OutputFileName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(identifier.OutputFileName), "obj", System.IO.Path.GetFileName(identifier.OutputFileName))
+                }
+
+            let! accepted =
+                client.JsonRpc.InvokeWithParameterObjectAsync<bool>(
+                    "textDocument/fsharp/setActiveProjectContext",
+                    parameters)
+
+            Assert.True(accepted)
+            let! repeated = client.JsonRpc.InvokeWithParameterObjectAsync<bool>("textDocument/fsharp/setActiveProjectContext", parameters)
+            Assert.True(repeated)
+            Assert.Equal(index + 1, refreshCount)
+
+            let! response =
+                if rangeRequest then
+                    pullSemanticTokensRange client file (Range(Start = Position(Line = 0), End = Position(Line = 8)))
+                else
+                    pullSemanticTokensFull client file
+
+            let tokens = decodeSemanticTokens legend response.Data
+            let activeLine, inactiveLine = if identifier = net8 then 2, 5 else 5, 2
+            let active = findTokenAtPosition activeLine 4 tokens
+            Assert.Equal(Some "FSharp.Function", active |> Option.map _.TokenType)
+            let inactive = findTokenAtPosition inactiveLine 4 tokens
+            Assert.Equal(Some "excluded code", inactive |> Option.map _.TokenType)
+
+        let explicitNet8 = VSProjectContext(Id = makeProjectContextId net8)
+        let! explicitResponse = pullSemanticTokensFullInContext client file explicitNet8
+        let explicitTokens = decodeSemanticTokens legend explicitResponse.Data
+        Assert.Equal(Some "FSharp.Function", findTokenAtPosition 2 4 explicitTokens |> Option.map _.TokenType)
+        Assert.Equal(Some "excluded code", findTokenAtPosition 5 4 explicitTokens |> Option.map _.TokenType)
+
+        do! closeDocument client file
+        do! openDocument client file content 2
+        let! reopened = pullSemanticTokensFull client file
+        let! defaultContext = pullSemanticTokensFullInContext client file (VSProjectContext(Id = makeProjectContextId defaultIdentifier))
+        Assert.Equal<int>(defaultContext.Data, reopened.Data)
+    }
 
 // ---------------------------------------------------------------------------
 //  Capability Tests

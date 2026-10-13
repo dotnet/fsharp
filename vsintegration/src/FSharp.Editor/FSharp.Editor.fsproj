@@ -61,6 +61,7 @@
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="LanguageService\LspProjectContextListener.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\ProjectFiltering.fs" />
@@ -181,6 +182,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client.Implementation" VersionOverride="17.10.72-preview" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Copilot" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />

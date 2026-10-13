@@ -24,10 +24,7 @@ type DocumentStateHandler() =
 
             contextHolder.UpdateWorkspace _.Files.Open(request.TextDocument.Uri, request.TextDocument.Text)
 
-            telemetry.ReportEvent(
-                TelemetryEvents.DocumentOpened,
-                [| "uri_hash", hash request.TextDocument.Uri :> obj |]
-            )
+            telemetry.ReportEvent(TelemetryEvents.DocumentOpened, [| "uri_hash", hash request.TextDocument.Uri :> obj |])
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -51,10 +48,8 @@ type DocumentStateHandler() =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Close(request.TextDocument.Uri)
+            context.ClearActiveProjectContext(request.TextDocument.Uri)
 
-            telemetry.ReportEvent(
-                TelemetryEvents.DocumentClosed,
-                [| "uri_hash", hash request.TextDocument.Uri :> obj |]
-            )
+            telemetry.ReportEvent(TelemetryEvents.DocumentClosed, [| "uri_hash", hash request.TextDocument.Uri :> obj |])
 
             Task.CompletedTask

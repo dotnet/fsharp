@@ -17,7 +17,9 @@ type SemanticTokensHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = false
 
-    member private _.GetParsingOptions(uri: System.Uri, context: FSharpRequestContext, projectContext: ProjectSnapshot.FSharpProjectIdentifier option) =
+    member private _.GetParsingOptions
+        (uri: System.Uri, context: FSharpRequestContext, projectContext: ProjectSnapshot.FSharpProjectIdentifier option)
+        =
         context.Workspace.Query.GetProjectSnapshotForFile(uri, ?context = projectContext)
         |> Option.map (fun snapshot ->
             let checker = context.Workspace.Checker
@@ -37,7 +39,11 @@ type SemanticTokensHandler() =
         =
         cancellableTask {
             let uri = textDocument.Uri
-            let projectContext = tryGetProjectContext textDocument
+
+            let projectContext =
+                tryGetProjectContext textDocument
+                |> Option.orElseWith (fun () -> context.TryGetActiveProjectContext uri)
+
             let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
 
             use _scope =
