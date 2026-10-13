@@ -4073,17 +4073,21 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                         (if options.deterministic then sizeof_IMAGE_DEBUG_DIRECTORY else 0)
                   ) next
 
-          // The debug data is given to us by the PDB writer and appears to
-          // typically be the type of the data plus the PDB file name. We fill
-          // this in after we've written the binary. We approximate the size according
-          // to what PDB writers seem to require and leave extra space just in case...
-          let debugDataJustInCase = 40
-          let debugDataChunk, next =
-              chunk (align 0x4 (match options.pdbfile with
-                                | None -> 0
-                                | Some f -> (24
-                                            + System.Text.Encoding.Unicode.GetByteCount f // See bug 748444
-                                            + debugDataJustInCase))) next
+          // Portable CodeView data contains a 24-byte header followed by the
+          // mapped UTF-8 path and its terminator. Reserving from the original path
+          // would retain checkout-specific padding even after applying a path map.
+          let debugDataSize =
+              match options.pdbfile with
+              | None -> 0
+              | Some f when options.portablePDB ->
+                  let debugPath =
+                      if options.embeddedPDB then !!(Path.GetFileName f)
+                      else PathMap.apply options.pathMap f
+                  24 + System.Text.Encoding.UTF8.GetByteCount debugPath + 1
+              | Some f ->
+                  // Keep the conservative reservation for the native PDB writer.
+                  24 + System.Text.Encoding.Unicode.GetByteCount f + 40 // See bug 748444
+          let debugDataChunk, next = chunk (align 0x4 debugDataSize) next
 
           let debugChecksumPdbChunk, next =
               chunk (align 0x4 (match pdbInfoOpt with
