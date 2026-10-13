@@ -1799,6 +1799,11 @@ type internal TransparentCompiler
                 let tcConfig = bootstrapInfo.TcConfig
                 let tcGlobals = bootstrapInfo.TcGlobals
 
+                let diagnosticsLogger =
+                    CompilationDiagnosticLogger("ComputeProjectExtras", tcConfig.diagnosticsOptions)
+
+                use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+
                 let results = results |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
                 // Finish the checking
@@ -1879,6 +1884,11 @@ type internal TransparentCompiler
                     with exn ->
                         errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
+
+                let finalInfo =
+                    { finalInfo with
+                        tcDiagnosticsRev = diagnosticsLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
+                    }
 
                 return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics
             }

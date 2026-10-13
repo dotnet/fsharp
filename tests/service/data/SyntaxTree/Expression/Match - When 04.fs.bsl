@@ -11,7 +11,8 @@ ImplFile
                     (Named (SynIdent (a, None), false, None, (4,2--4,3)), None,
                      ArbitraryAfterError ("patternClauses5", (4,8--4,8)),
                      (4,2--4,8), Yes, { ArrowRange = None
-                                        BarRange = Some (4,0--4,1) })],
+                                        BarRange = Some (4,0--4,1)
+                                        WhenKeyword = Some (4,4--4,8) })],
                  (3,0--5,1), { MatchKeyword = (3,0--3,5)
                                WithKeyword = (3,9--3,13) }), (3,0--5,1));
            Expr (Const (Unit, (7,0--7,2)), (7,0--7,2))],

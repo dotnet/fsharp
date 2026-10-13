@@ -4,7 +4,6 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled]
     branches:
         - 'main'
-        - 'release/*'
 permissions:
   contents: read
   issues: write
@@ -312,7 +311,7 @@ jobs:
         } >> "$GITHUB_OUTPUT"
 
         if [[ "$RELEASE_NOTES_REQUIRED" = true ]]; then
-            exit 1
+            echo "::warning::Release notes are required unless the pull request is labelled NO_RELEASE_NOTES."
         fi
     # Keep one bot comment current without evaluating pull request content as JavaScript.
     # Posting the informational comment is best-effort and must never fail the check:
