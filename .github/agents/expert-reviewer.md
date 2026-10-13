@@ -20,20 +20,20 @@ Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-
 - Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 - **Prefer general solutions over special cases.** Do not hardwire specific library optimizations into the compiler. Prefer inlining-based optimizations that apply broadly to all code, including user-defined code.
 - **Evidence-based performance.** Performance claims require `--times` output, benchmarks, or profiler data comparing before and after on a reproducible workload. Do not inline large functions without performance evidence.
-- **Guard the API surface.** Public API additions to FSharp.Core must be carefully controlled. FSharp.Core must remain stable. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+- **Guard the API surface.** Public API additions to FSharp.Core must be carefully controlled. FSharp.Core must remain stable. The FCS half of this rule moved to @vsintegration-reviewer.
 
 ## Anti-Patterns
 
 Push back against these recurring patterns:
 
 1. **Reformatting + logic in one PR** — Separate formatting into its own PR. Mixed diffs obscure logic changes and block review.
-2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
-3. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. The language-service exception moved to @vsintegration-reviewer.
+3. **Internal type leakage** — Moved to @vsintegration-reviewer.
 4. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
 5. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
 6. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
 7. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
-8. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+8. **Stale type-checking results** — Moved to @vsintegration-reviewer.
 9. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
 10. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
 11. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
@@ -149,6 +149,8 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 
 ---
 
+### 7. FCS API Surface Control
+
 Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 
 ### 8. Type System Correctness
@@ -181,6 +183,8 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 **Hotspots:** `src/Compiler/Checking/`, `src/Compiler/CodeGen/`
 
 ---
+
+### 10. IDE Responsiveness
 
 Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 
@@ -226,7 +230,7 @@ The pickled metadata format is a cross-version contract. DLLs compiled with any 
 Async and concurrent code must handle cancellation, thread safety, and exception propagation correctly.
 
 **CHECK:**
-- Thread cancellation tokens through all async operations. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+- Thread cancellation tokens through all async operations.
 - Ensure thread-safety for shared mutable state. Avoid global mutable state.
 - Every lock must have a comment explaining what it protects.
 - Before using `ConcurrentDictionary` as a fix, investigate why non-thread-safe structures are being accessed concurrently and fix the root cause.
@@ -235,9 +239,13 @@ Async and concurrent code must handle cancellation, thread safety, and exception
 
 **Severity:** Race condition or data corruption → **critical**. Swallowed cancellation → **high**. Missing async test → **medium**.
 
-**Hotspots:** `src/Compiler/Service/`, `src/Compiler/Facilities/`, `src/FSharp.Core/` Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+**Hotspots:** `src/Compiler/Facilities/`, `src/FSharp.Core/`
+
+FCS request cancellation and the `vsintegration/` hotspot moved to @vsintegration-reviewer.
 
 ---
+
+### 14. Incremental Checking Correctness
 
 Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 
@@ -266,8 +274,9 @@ Exception handling must be precise. Catch-all handlers and swallowed exceptions 
 - Never swallow exceptions silently; handle `OperationCanceledException` specially.
 - Do not suppress task completion by silently ignoring `TrySetException` failures.
 - Returning `Unchecked.defaultof<_>` to swallow exceptions is dangerous — investigate and fix the root cause.
-- Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 - Inside the compiler, do not add catch-all exception handlers — they hide bugs.
+
+The language-service boundary bullet moved to @vsintegration-reviewer.
 
 **Severity:** Swallowed cancellation → **critical**. Catch-all handler → **high**. Missing error → **medium**.
 
@@ -420,7 +429,7 @@ Execute review in six waves, each building on the previous.
 
 1. Verify every behavioral change has a corresponding test (Dimension 1).
 2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 19).
-3. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+3. IDE impact and incremental checking moved to @vsintegration-reviewer (Dimensions 10 and 14).
 4. Check for binary compatibility concerns in pickle/import code (Dimension 12).
 5. If FSharp.Core is touched, apply FSharp.Core Stability checks (Dimension 2).
 
@@ -436,9 +445,9 @@ Execute review in six waves, each building on the previous.
 ### Wave 3: Runtime & Integration
 
 1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 13).
-2. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+2. IDE impact moved to @vsintegration-reviewer (Dimension 10).
 3. Verify overload resolution correctness if constraint solving changes (Dimension 11).
-4. Moved to @vsintegration-reviewer. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
+4. Incremental checking moved to @vsintegration-reviewer (Dimension 14).
 5. Review diagnostic message quality (Dimension 17).
 6. Verify debug experience — stepping, breakpoints, locals (Dimension 18).
 
