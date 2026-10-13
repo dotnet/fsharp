@@ -18,35 +18,60 @@ the run rather than falling back to an unverified machine installation.
 
 Post **`/dart <sha>`** or **`/pr-val <sha>`** as the entire comment on an open
 `dotnet/fsharp` PR targeting `main`. Replace `<sha>` with the full 40-character
-lowercase SHA of the current PR head after reviewing that revision, including its
-pipeline YAML, templates and scripts. Short, stale or non-head SHAs are rejected.
+lowercase SHA of a commit listed in the PR after reviewing that revision, including
+its pipeline YAML, templates and scripts. Older listed commits are supported;
+short, unlisted or force-pushed-away SHAs are rejected. GitHub exposes at most 250
+PR commits, so a revision absent from that list cannot be authorized by this flow.
 Both commands run the same pipeline. Fork PRs are supported.
 The commenter must have repository write, maintain or admin access **and** be a
 member of the `microsoft` GitHub organization. Supplying the SHA is the requester's
 explicit authorization of that revision, not an automatic check of GitHub review status.
 
-The [GitHub workflow](../../../.github/workflows/pr-validation.yml) captures the PR
-head and base SHAs and queues Azure DevOps over OIDC. It posts a run link and those
-revisions to the PR. New pushes, PR events and VS builds do **not** request runs.
+The [GitHub workflow](../../../.github/workflows/pr-validation.yml) validates the
+requested commit and queues Azure DevOps over OIDC. It posts a run link and the
+reviewed revision to the PR. New pushes, PR events and VS builds do **not** request runs.
 Administrators can still queue runs manually, subject to pipeline permissions.
 
 The [pipeline](../../../azure-pipelines-integration-dartlab.yml) is registered
 directly against GitHub `dotnet/fsharp`; its `self` is **not** the dnceng mirror.
 The Actions workflow and authorization helper run from the default branch.
 The workflow pins pipeline YAML and local templates to `refs/pull/<number>/head`
-at the explicitly requested head SHA, including for fork PRs. On the test machine,
-[`setup-pr-validation.ps1`](../../setup-pr-validation.ps1) fetches the public PR
-merge ref from a checkout of that reviewed head, verifies both parents against
-the captured head/base SHAs, checks the PR is still open and observes current
-head/base refs before checking out that exact merge.
+at the explicitly requested commit SHA, including for fork PRs. On the test machine,
+[`setup-pr-validation.ps1`](../../setup-pr-validation.ps1) verifies the initial
+checkout and checks that the PR is still open and targeting `main`.
 
-A conflict, missing/stale merge, changed head/base, or API/Git failure stops the run
-before building PR code in the provided pipeline. Review the updated head and
-post a new command with its SHA after resolving the problem. A push
-after verification does not alter the detached commit being tested. The setup and
-test logs record the actual merge SHA; Azure DevOps `Build.SourceVersion` identifies
-the reviewed PR head/YAML revision, **not** the tested PR merge. Results apply only
-to the recorded snapshot, not automatically to later PR revisions.
+If the requested commit is still the current PR head, setup fetches GitHub's
+generated PR merge and verifies that its second parent is the reviewed commit.
+The merge's base parent is logged, not compared with a captured or live `main`
+revision. Advancing `main` does not invalidate the run. A missing or stale merge
+while the requested commit is still current fails explicitly rather than silently
+dropping integration coverage.
+
+If the PR head has advanced, setup verifies the requested commit is still listed
+in the PR and tests that exact commit directly, without requiring a merge ref.
+This also handles a push during merge fetching: no merge containing a newer,
+unreviewed head is executed. API/Git failures and invalid PR membership remain
+errors. A push after selection does not alter the detached commit being tested.
+
+Immediately before checkout in either mode, setup refreshes the PR metadata and
+requires the PR to remain open and target `dotnet/fsharp`'s `main`. Observed
+retargeting or closure during selection is rejected without reintroducing a
+base-SHA freshness check. GitHub's API and Git refs are not an atomic snapshot;
+this recheck cannot prove that a fetched merge matches a concurrently changing
+target when GitHub serves stale observations.
+
+Setup logs record `mode=merge` or `mode=commit`, the actual tested SHA
+(`FSharp.TestedCommitSha`), and the mode (`FSharp.TestedCommitMode`). Azure DevOps
+`Build.SourceVersion` identifies the reviewed YAML revision, which equals the
+tested SHA only in direct-commit mode. Results apply to that recorded snapshot,
+not automatically to newer PR revisions. Direct-commit mode does not validate
+integration with newer `main`; normal PR CI provides that coverage.
+
+For manual runs, set `prNumber` and `headSha`; the latter means the requested
+reviewed commit, even if it is older than the current PR head. Pin the pipeline
+source Commit to the same SHA. There is no `baseSha` input. Historical revisions
+whose own YAML/scripts still require `baseSha` do not acquire the new contract
+retroactively; older-commit runs require a revision containing this updated flow.
 
 ## Registration and authorization
 
@@ -109,7 +134,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexGit.Tests.ps1
 ```
 
 The script tests use temporary local Git repositories and a mocked GitHub PR response.
-They cover merge identity, ref races, closed/changed PRs and failure before checkout.
+They cover merge identity, advancing main, current/older reviewed commits, head
+races, closed PRs and failure before checkout.
 The Git provisioning tests run offline with the installer boundary mocked. They
 cover missing initial PATH, independent Apex process setup, build/test child PATH
 inheritance, and provisioning failures without changing machine-wide PATH.
@@ -118,21 +144,21 @@ They cover command syntax, authorization of the original commenter (also on reru
 private membership lookup with the separate App token, the queued snapshot and PR feedback.
 
 After provisioning, use the Runs API's `previewRun` with the same repository
-ref/version, snapshot parameters, `DD-CB-ReleaseVS` resource pin and confirmed
+ref/version, reviewed-commit parameters, `DD-CB-ReleaseVS` resource pin and confirmed
 `testMachineLab` to verify actual private-template expansion. Fix every template,
 parameter, expression, service-connection and operation-expansion error before
 allocating a CloudTest machine. Verify GitHub `self.version` pinning against the
-requested head SHA for same-repository and fork PRs, and the test-machine source
+requested commit SHA for same-repository and fork PRs, and the test-machine source
 bootstrap; local YAML parsing cannot establish either. Land the Actions
 workflow/authorization helper on main before activation, and configure the
 environment and real pipeline ID together.
 
 Explicitly request same-repository and fork PR smoke runs. Confirm the exact merge
-SHA, installed VS, VSIX load, Azure DevOps test counts, Apex results and CloudTest
-TRX/build/setup log artifacts. Exercise changed head/base rejection and an
-unauthorized request that queues no run. Exercise missing, short, mismatched and
-stale command SHAs. Verify the compiled YAML/local templates come from the
-explicitly requested PR head rather than main or a newer push, and no UI overrides,
+SHA and mode, installed VS, VSIX load, Azure DevOps test counts, Apex results and
+CloudTest TRX/build/setup log artifacts. Exercise an advancing main, a newer PR
+push and an unauthorized request that queues no run. Exercise missing, short and
+unlisted command SHAs. Verify the compiled YAML/local templates come from the
+explicitly requested commit rather than main or a newer push, and no UI overrides,
 schedules or resource triggers introduce automatic runs. Completion is not reported
 back as a new required GitHub check; the PR comment links to DevDiv results.
 

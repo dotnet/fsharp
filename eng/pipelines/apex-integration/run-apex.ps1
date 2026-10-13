@@ -16,11 +16,11 @@ $env:PATH = "$gitDirectory;$env:PATH"
 $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 Set-Location $repositoryRoot
 
-$mergeSha = (& git rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0 -or $mergeSha -notmatch '^[0-9a-f]{40}$') {
-    throw 'Unable to determine the verified PR merge SHA.'
+$testedSha = (& git rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $testedSha -notmatch '^[0-9a-f]{40}$') {
+    throw 'Unable to determine the selected PR test commit SHA.'
 }
-Write-Host "Running Apex against verified PR merge $mergeSha."
+Write-Host "Running Apex against selected PR test commit $testedSha."
 
 $env:NativeToolsOnMachine = 'true'
 & .\eng\SetupVSHive.ps1
