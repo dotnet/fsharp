@@ -24,7 +24,7 @@ Selected witnesses belong to individual applications, not only to their types or
 - When the compiler copies types or values, remap the captured scope identities with them.
 - Do not pickle a captured `TcEnv`. Metadata can store a selected witness only.
 - Keep quotation witness order and built-in operator priority.
-- A cache must distinguish selected witnesses. If witness identity is not part of its key, exclude trait-bearing applications.
+- For extension-constraint calls, a cache must distinguish selected witnesses. If its key cannot distinguish these selections, exclude such calls.
 
 Test the combined case: an unopened consumer, competing witnesses, and imported calls with equal types.
 
