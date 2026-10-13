@@ -7712,7 +7712,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
             mkString g m fmtString, tpenv
         )
 
-/// Lower a string-typed interpolated string to a reflection-free System.String.Concat of its parts,
+/// Lower a string-typed interpolated string to System.String.Concat of its rendered parts,
 /// type-checking each part in place.
 and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
     let g = cenv.g
@@ -7720,10 +7720,9 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
     let strLit (s: string) = SynExpr.Const(SynConst.String(s, SynStringKind.Regular, mSynth), mSynth)
     let paren (e: SynExpr) = SynExpr.Paren(e, range0, None, mSynth)
 
-    // '(sprintf spec e : string)': format a printf-specifier hole (still reflection-based).
-    let sprintfOp (spec: string, e: SynExpr) =
-        let f = mkSynApp1 (mkSynLidGet mSynth [ "Microsoft"; "FSharp"; "Core"; "ExtraTopLevelOperators" ] "sprintf") (strLit spec) mSynth
-        let call = mkSynApp1 f (paren e) mSynth
+    let sprintfOp (formatting: SynInterpolationFormatting, e: SynExpr) =
+        let format = SynExpr.InterpolatedString([ SynInterpolatedStringPart.FillExpr(e, formatting) ], SynStringKind.Regular, mSynth)
+        let call = mkSynApp1 (mkSynLidGet mSynth [ "Microsoft"; "FSharp"; "Core"; "ExtraTopLevelOperators" ] "sprintf") format mSynth
         SynExpr.Typed(call, SynType.LongIdent(SynLongIdent([ mkSynId mSynth "string" ], [], [ None ])), mSynth)
 
     // 'String.Format(InvariantCulture, "{0,align:format}", e)': format an aligned or '{e:fmt}' hole.
@@ -7756,7 +7755,7 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             | "%d" | "%i" -> convertViaString (CheckFormatStrings.mkFlexibleIntFormatTypar g m)
             | "%M" -> convertViaString (CheckFormatStrings.mkFlexibleDecimalFormatTypar g m)
             | _ ->
-                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
+                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (formatting, synFill))
                 (arg, false), tpenv
         | SynInterpolationFormatting.DotNet (alignment, format) ->
             // Type-checking the hole here is also where a function value gets warned about.
@@ -7910,7 +7909,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     // original source and this may include some additional characters,
     // and also doesn't raise all necessary errors
     match cenv.tcSink.CurrentSink with
-    | Some sink when sink.FormatStringCheckContext.IsSome ->
+    | Some sink when not m.IsSynthetic && sink.FormatStringCheckContext.IsSome ->
         try
             let _argTys, _printerTy, _printerTupleTyRequired, _percentATys, specifierLocations, _dotnetFormatString =
                 CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString sink.FormatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
@@ -7950,7 +7949,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                 let str = mkString g m printfFormatString
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         elif isString then
-            // String-typed interpolation: lower to a reflection-free System.String.Concat of the parts,
+            // String-typed interpolation: concatenate rendered parts,
             // type-checking each hole in place (no separate batch, no flat fill-expression list).
             TcInterpolatedStringViaConcat (cenv, overallTy, env, m, tpenv, parts)
         else
