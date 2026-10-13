@@ -145,6 +145,8 @@ type internal CompilerCaches =
 
     member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, BootstrapInfo option * FSharpDiagnostic array>
 
+    member ParsingTcConfig: AsyncMemoize<FSharpProjectIdentifier, string, TcConfig option * FSharpDiagnostic array>
+
     member BootstrapInfoStatic:
         AsyncMemoize<FSharpProjectIdentifier, string * string, int * TcImports * TcGlobals * TcInfo * Event<unit>>
 
