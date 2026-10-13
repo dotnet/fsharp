@@ -11,7 +11,7 @@ Two packs. Do not merge them. A PR that touches both produces findings in both. 
 
 Use the `reviewing-vsintegration` skill to route folders to a pack and to select dimensions. Do not copy `@vs-integration-perf`. Invoke it for JTF, retained memory, and the perf execution map.
 
-## Moved principle
+## Principle
 
 - **IDE responsiveness is a feature.** Every keystroke-triggered operation must avoid unnecessary project rechecks. Evaluate the queue stress impact of every new FCS request type.
 
@@ -82,10 +82,6 @@ Paths: `vsintegration/**`. Editor, project system, legacy language service, FSI,
 - Editor behavior that depends on a language-rule relaxation must follow language version, not apply to every project.
 - A green compiler suite does not prove a host feature; the editor test has to call the host provider and cover the shapes the feature claims.
 
-### IDE Responsiveness
-
-Applies to this pack. The section below is the host copy of the moved dimension.
-
 ### 10. IDE Responsiveness
 
 The compiler service must respond to editor keystrokes without unnecessary recomputation.
@@ -107,7 +103,7 @@ Language-service entry points in this pack: (Exception: top-level language servi
 
 - At language service API boundaries (top-level entry points called by the IDE), catch all exceptions to prevent IDE crashes — but log them, don't silence them.
 
-Hotspot moved with cancellation: `vsintegration/`.
+Cancellation hotspot: `vsintegration/`.
 
 ### UI thread affinity
 
@@ -334,7 +330,7 @@ Paths: `src/Compiler/Service/**`, `src/Compiler/Symbols/**`. Host-neutral API fo
 - Unfinished and ill-typed code stays resolvable. The checker does not throw out to the host, and it does not drop later names, uses, highlighting, or sequence-point ranges because one construct failed.
 - A public signature change is a break even when the private representation is unchanged. A break can be right when it helps the clients that use the type; it is not cleanup. A service syntax-tree reshape is not that break if existing client patterns still compile.
 
-### FCS API sentences
+### FCS API surface
 
 Public API additions to FCS must be carefully controlled. Internal data structures must never leak. Breaking changes to FCS API surface are acceptable with major version bumps.
 
@@ -359,10 +355,6 @@ The FCS public API is a permanent commitment. Internal types must never leak.
 **Hotspots:** `src/Compiler/Service/`, `src/FSharp.Core/`
 
 ---
-
-### IDE Responsiveness
-
-Applies to this pack. The section below is the service copy of the moved dimension.
 
 ### 10. IDE Responsiveness
 
