@@ -21,6 +21,7 @@ open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TraitConstraintScope
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -285,6 +286,10 @@ type TcEnv =
 
         member tenv.AccessRights = tenv.eAccessRights
 
+        member tenv.Remap(remapType, remapValRef, remapStamp) =
+            let ctxt = CreateTraitContext SelectExtensionMethInfosForTrait (Lazy.CreateFromValue tenv.eNameResEnv) tenv.eAccessRights
+            ctxt.Remap(remapType, remapValRef, remapStamp)
+
     override tenv.ToString() = "TcEnv(...)"
 
 /// Represents the compilation environment for typechecking a single file in an assembly.
@@ -392,7 +397,7 @@ type TcFileState =
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript
-          css = ConstraintSolverState.New(g, amap, infoReader, tcVal, Some thisCcu)
+          css = ConstraintSolverState.New(g, amap, infoReader, tcVal)
           infoReader = infoReader
           tcSink = tcSink
           nameResolver = nameResolver

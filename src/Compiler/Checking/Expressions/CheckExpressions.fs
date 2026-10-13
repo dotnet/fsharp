@@ -459,7 +459,7 @@ let nullnessContextOnly (env: TcEnv) =
 let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
     let g = cenv.g
     match overallTy with
-    | MustConvertTo(isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo(isMethodArg, reqdTy) ->
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
@@ -486,8 +486,8 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             else
                 // report the error
                 UnifyTypes cenv env m reqdTy actualTy
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
 
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
@@ -817,9 +817,6 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             | _ -> mkWoNullAppTy tcr [TType_measure(Measure.One m)]
         unif measureTy
 
-    let expandedMeasurablesEnabled =
-        g.langVersion.SupportsFeature LanguageFeature.ExpandedMeasurables
-
     match synConst with
     | SynConst.Unit ->
         unif g.unit_ty
@@ -887,22 +884,22 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     | SynConst.Measure(constant = SynConst.Int64 i) ->
         unifyMeasureArg (i=0L) g.pint64_tcr
         Const.Int64 i
-    | SynConst.Measure(constant = SynConst.IntPtr i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.IntPtr i) ->
         unifyMeasureArg (i=0L) g.pnativeint_tcr
         Const.IntPtr i
-    | SynConst.Measure(constant = SynConst.Byte i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.Byte i) ->
         unifyMeasureArg (i=0uy) g.puint8_tcr
         Const.Byte i
-    | SynConst.Measure(constant = SynConst.UInt16 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt16 i) ->
         unifyMeasureArg (i=0us) g.puint16_tcr
         Const.UInt16 i
-    | SynConst.Measure(constant = SynConst.UInt32 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt32 i) ->
         unifyMeasureArg (i=0u) g.puint_tcr
         Const.UInt32 i
-    | SynConst.Measure(constant = SynConst.UInt64 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt64 i) ->
         unifyMeasureArg (i=0UL) g.puint64_tcr
         Const.UInt64 i
-    | SynConst.Measure(constant = SynConst.UIntPtr i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UIntPtr i) ->
         unifyMeasureArg (i=0UL) g.punativeint_tcr
         Const.UIntPtr i
     | SynConst.Char c ->
@@ -2012,11 +2009,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: (Ident * ExplicitOrSpread
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
                     if showDeprecated then
-                        let diagnostic = Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(RichText.mkRecordField fref2.FieldName, richTextOfEntity fref2.Tycon) |> snd, m)
-                        if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
-                            errorR(diagnostic)
-                        else
-                            warning(diagnostic)
+                        errorR (Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(RichText.mkRecordField fref2.FieldName, richTextOfEntity fref2.Tycon) |> snd, m))
 
                     if not (tyconRefEq g tcref fref2.TyconRef) then
                         let _, frefSet1, _ = List.head fldResolutions
@@ -2042,11 +2035,7 @@ let ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m mItemIdent (cenv: 
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, mItemIdent)
-            if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
-                errorR(diagnostic)
-            else
-                warning(diagnostic)
+            errorR (Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, mItemIdent))
 
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes g ucref mItemIdent |> CommitOperationResult
@@ -2900,6 +2889,8 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
 
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, valRecInfo, tinst, vTy, vTauTy, m)
 
+                                // Preserve the instantiated constraint cells, as inferred type arguments do.
+                                let tinst = if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then tpTys else tinst
                                 vTypars, vrefFlags, tinst, vTauTy, tpenv
 
                   let exprForVal = Expr.Val (vref, vrefFlags, m)
@@ -5828,23 +5819,14 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
 ///   - string literal expressions (though the propagation is not essential in this case)
 ///
 and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
-    let g = cenv.g
-
     match overallTy with
-    | MustConvertTo _ when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-        assert (g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
-
-        // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
+    | MustConvertTo _ ->
         UnifyOverallType cenv env m overallTy actualTy
-
-        // Process the construct
         let expr, tpenv = f ()
-
-        // Build the conversion
-        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env m expr
         expr2, tpenv
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
         f ()
 
 /// Process a leaf construct, for cases where we propagate the overall type eagerly in
@@ -5864,7 +5846,7 @@ and TcPossiblyPropagatingExprLeafThenConvert isPropagating (cenv: cenv) (overall
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo(_, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+    | MustConvertTo(ty = reqdTy) when not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
             let exprTy = NewInferenceType g
 
@@ -5898,10 +5880,10 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || isMethodArg ->
+    | MustConvertTo(ty = reqdTy) ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
-    | _ ->
+    | MustEqual _ ->
         expr
 
 and TcNonControlFlowExpr (env: TcEnv) f =
@@ -5970,7 +5952,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         TcNonControlFlowExpr env <| fun env ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.StringInterpolation m
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
@@ -7222,8 +7203,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
         // `TransformAstForNestedUpdates` creates record constructions with synthetic ranges.
         // Don't emit the warning for nested field updates, because it does not really make sense.
         if oldFldsList.IsEmpty && not m.IsSynthetic then
-            let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
-            warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(richTextOfQualifiedTyconRef tcref), m, enabledByLangFeature))
+            warning(Error(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(richTextOfQualifiedTyconRef tcref), m))
 
     if not (Zset.subset ns1 ns2) then
         error (Error(FSComp.SR.tcExtraneousFieldsGivenValues(), m))
@@ -7858,7 +7838,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let newFormatMethod =
         match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
         | [ctorInfo] -> ctorInfo
-        | _ -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
+        | _ -> error (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod "Microsoft.FSharp.Core.PrintfFormat.ctor"), m))
 
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
@@ -7885,15 +7865,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             UnifyTypes cenv env m printerResultTy overallTy.Commit
 
             // Find the FormattableStringFactor.Create method in the .NET libraries
-            let ad = env.eAccessRights
-            let createMethodOpt =
-                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with
-                | [x] -> Some x
-                | _ -> None
-
-            match createMethodOpt with
-            | Some createMethod -> Choice2Of2 createMethod
-            | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
+            match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m env.eAccessRights "Create" g.system_FormattableStringFactory_ty with
+            | [createMethod] -> Choice2Of2 createMethod
+            | _ -> error (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod "System.Runtime.CompilerServices.FormattableStringFactory.Create"), m))
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
         elif not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
@@ -12482,10 +12456,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
         match memberFlags.MemberKind with
         | SynMemberKind.Member ->
              let dispatchSlots, dispatchSlotsArityMatch =
-                if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
-                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags, DiscardOnFirstNonOverride)
-                else
-                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags,IgnoreOverrides)
+                 GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags)
 
              let uniqueAbstractMethSigs =
                  match dispatchSlots with
