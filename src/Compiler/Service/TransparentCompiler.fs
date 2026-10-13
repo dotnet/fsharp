@@ -2410,7 +2410,7 @@ type internal TransparentCompiler
                         fileName,
                         SourceTextNew.ofISourceText sourceText,
                         caret,
-                        DocumentSource.FileSystem,
+                        documentSource,
                         previewEnabled,
                         loadedTimeStamp,
                         otherFlags,
@@ -2510,13 +2510,14 @@ type internal TransparentCompiler
                 // Populate the cache.
                 let! _ = caches.ScriptClosure.Get(loadClosureKey, async { return loadClosure })
 
-                let sourceFiles =
+                let! sourceFiles =
                     loadClosure.SourceFiles
                     |> List.map (fun (sf, _) ->
                         if sf = fileName then
-                            currentSourceFile
+                            async.Return currentSourceFile
                         else
                             FSharpFileSnapshot.CreateFromDocumentSource(sf, documentSource))
+                    |> MultipleDiagnosticsLoggers.Parallel
 
                 let references =
                     loadClosure.References
@@ -2533,7 +2534,7 @@ type internal TransparentCompiler
                         fileName + ".fsproj",
                         None,
                         None,
-                        sourceFiles,
+                        List.ofArray sourceFiles,
                         references,
                         otherFlags,
                         List.empty,
