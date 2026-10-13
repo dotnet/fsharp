@@ -25,7 +25,13 @@ module internal Md5Hasher =
 
     val empty: 'a array
 
+    /// Computes the MD5 hash of the UTF-8 encoding of a string. The encoded bytes go to a buffer rented from
+    /// the shared ArrayPool, and the result is the array that the hash algorithm returns, so this function
+    /// allocates no array of its own.
     val hashString: s: string -> byte array
+
+    /// Computes the MD5 hash of the UTF-8 encoding of a string as a hex string in the format of `toString`.
+    val hashStringToString: s: string -> string
 
     val addBytes: bytes: byte array -> s: byte array -> byte array
 
