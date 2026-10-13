@@ -121,3 +121,108 @@ let f (buffer: byref<int>) x =
     | _ -> 0
 """
         |> compiles
+
+    // https://github.com/dotnet/fsharp/issues/20632
+    // Guarded rules on the second column between rules on the first column, as in LexFilter's hwTokenFetch.
+    // Every branch of a switch on the first column would get its own copy of the guarded rules.
+    let private interleavedGuardsSource =
+        let ctxs, toks = 20, 12
+
+        let rules =
+            [ yield "T0", "C0 p :: _", "col < p"
+              for k in 0 .. ctxs - 1 -> "_", $"C%d{k} p :: _", $"col <= p + %d{k}"
+              for k in 1 .. toks - 1 -> $"T%d{k}", "_ :: _", (if k % 3 = 0 then $"col %% %d{k} = 0" else "true") ]
+
+        let clauses =
+            rules
+            |> List.mapi (fun i (tok, stack, guard) -> $"    | %s{tok}, %s{stack} when %s{guard} -> %d{i}")
+            |> String.concat "\n"
+
+        let reference =
+            rules
+            |> List.mapi (fun i (tok, stack, guard) ->
+                let tokTest = if tok = "_" then "true" else $"tok = %s{tok}"
+                $"    elif (%s{tokTest}) && (match stack with %s{stack} -> %s{guard} | _ -> false) then %d{i}")
+            |> String.concat "\n"
+
+        let cases prefix n field =
+            [ for k in 0 .. n - 1 -> $"    | %s{prefix}%d{k}%s{field}" ] |> String.concat "\n"
+
+        $"""module Test
+open Microsoft.FSharp.Reflection
+type Ctx =
+{cases "C" ctxs " of int"}
+type Tok =
+{cases "T" toks ""}
+let f (tok: Tok) (stack: Ctx list) (col: int) =
+    match tok, stack with
+{clauses}
+    | _ -> -1
+let reference (tok: Tok) (stack: Ctx list) (col: int) =
+    if false then -2
+{reference}
+    else -1
+[<EntryPoint>]
+let main _ =
+    let tokens = FSharpType.GetUnionCases typeof<Tok> |> Array.map (fun c -> FSharpValue.MakeUnion(c, [||]) :?> Tok)
+    let ctx k (p: int) = FSharpValue.MakeUnion((FSharpType.GetUnionCases typeof<Ctx>).[k], [| box p |]) :?> Ctx
+    let stacks = [ yield []; for k in 0 .. {ctxs - 1} do for p in 0 .. 3 -> [ ctx k p ] ]
+    let mismatches = Seq.length (seq {{ for tok in tokens do for stack in stacks do for col in 0 .. 25 do if f tok stack col <> reference tok stack col then yield () }})
+    let ilSize = typeof<Ctx>.DeclaringType.GetMethod("f").GetMethodBody().GetILAsByteArray().Length
+    printfn "mismatches=%%d small=%%b" mismatches (ilSize < 4000)
+    0
+"""
+
+    [<Fact>]
+    let ``Issue 20632 - guarded rules between first-column rules are emitted once`` () =
+        interleavedGuardsSource
+        |> FSharp
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "mismatches=0 small=true"
+
+    // https://github.com/dotnet/fsharp/pull/20718#discussion_r4219278089
+    // A failed guard that writes the data the match tests must not change which later rule matches.
+    let private guardWritesTestedDataSource =
+        let matchOn header write (pat: string -> string -> string) =
+            [ yield header
+              yield $"""    | %s{pat "0" "0"} when (%s{write}; false) -> 0"""
+              for c in 0..7 -> $"""    | %s{pat "_" (string c)} when col <= %d{c} -> 1%d{c}"""
+              for t in 1..7 -> $"""    | %s{pat (string t) "_"} -> %d{t}"""
+              yield "    | _ -> -1" ]
+            |> String.concat "\n"
+
+        let pair =
+            matchOn "let pair (value: byref<Pair>) col =\n    match value with" "value <- Pair (7, 7)" (fun t c -> $"Pair (%s{t}, %s{c})")
+
+        let array =
+            matchOn "let array (arr: int[]) col =\n    match arr with" "arr.[0] <- 7; arr.[1] <- 7" (fun t c -> $"[| %s{t}; %s{c} |]")
+
+        let record =
+            matchOn "let record (r: R) col =\n    match r with" "r.T <- 7; r.C <- 7" (fun t c -> $"{{ T = %s{t}; C = %s{c} }}")
+
+        $"""module Test
+[<Struct>]
+type Pair = Pair of token: int * context: int
+type R = {{ mutable T: int; mutable C: int }}
+{pair}
+{array}
+{record}
+[<EntryPoint>]
+let main _ =
+    let mutable input = Pair (0, 0)
+    printfn "pair=%%d array=%%d record=%%d" (pair &input 100) (array [| 0; 0 |] 100) (record {{ T = 0; C = 0 }} 100)
+    0
+"""
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Guards that write the tested data keep the rule the whole match would pick`` optimize =
+        guardWritesTestedDataSource
+        |> FSharp
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "pair=-1 array=-1 record=-1"
