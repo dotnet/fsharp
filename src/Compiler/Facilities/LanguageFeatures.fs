@@ -20,9 +20,7 @@ type LanguageFeature =
     | RuntimeAsync
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | AttributesToRightOfModuleKeyword
     | CSharpExtensionAttributeNotRequired
-    | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     | PreferExtensionMethodOverPlainProperty
@@ -108,12 +106,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let features =
         dict
             [
-                // F# 6.0
-                LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
-
                 // F# 8.0
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
-                LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
 
                 // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
@@ -268,10 +262,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
-        | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
-        | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
-            FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
