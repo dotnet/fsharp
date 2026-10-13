@@ -309,8 +309,8 @@ A keystroke, search, or tooltip starts work that keeps running after the user ha
 - Live-buffer edits must not start a non-cancellable parse for every keystroke. That work must be a debounced request for the current document version.
 - User-started editor search must pass cancellation into the parallel scan. A parallel loop that ignores the request token keeps running after the search is abandoned.
 - Solution search must stay cancellable, include operators as well as identifiers, and keep its cache for the solution lifetime, cleared on close, rather than a short-lived cache rebuilt on every query.
-- Tooltip navigation must use the host's built-in link and must be cancellable. If the user cancels the slower implementation lookup, fall back to the instant range. Render each tooltip element as icon, then description, then documentation.
-- Before adding a custom parallelism cap for editor background work, compare it with the existing parallel combinator that already takes a maximum degree.
+- Tooltip navigation must use the host's built-in link and must be cancellable. If the user cancels the slower implementation lookup, fall back to the instant range. Render each tooltip element as icon, then description, then documentation, because the host link parser reads that order.
+- Do not add a second cap on editor background parallelism when that work is already bounded. A second cap drifts from the bound callers already use, so cancellation and degree disagree.
 
 **Severity:** high.
 
