@@ -8,6 +8,28 @@ open FSharp.Test.Compiler
 
 module InterpolatedStringsTests =
 
+    [<Theory>]
+    [<InlineData("$\"%t{fun () -> printed}\"", "printed")>]
+    [<InlineData("$@\"%t{fun () -> printed}\"", "printed")>]
+    [<InlineData("$\"\"\"%t{fun () -> printed}\"\"\"", "printed")>]
+    [<InlineData("$\"%t{fun () -> x}%02d{1}%t{fun () -> y}\"", "x01y")>]
+    let ``Issue 20757 - printf thunk holes do not warn about ToString`` (expression: string, expected: string) =
+        Fsx ("let printed, x, y = \"printed\", \"x\", \"y\"\nlet s = " + expression + "\nif s <> \"" + expected + "\" then failwith \"Unexpected thunk formatting\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("%A")>]
+    [<InlineData("%O")>]
+    let ``Issue 20757 - explicit printf function formatting retains diagnostics`` (specifier: string) =
+        Fsx ("let s = $\"" + specifier + "{fun () -> 1}\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> typecheck
+        |> shouldSucceed
+
     [<Fact>]
     let ``Issue 20757 - printf interpolation matrix across files and assemblies`` () =
         let fixture = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "AheadOfTime", "NativeAOT", "PrintfInterpolation")
@@ -32,6 +54,11 @@ let format: Printf.StringFormat<string> = $"%02d{1}:%02d{2}"
 check "01:02" (sprintf format)
 check "01" (sprintf "%02d" 1)
 check "[1; 2]" $"%A{[1; 2]}"
+let inline structured value = $"%02d{1}|%A{value}|%02d{2}"
+check "01|[1; 2]|02" (structured [1; 2])
+check "01|Some \"x\"|02" (structured (Some "x"))
+let optional = Some "x"
+check "[1; 2]|Some \"x\"" $"%A{[1; 2]}|%A{optional}"
 let formattable: System.FormattableString = $"{1,3:D2}"
 check " 01" (formattable.ToString(System.Globalization.CultureInfo.InvariantCulture))
 let asInterface: System.IFormattable = $"{1:D2}"

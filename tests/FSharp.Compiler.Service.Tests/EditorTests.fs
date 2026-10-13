@@ -616,25 +616,24 @@ let ``Issue 20757 - foreground fallback formats preserve locations and arity`` (
 [<InlineData("let s = $\"%d{1}%02d{2}{true}%b{false}\"")>]
 [<InlineData("let inline padded (n: ^T) = $\"%02d{n}\"\nlet s = padded 1uy, padded 1L")>]
 [<InlineData("let padded n = $\"%02d{n}\"\nlet f: int -> string = padded\nlet s = f 1")>]
+[<InlineData("let s = $\"%t{fun () -> string 1}%02d{1}%t{fun () -> string 2}\"")>]
+[<InlineData("let s = $\"%A{fun () -> 1}%O{fun () -> 2}\"")>]
 let ``Issue 20757 - foreground checks fallback boundaries and generic integers`` (source: string) =
     let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
     results.Diagnostics |> shouldEqual [||]
 
 [<Theory>]
-[<InlineData("let s = $\"%02d{true}\"", 15, 19)>]
-[<InlineData("let s = $\"%b{1}\"", 13, 14)>]
-let ``Issue 20757 - foreground wrong-type holes report one real range`` (source: string, startColumn: int, endColumn: int) =
+[<InlineData("let s = $\"%02d{true}\"", 15, 19, -1, -1)>]
+[<InlineData("let s = $\"%b{1}\"", 13, 14, -1, -1)>]
+[<InlineData("let s = $\"%b{1}%02d{true}\"", 13, 14, 20, 24)>]
+let ``Issue 20757 - foreground wrong-type holes report real ranges once`` (source: string, firstStart: int, firstEnd: int, secondStart: int, secondEnd: int) =
     let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
     results.Diagnostics
     |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Range.IsSynthetic)
-    |> shouldEqual [| (1, 1, startColumn, 1, endColumn, false) |]
-
-[<Fact>]
-let ``Issue 20757 - mixed invalid fallback holes are checked once`` () =
-    let _, results = parseAndCheckScriptWithOptions(testFile, "let s = $\"%b{1}%02d{true}\"", [| "--langversion:preview" |])
-    results.Diagnostics
-    |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Range.IsSynthetic)
-    |> shouldEqual [| (1, 1, 13, 1, 14, false); (1, 1, 20, 1, 24, false) |]
+    |> shouldEqual [|
+        (1, 1, firstStart, 1, firstEnd, false)
+        if secondStart >= 0 then (1, 1, secondStart, 1, secondEnd, false)
+    |]
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
