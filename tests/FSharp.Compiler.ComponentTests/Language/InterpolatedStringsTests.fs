@@ -21,6 +21,42 @@ module InterpolatedStringsTests =
         |> shouldSucceed
 
     [<Theory>]
+    [<InlineData("string")>]
+    [<InlineData("obj")>]
+    [<InlineData("System.IComparable")>]
+    [<InlineData("System.ICloneable")>]
+    let ``Issue 20757 - string-rendering thunk holes enforce state and residue types`` (targetType: string) =
+        for thunk in ["fun (_: int) -> \"bad\""; "fun () -> 42"] do
+            Fsx ("let value: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\"")
+            |> withLangVersionPreview
+            |> typecheck
+            |> shouldFail
+            |> withErrorCode 1
+            |> ignore
+
+    [<Theory>]
+    [<InlineData("string")>]
+    [<InlineData("obj")>]
+    [<InlineData("System.IComparable")>]
+    [<InlineData("System.ICloneable")>]
+    let ``Issue 20757 - string-rendering thunk holes render before upcasting`` (targetType: string) =
+        Fsx ("let value: " + targetType + " = $\"\"\"%t{fun () -> \"ok\"}%02d{1}\"\"\"\nif string value <> \"ok01\" then failwith \"Unexpected thunk formatting\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("PrintfFormat<string, int, string, string>", "fun (state: int) -> string state")>]
+    [<InlineData("PrintfFormat<string, unit, int, string>", "fun () -> 42")>]
+    let ``Issue 20757 - captured format thunk holes retain custom state and residue types`` (targetType: string, thunk: string) =
+        Fsx ("let format: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\"")
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:3884"]
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory>]
     [<InlineData("%A")>]
     [<InlineData("%O")>]
     let ``Issue 20757 - explicit printf function formatting retains diagnostics`` (specifier: string) =

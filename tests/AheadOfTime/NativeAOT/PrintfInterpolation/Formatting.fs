@@ -25,6 +25,11 @@ let runChecks () =
     check "010203" $"%02d{now.Hour}%02d{now.Minute}%02d{now.Second}"
     check "01:02:03" (timestamp now)
     check "01:02:03" (PrintfInterpolationLibrary.timestamp now)
+    let asObject: obj = $"""%t{fun () -> "ok"}%02d{1}"""
+    let asComparable: IComparable = $"""%t{fun () -> "ok"}%02d{1}"""
+    let asCloneable: ICloneable = $"""%t{fun () -> "ok"}%02d{1}"""
+    for value in [asObject; asComparable; asCloneable] do
+        check "ok01" (string value)
     for n, expected in
         [ 0, "00"; 9, "09"; 10, "10"; -1, "-1"; -9, "-9"; -10, "-10"
           Int32.MinValue, "-2147483648"; Int32.MaxValue, "2147483647" ] do

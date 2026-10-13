@@ -623,6 +623,19 @@ let ``Issue 20757 - foreground checks fallback boundaries and generic integers``
     results.Diagnostics |> shouldEqual [||]
 
 [<Theory>]
+[<InlineData("string")>]
+[<InlineData("obj")>]
+[<InlineData("System.IComparable")>]
+[<InlineData("System.ICloneable")>]
+let ``Issue 20757 - foreground string-rendering thunks enforce state and residue types`` (targetType: string) =
+    for thunk in ["fun (_: int) -> \"bad\""; "fun () -> 42"] do
+        let source = "let value: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\""
+        let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+        results.Diagnostics
+        |> Array.map (fun d -> d.ErrorNumber, d.Range.IsSynthetic)
+        |> shouldEqual [| (1, false) |]
+
+[<Theory>]
 [<InlineData("let s = $\"%02d{true}\"", 15, 19, -1, -1)>]
 [<InlineData("let s = $\"%b{1}\"", 13, 14, -1, -1)>]
 [<InlineData("let s = $\"%b{1}%02d{true}\"", 13, 14, 20, 24)>]

@@ -7860,15 +7860,6 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
         if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty) then
-
-            // And if that succeeds, the result of printing is a string
-            UnifyTypes cenv env m printerArgTy g.unit_ty
-            UnifyTypes cenv env m printerResidueTy g.string_ty
-            UnifyTypes cenv env m printerResultTy overallTy.Commit
-
-            // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
-            UnifyTypes cenv env m printerTy printerResultTy
-
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
@@ -7895,6 +7886,14 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         else
             Choice1Of2 (true, newFormatMethod)
+
+    match stringKind with
+    | Choice1Of2 (true, _) ->
+        UnifyTypes cenv env m printerArgTy g.unit_ty
+        UnifyTypes cenv env m printerResidueTy g.string_ty
+        UnifyTypes cenv env m printerResultTy g.string_ty
+        UnifyTypes cenv env m printerTy printerResultTy
+    | Choice1Of2 (false, _) | Choice2Of2 _ -> ()
 
     let isFormattableString = (match stringKind with Choice2Of2 _ -> true | _ -> false)
 
