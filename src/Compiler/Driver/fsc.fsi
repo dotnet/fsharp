@@ -57,3 +57,6 @@ val CompileFromCommandLineArguments:
 
 /// Read the parallelReferenceResolution flag from environment variables
 val internal getParallelReferenceResolutionFromEnvironment: unit -> ParallelReferenceResolution option
+
+/// Pin deterministic output, sequential IlxGen and sequential optimization for hot reload capture and replay compiles.
+val internal applyHotReloadDeterminismPins: tcConfigB: TcConfigBuilder -> unit

@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -14,7 +15,12 @@ type LoweredStateMachine =
         thisVars: ValRef list *
         moveNext: (Val * Expr) *
         setStateMachine: (Val * Val * Expr) *
-        afterCode: (Val * Expr)
+        afterCode: (Val * Expr) *
+        /// The state machine's resume points in state-number order: (state number
+        /// assigned by the conversion, source range of the resumable entry). Hot reload
+        /// compiles persist these as the EnC State Machine State Map; empty
+        /// for state machines without suspension points.
+        resumptionPoints: (int * range) list
 
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
@@ -31,5 +37,12 @@ type LoweredStateMachineResult =
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
+/// 'collectResumptionPoints' requests collection of the resume points for the hot reload
+/// EnC State Machine State Map; when false (ordinary compiles) the resumptionPoints
+/// field of the result is always empty.
 val LowerStateMachineExpr:
-    g: TcGlobals -> outerResumableCodeDefns: ValMap<Expr> -> overallExpr: Expr -> LoweredStateMachineResult
+    g: TcGlobals ->
+    outerResumableCodeDefns: ValMap<Expr> ->
+    collectResumptionPoints: bool ->
+    overallExpr: Expr ->
+        LoweredStateMachineResult

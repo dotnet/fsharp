@@ -56,6 +56,18 @@ type TestingWorkspace(testName) as _this =
             //tracerProvider.ForceFlush() |> ignore
             //tracerProvider.Dispose()
 
+let private fullPathEquals (left: string) (right: string) =
+    String.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase)
+
+let private findTrackedInput (snapshot: FSharpProjectSnapshot) (path: string) =
+    snapshot.ProjectConfig.TrackedInputsOnDisk
+    |> List.tryFind (fun input -> fullPathEquals input.Path path)
+    |> Option.defaultWith (fun () -> failwithf "Expected tracked input '%s'." path)
+
+let private projectConfigVersion (snapshot: FSharpProjectSnapshot) =
+    snapshot.ProjectConfig.Version
+    |> BitConverter.ToString
+
 [<Fact>]
 let ``Add project to workspace`` () =
     use workspace = new TestingWorkspace("Add project to workspace")
@@ -68,6 +80,90 @@ let ``Add project to workspace`` () =
     Assert.Equal(projectPath, projectSnapshot.ProjectFileName)
     Assert.Equal(Some outputPath, projectSnapshot.OutputFileName)
     Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+
+[<Fact>]
+let ``Project config tracks non-source command-line input timestamp changes`` () =
+    use workspace = new TestingWorkspace("Project config tracks non-source command-line input timestamp changes")
+
+    let projectDir = Path.Combine(Path.GetTempPath(), "fcs-workspace-nonsource-input", Guid.NewGuid().ToString("N"))
+    Directory.CreateDirectory(projectDir) |> ignore
+
+    let sourcePath = Path.Combine(projectDir, "Program.fs")
+    let inputPath = Path.Combine(projectDir, "View.xaml")
+    let projectPath = Path.Combine(projectDir, "test.fsproj")
+    let outputPath = Path.Combine(projectDir, "test.dll")
+
+    try
+        File.WriteAllText(sourcePath, "module Program\nlet value = 1\n")
+        File.WriteAllText(inputPath, "<TextBlock Text=\"one\" />")
+
+        let compilerArgs = [| sourcePath; inputPath |]
+
+        let projectIdentifier =
+            workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+
+        let snapshot1 = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+        let trackedInput1 = findTrackedInput snapshot1 inputPath
+        let version1 = projectConfigVersion snapshot1
+
+        File.WriteAllText(inputPath, "<TextBlock Text=\"two\" />")
+        File.SetLastWriteTimeUtc(inputPath, DateTime.UtcNow.AddSeconds(3.0))
+
+        workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs) |> ignore
+
+        let snapshot2 = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+        let trackedInput2 = findTrackedInput snapshot2 inputPath
+        let version2 = projectConfigVersion snapshot2
+
+        Assert.NotEqual(trackedInput1.LastModified, trackedInput2.LastModified)
+        Assert.NotEqual<string>(version1, version2)
+    finally
+        try
+            Directory.Delete(projectDir, true)
+        with _ ->
+            ()
+
+[<Fact>]
+let ``Project config tracks --resource non-source input changes`` () =
+    use workspace = new TestingWorkspace("Project config tracks resource input changes")
+
+    let projectDir = Path.Combine(Path.GetTempPath(), "fcs-workspace-resource-input", Guid.NewGuid().ToString("N"))
+    Directory.CreateDirectory(projectDir) |> ignore
+
+    let sourcePath = Path.Combine(projectDir, "Program.fs")
+    let resourcePath = Path.Combine(projectDir, "Strings.resources")
+    let projectPath = Path.Combine(projectDir, "test.fsproj")
+    let outputPath = Path.Combine(projectDir, "test.dll")
+
+    try
+        File.WriteAllText(sourcePath, "module Program\nlet value = 1\n")
+        File.WriteAllText(resourcePath, "resource-1")
+
+        let compilerArgs = [| sourcePath; $"--resource:{resourcePath}" |]
+
+        let projectIdentifier =
+            workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+
+        let snapshot1 = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+        let trackedInput1 = findTrackedInput snapshot1 resourcePath
+        let version1 = projectConfigVersion snapshot1
+
+        File.WriteAllText(resourcePath, "resource-2")
+        File.SetLastWriteTimeUtc(resourcePath, DateTime.UtcNow.AddSeconds(3.0))
+
+        workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs) |> ignore
+
+        let snapshot2 = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+        let trackedInput2 = findTrackedInput snapshot2 resourcePath
+        let version2 = projectConfigVersion snapshot2
+
+        Assert.NotEqual(trackedInput1.LastModified, trackedInput2.LastModified)
+        Assert.NotEqual<string>(version1, version2)
+    finally
+        try
+            Directory.Delete(projectDir, true)
+        with _ ->
+            ()
 
 [<Fact>]
 let ``Open file in workspace`` () =
