@@ -1,6 +1,6 @@
 ---
 name: reviewing-vsintegration
-description: "Routes Visual Studio integration and IDE-service review to @vsintegration-reviewer. Use when a PR or edit touches vsintegration, FSharp.Editor, the legacy language service, FSI, the F# project system, MEF, src/Compiler/Service, src/Compiler/Symbols, FCS snapshots, the incremental builder, workspace, navigation, completion, or symbols. Does not review compiler type checking, IL, pickle, or FSharp.Core."
+description: "Selects Pack A and Pack B review dimensions for Visual Studio integration and the host-neutral F# compiler service. Use when reviewing a PR, pre-merge change, or edit under vsintegration, FSharp.Editor, the legacy language service, FSI, the project system, MEF, src/Compiler/Service, src/Compiler/Symbols, FCS snapshots, the incremental builder, workspace, navigation, completion, or symbols. Invokes @vsintegration-reviewer. Does not review compiler type checking, IL, pickle, or FSharp.Core."
 ---
 
 # Reviewing VS integration
