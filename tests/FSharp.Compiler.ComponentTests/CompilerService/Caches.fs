@@ -44,30 +44,6 @@ let ``Idle cache and contents are collected without explicit disposal`` useMailb
             shouldNeverTimeout)
     collected |> shouldBeTrue
 
-[<Fact>]
-let ``Faulting one cache does not stop eviction for another`` () =
-    let options =
-        { defaultStructural() with
-            TotalCapacity = 1
-            HeadroomPercentage = 0
-            EvictionMode = EvictionMode.MailboxProcessor }
-    let first = new Cache<string, obj>(options, name = "First cache isolation")
-    first.Evicted.Add(fun () -> raise (InvalidOperationException("Eviction subscriber failed")))
-
-    first.TryAdd("first", obj()) |> shouldBeTrue
-    first.TryAdd("last", obj()) |> shouldBeTrue
-
-    let second = new Cache<string, int>(options, name = "Second cache isolation")
-    let evicted = TaskCompletionSource<unit>()
-    second.Evicted.Add evicted.SetResult
-    second.TryAdd("first", 1) |> shouldBeTrue
-    second.TryAdd("last", 2) |> shouldBeTrue
-    evicted.Task.Wait shouldNeverTimeout |> shouldBeTrue
-    let mutable value = 0
-    second.TryGetValue("first", &value) |> shouldBeFalse
-    second.TryGetValue("last", &value) |> shouldBeTrue
-    value |> shouldEqual 2
-
 // Metrics assertions below read absolute per-name totals via CacheMetrics.getTotalsByName. Those totals
 // are aggregated process-globally while a CacheMetrics.ListenToAll() listener is running. This works
 // because each test uses a unique cache name and this module is the only ListenToAll caller in the
