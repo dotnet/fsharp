@@ -6,6 +6,7 @@ $git = (Get-Command git.exe -CommandType Application | Select-Object -First 1).S
 $gitRoot = Split-Path (Split-Path $git -Parent) -Parent
 $previousPath = $env:PATH
 $previousWorkFolder = $env:AGENT_WORKFOLDER
+$previousLoggingDirectory = $env:LoggingDirectory
 $systemPath = "$env:SystemRoot\System32"
 $powershell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $yaml = Get-Content (Join-Path $apex 'stage.yml') -Raw
@@ -71,12 +72,13 @@ $env:AGENT_WORKFOLDER | Set-Content .\setup-workfolder.txt
 @echo off
 git --version >nul
 if errorlevel 1 exit /b %ERRORLEVEL%
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "(Get-Command git.exe -CommandType Application).Source | Set-Content .\child-git.txt; $env:AGENT_WORKFOLDER | Set-Content .\child-workfolder.txt"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "(Get-Command git.exe -CommandType Application).Source | Set-Content .\child-git.txt; $env:AGENT_WORKFOLDER | Set-Content .\child-workfolder.txt; New-Item -ItemType Directory artifacts\TestResults\Release -Force | Out-Null; Set-Content artifacts\TestResults\Release\fixture.trx '<TestRun />'"
 exit /b %ERRORLEVEL%
 '@
     & $git -C $root init -q
     & $git -C $root -c user.name=Test -c user.email=test@example.invalid commit -q --allow-empty -m fixture
     if ($LASTEXITCODE -ne 0) { throw 'Could not initialize the offline Apex repository.' }
+    $env:LoggingDirectory = Join-Path $root 'cloudtest-results'
     foreach ($workFolder in @($null, (Join-Path $root 'stale-workspace'))) {
         $env:AGENT_WORKFOLDER = $workFolder
         $env:PATH = $systemPath
@@ -116,6 +118,7 @@ exit /b %ERRORLEVEL%
 finally {
     $env:PATH = $previousPath
     $env:AGENT_WORKFOLDER = $previousWorkFolder
+    $env:LoggingDirectory = $previousLoggingDirectory
     if (Test-Path $installation) { [IO.Directory]::Delete($installation) }
     Remove-Item -LiteralPath $root -Recurse -Force
 }

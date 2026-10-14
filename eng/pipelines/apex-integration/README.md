@@ -19,6 +19,12 @@ CloudTest supplies `BUILD_BUILDID` without an Azure Pipelines agent workspace;
 MicroBuild's `AddSBOM` task needs that workspace path when packaging VS manifests.
 The build children inherit the value; the caller's environment is unchanged.
 
+After setup/build execution, the runner copies the contents of
+`artifacts\TestResults\<Configuration>` into CloudTest's required `LoggingDirectory`,
+preserving attachment subdirectories. Handoff also runs on failure without replacing
+the original build error; copy errors are reported separately. A successful build
+without TRX results fails explicitly. No placeholder results are generated.
+
 ## Requesting a run
 
 Post **`/dart <sha>`** or **`/pr-val <sha>`** as the entire comment on an open
@@ -136,6 +142,7 @@ Local regression commands (no product build or DartLab access required):
 pwsh -NoProfile -File .github\scripts\pr-validation.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\SetupPrValidation.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexGit.Tests.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexResults.Tests.ps1
 ```
 
 The script tests use temporary local Git repositories and a mocked GitHub PR response.
@@ -144,6 +151,8 @@ races, closed PRs and failure before checkout.
 The Git provisioning tests run offline with the installer boundary mocked. They
 cover missing initial PATH, independent Apex process setup, build/test child PATH
 inheritance, and provisioning failures without changing machine-wide PATH.
+Result handoff tests cover copied TRX/attachments, missing results, and preserving
+the primary setup/build error when copying also fails.
 The PowerShell 7 tests run the Actions helper offline with a fake HTTP boundary.
 They cover command syntax, authorization of the original commenter (also on reruns),
 private membership lookup with the separate App token, the queued snapshot and PR feedback.
