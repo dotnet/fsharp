@@ -4,10 +4,9 @@ applyTo:
   - "src/Compiler/Symbols/**/*.{fs,fsi}"
 ---
 
-# IDE service
+# Compiler service
 
-These folders are Pack B of `@vsintegration-reviewer`. Invoke that agent for a review. Do not restate its CHECK list here.
+Read `.github/skills/reviewing-vsintegration/compiler-service.md`. Invoke `@vsintegration-reviewer`. Do not restate that file here.
 
-- No VS, MEF, JTF, or Roslyn types in these folders. Service must not reference `vsintegration`.
-- Public signature, cache identity, and stale results are Pack B checks. Do not restate them here.
+- No VS, MEF, JTF, or Roslyn types in these folders. These folders must not reference `vsintegration`.
 - `@expert-reviewer` still owns type checking, IL, pickle, and FSharp.Core. Do not add those rules here.

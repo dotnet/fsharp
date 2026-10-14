@@ -25,13 +25,13 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 | `Optimize/` | Optimization Correctness, IL Emission, Test Coverage |
 | `SyntaxTree/`, `pars.fsy` | Parser Integrity, Feature Gating, Typed Tree Discipline |
 | `TypedTreePickle.*`, `CompilerImports.*` | Binary Compatibility (highest priority) |
-| `Service/`, `Symbols/` | Invoke `@vsintegration-reviewer` Pack B. Do not apply compiler dimensions here. |
+| `Service/`, `Symbols/` | Read `compiler-service.md` via `@vsintegration-reviewer`. Do not apply compiler dimensions here. |
 | `LanguageServer/` | IDE responsiveness: `@vsintegration-reviewer`. Concurrency stays here. |
 | `Driver/` | Build Infrastructure, Incremental Checking, Cancellation |
 | `Facilities/` | Feature Gating, Concurrency |
 | `FSComp.txt` | Diagnostic Quality |
 | `FSharp.Core/` | FSharp.Core Stability, Backward Compat, XML Docs, RFC Process |
-| `vsintegration/` | Invoke `@vsintegration-reviewer` Pack A. Memory and JTF: `@vs-integration-perf`. |
+| `vsintegration/` | Read `vsintegration.md` via `@vsintegration-reviewer`. Memory and JTF: `@vs-integration-perf`. |
 | `eng/`, `setup/`, build scripts | Build Infrastructure, Cross-Platform |
 
 ## Subagent Dispatch
