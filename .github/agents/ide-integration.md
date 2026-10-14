@@ -1,9 +1,9 @@
 ---
-name: vsintegration-reviewer
-description: "Reviews Visual Studio integration and the host-neutral compiler service. Use when a change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/. Read vsintegration.md or compiler-service.md for the tree the diff touches. Does not replace @expert-reviewer."
+name: ide-integration
+description: "Reviews IDE integration: vsintegration/, src/Compiler/Service/, and src/Compiler/Symbols/. Read vsintegration.md or compiler-service.md for the tree the diff touches. Does not replace @expert-reviewer."
 ---
 
-# VS integration reviewer
+# IDE integration
 
 Sibling of `@expert-reviewer`. Does not replace it. Compiler types, IL, pickle, optimizer, feature gates, FSharp.Core, and compiler diagnostics stay there.
 

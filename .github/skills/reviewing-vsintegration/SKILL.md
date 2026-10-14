@@ -1,11 +1,11 @@
 ---
 name: reviewing-vsintegration
-description: "Routes a Visual Studio integration or compiler-service review to the file for that tree. Use when reviewing a PR, pre-merge change, or edit under vsintegration, FSharp.Editor, the legacy language service, FSI, the project system, MEF, src/Compiler/Service, src/Compiler/Symbols, FCS snapshots, the incremental builder, workspace, navigation, completion, or symbols. Invokes @vsintegration-reviewer. Does not review compiler type checking, IL, pickle, or FSharp.Core."
+description: "Routes a Visual Studio integration or compiler-service review to the file for that tree. Use when reviewing a PR, pre-merge change, or edit under vsintegration, FSharp.Editor, the legacy language service, FSI, the project system, MEF, src/Compiler/Service, src/Compiler/Symbols, FCS snapshots, the incremental builder, workspace, navigation, completion, or symbols. Invokes @ide-integration. Does not review compiler type checking, IL, pickle, or FSharp.Core."
 ---
 
 # Reviewing VS integration
 
-CHECK rules live in two files. The five-wave workflow lives in `@vsintegration-reviewer`. Do not copy `@vs-integration-perf`. Invoke it for JTF, retained memory, and the perf execution map.
+CHECK rules live in two files. The five-wave workflow lives in `@ide-integration`. Do not copy `@vs-integration-perf`. Invoke it for JTF, retained memory, and the perf execution map.
 
 `@expert-reviewer` stays the compiler reviewer. Do not send `vsintegration` or `src/Compiler/Service` findings there.
 
@@ -19,7 +19,7 @@ CHECK rules live in two files. The five-wave workflow lives in `@vsintegration-r
 | `vsintegration/tests/**` | [vsintegration.md](vsintegration.md) |
 | `tests/FSharp.Compiler.Service.Tests/**` | [compiler-service.md](compiler-service.md) |
 
-A change that crosses the two trees, owns cancellation, or could make `src/Compiler/Service` depend on `vsintegration` also uses the three rules under Both trees in `@vsintegration-reviewer`.
+A change that crosses the two trees, owns cancellation, or could make `src/Compiler/Service` depend on `vsintegration` also uses the three rules under Both trees in `@ide-integration`.
 
 ## Folder routing
 
