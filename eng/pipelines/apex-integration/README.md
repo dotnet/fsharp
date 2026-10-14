@@ -14,6 +14,11 @@ processes, so setup does not rely on a previous operation's PATH changes.
 Provisioning failures, an unusable Git executable, or a missing installation stop
 the run rather than falling back to an unverified machine installation.
 
+The runner also sets process-local `AGENT_WORKFOLDER` to the repository root.
+CloudTest supplies `BUILD_BUILDID` without an Azure Pipelines agent workspace;
+MicroBuild's `AddSBOM` task needs that workspace path when packaging VS manifests.
+The build children inherit the value; the caller's environment is unchanged.
+
 ## Requesting a run
 
 Post **`/dart <sha>`** or **`/pr-val <sha>`** as the entire comment on an open

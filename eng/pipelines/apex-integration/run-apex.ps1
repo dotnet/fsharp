@@ -15,6 +15,7 @@ $env:PATH = "$gitDirectory;$env:PATH"
 
 $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 Set-Location $repositoryRoot
+$env:AGENT_WORKFOLDER = $repositoryRoot.Path
 
 $testedSha = (& git rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $testedSha -notmatch '^[0-9a-f]{40}$') {

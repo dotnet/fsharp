@@ -5,6 +5,7 @@ $installation = Join-Path $root 'Git'
 $git = (Get-Command git.exe -CommandType Application | Select-Object -First 1).Source
 $gitRoot = Split-Path (Split-Path $git -Parent) -Parent
 $previousPath = $env:PATH
+$previousWorkFolder = $env:AGENT_WORKFOLDER
 $systemPath = "$env:SystemRoot\System32"
 $powershell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $yaml = Get-Content (Join-Path $apex 'stage.yml') -Raw
@@ -62,25 +63,36 @@ try {
     New-Item -ItemType Directory -Path $fixtureApex -Force | Out-Null
     (Get-Content (Join-Path $apex 'run-apex.ps1') -Raw).Replace('C:\Test\Git\cmd', (Join-Path $installation 'cmd')) |
         Set-Content (Join-Path $fixtureApex 'run-apex.ps1')
-    Set-Content (Join-Path $root 'eng\SetupVSHive.ps1') '(Get-Command git.exe -CommandType Application).Source | Set-Content .\setup-git.txt'
+    Set-Content (Join-Path $root 'eng\SetupVSHive.ps1') @'
+(Get-Command git.exe -CommandType Application).Source | Set-Content .\setup-git.txt
+$env:AGENT_WORKFOLDER | Set-Content .\setup-workfolder.txt
+'@
     Set-Content (Join-Path $root 'eng\CIBuildNoPublish.cmd') @'
 @echo off
 git --version >nul
 if errorlevel 1 exit /b %ERRORLEVEL%
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "(Get-Command git.exe -CommandType Application).Source | Set-Content .\child-git.txt"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "(Get-Command git.exe -CommandType Application).Source | Set-Content .\child-git.txt; $env:AGENT_WORKFOLDER | Set-Content .\child-workfolder.txt"
 exit /b %ERRORLEVEL%
 '@
     & $git -C $root init -q
     & $git -C $root -c user.name=Test -c user.email=test@example.invalid commit -q --allow-empty -m fixture
     if ($LASTEXITCODE -ne 0) { throw 'Could not initialize the offline Apex repository.' }
-    $env:PATH = $systemPath
-    & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $fixtureApex 'run-apex.ps1')
-    if ($LASTEXITCODE -ne 0) { throw 'Independent Apex process failed.' }
-    foreach ($file in @('setup-git.txt', 'child-git.txt')) {
-        if ((Get-Content (Join-Path $root $file)) -ne $expectedGit) { throw "$file used the wrong Git." }
+    foreach ($workFolder in @($null, (Join-Path $root 'stale-workspace'))) {
+        $env:AGENT_WORKFOLDER = $workFolder
+        $env:PATH = $systemPath
+        & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $fixtureApex 'run-apex.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Independent Apex process failed.' }
+        foreach ($file in @('setup-git.txt', 'child-git.txt')) {
+            if ((Get-Content (Join-Path $root $file)) -ne $expectedGit) { throw "$file used the wrong Git." }
+        }
+        foreach ($file in @('setup-workfolder.txt', 'child-workfolder.txt')) {
+            if ((Get-Content (Join-Path $root $file)) -ne $root) { throw "$file did not receive the repository workspace for SBOM packaging." }
+        }
+        if ($env:PATH -ne $systemPath -or $env:AGENT_WORKFOLDER -ne $workFolder) {
+            throw 'Apex changed its parent process environment.'
+        }
+        Write-Host "PASS: independent Apex children use provisioned Git and repository workspace (caller workspace='$workFolder')"
     }
-    if ($env:PATH -ne $systemPath) { throw 'Apex changed its parent process PATH.' }
-    Write-Host 'PASS: independent Apex, setup, build and test child processes use provisioned Git'
 
     [IO.Directory]::Delete($installation)
     foreach ($case in @('missing-module', 'installer-failure')) {
@@ -103,6 +115,7 @@ exit /b %ERRORLEVEL%
 }
 finally {
     $env:PATH = $previousPath
+    $env:AGENT_WORKFOLDER = $previousWorkFolder
     if (Test-Path $installation) { [IO.Directory]::Delete($installation) }
     Remove-Item -LiteralPath $root -Recurse -Force
 }
