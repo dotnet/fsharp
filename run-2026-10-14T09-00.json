@@ -1,7 +1,0 @@
-{
-  "timestamp": "2026-10-14T09:00:00Z",
-  "result": "no_eligible_prs",
-  "prs_processed": 0,
-  "prs": {},
-  "notes": "No open pull requests have the AI-Issue-Regression-PR label."
-}
