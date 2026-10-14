@@ -54,7 +54,13 @@ this file.
       Project file properties that control compiler selection:
       ========================================================
       Suggest that the compiler used be the desktop framework version.  On computers without Visual Studio these properties is ignored.
-      <FSharpPreferNetFrameworkTools>  boolean: true or false === default value true
+      <FSharpPreferNetFrameworkTools>  boolean: true or false === default value false when SDK paths are available
+      When unset, Visual Studio builds use the .NET SDK compiler if NetCoreRoot and NETCoreSdkVersion are available.
+      Otherwise, they use the bundled .NET Framework compiler.
+      Set this property to true to use the .NET Framework compiler, or turn off
+      Tools > Options > F# Tools > Compiler > "Use the .NET SDK F# compiler for builds"
+      (HKCU\Software\Microsoft\VisualStudio\FSharp, DWORD UseNetSdkCompiler = 0).
+      Command-line (dotnet build) builds are unaffected.
 
       Suggest that the compiler used be the 64 Bit compiler.  On computers without Visual Studio this property is ignored.
       <FSharpPreferAnyCpuTools>      boolean: true or false === default value true
@@ -66,8 +72,10 @@ this file.
       On Windows Arm64 default to Arm64 build, otherwise default to AnyCpu.
     -->
 
-    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
-        <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == ''">
+        <_FSharpUseNetSdkCompilerVsOption>$([MSBuild]::GetRegistryValueFromView('HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\FSharp', 'UseNetSdkCompiler', null, RegistryView.Default))</_FSharpUseNetSdkCompilerVsOption>
+        <FSharpPreferNetFrameworkTools Condition="'$(_FSharpUseNetSdkCompilerVsOption)' == '0' or '$(NetCoreRoot)' == '' or '$(NETCoreSdkVersion)' == ''">true</FSharpPreferNetFrameworkTools>
+        <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">false</FSharpPreferNetFrameworkTools>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">

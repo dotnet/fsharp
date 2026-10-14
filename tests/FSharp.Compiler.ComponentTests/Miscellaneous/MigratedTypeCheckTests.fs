@@ -146,10 +146,8 @@ let ``type check neg43`` () = singleNegTest ( "typecheck/sigs") "neg43"
 [<FactForDESKTOP>]
 let ``type check neg44`` () = singleNegTest ( "typecheck/sigs") "neg44"
 
-#if !DEBUG // requires release version of compiler to avoid very deep stacks
-[<FactForDESKTOP>]
+[<Fact>]
 let ``type check neg45`` () = singleNegTest ( "typecheck/sigs") "neg45"
-#endif
 
 [<FactForDESKTOP>]
 let ``type check neg46`` () = singleNegTest ( "typecheck/sigs") "neg46"

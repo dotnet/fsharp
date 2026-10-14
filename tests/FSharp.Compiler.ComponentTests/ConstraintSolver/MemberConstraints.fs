@@ -195,6 +195,37 @@ type DuCaseName<'T> =
         |> typecheck
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/5973
+    [<Fact>]
+    let ``Issue 5973 - unresolved SRTP chain reports a type constraint error`` () =
+        FSharp
+            """
+type Bar =
+    static member inline bar (f: ^c -> ^b, (a, b) : ^c) : ^b = f (a, b)
+    static member inline bar (f: ^c -> ^b, (a, b, c) : ^c) : ^b = f (a, b, c)
+
+let inline bar_ (f: ^a -> ^b) (x: ^c) : ^d when (^bar or ^d) : (static member bar : (^a -> ^b) * ^c -> ^d) =
+    ((^bar or ^d) : (static member bar : (^a -> ^b) * ^c -> ^d) (f, x))
+
+type Foo =
+    static member inline foo (f: ^a -> ^b, (a, b)) : ^c = bar_ f (a, b)
+    static member inline foo (f: ^a -> ^b, (a, b, c)) : ^c = bar_ f (a, b, c)
+
+let inline foo< ^foo, ^a, ^b, ^c, ^d when (^foo or ^a) : (static member foo : (^a -> ^b) * ^c -> ^d)> (f: ^a -> ^b) (x: ^c) : ^d =
+    ((^foo or ^a) : (static member foo : (^a -> ^b) * ^c -> ^d) (f, x))
+
+let inline callFoo (f: ^a -> ^b) (x: ^c) : ^d when (Foo or ^d) : (static member foo: (^a -> ^b) * ^c -> ^d) =
+    foo f x
+
+let test = fun (a: int, b: int) -> (a, b)
+
+let appliedFoo: int * int -> int * int =
+    callFoo test
+            """
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 71
+
     // https://github.com/dotnet/fsharp/issues/9382
     [<Fact>]
     let ``Issue 9382 - SRTP stress test with matrix inverse should compile`` () =
