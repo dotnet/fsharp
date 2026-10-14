@@ -2,7 +2,7 @@
 
 Paths: `vsintegration/**`. Tests: `vsintegration/tests/**`.
 
-Editor, project system, legacy language service, FSI, debug adapter, MEF, and the UI thread. Do not push Visual Studio, MEF, JTF, or Roslyn types into `src/Compiler/Service` or `src/Compiler/Symbols`.
+Review `FSharpLanguageDebugInfoService` and `FSharpBreakpointResolutionService` as Visual Studio debugger services, keeping their host types outside `src/Compiler/Service` and `src/Compiler/Symbols`.
 
 - Keep Visual Studio, MEF, shell, and Windows UI types in the host; do not push them into FCS, and do not move shared compiler sources into the VS tree.
 - Do not block the UI thread, and do not call a UI-thread host service from a background callback.
@@ -20,11 +20,9 @@ The compiler service must respond to editor keystrokes without unnecessary recom
 **CHECK:**
 - Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
 - Verify changes do not trigger endless project rechecks.
-- Evaluate the queue stress impact of every new FCS request type — each request blocks the service queue while running, so expensive requests delay all other IDE features.
 - Caching must prevent duplicate work per project.
-- Test IDE changes on large solutions before merging.
 
-**Severity:** Endless recheck loop → **critical**. UI thread block → **high**. Missing trace verification → **medium**.
+**Severity:** Endless recheck loop → **critical**. UI thread block → **critical**.
 
 **Hotspots:** `src/Compiler/Service/`, `src/FSharp.Compiler.LanguageServer/`, `vsintegration/`
 
@@ -32,7 +30,7 @@ The compiler service must respond to editor keystrokes without unnecessary recom
 
 (Exception: top-level language service entry points should catch all to prevent IDE crashes — but log, don't silence.)
 
-- At language service API boundaries (top-level entry points called by the IDE), catch all exceptions to prevent IDE crashes — but log them, don't silence them.
+- Separate cancellation from logged faults at IDE entry points, as `FSharpNavigation.TryGoToDefinition` and `RoslynHelpers.StartAsyncAsTask` do.
 
 Cancellation hotspot: `vsintegration/`.
 
@@ -42,9 +40,9 @@ A host call that requires the UI thread runs off it and deadlocks, or work that 
 
 **CHECK:**
 - A host call that requires the UI thread, including a project-site read or update, language-service creation, interactive-session startup, and options-page activation, must run on that thread.
-- A newer host version is not evidence that project-system initialization left the UI thread. Keep that work on the UI thread until the host contract says otherwise.
-- Package initialization and workspace updates that do not touch UI services must not take the UI thread, and a workspace project context whose host factory is built for the background must not stay on the UI thread.
-- Resolve a UI-thread service when the editor part is created, on the main thread, through one main-thread or async lookup. Do not fetch it from a background tooltip or command callback, which deadlocks even when the result is unused.
+- Keep calls guarded by `UIThread.MustBeCalledFromUIThread` on the UI thread and preserve `FSharpProjectNode`’s Opening-state `GetProjectSite` thread check.
+- In `FSharpPackage.RegisterInitializeAsyncWork`, retain `AddTask(false, ...)` for non-UI setup and `AddTask(true, ...)` for FSI and UI-service initialization.
+- Resolve `XMLMemberIndexService` in `FSharpAsyncQuickInfoSourceProvider.TryCreateQuickInfoSource`, not in `FSharpAsyncQuickInfoSource.GetQuickInfoItemAsync`.
 - Move the UI-thread switch outside the per-project setup loop, and do not start every project load at once when each load posts workspace updates to the UI thread.
 - Work that deadlocks off the UI thread, including interactive-session startup, must stay on the foreground init path. Background package initialization must not take that work with it.
 
@@ -58,10 +56,10 @@ The editor does not compose, another language loads F# visuals, or the host runs
 
 **CHECK:**
 - Declare MEF exports in an assembly the component model already composes. Do not import a part into a package that is not itself composed, and do not export a host settings service that is not a MEF part.
-- A MEF view factory must not be visible to other languages. Keep custom visuals on an internal type so another language's tooltip does not load the F# editor.
+- Restrict `WpfFSharpStyleFactory`’s `TypeConversion` metadata to `FSharpStyle` rather than relying on internal CLR visibility to restrict MEF activation.
 - One-time color or theme setup belongs on the language-service composition root, not on a chain of parts that may never be instantiated. Set workspace options once when the language service initializes, not on every new text view.
-- Editor options must be a composed part that features can import. Expose as little of the editor to MEF as possible: a small factory should choose the host or test store instead of exporting the whole options implementation, and do not keep a static singleton the language service initializes by hand.
-- Assign a process-global resource assembly once, from a composition singleton. Assigning it again for each view throws. The options page must open with no solution loaded.
+- Keep `EditorOptions` and `SettingsStore.ISettingsStore` available through composition, with `SettingsStore.Create` selecting the persistent or in-memory store instead of a mutable static singleton.
+- Load styles through `UIResources.NavStyles` and create `AbstractOptionPage` views without accessing a solution or assigning `Application.ResourceAssembly`.
 - Do not dynamically load XAML resources, and do not enable a preserialized resource form the component merger cannot read as a blanket project property. A resource change must be embedded in the extension package, and the steps must work from a clean tree; one IDE build is not enough.
 - Removing an unused host interface must leave the editor able to start. Shared sources used by more than one product stay with the compiler; a project file may retarget a link. Reuse the existing editor helper for the same lookup instead of a second copy.
 
@@ -74,10 +72,10 @@ The editor does not compose, another language loads F# visuals, or the host runs
 Project setup runs during solution load, a close leaves the previous solution cached, or a script or path is not the project the user loaded.
 
 **CHECK:**
-- Defer project setup until the host signals that the solution UI is ready. Do not replace that signal with a custom wait or a fixed delay.
+- Defer project setup until `LegacyProjectWorkspaceMap.OnAfterOpenSolution`; do not replace that callback with a delay.
 - Do not set up projects while the solution is loading, on the first open or on a later open of the same solution, and do not run a document analyzer on a temporary project the host creates before the solution has loaded.
 - Register projects as the solution reports them, after solution open, instead of waiting for a document to open.
-- On solution close, run the same cleanup as document close and release documents that are still open, because the workspace does not raise a close for them. Fix a project-close race by ordering disconnect against in-flight work, not by delaying the call.
+- Clear owned caches in `FSharpSolutionEvents.OnAfterCloseSolution` and pending setups in `LegacyProjectWorkspaceMap.OnAfterCloseSolution`, without using delays to hide project-disposal races.
 - Project-file synchronization must be atomic across a host callback that can fire twice, and a lookup in a concurrent project table must be one atomic try-get.
 - Treat script files as ordinary projects, analyze a closed script in the solution, and take symbol information from the project system so navigation does not need a special path.
 - Normalize a path that contains a parent segment before matching it to a project document. When the solution contains the source of a referenced framework assembly, other projects must bind the assembly they reference, not that source project.
@@ -107,24 +105,23 @@ A cache key cannot be found again, so entries accumulate, or an idle cache stays
 Quick info is unreadable, wraps through a fake divider, shows signature-help text, or is built from a Windows-only element.
 
 **CHECK:**
-- Quick info and inline hints must show the compiler's existing tooltip text, must not show a parameter value that belongs to signature help, and must not ship a debug tooltip that shows an internal layout tag.
-- A section separator must have a fixed length. Do not size it by repeating glyphs or draw it as ASCII art, and do not treat a hand-drawn divider as wrapping. Break long documentation explicitly.
-- Quick-info maximum width must scale with the editor font. Documentation may match the signature width only up to a fixed cap, alignment must follow the document reading direction, and documentation must not be fully justified.
-- A quick-info section that other languages expose as a setting must be configurable, not always shown. A secondary tooltip must follow the active theme, and a path it displays must be relative to the solution.
+- Keep Quick Info on `FSharpAsyncQuickInfoSource.TryGetToolTip` and hints on their existing symbol/type-formatting helpers without substituting signature-help parameter values.
+- Use `FSharpStyle.Separator` through `QuickInfoViewProvider.stackWithSeparators` and `WpfFSharpStyleFactory`, retaining `XmlDocumentation.separatorText` only as the text fallback.
+- Honor `QuickInfoOptions.ShowRemarks` and use `getLinkTooltip`’s shorter project-relative or available solution-relative path for navigation tooltips.
 - Custom tooltip content must reuse the host quick-info controller so show and dismiss stay identical to the platform. Do not keep a session capture whose only job was to dismiss the tooltip on navigation once the host already does that.
-- Quick-info content must stay a view model another host can translate. Do not build that model out of a Windows-only element. Record and value text shown in tools should keep a single space between braces and fields.
-- Do not add a width control that fights the host's own tooltip wrapping. If a setting does not always apply, mark it experimental and explain the effect. Quick info must keep line breaks between sections, and long documentation must still wrap after a host API change.
+- `QuickInfoViewProvider.provideContent` must build Roslyn `ClassifiedTextElement` content, not a custom Windows-only element.
+- Pass `QuickInfoOptions.DescriptionWidth` to `TryGetToolTip` and preserve section `LineBreak` tokens and `ContainerElementStyle.Wrapped` in `QuickInfoViewProvider`.
 
 **Severity:** medium.
 
-**Hotspots:** `vsintegration/src/FSharp.Editor/QuickInfo/**`, `vsintegration/src/FSharp.Editor/Hints/**`, `vsintegration/src/FSharp.Editor/Options/**`, `vsintegration/src/FSharp.UIResources/**`
+Use `vsintegration/src/FSharp.Editor/{QuickInfo,DocComments,Hints,Options}/**` and `vsintegration/src/FSharp.UIResources/**` as the Quick Info presentation hotspots.
 
 ### Navigate to the loaded definition
 
 Navigation opens a window itself, jumps to metadata or the wrong linked copy, or offers a link that goes nowhere.
 
 **CHECK:**
-- A definition request must return a navigation item and must not open a window itself. Hover must not jump to decompiled metadata because the pointer is over an external symbol.
+- A definition provider must return a navigable item; only `FSharpNavigation.NavigateToItem` may open the document.
 - Navigation must be able to return both the signature and the implementation. From an implementation, try the implementation and fall back to the signature span. A failed lookup must not leave a link that does nothing.
 - When quick info is already on a definition, do not offer a link that navigates nowhere. A link that is shown must toggle between signature and implementation the same way go-to-definition does.
 - Whether a tooltip symbol is navigable must be decided against the loaded workspace, not assumed from the symbol range alone. Navigation must reach types that are only inferred, and a symbol defined in another loaded project must resolve. A startup sentinel, identified by the existing range value rather than a copied filename, must not be offered as a target.
@@ -144,9 +141,9 @@ Completion offers items that cannot be declared there, removes items that are st
 - Auto-triggered completion must filter items by syntactic position. After a binding keyword, do not offer symbols that cannot be declared there, and do not auto-trigger where the user is declaring a new identifier.
 - In a pattern position, completion must offer only constructs that are valid destructuring, not the general symbol list.
 - In a pattern, rank items of the expected type first, but do not remove other items that are still legal to type. Remove only an item that cannot resolve in a pattern.
-- Completion must not invent a method body. Override completion must accept the member name first and the body in a later step, and must not insert the whole override, including a generated body, on one accept.
+- `CompletionProvider.GetChangeAsync` must not insert a generated method body.
 - Return every edit of a completion commit as the completion change for the document version the host will apply. A side edit is applied to a version the host then overwrites.
-- A name suggestion should reuse the completion items for that context when that lookup is cheap. Names the editor shows must stay separate from the representation that guides compiled form.
+- Reuse the current `DeclarationListItem` values in `FSharpCompletionProvider`, displaying `NameInList` and committing `NameInCode` through `GetChangeAsync`.
 
 **Severity:** high.
 
@@ -159,9 +156,9 @@ A code fix matches a culture-specific message, a host analysis limit is never ap
 **CHECK:**
 - A code fix must not identify a diagnostic by its displayed message. The diagnostic must carry structured data the fix can match in any culture.
 - When a diagnostic payload already has more than one case, callers should read those fields directly rather than adding a separate type test.
-- A diagnostics exporter must not stay enabled on the analysis path. Left running, it adds overhead that shows up as a compile-time regression.
+- Keep `FSharpServiceTelemetry.otelExport` DEBUG-only and disabled unless `FSHARP_OTEL_EXPORT` has a nonempty value.
 - Editor analyzers must follow the host's live-analysis scope setting. Do not invent a private active-document gate beside that setting.
-- A host limit or setting must be applied on the override or callback the host actually invokes. A limit that lives only in an initialization method the host no longer calls is never applied.
+- Apply `FSharpGlobalOptions.SetBackgroundAnalysisScope` from `FSharpPackage.RegisterInitializeAsyncWork` rather than placing the setting only in an unused initialization hook.
 - A language-rule relaxation that editor tools depend on must be gated by language version and exposed in a form tools can read. An editor suggestion must not rewrite code into a form an older compiler warns about. A language feature that changes editing must be tryable behind a preview switch before it becomes the default.
 - If a code-fix test fails because the diagnostic no longer reports that case, fix the diagnostic. A missed shape is not a reason to drop the test.
 
@@ -174,8 +171,8 @@ A code fix matches a culture-specific message, a host analysis limit is never ap
 Editor settings are persisted as one blob, so a new setting comes back as the zero value, or a setting cannot be found.
 
 **CHECK:**
-- Declare, store, and retrieve each editor setting on its own so a newly added setting keeps its default. Do not persist the whole settings type as one reflected blob.
-- An options type the settings page binds must keep the marker that makes its properties settable, and options-page markup must bind to public properties.
+- A new field on an options record must survive `SettingsStore.SaveSettings` and `JsonConvert.PopulateObject` at its default.
+- An options record bound by the settings page must have `[<CLIMutable>]`, and the markup must bind to public properties.
 - An options refactor must keep each existing setting persisted. A setting that no longer round-trips is a regression even if the page still opens.
 - An editor setting must have a resource string the options window can search. An optional numeric setting must accept an empty field as unset, and a control that is not wired to the checker must not be shown.
 - Prefer a public host option when it exists. Do not build UI for a built-in host setting whose persistence is not public, and do not reference another language's internal options implementation or copy its page markup.
@@ -191,9 +188,9 @@ Editor settings are persisted as one blob, so a new setting comes back as the ze
 A classification ignores the language role, or a baked-in foreground stays unreadable after the theme changes.
 
 **CHECK:**
-- Classify a name by its language role. A function must not be colored as a keyword, and a method and a function value must not share a classification when their calling rules differ.
+- In `getClassificationTypeName`, keep Function and Method mappings distinct while retaining the `IntrinsicFunction` and `ComputationExpression` keyword mappings.
 - Punctuation that is still part of a string must keep the string classification. Classifying that range as a delimiter hides the string extent and needs a test for that range.
-- Do not assign a fixed foreground on a classification format. Leave it unset so the host theme supplies a readable color and the user can still customize it.
+- Use `ThemeColors.GetColor` for custom format defaults and preserve the `fontAndColorStorage.GetItem` guard when applying theme updates.
 - Classification colors must follow the active editor theme. A theme switch must keep the user's per-mode classification color customizations and must not overwrite them.
 - Custom editor format definitions must be reapplied from the active theme at startup as well as on a theme switch, because the host persists the first instantiated defaults. A theme-specific foreground must not be baked into that default.
 
@@ -211,7 +208,7 @@ An exception from document check, Quick Info, analysis, or the options page reac
 - Enabling an editor analysis feature must not let an exception reach the Visual Studio UI.
 - Quick Info must not throw out to the shell. A failure while resolving a symbol, including a primitive, has to stay inside the feature.
 - Opening the editor options page must not let a binding exception reach the Visual Studio UI. The settings type the page binds must stay in the shape that binding expects.
-- Do not use a process-global resource assembly to locate one extension's dictionaries. Another extension assigning that same property causes a runtime failure. Resolve resources from this extension's install location.
+- Do not set a process-global resource assembly; load dictionaries from `FSharp.UIResources` through the `ProvideCodeBase` attribute.
 
 **Severity:** critical.
 
@@ -225,7 +222,7 @@ An editor change is tested only through the service API, or only for a flat modu
 - An editor test must exercise the editor provider. A suite that only calls the service method does not cover the editor.
 - Cover the declaration shapes the feature claims, including a binding nested in a type or in an expression, a dotted name in a nested pattern, and a union that is out of scope or requires qualified access, not only a flat module-level case.
 - A known limitation of an editor feature may be recorded as a skipped test so the missing case stays visible. Do not leave that case with no test at all.
-- Editor tests must reuse one MEF composition instead of building a new export provider for every test. Tests must not share a process-wide options part across cases. If desktop tests share one host, a throw from a background thread must still name the case.
+- Editor tests must reuse the cached `ExportProviderFactory` from `RoslynHelpers.fs`, not build a new composition per test.
 - Put a test that needs host-internal types in the test project those internals are already visible to. Do not link a setup file into an editor test project that does not reference the utility project that makes that setup run.
 
 **Severity:** medium.
@@ -240,7 +237,7 @@ A keystroke, search, or tooltip starts work that keeps running after the user ha
 - Live-buffer edits must not start a non-cancellable parse for every keystroke. That work must be a debounced request for the current document version.
 - User-started editor search must pass cancellation into the parallel scan. A parallel loop that ignores the request token keeps running after the search is abandoned.
 - Solution search must stay cancellable, include operators as well as identifiers, and keep its cache for the solution lifetime, cleared on close, rather than a short-lived cache rebuilt on every query.
-- Tooltip navigation must use the host's built-in link and must be cancellable. If the user cancels the slower implementation lookup, fall back to the instant range. Render each tooltip element as icon, then description, then documentation, because the host link parser reads that order.
+- Render icon, description, then documentation in `QuickInfoViewProvider.provideContent`, using `ClassifiedTextRun` links whose `FSharpNavigation.NavigateTo` fallback runs on lookup failure, never cancellation.
 - Do not add a second cap on editor background parallelism when that work is already bounded. A second cap drifts from the bound callers already use, so cancellation and degree disagree.
 
 **Severity:** high.

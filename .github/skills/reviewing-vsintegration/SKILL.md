@@ -5,7 +5,7 @@ description: "Routes a Visual Studio integration or compiler-service review to t
 
 # Reviewing VS integration
 
-CHECK rules live in two files. The five-wave workflow lives in `@ide-integration`. Do not copy `@vs-integration-perf`. Invoke it for JTF, retained memory, and the perf execution map.
+Tree checks live in `vsintegration.md` and `compiler-service.md`; the three boundary checks live in `@ide-integration`.
 
 `@expert-reviewer` stays the compiler reviewer. Do not send `vsintegration` or `src/Compiler/Service` findings there.
 
@@ -19,13 +19,13 @@ CHECK rules live in two files. The five-wave workflow lives in `@ide-integration
 | `vsintegration/tests/**` | [vsintegration.md](vsintegration.md) |
 | `tests/FSharp.Compiler.Service.Tests/**` | [compiler-service.md](compiler-service.md) |
 
-A change that crosses the two trees, owns cancellation, or could make `src/Compiler/Service` depend on `vsintegration` also uses the three rules under Both trees in `@ide-integration`.
+Use the Both trees rules only when the diff touches both trees or adds a reference from `src/Compiler/Service` to `vsintegration`.
 
 ## Folder routing
 
 | Path | File | Select |
 |---|---|---|
-| `vsintegration/src/FSharp.Editor/**` | vsintegration.md | UI thread, MEF, caches, quick info, navigation, completion, diagnostics scope, options, classification, feature failures |
+For `vsintegration/src/FSharp.Editor/**`, select every section of `vsintegration.md` whose hotspots include the changed path.
 | `vsintegration/src/FSharp.LanguageService/**` | vsintegration.md | Legacy language service, UI thread, solution lifetime |
 | `vsintegration/src/FSharp.ProjectSystem*/**` | vsintegration.md | Project lifetime, UI thread, generator identity |
 | `vsintegration/src/FSharp.VS.FSI/**` | vsintegration.md | Interactive session startup and cancellation |
@@ -39,4 +39,4 @@ A change that crosses the two trees, owns cancellation, or could make `src/Compi
 
 - `src/Compiler/Checking/`, `Optimize/`, `CodeGen/`, `TypedTree/`, `SyntaxTree/`, `Driver/`
 - `src/FSharp.Core/**`
-- `src/FSharp.Compiler.LanguageServer/**` — not this corpus. The IDE responsiveness section in both files still names that hotspot because that section was moved intact.
+- Route `src/FSharp.Compiler.LanguageServer/**` IDE responsiveness here; compiler concurrency stays with `@expert-reviewer`.
