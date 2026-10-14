@@ -37,6 +37,8 @@
     <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
+    <Compile Include="Common\PersistentStorage.fs" />
+    <Compile Include="Common\FilePersistentStorage.fs" />
     <Compile Include="Common\Error.fs" />
     <Compile Include="Common\DebugHelpers.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
@@ -91,9 +93,13 @@
     <Compile Include="Navigation\NavigableSymbolsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
+    <Compile Include="Navigation\NavigableItemsIndex.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="Copilot\CopilotSymbolMapping.fs" />
+    <Compile Include="Copilot\CopilotSymbolSnippets.fs" />
+    <Compile Include="Copilot\CopilotContextProvider.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -179,6 +185,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Copilot" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
