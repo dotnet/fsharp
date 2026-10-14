@@ -32,7 +32,7 @@ This file should be imported by eng/Versions.props
     <SystemCompositionPackageVersion>10.0.10</SystemCompositionPackageVersion>
     <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.10</SystemDiagnosticsDiagnosticSourcePackageVersion>
     <SystemReflectionMetadataPackageVersion>10.0.10</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>10.0.10</SystemSecurityCryptographyXmlPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.13</SystemSecurityCryptographyXmlPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
