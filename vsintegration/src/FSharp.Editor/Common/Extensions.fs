@@ -296,6 +296,14 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback(SourceText.create))
 
+    /// The lines of the text, as slices of a single string rather than one string per line.
+    member this.GetLinesAsMemory() =
+        let text = this.ToString()
+
+        Array.init this.Lines.Count (fun i ->
+            let line = this.Lines[i]
+            text.AsMemory(line.Start, line.End - line.Start))
+
 type NavigationItem with
 
     member x.RoslynGlyph: FSharpRoslynGlyph =
