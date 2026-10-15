@@ -67,11 +67,9 @@ let mkSynSimplePatVar isOpt id =
 let mkSynCompGenSimplePatVar id =
     SynSimplePat.Id(id, None, true, false, false, id.idRange)
 
-/// The head of a chain of atomic applications, member and index lookups and type applications,
-/// and the function that rebuilds the chain around a replacement head.
-let rec private atomicChainHead expr : struct (SynExpr * (SynExpr -> SynExpr)) =
+let rec private splitDotLambdaChain expr : struct (SynExpr * (SynExpr -> SynExpr)) =
     let inside inner wrap =
-        let struct (head, rebuild) = atomicChainHead inner
+        let struct (head, rebuild) = splitDotLambdaChain inner
         struct (head, rebuild >> wrap)
 
     match expr with
@@ -86,7 +84,7 @@ let rec private atomicChainHead expr : struct (SynExpr * (SynExpr -> SynExpr)) =
     | _ -> struct (expr, id)
 
 let rec pushUnaryArg expr arg =
-    let struct (head, rebuild) = atomicChainHead expr
+    let struct (head, rebuild) = splitDotLambdaChain expr
 
     match head with
     | SynExpr.Ident ident ->
@@ -102,7 +100,7 @@ let rec pushUnaryArg expr arg =
         expr
 
 let tryPopUnaryArg body =
-    let struct (head, rebuild) = atomicChainHead body
+    let struct (head, rebuild) = splitDotLambdaChain body
 
     match head with
     | SynExpr.LongIdent(isOptional, SynLongIdent(root :: (_ :: _ as rest), dotRanges, trivia), altNameRefCell, range) ->
