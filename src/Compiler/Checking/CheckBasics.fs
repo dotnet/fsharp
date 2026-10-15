@@ -247,7 +247,6 @@ type TcEnv =
 
       eInNameOf: bool
 
-      /// Checking an expression that must evaluate to a constant: a literal, an attribute argument or a static argument.
       eInConstantContext: bool
 
       /// Are we checking the body of an object expression? Such a body has family access to the

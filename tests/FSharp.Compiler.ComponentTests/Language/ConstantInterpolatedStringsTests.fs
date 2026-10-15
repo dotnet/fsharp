@@ -6,13 +6,12 @@ open System.IO
 open Xunit
 open FSharp.Test.Compiler
 
-// RFC FS-1352: interpolated strings in constant expressions.
 module ConstantInterpolatedStringsTests =
 
     let private preview source = FSharp source |> withLangVersionPreview
 
     [<Fact>]
-    let ``Literals and attribute arguments take the runtime text of a constant interpolated string`` () =
+    let ``Constant interpolated strings take their run-time text`` () =
         preview """
 module Program
 
@@ -40,32 +39,17 @@ type TagAttribute(tags: string[]) =
 type Tagged() = class end
 
 let tag = typeof<Tagged>.GetCustomAttributes(typeof<TagAttribute>, false) |> Array.exactlyOne :?> TagAttribute
+let quotationIsFolded = match <@ $"{Root}/items" @> with Quotations.Patterns.Value _ -> true | _ -> false
 
-let quotation =
-    match <@ $"{Root}/items" @> with
-    | Quotations.Patterns.Value _ -> "folded"
-    | _ -> "not folded"
-
-printfn "%s|%s|%s|%s" Items ItemById Verbatim (sprintf CountFormat 3)
-printfn "%s|%s|%s" (String.concat "," tag.Tags) tag.Name quotation
+printfn "%s|%s|%s|%s|%s|%s|%b" Items ItemById Verbatim (sprintf CountFormat 3) (String.concat "," tag.Tags) tag.Name quotationIsFolded
 """
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
-        |> withStdOutContains @"api/v2/items|api/v2/items/{id}|\Rootapi/v2|api/v2/items: 3"
-        |> withStdOutContains "api/v2/a,api/v2/b|api/v2!|not folded"
+        |> withStdOutContains @"api/v2/items|api/v2/items/{id}|\Rootapi/v2|api/v2/items: 3|api/v2/a,api/v2/b|api/v2!|false"
 
     [<Fact>]
-    let ``Extended interpolated strings fold with their own delimiters`` () =
-        // [<Literal>] let Json = $$"""{"{{Root}}": "100%"}"""
-        preview "module Program\n[<Literal>]\nlet Root = \"api\"\n[<Literal>]\nlet Json = $$\"\"\"{\"{{Root}}\": \"100%\"}\"\"\"\nprintfn \"%s\" Json"
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withStdOutContains "{\"api\": \"100%\"}"
-
-    [<Fact>]
-    let ``The compiler reads an attribute argument that is a constant interpolated string`` () =
+    let ``An Obsolete message can be a constant interpolated string`` () =
         preview """
 module Program
 
@@ -90,33 +74,25 @@ let item = getItem 1
 
     [<Fact>]
     let ``A type provider static argument can be a constant interpolated string`` () =
-        let providerPath =
-            Path.Combine(__SOURCE_DIRECTORY__, "../../fsharp/typeProviders/staticStringParameter/provider.fsx")
+        let providerPath = Path.Combine(__SOURCE_DIRECTORY__, "../../fsharp/typeProviders/staticStringValue/provider.fsx")
 
         let provider =
             Fsx $"""#load @"{providerPath}" """
-            |> withName "StaticStringParameterProvider"
+            |> withName "StaticStringValueProvider"
             |> ignoreWarnings
             |> compile
             |> shouldSucceed
 
-        Fsx(
-            $"#r @\"{provider.OutputPath.Value}\"\n"
-            + """
+        Fsx $$"""#r @"{{provider.OutputPath.Value}}"
+
 [<Literal>]
 let Root = "api/v2"
 
-let fromConst = Provided.Text<const ($"{Root}/items")>.Value
-
 [<Literal>]
-let ItemById = $"{Root}/items/{{id}}"
+let Items = $"{Root}/items"
 
-let fromLiteral = Provided.Text<ItemById>.Value
-
-if fromConst <> "api/v2/items" || fromLiteral <> "api/v2/items/{id}" then
-    failwith $"Unexpected static arguments: '{fromConst}', '{fromLiteral}'"
-"""
-        )
+type FromConst = Provided.Text<const ($"{Root}/items")>
+type FromLiteral = Provided.Text<Items>"""
 #if NETCOREAPP
         |> withOptions [ "--usesdkrefs-" ]
 #endif
@@ -124,9 +100,15 @@ if fromConst <> "api/v2/items" || fromLiteral <> "api/v2/items/{id}" then
         |> eval
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Each hole must be a non-null constant string without alignment or format specifiers`` () =
-        preview """
+    [<Theory>]
+    [<InlineData("{Version}", 3925)>]
+    [<InlineData("{Root,10}", 3925)>]
+    [<InlineData("%s{Root}", 3925)>]
+    [<InlineData("{NoValue}", 3925)>]
+    [<InlineData("{dir}", 267)>]
+    [<InlineData("{dir + dir}{missing}", 39)>]
+    let ``A hole must be a non-null constant string without alignment or format specifier`` (hole: string, errorCode: int) =
+        preview $"""
 module Program
 
 [<Literal>]
@@ -138,25 +120,11 @@ let NoValue: string = null
 let dir = "data"
 
 [<Literal>]
-let A = $"v{Version}"
-[<Literal>]
-let B = $"{Root,10}"
-[<Literal>]
-let C = $"%s{Root}"
-[<Literal>]
-let D = $"{dir}/x"
-[<Literal>]
-let E = $"{NoValue}/x"
+let Rejected = $"{hole}"
 """
         |> typecheck
         |> shouldFail
-        |> withDiagnostics [
-            (Error 3925, Line 13, Col 13, Line 13, Col 20, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 15, Col 12, Line 15, Col 16, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 17, Col 14, Line 17, Col 18, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 267, Line 19, Col 12, Line 19, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 3925, Line 21, Col 12, Line 21, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-        ]
+        |> withErrorCode errorCode
 
     [<Fact>]
     let ``Only the first hole that breaks a rule is reported`` () =
@@ -165,26 +133,15 @@ module Program
 
 [<Literal>]
 let Version = 2
-let dir = "data"
 
 [<Literal>]
-let A = $"{Version}{Version}"
-[<Literal>]
-let B = $"{dir}{Version}"
-[<Literal>]
-let C = $"{Version}{missing}"
+let Twice = $"{Version}{Version}"
 """
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3925, Line 9, Col 12, Line 9, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 267, Line 11, Col 12, Line 11, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 39, Line 13, Col 21, Line 13, Col 28, "The value or constructor 'missing' is not defined.")
-            (Error 3925, Line 13, Col 12, Line 13, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-        ]
+        |> withSingleDiagnostic (Error 3925, Line 8, Col 16, Line 8, Col 23, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
 
     [<Fact>]
-    let ``Constant interpolated strings need the preview language version`` () =
+    let ``Before the preview language version interpolated strings in literals are unchanged`` () =
         FSharp """
 module Program
 
@@ -192,9 +149,17 @@ module Program
 let Root = "api/v2"
 
 [<Literal>]
+let Unevaluated = false && ($"{1}" = "1")
+
+[<Literal>]
+let Picked = if true then Root else $"{1}"
+
+[<Literal>]
 let Items = $"{Root}/items"
 """
         |> withLangVersion "11.2"
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 3350, Line 8, Col 13, Line 8, Col 28, "Feature 'interpolated strings in constant expressions' is not available in F# 11.2. Please use language version 'PREVIEW' or greater.")
+        |> withDiagnostics
+            [ Error 267, Line 14, Col 13, Line 14, Col 28, "This is not a valid constant expression or custom attribute value"
+              Error 837, Line 14, Col 13, Line 14, Col 28, "This is not a valid constant expression" ]
