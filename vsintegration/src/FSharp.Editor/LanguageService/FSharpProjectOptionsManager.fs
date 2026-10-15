@@ -752,9 +752,15 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                 lastSuccessfulCompilations.Clear()
                 clearAllReferenceWatchesNoLock ()
 
-                let entries = singleFileCache.Values |> Seq.toArray
-                singleFileCache.Clear()
-                entries)
+                // Taking an entry out is what makes its subscription ours to dispose. A document closing at the
+                // same moment takes entries out too, and one that came out of the cache twice would be unadvised
+                // twice, which ends the agent.
+                [|
+                    for documentId in singleFileCache.Keys do
+                        match singleFileCache.TryRemove documentId with
+                        | true, entry -> entry
+                        | _ -> ()
+                |])
 
         // A subscription's Dispose is a COM unadvise; it stays outside the gate.
         for entry in singleFileEntries do
