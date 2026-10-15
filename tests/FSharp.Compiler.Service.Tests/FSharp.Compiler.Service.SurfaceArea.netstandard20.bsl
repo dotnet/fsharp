@@ -2452,10 +2452,10 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Boolean Equals(
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Boolean IsSignatureFile
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Boolean get_IsSignatureFile()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot Create(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew]])
-FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromDocumentSource(System.String, FSharp.Compiler.CodeAnalysis.DocumentSource)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromFileSystem(System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromString(System.String, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] CreateFromDocumentSource(System.String, FSharp.Compiler.CodeAnalysis.DocumentSource)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String FileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String GetFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String Version
