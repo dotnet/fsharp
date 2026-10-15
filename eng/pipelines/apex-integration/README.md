@@ -106,12 +106,11 @@ Provision these before enabling requests:
    federated to `repo:dotnet/fsharp:environment:fsharp_pr_validation`.
    Grant it permission to queue this pipeline, not edit pipeline definitions.
    This flow does not require an Azure subscription.
-5. Provide **`MICROSOFT_MEMBERS_APP_ID`** and **`MICROSOFT_MEMBERS_APP_PRIVATE_KEY`**
-   environment secrets for an approved GitHub App installed in `microsoft`, with
-   organization **Members: read** permission. The workflow requests a short-lived
-   membership-only token. The dotnet/fsharp `GITHUB_TOKEN` alone cannot be assumed
-   to see private memberships in another organization. Verify lookup with a private
-   member before rollout. Lookup errors fail closed; they do not prove nonmembership.
+5. Microsoft-org membership lookup uses the repository **`GITHUB_TOKEN`**, matching
+   Roslyn's comment-command flow. No separate GitHub App or membership secrets are
+   required. Private memberships may not be visible to this token, so a legitimate
+   member with hidden membership may be rejected. Verify lookup for the intended
+   requesters before rollout. Lookup errors fail closed; they do not prove nonmembership.
 6. Have the lab owners approve execution of fork PR code and verify effective
    credential/network isolation. This is a manually queued build that executes
    reviewed PR pipeline YAML: **do not assume automatic fork-build secret
@@ -119,12 +118,12 @@ Provision these before enabling requests:
    provided source-verification script runs, so the SHA gate is not a sandbox.
    Review job tokens, feed credentials, service connections and internal
    network access. Git fetches use the public repository, and the Actions OIDC and
-   membership tokens are not sent to the test machine, but these measures alone do
+   GitHub tokens are not sent to the test machine, but these measures alone do
    not sandbox a build. Do not enable this pipeline if lab policy cannot support it.
 
-These are three separate identities: the Azure Pipelines GitHub source connection,
-the Entra queue identity, and the Microsoft-org membership lookup App. None replaces
-the others. Protect `main`, restrict who can edit/queue this privileged pipeline,
+The Azure Pipelines GitHub source connection and the Entra queue identity are
+separate; neither replaces the other or the Actions `GITHUB_TOKEN`.
+Protect `main`, restrict who can edit/queue this privileged pipeline,
 keep `testMachineHoldStrategy: None` as the default, and authorize no
 signing/publishing credentials. Use `Failure` or `Completion` only for a bounded
 investigation; CloudTest held machines are accessed through the generated Bastion link.
@@ -155,7 +154,7 @@ Result handoff tests cover copied TRX/attachments, missing results, and preservi
 the primary setup/build error when copying also fails.
 The PowerShell 7 tests run the Actions helper offline with a fake HTTP boundary.
 They cover command syntax, authorization of the original commenter (also on reruns),
-private membership lookup with the separate App token, the queued snapshot and PR feedback.
+membership lookup with the repository token, the queued snapshot and PR feedback.
 
 After provisioning, use the Runs API's `previewRun` with the same repository
 ref/version, reviewed-commit parameters, `DD-CB-ReleaseVS` resource pin and confirmed

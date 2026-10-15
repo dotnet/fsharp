@@ -68,7 +68,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
     $env:GITHUB_OUTPUT = Join-Path $root 'output'
     $env:GITHUB_REPOSITORY = 'dotnet/fsharp'; $env:GITHUB_ACTOR = 'rerunning-admin'
     $env:GITHUB_SERVER_URL = 'https://github.com'; $env:GITHUB_RUN_ID = '987'
-    $env:GITHUB_TOKEN = if ($Mode -eq 'Membership') { 'membership-token' } else { 'github-token' }
+    $env:GITHUB_TOKEN = 'github-token'
     $env:PIPELINE_ID = '123'; $env:AZDO_TOKEN = 'test-token'
     $env:REQUEST_BODY = ConvertTo-Json -InputObject $request -Depth 10 -Compress
     $env:RUN_URL = ''; $env:HEAD_SHA = 'a' * 40
@@ -82,7 +82,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
     if ($ExpectedError) {
         Assert ($failure -and $failure -match $ExpectedError) "$Name failed for wrong reason: $failure"
         Assert (!(Test-Path -LiteralPath $env:GITHUB_OUTPUT)) "$Name wrote outputs on failure"
-        Assert ($failure -notmatch 'test-token|github-token|membership-token') 'Leaked token'
+        Assert ($failure -notmatch 'test-token|github-token') 'Leaked token'
     }
     else {
         Assert (!$failure) "$Name failed: $failure"
@@ -181,7 +181,7 @@ try {
         Test-Case "bad head SHA '$sha'" { $pr.head.sha = $sha } 'full PR head'
     }
     Test-Case 'main advancing does not affect request' { $pr.base.sha = 'c' * 40 }
-    Test-Case 'membership original commenter' -Mode Membership
+    Test-Case 'membership original commenter with repository token' -Mode Membership
     foreach ($status in 200, 201, 301, 302, 307, 308, 401, 403, 404, 429, 500) {
         Test-Case "membership HTTP $status" { $responses[$memberUri].Status = $status } "HTTP $status" Membership
     }
