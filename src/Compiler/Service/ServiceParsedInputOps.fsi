@@ -131,10 +131,8 @@ type public InsertionContext =
         /// Current scope kind.
         ScopeKind: ScopeKind
 
-        /// Where the `open` belongs (F# compiler line number): the first line inside the scope, that
-        /// is, below the declaration header or below the open declarations and directives above it.
-        /// A nested module whose first declaration shares the header's line is entered at that
-        /// declaration, so there `Pos` is on the header's line, at the declaration's column.
+        /// Where the `open` belongs (F# compiler line number): the first line inside the scope, below its header,
+        /// opens and directives. For a nested module whose body starts on the header's line, that line.
         Pos: pos
     }
 
@@ -210,9 +208,8 @@ module public ParsedInput =
     /// Returns long identifier at position.
     val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
 
-    /// Nudges the insertion point past the blank line that conventionally follows a declaration header,
-    /// so that the `open` joins the code below it instead of the gap above it. `getLineStr` returns the
-    /// trimmed text of a zero-based line, or an empty string past the end of the file.
+    /// Moves the insertion point below the blank line that follows a declaration header. `getLineStr` returns
+    /// the trimmed text of a zero-based line, or an empty string past the end of the file.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
 // implementation details used by other code in the compiler

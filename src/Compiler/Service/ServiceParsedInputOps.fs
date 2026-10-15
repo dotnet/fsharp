@@ -2475,17 +2475,13 @@ module ParsedInput =
                 | SynModuleDecl.HashDirective(range = r) -> ValueSome r.Start
                 | _ -> ValueNone
 
-        // The line a declaration's header ends on: its leading keyword, the name it introduces and,
-        // for a nested module, the `=`. Attributes and doc comments sit above it, the body below.
         let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) =
-            let nameEnd =
-                match List.tryLast ident with
-                | Some lastIdent -> max keyword.EndLine lastIdent.idRange.EndLine
-                | None -> keyword.EndLine
+            let nameEndLine =
+                ident
+                |> List.fold (fun line part -> max line part.idRange.EndLine) keyword.EndLine
 
-            match equals with
-            | Some equalsRange -> max nameEnd equalsRange.EndLine
-            | None -> nameEnd
+            equals
+            |> Option.fold (fun line equalsSign -> max line equalsSign.EndLine) nameEndLine
 
         let rec walkImplFileInput (file: ParsedImplFileInput) =
             List.iter (walkSynModuleOrNamespace []) file.Contents
@@ -2507,11 +2503,10 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
-                let headerLine =
+                let lineAboveBody =
                     match trivia.LeadingKeyword with
                     | SynModuleOrNamespaceLeadingKeyword.Module keyword
                     | SynModuleOrNamespaceLeadingKeyword.Namespace keyword -> headerEndLine keyword ident None
-                    // An implicit module has no header, so its first declaration opens the scope.
                     | SynModuleOrNamespaceLeadingKeyword.None -> range.StartLine - 1
 
                 let scopeKind =
@@ -2520,7 +2515,7 @@ module ParsedInput =
                     | true, _ -> NestedModule
                     | _ -> Namespace
 
-                doRange scopeKind fullIdent headerLine range.StartColumn
+                doRange scopeKind fullIdent lineAboveBody range.StartColumn
                 addModule (fullIdent, range)
                 List.iter (walkSynModuleDecl fullIdent) decls
 
@@ -2547,29 +2542,21 @@ module ParsedInput =
                         |> ValueOption.defaultValue (range.StartColumn + 4)
 
                     let bodyStartsOnHeaderLine =
-                        match firstDeclStart with
-                        | ValueSome start -> start.Line = headerLine
-                        | ValueNone -> false
+                        firstDeclStart |> ValueOption.exists (fun start -> start.Line = headerLine)
 
-                    // The open goes on the line below this one. A body that starts on the header's own
-                    // line (`module M = let x = 1`) is entered at its first declaration instead, since
-                    // the line below the header may already be past the use the open has to precede.
                     let lineAboveBody =
                         if bodyStartsOnHeaderLine then
                             headerLine - 1
                         else
                             headerLine
 
-                    // A use on the line the header shares with the body is in that body or in an attribute
-                    // of the module, which the enclosing scope resolves. The line alone cannot tell the two
-                    // apart, and an open in the enclosing scope serves both.
-                    let mayBeInAttribute =
+                    let useMayBeInModuleAttribute =
                         bodyStartsOnHeaderLine
                         && currentLine = headerLine
                         && attributes
                            |> List.exists (fun attributeList -> attributeList.Range.EndLine = headerLine)
 
-                    if headerLine <= currentLine && not mayBeInAttribute then
+                    if headerLine <= currentLine && not useMayBeInModuleAttribute then
                         doRange NestedModule fullIdent lineAboveBody moduleBodyIndentation
                         List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
@@ -2646,8 +2633,6 @@ module ParsedInput =
                 entities
                 |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
 
-    /// Nudges the insertion point past the blank line that conventionally follows a declaration
-    /// header, so that the `open` joins the code below it instead of the gap above it.
     let AdjustInsertionPoint (getLineStr: int -> string) ctx =
         match ctx.ScopeKind with
         | ScopeKind.TopModule
@@ -2696,8 +2681,7 @@ module ParsedInput =
                 | _ -> 0
 
             if lastReferenceLine > 0 then
-                // The open belongs directly under the directives, so report the scope that keeps it
-                // there rather than the module scope, which would push it past the blank line below.
+                // AdjustInsertionPoint would move a TopModule position below the blank line under the directives.
                 let scopeKind =
                     if ctx.ScopeKind = ScopeKind.TopModule then
                         ScopeKind.HashDirective
