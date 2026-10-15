@@ -2,7 +2,9 @@
 
 module FSharp.Editor.Tests.MultiTargetNavigateToSearchTests
 
+open System.IO
 open Xunit
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test.ProjectGeneration
@@ -19,13 +21,23 @@ let private syntheticProject =
         }
     )
 
+let private linkedText path (text: string) (solution: Solution) =
+    let linked = TextAndVersion.Create(SourceText.From text, VersionStamp.Create())
+
+    (solution, solution.GetDocumentIdsWithFilePath path)
+    ||> Seq.fold (fun (solution: Solution) id -> solution.WithDocumentText(id, linked))
+
 [<AutoOpen>]
 module private Fixture =
-    let struct (solution, instances) =
+    let struct (unlinked, instances) =
         RoslynTestHelpers.CreateMultiTargetSolution(
             syntheticProject,
             [ for defs in [ []; [ "FOO" ] ] -> { Defines = defs; ExcludedFileIds = [] } ]
         )
+
+    let solution =
+        (unlinked, syntheticProject.SourceFilePaths)
+        ||> List.fold (fun solution path -> linkedText path (File.ReadAllText path) solution)
 
     let withoutFoo, withFoo = instances[0], instances[1]
 
@@ -37,6 +49,17 @@ let ``an instance reports a shared declaration on its own, and again once the pa
 
     Assert.Equal<string list>([ "plainUse" ], exactNamesIn project "plainUse")
     Assert.Equal<string list>([ "plainUse" ], exactNamesIn project "plainUse")
+
+[<Fact>]
+let ``an instance reuses the parse another instance made of the same text`` () =
+    let path = syntheticProject.GetFilePath "Plain"
+    let linked = linkedText path "module ModulePlain\nlet reusedUse = 1\n" solution
+
+    let searchEveryInstance () =
+        for instance in instances do
+            Assert.Equal<string list>([ "reusedUse" ], exactNamesIn (linked.GetProject instance) "reusedUse")
+
+    Assert.Equal(1, NavigateToSearchServiceTests.countParseRequests path searchEveryInstance)
 
 [<Fact>]
 let ``a declaration behind a directive is reported only by the instance that defines it`` () =
