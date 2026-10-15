@@ -3,8 +3,11 @@
 namespace FSharp.Editor.Tests
 
 open Xunit
+open System.Collections.Concurrent
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
@@ -151,3 +154,61 @@ module HeyHo =
                 Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
 
         Assert.Equal(1, countParseRequests path searchTwice)
+
+    type private GatedTextLoader(path: string, onLoad: string -> Task) =
+        inherit TextLoader()
+
+        override _.LoadTextAndVersionAsync(_: LoadTextOptions, _: CancellationToken) =
+            task {
+                do! onLoad path
+                return TextAndVersion.Create(SourceText.From "let shared = 1\n", VersionStamp.Create(), path)
+            }
+
+    [<Fact>]
+    let ``a project's priority documents are reached first and do not hold back the rest`` () =
+        let first, second = "C:\\First.fs", "C:\\Second.fs"
+        let hasSecondWorker = System.Environment.ProcessorCount > 1
+        let reached = ConcurrentQueue<string>()
+
+        let firstReached =
+            TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+        let onLoad path : Task =
+            reached.Enqueue path
+
+            if path = first then
+                firstReached.TrySetResult() |> ignore
+
+            if hasSecondWorker then
+                firstReached.Task
+            else
+                Task.CompletedTask
+
+        let projectId = ProjectId.CreateNewId()
+
+        let documentOf path =
+            DocumentInfo.Create(DocumentId.CreateNewId projectId, path, loader = GatedTextLoader(path, onLoad), filePath = path)
+
+        let solution =
+            [ documentOf first; documentOf second ]
+            |> RoslynTestHelpers.CreateProjectInfo projectId "C:\\test.fsproj"
+            |> List.singleton
+            |> RoslynTestHelpers.CreateSolution
+
+        { RoslynTestHelpers.DefaultProjectOptions with
+            SourceFiles = [| first; second |]
+        }
+        |> RoslynTestHelpers.SetProjectOptions projectId solution
+
+        let project = solution.GetProject projectId
+
+        let priority =
+            project.Documents |> Seq.find (fun document -> document.FilePath = second)
+
+        let service: IFSharpNavigateToSearchService = provider.GetExportedValue()
+
+        let search =
+            service.SearchProjectAsync(project, ImmutableArray.Create priority, "shared", service.KindsProvided, CancellationToken.None)
+
+        Assert.True(search.Wait(System.TimeSpan.FromMinutes 1.0), "The rest of the project waited for the priority document.")
+        Assert.Equal(second, reached |> Seq.head)
