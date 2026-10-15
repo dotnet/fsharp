@@ -1,79 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="ee344f85ef890dd92974e9b93d75906f1f8c39f3" BarId="337683" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="a2f466a2ccc2851d3c665f764a36b0cb59dd18b8" BarId="334576" />
   <ProductDependencies>
-    <Dependency Name="Microsoft.Build" Version="18.13.0-1.26516.14">
+    <Dependency Name="Microsoft.Build" Version="18.13.0-1.26509.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6348d0c087aeec18c323b01a2c77da089ddafea0</Sha>
+      <Sha>558f8a5f4cf6e10a5a1fff132d2e23b93f9752c9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.13.0-1.26516.14">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.13.0-1.26509.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6348d0c087aeec18c323b01a2c77da089ddafea0</Sha>
+      <Sha>558f8a5f4cf6e10a5a1fff132d2e23b93f9752c9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.13.0-1.26516.14">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.13.0-1.26509.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6348d0c087aeec18c323b01a2c77da089ddafea0</Sha>
+      <Sha>558f8a5f4cf6e10a5a1fff132d2e23b93f9752c9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.13.0-1.26516.14">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.13.0-1.26509.1">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>6348d0c087aeec18c323b01a2c77da089ddafea0</Sha>
+      <Sha>558f8a5f4cf6e10a5a1fff132d2e23b93f9752c9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="5.13.0-1.26516.4">
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices.ExternalAccess" Version="5.12.0-1.26428.6">
       <Uri>https://github.com/dotnet/roslyn</Uri>
-      <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
+      <Sha>92a36efa9ae1a26a14872f87798526a1c3dd050b</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Collections.Immutable" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
+    <Dependency Name="System.Collections.Immutable" Version="10.0.10">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Composition" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
+    <Dependency Name="System.Composition" Version="10.0.10">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.10">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Reflection.Metadata" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.10">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
+    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.13">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>
+      </Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
