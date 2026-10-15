@@ -53,7 +53,6 @@ module private NamespaceModuleConversion =
         let position = (spanOf sourceText m).End
         isBlank sourceText position (sourceText.Lines.GetLineFromPosition position).End
 
-    /// Whether what follows on the line is at most a line comment, which can move together with what stands before it.
     let restOfLineIsBlankOrLineComment (sourceText: SourceText) (m: range) =
         let position = (spanOf sourceText m).End
 
@@ -62,16 +61,12 @@ module private NamespaceModuleConversion =
 
         rest.IsEmpty || rest.StartsWith("//".AsSpan(), StringComparison.Ordinal)
 
-    /// Whether an `#if` stands on or above the line. The tree shows only what the active branches hold, so a
-    /// declaration or an `open` in another branch there would go unseen and stay above the root module.
-    let private hasConditionalDirectiveThrough (line: int) (directives: ConditionalDirectiveTrivia list) =
+    let private hasIfDirectiveOnOrAbove (line: int) (directives: ConditionalDirectiveTrivia list) =
         directives
         |> List.exists (function
             | ConditionalDirectiveTrivia.If(range = m) -> m.StartLine <= line
             | _ -> false)
 
-    /// The declarations of a namespace are a single nested module, optionally preceded by `open`s that would
-    /// apply equally to a root module: moving them into it changes nothing they resolve against.
     let private tryOpensBeforeNestedModule (decls: SynModuleDecl list) =
         match List.rev decls with
         | nestedModule :: reversedOpens when
@@ -112,7 +107,7 @@ module private NamespaceModuleConversion =
                     && Position.posEq moduleRange.End (List.last declarations).Range.End
                     && restOfLineIsBlank sourceText (List.last namespacePath).idRange
                     && List.forall (restOfLineIsBlankOrLineComment sourceText) opens
-                    && not (hasConditionalDirectiveThrough equals.EndLine fileTrivia.ConditionalDirectives)
+                    && not (hasIfDirectiveOnOrAbove equals.EndLine fileTrivia.ConditionalDirectives)
                     ->
                     ValueSome(
                         Nested(
@@ -149,7 +144,6 @@ module private NamespaceModuleConversion =
 
         | _ -> ValueNone
 
-    /// The first identifier of each dotted name in the attributes: what they look up in the scope they stand in.
     let private headIdentifiers (attributes: SynAttributes) =
         [
             for list in attributes do
@@ -166,23 +160,32 @@ module private NamespaceModuleConversion =
                             | _ -> heads)
         ]
 
-    /// Whether the attributes mean the same at the position as where they stand. A root module's attributes are
-    /// checked above the `open`s that move below its header, so a name one of those brings into scope is lost to them.
-    let attributesResolveAt (checkResults: FSharpCheckFileResults) (sourceText: SourceText) (position: pos) (attributes: SynAttributes) =
-        headIdentifiers attributes
-        |> List.forall (fun head ->
-            // Only the operators of FSharp.Core make a constant, and those need no `open`.
-            PrettyNaming.IsLogicalOpName head.idText
-            || (let line = sourceText.Lines[Line.toZ head.idRange.EndLine].ToString()
+    let private isNamedArgumentTarget (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpField -> true
+        | :? FSharpMemberOrFunctionOrValue as value -> value.IsMember && not value.IsConstructor
+        | _ -> false
 
-                match checkResults.GetSymbolUseAtLocation(head.idRange.EndLine, head.idRange.EndColumn, line, [ head.idText ]) with
-                | Some symbolUse ->
-                    match symbolUse.Symbol with
-                    // A named argument sets a property or a field of the attribute.
-                    | :? FSharpField -> true
-                    | :? FSharpMemberOrFunctionOrValue as value when value.IsMember && not value.IsConstructor -> true
-                    | symbol -> checkResults.IsRelativeNameResolvableFromSymbol(position, [], symbol)
-                | None -> false))
+    let attributesKeepMeaningAt
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (position: pos)
+        (attributes: SynAttributes)
+        =
+        let isConstantOperator (head: Ident) =
+            PrettyNaming.IsLogicalOpName head.idText
+
+        let keepsMeaning (head: Ident) =
+            let line = sourceText.Lines[Line.toZ head.idRange.EndLine].ToString()
+
+            match checkResults.GetSymbolUseAtLocation(head.idRange.EndLine, head.idRange.EndColumn, line, [ head.idText ]) with
+            | Some symbolUse ->
+                isNamedArgumentTarget symbolUse.Symbol
+                || checkResults.IsRelativeNameResolvableFromSymbol(position, [], symbolUse.Symbol)
+            | None -> false
+
+        headIdentifiers attributes
+        |> List.forall (fun head -> isConstantOperator head || keepsMeaning head)
 
     let isOnHeader (caretLine: int) shape =
         match shape with
@@ -200,8 +203,7 @@ module private NamespaceModuleConversion =
         | Root(path = path) ->
             String.Format(SR.ConvertToNamespaceWithNestedModule(), dotted (List.take (path.Length - 1) path), (List.last path).idText)
 
-    /// Whether a line lexed from this state starts inside a string literal.
-    let private continuesString (state: FSharpTokenizerColorState) =
+    let private isCodeCommentOrSkippedState (state: FSharpTokenizerColorState) =
         match state with
         | FSharpTokenizerColorState.InitialState
         | FSharpTokenizerColorState.Token
@@ -212,9 +214,10 @@ module private NamespaceModuleConversion =
         | FSharpTokenizerColorState.SingleLineComment
         | FSharpTokenizerColorState.StringInComment
         | FSharpTokenizerColorState.VerbatimStringInComment
-        | FSharpTokenizerColorState.TripleQuoteStringInComment -> false
-        // String, VerbatimString, TripleQuoteString and the extended interpolated string state, which the public enum does not name.
-        | _ -> true
+        | FSharpTokenizerColorState.TripleQuoteStringInComment -> true
+        | _ -> false
+
+    let private startsInsideString (state: FSharpTokenizerColorState) = not (isCodeCommentOrSkippedState state)
 
     let private isSkipped (state: FSharpTokenizerLexState) =
         match FSharpLineTokenizer.ColorStateOfLexState state with
@@ -228,8 +231,7 @@ module private NamespaceModuleConversion =
             || Char.IsWhiteSpace code[keyword.Length]
             || code[keyword.Length] = '/')
 
-    /// Whether the line is a directive the lexer recognizes while it skips an inactive branch.
-    let private isSkippedDirective (line: string) =
+    let private isDirectiveRecognizedWhileSkipping (line: string) =
         let code = line.AsSpan().TrimStart()
 
         startsWithDirective code "#if"
@@ -247,32 +249,31 @@ module private NamespaceModuleConversion =
 
         loop state
 
-    /// Lines inside multi-line string literals of the branches of `#if` the defines leave inactive. Each run of
-    /// inactive lines between two directives is lexed as the code it is when its branch is taken, where a line
-    /// that reads like a directive inside a string is part of that string.
     let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
-        let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
-        let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
-        let mutable fileState = FSharpTokenizerLexState.Initial
-        let mutable branchState = FSharpTokenizerLexState.Initial
+        let tokenizerWithDefines = FSharpSourceTokenizer(defines, None, Some langVersion)
+        let tokenizerAsIfBranchTaken = FSharpSourceTokenizer([], None, Some langVersion)
+        let mutable stateWithDefines = FSharpTokenizerLexState.Initial
+        let mutable stateAsIfBranchTaken = FSharpTokenizerLexState.Initial
 
         for line in sourceText.Lines do
             let text = line.ToString()
 
             let isInString =
-                continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState)
+                startsInsideString (FSharpLineTokenizer.ColorStateOfLexState stateAsIfBranchTaken)
 
-            if isSkipped fileState && (isInString || not (isSkippedDirective text)) then
+            if
+                isSkipped stateWithDefines
+                && (isInString || not (isDirectiveRecognizedWhileSkipping text))
+            then
                 if isInString then
                     lines.Add line.LineNumber |> ignore
 
-                branchState <- scanLine branchTokenizer text branchState
+                stateAsIfBranchTaken <- scanLine tokenizerAsIfBranchTaken text stateAsIfBranchTaken
             else
-                branchState <- FSharpTokenizerLexState.Initial
+                stateAsIfBranchTaken <- FSharpTokenizerLexState.Initial
 
-            fileState <- scanLine fileTokenizer text fileState
+            stateWithDefines <- scanLine tokenizerWithDefines text stateWithDefines
 
-    /// Lines inside multi-line string literals, including those in branches of `#if` the defines leave inactive.
     let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
         let lines =
             (HashSet<int>(), parseTree)
@@ -310,6 +311,36 @@ module private NamespaceModuleConversion =
         | 0 -> Environment.NewLine
         | length -> sourceText.ToString(TextSpan(line.End, length))
 
+    let private removedLineRangesWithBlankLinesAfter (lines: TextLineCollection) (removedLines: Set<int>) (firstLine: int) (lastLine: int) =
+        let deletedLines =
+            ((false, []), [ firstLine..lastLine ])
+            ||> List.fold (fun (afterDeleted, deleted) i ->
+                if
+                    removedLines.Contains i
+                    || (afterDeleted && String.IsNullOrWhiteSpace(lines[i].ToString()))
+                then
+                    true, i :: deleted
+                else
+                    false, deleted)
+            |> snd
+
+        ([], deletedLines)
+        ||> List.fold (fun ranges i ->
+            match ranges with
+            | struct (first, last) :: rest when first = i + 1 -> struct (i, last) :: rest
+            | _ -> struct (i, i) :: ranges)
+
+    let private insertOpensBelowHeader (sourceText: SourceText) (opens: range list) (headerLine: TextLine) (lineBreak: string) =
+        let openText =
+            opens
+            |> List.map (fun m ->
+                let span = spanOf sourceText m
+
+                sourceText.ToString(TextSpan.FromBounds(span.Start, sourceText.Lines.GetLineFromPosition(span.End).End)).TrimEnd())
+            |> String.concat lineBreak
+
+        TextChange(TextSpan(headerLine.EndIncludingLineBreak, 0), $"{lineBreak}{openText}{lineBreak}{lineBreak}")
+
     let changes (sourceText: SourceText) (literalLines: HashSet<int>) (indentSize: int) shape =
         let lines = sourceText.Lines
 
@@ -332,28 +363,8 @@ module private NamespaceModuleConversion =
                 |> List.collect (fun m -> [ Line.toZ m.StartLine .. Line.toZ m.EndLine ])
                 |> Set.ofList
 
-            // The namespace line and the moved `open`s are deleted, each with the blank lines right after it;
-            // comments, XML doc comments and attributes among them stay in front of the new header.
             let deletedRanges =
-                let removedLines = openLines.Add namespaceLine
-
-                let deletedLines =
-                    ((false, []), [ namespaceLine .. headerLine - 1 ])
-                    ||> List.fold (fun (afterDeleted, deleted) i ->
-                        if
-                            removedLines.Contains i
-                            || (afterDeleted && String.IsNullOrWhiteSpace(lines[i].ToString()))
-                        then
-                            true, i :: deleted
-                        else
-                            false, deleted)
-                    |> snd
-
-                ([], deletedLines)
-                ||> List.fold (fun ranges i ->
-                    match ranges with
-                    | struct (first, last) :: rest when first = i + 1 -> struct (i, last) :: rest
-                    | _ -> struct (i, i) :: ranges)
+                removedLineRangesWithBlankLinesAfter lines (openLines.Add namespaceLine) namespaceLine (headerLine - 1)
 
             let moduleSpan = spanOf sourceText moduleIdent.idRange
             let equalsEnd = (spanOf sourceText equals).End
@@ -374,23 +385,13 @@ module private NamespaceModuleConversion =
                 $"{recursive}{textBetween sourceText namespacePath.Head (List.last namespacePath)}.{sourceText.ToString moduleSpan}"
 
             [
-                // A root-style `module A.B.C` must be the file's first declaration, so the `open`s move to right
-                // after the header.
                 for struct (first, last) in deletedRanges do
                     TextChange(TextSpan.FromBounds(lines[first].Start, lines[last].EndIncludingLineBreak), "")
 
                 TextChange(TextSpan.FromBounds(moduleSpan.Start, headerEnd), rootPath)
 
                 if not (List.isEmpty opens) then
-                    let openText =
-                        opens
-                        |> List.map (fun m ->
-                            let span = spanOf sourceText m
-
-                            sourceText.ToString(TextSpan.FromBounds(span.Start, lines.GetLineFromPosition(span.End).End)).TrimEnd())
-                        |> String.concat lineBreak
-
-                    TextChange(TextSpan(lines[headerLine].EndIncludingLineBreak, 0), $"{lineBreak}{openText}{lineBreak}{lineBreak}")
+                    insertOpensBelowHeader sourceText opens lines[headerLine] lineBreak
 
                 for i in headerLine + 1 .. lines.Count - 1 do
                     let removed = min bodyColumn (leadingSpaces sourceText lines[i])
@@ -457,7 +458,7 @@ type internal FSharpConvertNamespaceModuleRefactoring [<ImportingConstructor>] (
                                     document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertNamespaceModuleRefactoring)
 
                                 return
-                                    NamespaceModuleConversion.attributesResolveAt
+                                    NamespaceModuleConversion.attributesKeepMeaningAt
                                         checkResults
                                         sourceText
                                         namespaceKeyword.End

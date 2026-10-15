@@ -41,7 +41,6 @@ let private actionsAt (code: string) (marker: string) =
     use context = TestContext.CreateWithCode code
     tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertNamespaceModuleRefactoring())
 
-// Both contain a triple-quoted string, which a triple-quoted literal cannot hold.
 let private nestedHelpers =
     "namespace My.Company\n\n/// Utilities.\n[<AutoOpen; RequireQualifiedAccess>]\nmodule private Helpers =\n    let inline twice x = x + x\n    let banner = \"\"\"\n  not\n    touched\"\"\"\n"
 
@@ -58,7 +57,6 @@ let ``Namespace with a single nested module converts to a root module`` (marker:
 let ``Root module converts to a namespace with a nested module`` () =
     Assert.Equal(nestedHelpers, refactored rootHelpers "module")
 
-// Each contains a triple-quoted string in a branch that ALT, undefined, leaves inactive.
 [<Theory>]
 [<InlineData("namespace A.B\n\nmodule C =\n#if ALT\n    let text = \"\"\"first\n    preserved\n    last\"\"\"\n#endif\n    let x = 1\n",
              "namespace",
