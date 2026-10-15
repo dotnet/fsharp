@@ -230,14 +230,15 @@ type internal FSharpNavigateToSearchService
 
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync
-            (project, _priorityDocuments, searchPattern, kinds, cancellationToken)
+            (project, priorityDocuments, searchPattern, kinds, cancellationToken)
             : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
+                let priorityIds = ImmutableHashSet.CreateRange(priorityDocuments |> Seq.map _.Id)
 
                 let tasks =
                     [|
-                        for doc in project.Documents do
+                        for doc in project.Documents |> Seq.sortBy (fun doc -> not (priorityIds.Contains doc.Id)) do
                             yield processDocument tryMatch kinds doc
                     |]
 
