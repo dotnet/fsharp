@@ -6,7 +6,11 @@ open System
 open System.Collections.Generic
 open System.Text
 
+open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.CodeRefactorings
+open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
@@ -15,24 +19,34 @@ open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-/// A place in front of which a declaration used by the selected expression can be inserted.
+open CancellableTasks
+
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type Anchor =
-    /// An expression that is a statement of its block.
     | Statement of start: pos
-    /// The body of a binding, match clause, branch or lambda, after the keyword ending at keywordEnd. No line of the
-    /// body can start left of column limit, where the construct that sets its offside line starts.
-    | Clause of keywordEnd: pos * body: range * limit: int
+    | Clause of keywordEnd: pos * body: range * offsideColumn: int
 
 [<NoComparison; NoEquality>]
 type ExtractionTarget =
     {
         Expr: SynExpr
         Path: SyntaxVisitorPath
-        /// The selection without its parentheses when the selected expression is parenthesized.
-        Content: TextSpan
-        /// The text the new name replaces; the parentheses of a method call stay.
+        Extracted: TextSpan
         Replaced: TextSpan
+    }
+
+[<NoComparison; NoEquality>]
+type Extraction =
+    {
+        Context: CodeRefactoringContext
+        Provider: string
+        SourceText: SourceText
+        Target: ExtractionTarget
+        CheckResults: FSharpCheckFileResults
+        IndentSize: int
+        LiteralLines: HashSet<int>
+        LineBreak: string
+        Names: HashSet<string>
     }
 
 let private isSame (expr: SynExpr) (other: SynExpr) = obj.ReferenceEquals(expr, other)
@@ -47,6 +61,8 @@ let positionOf (sourceText: SourceText) (offset: int) =
     let linePosition = sourceText.Lines.GetLinePosition offset
     Position.mkPos (Line.fromZ linePosition.Line) linePosition.Character
 
+let padding (width: int) = String(' ', width)
+
 let leadingSpaces (sourceText: SourceText) (line: TextLine) =
     let mutable position = line.Start
 
@@ -57,44 +73,37 @@ let leadingSpaces (sourceText: SourceText) (line: TextLine) =
 
 let lineBreakOf (sourceText: SourceText) =
     sourceText.Lines
-    |> Seq.tryFind (fun line -> line.EndIncludingLineBreak > line.End)
-    |> Option.map (fun line -> sourceText.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak)))
-    |> Option.defaultValue Environment.NewLine
+    |> Seq.tryFindV (fun line -> line.EndIncludingLineBreak > line.End)
+    |> ValueOption.map (fun line -> sourceText.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak)))
+    |> ValueOption.defaultValue Environment.NewLine
 
-let isLineLeading (sourceText: SourceText) (position: pos) =
+let private isLineLeading (sourceText: SourceText) (position: pos) =
     let line = sourceText.Lines[Line.toZ position.Line]
     leadingSpaces sourceText line = position.Column
 
-/// Whether only closing brackets and a line comment follow the position on its line.
-let restOfLineIsClosers (sourceText: SourceText) (position: pos) =
+let private onlyClosersFollow (sourceText: SourceText) (position: pos) =
     let line = sourceText.Lines[Line.toZ position.Line]
 
-    let rest =
-        sourceText.ToString(TextSpan.FromBounds(line.Start + position.Column, line.End))
+    let isCloser c =
+        Char.IsWhiteSpace c || c = ')' || c = ']' || c = '}' || c = '|'
 
-    let code =
-        match rest.IndexOf("//", StringComparison.Ordinal) with
-        | -1 -> rest
-        | comment -> rest.Substring(0, comment)
+    let mutable offset = line.Start + position.Column
 
-    code
-    |> Seq.forall (fun c -> Char.IsWhiteSpace c || c = ')' || c = ']' || c = '}' || c = '|')
+    while offset < line.End && isCloser (sourceText[offset]) do
+        offset <- offset + 1
 
-/// Whether a line lexed from this state starts inside a string literal.
-let private continuesString (state: FSharpTokenizerColorState) =
-    match state with
-    | FSharpTokenizerColorState.InitialState
-    | FSharpTokenizerColorState.Token
-    | FSharpTokenizerColorState.IfDefSkip
-    | FSharpTokenizerColorState.EndLineThenSkip
-    | FSharpTokenizerColorState.EndLineThenToken
-    | FSharpTokenizerColorState.Comment
-    | FSharpTokenizerColorState.SingleLineComment
-    | FSharpTokenizerColorState.StringInComment
-    | FSharpTokenizerColorState.VerbatimStringInComment
-    | FSharpTokenizerColorState.TripleQuoteStringInComment -> false
-    // String, VerbatimString, TripleQuoteString and the extended interpolated string state, which the public enum does not name.
-    | _ -> true
+    offset = line.End
+    || (offset + 1 < line.End
+        && sourceText[offset] = '/'
+        && sourceText[offset + 1] = '/')
+
+let private startsInsideString (state: FSharpTokenizerLexState) =
+    match FSharpLineTokenizer.ColorStateOfLexState state with
+    | FSharpTokenizerColorState.String
+    | FSharpTokenizerColorState.VerbatimString
+    | FSharpTokenizerColorState.TripleQuoteString -> true
+    // The public enum does not name the interpolated string states.
+    | color -> not (Enum.IsDefined(typeof<FSharpTokenizerColorState>, color))
 
 let private isSkipped (state: FSharpTokenizerLexState) =
     match FSharpLineTokenizer.ColorStateOfLexState state with
@@ -108,7 +117,6 @@ let private startsWithDirective (code: ReadOnlySpan<char>) (keyword: string) =
         || Char.IsWhiteSpace code[keyword.Length]
         || code[keyword.Length] = '/')
 
-/// Whether the line is a directive the lexer recognizes while it skips an inactive branch.
 let private isSkippedDirective (line: string) =
     let code = line.AsSpan().TrimStart()
 
@@ -127,8 +135,6 @@ let private scanLine (tokenizer: FSharpSourceTokenizer) (line: string) (state: F
 
     loop state
 
-/// Lines inside multi-line string literals of the branches of `#if` the defines leave inactive. Each run of inactive
-/// lines between two directives is lexed as the code it is when its branch is taken.
 let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
     let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
     let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
@@ -137,18 +143,22 @@ let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: strin
 
     for line in sourceText.Lines do
         let text = line.ToString()
+        let inInactiveBranch = isSkipped fileState && not (isSkippedDirective text)
 
-        if isSkipped fileState && not (isSkippedDirective text) then
-            if continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState) then
-                lines.Add line.LineNumber |> ignore
+        if inInactiveBranch && startsInsideString branchState then
+            lines.Add line.LineNumber |> ignore
 
-            branchState <- scanLine branchTokenizer text branchState
-        else
-            branchState <- FSharpTokenizerLexState.Initial
+        branchState <-
+            if inInactiveBranch then
+                scanLine branchTokenizer text branchState
+            else
+                FSharpTokenizerLexState.Initial
 
         fileState <- scanLine fileTokenizer text fileState
 
-/// Lines inside multi-line string literals, including those in branches of `#if` the defines leave inactive.
+let private linesAfterFirst (m: range) =
+    seq { for line in m.StartLine + 1 .. m.EndLine -> Line.toZ line }
+
 let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
     let lines =
         (HashSet<int>(), parseTree)
@@ -156,9 +166,7 @@ let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defin
             match node with
             | SyntaxNode.SynExpr(SynExpr.Const(range = m))
             | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
-            | SyntaxNode.SynPat(SynPat.Const(range = m)) ->
-                for line in m.StartLine + 1 .. m.EndLine do
-                    lines.Add(Line.toZ line) |> ignore
+            | SyntaxNode.SynPat(SynPat.Const(range = m)) -> lines.UnionWith(linesAfterFirst m)
             | _ -> ()
 
             lines)
@@ -182,9 +190,7 @@ let usedNames (parseTree: ParsedInput) =
         | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ident :: _)))
         | SyntaxNode.SynExpr(SynExpr.NamedIndexedPropertySet(longDotId = SynLongIdent(id = ident :: _)))
         | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _))) -> names.Add ident.idText |> ignore
-        | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = idents))) ->
-            for ident in idents do
-                names.Add ident.idText |> ignore
+        | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = idents))) -> names.UnionWith(idents |> Seq.map _.idText)
         | _ -> ()
 
         names)
@@ -193,10 +199,9 @@ let uniqueName (baseName: string) (used: HashSet<string>) =
     Seq.initInfinite (fun i -> if i = 0 then baseName else $"{baseName}{i}")
     |> Seq.find (used.Contains >> not)
 
-/// The text of the span with every line after the first moved by as many columns as the first line moves to reach
-/// column. Lines inside multi-line string literals are kept as they are; a line that would need a negative indentation
-/// makes the whole text unavailable.
-let tryIndentedText (sourceText: SourceText) (span: TextSpan) (column: int) (literalLines: HashSet<int>) =
+let private tryIndentedText (extraction: Extraction) (column: int) =
+    let sourceText = extraction.SourceText
+    let span = extraction.Target.Extracted
     let lines = sourceText.Lines
     let first = lines.GetLineFromPosition span.Start
     let last = lines.GetLineFromPosition span.End
@@ -216,7 +221,7 @@ let tryIndentedText (sourceText: SourceText) (span: TextSpan) (column: int) (lit
                 sourceText.ToString(TextSpan.FromBounds(line.Start, min line.End span.End))
 
             let moved =
-                match literalLines.Contains lineNumber with
+                match extraction.LiteralLines.Contains lineNumber with
                 | true -> ValueSome content
                 | false when String.IsNullOrWhiteSpace content -> ValueSome content
                 | false when shift >= 0 -> ValueSome(String(' ', shift) + content)
@@ -334,8 +339,7 @@ let private isInExcludedContext (expr: SynExpr) (path: SyntaxVisitorPath) =
 
     loop (SyntaxNode.SynExpr expr) path
 
-/// Whether the expression contains a computation expression construct outside any computation expression of its own.
-let private hasStatementOnlyConstruct (expr: SynExpr) =
+let private hasOrphanedComputationConstruct (expr: SynExpr) =
     let containers = ResizeArray<range>()
     let statements = ResizeArray<range>()
 
@@ -357,6 +361,37 @@ let private hasStatementOnlyConstruct (expr: SynExpr) =
             |> Seq.exists (fun container -> Range.rangeContainsRange container statement)
         ))
 
+let private targetOf (sourceText: SourceText) (expr: SynExpr) (path: SyntaxVisitorPath) =
+    let span = textSpanOf sourceText expr.Range
+
+    let extracted =
+        match expr with
+        | SynExpr.Paren(expr = inner) -> textSpanOf sourceText inner.Range
+        | _ -> span
+
+    let replaced =
+        match expr with
+        | SynExpr.Paren _ when isCall path -> extracted
+        | _ -> span
+
+    {
+        Expr = expr
+        Path = path
+        Extracted = extracted
+        Replaced = replaced
+    }
+
+let private exprSpanning (start: pos) (finish: pos) (path: SyntaxVisitorPath) (node: SyntaxNode) =
+    match node with
+    | SyntaxNode.SynExpr expr when Position.posEq expr.Range.Start start && Position.posEq expr.Range.End finish -> Some(expr, path)
+    | _ -> None
+
+let private crossesDirective (directives: ConditionalDirectiveTrivia list) (start: pos) (finish: pos) =
+    directives
+    |> List.exists (fun directive ->
+        let line = directiveLine directive
+        line >= start.Line && line <= finish.Line)
+
 let tryExtractionTarget (sourceText: SourceText) (parseTree: ParsedInput) (selection: TextSpan) =
     let span = trimmed sourceText selection
 
@@ -365,53 +400,75 @@ let tryExtractionTarget (sourceText: SourceText) (parseTree: ParsedInput) (selec
         let start = positionOf sourceText span.Start
         let finish = positionOf sourceText span.End
 
-        let crossesDirective =
-            file.Trivia.ConditionalDirectives
-            |> List.exists (fun directive ->
-                let line = directiveLine directive
-                line >= start.Line && line <= finish.Line)
-
-        let exact =
-            (start, parseTree)
-            ||> ParsedInput.tryPickLast (fun path node ->
-                match node with
-                | SyntaxNode.SynExpr expr when Position.posEq expr.Range.Start start && Position.posEq expr.Range.End finish ->
-                    Some(expr, path)
-                | _ -> None)
-
-        match exact with
+        match (start, parseTree) ||> ParsedInput.tryPickLast (exprSpanning start finish) with
         | Some(expr, path) when
-            not crossesDirective
+            not (crossesDirective file.Trivia.ConditionalDirectives start finish)
             && isExtractableShape expr path
             && not (isInExcludedContext expr path)
-            && not (hasStatementOnlyConstruct expr)
+            && not (hasOrphanedComputationConstruct expr)
             ->
-            let content =
-                match expr with
-                | SynExpr.Paren(expr = inner) -> textSpanOf sourceText inner.Range
-                | _ -> span
-
-            let replaced =
-                match expr with
-                | SynExpr.Paren _ when isCall path -> content
-                | _ -> span
-
-            ValueSome
-                {
-                    Expr = expr
-                    Path = path
-                    Content = content
-                    Replaced = replaced
-                }
+            ValueSome(targetOf sourceText expr path)
         | _ -> ValueNone
     | _ -> ValueNone
+
+let isLiteralConstant (expr: SynExpr) =
+    match expr with
+    | SynExpr.Const((SynConst.Bool _ | SynConst.SByte _ | SynConst.Byte _ | SynConst.Int16 _ | SynConst.UInt16 _ | SynConst.Int32 _ | SynConst.UInt32 _ | SynConst.Int64 _ | SynConst.UInt64 _ | SynConst.Single _ | SynConst.Double _ | SynConst.Decimal _ | SynConst.Char _ | SynConst.String _),
+                    _) -> true
+    | _ -> false
+
+let private constantAt (position: pos) (path: SyntaxVisitorPath) (node: SyntaxNode) =
+    match node with
+    | SyntaxNode.SynExpr(SynExpr.Const(range = m) as expr) when
+        isLiteralConstant expr
+        && Position.posGeq position m.Start
+        && Position.posGeq m.End position
+        && not (isInExcludedContext expr path)
+        ->
+        Some(expr, path)
+    | _ -> None
+
+let tryConstantAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (selection: TextSpan) =
+    let position = positionOf sourceText selection.Start
+
+    if selection.IsEmpty then
+        match (position, parseTree) ||> ParsedInput.tryPickLast (constantAt position) with
+        | Some(expr, path) -> ValueSome(targetOf sourceText expr path)
+        | None -> ValueNone
+    else
+        ValueNone
+
+let private parenthesizedLambdaHeaderAt (position: pos) (_: SyntaxVisitorPath) (node: SyntaxNode) =
+    match node with
+    | SyntaxNode.SynExpr(SynExpr.Paren(expr = SynExpr.Lambda(parsedData = Some _; trivia = { ArrowRange = Some arrow }) as lambda; range = m)) when
+        Position.posGeq position lambda.Range.Start
+        && Position.posGeq arrow.End position
+        ->
+        Some m
+    | _ -> None
+
+let private tryParenthesizedLambdaAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret: int) =
+    let position = positionOf sourceText caret
+
+    match
+        (position, parseTree)
+        ||> ParsedInput.tryPickLast (parenthesizedLambdaHeaderAt position)
+    with
+    | Some m -> tryExtractionTarget sourceText parseTree (textSpanOf sourceText m)
+    | None -> ValueNone
+
+let trySelectedTarget (sourceText: SourceText) (parseTree: ParsedInput) (selection: TextSpan) =
+    if selection.IsEmpty then
+        tryParenthesizedLambdaAtCaret sourceText parseTree selection.Start
+    else
+        tryExtractionTarget sourceText parseTree selection
 
 let private isFunctionBinding (binding: SynBinding) =
     match binding with
     | SynBinding(headPat = SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _))) -> true
     | _ -> false
 
-let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (grandparent: SyntaxNode voption) (limit: int) =
+let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (outer: SyntaxVisitorPath) (offsideColumn: int) =
     match parent, child with
     | SyntaxNode.SynExpr(SynExpr.Sequential _), SyntaxNode.SynExpr expr -> ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse), SyntaxNode.SynExpr expr when isSame letOrUse.Body expr ->
@@ -423,54 +480,52 @@ let private anchorOf (child: SyntaxNode) (parent: SyntaxNode) (grandparent: Synt
         ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynModule(SynModuleDecl.Expr _), SyntaxNode.SynExpr expr -> ValueSome(Anchor.Statement expr.Range.Start)
     | SyntaxNode.SynBinding(SynBinding(expr = rhs; trivia = trivia) as binding), SyntaxNode.SynExpr expr when isSame rhs expr ->
-        match grandparent, trivia.EqualsRange with
-        | ValueSome(SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse)), _ when not letOrUse.IsRecursive && not (isFunctionBinding binding) ->
+        match outer, trivia.EqualsRange with
+        | SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse) :: _, _ when not letOrUse.IsRecursive && not (isFunctionBinding binding) ->
             ValueSome(Anchor.Statement letOrUse.Range.Start)
-        | _, Some equals -> ValueSome(Anchor.Clause(equals.End, expr.Range, limit))
+        | _, Some equals -> ValueSome(Anchor.Clause(equals.End, expr.Range, offsideColumn))
         | _ -> ValueNone
-    | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = result; trivia = trivia)), SyntaxNode.SynExpr expr when isSame result expr ->
-        match trivia.ArrowRange with
-        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range, limit))
-        | None -> ValueNone
-    | SyntaxNode.SynExpr(SynExpr.IfThenElse(thenExpr = thenExpr; elseExpr = elseExpr; trivia = trivia)), SyntaxNode.SynExpr expr ->
-        match elseExpr, trivia.ElseKeyword with
-        | _ when isSame thenExpr expr -> ValueSome(Anchor.Clause(trivia.ThenKeyword.End, expr.Range, limit))
-        | Some elseExpr, Some elseKeyword when isSame elseExpr expr -> ValueSome(Anchor.Clause(elseKeyword.End, expr.Range, limit))
-        | _ -> ValueNone
-    | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(_, body); trivia = trivia)), SyntaxNode.SynExpr expr when isSame body expr ->
-        match trivia.ArrowRange with
-        | Some arrow -> ValueSome(Anchor.Clause(arrow.End, expr.Range, limit))
-        | None -> ValueNone
+    | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = body; trivia = { ArrowRange = Some arrow })), SyntaxNode.SynExpr expr when
+        isSame body expr
+        ->
+        ValueSome(Anchor.Clause(arrow.End, expr.Range, offsideColumn))
+    | SyntaxNode.SynExpr(SynExpr.IfThenElse(thenExpr = body; trivia = trivia)), SyntaxNode.SynExpr expr when isSame body expr ->
+        ValueSome(Anchor.Clause(trivia.ThenKeyword.End, expr.Range, offsideColumn))
+    | SyntaxNode.SynExpr(SynExpr.IfThenElse(elseExpr = Some body; trivia = { ElseKeyword = Some elseKeyword })), SyntaxNode.SynExpr expr when
+        isSame body expr
+        ->
+        ValueSome(Anchor.Clause(elseKeyword.End, expr.Range, offsideColumn))
+    | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(_, body); trivia = { ArrowRange = Some arrow })), SyntaxNode.SynExpr expr when
+        isSame body expr
+        ->
+        ValueSome(Anchor.Clause(arrow.End, expr.Range, offsideColumn))
     | _ -> ValueNone
 
-/// The column where the innermost `let`, `match`, `try`, `if` or loop of the path starts. An `if` after `else` continues
-/// the `if` it belongs to.
-let rec private limitColumn (path: SyntaxVisitorPath) =
+let private (|ElifBranch|_|) (path: SyntaxVisitorPath) =
     match path with
-    | [] -> 0
-    | SyntaxNode.SynExpr(SynExpr.IfThenElse _ as nested) :: (SyntaxNode.SynExpr(SynExpr.IfThenElse(elseExpr = Some elseExpr)) :: _ as rest) when
+    | SyntaxNode.SynExpr(SynExpr.IfThenElse _ as nested) :: (SyntaxNode.SynExpr(SynExpr.IfThenElse(elseExpr = Some elseExpr)) :: _ as enclosingIf) when
         isSame elseExpr nested
         ->
-        limitColumn rest
+        Some enclosingIf
+    | _ -> None
+
+let rec private offsideColumnOf (path: SyntaxVisitorPath) =
+    match path with
+    | [] -> 0
+    | ElifBranch enclosingIf -> offsideColumnOf enclosingIf
     | SyntaxNode.SynBinding(SynBinding(trivia = trivia)) :: _ -> trivia.LeadingKeyword.Range.StartColumn
     | SyntaxNode.SynExpr(SynExpr.Match(range = m) | SynExpr.MatchBang(range = m) | SynExpr.TryWith(range = m) | SynExpr.TryFinally(range = m) | SynExpr.IfThenElse(
         range = m) | SynExpr.For(range = m) | SynExpr.ForEach(range = m) | SynExpr.While(range = m)) :: _ -> m.StartColumn
-    | _ :: rest -> limitColumn rest
+    | _ :: rest -> offsideColumnOf rest
 
-/// The places a declaration used by the expression can go, innermost first.
 let anchorsOf (expr: SynExpr) (path: SyntaxVisitorPath) =
     let rec loop (child: SyntaxNode) (path: SyntaxVisitorPath) =
         match path with
         | [] -> []
-        | parent :: rest ->
-            let grandparent =
-                match rest with
-                | node :: _ -> ValueSome node
-                | [] -> ValueNone
-
-            match anchorOf child parent grandparent (limitColumn path) with
-            | ValueSome anchor -> anchor :: loop parent rest
-            | ValueNone -> loop parent rest
+        | parent :: outer ->
+            match anchorOf child parent outer (offsideColumnOf path) with
+            | ValueSome anchor -> anchor :: loop parent outer
+            | ValueNone -> loop parent outer
 
     loop (SyntaxNode.SynExpr expr) path
 
@@ -481,24 +536,20 @@ let rec private hasInferredTypeVariable (ty: FSharpType) =
         not ty.IsMeasureType
         && ty.GenericArguments |> Seq.exists hasInferredTypeVariable
 
-/// The type the checker gave the parenthesized lambda or `function` the target is, as the source can write it. The
-/// checker records no type for one without parentheses. A type with a variable that inference introduced has no name
-/// in the source.
 let tryFunctionTypeText (checkResults: FSharpCheckFileResults) (target: ExtractionTarget) =
-    let parentheses =
+    let parenthesizedFunction =
         match target.Expr, target.Path with
         | SynExpr.Paren(expr = SynExpr.Lambda _ | SynExpr.MatchLambda _; range = m), _
         | (SynExpr.Lambda _ | SynExpr.MatchLambda _), SyntaxNode.SynExpr(SynExpr.Paren(range = m)) :: _ -> ValueSome m
         | _ -> ValueNone
 
-    parentheses
+    parenthesizedFunction
     |> ValueOption.bind (fun m ->
         match checkResults.TryGetCapturedType m, checkResults.TryGetCapturedDisplayContext m with
         | Some ty, Some displayContext when ty.StripAbbreviations().IsFunctionType && not (hasInferredTypeVariable ty) ->
             ValueSome(ty.Format displayContext)
         | _ -> ValueNone)
 
-/// `Literal`, with its namespace where the name alone does not reach the FSharp.Core attribute from the position.
 let literalAttributeAt (checkResults: FSharpCheckFileResults) (position: pos) =
     let attribute =
         checkResults.ProjectContext.GetReferencedAssemblies()
@@ -509,174 +560,107 @@ let literalAttributeAt (checkResults: FSharpCheckFileResults) (position: pos) =
         "global.Microsoft.FSharp.Core.Literal"
     | _ -> "Literal"
 
-let isLiteralConstant (expr: SynExpr) =
-    match expr with
-    | SynExpr.Const((SynConst.Bool _ | SynConst.SByte _ | SynConst.Byte _ | SynConst.Int16 _ | SynConst.UInt16 _ | SynConst.Int32 _ | SynConst.UInt32 _ | SynConst.Int64 _ | SynConst.UInt64 _ | SynConst.Single _ | SynConst.Double _ | SynConst.Decimal _ | SynConst.Char _ | SynConst.String _),
-                    _) -> true
-    | _ -> false
-
-/// The literal constant the caret is in or touches.
-let tryConstantAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret: int) =
-    let position = positionOf sourceText caret
-
-    let constant =
-        (position, parseTree)
-        ||> ParsedInput.tryPickLast (fun path node ->
-            match node with
-            | SyntaxNode.SynExpr(SynExpr.Const(range = m) as expr) when
-                isLiteralConstant expr
-                && Position.posGeq position m.Start
-                && Position.posGeq m.End position
-                && not (isInExcludedContext expr path)
-                ->
-                Some(expr, path)
-            | _ -> None)
-
-    match constant with
-    | Some(expr, path) ->
-        let span = textSpanOf sourceText expr.Range
-
-        ValueSome
-            {
-                Expr = expr
-                Path = path
-                Content = span
-                Replaced = span
-            }
-    | None -> ValueNone
-
-/// The parenthesized lambda whose `fun <params> ->` the caret is in, as if it were selected with its parentheses.
-let tryParenthesizedLambdaAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret: int) =
-    let position = positionOf sourceText caret
-
-    let parenthesized =
-        (position, parseTree)
-        ||> ParsedInput.tryPickLast (fun _ node ->
-            match node with
-            | SyntaxNode.SynExpr(SynExpr.Paren(
-                expr = SynExpr.Lambda(parsedData = Some _; trivia = { ArrowRange = Some arrow }) as lambda; range = m)) when
-                Position.posGeq position lambda.Range.Start
-                && Position.posGeq arrow.End position
-                ->
-                Some m
-            | _ -> None)
-
-    match parenthesized with
-    | Some m -> tryExtractionTarget sourceText parseTree (textSpanOf sourceText m)
-    | None -> ValueNone
-
-/// The module-level let declaration containing the path, with its first binding.
-let tryEnclosingModuleLet (path: SyntaxVisitorPath) =
+let private tryEnclosingModuleLet (path: SyntaxVisitorPath) =
     path
     |> List.tryPick (function
         | SyntaxNode.SynModule(SynModuleDecl.Let(bindings = binding :: _; range = m)) -> Some struct (binding, m)
         | _ -> None)
 
-let private padding (width: int) = String(' ', width)
+let tryDeclaration (extraction: Extraction) (header: string) (bodyColumn: int) =
+    let sourceText = extraction.SourceText
+    let lines = sourceText.Lines
+    let extracted = extraction.Target.Extracted
 
-/// `header = <content>`, with a multi-line content starting on its own line at bodyColumn.
-let tryDeclaration (sourceText: SourceText) (content: TextSpan) (header: string) (bodyColumn: int) literalLines lineBreak =
-    tryIndentedText sourceText content bodyColumn literalLines
+    tryIndentedText extraction bodyColumn
     |> ValueOption.map (fun body ->
-        let lines = sourceText.Lines
-
-        if lines.GetLineFromPosition(content.Start).LineNumber = lines.GetLineFromPosition(content.End).LineNumber then
+        if lines.GetLineFromPosition(extracted.Start).LineNumber = lines.GetLineFromPosition(extracted.End).LineNumber then
             $"{header} = {body}"
         else
-            $"{header} ={lineBreak}{padding bodyColumn}{body}")
+            $"{header} ={extraction.LineBreak}{padding bodyColumn}{body}")
 
-/// Changes that declare `header = <selection>` in front of the anchor and put replacement where the selection was.
-/// A body that shares its line with its keyword moves to new lines under that keyword, when only closing brackets
-/// and a comment follow it.
-let tryDeclareInFront
-    (sourceText: SourceText)
-    (target: ExtractionTarget)
-    (anchor: Anchor)
+let private tryInFrontOfLine (extraction: Extraction) (start: pos) (header: string) (replacement: string) =
+    let line = extraction.SourceText.Lines[Line.toZ start.Line]
+
+    tryDeclaration extraction header (start.Column + extraction.IndentSize)
+    |> ValueOption.map (fun declaration ->
+        [
+            TextChange(TextSpan(line.Start, 0), $"{padding start.Column}{declaration}{extraction.LineBreak}")
+            TextChange(extraction.Target.Replaced, replacement)
+        ])
+
+let private linesMovedWithBody (extraction: Extraction) (body: range) =
+    let lines = extraction.SourceText.Lines
+    let replaced = extraction.Target.Replaced
+
+    let stays (line: TextLine) =
+        extraction.LiteralLines.Contains line.LineNumber
+        || String.IsNullOrWhiteSpace(line.ToString())
+        || (line.Start >= replaced.Start && line.Start <= replaced.End)
+
+    [
+        for lineNumber in Line.toZ body.StartLine + 1 .. Line.toZ body.EndLine -> lines[lineNumber]
+    ]
+    |> List.filter (stays >> not)
+
+let private tryUnderKeyword
+    (extraction: Extraction)
+    (keywordEnd: pos)
+    (body: range)
+    (offsideColumn: int)
     (header: string)
     (replacement: string)
-    (indentSize: int)
-    (literalLines: HashSet<int>)
     =
-    let lines = sourceText.Lines
-    let lineBreak = lineBreakOf sourceText
-    let replacementChange = TextChange(target.Replaced, replacement)
+    let sourceText = extraction.SourceText
+    let keywordLine = sourceText.Lines[Line.toZ keywordEnd.Line]
 
-    let inFrontOfLine (start: pos) =
-        let line = lines[Line.toZ start.Line]
+    let gap =
+        TextSpan.FromBounds(keywordLine.Start + keywordEnd.Column, (textSpanOf sourceText body).Start)
 
-        tryDeclaration sourceText target.Content header (start.Column + indentSize) literalLines lineBreak
+    let newIndent =
+        max (leadingSpaces sourceText keywordLine) offsideColumn + extraction.IndentSize
+
+    let shift = newIndent - body.StartColumn
+    let movedLines = linesMovedWithBody extraction body
+
+    let indentation =
+        [
+            for line in movedLines do
+                if shift > 0 then
+                    TextChange(TextSpan(line.Start, 0), padding shift)
+                elif shift < 0 then
+                    TextChange(TextSpan(line.Start, -shift), "")
+        ]
+
+    let canMove =
+        movedLines
+        |> List.forall (fun line -> shift >= 0 || leadingSpaces sourceText line >= -shift)
+
+    if canMove && String.IsNullOrWhiteSpace(sourceText.ToString gap) then
+        tryDeclaration extraction header (newIndent + extraction.IndentSize)
         |> ValueOption.map (fun declaration ->
             [
-                TextChange(TextSpan(line.Start, 0), $"{padding start.Column}{declaration}{lineBreak}")
-                replacementChange
-            ])
+                TextChange(gap, $"{extraction.LineBreak}{padding newIndent}{declaration}{extraction.LineBreak}{padding newIndent}")
+                yield! indentation
+                TextChange(extraction.Target.Replaced, replacement)
+            ]
+            |> List.sortBy _.Span.Start)
+    else
+        ValueNone
+
+let tryDeclareInFront (extraction: Extraction) (anchor: Anchor) (header: string) (replacement: string) =
+    let sourceText = extraction.SourceText
 
     match anchor with
-    | Anchor.Statement start when isLineLeading sourceText start -> inFrontOfLine start
-    | Anchor.Clause(body = body) when isLineLeading sourceText body.Start -> inFrontOfLine body.Start
-    | Anchor.Clause(keywordEnd, body, limit) when keywordEnd.Line = body.StartLine && restOfLineIsClosers sourceText body.End ->
-        let keywordLine = lines[Line.toZ keywordEnd.Line]
-        let keywordEndOffset = keywordLine.Start + keywordEnd.Column
-        let bodySpan = textSpanOf sourceText body
-        let newIndent = max (leadingSpaces sourceText keywordLine) limit + indentSize
-        let shift = newIndent - body.StartColumn
-
-        let continuation =
-            [
-                for lineNumber in Line.toZ body.StartLine + 1 .. Line.toZ body.EndLine do
-                    let line = lines[lineNumber]
-
-                    let keep =
-                        literalLines.Contains lineNumber
-                        || String.IsNullOrWhiteSpace(line.ToString())
-                        || (line.Start >= target.Replaced.Start && line.Start <= target.Replaced.End)
-
-                    if not keep then
-                        line
-            ]
-
-        let movable =
-            continuation
-            |> List.forall (fun line -> shift >= 0 || leadingSpaces sourceText line >= -shift)
-
-        let separatedByWhitespace =
-            String.IsNullOrWhiteSpace(sourceText.ToString(TextSpan.FromBounds(keywordEndOffset, bodySpan.Start)))
-
-        if movable && separatedByWhitespace then
-            tryDeclaration sourceText target.Content header (newIndent + indentSize) literalLines lineBreak
-            |> ValueOption.map (fun declaration ->
-                [
-                    TextChange(
-                        TextSpan.FromBounds(keywordEndOffset, bodySpan.Start),
-                        $"{lineBreak}{padding newIndent}{declaration}{lineBreak}{padding newIndent}"
-                    )
-
-                    for line in continuation do
-                        if shift > 0 then
-                            TextChange(TextSpan(line.Start, 0), padding shift)
-                        elif shift < 0 then
-                            TextChange(TextSpan(line.Start, -shift), "")
-
-                    replacementChange
-                ]
-                |> List.sortBy _.Span.Start)
-        else
-            ValueNone
+    | Anchor.Statement start when isLineLeading sourceText start -> tryInFrontOfLine extraction start header replacement
+    | Anchor.Clause(body = body) when isLineLeading sourceText body.Start -> tryInFrontOfLine extraction body.Start header replacement
+    | Anchor.Clause(keywordEnd, body, offsideColumn) when keywordEnd.Line = body.StartLine && onlyClosersFollow sourceText body.End ->
+        tryUnderKeyword extraction keywordEnd body offsideColumn header replacement
     | _ -> ValueNone
 
-/// Changes that declare `header = <selection>`, preceded by the attribute lines, in front of the module-level let
-/// containing the selection, and put replacement where the selection was. Unavailable when that let does not start its
-/// line, as in `module M = let f () = 1`.
-let tryDeclareInFrontOfModuleLet
-    (sourceText: SourceText)
-    (target: ExtractionTarget)
-    (attributes: string list)
-    (header: string)
-    (replacement: string)
-    (indentSize: int)
-    (literalLines: HashSet<int>)
-    =
-    match tryEnclosingModuleLet target.Path with
+let tryDeclareInFrontOfModuleLet (extraction: Extraction) (attributes: string list) (header: string) (replacement: string) =
+    let sourceText = extraction.SourceText
+
+    match tryEnclosingModuleLet extraction.Target.Path with
     | Some(struct (SynBinding(xmlDoc = xmlDoc), declaration)) when isLineLeading sourceText declaration.Start ->
         let firstLine =
             if xmlDoc.IsEmpty then
@@ -686,17 +670,62 @@ let tryDeclareInFrontOfModuleLet
 
         let line = sourceText.Lines[Line.toZ firstLine]
         let indent = leadingSpaces sourceText line
-        let lineBreak = lineBreakOf sourceText
 
-        tryDeclaration sourceText target.Content header (indent + indentSize) literalLines lineBreak
+        tryDeclaration extraction header (indent + extraction.IndentSize)
         |> ValueOption.map (fun declaration ->
             let attributeLines =
                 attributes
-                |> List.map (fun attribute -> $"{padding indent}{attribute}{lineBreak}")
+                |> List.map (fun attribute -> $"{padding indent}{attribute}{extraction.LineBreak}")
                 |> String.concat ""
 
             [
-                TextChange(TextSpan(line.Start, 0), $"{attributeLines}{padding indent}{declaration}{lineBreak}{lineBreak}")
-                TextChange(target.Replaced, replacement)
+                TextChange(
+                    TextSpan(line.Start, 0),
+                    $"{attributeLines}{padding indent}{declaration}{extraction.LineBreak}{extraction.LineBreak}"
+                )
+                TextChange(extraction.Target.Replaced, replacement)
             ])
     | _ -> ValueNone
+
+let prepareExtraction
+    (context: CodeRefactoringContext)
+    (provider: string)
+    (sourceText: SourceText)
+    (parseTree: ParsedInput)
+    (target: ExtractionTarget)
+    =
+    cancellableTask {
+        let document = context.Document
+        let! options = document.GetOptionsAsync context.CancellationToken
+        let! defines, langVersion = document.GetFsharpParsingOptionsAsync provider
+        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync provider
+
+        return
+            {
+                Context = context
+                Provider = provider
+                SourceText = sourceText
+                Target = target
+                CheckResults = checkResults
+                IndentSize = options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
+                LiteralLines = linesInsideLiterals sourceText parseTree defines langVersion
+                LineBreak = lineBreakOf sourceText
+                Names = usedNames parseTree
+            }
+    }
+
+let registerRefactoring (extraction: Extraction) (title: string) (kind: string) (changes: TextChange list voption) =
+    match changes with
+    | ValueSome changes ->
+        let changedDocument =
+            cancellableTask {
+                TelemetryReporter.ReportSingleEvent(
+                    TelemetryEvents.RefactoringActivated,
+                    [| "name", box extraction.Provider; "kind", box kind |]
+                )
+
+                return extraction.Context.Document.WithText(extraction.SourceText.WithChanges changes)
+            }
+
+        extraction.Context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
+    | ValueNone -> ()

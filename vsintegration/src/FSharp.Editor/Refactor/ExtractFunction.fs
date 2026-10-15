@@ -241,7 +241,7 @@ module private FunctionExtraction =
     /// receiver of an assignment.
     let needsParentheses (target: ExtractionTarget) =
         match target.Expr, target.Path with
-        | SynExpr.Paren _, _ when target.Replaced = target.Content -> false
+        | SynExpr.Paren _, _ when target.Replaced = target.Extracted -> false
         | _, SyntaxNode.SynExpr(SynExpr.App _ | SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.TypeApp _) :: _ -> true
         | expr,
           SyntaxNode.SynExpr(SynExpr.DotSet(targetExpr = receiver) | SynExpr.DotIndexedSet(objectExpr = receiver) | SynExpr.DotNamedIndexedPropertySet(
@@ -308,22 +308,16 @@ module private FunctionExtraction =
         | _ -> ValueNone
 
     /// Changes that declare `header = <selection>` right after the member and call it where the selection was.
-    let tryMemberChanges
-        (sourceText: SourceText)
-        (target: ExtractionTarget)
-        (memberRange: range)
-        (header: string)
-        (call: string)
-        (indentSize: int)
-        (literalLines: HashSet<int>)
-        =
+    let tryMemberChanges (extraction: Extraction) (memberRange: range) (header: string) (call: string) =
+        let sourceText = extraction.SourceText
+        let target = extraction.Target
+        let lineBreak = extraction.LineBreak
         let lines = sourceText.Lines
         let firstLine = lines[Line.toZ memberRange.StartLine]
         let lastLine = lines[Line.toZ memberRange.EndLine]
         let indent = leadingSpaces sourceText firstLine
-        let lineBreak = lineBreakOf sourceText
 
-        tryDeclaration sourceText target.Content header (indent + indentSize) literalLines lineBreak
+        tryDeclaration extraction header (indent + extraction.IndentSize)
         |> ValueOption.map (fun declaration ->
             let insertion =
                 if lastLine.EndIncludingLineBreak > lastLine.End then
@@ -365,11 +359,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                 let! sourceText = document.GetTextAsync cancellationToken
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpExtractFunctionRefactoring)
 
-                let target =
-                    if context.Span.IsEmpty then
-                        tryParenthesizedLambdaAtCaret sourceText parseResults.ParseTree context.Span.Start
-                    else
-                        tryExtractionTarget sourceText parseResults.ParseTree context.Span
+                let target = trySelectedTarget sourceText parseResults.ParseTree context.Span
 
                 match target with
                 | ValueNone -> ()
@@ -382,8 +372,8 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                         let selection =
                             Range.mkRange
                                 document.FilePath
-                                (positionOf sourceText target.Content.Start)
-                                (positionOf sourceText target.Content.End)
+                                (positionOf sourceText target.Extracted.Start)
+                                (positionOf sourceText target.Extracted.End)
 
                         match FunctionExtraction.tryCaptures checkResults selection scope cancellationToken with
                         | ValueSome captures when
@@ -402,6 +392,19 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                 linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
 
                             let names = usedNames parseResults.ParseTree
+
+                            let extraction =
+                                {
+                                    Context = context
+                                    Provider = nameof FSharpExtractFunctionRefactoring
+                                    SourceText = sourceText
+                                    Target = target
+                                    CheckResults = checkResults
+                                    IndentSize = indentSize
+                                    LiteralLines = literalLines
+                                    LineBreak = lineBreakOf sourceText
+                                    Names = names
+                                }
 
                             let needingType =
                                 FunctionExtraction.positionsNeedingType target.Expr captures.MethodNameEnds
@@ -432,7 +435,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                             if not (captures.UsesBase || captures.UsesStructThis) then
                                 match anchorsOf target.Expr target.Path with
                                 | anchor :: _ ->
-                                    match tryDeclareInFront sourceText target anchor $"let {header}" call indentSize literalLines with
+                                    match tryDeclareInFront extraction anchor $"let {header}" call with
                                     | ValueSome changes -> register context sourceText (SR.ExtractToLocalFunction()) "local" changes
                                     | ValueNone -> ()
                                 | [] -> ()
@@ -446,9 +449,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                     || FunctionExtraction.isInRecursiveModuleLet target.Path
                                 )
                             then
-                                match
-                                    tryDeclareInFrontOfModuleLet sourceText target [] $"let private {header}" call indentSize literalLines
-                                with
+                                match tryDeclareInFrontOfModuleLet extraction [] $"let private {header}" call with
                                 | ValueSome changes -> register context sourceText (SR.ExtractToModuleFunction()) "module" changes
                                 | ValueNone -> ()
 
@@ -468,16 +469,7 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                                     let memberCall =
                                         $"{receiver}.{memberName}{FunctionExtraction.tupledArguments parameters}"
 
-                                    match
-                                        FunctionExtraction.tryMemberChanges
-                                            sourceText
-                                            target
-                                            memberRange
-                                            memberHeader
-                                            memberCall
-                                            indentSize
-                                            literalLines
-                                    with
+                                    match FunctionExtraction.tryMemberChanges extraction memberRange memberHeader memberCall with
                                     | ValueSome changes -> register context sourceText (SR.ExtractToPrivateMember()) "member" changes
                                     | ValueNone -> ()
                                 | ValueNone -> ()
