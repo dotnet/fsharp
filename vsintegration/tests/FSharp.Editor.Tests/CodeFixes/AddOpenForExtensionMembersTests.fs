@@ -2,77 +2,22 @@
 
 module FSharp.Editor.Tests.CodeFixes.AddOpenForExtensionMembersTests
 
-open System
-
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
+open AddOpenOnTopSharedTests
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-/// Everything the fix offers, in the order the lightbulb lists it: the opens, then the qualifications.
-let private allFixes code =
-    codeFix |> multiFix code Auto |> Seq.toList
-
-let private messages code = allFixes code |> List.map _.Message
+let private messages code =
+    codeFix |> allFixes code Auto |> List.map _.Message
 
 let private openMessages code =
-    messages code
-    |> List.filter (fun message -> message.StartsWith("open ", StringComparison.Ordinal))
+    codeFix |> openFixes code Auto |> List.map _.Message
 
-[<Fact>] // Only an open brings a C#-style extension method into scope; qualifying `xs.Where` makes no sense
-let ``Offers the namespace of a C# extension method called on a value`` () =
-    let code =
-        """module Module1
-
-let evens (xs: int list) = xs.Where(fun x -> x % 2 = 0)
-"""
-
-    let expected =
-        [
-            {
-                Message = "open System.Linq"
-                FixedCode =
-                    """module Module1
-
-open System.Linq
-
-let evens (xs: int list) = xs.Where(fun x -> x % 2 = 0)
-"""
-            }
-        ]
-
-    let actual = allFixes code
-
-    Assert.Equal<TestCodeFix list>(expected, actual)
-
-[<Fact>] // The receiver is an expression whose type the fix does not know, so every `Where` counts - `System.Data` has one too
-let ``Offers the namespace of a C# extension method called on an expression`` () =
-    let code =
-        """module Module1
-
-let evens () = [ 1; 2; 3 ].Where(fun x -> x % 2 = 0)
-"""
-
-    Assert.Equal<string list>([ "open System.Data"; "open System.Linq" ], messages code)
-
-[<Fact>] // `AsSpan` extends strings and arrays in different overloads of one class, and the content lists only one
-let ``Offers a C# extension method whose other overload extends the receiver`` () =
-    let code =
-        """module Module1
-
-let span (numbers: int[]) = numbers.AsSpan()
-"""
-
-    Assert.Equal<string list>([ "open System" ], messages code)
-
-[<Theory>] // `Shout` extends `IEnumerable<string>`, which a sequence of numbers is not
-[<InlineData("string", true)>]
-[<InlineData("int", false)>]
-let ``Offers a C# extension method only for the type arguments it extends`` (elementType: string, isOffered: bool) =
-    let code =
-        $"""namespace Lib
+let private shoutOnSequenceOf elementType =
+    $"""namespace Lib
 
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -88,18 +33,8 @@ module Use =
     let loud (xs: seq<{elementType}>) = xs.Shout()
 """
 
-    let expected = if isOffered then [ "open Lib" ] else []
-
-    Assert.Equal<string list>(expected, messages code)
-
-[<Theory>] // `Release` extends every `'T` that is an `IDisposable`, which a number is not
-[<InlineData("System.IO.MemoryStream", true)>]
-[<InlineData("int", false)>]
-let ``Offers a C# extension method on a type parameter only for a type that meets its constraints``
-    (receiverType: string, isOffered: bool)
-    =
-    let code =
-        $"""namespace Lib
+let private releaseOn receiverType =
+    $"""namespace Lib
 
 open System
 open System.Runtime.CompilerServices
@@ -115,14 +50,27 @@ module Use =
     let release (x: {receiverType}) = x.Release()
 """
 
-    let expected = if isOffered then [ "open Lib" ] else []
+let extensionOpens =
+    scenarios
+        [
+            ("a C# extension method called on an expression of unknown type: every namespace with one",
+             "module Module1\n\nlet evens () = [ 1; 2; 3 ].Where(fun x -> x % 2 = 0)\n",
+             [| "open System.Data"; "open System.Linq" |])
 
-    Assert.Equal<string list>(expected, messages code)
+            ("a C# extension method whose other overload extends the receiver",
+             "module Module1\n\nlet span (numbers: int[]) = numbers.AsSpan()\n",
+             [| "open System" |])
 
-[<Fact>]
-let ``Offers only the modules whose extension member extends the receiver`` () =
-    let code =
-        """module Module1
+            ("a C# extension on IEnumerable<string> extends a sequence of strings", shoutOnSequenceOf "string", [| "open Lib" |])
+
+            ("a C# extension on IEnumerable<string> does not extend a sequence of numbers", shoutOnSequenceOf "int", [||])
+
+            ("a C# extension on a disposable type parameter extends a stream", releaseOn "System.IO.MemoryStream", [| "open Lib" |])
+
+            ("a C# extension on a disposable type parameter does not extend a number", releaseOn "int", [||])
+
+            ("only the modules whose F# extension member extends the receiver",
+             """module Module1
 
 module StringExtensions =
     type System.String with
@@ -134,50 +82,44 @@ module NumberExtensions =
 
 let greeting = "hi"
 let loud = greeting.Shout
-"""
+""",
+             [| "open StringExtensions" |])
 
-    Assert.Equal<string list>([ "open StringExtensions" ], messages code)
+            ("an F# extension member of another type",
+             """module Module1
 
-[<Fact>]
-let ``Offers the module of an F# extension property`` () =
-    let code =
-        """module Module1
+module Extensions =
+    type System.String with
+        member s.Shout = s.ToUpper()
 
+let n = 42
+let loud = n.Shout
+""",
+             [||])
+
+            ("a module that requires qualified access",
+             """module Module1
+
+[<RequireQualifiedAccess>]
 module Extensions =
     type System.String with
         member s.Shout = s.ToUpper()
 
 let greeting = "hi"
 let loud = greeting.Shout
-"""
-
-    let expected =
-        [
-            {
-                Message = "open Extensions"
-                FixedCode =
-                    """module Module1
-
-module Extensions =
-    type System.String with
-        member s.Shout = s.ToUpper()
-
-open Extensions
-
-let greeting = "hi"
-let loud = greeting.Shout
-"""
-            }
+""",
+             [||])
         ]
 
-    let actual = allFixes code
+[<Theory; MemberData(nameof extensionOpens)>]
+let ``Offers the opens of the extension members that apply`` (_scenario: string, code: string, expected: string[]) =
+    Assert.Equal<string list>(List.ofArray expected, messages code)
 
-    Assert.Equal<TestCodeFix list>(expected, actual)
-
-[<Fact>] // Opening the namespace opens an [<AutoOpen>] module in it, and the module can still be opened on its own
-let ``Offers both the namespace that opens an AutoOpen module and the module itself`` () =
-    let code =
-        """namespace Lib
+let extensionOpensBesideQualifications =
+    scenarios
+        [
+            ("the namespace that opens an AutoOpen module, and the module itself",
+             """namespace Lib
 
 [<AutoOpen>]
 module StringExtensions =
@@ -188,61 +130,58 @@ namespace App
 
 module Use =
     let loud (s: string) = s.Shout()
-"""
+""",
+             [| "open Lib"; "open Lib.StringExtensions" |])
 
-    Assert.Equal<string list>([ "open Lib"; "open Lib.StringExtensions" ], openMessages code)
-
-[<Fact>]
-let ``Offers the module of an F# static extension member`` () =
-    let code =
-        """module Module1
+            ("the module of an F# static extension member",
+             """module Module1
 
 module Extensions =
     type System.String with
         static member Shout(s: string) = s.ToUpper()
 
 let loud = System.String.Shout "hi"
-"""
+""",
+             [| "open Extensions" |])
 
-    Assert.Equal<string list>([ "open Extensions" ], openMessages code)
-
-[<Fact>] // NEGATIVE: the extension is on `string`, and `n` is an `int`
-let ``Doesn't offer an F# extension member of another type`` () =
-    let code =
-        """module Module1
-
-module Extensions =
-    type System.String with
-        member s.Shout = s.ToUpper()
-
-let n = 42
-let loud = n.Shout
-"""
-
-    Assert.Equal<string list>([], messages code)
-
-[<Fact>] // NEGATIVE: a module that requires qualified access cannot be opened
-let ``Doesn't offer a module that requires qualified access`` () =
-    let code =
-        """module Module1
-
-[<RequireQualifiedAccess>]
-module Extensions =
-    type System.String with
-        member s.Shout = s.ToUpper()
-
-let greeting = "hi"
-let loud = greeting.Shout
-"""
-
-    Assert.Equal<string list>([], messages code)
-
-[<Fact>] // NEGATIVE: opening its class does not make `Where` a name of its own; qualifying it does
-let ``Doesn't offer to open the class of a C# extension method called by name`` () =
-    let code =
-        """module Module1
+            ("no open for the class of a C# extension method called by name",
+             """module Module1
 
 let evens (xs: int list) = Where(xs, fun x -> x % 2 = 0)
-"""
+""",
+             [||])
+        ]
 
-    Assert.Equal<string list>([], openMessages code)
+[<Theory; MemberData(nameof extensionOpensBesideQualifications)>]
+let ``Offers the opens of the extension members, whatever else is offered`` (_scenario: string, code: string, expected: string[]) =
+    Assert.Equal<string list>(List.ofArray expected, openMessages code)
+
+[<Fact>]
+let ``Offers the namespace of a C# extension method called on a value`` () =
+    let code =
+        "module Module1\n\nlet evens (xs: int list) = xs.Where(fun x -> x % 2 = 0)\n"
+
+    let expected =
+        [
+            {
+                Message = "open System.Linq"
+                FixedCode = code.Replace("let evens", "open System.Linq\n\nlet evens")
+            }
+        ]
+
+    Assert.Equal<TestCodeFix list>(expected, codeFix |> allFixes code Auto)
+
+[<Fact>]
+let ``Offers the module of an F# extension property`` () =
+    let code =
+        "module Module1\n\nmodule Extensions =\n    type System.String with\n        member s.Shout = s.ToUpper()\n\nlet greeting = \"hi\"\nlet loud = greeting.Shout\n"
+
+    let expected =
+        [
+            {
+                Message = "open Extensions"
+                FixedCode = code.Replace("let greeting", "open Extensions\n\nlet greeting")
+            }
+        ]
+
+    Assert.Equal<TestCodeFix list>(expected, codeFix |> allFixes code Auto)
