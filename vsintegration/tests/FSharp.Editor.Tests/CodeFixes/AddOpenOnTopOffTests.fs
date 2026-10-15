@@ -6,6 +6,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
+open AddOpenOnTopSharedTests
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
@@ -134,31 +135,6 @@ Console.WriteLine 42
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0039 for missing opens - module has an attribute on the same line`` () =
-    let code =
-        """[<AutoOpen>] module Module1
-
-Console.WriteLine 42
-"""
-
-    let expected =
-        Some
-            {
-                Message = "open System"
-                FixedCode =
-                    """[<AutoOpen>] module Module1
-
-open System
-
-Console.WriteLine 42
-"""
-            }
-
-    let actual = codeFix |> tryFix code mode
-
-    Assert.Equal(expected, actual)
-
-[<Fact>]
 let ``Fixes FS0039 for missing opens - nested module`` () =
     let code =
         """module Module1 =
@@ -183,44 +159,25 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
 
     Assert.Equal(expected, actual)
 
-[<Fact>]
-let ``Fixes FS0039 for missing opens - nested module declared on one line`` () =
-    let code =
-        """module Module1 = let x = Console.WriteLine 42
-"""
+let placements =
+    scenarios
+        [
+            ("nested module declared on one line",
+             "module Module1 = let x = Console.WriteLine 42\n",
+             "module Module1 =\n                 open System\n\n                 let x = Console.WriteLine 42\n")
 
-    let expected =
-        Some
-            {
-                Message = "open System"
-                FixedCode =
-                    """module Module1 =
-                 open System
+            ("use before a nested module declared on one line",
+             "module Module1\nlet x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n",
+             "module Module1\n\nopen System\n\nlet x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n")
 
-                 let x = Console.WriteLine 42
-"""
-            }
+            ("use in the attribute of a nested module declared on one line",
+             "module Module1\n[<Obsolete>] module Module2 = let y = 1\n",
+             "module Module1\n\nopen System\n\n[<Obsolete>] module Module2 = let y = 1\n")
+        ]
 
-    let actual = codeFix |> tryFix code mode
-
-    Assert.Equal(expected, actual)
-
-[<Theory>] // The open has to stay in `Module1`, the scope of the use, and not enter `Module2`
-[<InlineData("let x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n")>]
-[<InlineData("[<Obsolete>] module Module2 = let y = 1\n")>]
-let ``Fixes FS0039 for missing opens - the use is not in the nested module declared on one line`` (declarations: string) =
-    let code = "module Module1\n" + declarations
-
-    let expected =
-        Some
-            {
-                Message = "open System"
-                FixedCode = "module Module1\n\nopen System\n\n" + declarations
-            }
-
-    let actual = codeFix |> tryFix code mode
-
-    Assert.Equal(expected, actual)
+[<Theory; MemberData(nameof placements)>]
+let ``Fixes FS0039 for missing opens - placement`` (_scenario: string, code: string, fixedCode: string) =
+    expectOpenSystem mode code fixedCode
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
