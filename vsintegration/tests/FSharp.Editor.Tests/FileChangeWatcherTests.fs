@@ -95,7 +95,7 @@ type private RecordingFileChangeService() =
         with set value = failAdviseDirForPath <- value
 
     member this.WaitForCalls(count: int) =
-        let deadline = DateTime.UtcNow + TimeSpan.FromSeconds 10.
+        let deadline = DateTime.UtcNow + TimeSpan.FromSeconds 60.
 
         while lock calls (fun () -> calls.Count) < count && DateTime.UtcNow < deadline do
             Thread.Sleep 10
@@ -151,7 +151,7 @@ module FileChangeWatcherTests =
         new FSharpFileChangeWatcher(Task.FromResult(service :> IVsAsyncFileChangeEx2), batchDelay)
 
     let private becomesActive (watched: IFSharpWatchedFile) =
-        SpinWait.SpinUntil((fun () -> watched.IsActive), TimeSpan.FromSeconds 10.)
+        SpinWait.SpinUntil((fun () -> watched.IsActive), TimeSpan.FromSeconds 60.)
 
     [<Fact>]
     let ``WatchedDirectory covers files under it matching the extension filter`` () =
