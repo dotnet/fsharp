@@ -19,10 +19,18 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Editor.Tests.Helpers
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
+let private newLineOf (code: string) =
+    if code.IndexOf('\r') >= 0 then "\r\n" else "\n"
+
+let private moduleM (code: string) =
+    let newLine = newLineOf code
+    $"{newLine}module M{newLine}{newLine}{code}{newLine}"
+
 let private caretAt (code: string) (marker: string) =
     code.IndexOf(marker, StringComparison.Ordinal)
 
-let private refactored (code: string) (marker: string) =
+let private assertRefactored (marker: string) (before: string) (after: string) =
+    let code = moduleM before
     use context = TestContext.CreateWithCode code
 
     let document =
@@ -37,7 +45,7 @@ let private refactored (code: string) (marker: string) =
         |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
     )
 
-    (document.GetTextAsync() |> GetTaskResult).ToString()
+    Assert.Equal(moduleM after, (document.GetTextAsync() |> GetTaskResult).ToString())
 
 let private actionsIn (context: TestContext) (code: string) (marker: string) =
     tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertOptionalParameterStructRefactoring())
@@ -56,11 +64,9 @@ let private actionsOf (document: Document) (position: int) =
 
     actions
 
+[<Literal>]
 let private greeter =
-    """
-module M
-
-type Greeter() =
+    """type Greeter() =
     member _.Greet(name: string, ?greeting: string) =
         let greeting = defaultArg greeting "Hello"
         $"{greeting}, {name}"
@@ -68,14 +74,11 @@ type Greeter() =
 let a = Greeter().Greet("Ada")
 let b = Greeter().Greet("Ada", greeting = "Hi")
 let c = Greeter().Greet("Ada", ?greeting = Some "Hey")
-let d (g: string option) = Greeter().Greet("Ada", ?greeting = g)
-"""
+let d (g: string option) = Greeter().Greet("Ada", ?greeting = g)"""
 
+[<Literal>]
 let private structGreeter =
-    """
-module M
-
-type Greeter() =
+    """type Greeter() =
     member _.Greet(name: string, [<Struct>] ?greeting: string) =
         let greeting = defaultValueArg greeting "Hello"
         $"{greeting}, {name}"
@@ -83,412 +86,242 @@ type Greeter() =
 let a = Greeter().Greet("Ada")
 let b = Greeter().Greet("Ada", greeting = "Hi")
 let c = Greeter().Greet("Ada", ?greeting = ValueSome "Hey")
-let d (g: string option) = Greeter().Greet("Ada", ?greeting = ValueOption.ofOption g)
-"""
+let d (g: string option) = Greeter().Greet("Ada", ?greeting = ValueOption.ofOption g)"""
 
-[<Fact>]
-let ``Optional parameter and its optional arguments convert to value options`` () =
-    Assert.Equal(structGreeter, refactored greeter "?greeting")
-
-[<Fact>]
-let ``Struct optional parameter and its optional arguments convert back to options`` () =
-    Assert.Equal(greeter, refactored structGreeter "?greeting")
+let private counter =
+    moduleM
+        """type C() =
+    static member M(?x: int) = defaultArg x 0"""
 
 [<Theory>]
-[<InlineData("""
-module M
-
-type Counter() =
+[<InlineData("match cases",
+             """type Counter() =
     member _.Next(?step: int) =
         match step with
         | Some s -> s
-        | None -> 1
-""",
-             """
-module M
-
-type Counter() =
+        | None -> 1""",
+             """type Counter() =
     member _.Next([<Struct>] ?step: int) =
         match step with
         | ValueSome s -> s
-        | ValueNone -> 1
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+        | ValueNone -> 1""")>]
+[<InlineData("module functions and properties",
+             """type Counter() =
     static member Describe(?step: int) =
-        if Option.isSome step && step.IsSome then step |> Option.defaultValue 0 else 1
-""",
-             """
-module M
-
-type Counter() =
+        if Option.isSome step && step.IsSome then step |> Option.defaultValue 0 else 1""",
+             """type Counter() =
     static member Describe([<Struct>] ?step: int) =
-        if ValueOption.isSome step && step.IsSome then step |> ValueOption.defaultValue 0 else 1
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+        if ValueOption.isSome step && step.IsSome then step |> ValueOption.defaultValue 0 else 1""")>]
+[<InlineData("expression argument",
+             """type Counter() =
     static member Next(?step: int) = defaultArg step 1
 
-let next (step: int option) = Counter.Next(?step = (if true then step else None))
-""",
-             """
-module M
-
-type Counter() =
+let next (step: int option) = Counter.Next(?step = (if true then step else None))""",
+             """type Counter() =
     static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
-let next (step: int option) = Counter.Next(?step = ValueOption.ofOption (if true then step else None))
-""")>]
-let ``Uses of the parameter in the member body follow the conversion`` (before: string, after: string) =
-    Assert.Equal(after, refactored before "?step")
-    Assert.Equal(before, refactored after "?step")
-
-[<Fact>]
-let ``Value option passed to a struct optional parameter is converted to an option`` () =
-    let before =
-        """
-module M
-
-type Counter() =
-    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
-
-let next (step: int voption) = Counter.Next(?step = step)
-"""
-
-    let after =
-        """
-module M
-
-type Counter() =
-    static member Next(?step: int) = defaultArg step 1
-
-let next (step: int voption) = Counter.Next(?step = ValueOption.toOption step)
-"""
-
-    Assert.Equal(after, refactored before "?step")
-
-[<Fact>]
-let ``Struct attribute with a target marks a value option parameter`` () =
-    let before =
-        """
-module M
-
-type Counter() =
-    static member Next([<param: Struct>] ?step: int) = defaultValueArg step 1
-"""
-
-    let after =
-        """
-module M
-
-type Counter() =
-    static member Next(?step: int) = defaultArg step 1
-"""
-
-    Assert.Equal(after, refactored before "?step")
+let next (step: int option) = Counter.Next(?step = ValueOption.ofOption (if true then step else None))""")>]
+let ``Uses of the parameter in the member body follow the conversion`` (_scenario: string, before: string, after: string) =
+    assertRefactored "?" before after
+    assertRefactored "?" after before
 
 [<Theory>]
-[<InlineData("""
-module M
+[<InlineData("optional parameter to value option", greeter, structGreeter)>]
+[<InlineData("value option parameter to option", structGreeter, greeter)>]
+[<InlineData("value option argument of a struct parameter",
+             """type Counter() =
+    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
-type Counter() =
+let next (step: int voption) = Counter.Next(?step = step)""",
+             """type Counter() =
+    static member Next(?step: int) = defaultArg step 1
+
+let next (step: int voption) = Counter.Next(?step = ValueOption.toOption step)""")>]
+[<InlineData("struct attribute with a target",
+             """type Counter() =
+    static member Next([<param: Struct>] ?step: int) = defaultValueArg step 1""",
+             """type Counter() =
+    static member Next(?step: int) = defaultArg step 1""")>]
+[<InlineData("generic static member",
+             """type Counter() =
     static member Next<'T>(value: 'T, ?step: int) = value, defaultArg step 1
 
-let next = Counter.Next<string>("a", ?step = Some 2)
-""",
-             """
-module M
-
-type Counter() =
+let next = Counter.Next<string>("a", ?step = Some 2)""",
+             """type Counter() =
     static member Next<'T>(value: 'T, [<Struct>] ?step: int) = value, defaultValueArg step 1
 
-let next = Counter.Next<string>("a", ?step = ValueSome 2)
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+let next = Counter.Next<string>("a", ?step = ValueSome 2)""")>]
+[<InlineData("generic instance member",
+             """type Counter() =
     member _.Next<'T>(value: 'T, ?step: int) = value, defaultArg step 1
 
-let next = Counter().Next<string>("a", ?step = Some 2)
-""",
-             """
-module M
-
-type Counter() =
+let next = Counter().Next<string>("a", ?step = Some 2)""",
+             """type Counter() =
     member _.Next<'T>(value: 'T, [<Struct>] ?step: int) = value, defaultValueArg step 1
 
-let next = Counter().Next<string>("a", ?step = ValueSome 2)
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+let next = Counter().Next<string>("a", ?step = ValueSome 2)""")>]
+[<InlineData("comment between function and argument",
+             """type Counter() =
     static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
-let next (step: int option) = Counter.Next(?step = ValueOption.ofOption (* keep *) step)
-""",
-             """
-module M
-
-type Counter() =
+let next (step: int option) = Counter.Next(?step = ValueOption.ofOption (* keep *) step)""",
+             """type Counter() =
     static member Next(?step: int) = defaultArg step 1
 
-let next (step: int option) = Counter.Next(?step = (* keep *) step)
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+let next (step: int option) = Counter.Next(?step = (* keep *) step)""")>]
+[<InlineData("nested conversions",
+             """type Counter() =
     static member Next(?step: int) = defaultArg step 1
 
-let next = Counter.Next(?step = ValueOption.toOption (ValueSome (Counter.Next(?step = Some 2))))
-""",
-             """
-module M
-
-type Counter() =
+let next = Counter.Next(?step = ValueOption.toOption (ValueSome (Counter.Next(?step = Some 2))))""",
+             """type Counter() =
     static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
-let next = Counter.Next(?step = (ValueSome (Counter.Next(?step = ValueSome 2))))
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+let next = Counter.Next(?step = (ValueSome (Counter.Next(?step = ValueSome 2))))""")>]
+[<InlineData("shadowed ValueSome",
+             """type Counter() =
     static member Next(?step: int) = defaultArg step 1
 
 let ValueSome x = ValueSome (x + 1)
 
-let next = Counter.Next(?step = Some 2)
-""",
-             """
-module M
-
-type Counter() =
+let next = Counter.Next(?step = Some 2)""",
+             """type Counter() =
     static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
 let ValueSome x = ValueSome (x + 1)
 
-let next = Counter.Next(?step = ValueOption.ofOption (Some 2))
-""")>]
-[<InlineData("""
-module M
-
-type Counter() =
+let next = Counter.Next(?step = ValueOption.ofOption (Some 2))""")>]
+[<InlineData("shadowed ValueOption module",
+             """type Counter() =
     static member Next(?step: int) = defaultArg step 1
 
 module ValueOption =
     let ofOption (x: int option) = ValueSome 0
 
-let next (step: int option) = Counter.Next(?step = step)
-""",
-             """
-module M
-
-type Counter() =
+let next (step: int option) = Counter.Next(?step = step)""",
+             """type Counter() =
     static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
 module ValueOption =
     let ofOption (x: int option) = ValueSome 0
 
-let next (step: int option) = Counter.Next(?step = Microsoft.FSharp.Core.ValueOption.ofOption step)
-""")>]
-let ``Optional arguments at call sites follow the conversion`` (before: string, after: string) =
-    Assert.Equal(after, refactored before "?step")
+let next (step: int option) = Counter.Next(?step = Microsoft.FSharp.Core.ValueOption.ofOption step)""")>]
+[<InlineData("shadowed Some",
+             """let Some x = Some (x + 1)
 
-[<Fact>]
-let ``Title names the target option kind`` () =
-    Assert.Equal("Use 'voption' for optional parameter", (actionsAt greeter "?greeting" |> Seq.exactlyOne).Title)
-    Assert.Equal("Use 'option' for optional parameter", (actionsAt structGreeter "?greeting" |> Seq.exactlyOne).Title)
+type Counter() =
+    static member Next(?step: int) = defaultArg step 1
 
-let private counter =
-    """
-module M
+let next = Counter.Next(?step = Some 1)""",
+             """let Some x = Some (x + 1)
 
-type C() =
-    static member M(?x: int) = defaultArg x 0
-"""
+type Counter() =
+    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
 
-[<Theory>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = printfn "%A" x
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = Option.map string x
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-type B() =
-    abstract M: ?x: int -> int
-    default _.M(?x) = defaultArg x 0
-""",
-             "?x)")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = defaultArg x 0
-""",
-             "M(")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(x: int option) = defaultArg x 0
-""",
-             "x:")>]
-[<InlineData("""
-module M
-
-let defaultArg (x: int option) (fallback: int) = fallback
-
-type C() =
-    static member M(?x: int) = defaultArg x 0
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-module Option =
-    let isSome (x: int option) = true
-
-type C() =
-    static member M(?x: int) = Option.isSome x
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-module ValueOption =
-    let isSome (x: int voption) = false
-
-type C() =
-    static member M(?x: int) = Option.isSome x
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-let defaultValueArg (x: int voption) (fallback: int) = fallback
-
-type C() =
-    static member M(?x: int) = defaultArg x 0
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = Option.defaultValue x (Some None)
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = defaultArg x 0
-    static member M([<Struct>] ?x: int) = defaultValueArg x 1
-""",
-             "?x: int) = defaultArg")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) = defaultArg x 0
-    static member M([<Struct>] ?x: int) = defaultValueArg x 1
-""",
-             "?x: int) = defaultValueArg")>]
-[<InlineData("""
-module M
-
-type Box<'T>() =
-    static member M<'U>(a: 'T, b: 'U list, ?x: int) = defaultArg x 0
-    static member M<'V>(a: 'T, b: 'V list, [<Struct>] ?x: int) = defaultValueArg x 1
-""",
-             "?x: int) = defaultArg")>]
-[<InlineData("""
-module M
-
-type C() =
-    static member M(?x: int) =
-        match x with
-        | y -> Option.defaultValue 0 y
-""",
-             "?x")>]
-[<InlineData("""
-module M
-
-let (|>) (x: int option) f = f x
-
-type C() =
-    static member M(?x: int) = x |> Option.defaultValue 0
-""",
-             "?x")>]
-let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
+let next = Counter.Next(?step = ValueOption.ofOption (Some 1))""")>]
+let ``Optional arguments at call sites follow the conversion`` (_scenario: string, before: string, after: string) =
+    assertRefactored "?" before after
 
 [<Fact>]
 let ``Overload that differs in another parameter does not block the conversion`` () =
     let before =
-        """
-module M
-
-type Counter() =
+        """type Counter() =
     static member Next(start: int, [<Struct>] ?step: int) = start + defaultValueArg step 1
-    static member Next(start: string, ?step: int) = start.Length + defaultArg step 1
-"""
+    static member Next(start: string, ?step: int) = start.Length + defaultArg step 1"""
 
     let after =
-        """
-module M
-
-type Counter() =
+        """type Counter() =
     static member Next(start: int, [<Struct>] ?step: int) = start + defaultValueArg step 1
-    static member Next(start: string, [<Struct>] ?step: int) = start.Length + defaultValueArg step 1
-"""
+    static member Next(start: string, [<Struct>] ?step: int) = start.Length + defaultValueArg step 1"""
 
-    Assert.Equal(after, refactored before "?step: int) = start.Length")
+    assertRefactored "?step: int) = start.Length" before after
 
 [<Fact>]
-let ``Shadowed Some at a call site goes through ValueOption.ofOption`` () =
-    let before =
-        """
-module M
+let ``Title names the target option kind`` () =
+    Assert.Equal("Use 'voption' for optional parameter", (actionsAt (moduleM greeter) "?greeting" |> Seq.exactlyOne).Title)
+    Assert.Equal("Use 'option' for optional parameter", (actionsAt (moduleM structGreeter) "?greeting" |> Seq.exactlyOne).Title)
 
-let Some x = Some (x + 1)
+[<Theory>]
+[<InlineData("parameter passed to another function",
+             """type C() =
+    static member M(?x: int) = printfn "%A" x""",
+             "?x")>]
+[<InlineData("unsupported module function",
+             """type C() =
+    static member M(?x: int) = Option.map string x""",
+             "?x")>]
+[<InlineData("override of an abstract slot",
+             """type B() =
+    abstract M: ?x: int -> int
+    default _.M(?x) = defaultArg x 0""",
+             "?x)")>]
+[<InlineData("caret on the member name",
+             """type C() =
+    static member M(?x: int) = defaultArg x 0""",
+             "M(")>]
+[<InlineData("parameter that is not optional",
+             """type C() =
+    static member M(x: int option) = defaultArg x 0""",
+             "x:")>]
+[<InlineData("shadowed defaultArg",
+             """let defaultArg (x: int option) (fallback: int) = fallback
 
-type Counter() =
-    static member Next(?step: int) = defaultArg step 1
+type C() =
+    static member M(?x: int) = defaultArg x 0""",
+             "?x")>]
+[<InlineData("shadowed Option module",
+             """module Option =
+    let isSome (x: int option) = true
 
-let next = Counter.Next(?step = Some 1)
-"""
+type C() =
+    static member M(?x: int) = Option.isSome x""",
+             "?x")>]
+[<InlineData("shadowed ValueOption module",
+             """module ValueOption =
+    let isSome (x: int voption) = false
 
-    let after =
-        """
-module M
+type C() =
+    static member M(?x: int) = Option.isSome x""",
+             "?x")>]
+[<InlineData("shadowed defaultValueArg",
+             """let defaultValueArg (x: int voption) (fallback: int) = fallback
 
-let Some x = Some (x + 1)
+type C() =
+    static member M(?x: int) = defaultArg x 0""",
+             "?x")>]
+[<InlineData("parameter is the default value of Option.defaultValue",
+             """type C() =
+    static member M(?x: int) = Option.defaultValue x (Some None)""",
+             "?x")>]
+[<InlineData("overload with the converted signature, option side",
+             """type C() =
+    static member M(?x: int) = defaultArg x 0
+    static member M([<Struct>] ?x: int) = defaultValueArg x 1""",
+             "?x: int) = defaultArg")>]
+[<InlineData("overload with the converted signature, struct side",
+             """type C() =
+    static member M(?x: int) = defaultArg x 0
+    static member M([<Struct>] ?x: int) = defaultValueArg x 1""",
+             "?x: int) = defaultValueArg")>]
+[<InlineData("generic overload with the converted signature",
+             """type Box<'T>() =
+    static member M<'U>(a: 'T, b: 'U list, ?x: int) = defaultArg x 0
+    static member M<'V>(a: 'T, b: 'V list, [<Struct>] ?x: int) = defaultValueArg x 1""",
+             "?x: int) = defaultArg")>]
+[<InlineData("parameter rebound by a match",
+             """type C() =
+    static member M(?x: int) =
+        match x with
+        | y -> Option.defaultValue 0 y""",
+             "?x")>]
+[<InlineData("shadowed pipe",
+             """let (|>) (x: int option) f = f x
 
-type Counter() =
-    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
-
-let next = Counter.Next(?step = ValueOption.ofOption (Some 1))
-"""
-
-    Assert.Equal(after, refactored before "?step")
+type C() =
+    static member M(?x: int) = x |> Option.defaultValue 0""",
+             "?x")>]
+let ``No action`` (_scenario: string, code: string, marker: string) =
+    Assert.Empty(actionsAt (moduleM code) marker)
 
 [<Fact>]
 let ``Value option is not offered before F# 10`` () =
@@ -542,13 +375,10 @@ let ``Value option is offered when the dependent projects have F# 10`` (dependen
 [<Fact>]
 let ``No action when the file has a signature`` () =
     let signature =
-        """
-module M
-
-type C =
+        moduleM
+            """type C =
     new: unit -> C
-    static member M: ?x: int -> int
-"""
+    static member M: ?x: int -> int"""
 
     let document = RoslynTestHelpers.GetFsiAndFsDocuments signature counter |> Seq.last
 
@@ -557,8 +387,9 @@ type C =
 
 [<Fact>]
 let ``Action applies after an invocation that was cancelled`` () =
-    use context = TestContext.CreateWithCode greeter
-    let action = actionsIn context greeter "?greeting" |> Seq.exactlyOne
+    let code = moduleM greeter
+    use context = TestContext.CreateWithCode code
+    let action = actionsIn context code "?greeting" |> Seq.exactlyOne
 
     use cancellation = new CancellationTokenSource()
     let cancelled = action.GetOperationsAsync cancellation.Token
