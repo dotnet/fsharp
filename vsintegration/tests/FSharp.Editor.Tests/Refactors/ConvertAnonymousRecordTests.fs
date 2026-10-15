@@ -6,41 +6,31 @@ open Xunit
 
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
-let private refactorIn (context: TestContext) (code: string) (marker: string) =
-    refactorAt (new FSharpConvertAnonymousRecordRefactoring()) context code marker
+let private refactored (body: string) (marker: string) =
+    refactoredBy (new FSharpConvertAnonymousRecordRefactoring()) body marker
 
-let private refactored (code: string) (marker: string) =
-    refactoredBy (new FSharpConvertAnonymousRecordRefactoring()) code marker
+let private actionsAt (body: string) (marker: string) =
+    actionsBy (new FSharpConvertAnonymousRecordRefactoring()) body marker
 
-let private actionsAt (code: string) (marker: string) =
-    actionsBy (new FSharpConvertAnonymousRecordRefactoring()) code marker
+let private convertsBothWays (markers: string seq) (reference: string) (structs: string) =
+    convertsBothWaysBy (new FSharpConvertAnonymousRecordRefactoring()) markers reference structs
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let show () = printfn "%A" {| A = 1 |}
 """,
              "A = 1",
              """
-module M
-
 let show () = printfn "%A" struct {| A = 1 |}
 """)>]
 [<InlineData("""
-module M
-
 let items: list<{| A: int |}> = []
 """,
              "A: int",
              """
-module M
-
 let items: list<struct {| A: int |}> = []
 """)>]
 [<InlineData("""
-module M
-
 let config =
     {|
         Name = "x"
@@ -49,8 +39,6 @@ let config =
 """,
              "Size",
              """
-module M
-
 let config =
     struct {|
         Name = "x"
@@ -58,15 +46,12 @@ let config =
     |}
 """)>]
 let ``Anonymous record that flows nowhere else converts on its own`` (reference: string, marker: string, structs: string) =
-    Assert.Equal(structs, refactored reference marker)
-    Assert.Equal(reference, refactored structs marker)
+    convertsBothWays [ marker ] reference structs
 
 [<Fact>]
 let ``Value and the annotations it flows into convert together`` () =
     let reference =
         """
-module M
-
 let person = {| Name = "Ada"; Age = 36 |}
 let copy: {| Name: string; Age: int |} = person
 let age = person.Age
@@ -74,22 +59,17 @@ let age = person.Age
 
     let structs =
         """
-module M
-
 let person = struct {| Name = "Ada"; Age = 36 |}
 let copy: struct {| Name: string; Age: int |} = person
 let age = person.Age
 """
 
-    Assert.Equal(structs, refactored reference "Ada")
-    Assert.Equal(reference, refactored structs "Ada")
+    convertsBothWays [ "Ada" ] reference structs
 
 [<Fact>]
 let ``Parameter annotation converts its arguments`` () =
     let reference =
         """
-module M
-
 let greet (p: {| Name: string |}) = "Hi " + p.Name
 
 let ada = {| Name = "Ada" |}
@@ -98,44 +78,34 @@ let greetings = [ greet ada; greet {| Name = "Bob" |} ]
 
     let structs =
         """
-module M
-
 let greet (p: struct {| Name: string |}) = "Hi " + p.Name
 
 let ada = struct {| Name = "Ada" |}
 let greetings = [ greet ada; greet struct {| Name = "Bob" |} ]
 """
 
-    Assert.Equal(structs, refactored reference "Name: string")
-    Assert.Equal(reference, refactored structs "Name: string")
+    convertsBothWays [ "Name: string" ] reference structs
 
 [<Fact>]
 let ``Return type converts the result and the values it is bound to`` () =
     let reference =
         """
-module M
-
 let origin () : {| X: int; Y: int |} = {| X = 0; Y = 0 |}
 let start: {| X: int; Y: int |} = origin ()
 """
 
     let structs =
         """
-module M
-
 let origin () : struct {| X: int; Y: int |} = struct {| X = 0; Y = 0 |}
 let start: struct {| X: int; Y: int |} = origin ()
 """
 
-    Assert.Equal(structs, refactored reference "X: int")
-    Assert.Equal(reference, refactored structs "X: int")
+    convertsBothWays [ "X: int" ] reference structs
 
 [<Fact>]
 let ``Record field converts its values and the annotations reading it`` () =
     let reference =
         """
-module M
-
 type Person = { Info: {| Age: int |}; Tags: {| Count: int |} }
 
 let person = { Info = {| Age = 30 |}; Tags = {| Count = 0 |} }
@@ -144,47 +114,35 @@ let info: {| Age: int |} = person.Info
 
     let structs =
         """
-module M
-
 type Person = { Info: struct {| Age: int |}; Tags: {| Count: int |} }
 
 let person = { Info = struct {| Age = 30 |}; Tags = {| Count = 0 |} }
 let info: struct {| Age: int |} = person.Info
 """
 
-    Assert.Equal(structs, refactored reference "Age: int")
-    Assert.Equal(reference, refactored structs "Age: int")
+    convertsBothWays [ "Age: int" ] reference structs
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let point = {| X = 1 |}
 let moved = {| point with Y = 2 |}
 """,
              "X = 1",
              """
-module M
-
 let point = struct {| X = 1 |}
 let moved = {| point with Y = 2 |}
 """)>]
 [<InlineData("""
-module M
-
 let point = {| X = 1 |}
 let moved = {| point with Y = 2 |}
 """,
              "with",
              """
-module M
-
 let point = {| X = 1 |}
 let moved = struct {| point with Y = 2 |}
 """)>]
 let ``Copy-and-update converts independently of its source`` (reference: string, marker: string, structs: string) =
-    Assert.Equal(structs, refactored reference marker)
-    Assert.Equal(reference, refactored structs marker)
+    convertsBothWays [ marker ] reference structs
 
 [<Fact>]
 let ``Value declared in another file converts there`` () =
@@ -203,8 +161,8 @@ let name (p: {| Name: string |}) = p.Name
 let text = name A.person
 """
 
-    use context = TestContext.CreateWithCodeAndDependency code definition
-    let document = refactorIn context code "Name: string"
+    let struct (codeAfter, definitionAfter) =
+        refactoredAcrossFiles (new FSharpConvertAnonymousRecordRefactoring()) definition code "Name: string"
 
     Assert.Equal(
         """
@@ -213,7 +171,7 @@ module B
 let name (p: struct {| Name: string |}) = p.Name
 let text = name A.person
 """,
-        textOf document
+        codeAfter
     )
 
     Assert.Equal(
@@ -222,31 +180,18 @@ module A
 
 let person = struct {| Name = "Ada" |}
 """,
-        (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
+        definitionAfter
     )
-
-    // The checker reads the other file of a synthetic project from disk, so the result is checked as a new project.
-    let definitionAfter =
-        (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
-
-    use checkContext =
-        TestContext.CreateWithCodeAndDependency (textOf document) definitionAfter
-
-    Assert.Empty((checkContext.Solution.Projects |> Seq.head).Documents |> Seq.last |> errorsOf)
 
 [<Fact>]
 let ``Title names the target kind`` () =
     let reference =
         """
-module M
-
 let point = {| X = 1 |}
 """
 
     let structs =
         """
-module M
-
 let point = struct {| X = 1 |}
 """
 
@@ -255,8 +200,6 @@ let point = struct {| X = 1 |}
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let make () =
     try {| A = 1 |}
     finally ()
@@ -264,8 +207,6 @@ let make () =
 let copy: {| A: int |} = make ()
 """,
              """
-module M
-
 let make () =
     try struct {| A = 1 |}
     finally ()
@@ -273,8 +214,6 @@ let make () =
 let copy: struct {| A: int |} = make ()
 """)>]
 [<InlineData("""
-module M
-
 let make () =
     try {| A = 1 |}
     with _ -> {| A = 0 |}
@@ -282,8 +221,6 @@ let make () =
 let copy: {| A: int |} = make ()
 """,
              """
-module M
-
 let make () =
     try struct {| A = 1 |}
     with _ -> struct {| A = 0 |}
@@ -291,158 +228,110 @@ let make () =
 let copy: struct {| A: int |} = make ()
 """)>]
 let ``Result flowing out of try converts every branch of it`` (reference: string, structs: string) =
-    Assert.Equal(structs, refactored reference "A: int")
-    Assert.Equal(reference, refactored structs "A: int")
+    convertsBothWays [ "A: int" ] reference structs
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let person = {| A = 1 |}
 let copy = match person with | p -> p
 let typed: {| A: int |} = copy
 """,
              """
-module M
-
 let person = struct {| A = 1 |}
 let copy = match person with | p -> p
 let typed: struct {| A: int |} = copy
 """)>]
 [<InlineData("""
-module M
-
 let person = {| A = 1 |}
 let alias = person
 let typed: {| A: int |} = alias
 """,
              """
-module M
-
 let person = struct {| A = 1 |}
 let alias = person
 let typed: struct {| A: int |} = alias
 """)>]
 [<InlineData("""
-module M
-
 let (person: {| A: int |}) = {| A = 1 |}
 let typed: {| A: int |} = person
 """,
              """
-module M
-
 let (person: struct {| A: int |}) = struct {| A = 1 |}
 let typed: struct {| A: int |} = person
 """)>]
 let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
-    Assert.Equal(structs, refactored reference "A = 1")
-    Assert.Equal(reference, refactored structs "A = 1")
-    Assert.Equal(structs, refactored reference "A: int")
-    Assert.Equal(reference, refactored structs "A: int")
+    convertsBothWays [ "A = 1"; "A: int" ] reference structs
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let size (p: {| Size: int |}) = p.Size
 let total = (size) {| Size = 1 |}
 """,
              """
-module M
-
 let size (p: struct {| Size: int |}) = p.Size
 let total = (size) struct {| Size = 1 |}
 """)>]
 [<InlineData("""
-module M
-
 let make () = {| Size = 1 |}
 let copy: {| Size: int |} = (make) ()
 """,
              """
-module M
-
 let make () = struct {| Size = 1 |}
 let copy: struct {| Size: int |} = (make) ()
 """)>]
 [<InlineData("""
-module M
-
 let size = fun (p: {| Size: int |}) -> p.Size
 let total = size {| Size = 1 |}
 """,
              """
-module M
-
 let size = fun (p: struct {| Size: int |}) -> p.Size
 let total = size struct {| Size = 1 |}
 """)>]
 [<InlineData("""
-module M
-
 let make = fun () -> {| Size = 1 |}
 let copy: {| Size: int |} = make ()
 """,
              """
-module M
-
 let make = fun () -> struct {| Size = 1 |}
 let copy: struct {| Size: int |} = make ()
 """)>]
 [<InlineData("""
-module M
-
 let make () = {| Size = 1 |}
 let alias = make
 let copy: {| Size: int |} = alias ()
 """,
              """
-module M
-
 let make () = struct {| Size = 1 |}
 let alias = make
 let copy: struct {| Size: int |} = alias ()
 """)>]
 [<InlineData("""
-module M
-
 let grow (by: int) (p: {| Size: int |}) = p.Size + by
 let growOne = grow 1
 let total = growOne {| Size = 1 |}
 """,
              """
-module M
-
 let grow (by: int) (p: struct {| Size: int |}) = p.Size + by
 let growOne = grow 1
 let total = growOne struct {| Size = 1 |}
 """)>]
 let ``Function in parentheses, bound as a lambda, aliased or partly applied converts with its calls`` (reference: string, structs: string) =
-    for marker in [ "Size = 1"; "Size: int" ] do
-        Assert.Equal(structs, refactored reference marker)
-        Assert.Equal(reference, refactored structs marker)
+    convertsBothWays [ "Size = 1"; "Size: int" ] reference structs
 
 [<Theory>]
 [<InlineData("""
-module M
-
 type C() =
     member _.Size(p: {| Size: int |}) = p.Size
 
 let total = C().Size({| Size = 1 |})
 """,
              """
-module M
-
 type C() =
     member _.Size(p: struct {| Size: int |}) = p.Size
 
 let total = C().Size(struct {| Size = 1 |})
 """)>]
 [<InlineData("""
-module M
-
 type C() =
     member _.Grow(p: {| Size: int |}, by: int) = p.Size + by
 
@@ -450,8 +339,6 @@ let small = {| Size = 1 |}
 let total = C().Grow(p = small, by = 1)
 """,
              """
-module M
-
 type C() =
     member _.Grow(p: struct {| Size: int |}, by: int) = p.Size + by
 
@@ -459,32 +346,24 @@ let small = struct {| Size = 1 |}
 let total = C().Grow(p = small, by = 1)
 """)>]
 [<InlineData("""
-module M
-
 type C() =
     member _.Grow(by: int, p: {| Size: int |}) = p.Size + by
 
 let total = C().Grow(p = {| Size = 1 |}, by = 1)
 """,
              """
-module M
-
 type C() =
     member _.Grow(by: int, p: struct {| Size: int |}) = p.Size + by
 
 let total = C().Grow(p = struct {| Size = 1 |}, by = 1)
 """)>]
 let ``Member parameter converts with the arguments given for it by position or by name`` (reference: string, structs: string) =
-    for marker in [ "Size = 1"; "Size: int" ] do
-        Assert.Equal(structs, refactored reference marker)
-        Assert.Equal(reference, refactored structs marker)
+    convertsBothWays [ "Size = 1"; "Size: int" ] reference structs
 
 [<Fact>]
 let ``Generic parameter stops the conversion`` () =
     let reference =
         """
-module M
-
 let identity<'T> (x: 'T) = x
 let a = identity {| A = 1 |}
 let b = identity<{| B: int |}> {| B = 2 |}
@@ -492,22 +371,17 @@ let b = identity<{| B: int |}> {| B = 2 |}
 
     let structs =
         """
-module M
-
 let identity<'T> (x: 'T) = x
 let a = identity struct {| A = 1 |}
 let b = identity<{| B: int |}> {| B = 2 |}
 """
 
-    Assert.Equal(structs, refactored reference "A = 1")
-    Assert.Equal(reference, refactored structs "A = 1")
+    convertsBothWays [ "A = 1" ] reference structs
 
 [<Fact>]
 let ``Generic field does not stop the conversion`` () =
     let reference =
         """
-module M
-
 let make value = {| Value = value |}
 let a: {| Value: int |} = make 1
 let b: {| Value: string |} = make "s"
@@ -515,42 +389,32 @@ let b: {| Value: string |} = make "s"
 
     let structs =
         """
-module M
-
 let make value = struct {| Value = value |}
 let a: struct {| Value: int |} = make 1
 let b: struct {| Value: string |} = make "s"
 """
 
-    for marker in [ "Value = value"; "Value: int" ] do
-        Assert.Equal(structs, refactored reference marker)
-        Assert.Equal(reference, refactored structs marker)
+    convertsBothWays [ "Value = value"; "Value: int" ] reference structs
 
 [<Theory>]
-[<InlineData("\nmodule M\n\nlet x = id<_>{| A = 1 |}\n", "\nmodule M\n\nlet x = id<_> struct {| A = 1 |}\n")>]
-[<InlineData("\nmodule M\n\nlet x = id{| A = 1 |}\n", "\nmodule M\n\nlet x = id struct {| A = 1 |}\n")>]
-[<InlineData("\nmodule M\n\nlet f́ x = x\nlet y = f́{| A = 1 |}\n", "\nmodule M\n\nlet f́ x = x\nlet y = f́ struct {| A = 1 |}\n")>]
+[<InlineData("\nlet x = id<_>{| A = 1 |}\n", "\nlet x = id<_> struct {| A = 1 |}\n")>]
+[<InlineData("\nlet x = id{| A = 1 |}\n", "\nlet x = id struct {| A = 1 |}\n")>]
+[<InlineData("\nlet f́ x = x\nlet y = f́{| A = 1 |}\n", "\nlet f́ x = x\nlet y = f́ struct {| A = 1 |}\n")>]
 let ``Struct keyword is separated from a name or type arguments the record follows`` (before: string, after: string) =
     Assert.Equal(after, refactored before "A = 1")
 
 [<Theory>]
 [<InlineData("""
-module M
-
 let x = 1
 """,
              "1")>]
 [<InlineData("""
-module M
-
 type Point = { X: int }
 
 let point = { X = 1 }
 """,
              "X = 1")>]
 [<InlineData("""
-module M
-
 let quoted = <@ {| A = 1 |} @>
 """,
              "A = 1")>]
