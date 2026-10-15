@@ -146,6 +146,50 @@ module FSharpProjectOptionsManagerWatchTests =
         }
 
     [<Fact>]
+    let ``Turning snapshot reuse off releases the watches although the options stay cached`` () : Task =
+        task {
+            let project = createProject [ referenceDll ]
+            let watcher, manager = createManager project
+            let! _ = manager.TryGetOptionsByProject(project, CancellationToken.None)
+            Assert.Equal<string list>([ referenceDll ], watchedFiles watcher)
+
+            RoslynTestHelpers.SetEditorOptions
+                project.Solution
+                { snapshotReuseOptions with
+                    TransparentCompilerSnapshotReuse = false
+                }
+
+            // The same Roslyn project, so its options are a cache hit.
+            let! options = manager.TryGetOptionsByProject(project, CancellationToken.None)
+
+            Assert.True options.IsSome
+            Assert.Empty(watchedFiles watcher)
+        }
+
+    [<Fact>]
+    let ``Turning snapshot reuse on watches the references of options cached without it`` () : Task =
+        task {
+            let project = createProject [ referenceDll ]
+
+            RoslynTestHelpers.SetEditorOptions
+                project.Solution
+                { snapshotReuseOptions with
+                    TransparentCompilerSnapshotReuse = false
+                }
+
+            let watcher, manager = createManager project
+            let! _ = manager.TryGetOptionsByProject(project, CancellationToken.None)
+            Assert.Empty(watchedFiles watcher)
+
+            RoslynTestHelpers.SetEditorOptions project.Solution snapshotReuseOptions
+
+            let! options = manager.TryGetOptionsByProject(project, CancellationToken.None)
+
+            Assert.True options.IsSome
+            Assert.Equal<string list>([ referenceDll ], watchedFiles watcher)
+        }
+
+    [<Fact>]
     let ``ClearAllCaches releases every reference watch and forgets the project`` () : Task =
         task {
             let project = createProject [ referenceDll ]
