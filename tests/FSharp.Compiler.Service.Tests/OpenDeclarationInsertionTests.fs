@@ -4,16 +4,10 @@ open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 
-/// Computes the position an `open` would be inserted at for a use on `currentLine`, mirroring the real
-/// editor consumer (RoslynHelpers.insertContext): `FindNearestPointToInsertOpenDeclaration` followed by
+/// Computes the position an `open` would be inserted at, mirroring the real editor consumer
+/// (RoslynHelpers.insertContext): `FindNearestPointToInsertOpenDeclaration` followed by
 /// `AdjustInsertionPoint`. Asserting on the adjusted position is what the user actually sees.
-let private findOpenInsertionAt
-    (currentLine: int)
-    (insertionPoint: OpenStatementInsertionPoint)
-    (fileName: string)
-    (source: string)
-    (entity: string)
-    =
+let private findOpenInsertionAt currentLine insertionPoint fileName (source: string) (entity: string) =
     let parseTree = parseSourceCode (fileName, source)
 
     let lines = source.Replace("\r\n", "\n").Split('\n')
@@ -29,17 +23,8 @@ let private findOpenInsertionAt
     let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
     pos.Line, pos.Column
 
-/// The same for a use on the last line of the source that is not blank.
-let private findOpenInsertion (insertionPoint: OpenStatementInsertionPoint) (fileName: string) (source: string) (entity: string) =
-    let lines = source.Replace("\r\n", "\n").Split('\n')
-
-    let currentLine =
-        let mutable i = lines.Length - 1
-        while i > 0 && System.String.IsNullOrWhiteSpace(lines.[i]) do
-            i <- i - 1
-        i + 1
-
-    findOpenInsertionAt currentLine insertionPoint fileName source entity
+let private findOpenInsertion insertionPoint fileName (source: string) entity =
+    findOpenInsertionAt (source.TrimEnd().Split('\n').Length) insertionPoint fileName source entity
 
 let private findOpenInsertionLine fileName source entity =
     findOpenInsertion OpenStatementInsertionPoint.TopLevel fileName source entity |> fst
@@ -128,36 +113,24 @@ let ``Open not forced above named module in fsx`` () =
 let x = System.IO.File.ReadAllText "a"
 """
     let line = findOpenInsertionLine "test.fsx" source "System.IO"
-    // Inside the module, next to the code rather than in the gap under the header.
     Assert.Equal(3, line)
 
-[<Fact>]  // Regression: an attribute sharing the header's line must not read as an implicit module
-let ``Open not forced above module with attribute on same line`` () =
-    let source = """[<AutoOpen>] module Foo
+[<Theory>]
+[<InlineData("""[<AutoOpen>] module Foo
 
 let x = System.IO.File.ReadAllText "a"
-"""
-    let line = findOpenInsertionLine "test.fs" source "System.IO"
-    Assert.Equal(3, line)
-
-[<Fact>]  // Regression: the header line is known from the tree, not from a blank line below it
-let ``Open placed inside module without a blank line under the header`` () =
-    let source = """module Foo
+""", 3)>]
+[<InlineData("""module Foo
 let x = System.IO.File.ReadAllText "a"
-"""
-    let line = findOpenInsertionLine "test.fs" source "System.IO"
-    Assert.Equal(2, line)
-
-[<Fact>]
-let ``Open placed under namespace without a blank line under the header`` () =
-    let source = """namespace Ns
+""", 2)>]
+[<InlineData("""namespace Ns
 type T() =
     member _.M() = System.IO.File.ReadAllText "a"
-"""
-    let line = findOpenInsertionLine "test.fs" source "System.IO"
-    Assert.Equal(2, line)
+""", 2)>]
+let ``Open goes below the header of a module or namespace, with or without a blank line`` (source: string, expectedLine: int) =
+    Assert.Equal(expectedLine, findOpenInsertionLine "test.fs" source "System.IO")
 
-[<Fact>]  // Regression: the line below a nested module declared on one line is already past the use
+[<Fact>]
 let ``Open placed at the first declaration of a nested module declared on one line`` () =
     let source = """module Top
 
@@ -166,10 +139,10 @@ module M = let x = System.IO.File.ReadAllText "a"
     let pos = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
     Assert.Equal((3, 11), pos)
 
-[<Theory>]  // Regression: the open has to stay in `Top`, the scope of the use, and not enter `M`
+[<Theory>]
 [<InlineData("module M = let y = 1", 2)>]
 [<InlineData("[<Obsolete>] module M = let y = 1", 2)>]
-[<InlineData("[<Obsolete>] module M = let y = 1", 3)>]  // the use is the attribute on the header's line
+[<InlineData("[<Obsolete>] module M = let y = 1", 3)>]
 let ``Open stays out of a nested module declared on one line that the use is not in`` (nestedModule: string, useLine: int) =
     let source = $"module Top\nlet x = Console.WriteLine 42\n{nestedModule}\n"
     let pos = findOpenInsertionAt useLine OpenStatementInsertionPoint.Nearest "test.fs" source "System"

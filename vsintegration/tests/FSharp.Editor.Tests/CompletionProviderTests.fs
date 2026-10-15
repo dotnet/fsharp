@@ -149,15 +149,13 @@ module CompletionProviderTests =
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
-    /// Verify the text that committing an item from a namespace that is not opened leaves, the `open` included.
     let VerifyCompletionWithOpen (fileContents: string, marker: string, itemName: string, expected: string) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let sourceText = SourceText.From(fileContents)
 
         let document =
             RoslynTestHelpers.CreateSolution(fileContents)
             |> RoslynTestHelpers.GetSingleDocument
-
-        let sourceText = SourceText.From(fileContents)
 
         let span =
             CompletionUtils.getDefaultCompletionListSpan (
@@ -170,9 +168,6 @@ module CompletionProviderTests =
                 CancellationToken.None
             )
 
-        let assemblyContentProvider = AssemblyContentProvider()
-
-        // A completion item gets its span from the context it is added to.
         let context =
             let provider =
                 { new CompletionProvider() with
@@ -182,34 +177,32 @@ module CompletionProviderTests =
             CompletionContext(provider, document, caretPosition, span, CompletionTrigger.Invoke, null, CancellationToken.None)
 
         let change =
-            let task =
-                cancellableTask {
-                    let! items =
-                        FSharpCompletionProvider.ProvideCompletionsAsyncAux(
-                            document,
-                            caretPosition,
-                            assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies,
-                            false
-                        )
+            cancellableTask {
+                let! items =
+                    FSharpCompletionProvider.ProvideCompletionsAsyncAux(
+                        document,
+                        caretPosition,
+                        AssemblyContentProvider().GetAllEntitiesInProjectAndReferencedAssemblies,
+                        false
+                    )
 
-                    let item =
-                        items
-                        |> Seq.find (fun item -> item.DisplayText = itemName && item.Properties.ContainsKey "NamespaceToOpen")
+                let item =
+                    items
+                    |> Seq.find (fun item -> item.DisplayText = itemName && item.Properties.ContainsKey "NamespaceToOpen")
 
-                    context.AddItem item
+                // CompletionItem.WithSpan is obsolete: the context hands the item its span.
+                context.AddItem item
 
-                    return!
-                        FSharpCompletionProvider.GetChangeAsyncAux(
-                            document,
-                            item,
-                            FSharp.Compiler.EditorServices.OpenStatementInsertionPoint.Nearest
-                        )
-                }
-                |> CancellableTask.start CancellationToken.None
+                return!
+                    FSharpCompletionProvider.GetChangeAsyncAux(
+                        document,
+                        item,
+                        FSharp.Compiler.EditorServices.OpenStatementInsertionPoint.Nearest
+                    )
+            }
+            |> CancellableTask.start CancellationToken.None
 
-            task.Result
-
-        Assert.Equal(expected, sourceText.WithChanges(change.TextChange).ToString())
+        Assert.Equal(expected, sourceText.WithChanges(change.Result.TextChange).ToString())
 
     [<Fact>]
     let ShouldTriggerCompletionAtCorrectMarkers () =

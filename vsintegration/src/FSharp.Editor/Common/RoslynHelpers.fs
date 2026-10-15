@@ -231,12 +231,6 @@ module internal RoslynHelpers =
         Async.Start(computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
-    /// <summary>
-    /// The change that adds an open declaration at the point the insertion context names.
-    /// </summary>
-    /// <param name="sourceText">SourceText.</param>
-    /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
-    /// <param name="declaration">The declaration to add, `open Foo` or `open type Foo`.</param>
     let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (declaration: string) : TextChange =
         let getLineStr line =
             if line >= 0 && line < sourceText.Lines.Count then
@@ -250,50 +244,40 @@ module internal OpenDeclarationHelper =
         let lineBreakOf (line: TextLine) =
             sourceText.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak))
 
-        // Follow the line endings the file itself uses rather than assuming the host's. Only the last
-        // line can lack a line break, and every line above it has one.
         let lineBreak =
             match lineBreakOf line with
             | "" when line.LineNumber > 0 -> lineBreakOf sourceText.Lines[line.LineNumber - 1]
             | "" -> Environment.NewLine
             | breakChars -> breakChars
 
-        let isHeaderScope =
+        let blankLineAboveOpen =
             match ctx.ScopeKind with
             | ScopeKind.TopModule
             | ScopeKind.Namespace
-            | ScopeKind.NestedModule -> true
-            | _ -> false
+            | ScopeKind.NestedModule when getLineStr (line.LineNumber - 1) <> "" -> lineBreak
+            | _ -> ""
 
-        // A declaration header sitting directly above becomes its own paragraph, so the open block
-        // below it reads as a block rather than as part of the header.
-        let separatorAbove =
-            if isHeaderScope && getLineStr (line.LineNumber - 1) <> "" then
-                lineBreak
-            else
+        let blankLineBelowOpen =
+            if ctx.ScopeKind = ScopeKind.OpenDeclaration || getLineStr line.LineNumber = "" then
                 ""
-
-        let separatorBelow =
-            match ctx.ScopeKind with
-            // The open joins the block of opens right above it.
-            | ScopeKind.OpenDeclaration -> lineBreak
-            | _ when getLineStr line.LineNumber = "" -> lineBreak
-            | _ -> lineBreak + lineBreak
+            else
+                lineBreak
 
         let margin = String(' ', pos.Column)
         let column = min pos.Column (line.End - line.Start)
-        let trivia = sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
 
-        // Anything but whitespace before the insertion point is what the scope's first declaration
-        // follows on its line - a block comment closing there, or the header of a module declared on
-        // one line. Break the line at the declaration rather than write the open into what precedes it.
-        if trivia.Length > 0 then
+        let textBeforeDeclaration =
+            sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
+
+        let openLine = margin + declaration + lineBreak
+
+        if textBeforeDeclaration.Length > 0 then
             TextChange(
-                TextSpan(line.Start + trivia.Length, column - trivia.Length),
-                lineBreak + margin + declaration + lineBreak + lineBreak + margin
+                TextSpan(line.Start + textBeforeDeclaration.Length, column - textBeforeDeclaration.Length),
+                lineBreak + openLine + lineBreak + margin
             )
         else
-            TextChange(TextSpan(line.Start, 0), separatorAbove + margin + declaration + separatorBelow)
+            TextChange(TextSpan(line.Start, 0), blankLineAboveOpen + openLine + blankLineBelowOpen)
 
     /// <summary>
     /// Inserts open declaration into `SourceText`.
