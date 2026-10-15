@@ -30,6 +30,15 @@ let CountFormat = $"{Items}: %%d"
 [<Literal>]
 let Verbatim = $@"\{nameof Root}" + $"{Root}"
 
+[<Literal>]
+let Version = 2
+
+[<Literal>]
+let Scalars = $"v{Version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{Root}"
+
+let root, version = Root, Version
+let scalarsAtRunTime = $"v{version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{root}"
+
 type TagAttribute(tags: string[]) =
     inherit System.Attribute()
     member _.Tags = tags
@@ -42,11 +51,13 @@ let tag = typeof<Tagged>.GetCustomAttributes(typeof<TagAttribute>, false) |> Arr
 let quotationIsFolded = match <@ $"{Root}/items" @> with Quotations.Patterns.Value _ -> true | _ -> false
 
 printfn "%s|%s|%s|%s|%s|%s|%b" Items ItemById Verbatim (sprintf CountFormat 3) (String.concat "," tag.Tags) tag.Name quotationIsFolded
+printfn "%s|%b" Scalars (Scalars = scalarsAtRunTime)
 """
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains @"api/v2/items|api/v2/items/{id}|\Rootapi/v2|api/v2/items: 3|api/v2/a,api/v2/b|api/v2!|false"
+        |> withStdOutContains "v2-True|-1|18446744073709551615|-12.3400|api/v2|true"
 
     [<Fact>]
     let ``An Obsolete message can be a constant interpolated string`` () =
@@ -101,13 +112,15 @@ type FromLiteral = Provided.Text<Items>"""
         |> shouldSucceed
 
     [<Theory>]
-    [<InlineData("{Version}", 3925)>]
+    [<InlineData("{1.5}", 3925)>]
     [<InlineData("{Root,10}", 3925)>]
-    [<InlineData("%s{Root}", 3925)>]
+    [<InlineData("%d{Version}", 3925)>]
+    [<InlineData("%s{Version}", 3925)>]
     [<InlineData("{NoValue}", 3925)>]
+    [<InlineData("{System.DayOfWeek.Monday}", 3925)>]
     [<InlineData("{dir}", 267)>]
     [<InlineData("{dir + dir}{missing}", 39)>]
-    let ``A hole must be a non-null constant string without alignment or format specifier`` (hole: string, errorCode: int) =
+    let ``A hole must be a non-null constant string, integer, decimal, character or Boolean`` (hole: string, errorCode: int) =
         preview $"""
 module Program
 
@@ -132,13 +145,10 @@ let Rejected = $"{hole}"
 module Program
 
 [<Literal>]
-let Version = 2
-
-[<Literal>]
-let Twice = $"{Version}{Version}"
+let Twice = $"{1.5}{1.5}"
 """
         |> typecheck
-        |> withSingleDiagnostic (Error 3925, Line 8, Col 16, Line 8, Col 23, "This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+        |> withSingleDiagnostic (Error 3925, Line 5, Col 16, Line 5, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.")
 
     [<Fact>]
     let ``Before the preview language version interpolated strings in literals are unchanged`` () =

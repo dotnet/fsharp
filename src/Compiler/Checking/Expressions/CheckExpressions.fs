@@ -4202,18 +4202,30 @@ let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern
     | None -> eliminateNull inputTy pat
     | _ -> inputTy
 
+[<return: Struct>]
+let (|PrimitiveConstText|_|) (c: Const) =
+    match c with
+    | Const.SByte n -> ValueSome(string n)
+    | Const.Int16 n -> ValueSome(string n)
+    | Const.Int32 n -> ValueSome(string n)
+    | Const.Int64 n -> ValueSome(string n)
+    | Const.Byte n -> ValueSome(string n)
+    | Const.UInt16 n -> ValueSome(string n)
+    | Const.UInt32 n -> ValueSome(string n)
+    | Const.UInt64 n -> ValueSome(string n)
+    | Const.Decimal n -> ValueSome(string n)
+    | Const.Char n -> ValueSome(string n)
+    | Const.Bool n -> ValueSome(string n)
+    | _ -> ValueNone
+
 let tryConstantHoleText (g: TcGlobals) (formatting: SynInterpolationFormatting) (mHole: range) (hole: Expr) =
-    match formatting with
-    | SynInterpolationFormatting.DotNet(None, None) when isStringTy g (tyOfExpr g hole) ->
-        match EvalLiteralExprOrAttribArg g hole with
-        | Expr.Const(Const.String text, _, _) -> ValueSome text
-        | Expr.Const(Const.Zero, _, _) ->
-            errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
-            ValueNone
-        | _ -> ValueNone
-    | _ ->
+    match formatting, EvalLiteralExprOrAttribArg g hole with
+    | (SynInterpolationFormatting.DotNet(None, None) | SynInterpolationFormatting.Printf("%s", _)), Expr.Const(Const.String text, _, _) -> ValueSome text
+    | SynInterpolationFormatting.DotNet(None, None), Expr.Const(PrimitiveConstText text, _, ty) when not (isEnumTy g ty) -> ValueSome text
+    | _, Expr.Const _ ->
         errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
         ValueNone
+    | _ -> ValueNone
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints
