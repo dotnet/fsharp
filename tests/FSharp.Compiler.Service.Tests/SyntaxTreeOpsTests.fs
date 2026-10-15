@@ -24,7 +24,7 @@ let ``tryPopUnaryArg splits the root off a chain that pushUnaryArg restores`` (s
     match tryPopUnaryArg body with
     | ValueSome(struct (root, popped)) ->
         Assert.Equal("x", root.idText)
-        Assert.Equal(sprintf "%A" body, sprintf "%A" (pushUnaryArg popped root))
+        Assert.Equal($"%A{body}", $"%A{pushUnaryArg popped root}")
     | ValueNone -> Assert.Fail $"Expected {source} to have a root"
 
 [<Theory>]
