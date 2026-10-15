@@ -174,11 +174,24 @@ module internal ProjectSnapshotCache =
     let latest =
         ConcurrentDictionary<ProjectId, Project * VersionStamp * Set<string> * FSharpProjectOptions * FSharpProjectSnapshot>()
 
-    let removeProject (projectId: ProjectId) =
+    let mutable private removals = 0
+
+    /// How many removals the workspace has reported so far. A request that finds it moved while it was under
+    /// way may have built a snapshot of a project the workspace dropped, and the project's id cannot tell:
+    /// a reload brings the same ids back.
+    let removalsSoFar () =
+        System.Threading.Volatile.Read &removals
+
+    let forget (projectId: ProjectId) =
         snapshots.Clear(fun key -> key = projectId)
         latest.TryRemove projectId |> ignore
 
+    let removeProject (projectId: ProjectId) =
+        System.Threading.Interlocked.Increment &removals |> ignore
+        forget projectId
+
     let clear () =
+        System.Threading.Interlocked.Increment &removals |> ignore
         snapshots.Clear()
         latest.Clear()
 
@@ -395,6 +408,8 @@ module private CheckerExtensions =
             }
 
         async {
+            let removalsAtStart = ProjectSnapshotCache.removalsSoFar ()
+
             let! snapshot =
                 ProjectSnapshotCache.snapshots.Get(
                     key,
@@ -407,10 +422,11 @@ module private CheckerExtensions =
                     }
                 )
 
-            // Stored first and checked after: a project that left the workspace while its snapshot was being
-            // built is dropped here, or by the workspace's own handler if it leaves after this check.
-            if not (project.Solution.Workspace.CurrentSolution.ContainsProject project.Id) then
-                ProjectSnapshotCache.removeProject project.Id
+            // The handler that follows the workspace may have run before this request stored its entries, and a
+            // reload brings the project's id back, so the id says nothing: if a removal happened meanwhile, this
+            // project's entries go, and the next request builds them again.
+            if ProjectSnapshotCache.removalsSoFar () <> removalsAtStart then
+                ProjectSnapshotCache.forget project.Id
 
             return snapshot
         }
