@@ -1116,6 +1116,13 @@ let x = A.``B C``
         VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
 
     [<Fact>]
+    let ``Completion after backticked binding name`` () =
+        let fileContents = "let ``what is this`` = System.DateTime.N"
+
+        VerifyCompletionList(fileContents, "System.DateTime.N", [ "Now" ], [])
+        VerifyCompletionListSpan(fileContents, "System.DateTime.N", "N")
+
+    [<Fact>]
     let ``Completion list span works with partial backtick identifier`` () =
         let fileContents =
             """
