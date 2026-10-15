@@ -530,7 +530,12 @@ type FSharpChecker
             ?userOpName: string
         ) =
         let userOpName = defaultArg userOpName "Unknown"
-        let documentSource = defaultArg documentSource DocumentSource.FileSystem
+
+        let documentSource =
+            match documentSource, getSource with
+            | Some documentSource, _ -> documentSource
+            | None, Some getSource -> DocumentSource.Custom getSource
+            | None, None -> DocumentSource.FileSystem
 
         backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
