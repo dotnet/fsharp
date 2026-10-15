@@ -9,21 +9,13 @@ open FSharp.Compiler.Text
 
 open StructConversion
 
-/// Both forms differ only by `struct` in front of `{|`, which the node's range starts with.
 let private keywordChanges (sourceText: SourceText) (toStruct: bool) (isStruct: bool) (m: range) =
     match isStruct, toStruct with
     | true, true
     | false, false -> []
     | false, true ->
         let start = (spanOf sourceText m).Start
-
-        let keyword =
-            if needsSpaceBefore sourceText start then
-                " struct "
-            else
-                "struct "
-
-        [ TextChange(TextSpan(start, 0), keyword) ]
+        [ TextChange(TextSpan(start, 0), structAt sourceText start) ]
     | true, false -> [ TextChange(structKeyword sourceText m, "") ]
 
 let kind: StructKind =
