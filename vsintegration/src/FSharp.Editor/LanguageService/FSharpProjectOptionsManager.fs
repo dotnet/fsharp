@@ -242,6 +242,22 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
         referenceWatches.Clear()
 
+    let shouldWatchReferences (project: Project) =
+        checker.UsesTransparentCompiler
+        && project.IsTransparentCompilerSnapshotReuseEnabled
+
+    // Callers hold `publication`. The setting can change while a project's options stay cached, so the watches
+    // follow it on every request and not only when the options are computed; a request that finds them as they
+    // should be costs one lookup.
+    let reconcileReferenceWatchesNoLock (projectId: ProjectId) (projectOptions: FSharpProjectOptions) shouldWatch =
+        let watched = referenceWatches.ContainsKey projectId
+
+        if shouldWatch then
+            if not watched then
+                watchReferenceFilesNoLock projectId projectOptions
+        elif watched then
+            clearReferenceWatchesNoLock projectId
+
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
         let epoch = publication.Current
@@ -564,16 +580,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
                             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
+                            // Read outside the gate: it is a lookup in the workspace's services.
+                            let shouldWatch = shouldWatchReferences project
+
                             let published =
                                 publication.TryPublish(
                                     epoch,
                                     fun () ->
                                         cache.[projectId] <- struct (project, parsingOptions, projectOptions)
 
-                                        if
-                                            checker.UsesTransparentCompiler
-                                            && project.IsTransparentCompilerSnapshotReuseEnabled
-                                        then
+                                        if shouldWatch then
                                             watchReferenceFilesNoLock projectId projectOptions
                                         else
                                             clearReferenceWatchesNoLock projectId
@@ -602,6 +618,11 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
+                    let shouldWatch = shouldWatchReferences project
+
+                    publication.TryPublish(epoch, fun () -> reconcileReferenceWatchesNoLock projectId projectOptions shouldWatch)
+                    |> ignore
+
                     return ValueSome struct (parsingOptions, projectOptions)
         }
 
