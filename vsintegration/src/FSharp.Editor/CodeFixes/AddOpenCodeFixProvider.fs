@@ -32,13 +32,9 @@ type internal MemberReceiver =
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
-    // A name can be reachable from a great many places, and the lightbulb is a menu a person reads.
-    // The same reason Roslyn's add-import fix stops at five suggestions and its fully-qualify at three.
     let maxOpenSuggestions = 5
     let maxQualifySuggestions = 3
 
-    // Which assembly the entity crawler reached first is no order to offer suggestions in. Sort them
-    // the way Roslyn's add-import fix does: what `System` holds first, the rest alphabetically after.
     let systemFirst (name: ReadOnlySpan<char>) (sortText: string) =
         let isInSystem =
             name.Equals("System".AsSpan(), StringComparison.Ordinal)
@@ -54,8 +50,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    // The qualifier stands in for the first identifier written, whichever one the diagnostic is on:
-    // choosing `N.M.T` for `M.T` rewrites `M`, not `T`.
     let qualifySymbolFix (firstIdentSpan: TextSpan) (fullName, qualifier) =
         {
             Name = CodeFix.AddOpen
@@ -81,15 +75,13 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DeclaringEntity
         | _ -> None
 
-    // Below its namespace, each ident of a symbol's name names the module or type the next one is
-    // declared in. Finds what the first `count` of `identCount` idents name, unless that is a namespace.
-    let rec tryFindEntityNamedBy count identCount (symbol: FSharpSymbol) =
+    let rec tryFindModuleOrTypeNamedByLeading (leadingIdentCount: int) (nameIdentCount: int) (symbol: FSharpSymbol) =
         match declaringEntity symbol with
         | Some parent when not parent.IsNamespace ->
-            if identCount - 1 = count then
+            if nameIdentCount - 1 = leadingIdentCount then
                 ValueSome parent
             else
-                tryFindEntityNamedBy count (identCount - 1) parent
+                tryFindModuleOrTypeNamedByLeading leadingIdentCount (nameIdentCount - 1) parent
         | _ -> ValueNone
 
     let isCSharpStyleExtension (method: FSharpMemberOrFunctionOrValue) =
@@ -104,7 +96,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         // on the value it extends, or qualified by the class.
         | :? FSharpMemberOrFunctionOrValue as method when isCSharpStyleExtension method -> ValueNone
         | _ ->
-            match tryFindEntityNamedBy entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+            match tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
             | ValueSome opened when not opened.IsFSharpModule ->
                 if opened.GenericParameters.Count > 0 then
                     ValueNone
