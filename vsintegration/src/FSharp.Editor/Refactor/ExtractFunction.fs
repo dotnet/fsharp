@@ -7,11 +7,8 @@ open System.Collections.Generic
 open System.Composition
 open System.Threading
 
-open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeRefactorings
-open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
@@ -33,118 +30,141 @@ module private FunctionExtraction =
             Uses: range list
         }
 
-    /// What the selection takes from the code around it.
     [<NoComparison; NoEquality>]
     type Captures =
         {
-            /// The values read from the scope, in order of first use.
             Parameters: Parameter list
             UsesThis: bool
-            /// The `this` of a struct is a byref, which a closure cannot capture.
             UsesStructThis: bool
             UsesBase: bool
-            /// Where the type parameters the selection names are declared.
-            TypeParameters: range list
-            /// Where the names of the methods and constructors the selection calls end.
+            TypeParameterDeclarations: range list
             MethodNameEnds: HashSet<pos>
         }
 
-    let private padding (width: int) = String(' ', width)
-
-    /// The declaration whose locals the extracted code may capture: the enclosing member or module-level declaration.
-    let enclosingScope (path: SyntaxVisitorPath) =
+    let private tryEnclosingDeclaration (path: SyntaxVisitorPath) =
         path
-        |> List.tryPick (function
+        |> Seq.tryPickV (function
             | SyntaxNode.SynMemberDefn(SynMemberDefn.Member(range = m) | SynMemberDefn.LetBindings(range = m))
-            | SyntaxNode.SynModule(SynModuleDecl.Let(range = m) | SynModuleDecl.Expr(range = m)) -> Some m
-            | _ -> None)
+            | SyntaxNode.SynModule(SynModuleDecl.Let(range = m) | SynModuleDecl.Expr(range = m)) -> ValueSome m
+            | _ -> ValueNone)
 
-    let private isByRefLike (fullType: FSharpType) =
+    let tryTargetInDeclaration (sourceText: SourceText) (parseTree: ParsedInput) (selection: TextSpan) =
+        trySelectedTarget sourceText parseTree selection
+        |> ValueOption.bind (fun target ->
+            tryEnclosingDeclaration target.Path
+            |> ValueOption.map (fun declaration -> struct (target, declaration)))
+
+    let private tryEntityOf (fullType: FSharpType) =
         let stripped = fullType.StripAbbreviations()
 
-        stripped.HasTypeDefinition
-        && (stripped.TypeDefinition.IsByRef
-            || stripped.TypeDefinition.Attributes
+        if stripped.HasTypeDefinition then
+            ValueSome stripped.TypeDefinition
+        else
+            ValueNone
+
+    let private isByRefLike (fullType: FSharpType) =
+        tryEntityOf fullType
+        |> ValueOption.exists (fun entity ->
+            entity.IsByRef
+            || entity.Attributes
                |> Seq.exists (fun attribute ->
                    String.Equals(attribute.AttributeType.CompiledName, "IsByRefLikeAttribute", StringComparison.Ordinal)))
 
     let private isStruct (fullType: FSharpType) =
-        let stripped = fullType.StripAbbreviations()
+        tryEntityOf fullType
+        |> ValueOption.exists (fun entity -> entity.IsByRef || entity.IsValueType)
 
-        stripped.HasTypeDefinition
-        && (stripped.TypeDefinition.IsByRef || stripped.TypeDefinition.IsValueType)
+    let private (|CapturedLocal|_|) (selection: range) (scope: range) (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpMemberOrFunctionOrValue as value when not value.IsModuleValueOrMember ->
+            match symbol.DeclarationLocation with
+            | Some declaration when
+                Range.rangeContainsRange scope declaration
+                && not (Range.rangeContainsRange selection declaration)
+                ->
+                Some(value, declaration)
+            | _ -> None
+        | _ -> None
 
-    /// What the selection takes from its scope; ValueNone when a value it reads cannot become a parameter: one that has
-    /// no type or a byref-like one, or a generic function, which a parameter would fix to one instance.
+    let private (|TypeParameterDeclaredOutside|_|) (selection: range) (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpGenericParameter ->
+            symbol.DeclarationLocation
+            |> Option.filter (fun declaration -> not (Range.rangeContainsRange selection declaration))
+        | _ -> None
+
+    let private tryAddParameter
+        (parameters: Dictionary<range, Parameter>)
+        (value: FSharpMemberOrFunctionOrValue)
+        (symbolUse: FSharpSymbolUse)
+        (declaration: range)
+        =
+        match parameters.TryGetValue declaration, value.FullTypeSafe with
+        | (true, parameter), _ ->
+            parameters[declaration] <-
+                { parameter with
+                    Uses = symbolUse.Range :: parameter.Uses
+                }
+
+            true
+        | (false, _), Some fullType when not (isByRefLike fullType) && value.GenericParameters.Count = 0 ->
+            parameters[declaration] <-
+                {
+                    Name = value.DisplayName
+                    Type = fullType.FormatWithConstraints symbolUse.DisplayContext
+                    IsMutable = value.IsMutable
+                    Uses = [ symbolUse.Range ]
+                }
+
+            true
+        | _ -> false
+
+    let private firstUse (parameter: Parameter) =
+        parameter.Uses
+        |> List.map (fun m -> struct (m.StartLine, m.StartColumn))
+        |> List.min
+
     let tryCaptures (checkResults: FSharpCheckFileResults) (selection: range) (scope: range) (cancellationToken: CancellationToken) =
         let parameters = Dictionary<range, Parameter>(Range.comparer)
-        let typeParameters = ResizeArray<range>()
+        let typeParameterDeclarations = ResizeArray<range>()
         let methodNameEnds = HashSet<pos>()
         let mutable usesThis = false
         let mutable usesStructThis = false
         let mutable usesBase = false
         let mutable capturable = true
 
-        for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken do
-            if
+        let usesInSelection =
+            checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
+            |> Seq.filter (fun symbolUse ->
                 not symbolUse.IsFromDefinition
-                && Range.rangeContainsRange selection symbolUse.Range
-            then
-                match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as value when value.IsMemberThisValue || value.IsConstructorThisValue ->
-                    usesThis <- true
-                    usesStructThis <- usesStructThis || (value.FullTypeSafe |> Option.exists isStruct)
-                | :? FSharpMemberOrFunctionOrValue as value when value.IsBaseValue -> usesBase <- true
-                | :? FSharpMemberOrFunctionOrValue as value when not value.IsModuleValueOrMember ->
-                    match symbolUse.Symbol.DeclarationLocation with
-                    | Some declaration when
-                        Range.rangeContainsRange scope declaration
-                        && not (Range.rangeContainsRange selection declaration)
-                        ->
-                        match parameters.TryGetValue declaration, value.FullTypeSafe with
-                        | (true, parameter), _ ->
-                            parameters[declaration] <-
-                                { parameter with
-                                    Uses = symbolUse.Range :: parameter.Uses
-                                }
-                        | (false, _), Some fullType when not (isByRefLike fullType) && value.GenericParameters.Count = 0 ->
-                            parameters[declaration] <-
-                                {
-                                    Name = value.DisplayName
-                                    Type = fullType.FormatWithConstraints symbolUse.DisplayContext
-                                    IsMutable = value.IsMutable
-                                    Uses = [ symbolUse.Range ]
-                                }
-                        | (false, _), _ -> capturable <- false
-                    | _ -> ()
-                | :? FSharpMemberOrFunctionOrValue as value when value.IsMember -> methodNameEnds.Add symbolUse.Range.End |> ignore
-                | :? FSharpGenericParameter ->
-                    match symbolUse.Symbol.DeclarationLocation with
-                    | Some declaration when not (Range.rangeContainsRange selection declaration) -> typeParameters.Add declaration
-                    | _ -> ()
-                | _ -> ()
+                && Range.rangeContainsRange selection symbolUse.Range)
+
+        for symbolUse in usesInSelection do
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as value when value.IsMemberThisValue || value.IsConstructorThisValue ->
+                usesThis <- true
+                usesStructThis <- usesStructThis || (value.FullTypeSafe |> Option.exists isStruct)
+            | :? FSharpMemberOrFunctionOrValue as value when value.IsBaseValue -> usesBase <- true
+            | CapturedLocal selection scope (value, declaration) ->
+                capturable <- capturable && tryAddParameter parameters value symbolUse declaration
+            | :? FSharpMemberOrFunctionOrValue as value when value.IsMember -> methodNameEnds.Add symbolUse.Range.End |> ignore
+            | TypeParameterDeclaredOutside selection declaration -> typeParameterDeclarations.Add declaration
+            | _ -> ()
 
         if capturable then
-            let firstUse (parameter: Parameter) =
-                parameter.Uses
-                |> List.map (fun m -> struct (m.StartLine, m.StartColumn))
-                |> List.min
-
             ValueSome
                 {
                     Parameters = parameters.Values |> Seq.sortBy firstUse |> Seq.toList
                     UsesThis = usesThis
                     UsesStructThis = usesStructThis
                     UsesBase = usesBase
-                    TypeParameters = Seq.toList typeParameters
+                    TypeParameterDeclarations = Seq.toList typeParameterDeclarations
                     MethodNameEnds = methodNameEnds
                 }
         else
             ValueNone
 
-    /// Whether the selection reads a captured mutable local inside a function or other delayed code. That code sees the
-    /// assignments made before it runs, where a parameter would keep the value passed to the call.
-    let readsMutableLater (expr: SynExpr) (parameters: Parameter list) =
+    let readsMutableInDelayedCode (expr: SynExpr) (parameters: Parameter list) =
         let delayed =
             (ResizeArray<range>(), [ SyntaxNode.SynExpr expr ])
             ||> SyntaxNodes.fold (fun delayed _ node ->
@@ -163,8 +183,7 @@ module private FunctionExtraction =
             && parameter.Uses
                |> List.exists (fun m -> delayed |> Seq.exists (fun code -> Range.rangeContainsRange code m)))
 
-    /// Whether the selection assigns to one of the captured values, which a parameter could not carry back.
-    let assignsParameter (expr: SynExpr) (parameters: Parameter list) =
+    let assignsCapturedValue (expr: SynExpr) (parameters: Parameter list) =
         let assigned =
             (HashSet<pos>(), [ SyntaxNode.SynExpr expr ])
             ||> SyntaxNodes.fold (fun positions _ node ->
@@ -185,15 +204,12 @@ module private FunctionExtraction =
         | SynExpr.Tuple(exprs = arguments) -> arguments |> List.collect identifierArguments
         | _ -> []
 
-    /// Positions of identifiers whose type inference cannot tell from their use alone: receivers of a member or indexer
-    /// access, operands of an operator and arguments of a method or constructor, which can have overloads.
     let positionsNeedingType (expr: SynExpr) (methodNameEnds: HashSet<pos>) =
         (HashSet<pos>(), [ SyntaxNode.SynExpr expr ])
         ||> SyntaxNodes.fold (fun positions _ node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.App(funcExpr = method; argExpr = argument)) when methodNameEnds.Contains method.Range.End ->
-                for ident in identifierArguments argument do
-                    positions.Add ident.idRange.Start |> ignore
+                positions.UnionWith(identifierArguments argument |> Seq.map _.idRange.Start)
             | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = head :: _ :: _)))
             | SyntaxNode.SynExpr(SynExpr.DotGet(expr = SynExpr.Ident head))
             | SyntaxNode.SynExpr(SynExpr.DotIndexedGet(objectExpr = SynExpr.Ident head))
@@ -206,40 +222,31 @@ module private FunctionExtraction =
 
             positions)
 
-    let private declared (annotate: Parameter -> bool) (parameter: Parameter) =
+    let private curried (annotate: Parameter -> bool) (parameter: Parameter) =
+        if annotate parameter then
+            $"({parameter.Name}: {parameter.Type})"
+        else
+            parameter.Name
+
+    let private tupled (annotate: Parameter -> bool) (parameter: Parameter) =
         if annotate parameter then
             $"{parameter.Name}: {parameter.Type}"
         else
             parameter.Name
 
-    let curriedParameters (parameters: Parameter list) (annotate: Parameter -> bool) =
-        match parameters with
-        | [] -> "()"
-        | _ ->
-            parameters
-            |> List.map (fun parameter ->
-                if annotate parameter then
-                    $"({declared annotate parameter})"
-                else
-                    parameter.Name)
-            |> String.concat " "
+    let private never (_: Parameter) = false
 
-    let curriedArguments (parameters: Parameter list) =
-        match parameters with
-        | [] -> "()"
-        | _ -> parameters |> List.map _.Name |> String.concat " "
+    let private curriedParameters (annotate: Parameter -> bool) (parameters: Parameter list) =
+        if parameters.IsEmpty then
+            "()"
+        else
+            parameters |> List.map (curried annotate) |> String.concat " "
 
-    let tupledParameters (parameters: Parameter list) (annotate: Parameter -> bool) =
-        let declarations = parameters |> List.map (declared annotate) |> String.concat ", "
+    let private tupledParameters (annotate: Parameter -> bool) (parameters: Parameter list) =
+        let declarations = parameters |> List.map (tupled annotate) |> String.concat ", "
         $"({declarations})"
 
-    let tupledArguments (parameters: Parameter list) =
-        let arguments = parameters |> List.map _.Name |> String.concat ", "
-        $"({arguments})"
-
-    /// Whether a function application put where the selection was needs parentheses to stay one argument or the
-    /// receiver of an assignment.
-    let needsParentheses (target: ExtractionTarget) =
+    let private callNeedsParentheses (target: ExtractionTarget) =
         match target.Expr, target.Path with
         | SynExpr.Paren _, _ when target.Replaced = target.Extracted -> false
         | _, SyntaxNode.SynExpr(SynExpr.App _ | SynExpr.DotGet _ | SynExpr.DotIndexedGet _ | SynExpr.TypeApp _) :: _ -> true
@@ -248,7 +255,7 @@ module private FunctionExtraction =
               targetExpr = receiver)) :: _ -> obj.ReferenceEquals(expr, receiver)
         | _ -> false
 
-    let isInRecursiveModuleLet (path: SyntaxVisitorPath) =
+    let private isInRecursiveModuleLet (path: SyntaxVisitorPath) =
         path
         |> List.exists (function
             | SyntaxNode.SynModule(SynModuleDecl.Let(isRecursive = true)) -> true
@@ -261,16 +268,13 @@ module private FunctionExtraction =
         | SynBinding(headPat = SynPat.Named(accessibility = Some(SynAccess.Private _))) -> true
         | _ -> false
 
-    /// Whether the selection is in an inline module-level function or member that is not private. Its body cannot
-    /// call anything less accessible than it is.
-    let rec isInExposedInline (path: SyntaxVisitorPath) =
+    let rec private isInExposedInline (path: SyntaxVisitorPath) =
         match path with
         | [] -> false
         | SyntaxNode.SynBinding(SynBinding(isInline = isInline) as binding) :: (SyntaxNode.SynModule _ | SyntaxNode.SynMemberDefn _) :: _ ->
             isInline && not (isPrivate binding)
         | _ :: rest -> isInExposedInline rest
 
-    /// Whether a pattern in the member binds the name, which hides a self identifier of that name.
     let private bindsName (name: string) (binding: SynBinding) =
         (false, [ SyntaxNode.SynBinding binding ])
         ||> SyntaxNodes.fold (fun found _ node ->
@@ -280,9 +284,7 @@ module private FunctionExtraction =
                 found || String.Equals(ident.idText, name, StringComparison.Ordinal)
             | _ -> found)
 
-    /// The member of a class, record or union that contains the selection, outside interface implementations and
-    /// object expressions.
-    let tryEnclosingMember (path: SyntaxVisitorPath) =
+    let private tryEnclosingMember (path: SyntaxVisitorPath) =
         let rec loop (path: SyntaxVisitorPath) =
             match path with
             | SyntaxNode.SynMemberDefn(SynMemberDefn.Member(memberDefn = binding; range = memberRange)) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
@@ -293,187 +295,143 @@ module private FunctionExtraction =
 
         loop path
 
-    /// The start of the new member's declaration and the receiver it is called on: the self identifier of an instance
-    /// member, unless a local of the member hides it, or the name of a non-generic type for a static member.
-    let tryMemberCallee (binding: SynBinding) (info: SynComponentInfo) =
+    let private tryMemberCallee (binding: SynBinding) (info: SynComponentInfo) =
         match binding, info with
         | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ self; _ ]))), _ when
             not (self.idText.StartsWith("_", StringComparison.Ordinal))
             && not (bindsName self.idText binding)
             ->
             let self = PrettyNaming.NormalizeIdentifierBackticks self.idText
-            ValueSome(struct ($"member private {self}.", self))
+
+            ValueSome
+                struct {|
+                    Declaration = $"member private {self}."
+                    Receiver = self
+                |}
         | SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ]))), SynComponentInfo(typeParams = None) ->
-            ValueSome(struct ("static member private ", PrettyNaming.NormalizeIdentifierBackticks (List.last info.LongIdent).idText))
+            ValueSome
+                struct {|
+                    Declaration = "static member private "
+                    Receiver = PrettyNaming.NormalizeIdentifierBackticks (List.last info.LongIdent).idText
+                |}
         | _ -> ValueNone
 
-    /// Changes that declare `header = <selection>` right after the member and call it where the selection was.
-    let tryMemberChanges (extraction: Extraction) (memberRange: range) (header: string) (call: string) =
+    let private tryDeclareAfterMember (extraction: Extraction) (memberRange: range) (header: string) (call: string) =
         let sourceText = extraction.SourceText
-        let target = extraction.Target
-        let lineBreak = extraction.LineBreak
-        let lines = sourceText.Lines
-        let firstLine = lines[Line.toZ memberRange.StartLine]
-        let lastLine = lines[Line.toZ memberRange.EndLine]
-        let indent = leadingSpaces sourceText firstLine
+        let lastLine = sourceText.Lines[Line.toZ memberRange.EndLine]
+
+        let indent =
+            leadingSpaces sourceText sourceText.Lines[Line.toZ memberRange.StartLine]
 
         tryDeclaration extraction header (indent + extraction.IndentSize)
         |> ValueOption.map (fun declaration ->
             let insertion =
                 if lastLine.EndIncludingLineBreak > lastLine.End then
-                    TextChange(TextSpan(lastLine.EndIncludingLineBreak, 0), $"{padding indent}{declaration}{lineBreak}")
+                    TextChange(TextSpan(lastLine.EndIncludingLineBreak, 0), $"{padding indent}{declaration}{extraction.LineBreak}")
                 else
-                    TextChange(TextSpan(lastLine.End, 0), $"{lineBreak}{padding indent}{declaration}")
+                    TextChange(TextSpan(lastLine.End, 0), $"{extraction.LineBreak}{padding indent}{declaration}")
 
-            [ TextChange(target.Replaced, call); insertion ])
+            [ TextChange(extraction.Target.Replaced, call); insertion ])
+
+    let private closureCannotCapture (captures: Captures) =
+        captures.UsesBase || captures.UsesStructThis
+
+    let private curriedFunction (extraction: Extraction) (captures: Captures) (annotate: Parameter -> bool) =
+        let name = uniqueName "extractedFunction" extraction.Names
+        let application = $"{name} {curriedParameters never captures.Parameters}"
+
+        struct {|
+            Header = $"{name} {curriedParameters annotate captures.Parameters}"
+            Call =
+                if callNeedsParentheses extraction.Target then
+                    $"({application})"
+                else
+                    application
+        |}
+
+    let private localFunctionChanges (extraction: Extraction) (captures: Captures) (annotate: Parameter -> bool) =
+        match anchorsOf extraction.Target.Expr extraction.Target.Path with
+        | anchor :: _ when not (closureCannotCapture captures) ->
+            let newFunction = curriedFunction extraction captures annotate
+            tryDeclareInFront extraction anchor $"let {newFunction.Header}" newFunction.Call
+        | _ -> ValueNone
+
+    let private moduleFunctionChanges (extraction: Extraction) (captures: Captures) (annotate: Parameter -> bool) =
+        let path = extraction.Target.Path
+
+        if
+            captures.UsesThis
+            || captures.UsesBase
+            || isInExposedInline path
+            || not captures.TypeParameterDeclarations.IsEmpty
+            || isInRecursiveModuleLet path
+        then
+            ValueNone
+        else
+            let newFunction = curriedFunction extraction captures annotate
+            tryDeclareInFrontOfModuleLet extraction [] $"let private {newFunction.Header}" newFunction.Call
+
+    let private privateMemberChanges (extraction: Extraction) (captures: Captures) (annotate: Parameter -> bool) =
+        let declaresNoneOf (memberRange: range) =
+            captures.TypeParameterDeclarations
+            |> List.forall (fun declaration -> not (Range.rangeContainsRange memberRange declaration))
+
+        match tryEnclosingMember extraction.Target.Path with
+        | ValueSome(struct (binding, memberRange, info)) when not (isInExposedInline extraction.Target.Path) && declaresNoneOf memberRange ->
+            tryMemberCallee binding info
+            |> ValueOption.bind (fun callee ->
+                let name = uniqueName "ExtractedMethod" extraction.Names
+
+                let header =
+                    $"{callee.Declaration}{name}{tupledParameters annotate captures.Parameters}"
+
+                let call = $"{callee.Receiver}.{name}{tupledParameters never captures.Parameters}"
+                tryDeclareAfterMember extraction memberRange header call)
+        | _ -> ValueNone
+
+    let private annotationOf (setting: ParameterAnnotationSetting) (needingType: HashSet<pos>) (parameter: Parameter) =
+        match setting with
+        | ParameterAnnotationSetting.Always -> true
+        | ParameterAnnotationSetting.WhenNeeded -> parameter.Uses |> List.exists (fun m -> needingType.Contains m.Start)
+        | ParameterAnnotationSetting.Never -> false
+
+    let offer (extraction: Extraction) (declaration: range) (setting: ParameterAnnotationSetting) =
+        let target = extraction.Target
+
+        let selection =
+            RoslynHelpers.TextSpanToFSharpRange(extraction.Context.Document.FilePath, target.Extracted, extraction.SourceText)
+
+        match tryCaptures extraction.CheckResults selection declaration extraction.Context.CancellationToken with
+        | ValueSome captures when
+            not (assignsCapturedValue target.Expr captures.Parameters)
+            && not (readsMutableInDelayedCode target.Expr captures.Parameters)
+            ->
+            let annotate =
+                annotationOf setting (positionsNeedingType target.Expr captures.MethodNameEnds)
+
+            let register = registerRefactoring extraction
+            register (SR.ExtractToLocalFunction()) "local" (localFunctionChanges extraction captures annotate)
+            register (SR.ExtractToModuleFunction()) "module" (moduleFunctionChanges extraction captures annotate)
+            register (SR.ExtractToPrivateMember()) "member" (privateMemberChanges extraction captures annotate)
+        | _ -> ()
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ExtractFunction"); Shared>]
 type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
-
-    static let register
-        (context: CodeRefactoringContext)
-        (sourceText: SourceText)
-        (title: string)
-        (kind: string)
-        (changes: TextChange list)
-        =
-        let changedDocument =
-            cancellableTask {
-                TelemetryReporter.ReportSingleEvent(
-                    TelemetryEvents.RefactoringActivated,
-                    [| "name", box (nameof FSharpExtractFunctionRefactoring); "kind", box kind |]
-                )
-
-                return context.Document.WithText(sourceText.WithChanges changes)
-            }
-
-        context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
 
     override _.ComputeRefactoringsAsync context =
         cancellableTask {
             let document = context.Document
 
             if not document.IsFSharpSignatureFile then
-                let! cancellationToken = CancellableTask.getCancellationToken ()
-                let! sourceText = document.GetTextAsync cancellationToken
+                let! sourceText = document.GetTextAsync context.CancellationToken
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpExtractFunctionRefactoring)
+                let parseTree = parseResults.ParseTree
 
-                let target = trySelectedTarget sourceText parseResults.ParseTree context.Span
-
-                match target with
+                match FunctionExtraction.tryTargetInDeclaration sourceText parseTree context.Span with
                 | ValueNone -> ()
-                | ValueSome target ->
-                    match FunctionExtraction.enclosingScope target.Path with
-                    | None -> ()
-                    | Some scope ->
-                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof FSharpExtractFunctionRefactoring)
-
-                        let selection =
-                            Range.mkRange
-                                document.FilePath
-                                (positionOf sourceText target.Extracted.Start)
-                                (positionOf sourceText target.Extracted.End)
-
-                        match FunctionExtraction.tryCaptures checkResults selection scope cancellationToken with
-                        | ValueSome captures when
-                            not (FunctionExtraction.assignsParameter target.Expr captures.Parameters)
-                            && not (FunctionExtraction.readsMutableLater target.Expr captures.Parameters)
-                            ->
-                            let parameters = captures.Parameters
-                            let! options = document.GetOptionsAsync cancellationToken
-
-                            let indentSize =
-                                options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
-
-                            let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpExtractFunctionRefactoring)
-
-                            let literalLines =
-                                linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
-
-                            let names = usedNames parseResults.ParseTree
-
-                            let extraction =
-                                {
-                                    Context = context
-                                    Provider = nameof FSharpExtractFunctionRefactoring
-                                    SourceText = sourceText
-                                    Target = target
-                                    CheckResults = checkResults
-                                    IndentSize = indentSize
-                                    LiteralLines = literalLines
-                                    LineBreak = lineBreakOf sourceText
-                                    Names = names
-                                }
-
-                            let needingType =
-                                FunctionExtraction.positionsNeedingType target.Expr captures.MethodNameEnds
-
-                            let setting = document.Project.FSharpExtractFunctionParameterAnnotations
-                            let inExposedInline = FunctionExtraction.isInExposedInline target.Path
-
-                            let annotate (parameter: FunctionExtraction.Parameter) =
-                                match setting with
-                                | ParameterAnnotationSetting.Always -> true
-                                | ParameterAnnotationSetting.WhenNeeded ->
-                                    parameter.Uses |> List.exists (fun m -> needingType.Contains m.Start)
-                                | ParameterAnnotationSetting.Never -> false
-
-                            let functionName = uniqueName "extractedFunction" names
-
-                            let header =
-                                $"{functionName} {FunctionExtraction.curriedParameters parameters annotate}"
-
-                            let application = $"{functionName} {FunctionExtraction.curriedArguments parameters}"
-
-                            let call =
-                                if FunctionExtraction.needsParentheses target then
-                                    $"({application})"
-                                else
-                                    application
-
-                            if not (captures.UsesBase || captures.UsesStructThis) then
-                                match anchorsOf target.Expr target.Path with
-                                | anchor :: _ ->
-                                    match tryDeclareInFront extraction anchor $"let {header}" call with
-                                    | ValueSome changes -> register context sourceText (SR.ExtractToLocalFunction()) "local" changes
-                                    | ValueNone -> ()
-                                | [] -> ()
-
-                            if
-                                not (
-                                    captures.UsesThis
-                                    || captures.UsesBase
-                                    || inExposedInline
-                                    || not captures.TypeParameters.IsEmpty
-                                    || FunctionExtraction.isInRecursiveModuleLet target.Path
-                                )
-                            then
-                                match tryDeclareInFrontOfModuleLet extraction [] $"let private {header}" call with
-                                | ValueSome changes -> register context sourceText (SR.ExtractToModuleFunction()) "module" changes
-                                | ValueNone -> ()
-
-                            match FunctionExtraction.tryEnclosingMember target.Path with
-                            | ValueSome(struct (binding, memberRange, info)) when
-                                not inExposedInline
-                                && captures.TypeParameters
-                                   |> List.forall (fun declaration -> not (Range.rangeContainsRange memberRange declaration))
-                                ->
-                                match FunctionExtraction.tryMemberCallee binding info with
-                                | ValueSome(struct (prefix, receiver)) ->
-                                    let memberName = uniqueName "ExtractedMethod" names
-
-                                    let memberHeader =
-                                        $"{prefix}{memberName}{FunctionExtraction.tupledParameters parameters annotate}"
-
-                                    let memberCall =
-                                        $"{receiver}.{memberName}{FunctionExtraction.tupledArguments parameters}"
-
-                                    match FunctionExtraction.tryMemberChanges extraction memberRange memberHeader memberCall with
-                                    | ValueSome changes -> register context sourceText (SR.ExtractToPrivateMember()) "member" changes
-                                    | ValueNone -> ()
-                                | ValueNone -> ()
-                            | _ -> ()
-                        | _ -> ()
+                | ValueSome(struct (target, declaration)) ->
+                    let! extraction = prepareExtraction context (nameof FSharpExtractFunctionRefactoring) sourceText parseTree target
+                    FunctionExtraction.offer extraction declaration document.Project.FSharpExtractFunctionParameterAnnotations
         }
         |> CancellableTask.startAsTask context.CancellationToken
