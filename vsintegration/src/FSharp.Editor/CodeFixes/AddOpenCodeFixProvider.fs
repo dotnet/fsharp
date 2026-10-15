@@ -20,13 +20,9 @@ open CancellableTasks
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
-    // A name can be reachable from a great many places, and the lightbulb is a menu a person reads.
-    // The same reason Roslyn's add-import fix stops at five suggestions and its fully-qualify at three.
     let maxOpenSuggestions = 5
     let maxQualifySuggestions = 3
 
-    // Which assembly the entity crawler reached first is no order to offer suggestions in. Sort them
-    // the way Roslyn's add-import fix does: what `System` holds first, the rest alphabetically after.
     let systemFirst (name: ReadOnlySpan<char>) (sortText: string) =
         let isInSystem =
             name.Equals("System".AsSpan(), StringComparison.Ordinal)
@@ -42,8 +38,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    // The qualifier stands in for the first identifier written, whichever one the diagnostic is on:
-    // choosing `N.M.T` for `M.T` rewrites `M`, not `T`.
     let qualifySymbolFix (firstIdentSpan: TextSpan) (fullName, qualifier) =
         {
             Name = CodeFix.AddOpen
@@ -69,28 +63,23 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DeclaringEntity
         | _ -> None
 
-    // Below its namespace, each ident of a symbol's name names the module or type the next one is
-    // declared in. Finds what the first `count` of `identCount` idents name, unless that is a namespace.
-    let rec tryFindEntityNamedBy count identCount (symbol: FSharpSymbol) =
+    let rec tryFindModuleOrTypeNamedByLeading (leadingIdentCount: int) (nameIdentCount: int) (symbol: FSharpSymbol) =
         match declaringEntity symbol with
         | Some parent when not parent.IsNamespace ->
-            if identCount - 1 = count then
+            if nameIdentCount - 1 = leadingIdentCount then
                 ValueSome parent
             else
-                tryFindEntityNamedBy count (identCount - 1) parent
+                tryFindModuleOrTypeNamedByLeading leadingIdentCount (nameIdentCount - 1) parent
         | _ -> ValueNone
 
-    // A plain `open` reaches namespaces and F# modules. When the name is opened deeper than that - a
-    // type nested in a type, or a static member of one - the type itself has to be opened, and a generic
-    // one cannot be: the type arguments `open type` needs are not part of the name.
     let tryGetOpenDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
-        match tryFindEntityNamedBy entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
-        | ValueSome opened when not opened.IsFSharpModule ->
-            if opened.GenericParameters.Count > 0 then
-                ValueNone
-            else
-                ValueSome $"open type {ns}"
-        | _ -> ValueSome $"open {ns}"
+        match tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+        | ValueSome opened when opened.IsFSharpModule -> ValueSome $"open {ns}"
+        | ValueSome opened when opened.GenericParameters.Count > 0 -> ValueNone
+        | ValueSome _ -> ValueSome $"open type {ns}"
+        | ValueNone -> ValueSome $"open {ns}"
+
+    let isQualifiable (entity: InsertionContextEntity) = not (entity.LastIdent.StartsWith "op_")
 
     let getSuggestionsAsCodeFixes
         (firstIdentSpan: TextSpan)
@@ -122,7 +111,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
-            |> Seq.filter (fun (entity, _, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
+            |> Seq.filter (fun (entity, _, _) -> isQualifiable entity)
             |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sortBy (fst >> qualificationOrder)
