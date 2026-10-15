@@ -2447,27 +2447,13 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt returnFromCall)
 
-        // A range is not yielded or returned as one value (FS-1031). Recover 'yield e1..e2' as 'yield! e1..e2' when the
-        // builder can splice; otherwise 'Yield' or 'Return' takes an argument of any type, so no type error follows.
-        | SynExpr.YieldOrReturn(((isYield, _) as flags), (BareRangeExpr _ as synRange), mFull, ({ YieldOrReturnKeyword = m } as trivia)) when
-            cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-            ->
-            errorR (Error(FSComp.SR.tcRangeIsNotASingleValue (), synRange.Range))
-
-            let recovery =
-                if isYield && hasBuilderMethod ceenv m "YieldFrom" then
-                    mkRangeSplice synRange
-                else
-                    SynExpr.YieldOrReturn(flags, arbExpr ("rangeAsSingleValue", synRange.Range), mFull, trivia)
-
-            TryTranslateComputationExpression ceenv firstTry q varSpace recovery translatedCtxt
-
         | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, mFull, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
                 error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
+            let synYieldOrReturnExpr = rejectRangeOperand cenv synYieldOrReturnExpr
             requireBuilderMethod methName ceenv m m
 
             let yieldOrReturnCall =
@@ -2765,6 +2751,8 @@ and TranslateComputationExpressionBind
 /// The inner option indicates if a custom operation is involved inside
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
+    | SynExpr.YieldOrReturn((false, _), RangeAsSingleValue ceenv.cenv, _, _) -> None
+
     | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
         let returnExpr =
             SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, m), false, returnExpr)

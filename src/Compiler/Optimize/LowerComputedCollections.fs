@@ -199,8 +199,6 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 Result.Ok (flag, exprR)
             | Result.Error msg -> Result.Error msg
 
-        // yield! start..step..finish over an integral type: a counted loop adding each element,
-        // instead of AddMany over the range's enumerator.
         | IntegralRange g (rangeTy, (start, step, finish)) when
             not isUninteresting
             && g.langVersion.SupportsFeature LanguageFeature.LowerIntegralRangesToFastLoops
