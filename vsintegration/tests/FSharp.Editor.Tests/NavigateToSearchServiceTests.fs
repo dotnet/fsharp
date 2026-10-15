@@ -51,6 +51,27 @@ module HeyHo =
         |> Seq.filter ((=) pattern)
         |> Seq.toList
 
+    let countParseRequests (path: string) searches =
+        let isParseOfPath (activity: Activity) =
+            activity.OperationName = "BackgroundCompiler.ParseFile"
+            && activity.Tags |> Seq.exists (fun tag -> tag.Value = path)
+
+        let parseRequests = ref 0
+
+        use listener =
+            new ActivityListener(
+                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                Sample = (fun _ -> ActivitySamplingResult.AllData),
+                ActivityStarted =
+                    (fun activity ->
+                        if isParseOfPath activity then
+                            Interlocked.Increment(&parseRequests.contents) |> ignore)
+            )
+
+        ActivitySource.AddActivityListener listener
+        searches ()
+        parseRequests.Value
+
     let assertResultsContain pattern expected =
         navigateToSearch project pattern
         |> Seq.exists (fun i -> i.Name = expected)
@@ -123,26 +144,10 @@ module HeyHo =
             |> List.singleton
             |> RoslynTestHelpers.CreateSolution
 
-        let isParseOfScript (activity: Activity) =
-            activity.OperationName = "BackgroundCompiler.ParseFile"
-            && activity.Tags |> Seq.exists (fun tag -> tag.Value = path)
-
-        let parseRequests = ref 0
-
-        use listener =
-            new ActivityListener(
-                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
-                Sample = (fun _ -> ActivitySamplingResult.AllData),
-                ActivityStarted =
-                    (fun activity ->
-                        if isParseOfScript activity then
-                            Interlocked.Increment(&parseRequests.contents) |> ignore)
-            )
-
-        ActivitySource.AddActivityListener listener
-
         let script = solution.GetProject projectId
 
-        Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
-        Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
-        Assert.Equal(1, parseRequests.Value)
+        let searchTwice () =
+            for _ in 1..2 do
+                Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
+
+        Assert.Equal(1, countParseRequests path searchTwice)
