@@ -581,7 +581,7 @@ module Task =
     /// <param name="ct">A cancellation token to pass to each task factory.</param>
     /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
     /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
-    ///
+    /// <exception cref="OperationCanceledException">Thrown if the provided cancellation token is canceled before the last computation starts, even if the <c>computations</c> ignore cancellation.</exception>
     /// <example id="task-sequential-1">
     /// <code lang="fsharp">
     /// task {
@@ -598,7 +598,7 @@ module Task =
     /// <param name="ct">A cancellation token to pass to each task factory.</param>
     /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
     /// <returns>A task that runs all inputs in sequence and returns <c>unit</c>.</returns>
-    ///
+    /// <exception cref="OperationCanceledException">Thrown if the provided cancellation token is canceled before the last computation starts, even if the <c>computations</c> ignore cancellation.</exception>
     /// <example id="task-sequentialdo-1">
     /// <code lang="fsharp">
     /// task {
