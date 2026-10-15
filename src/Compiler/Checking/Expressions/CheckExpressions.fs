@@ -7203,8 +7203,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
         // `TransformAstForNestedUpdates` creates record constructions with synthetic ranges.
         // Don't emit the warning for nested field updates, because it does not really make sense.
         if oldFldsList.IsEmpty && not m.IsSynthetic then
-            let enabledByLangFeature = g.langVersion.SupportsFeature LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields
-            warning(ErrorEnabledWithLanguageFeature(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(richTextOfQualifiedTyconRef tcref), m, enabledByLangFeature))
+            warning(Error(FSComp.SR.tcCopyAndUpdateRecordChangesAllFields(richTextOfQualifiedTyconRef tcref), m))
 
     if not (Zset.subset ns1 ns2) then
         error (Error(FSComp.SR.tcExtraneousFieldsGivenValues(), m))

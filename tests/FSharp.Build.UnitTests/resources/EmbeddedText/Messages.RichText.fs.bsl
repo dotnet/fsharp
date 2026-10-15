@@ -33,57 +33,49 @@ type internal SR private() =
     static let postProcessString (s: string) =
         s.Replace("\\n","\n").Replace("\\t","\t").Replace("\\r","\r").Replace("\\\"", "\"")
 
-    static let mutable swallowResourceText = false
-
-    static let FormatMessage(messageID: string, swallowedFormat: string, args: objnull array) : string =
-        if swallowResourceText then
-            System.String.Format(System.Globalization.CultureInfo.InvariantCulture, swallowedFormat, args)
-        else
-            System.String.Format(postProcessString (GetString messageID), args)
+    static let FormatMessage(messageID: string, args: objnull array) : string =
+        System.String.Format(postProcessString (GetString messageID), args)
 
     static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
-    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
-    static member SwallowResourceText with get () = swallowResourceText
-                                        and set (b) = swallowResourceText <- b
     // END BOILERPLATE
 
     /// No arguments
     /// (Originally from Messages.txt:1)
-    static member zero() = (FormatMessage("zero", ",,,", [|  |]))
+    static member zero() = (FormatMessage("zero", [|  |]))
     /// Integer %d
     /// (Originally from Messages.txt:2)
-    static member integer(a0: System.Int32) = (FormatMessage("integer", ",,,{0},,,", [| box a0 |]))
+    static member integer(a0: System.Int32) = (FormatMessage("integer", [| box a0 |]))
     /// Floating %f
     /// (Originally from Messages.txt:3)
-    static member floating(a0: System.Double) = (FormatMessage("floating", ",,,{0:F6},,,", [| box a0 |]))
+    static member floating(a0: System.Double) = (FormatMessage("floating", [| box a0 |]))
     /// Text %s
     /// (Originally from Messages.txt:4)
-    static member text(a0: System.String) = (FormatMessage("text", ",,,{0},,,", [| box a0 |]))
+    static member text(a0: System.String) = (FormatMessage("text", [| box a0 |]))
     /// Text %s
     /// (Originally from Messages.txt:4)
     static member text(a0: RichText) = RichMessage.text (fun rich -> SR.text(rich a0))
     /// Hex %x
     /// (Originally from Messages.txt:5)
-    static member hex(a0: System.UInt32) = (FormatMessage("hex", ",,,{0:x},,,", [| box a0 |]))
+    static member hex(a0: System.UInt32) = (FormatMessage("hex", [| box a0 |]))
     /// Mixed %d / %f / %s
     /// (Originally from Messages.txt:6)
-    static member mixed(a0: System.Int32, a1: System.Double, a2: System.String) = (FormatMessage("mixed", ",,,{0},,,{1:F6},,,{2},,,", [| box a0; box a1; box a2 |]))
+    static member mixed(a0: System.Int32, a1: System.Double, a2: System.String) = (FormatMessage("mixed", [| box a0; box a1; box a2 |]))
     /// Mixed %d / %f / %s
     /// (Originally from Messages.txt:6)
     static member mixed(a0: System.Int32, a1: System.Double, a2: RichText) = RichMessage.text (fun rich -> SR.mixed(a0, a1, rich a2))
     /// Numbered without arguments
     /// (Originally from Messages.txt:7)
-    static member numberedZero() = (41, RichText.mkText (FormatMessage("numberedZero", ",,,", [|  |])))
+    static member numberedZero() = (41, RichText.mkText (FormatMessage("numberedZero", [|  |])))
     /// Numbered %d / %f / %s
     /// (Originally from Messages.txt:8)
-    static member numberedMixed(a0: System.Int32, a1: System.Double, a2: System.String) = (42, RichText.mkText (FormatMessage("numberedMixed", ",,,{0},,,{1:F6},,,{2},,,", [| box a0; box a1; box a2 |])))
+    static member numberedMixed(a0: System.Int32, a1: System.Double, a2: System.String) = (42, RichText.mkText (FormatMessage("numberedMixed", [| box a0; box a1; box a2 |])))
     /// Numbered %d / %f / %s
     /// (Originally from Messages.txt:8)
     static member numberedMixed(a0: System.Int32, a1: System.Double, a2: RichText) = RichMessage.numbered (fun rich -> SR.numberedMixed(a0, a1, rich a2))
     /// Escaped {literal}, 100%% and %s\n\t\"quoted\"
     /// (Originally from Messages.txt:9)
-    static member escaped(a0: System.String) = (FormatMessage("escaped", ",,,{0},,,", [| box a0 |]))
+    static member escaped(a0: System.String) = (FormatMessage("escaped", [| box a0 |]))
     /// Escaped {literal}, 100%% and %s\n\t\"quoted\"
     /// (Originally from Messages.txt:9)
     static member escaped(a0: RichText) = RichMessage.text (fun rich -> SR.escaped(rich a0))

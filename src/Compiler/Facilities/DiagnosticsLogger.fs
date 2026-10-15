@@ -129,9 +129,6 @@ exception DiagnosticWithSuggestions of number: int * message: RichText * range: 
         | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg.Text
         | _ -> "impossible"
 
-/// A diagnostic that is raised when enabled manually, or by default with a language feature
-exception DiagnosticEnabledWithLanguageFeature of number: int * message: RichText * range: range * enabledByLangFeature: bool
-
 type ObsoleteDiagnosticInfo =
     | ObsoleteDiagnosticInfo of isError: bool * diagnosticId: string option * message: string option * urlFormat: string option
 
@@ -154,9 +151,6 @@ let Error ((n, text): int * RichText, m) = DiagnosticWithText(n, text, m)
 /// We will eventually rename this to remove this use of "Error"
 let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
-
-let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
-    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
 
 let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
     try
