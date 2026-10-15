@@ -182,29 +182,32 @@ let RewriteRangeExpr synExpr =
         Some otherExpr
     | _ -> None
 
-/// A closed range 'e1..e2' or 'e1..e2..e3' that is not parenthesized, as a call to '(..)' or '(.. ..)'.
 [<return: Struct>]
 let (|BareRangeExpr|_|) synExpr =
-    match synExpr with
-    | SynExpr.IndexRange _ ->
-        match RewriteRangeExpr synExpr with
-        | Some rangeExpr -> ValueSome rangeExpr
-        | None -> ValueNone
-    | _ -> ValueNone
+    RewriteRangeExpr synExpr |> ValueOption.ofOption
 
-/// A range in element position of a list, array, sequence or computation expression
-/// splices its elements, as 'yield! e1..e2' does (FS-1031).
+let (|RangeAsSingleValue|_|) (cenv: TcFileState) synExpr =
+    match synExpr with
+    | BareRangeExpr _ -> cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+    | _ -> false
+
 let mkRangeSplice (synRange: SynExpr) =
     let m = synRange.Range
     SynExpr.YieldOrReturnFrom((true, false), synRange, m, { YieldOrReturnFromKeyword = m })
 
-/// The source of 'yield! e1..e2' is '(..) e1 e2' (FS-1031).
 let rewriteYieldFromRange (cenv: TcFileState) synExpr =
     match synExpr with
-    | BareRangeExpr rangeExpr ->
+    | BareRangeExpr rangeCall ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions synExpr.Range
-        rangeExpr
+        rangeCall
     | _ -> synExpr
+
+let rejectRangeOperand (cenv: TcFileState) operand =
+    match operand with
+    | RangeAsSingleValue cenv ->
+        errorR (Error(FSComp.SR.tcRangeIsNotASingleValue (), operand.Range))
+        arbExpr ("rangeAsSingleValue", operand.Range)
+    | _ -> operand
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
 let YieldFree (_cenv: TcFileState) expr =
@@ -273,35 +276,37 @@ let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc cenv acceptDepreca
 let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
     TryGetSimpleSemicolonSequenceOfComprehension cexpr [] cenv acceptDeprecated
 
-/// A flat list or array of values with at least one range, such as '[ 0; 1..3; 10 ]' (FS-1031),
-/// as '[ yield 0; 1..3; yield 10 ]': every value stays an element, as in a list literal.
 [<return: Struct>]
 let (|SimpleSemicolonSequenceWithRanges|_|) cenv cexpr =
-    let yieldElement (e: SynExpr) =
-        SynExpr.YieldOrReturn((true, false), e, e.Range, { YieldOrReturnKeyword = e.Range })
+    let isRange = RewriteRangeExpr >> Option.isSome
 
-    let rec collectReversed expr acc hasRange =
+    let yieldValue expr =
+        SynExpr.YieldOrReturn((true, false), expr, expr.Range, SynExprYieldOrReturnTrivia.Zero)
+
+    let sequential head tail =
+        SynExpr.Sequential(
+            DebugPointAtSequential.SuppressNeither,
+            true,
+            head,
+            tail,
+            unionRanges head.Range tail.Range,
+            SynExprSequentialTrivia.Zero
+        )
+
+    let rec elements acc expr =
         match expr with
-        | SynExpr.Sequential(isTrueSeq = true; expr1 = BareRangeExpr _ as e1; expr2 = e2) -> collectReversed e2 (e1 :: acc) true
-        | SynExpr.Sequential(isTrueSeq = true; expr1 = e1; expr2 = e2) when IsSimpleSemicolonSequenceElement e1 cenv false ->
-            collectReversed e2 (yieldElement e1 :: acc) hasRange
-        | BareRangeExpr _ -> ValueSome(expr :: acc)
-        | _ when hasRange && IsSimpleSemicolonSequenceElement expr cenv false -> ValueSome(yieldElement expr :: acc)
-        | _ -> ValueNone
+        | SynExpr.Sequential(isTrueSeq = true; expr1 = head; expr2 = tail) -> elements (head :: acc) tail
+        | _ -> List.rev (expr :: acc)
 
-    match collectReversed cexpr [] false with
-    | ValueSome(last :: before) ->
-        let mkSequential (tail: SynExpr) (e: SynExpr) =
-            SynExpr.Sequential(
-                DebugPointAtSequential.SuppressNeither,
-                true,
-                e,
-                tail,
-                unionRanges e.Range tail.Range,
-                SynExprSequentialTrivia.Zero
-            )
-
-        ValueSome(List.fold mkSequential last before)
+    match elements [] cexpr with
+    | elems when
+        List.exists isRange elems
+        && List.forall (fun e -> isRange e || IsSimpleSemicolonSequenceElement e cenv false) elems
+        ->
+        elems
+        |> List.map (fun e -> if isRange e then e else yieldValue e)
+        |> List.reduceBack sequential
+        |> ValueSome
     | _ -> ValueNone
 
 let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
