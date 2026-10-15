@@ -16,55 +16,22 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
+open FSharp.Compiler
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open CancellableTasks
 
-/// Where a parse of a file is kept: under what the parse depends on besides the text. The defines are those it
-/// was parsed with, or `AnyDefines` when its tree holds no conditional directives and so reads the same under
-/// any of them; the language version decides what the parser accepts and is never shared across versions. The
-/// remaining parsing options cannot differ for one path: the editor never applies line directives, and whether
-/// a file is interactive follows from its own extension.
 [<Struct>]
-type private NavigableItemsKey =
-    {
-        Defines: string
-        LangVersion: string
-        FilePath: string
-    }
-
-/// The navigable items of one parse of a file, and the text version it was taken from.
-[<Struct>]
-type private NavigableItemsEntry =
-    {
-        Version: VersionStamp
-        Items: NavigableItem array
-    }
+type private ParseKey =
+    | AnyDefines of filePath: string * langVersion: string
+    | DefinedAs of filePath: string * langVersion: string * defines: string list
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    /// A multi-targeted project is one Roslyn project per target framework over the same files, so the same
-    /// file is searched once per instance. What that costs is the parse, and a parse whose tree holds no
-    /// conditional directives does not depend on the defines: it is stored under `AnyDefines` and every
-    /// instance reuses it. One that does hold them is stored per define set, because those instances
-    /// genuinely parse the file differently.
-    ///
-    /// The duplicate results this produces are not for this service to remove. `NavigateToSearcher` pools its
-    /// seen set with `NavigateToSearchResultComparer`, which already collapses results by file path and span.
-    let cache = ConcurrentDictionary<NavigableItemsKey, NavigableItemsEntry>()
-
-    /// The parses of documents whose options are kept per document rather than per project - a standalone
-    /// script, a file outside any project - and so name no key in `cache`. Each is kept under its own
-    /// document and answers for nothing else.
-    let documentCache = ConcurrentDictionary<DocumentId, NavigableItemsEntry>()
-
-    /// The key for a parse that does not depend on the defines. Not a define set any instance can have,
-    /// since defines are identifiers — an instance with none of its own must not read this entry as its own.
-    [<Literal>]
-    let AnyDefines = "?"
+    let cache = ConcurrentDictionary<ParseKey, VersionStamp * NavigableItem array>()
 
     do
         if workspace <> null then
@@ -72,75 +39,50 @@ type internal FSharpNavigateToSearchService
             <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
-                    documentCache.Clear()
 
-    let dependsOnDefines (parseTree: ParsedInput) =
-        match parseTree with
-        | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
-        | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+    // Awaiting a project's options recomputes them after an edit to a C# project it references.
+    let parsingOptionsOf (document: Document) =
+        let optionsManager =
+            document.Project.Solution.GetFSharpWorkspaceService().FSharpProjectOptionsManager
+
+        match optionsManager.TryGetCachedOptionsByProjectId document.Project.Id with
+        | Some(_, parsingOptions, _) -> CancellableTask.singleton parsingOptions
+        | None ->
+            document.GetFSharpCompilationOptionsAsync(nameof (FSharpNavigateToSearchService))
+            |> CancellableTask.map (fun (_, _, parsingOptions, _) -> parsingOptions)
+
+    let storedUnder anyDefinesKey definedAsKey =
+        function
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = trivia))
+        | ParsedInput.SigFile(ParsedSigFileInput(trivia = trivia)) when trivia.ConditionalDirectives.IsEmpty -> anyDefinesKey
+        | _ -> definedAsKey
 
     let getNavigableItems (document: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
+            let! parsingOptions = parsingOptionsOf document
+            let anyDefinesKey = AnyDefines(document.FilePath, parsingOptions.LangVersionText)
 
-            match document.FilePath, document.TryGetFSharpParsingOptionsData() with
-            // A document with no path is keyed by nothing, and one whose project has not produced its options
-            // yet knows neither the defines nor the language version its own parse depends on - an entry
-            // another instance wrote under what it really parsed with must not answer for it.
-            | null, _
-            | _, ValueNone ->
-                match documentCache.TryGetValue document.Id with
-                | true, entry when entry.Version = currentVersion -> return entry.Items
-                | _ ->
-                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                    let items = NavigateTo.GetNavigableItems parseResults.ParseTree
+            let definedAsKey =
+                DefinedAs(
+                    document.FilePath,
+                    parsingOptions.LangVersionText,
+                    CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+                )
 
-                    // A project's first parse is what makes it produce its options, and the next search keys the
-                    // document by them: only a document that still has none is kept under its own id.
-                    if document.TryGetFSharpParsingOptionsData().IsNone then
-                        documentCache[document.Id] <-
-                            {
-                                Version = currentVersion
-                                Items = items
-                            }
+            let cached key =
+                match cache.TryGetValue key with
+                | true, (version, items) when version = currentVersion -> ValueSome items
+                | _ -> ValueNone
 
-                    return items
-            | path, ValueSome(struct (documentDefines, langVersion)) ->
-                let defines = documentDefines |> String.concat ";"
-
-                let keyOf defines =
-                    {
-                        Defines = defines
-                        LangVersion = langVersion
-                        FilePath = path
-                    }
-
-                let cached defines =
-                    match cache.TryGetValue(keyOf defines) with
-                    | true, entry when entry.Version = currentVersion -> ValueSome entry.Items
-                    | _ -> ValueNone
-
-                match cached AnyDefines, cached defines with
-                | ValueSome items, _
-                | _, ValueSome items -> return items
-                | ValueNone, ValueNone ->
-                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                    let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-
-                    let key =
-                        if dependsOnDefines parseResults.ParseTree then
-                            keyOf defines
-                        else
-                            keyOf AnyDefines
-
-                    cache[key] <-
-                        {
-                            Version = currentVersion
-                            Items = items
-                        }
-
-                    return items
+            match cached anyDefinesKey |> ValueOption.orElseWith (fun () -> cached definedAsKey) with
+            | ValueSome items -> return items
+            | ValueNone ->
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                let items = NavigateTo.GetNavigableItems parseResults.ParseTree
+                cache[storedUnder anyDefinesKey definedAsKey parseResults.ParseTree] <- currentVersion, items
+                return items
         }
 
     let kindsProvided =
@@ -252,7 +194,6 @@ type internal FSharpNavigateToSearchService
                             | ValueNone -> ()
                 |]
 
-            // The text, read from disk for a closed document, is only needed to place the matches.
             if matches.Length = 0 then
                 return [||]
             else
@@ -262,17 +203,23 @@ type internal FSharpNavigateToSearchService
                 return
                     [|
                         for struct (item, m) in matches do
-                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
+                            let sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
+
+                            match sourceSpan with
                             | ValueNone -> ()
                             | ValueSome sourceSpan ->
+                                let glyph = navigateToItemKindToGlyph item.Kind
+                                let kind = navigateToItemKindToRoslynKind item.Kind
+                                let additionalInfo = formatInfo item.Container document
+
                                 yield
                                     FSharpNavigateToSearchResult(
-                                        formatInfo item.Container document,
-                                        navigateToItemKindToRoslynKind item.Kind,
+                                        additionalInfo,
+                                        kind,
                                         patternMatchKindToNavigateToMatchKind m.Kind,
                                         item.Name,
                                         FSharpNavigableItem(
-                                            navigateToItemKindToGlyph item.Kind,
+                                            glyph,
                                             ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
                                             document,
                                             sourceSpan
@@ -288,13 +235,16 @@ type internal FSharpNavigateToSearchService
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results =
-                    project.Documents
-                    |> Seq.map (processDocument tryMatch kinds)
-                    // Throttle to avoid launching a parse per document in the project all at once.
-                    |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
+                let tasks =
+                    [|
+                        for doc in project.Documents do
+                            yield processDocument tryMatch kinds doc
+                    |]
+
+                let! results = CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount) tasks
 
                 return results |> Array.concat |> Array.toImmutableArray
+
             }
             |> CancellableTask.start cancellationToken
 
