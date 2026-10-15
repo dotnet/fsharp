@@ -20,13 +20,15 @@ open FSharp.Compiler.Text
 
 open CancellableTasks
 
-/// What the unresolved name is written as a member of. Only an extension member can supply it then.
 [<RequireQualifiedAccess>]
 type internal MemberReceiver =
-    /// `x.Name` or `f().Name`: an instance member of a value, of this type when it is known.
     | Value of FSharpType voption
-    /// `T.Name`: a static member of a type.
     | Type of FSharpEntity
+
+type internal ReceiverTypes = ResizeArray<struct (string * FSharpType)>
+
+type internal EntityFinder =
+    (ShortIdents option * ShortIdents option * ShortIdents option * ShortIdents) -> (InsertionContextEntity * InsertionContext)[]
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
@@ -87,31 +89,31 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
     let isCSharpStyleExtension (method: FSharpMemberOrFunctionOrValue) =
         not method.IsExtensionMember && method.HasAttribute<ExtensionAttribute>()
 
-    // A plain `open` reaches namespaces and F# modules. When the name is opened deeper than that - a
-    // type nested in a type, or a static member of one - the type itself has to be opened, and a generic
-    // one cannot be: the type arguments `open type` needs are not part of the name.
     let tryGetOpenDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
-        match symbol.Symbol with
-        // Opening its class does not make a C#-style extension method a name of its own: F# calls one
-        // on the value it extends, or qualified by the class.
-        | :? FSharpMemberOrFunctionOrValue as method when isCSharpStyleExtension method -> ValueNone
-        | _ ->
-            match tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
-            | ValueSome opened when not opened.IsFSharpModule ->
-                if opened.GenericParameters.Count > 0 then
-                    ValueNone
-                else
-                    ValueSome $"open type {ns}"
-            | _ -> ValueSome $"open {ns}"
+        match symbol.Symbol, tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+        | (:? FSharpMemberOrFunctionOrValue as method), _ when isCSharpStyleExtension method -> ValueNone
+        | _, ValueSome opened when opened.IsFSharpModule -> ValueSome $"open {ns}"
+        | _, ValueSome opened when opened.GenericParameters.Count > 0 -> ValueNone
+        | _, ValueSome _ -> ValueSome $"open type {ns}"
+        | _, ValueNone -> ValueSome $"open {ns}"
 
-    // An F# extension member is reached through the value or type it extends, never by a name of its own.
     let isReachedByName (symbol: AssemblySymbol) =
         match symbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsExtensionMember
         | _ -> true
 
-    // Whether the unresolved name is written as a member of something, and of what. A bare name, or one
-    // qualified by a namespace or module, is not.
+    let isQualifiable (entity: InsertionContextEntity) = not (entity.LastIdent.StartsWith "op_")
+
+    let memberReceiverOf (symbol: FSharpSymbol option) =
+        match symbol with
+        | Some(:? FSharpEntity as entity) when entity.IsNamespace || entity.IsFSharpModule -> ValueNone
+        | Some(:? FSharpEntity as entity) -> ValueSome(MemberReceiver.Type entity)
+        | Some(:? FSharpMemberOrFunctionOrValue as value) -> ValueSome(MemberReceiver.Value(ValueSome value.FullType))
+        | Some(:? FSharpField as field) -> ValueSome(MemberReceiver.Value(ValueSome field.FieldType))
+        | Some(:? FSharpParameter as parameter) -> ValueSome(MemberReceiver.Value(ValueSome parameter.Type))
+        | Some _ -> ValueSome(MemberReceiver.Value ValueNone)
+        | None -> ValueNone
+
     let tryGetMemberReceiver
         (parseResults: FSharpParseFileResults)
         (checkResults: FSharpCheckFileResults)
@@ -127,22 +129,14 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 let lastIdent = List.last receiverIdents
                 let lineText = sourceText.Lines[Line.toZ lastIdent.idRange.EndLine].ToString()
 
-                let receiver =
-                    checkResults.GetSymbolUseAtLocation(
-                        lastIdent.idRange.EndLine,
-                        lastIdent.idRange.EndColumn,
-                        lineText,
-                        receiverIdents |> List.map _.idText
-                    )
-
-                match receiver |> Option.map _.Symbol with
-                | Some(:? FSharpEntity as entity) when entity.IsNamespace || entity.IsFSharpModule -> ValueNone
-                | Some(:? FSharpEntity as entity) -> ValueSome(MemberReceiver.Type entity)
-                | Some(:? FSharpMemberOrFunctionOrValue as value) -> ValueSome(MemberReceiver.Value(ValueSome value.FullType))
-                | Some(:? FSharpField as field) -> ValueSome(MemberReceiver.Value(ValueSome field.FieldType))
-                | Some(:? FSharpParameter as parameter) -> ValueSome(MemberReceiver.Value(ValueSome parameter.Type))
-                | Some _ -> ValueSome(MemberReceiver.Value ValueNone)
-                | None -> ValueNone
+                checkResults.GetSymbolUseAtLocation(
+                    lastIdent.idRange.EndLine,
+                    lastIdent.idRange.EndColumn,
+                    lineText,
+                    receiverIdents |> List.map _.idText
+                )
+                |> Option.map _.Symbol
+                |> memberReceiverOf
         | _ -> ValueNone
 
     let tryGetDefinitionName (ty: FSharpType) =
@@ -153,11 +147,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         else
             None
 
-    // What an extension member has to extend to apply to a value of this type: the type itself, one of
-    // its base types or one of its interfaces. Each is kept under the name of its definition and with
-    // the type arguments the value's type gives it.
-    let getExtensibleTypes (ty: FSharpType) =
-        let types = ResizeArray<struct (string * FSharpType)>()
+    let getReceiverTypes (ty: FSharpType) =
+        let types = ReceiverTypes()
         let baseTypeNames = HashSet<string>(StringComparer.Ordinal)
 
         let rec addWithBaseTypes (ty: FSharpType) =
@@ -176,16 +167,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
         types
 
-    // Whether a type argument an extension is written with accepts the one the receiver has. Type
-    // arguments are invariant: two named types have to share a definition and have arguments that match
-    // in turn. A type parameter on either side accepts anything, and other types are not compared.
     let rec typeArgumentMatches (extended: FSharpType) (actual: FSharpType) =
         extended.IsGenericParameter
         || actual.IsGenericParameter
         || match tryGetDefinitionName extended, tryGetDefinitionName actual with
-           | Some extendedName, Some actualName ->
-               String.Equals(extendedName, actualName, StringComparison.Ordinal)
-               && typeArgumentsMatch extended actual
+           | Some extendedName, Some actualName -> extendedName = actualName && typeArgumentsMatch extended actual
            | None, None -> true
            | _ -> false
 
@@ -196,43 +182,37 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         extendedArguments.Count = actualArguments.Count
         && Seq.forall2 typeArgumentMatches extendedArguments actualArguments
 
-    // Whether one of the receiver's types is the type a C#-style extension method is written for. A type
-    // with no named definition, such as an array or a tuple, is not compared.
-    let isAnyOf (extensibleTypes: ResizeArray<struct (string * FSharpType)>) (extended: FSharpType) =
+    let receiverTypesInclude (receiverTypes: ReceiverTypes) (extended: FSharpType) =
         match tryGetDefinitionName extended with
-        | Some extendedName ->
-            extensibleTypes.Exists(fun struct (name, ty) ->
-                String.Equals(name, extendedName, StringComparison.Ordinal)
-                && typeArgumentsMatch extended ty)
+        | Some extendedName -> receiverTypes.Exists(fun struct (name, ty) -> name = extendedName && typeArgumentsMatch extended ty)
         | None -> true
 
-    // Whether an extension member applies to a receiver of these types. An F# member extends a type
-    // definition, whatever its type arguments. A C#-style method extends the type of its first parameter,
-    // and when that is a type parameter, every type the parameter's coercion constraints let through.
-    let extendsAny (extensibleTypes: ResizeArray<struct (string * FSharpType)> voption) (extension: FSharpMemberOrFunctionOrValue) =
-        match extensibleTypes with
+    let fsharpExtensionExtendsOneOf (receiverTypes: ReceiverTypes) (extension: FSharpMemberOrFunctionOrValue) =
+        match extension.ApparentEnclosingEntity |> Option.bind _.TryFullName with
+        | Some extendedName -> receiverTypes.Exists(fun struct (name, _) -> name = extendedName)
+        | None -> true
+
+    let csharpExtensionExtendsOneOf (receiverTypes: ReceiverTypes) (extension: FSharpMemberOrFunctionOrValue) =
+        match extension.CurriedParameterGroups |> Seq.tryHead |> Option.bind Seq.tryHead with
+        | Some thisParameter when thisParameter.Type.IsGenericParameter ->
+            thisParameter.Type.GenericParameter.Constraints
+            |> Seq.forall (fun typeConstraint ->
+                not typeConstraint.IsCoercesToConstraint
+                || typeConstraint.CoercesToTarget.IsGenericParameter
+                || receiverTypesInclude receiverTypes typeConstraint.CoercesToTarget)
+        | Some thisParameter -> receiverTypesInclude receiverTypes thisParameter.Type
+        | None -> true
+
+    let extendsOneOf (receiverTypes: ReceiverTypes voption) (extension: FSharpMemberOrFunctionOrValue) =
+        match receiverTypes with
         | ValueNone -> true
-        | ValueSome types ->
-            if extension.IsExtensionMember then
-                match extension.ApparentEnclosingEntity |> Option.bind _.TryFullName with
-                | Some extendedName -> types.Exists(fun struct (name, _) -> String.Equals(name, extendedName, StringComparison.Ordinal))
-                | None -> true
-            else
-                match extension.CurriedParameterGroups |> Seq.tryHead |> Option.bind Seq.tryHead with
-                | Some thisParameter when thisParameter.Type.IsGenericParameter ->
-                    thisParameter.Type.GenericParameter.Constraints
-                    |> Seq.forall (fun typeConstraint ->
-                        not typeConstraint.IsCoercesToConstraint
-                        || typeConstraint.CoercesToTarget.IsGenericParameter
-                        || isAnyOf types typeConstraint.CoercesToTarget)
-                | Some thisParameter -> isAnyOf types thisParameter.Type
-                | None -> true
+        | ValueSome types when extension.IsExtensionMember -> fsharpExtensionExtendsOneOf types extension
+        | ValueSome types -> csharpExtensionExtendsOneOf types extension
 
     let moduleExtensionMembers =
         ConditionalWeakTable<FSharpEntity, FSharpMemberOrFunctionOrValue[]>()
 
-    // Asked of every module in reach whenever a member access fails, so kept per module: the modules of
-    // referenced assemblies are cached along with them, for as long as the assembly does not change.
+    // Asked of every module in reach on each failed member access, so cached per module.
     let getExtensionMembers (cancellationToken: CancellationToken) (moduleEntity: FSharpEntity) =
         moduleExtensionMembers.GetValue(
             moduleEntity,
@@ -247,8 +227,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 |> Seq.toArray
         )
 
-    // What to open to bring the extension members a module declares into scope: the module itself and,
-    // when it is [<AutoOpen>], also what opens it. One that requires qualified access cannot be opened.
     let getModuleOpenTargets (moduleSymbol: AssemblySymbol) (moduleEntity: FSharpEntity) =
         if moduleEntity.HasAttribute<RequireQualifiedAccessAttribute>() then
             []
@@ -264,8 +242,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 moduleSymbol.CleanedIdents
             ]
 
-    // The namespaces and modules that hold an extension member of this name for the receiver: that of a
-    // C#-style method's static class, or the module an F# one is declared in and what opens that module.
     let getExtensionOpenTargets
         (checkResults: FSharpCheckFileResults)
         (receiver: MemberReceiver)
@@ -273,25 +249,23 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         (symbols: AssemblySymbol[])
         (cancellationToken: CancellationToken)
         =
-        let extensibleTypes =
+        let receiverTypes =
             match receiver with
-            | MemberReceiver.Value(ValueSome ty) -> ValueSome(getExtensibleTypes ty)
+            | MemberReceiver.Value(ValueSome ty) -> ValueSome(getReceiverTypes ty)
             | MemberReceiver.Value ValueNone -> ValueNone
-            | MemberReceiver.Type entity -> ValueSome(getExtensibleTypes (entity.AsType()))
+            | MemberReceiver.Type entity -> ValueSome(getReceiverTypes (entity.AsType()))
 
-        let isNamed (symbol: FSharpSymbol) =
-            String.Equals(symbol.DisplayNameCore, name, StringComparison.Ordinal)
+        let isNamed (symbol: FSharpSymbol) = symbol.DisplayNameCore = name
 
         let accessibilityRights = checkResults.ProjectContext.AccessibilityRights
 
         let appliesToReceiver (extension: FSharpMemberOrFunctionOrValue) =
             extension.IsInstanceMember = receiver.IsValue
             && extension.IsAccessible(accessibilityRights)
-            && extendsAny extensibleTypes extension
+            && extendsOneOf receiverTypes extension
 
-        // The assembly content lists one of a class's overloads, and they can extend different types.
         let anyOverloadExtends (method: FSharpMemberOrFunctionOrValue) =
-            match extensibleTypes, method.DeclaringEntity with
+            match receiverTypes, method.DeclaringEntity with
             | ValueSome _, Some staticClass ->
                 staticClass.TryGetMembersFunctionsAndValues()
                 |> Seq.exists (fun overload ->
@@ -299,8 +273,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
                     isNamed overload
                     && isCSharpStyleExtension overload
-                    && extendsAny extensibleTypes overload)
-            | _ -> extendsAny extensibleTypes method
+                    && extendsOneOf receiverTypes overload)
+            | _ -> extendsOneOf receiverTypes method
 
         [|
             for symbol in symbols do
@@ -309,7 +283,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 match symbol.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as method when
                     receiver.IsValue
-                    && String.Equals(Array.last symbol.CleanedIdents, name, StringComparison.Ordinal)
+                    && Array.last symbol.CleanedIdents = name
                     && isCSharpStyleExtension method
                     && anyOverloadExtends method
                     ->
@@ -326,14 +300,74 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 | _ -> ()
         |]
 
+    let getExtensionOpens
+        (checkResults: FSharpCheckFileResults)
+        (receiver: MemberReceiver)
+        (name: string)
+        (symbols: AssemblySymbol[])
+        (cancellationToken: CancellationToken)
+        (findEntities: EntityFinder)
+        =
+        [
+            for struct (symbol, target) in getExtensionOpenTargets checkResults receiver name symbols cancellationToken do
+                for entity, ctx in findEntities (None, None, symbol.Namespace, Array.append target [| name |]) do
+                    match entity.Namespace with
+                    | Some ns -> $"open {ns}", entity.FullDisplayName, ctx
+                    | None -> ()
+        ]
+
+    let nameIdentsOf (symbol: AssemblySymbol) isAttribute =
+        seq {
+            yield symbol.CleanedIdents
+
+            if isAttribute then
+                let lastIdent = Array.last symbol.CleanedIdents
+
+                if
+                    lastIdent.EndsWith "Attribute"
+                    && symbol.Kind LookupType.Precise = EntityKind.Attribute
+                then
+                    yield
+                        symbol.CleanedIdents
+                        |> Array.replace (symbol.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9))
+        }
+
+    let getNameCandidates (symbols: AssemblySymbol[]) isAttribute (findEntities: EntityFinder) =
+        symbols
+        |> Seq.filter isReachedByName
+        |> Seq.collect (fun symbol ->
+            nameIdentsOf symbol isAttribute
+            |> Seq.collect (fun idents ->
+                findEntities (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, idents)
+                |> Seq.map (fun (entity, ctx) -> entity, ctx, symbol)))
+        |> Seq.toList
+
+    let toMaybeUnresolvedIdents (unresolvedIdentRange: range) (longIdent: LongIdent) =
+        longIdent
+        |> List.map (fun ident ->
+            {
+                Ident = ident.idText
+                Resolved = not (ident.idRange = unresolvedIdentRange)
+            })
+        |> List.toArray
+
     let getSuggestionsAsCodeFixes
         (firstIdentSpan: TextSpan)
         (sourceText: SourceText)
-        (opens: (string * string * InsertionContext) seq)
-        (qualifications: (string * string) seq)
+        (candidates: (InsertionContextEntity * InsertionContext * AssemblySymbol) list)
+        (extensionOpens: (string * string * InsertionContext) list)
         =
+        let nameOpens =
+            candidates
+            |> Seq.chooseV (fun (entity, ctx, symbol) ->
+                match entity.Namespace with
+                | Some ns ->
+                    tryGetOpenDeclaration entity symbol ns
+                    |> ValueOption.map (fun declaration -> declaration, entity.FullDisplayName, ctx)
+                | None -> ValueNone)
+
         seq {
-            opens
+            Seq.append nameOpens extensionOpens
             |> Seq.groupBy (fun (declaration, _, _) -> declaration)
             |> Seq.map (fun (declaration, xs) ->
                 declaration,
@@ -350,7 +384,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.truncate maxOpenSuggestions
             |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
-            qualifications
+            candidates
+            |> Seq.filter (fun (entity, _, _) -> isQualifiable entity)
+            |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sortBy (fst >> qualificationOrder)
             |> Seq.truncate maxQualifySuggestions
@@ -426,106 +462,36 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                 else
                                     OpenStatementInsertionPoint.Nearest
 
+                            let createEntity (maybeUnresolvedIdents: MaybeUnresolvedIdent[]) : EntityFinder =
+                                ParsedInput.TryFindInsertionContext
+                                    unresolvedIdentRange.StartLine
+                                    parseResults.ParseTree
+                                    maybeUnresolvedIdents
+                                    insertionPoint
+
                             let receiver =
                                 tryGetMemberReceiver parseResults checkResults sourceText longIdent unresolvedIdentRange
 
-                            // A name written as a member of a value can only be an extension member.
                             let candidates =
                                 match receiver with
                                 | ValueSome(MemberReceiver.Value _) -> []
                                 | _ ->
-                                    let maybeUnresolvedIdents =
-                                        longIdent
-                                        |> List.map (fun ident ->
-                                            {
-                                                Ident = ident.idText
-                                                Resolved = not (ident.idRange = unresolvedIdentRange)
-                                            })
-                                        |> List.toArray
-
-                                    let createEntity =
-                                        ParsedInput.TryFindInsertionContext
-                                            unresolvedIdentRange.StartLine
-                                            parseResults.ParseTree
-                                            maybeUnresolvedIdents
-                                            insertionPoint
-
-                                    [
-                                        for s in symbols do
-                                            if isReachedByName s then
-                                                let candidate =
-                                                    s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
-
-                                                for entity, ctx in createEntity candidate do
-                                                    entity, ctx, s
-
-                                                if isAttribute then
-                                                    let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
-
-                                                    if
-                                                        lastIdent.EndsWith "Attribute"
-                                                        && s.Kind LookupType.Precise = EntityKind.Attribute
-                                                    then
-                                                        let attributeCandidate =
-                                                            s.TopRequireQualifiedAccessParent,
-                                                            s.AutoOpenParent,
-                                                            s.Namespace,
-                                                            s.CleanedIdents
-                                                            |> Array.replace
-                                                                (s.CleanedIdents.Length - 1)
-                                                                (lastIdent.Substring(0, lastIdent.Length - 9))
-
-                                                        for entity, ctx in createEntity attributeCandidate do
-                                                            entity, ctx, s
-                                    ]
+                                    createEntity (toMaybeUnresolvedIdents unresolvedIdentRange longIdent)
+                                    |> getNameCandidates symbols isAttribute
 
                             let extensionOpens =
                                 match receiver, longIdent |> List.tryFind (fun ident -> ident.idRange = unresolvedIdentRange) with
                                 | ValueSome receiver, Some unresolvedIdent ->
                                     let name = unresolvedIdent.idText
 
-                                    let createEntity =
-                                        ParsedInput.TryFindInsertionContext
-                                            unresolvedIdentRange.StartLine
-                                            parseResults.ParseTree
-                                            [| { Ident = name; Resolved = false } |]
-                                            insertionPoint
-
-                                    let targets =
-                                        getExtensionOpenTargets checkResults receiver name symbols context.CancellationToken
-
-                                    [
-                                        for struct (symbol, target) in targets do
-                                            for entity, ctx in createEntity (None, None, symbol.Namespace, Array.append target [| name |]) do
-                                                match entity.Namespace with
-                                                | Some ns -> $"open {ns}", entity.FullDisplayName, ctx
-                                                | None -> ()
-                                    ]
+                                    createEntity [| { Ident = name; Resolved = false } |]
+                                    |> getExtensionOpens checkResults receiver name symbols context.CancellationToken
                                 | _ -> []
-
-                            let opens =
-                                seq {
-                                    for entity, ctx, symbol in candidates do
-                                        match entity.Namespace with
-                                        | Some ns ->
-                                            match tryGetOpenDeclaration entity symbol ns with
-                                            | ValueSome declaration -> declaration, entity.FullDisplayName, ctx
-                                            | ValueNone -> ()
-                                        | None -> ()
-
-                                    yield! extensionOpens
-                                }
-
-                            let qualifications =
-                                candidates
-                                |> Seq.filter (fun (entity, _, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
-                                |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
 
                             getSuggestionsAsCodeFixes
                                 (RoslynHelpers.FSharpRangeToTextSpan(sourceText, longIdent.Head.idRange))
                                 sourceText
-                                opens
-                                qualifications))
-
+                                candidates
+                                extensionOpens))
                     |> Option.defaultValue Seq.empty
             }
