@@ -48,8 +48,7 @@ module private DotLambdaConversion =
         Seq.initInfinite (fun i -> if i = 0 then "x" else $"x{i}")
         |> Seq.find (fun name -> not (List.exists (hasName name) used))
 
-    /// Whether the name is one the compiler gives the parameter of `_.`: a use of an outer value with it would bind to that parameter.
-    let isGeneratedArgumentName (ident: Ident) =
+    let canBeCapturedByGeneratedArgument (ident: Ident) =
         let prefix = "_arg"
         let name = ident.idText
 
@@ -64,11 +63,9 @@ module private DotLambdaConversion =
         comments
         |> List.exists (fun (CommentTrivia.LineComment comment | CommentTrivia.BlockComment comment) -> Range.rangeContainsRange m comment)
 
-    /// The line the chain ends on, not counting what its argument brackets hold. A chain that goes on below `_` is
-    /// offside once it is the body of a lambda that starts further right; what the brackets hold is valid on any line.
-    let rec lastLineOutsideArguments (expr: SynExpr) =
+    let rec lastOffsideSensitiveLine (expr: SynExpr) =
         match expr with
-        | SynExpr.App(flag = ExprAtomicFlag.Atomic; funcExpr = func) -> lastLineOutsideArguments func
+        | SynExpr.App(flag = ExprAtomicFlag.Atomic; funcExpr = func) -> lastOffsideSensitiveLine func
         | SynExpr.DotGet(longDotId = longDotId) -> longDotId.Range.EndLine
         | SynExpr.DotIndexedGet(dotRange = dot) -> dot.EndLine
         | _ -> expr.Range.EndLine
@@ -89,9 +86,8 @@ module private DotLambdaConversion =
         start <= finish
         && String.IsNullOrWhiteSpace(sourceText.ToString(TextSpan.FromBounds(start, finish)))
 
-    /// The parentheses around a lambda argument that hold nothing else, so `f (fun x -> x.P)` can become `f _.P`.
     [<return: Struct>]
-    let (|ParenthesizedLambdaArgument|_|) (sourceText: SourceText) (lambda: SynExpr) (lambdaSpan: TextSpan) (path: SyntaxVisitorPath) =
+    let (|SoleParenthesizedLambdaArgument|_|) (sourceText: SourceText) (lambda: SynExpr) (lambdaSpan: TextSpan) (path: SyntaxVisitorPath) =
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; leftParenRange = leftParen; rightParenRange = Some rightParen; range = parenRange) as paren) :: SyntaxNode.SynExpr(SynExpr.App(
             flag = ExprAtomicFlag.NonAtomic; isInfix = false; argExpr = arg)) :: _ when
@@ -108,7 +104,7 @@ module private DotLambdaConversion =
         let rootEnd = RoslynHelpers.FSharpRangeToTextSpan(sourceText, root.idRange).End
 
         match path with
-        | ParenthesizedLambdaArgument sourceText lambda lambdaSpan parenSpan ->
+        | SoleParenthesizedLambdaArgument sourceText lambda lambdaSpan parenSpan ->
             let chain = sourceText.ToString(TextSpan.FromBounds(rootEnd, lambdaSpan.End))
             TextChange(parenSpan, $"_{chain}")
         | _ -> TextChange(TextSpan.FromBounds(lambdaSpan.Start, rootEnd), "_")
@@ -148,7 +144,7 @@ module private DotLambdaConversion =
                 | ValueSome(struct (root, _)) when
                     hasName parameter.idText root
                     && (identifiers |> List.filter (hasName parameter.idText) |> List.length) = 1
-                    && not (List.exists isGeneratedArgumentName identifiers)
+                    && not (List.exists canBeCapturedByGeneratedArgument identifiers)
                     && not (hasCommentIn comments (Range.withEnd root.idRange.End lambda.Range))
                     ->
                     Some
@@ -162,7 +158,7 @@ module private DotLambdaConversion =
             | SyntaxNode.SynExpr(SynExpr.DotLambda(expr = body; range = range; trivia = trivia)) when
                 not body.IsArbExprAndThusAlreadyReportedError
                 && not (isInQuotation path)
-                && lastLineOutsideArguments body = range.StartLine
+                && lastOffsideSensitiveLine body = range.StartLine
                 ->
                 Some
                     {
