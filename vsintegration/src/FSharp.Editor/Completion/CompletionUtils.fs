@@ -184,7 +184,7 @@ module internal CompletionUtils =
             let inline isUnclosedBacktick (classifiedSpan: ClassifiedSpan) =
                 if classifiedSpan.ClassificationType = ClassificationTypeNames.Identifier then
                     let text = sourceText.ToString(classifiedSpan.TextSpan)
-                    
+
                     text.StartsWith("``", System.StringComparison.Ordinal)
                     && not (Tokenizer.isDoubleBacktickIdent text)
                 else
