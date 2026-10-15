@@ -398,7 +398,7 @@ type internal BackgroundCompiler
                     captureIdentifiersWhenParsing,
                     getSource,
                     useChangeNotifications,
-                    referenceStampProvider
+                    referenceStampProvider |> ValueOption.ofOption
                 )
 
             match builderOpt with

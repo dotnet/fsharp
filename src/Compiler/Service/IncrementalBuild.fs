@@ -1436,7 +1436,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications,
-            getReferenceStamp: (string -> DateTime) option
+            getReferenceStamp: (string -> DateTime) voption
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1579,8 +1579,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 // lags the disk would recreate the builder on every request.
                 let stampReferencedAssembly =
                     match getReferenceStamp with
-                    | Some getReferenceStamp -> fun fileName (_: TimeStampCache) -> getReferenceStamp fileName
-                    | None -> fun fileName (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName
+                    | ValueSome getReferenceStamp -> fun fileName (_: TimeStampCache) -> getReferenceStamp fileName
+                    | ValueNone -> fun fileName (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName
 
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath

@@ -297,7 +297,7 @@ type internal IncrementalBuilder =
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool *
-        getReferenceStamp: (string -> DateTime) option ->
+        getReferenceStamp: (string -> DateTime) voption ->
             Async<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
