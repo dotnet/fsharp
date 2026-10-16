@@ -25,7 +25,7 @@ Use the Both trees rules only when the diff touches both trees or adds a referen
 
 | Path | File | Select |
 |---|---|---|
-For `vsintegration/src/FSharp.Editor/**`, select every section of `vsintegration.md` whose hotspots include the changed path.
+| `vsintegration/src/FSharp.Editor/**` | vsintegration.md | UI thread, MEF, caches, quick info, navigation, completion, diagnostics, options, classification |
 | `vsintegration/src/FSharp.LanguageService/**` | vsintegration.md | Legacy language service, UI thread, solution lifetime |
 | `vsintegration/src/FSharp.ProjectSystem*/**` | vsintegration.md | Project lifetime, UI thread, generator identity |
 | `vsintegration/src/FSharp.VS.FSI/**` | vsintegration.md | Interactive session startup and cancellation |
@@ -37,6 +37,6 @@ For `vsintegration/src/FSharp.Editor/**`, select every section of `vsintegration
 
 ## Do not route here
 
-- `src/Compiler/Checking/`, `Optimize/`, `CodeGen/`, `TypedTree/`, `SyntaxTree/`, `Driver/`
+- `src/Compiler/Checking/`, `src/Compiler/Optimize/`, `src/Compiler/CodeGen/`, `src/Compiler/TypedTree/`, `src/Compiler/SyntaxTree/`, `src/Compiler/Driver/`
 - `src/FSharp.Core/**`
-- Route `src/FSharp.Compiler.LanguageServer/**` IDE responsiveness here; compiler concurrency stays with `@expert-reviewer`.
+- `src/FSharp.Compiler.LanguageServer/**` is not this corpus. Compiler concurrency stays with `@expert-reviewer`.

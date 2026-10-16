@@ -59,7 +59,7 @@ The editor does not compose, another language loads F# visuals, or the host runs
 - Restrict `WpfFSharpStyleFactory`’s `TypeConversion` metadata to `FSharpStyle` rather than relying on internal CLR visibility to restrict MEF activation.
 - One-time color or theme setup belongs on the language-service composition root, not on a chain of parts that may never be instantiated. Set workspace options once when the language service initializes, not on every new text view.
 - Keep `EditorOptions` and `SettingsStore.ISettingsStore` available through composition, with `SettingsStore.Create` selecting the persistent or in-memory store instead of a mutable static singleton.
-- Load styles through `UIResources.NavStyles` and create `AbstractOptionPage` views without accessing a solution or assigning `Application.ResourceAssembly`.
+- Load styles through `UIResources.NavStyles`. `AbstractOptionPage` must get settings from `SettingsStore.ISettingsStore`, not from `IVsSolution`.
 - Do not dynamically load XAML resources, and do not enable a preserialized resource form the component merger cannot read as a blanket project property. A resource change must be embedded in the extension package, and the steps must work from a clean tree; one IDE build is not enough.
 - Removing an unused host interface must leave the editor able to start. Shared sources used by more than one product stay with the compiler; a project file may retarget a link. Reuse the existing editor helper for the same lookup instead of a second copy.
 
