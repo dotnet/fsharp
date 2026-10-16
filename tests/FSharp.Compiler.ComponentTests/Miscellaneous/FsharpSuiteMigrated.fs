@@ -87,6 +87,7 @@ module TestFrameworkAdapter =
         | LangVersion.V80 -> "8.0",bonusArgs
         | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.V10 -> "10.0",bonusArgs
+        | LangVersion.V11 -> "11.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
 

@@ -31,11 +31,12 @@ ImplFile
                                    ([], SynIdent (A, None), Fields [],
                                     PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
                                     None, (7,14--7,15),
-                                    { BarRange = Some (7,12--7,13) })],
-                                (7,12--7,15)), (7,12--7,15)), [], None,
-                          (6,13--7,15), { LeadingKeyword = Type (6,8--6,12)
-                                          EqualsRange = Some (6,20--6,21)
-                                          WithKeyword = None })], (6,8--7,15));
+                                    { BarRange = Some (7,12--7,13)
+                                      OfKeyword = None })], (7,12--7,15)),
+                             (7,12--7,15)), [], None, (6,13--7,15),
+                          { LeadingKeyword = Type (6,8--6,12)
+                            EqualsRange = Some (6,20--6,21)
+                            WithKeyword = None })], (6,8--7,15));
                    NestedModule
                      (SynComponentInfo
                         ([], None, [],

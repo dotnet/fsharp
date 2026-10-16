@@ -19,11 +19,11 @@
     <!-- F# Version components -->
     <FSMajorVersion>11</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>101</FSBuildVersion>
+    <FSBuildVersion>200</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
-    <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
+    <FSLanguageVersion>11.2</FSLanguageVersion>
     <!-- -->
     <!-- FSharp.Core version -->
     <!-- For FSMajorVersion 10, use MinorVersion 1 to indicate breaking changes in FSharp.Core -->
@@ -102,6 +102,11 @@
          rationale lives there, next to the 18.9.x pins. -->
     <VisualStudioEditorPackagesVersion>18.9.179</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
+
+    <!-- Apex VS integration-test packages, consumed by-name via $(...) in
+         vsintegration/tests/FSharp.Editor.Apex.IntegrationTests, so they stay properties here. -->
+    <MicrosoftTestApexVisualStudioVersion>18.7.0-preview-1-11715-043</MicrosoftTestApexVisualStudioVersion>
+    <MSTestVersion>3.6.4</MSTestVersion>
 
     <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
          stay a property rather than being inlined into eng/Packages.props. -->

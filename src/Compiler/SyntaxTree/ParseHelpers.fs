@@ -31,7 +31,7 @@ exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 
-let warningStringOfCoords line column = sprintf "(%d:%d)" line (column + 1)
+let warningStringOfCoords (line: int) (column: int) = $"({line}:{column + 1})"
 
 let warningStringOfPos (p: pos) = warningStringOfCoords p.Line p.Column
 
@@ -1003,12 +1003,17 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Default(mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
 
-let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
+let mkSynUnionCase attributes (access: SynAccess option) id kind mOf mDecl (xmlDoc, mBar) =
     match access with
     | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
     | _ -> ()
 
-    let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+    let trivia: SynUnionCaseTrivia =
+        {
+            BarRange = Some mBar
+            OfKeyword = mOf
+        }
+
     let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
     SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
 
@@ -1260,14 +1265,21 @@ let mkAbstractMember
     ]
 
 let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter =
-    let (pat: SynPat), guard = patternAndGuard
+    let (pat: SynPat), (mWhen: range option), guard = patternAndGuard
     let (mArrow: range option), (resultExpr: SynExpr) = patternResult
 
     fun mBar ->
         let m = unionRanges resultExpr.Range pat.Range
 
+        let trivia =
+            {
+                ArrowRange = mArrow
+                BarRange = mBar
+                WhenKeyword = mWhen
+            }
+
         let clause =
-            SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = mArrow; BarRange = mBar })
+            SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, trivia)
 
         let clauses, mLast =
             match nextClauses with
@@ -1280,14 +1292,14 @@ let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextCl
         clauses, mLastOuter |> Option.defaultValue mLast
 
 let mkMatchClausesRecoverMissingResult
-    (patternAndGuard: SynPat * SynExpr option)
+    (patternAndGuard: SynPat * range option * SynExpr option)
     exprDebugString
     (mExpr: range option)
     (mNextBar: range option)
     nextClauses
     mLastOuter
     =
-    let pat, guard = patternAndGuard
+    let pat, _, guard = patternAndGuard
 
     let mBeforeResult =
         match mExpr with

@@ -73,7 +73,7 @@ and [<NoEquality; NoComparison>]
 
     override cr.MoveNext() = 
         match cr.TailcallTarget with 
-        | None -> //if verbose then printfn $"[{cr.Id}] move"
+        | None -> //if verbose then printn $"[{cr.Id}] move"
             MoveNext(&cr.Machine)
         | Some tg -> 
             match tg.TailcallTarget with 
@@ -219,7 +219,7 @@ let dumpCoroutine (t: Coroutine) =
     yieldFromFinalCallCount <- 0
     yieldFromCount <- 0
     printfn "-----"
-    while ( //if verbose then printfn $"[{t.Id}] calling t.MoveNext, will resume at {t.ResumptionPoint}"; 
+    while ( //if verbose then printn $"[{t.Id}] calling t.MoveNext, will resume at {t.ResumptionPoint}"; 
             t.MoveNext()
             not t.IsCompleted) do 
         () // printn "yield"

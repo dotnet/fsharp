@@ -677,13 +677,6 @@ module FsiTests =
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         FsiEvaluationSession.Create(fsiConfig, allArgs, stdin, stdout, stderr, collectible = true)
 
-    // RFC FS-1043: each EvalInteraction reuses the dummy file name "input.fsx" and a fresh lexbuf, so two
-    // identical-layout submissions produce identical source ranges while sharing one session CcuThunk (and its
-    // extension-operator solution sink). Submission 0 defines two different String '*' extensions; submissions
-    // 1 and 2 open one each with IDENTICAL layout, so their trait-call ranges coincide. Without resetting the
-    // sink per fragment the stale record from submission 1 is indistinguishable from submission 2's, the
-    // ambiguous file-global re-resolution is used, and the second use of '*' falls back to FSharp.Core's
-    // throwing dynamic stub (NotSupportedException) instead of the freshly opened extension.
     [<TheoryForNETCOREAPP>]
     [<InlineData(true)>]
     [<InlineData(false)>]
@@ -703,3 +696,29 @@ module FsiTests =
         let byName name = fsiSession.GetBoundValues() |> List.find (fun v -> v.Name = name)
         Assert.shouldBe (box "haho") ((byName "r1").Value.ReflectionValue)
         Assert.shouldBe (box "hoha") ((byName "r2").Value.ReflectionValue)
+
+    [<Theory>]
+    [<InlineData("41;; 42;;")>]
+    [<InlineData("42;; ;;")>]
+    [<InlineData("42;; open System;;")>]
+    [<InlineData("42;; let x = 1;;")>]
+    [<InlineData("42;; type T = A")>]
+    let ``EvalInteractionNonThrowing keeps the last value a multi-interaction text produced`` (code: string) =
+        use fsiSession = createFsiSession false
+
+        match fsiSession.EvalInteractionNonThrowing code with
+        | Choice1Of2(Some value), [||] -> Assert.shouldBe (box 42) value.ReflectionValue
+        | result, diagnostics -> failwith $"expected the value 42, got %A{result} with %A{diagnostics}"
+
+    [<Fact>]
+    let ``EvalInteractionNonThrowing evaluates every interaction in the text`` () =
+        use fsiSession = createFsiSession false
+
+        match fsiSession.EvalInteractionNonThrowing "let a = 1;; let b = a + 1;; let c = b + 1" with
+        | Choice1Of2 _, [||] -> ()
+        | result, diagnostics -> failwith $"expected success, got %A{result} with %A{diagnostics}"
+
+        let byName name =
+            fsiSession.GetBoundValues() |> List.find (fun v -> v.Name = name)
+
+        Assert.shouldBe (box 3) (byName "c").Value.ReflectionValue

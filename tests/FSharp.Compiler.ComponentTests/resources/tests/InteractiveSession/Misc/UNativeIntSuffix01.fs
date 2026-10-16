@@ -4,5 +4,3 @@
 //<Expects status="success">val it: unativeint = 2un</Expects>
 
 unativeint 2;;
-#q;;
-

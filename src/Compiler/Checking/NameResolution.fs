@@ -3127,7 +3127,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                                 // * is function type e.g.:
                                 // ```fsharp
                                 // member x.Prop with
-                                //    get () = fun a -> printfn $"{a}"
+                                //    get () = fun a -> printn $"{a}"
                                 // ```
                                 // which is called like this: obj.Prop 123
                                 if p.IsIndexer then
@@ -3265,10 +3265,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                             |> fun a -> System.String.Join("\n", a)
                         let message =
                             FSComp.SR.tcMultipleRecdTypeChoice(RichText.mkText candidates, richTextOfEntityRefName tcref resolvedTypeName, RichText.mkText overlappingNames)
-                        if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
-                            warning(Error(message, m))
-                        else
-                            informationalWarning(Error(message, m))
+                        warning(Error(message, m))
                 | _ -> ()
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->

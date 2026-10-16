@@ -20,7 +20,8 @@ ImplFile
                            { ParenRange = (3,13--5,13) }), None, (3,2--5,13)),
                      None, Ident p1, (3,2--5,19), Yes,
                      { ArrowRange = Some (5,14--5,16)
-                       BarRange = Some (3,0--3,1) });
+                       BarRange = Some (3,0--3,1)
+                       WhenKeyword = None });
                   SynMatchClause
                     (Wild (6,2--6,3), None,
                      App
@@ -29,7 +30,8 @@ ImplFile
                           (String ("todo", Regular, (6,16--6,22)), (6,16--6,22)),
                         (6,7--6,22)), (6,2--6,22), Yes,
                      { ArrowRange = Some (6,4--6,6)
-                       BarRange = Some (6,0--6,1) })], (2,0--6,22),
+                       BarRange = Some (6,0--6,1)
+                       WhenKeyword = None })], (2,0--6,22),
                  { MatchKeyword = (2,0--2,5)
                    WithKeyword = (2,11--2,15) }), (2,0--6,22))], PreXmlDocEmpty,
           [], None, (2,0--7,0), { LeadingKeyword = None })], (true, true),

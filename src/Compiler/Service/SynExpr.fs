@@ -1070,7 +1070,7 @@ module SynExpr =
             //     let x = 3
             //     (
             //         let x = 4
-            //         printfn $"{x}"
+            //         printn $"{x}"
             //     )
             //     x
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
