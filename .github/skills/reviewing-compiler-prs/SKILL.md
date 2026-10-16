@@ -1,6 +1,6 @@
 ---
 name: reviewing-compiler-prs
-description: "Performs multi-agent, multi-model code review of F# compiler PRs across 19 dimensions including type checking, IL emission, binary compatibility, and IDE performance. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Performs multi-agent, multi-model code review of F# compiler PRs across 16 dimensions including type checking, IL emission, and binary compatibility. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks. Invoke @ide-integration for vsintegration/, src/Compiler/Service/, and src/Compiler/Symbols/."
 ---
 
 # Reviewing Compiler PRs
@@ -11,7 +11,8 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 
 - PR touches `src/Compiler/` — invoke the `expert-reviewer` agent
 - PR touches `src/FSharp.Core/` — focus on FSharp.Core Stability, API Surface, Backward Compat, XML Docs
-- PR touches `vsintegration/` or `LanguageServer/` — focus on IDE Responsiveness, Concurrency, Memory
+- PR touches `vsintegration/`, `src/Compiler/Service/`, or `src/Compiler/Symbols/` — invoke `@ide-integration`. Do not review those trees here.
+- PR touches `LanguageServer/` — IDE responsiveness moved to `@ide-integration`. Compiler concurrency stays here.
 - PR touches `tests/` only — quick check: baselines explained? Cross-TFM coverage? Tests actually assert?
 - PR touches `eng/` or build scripts — focus on Build Infrastructure, Cross-Platform
 
@@ -24,13 +25,13 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 | `Optimize/` | Optimization Correctness, IL Emission, Test Coverage |
 | `SyntaxTree/`, `pars.fsy` | Parser Integrity, Feature Gating, Typed Tree Discipline |
 | `TypedTreePickle.*`, `CompilerImports.*` | Binary Compatibility (highest priority) |
-| `Service/` | FCS API Surface, IDE Responsiveness, Concurrency, Incremental Checking |
-| `LanguageServer/` | IDE Responsiveness, Concurrency |
+| `Service/`, `Symbols/` | Read `compiler-service.md` via `@ide-integration`. Do not apply compiler dimensions here. |
+| `LanguageServer/` | IDE responsiveness: `@ide-integration`. Concurrency stays here. |
 | `Driver/` | Build Infrastructure, Incremental Checking, Cancellation |
 | `Facilities/` | Feature Gating, Concurrency |
 | `FSComp.txt` | Diagnostic Quality |
 | `FSharp.Core/` | FSharp.Core Stability, Backward Compat, XML Docs, RFC Process |
-| `vsintegration/` | IDE Responsiveness, Memory Footprint, Cross-Platform |
+| `vsintegration/` | Read `vsintegration.md` via `@ide-integration`. Memory and JTF: `@vs-integration-perf`. |
 | `eng/`, `setup/`, build scripts | Build Infrastructure, Cross-Platform |
 
 ## Subagent Dispatch
