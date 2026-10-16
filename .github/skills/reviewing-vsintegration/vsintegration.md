@@ -109,7 +109,7 @@ Quick info is unreadable, wraps through a fake divider, shows signature-help tex
 - Use `FSharpStyle.Separator` through `QuickInfoViewProvider.stackWithSeparators` and `WpfFSharpStyleFactory`, retaining `XmlDocumentation.separatorText` only as the text fallback.
 - Honor `QuickInfoOptions.ShowRemarks` and use `getLinkTooltip`’s shorter project-relative or available solution-relative path for navigation tooltips.
 - Custom tooltip content must reuse the host quick-info controller so show and dismiss stay identical to the platform. Do not keep a session capture whose only job was to dismiss the tooltip on navigation once the host already does that.
-- `QuickInfoViewProvider.provideContent` must build Roslyn `ClassifiedTextElement` content, not a custom Windows-only element.
+- `QuickInfoViewProvider.provideContent` builds `Microsoft.VisualStudio.Text.Adornments.ClassifiedTextElement` content with Roslyn `ClassificationTypeNames`, not a custom Windows-only element.
 - Pass `QuickInfoOptions.DescriptionWidth` to `TryGetToolTip` and preserve section `LineBreak` tokens and `ContainerElementStyle.Wrapped` in `QuickInfoViewProvider`.
 
 **Severity:** medium.
@@ -121,7 +121,7 @@ Use `vsintegration/src/FSharp.Editor/{QuickInfo,DocComments,Hints,Options}/**` a
 Navigation opens a window itself, jumps to metadata or the wrong linked copy, or offers a link that goes nowhere.
 
 **CHECK:**
-- A definition provider must return a navigable item; only `FSharpNavigation.NavigateToItem` may open the document.
+- A definition provider returns a navigable item. `GoToDefinition.NavigateToItem` and `GoToDefinition.TryNavigateToTextSpan` open the document.
 - Navigation must be able to return both the signature and the implementation. From an implementation, try the implementation and fall back to the signature span. A failed lookup must not leave a link that does nothing.
 - When quick info is already on a definition, do not offer a link that navigates nowhere. A link that is shown must toggle between signature and implementation the same way go-to-definition does.
 - Whether a tooltip symbol is navigable must be decided against the loaded workspace, not assumed from the symbol range alone. Navigation must reach types that are only inferred, and a symbol defined in another loaded project must resolve. A startup sentinel, identified by the existing range value rather than a copied filename, must not be offered as a target.
@@ -141,7 +141,7 @@ Completion offers items that cannot be declared there, removes items that are st
 - Auto-triggered completion must filter items by syntactic position. After a binding keyword, do not offer symbols that cannot be declared there, and do not auto-trigger where the user is declaring a new identifier.
 - In a pattern position, completion must offer only constructs that are valid destructuring, not the general symbol list.
 - In a pattern, rank items of the expected type first, but do not remove other items that are still legal to type. Remove only an item that cannot resolve in a pattern.
-- `CompletionProvider.GetChangeAsync` must not insert a generated method body.
+- `FSharpCompletionProvider.GetChangeAsync` commits `NameInCode`, including a generated override body when `GenerateBodyForOverriddenMethod` is enabled.
 - Return every edit of a completion commit as the completion change for the document version the host will apply. A side edit is applied to a version the host then overwrites.
 - Reuse the current `DeclarationListItem` values in `FSharpCompletionProvider`, displaying `NameInList` and committing `NameInCode` through `GetChangeAsync`.
 
@@ -208,7 +208,7 @@ An exception from document check, Quick Info, analysis, or the options page reac
 - Enabling an editor analysis feature must not let an exception reach the Visual Studio UI.
 - Quick Info must not throw out to the shell. A failure while resolving a symbol, including a primitive, has to stay inside the feature.
 - Opening the editor options page must not let a binding exception reach the Visual Studio UI. The settings type the page binds must stay in the shape that binding expects.
-- Do not set a process-global resource assembly; load dictionaries from `FSharp.UIResources` through the `ProvideCodeBase` attribute.
+- Do not set a process-global resource assembly. Probe `FSharp.UIResources` XAML dictionaries with `ProvideBindingPath`. `ProvideCodeBase` does not load them.
 
 **Severity:** critical.
 

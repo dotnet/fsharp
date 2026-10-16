@@ -4,7 +4,7 @@ Paths: `src/Compiler/Service/**`, `src/Compiler/Symbols/**`. Tests: `tests/FShar
 
 Host-neutral API for IDEs: checker, incremental builder, snapshots, workspace, navigation, completion, symbols, and the diagnostics surface. This is not the rest of `FSharp.Compiler.Service.fsproj`. No Visual Studio, MEF, JTF, or Roslyn types.
 
-- A host must not fork `DelayedILModuleReader`; cross-project IL reads go through `FSharpReferencedProject.ILModuleReference`.
+- Do not fork `DelayedILModuleReader`. Cross-project IL reads use `FSharpReferencedProject.ILModuleReference`, or `PEReference` with `DelayedILModuleReader`. The Visual Studio host uses `PEReference`.
 - Use `ProjectSnapshotBase.ParsingVersion`, `SignatureKey`, or `FullKey` according to the cached computation’s inputs rather than assigning every cache the whole project closure.
 - Process-wide ambient state is a leak. Readers, file-system shims, diagnostic loggers, console encoding, cancellation tokens, and generated-name state travel with the request or are restored when that owner finishes.
 - One syntactic form, one flag value, or the happy path is not the feature. Sibling constructs, the other checking flag, and the error path get the same rule and an assertion of the observable result.
@@ -15,7 +15,7 @@ Host-neutral API for IDEs: checker, incremental builder, snapshots, workspace, n
 
 ### FCS API surface
 
-A public FCS signature change must update `FSharp.Compiler.Service.SurfaceArea.netstandard20.bsl` or be marked experimental.
+A public FCS signature change must update `FSharp.Compiler.Service.SurfaceArea.netstandard20.bsl`, including when the API is marked experimental.
 
 3. **Internal type leakage** — Internal compiler data structures must not leak through the FCS (F# Compiler Service) public API. Leakage creates permanent API commitments from implementation details.
 
@@ -102,7 +102,6 @@ An edit reparses unchanged files, or a diagnostics request misses files the buil
 - a full type-check of an implementation that has a signature does not block the partial path; start that check so it can run alongside the graph.
 - `FSharpChecker.ParseAndCheckProject` must return parse errors from the same parse the check used.
 - `useTransparentCompiler` selects `BackgroundCompiler` or `TransparentCompiler`; do not add a third builder for the same setting.
-- Do not add a size threshold on the weak parse cache in `IncrementalBuild`.
 - optional capture stays off unless the caller sets the flag, the compact type-check summary is computed when the full check finishes, a timestamp read does not take the builder lock, and a cache hit is a distinct event from building a new cache.
 
 **Severity:** high.
