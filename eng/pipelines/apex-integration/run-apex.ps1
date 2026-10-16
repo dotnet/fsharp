@@ -1,7 +1,5 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)]
-    [string] $SourceRoot,
     [ValidateSet('Debug', 'Release')]
     [string] $Configuration = 'Release'
 )
@@ -15,7 +13,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $gitDirectory 'git.exe') -PathType L
 }
 $env:PATH = "$gitDirectory;$env:PATH"
 
-$repositoryRoot = Resolve-Path -LiteralPath $SourceRoot
+$repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 Set-Location $repositoryRoot
 $env:AGENT_WORKFOLDER = $repositoryRoot.Path
 
