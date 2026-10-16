@@ -42,7 +42,7 @@ type DelayedILModuleReader =
 
     /// Will lazily create the ILModuleReader.
     /// Is only evaluated once and can be called by multiple threads.
-    member internal TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
+    member internal TryGetILModuleReader: unit -> Cancellable<ILModuleReader voption>
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
