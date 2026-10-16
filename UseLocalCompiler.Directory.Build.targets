@@ -1,0 +1,11 @@
+<Project>
+  <!-- Regression matrix only, imported after the project body so these Updates win over the repo's own FSharp.Core
+       reference (the restore feed comes from the .props). CPM needs PackageVersion because a versioned PackageReference
+       is NU1008; Paket and bare Reference repos have nothing to Update and stay on their own core (smoke-only). -->
+  <ItemGroup Condition="'$(RegressionLocalCore)' == 'true' and '$(RegressionLocalCoreVersion)' != '' and '$(ManagePackageVersionsCentrally)' == 'true'">
+    <PackageVersion Update="FSharp.Core" Version="$(RegressionLocalCoreVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RegressionLocalCore)' == 'true' and '$(RegressionLocalCoreVersion)' != '' and '$(ManagePackageVersionsCentrally)' != 'true'">
+    <PackageReference Update="FSharp.Core" Version="$(RegressionLocalCoreVersion)" />
+  </ItemGroup>
+</Project>

@@ -22,14 +22,12 @@ module CacheMetrics =
     let creations = Meter.CreateCounter<int64>("creations", "count")
     let disposals = Meter.CreateCounter<int64>("disposals", "count")
 
-    let mutable private nextCacheId = 0
-
     let mkTags (name: string) =
-        let cacheId = Interlocked.Increment &nextCacheId
         // Avoid TagList(ReadOnlySpan<...>) to support net472 runtime
+        // Only the cache name is tagged: a per-instance id would be published on every measurement,
+        // inflating the tag payload sent to any connected exporter for no in-process benefit.
         let mutable tags = TagList()
         tags.Add("name", box name)
-        tags.Add("cacheId", box cacheId)
         tags
 
     let Add (tags: inref<TagList>) = adds.Add(1L, &tags)
@@ -78,6 +76,10 @@ module CacheMetrics =
     let getStatsByName name =
         statsByName.GetOrAdd(name, fun _ -> Stats())
 
+    let getTotalsByName name = (getStatsByName name).GetTotals()
+
+    let getRatioByName name = (getStatsByName name).Ratio
+
     let ListenToAll () =
         let listener = new MeterListener()
 
@@ -122,50 +124,6 @@ module CacheMetrics =
                 listener.Dispose()
                 Console.WriteLine(StatsToString())
         }
-
-    [<Sealed>]
-    type CacheMetricsListener(cacheTags: TagList, ?nameOnlyFilter: string) =
-
-        let stats = Stats()
-        let listener = new MeterListener()
-
-        do
-            for instrument in allCounters do
-                listener.EnableMeasurementEvents instrument
-
-            listener.SetMeasurementEventCallback(fun instrument v tags _ ->
-                let shouldIncrement =
-                    match nameOnlyFilter with
-                    | Some filterName ->
-                        match tags[0].Value with
-                        | :? string as name when name = filterName -> true
-                        | _ -> false
-                    | None -> tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
-
-                if shouldIncrement then
-                    stats.Incr instrument.Name v)
-
-            listener.Start()
-
-        /// Creates a listener that aggregates metrics across all cache instances with the given name.
-        new(cacheName: string) = new CacheMetricsListener(TagList(), nameOnlyFilter = cacheName)
-
-        interface IDisposable with
-            member _.Dispose() = listener.Dispose()
-
-        /// Gets the current totals for each metric type.
-        member _.GetTotals() = stats.GetTotals()
-
-        /// Gets the current hit ratio (hits / (hits + misses)).
-        member _.Ratio = stats.Ratio
-
-        /// Gets the total number of cache hits.
-        member _.Hits = stats.GetTotals().[hits.Name]
-
-        /// Gets the total number of cache misses.
-        member _.Misses = stats.GetTotals().[misses.Name]
-
-        override _.ToString() = stats.ToString()
 
 [<RequireQualifiedAccess>]
 type EvictionMode =
@@ -361,10 +319,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
             post, dispose
 
-#if DEBUG
-    let debugListener = new CacheMetrics.CacheMetricsListener(tags)
-#endif
-
     do CacheMetrics.Created &tags
 
     member val Evicted = evicted.Publish
@@ -430,9 +384,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
             CacheMetrics.Update &tags
             post (EvictionQueueMessage.Update result)
 
-    member _.CreateMetricsListener() =
-        new CacheMetrics.CacheMetricsListener(tags)
-
     member _.Dispose() =
         if Interlocked.Exchange(&disposed, 1) = 0 then
             disposeEvictionProcessor ()
@@ -447,5 +398,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     override this.Finalize() = this.Dispose()
 
 #if DEBUG
-    member _.DebugDisplay() = debugListener.ToString()
+    // Shows the totals aggregated for this cache's name. Populated only while a metrics listener
+    // (CacheMetrics.ListenToAll, e.g. under --times or the editor's metrics view) is running.
+    member _.DebugDisplay() =
+        (CacheMetrics.getStatsByName name).ToString()
 #endif

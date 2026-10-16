@@ -128,3 +128,128 @@ let ``GetPartialLongNameEx preserves plain long identifiers`` (lineStr: string, 
     Assert.NotEmpty pln.QualifyingIdents
     Assert.Equal(lastQualifier, List.last pln.QualifyingIdents)
     Assert.Equal("", pln.PartialIdent)
+
+// QuickParse.GetCompleteIdentifierIsland tolerateJustAfter line index -> (identifier, endColumn, isQuoted) option.
+[<Theory>]
+[<InlineData(true, "", -1, null, -1)>]
+[<InlineData(false, "", -1, null, -1)>]
+[<InlineData(true, "", 0, null, -1)>]
+[<InlineData(false, "", 0, null, -1)>]
+[<InlineData(true, null, 0, null, -1)>]
+[<InlineData(false, null, 0, null, -1)>]
+[<InlineData(false, "identifier", 0, "identifier", 10)>]
+[<InlineData(false, "identifier", 8, "identifier", 10)>]
+[<InlineData(true, "identifier", 0, "identifier", 10)>]
+[<InlineData(true, "identifier", 8, "identifier", 10)>]
+[<InlineData(false, "identifier", 10, null, -1)>]
+[<InlineData(true, "identifier", 10, "identifier", 10)>]
+[<InlineData(true, "identifier", 11, null, -1)>]
+[<InlineData(false, "identifier", 11, null, -1)>]
+[<InlineData(false, "|Identifier|", 0, "|Identifier|", 12)>]
+[<InlineData(true, "|Identifier|", 0, "|Identifier|", 12)>]
+[<InlineData(false, "|Identifier|", 12, null, -1)>]
+[<InlineData(true, "|Identifier|", 12, "|Identifier|", 12)>]
+[<InlineData(false, "|Identifier|", 13, null, -1)>]
+[<InlineData(true, "|Identifier|", 13, null, -1)>]
+[<InlineData(false, "``Space Man``", 0, "``Space Man``", 13)>]
+[<InlineData(true, "``Space Man``", 0, "``Space Man``", 13)>]
+[<InlineData(false, "``Space Man``", 10, "``Space Man``", 13)>]
+[<InlineData(true, "``Space Man``", 10, "``Space Man``", 13)>]
+[<InlineData(false, "``Space Man``", 11, "``Space Man``", 13)>]
+[<InlineData(false, "``Space Man``", 12, "``Space Man``", 13)>]
+[<InlineData(true, "``Space Man``", 12, "``Space Man``", 13)>]
+[<InlineData(false, "``Space Man``", 13, null, -1)>]
+[<InlineData(true, "``Space Man``", 13, "``Space Man``", 13)>]
+[<InlineData(false, "``Space Man``", 14, null, -1)>]
+[<InlineData(true, "``Space Man``", 14, null, -1)>]
+[<InlineData(true, "``msft-prices.csv``", 14, "``msft-prices.csv``", 19)>]
+[<InlineData(true, "[|abc;def|]", 2, "abc", 5)>]
+[<InlineData(true, "[|abc;def|]", 4, "abc", 5)>]
+[<InlineData(true, "[|abc;def|]", 5, "abc", 5)>]
+[<InlineData(true, "[|abc;def|]", 6, "def", 9)>]
+[<InlineData(true, "[|abc;def|]", 8, "def", 9)>]
+[<InlineData(true, "[|abc;def|]", 9, "def", 9)>]
+[<InlineData(false, "identifier(*boo*)", 0, "identifier", 10)>]
+[<InlineData(true, "identifier(*boo*)", 0, "identifier", 10)>]
+[<InlineData(false, "identifier(*boo*)", 10, null, -1)>]
+[<InlineData(true, "identifier(*boo*)", 10, "identifier", 10)>]
+[<InlineData(false, "identifier(*boo*)", 11, null, -1)>]
+[<InlineData(true, "identifier(*boo*)", 11, null, -1)>]
+[<InlineData(false, "``Space Man (*boo*)``", 13, "``Space Man (*boo*)``", 21)>]
+[<InlineData(true, "``Space Man (*boo*)``", 13, "``Space Man (*boo*)``", 21)>]
+[<InlineData(false, "(*boo*)identifier", 11, "identifier", 17)>]
+[<InlineData(true, "(*boo*)identifier", 11, "identifier", 17)>]
+[<InlineData(false, "identifier(*(*  *)boo*)", 0, "identifier", 10)>]
+[<InlineData(true, "identifier(*(*  *)boo*)", 0, "identifier", 10)>]
+let ``QuickParse GetCompleteIdentifierIsland``
+    (tolerateJustAfter: bool)
+    (line: string)
+    (index: int)
+    (expectedIdent: string)
+    (expectedEndCol: int)
+    =
+    let actual =
+        match QuickParse.GetCompleteIdentifierIsland tolerateJustAfter line index with
+        | Some(ident, endCol, _) -> Some(ident, endCol)
+        | None -> None
+
+    let expected =
+        if isNull expectedIdent then
+            None
+        else
+            Some(expectedIdent, expectedEndCol)
+
+    Assert.Equal<(string * int) option>(expected, actual)
+
+[<Fact(Skip = "This is probably not what the user wanted; not enforcing this test.")>]
+let ``QuickParse GetCompleteIdentifierIsland tolerates one char after a quoted identifier (legacy CheckIsland25, not enforced)``
+    ()
+    =
+    let actual =
+        match QuickParse.GetCompleteIdentifierIsland true "``Space Man``" 11 with
+        | Some(ident, endCol, _) -> Some(ident, endCol)
+        | None -> None
+
+    Assert.Equal<(string * int) option>(Some("Man", 11), actual)
+
+// tuple (QualifyingIdents, PartialIdent, LastDotPos). Encoding for the [<InlineData>] primitives:
+//   quals:   null -> [] (empty list); "" -> [""] (one empty qualifier); else ';'-split into a list.
+//   lastDot: -1 -> None; else Some lastDot.
+[<Theory>]
+[<InlineData("let y = List.", "List", "", 12)>]
+[<InlineData("let y = List.conc", "List", "conc", 12)>]
+[<InlineData("let y = S", null, "S", -1)>]
+[<InlineData("S", null, "S", -1)>]
+[<InlineData("let y=", null, "", -1)>]
+[<InlineData("Console.Wr", "Console", "Wr", 7)>]
+[<InlineData(" .", "", "", 1)>]
+[<InlineData(".", "", "", 0)>]
+[<InlineData("System.Console.Wr", "System;Console", "Wr", 14)>]
+[<InlineData("let y=f'", null, "f'", -1)>]
+[<InlineData("let y=SomeModule.f'", "SomeModule", "f'", 16)>]
+[<InlineData("let y=Some.OtherModule.f'", "Some;OtherModule", "f'", 22)>]
+[<InlineData("let y=f'g", null, "f'g", -1)>]
+[<InlineData("let y=SomeModule.f'g", "SomeModule", "f'g", 16)>]
+[<InlineData("let y=Some.OtherModule.f'g", "Some;OtherModule", "f'g", 22)>]
+[<InlineData("let y=FSharp.Data.File.``msft-prices.csv``", null, "", -1)>]
+[<InlineData("let y=FSharp.Data.File.``msft-prices.csv", "FSharp;Data;File", "msft-prices.csv", 22)>]
+[<InlineData("let y=SomeModule.  f", "SomeModule", "f", 16)>]
+[<InlineData("let y=SomeModule  .f", "SomeModule", "f", 18)>]
+[<InlineData("let y=SomeModule  .  f", "SomeModule", "f", 18)>]
+[<InlineData("let y=SomeModule  .", "SomeModule", "", 18)>]
+[<InlineData("let y=SomeModule  .  ", "SomeModule", "", 18)>]
+let ``QuickParse GetPartialLongNameEx``
+    (line: string)
+    (quals: string)
+    (partialIdent: string)
+    (lastDot: int)
+    =
+    let actual = QuickParse.GetPartialLongNameEx(line, line.Length - 1)
+
+    let expectedQuals =
+        if isNull quals then [] else quals.Split(';') |> List.ofArray
+
+    let expectedLastDot = if lastDot < 0 then None else Some lastDot
+    let expected = (expectedQuals, partialIdent, expectedLastDot)
+    let actualTuple = (actual.QualifyingIdents, actual.PartialIdent, actual.LastDotPos)
+    Assert.Equal<string list * string * int option>(expected, actualTuple)

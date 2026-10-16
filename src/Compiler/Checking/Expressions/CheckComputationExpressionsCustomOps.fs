@@ -18,7 +18,7 @@ type DeferredCustomOpSink =
     {
         KeywordRange: range
         OpName: string
-        UsageText: unit -> string option
+        UsageText: unit -> RichText option
         SyntheticCallRange: range
         Fallback: MethInfo
         NameEnv: NameResolutionEnv

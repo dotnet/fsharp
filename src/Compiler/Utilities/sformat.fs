@@ -72,6 +72,7 @@ type TextTag =
     | Punctuation
     | UnknownType
     | UnknownEntity
+    | UnresolvedName
 
 type TaggedText(tag: TextTag, text: string) =
     member x.Tag = tag
@@ -213,6 +214,7 @@ module TaggedText =
     let tagUnion t = mkTag TextTag.Union t
     let tagMember t = mkTag TextTag.Member t
     let tagUnknownEntity t = mkTag TextTag.UnknownEntity t
+    let tagUnresolvedName t = mkTag TextTag.UnresolvedName t
     let tagUnknownType t = mkTag TextTag.UnknownType t
 
     // common tagged literals

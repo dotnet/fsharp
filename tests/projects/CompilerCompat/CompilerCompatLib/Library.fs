@@ -55,3 +55,14 @@ module Library =
     [<TestAttr(LiteralAttrArg)>]
     type TypeWithLiteralAttrArg() =
         member _.GetValue() = LiteralAttrArg
+
+    /// Record + inline constructor for the FS-1073 cross-compiler test. The new positional syntax is used
+    /// when built with a preview compiler, classic syntax otherwise; both pickle identically.
+    type RecordCtorPoint = { A: int; B: int }
+
+    let inline makeRecordCtorPoint a b =
+#if USES_PREVIEW_COMPILER
+        RecordCtorPoint(a, b)
+#else
+        { RecordCtorPoint.A = a; RecordCtorPoint.B = b }
+#endif

@@ -82,10 +82,11 @@ module XmlDocWriter =
             error (Error(FSComp.SR.docfileNoXmlSuffix (), Range.rangeStartup))
 
         let mutable members = []
+        let includeEnv = XmlDocIncludeExpander.mkExpansionEnv ()
 
-        let addMember id xmlDoc =
+        let addMember id (xmlDoc: XmlDoc) =
             if hasDoc xmlDoc then
-                let doc = xmlDoc.GetXmlText()
+                let doc = xmlDoc.GetExpandedXmlText(true, includeEnv)
                 members <- (id, doc) :: members
 
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc

@@ -519,7 +519,7 @@ type DependencyProvider
             with e ->
                 let e = stripTieWrapper e
                 let n, m = FSComp.SR.couldNotLoadDependencyManagerExtension (path, e.Message)
-                reportError.Invoke(ErrorReportType.Warning, n, m)
+                reportError.Invoke(ErrorReportType.Warning, n, m.Text)
                 None)
         |> Seq.filter (fun a -> assemblyHasAttribute a dependencyManagerAttributeName)
 
@@ -620,7 +620,7 @@ type DependencyProvider
                     let err, msg =
                         this.CreatePackageManagerUnknownError(compilerTools, outputDir, sdkDirOverride, path.Split(':').[0], reportError)
 
-                    reportError.Invoke(ErrorReportType.Error, err, msg)
+                    reportError.Invoke(ErrorReportType.Error, err, msg.Text)
                     null, null
 
                 | Some kv -> path, kv.Value
@@ -629,7 +629,7 @@ type DependencyProvider
         with e ->
             let e = stripTieWrapper e
             let err, msg = FSComp.SR.packageManagerError e.Message
-            reportError.Invoke(ErrorReportType.Error, err, msg)
+            reportError.Invoke(ErrorReportType.Error, err, msg.Text)
             null, null
 
     /// Fetch a dependencymanager that supports a specific key
@@ -644,7 +644,7 @@ type DependencyProvider
         with e ->
             let e = stripTieWrapper e
             let err, msg = FSComp.SR.packageManagerError e.Message
-            reportError.Invoke(ErrorReportType.Error, err, msg)
+            reportError.Invoke(ErrorReportType.Error, err, msg.Text)
             null
 
     /// Resolve reference for a list of package manager lines
@@ -705,7 +705,7 @@ type DependencyProvider
             dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
             res
         | Error(errorNumber, errorData) ->
-            reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
+            reportError.Invoke(ErrorReportType.Error, errorNumber, errorData.Text)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
     interface IDisposable with

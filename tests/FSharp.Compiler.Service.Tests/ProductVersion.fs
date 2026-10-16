@@ -35,6 +35,11 @@ module FileVersionTest =
 
 module ProductVersionTest =
 
+    [<Fact>]
+    let ``breaking FCS contracts use the 43.13 version family`` () =
+        let version = typeof<FSharp.Compiler.Tokenization.FSharpSourceTokenizer>.Assembly.GetName().Version
+        Assert.Equal(Version(43, 13), Version(version.Major, version.Minor))
+
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
     let fileVersionAttrName = typeof<System.Reflection.AssemblyFileVersionAttribute>.FullName
 

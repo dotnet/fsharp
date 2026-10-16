@@ -40,7 +40,7 @@ These are **general investigation instructions** for this agent, a template for 
 ### 1. Preparation
 - **Setup:** Clone/generate repo/snippet/etc.
 - **Clear old config:** Remove `global.json` unless needed.
-- **Prepare local compiler:** Use `PrepareRepoForRegressionTesting.fsx` and absolute env paths.
+- **Prepare local compiler:** Build via `dotnet fsi <fsharp-repo>/eng/scripts/BuildWithLocalFSharp.fsx --build-script '<cmd>'` (sets the local-compiler + FSharp.Core shim env).
 
 ### 2. Experiment Matrix
 

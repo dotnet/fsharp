@@ -25,6 +25,7 @@ open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
@@ -44,6 +45,13 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+
+// Naming wrappers routed through here so synthesized-name replay stays enforceable.
+let private freshIlxName (g: TcGlobals) name m =
+    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(name, m)
+
+let private freshCoreName (g: TcGlobals) name m =
+    g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
 
 let getEmptyStackGuard () = StackGuard("IlxAssemblyGenerator")
 
@@ -876,16 +884,12 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
     elif g.realsig then
         assert (g.CompilerGlobalState |> Option.isSome)
 
-        mkILFieldSpecInTy (
-            ilContainerTy,
-            CompilerGeneratedName(g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(nm, m)),
-            ilTy
-        )
+        mkILFieldSpecInTy (ilContainerTy, CompilerGeneratedName(freshIlxName g nm m), ilTy)
     else
         let fieldName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(nm, m)
+            freshIlxName g nm m
 
         let ilFieldContainerTy = mkILTyForCompLoc (CompLocForInitClass cloc)
         mkILFieldSpecInTy (ilFieldContainerTy, fieldName, ilTy)
@@ -1394,7 +1398,7 @@ let StorageForVal m v eenv =
             eenv.valsInScope[v]
         with :? KeyNotFoundException ->
             assert false
-            errorR (Error(FSComp.SR.ilUndefinedValue (showL (valAtBindL v)), m))
+            errorR (Error(FSComp.SR.ilUndefinedValue (RichText.mkText (showL (valAtBindL v))), m))
             notlazy (Arg 668 (* random value for post-hoc diagnostic analysis on generated tree *) )
 
     v.Force()
@@ -2261,7 +2265,6 @@ type AnonTypeGenerationTable() =
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
                         |> g.AddMethodGeneratedAttributes
-                    yield! genToStringMethod ilTy
                 ]
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
@@ -2364,6 +2367,10 @@ type AnonTypeGenerationTable() =
                 Some(mkLocalValRef augmentation.EqualsExactWithComparer)
             )
 
+            // Generate ToString through the synthetic record tycon (renders "{| Name = value; ... |}" under
+            // --reflectionfree, otherwise sprintf "%+A"). Done here, not in ilMethods above, because it needs the tycon.
+            let ilToStringMethodDefs = genToStringMethod (ilTy, tycon)
+
             // Build the ILTypeDef. We don't rely on the normal record generation process because we want very specific field names
 
             let ilTypeDefAttribs =
@@ -2386,7 +2393,7 @@ type AnonTypeGenerationTable() =
                     ilGenericParams,
                     ilBaseTy,
                     ilInterfaceTys,
-                    mkILMethods (ilCtorDef :: ilMethods),
+                    mkILMethods (ilCtorDef :: ilMethods @ ilToStringMethodDefs),
                     ilFieldDefs,
                     emptyILTypeDefs,
                     ilProperties,
@@ -3152,7 +3159,10 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 ]
                 |> String.concat ","
 
-            informationalWarning (Error(FSComp.SR.ilxGenUnknownDebugPoint (debugPointName, others), dpExpr.Range))
+            informationalWarning (
+                Error(FSComp.SR.ilxGenUnknownDebugPoint (RichText.mkText debugPointName, RichText.mkText others), dpExpr.Range)
+            )
+
             CG.EmitDebugPoint cgbuf m
         | true, dp ->
             // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
@@ -3204,13 +3214,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                     // is important if the nested state machine generates dynamic code (LoweredStateMachineResult.UseAlternative).
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    warning (Error(FSComp.SR.reprStateMachineNotCompilable msg, expr.Range))
+                    warning (Error(FSComp.SR.reprStateMachineNotCompilable (RichText.mkText msg), expr.Range))
                     GenExpr cenv cgbuf eenv altExpr sequel
                     true
                 | LoweredStateMachineResult.NoAlternative msg ->
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative msg, expr.Range))
+                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative (RichText.mkText msg), expr.Range))
                     GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
                     true
                 | LoweredStateMachineResult.NotAStateMachine ->
@@ -3867,7 +3877,11 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref, argTys, args, m) sequel =
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
     let anonCtor, _anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
@@ -3881,7 +3895,11 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
     let _anonCtor, anonMethods, anonType =
-        cgbuf.mgbuf.LookupAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        cgbuf.mgbuf.LookupAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, cgbuf.mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv m eenv.tyenv tyargs
@@ -4492,7 +4510,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         || valRefEq g v g.cgh__resumableEntry_vref
         || valRefEq g v g.cgh__stateMachine_vref
         ->
-        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen v.DisplayName, m))
+        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen (richTextOfValName g v.Deref), m))
         CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) AI_ldnull
         GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -4693,7 +4711,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                             let locName =
                                 // Ensure that we have an g.CompilerGlobalState
                                 assert (g.CompilerGlobalState |> Option.isSome)
-                                g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("arg", m), ilTy, false
+                                freshIlxName g "arg" m, ilTy, false
 
                             let loc, _realloc, eenv = AllocLocal cenv cgbuf eenv true locName scopeMarks
                             GenExpr cenv cgbuf eenv laterArg Continue
@@ -5030,13 +5048,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
             assert (cenv.g.CompilerGlobalState |> Option.isSome)
 
             let whereToSave, _realloc, eenvinner =
-                AllocLocal
-                    cenv
-                    cgbuf
-                    eenvinner
-                    true
-                    (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("tryres", m), ilResultTy, false)
-                    (startTryMark, endTryMark)
+                AllocLocal cenv cgbuf eenvinner true (freshIlxName cenv.g "tryres" m, ilResultTy, false) (startTryMark, endTryMark)
 
             Some(whereToSave, ilResultTy), eenvinner
 
@@ -5311,8 +5323,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
 
-            let vName =
-                g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("endLoop", m)
+            let vName = freshIlxName g "endLoop" m
 
             let v, _realloc, eenvinner =
                 AllocLocal cenv cgbuf eenvinner true (vName, g.ilg.typ_Int32, false) (start, finish)
@@ -5883,7 +5894,7 @@ and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
     | Method _
     | Env _
     | Null ->
-        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid v.DisplayName, m))
+        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid (richTextOfValName cenv.g v.Deref), m))
 
         CG.EmitInstr
             cgbuf
@@ -5940,13 +5951,7 @@ and GenDefaultValue cenv cgbuf eenv (ty, m) =
                     // Ensure that we have an g.CompilerGlobalState
                     assert (g.CompilerGlobalState |> Option.isSome)
 
-                    AllocLocal
-                        cenv
-                        cgbuf
-                        eenv
-                        true
-                        (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("default", m), ilTy, false)
-                        scopeMarks
+                    AllocLocal cenv cgbuf eenv true (freshIlxName g "default" m, ilTy, false) scopeMarks
                 // We can normally rely on .NET IL zero-initialization of the temporaries
                 // we create to get zero values for struct types.
                 //
@@ -6625,25 +6630,11 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
         // The local for the state machine
         let locIdx, realloc, _ =
-            AllocLocal
-                cenv
-                cgbuf
-                eenvouter
-                true
-                (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("machine", m), ilCloTy, false)
-                scopeMarks
+            AllocLocal cenv cgbuf eenvouter true (freshIlxName g "machine" m, ilCloTy, false) scopeMarks
 
         // The local for the state machine address
         let locIdx2, _realloc2, _ =
-            AllocLocal
-                cenv
-                cgbuf
-                eenvouter
-                true
-                (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName(afterCodeThisVar.DisplayName, m),
-                 ilMachineAddrTy,
-                 false)
-                scopeMarks
+            AllocLocal cenv cgbuf eenvouter true (freshIlxName g afterCodeThisVar.DisplayName m, ilMachineAddrTy, false) scopeMarks
 
         let eenvouter =
             eenvouter
@@ -6842,7 +6833,7 @@ and GenSequenceExpr
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars)
 
     let ilxCloSpec =
-        IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars, false)
+        IlxClosureSpec.Create(cloref, GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars, false)
 
     let formalClospec =
         IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams, false)
@@ -7084,8 +7075,10 @@ and GenStaticDelegateClosureTypeDefs
 and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
-and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv[c, m]))
+and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
+    tps
+    |> DropErasedTypars
+    |> List.map (fun tp -> GenType cenv m tyenv (mkTyparTy tp))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
@@ -7485,7 +7478,7 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
 
     /// Compute the contract if it is a local type function
     let ilCloGenericFormals = GenGenericParams cenv eenvinner cloFreeTyvars
-    let ilCloGenericActuals = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+    let ilCloGenericActuals = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
 
     let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)
 
@@ -7537,136 +7530,303 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         with _ ->
             false
 
-    // Work out the free type variables for the morphing thunk
-    let takenNames = List.map nameOfVal tmvs
+    let invokeParamInfos =
+        List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1
 
-    let cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner =
-        GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter takenNames expr
+    let numDelegeeParams = invokeParamInfos.Length
 
-    let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
-    let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
+    let etaUnitDelegate =
+        match tmvs, invokeParamInfos with
+        | [ _ ], [] -> true
+        | _ -> false
 
-    // When creating a delegate that does not capture any variables, we can instead create a static closure and directly reference the method.
-    let useStaticClosure = cloFreeVars.IsEmpty
+    let tmvs, body = BindUnitVars g (tmvs, invokeParamInfos, body)
 
-    // Create a new closure class with a single "delegee" method that implements the delegate.
-    let delegeeMethName = "Invoke"
-    let ilDelegeeTyInner = mkILBoxedTy ilDelegeeTypeRef ilDelegeeGenericActualsInner
+    // Point the delegate directly at a recognized transparent-forwarding target instead of generating an
+    // intermediate closure; anything unmatched falls back to the closure path below.
+    let directDelegateTarget =
+        if not (g.langVersion.SupportsFeature LanguageFeature.DirectDelegateConstruction) then
+            None
+        elif
+            not cenv.options.localOptimizationsEnabled
+            && (etaUnitDelegate || tmvs |> List.exists (fun v -> not v.IsCompilerGenerated))
+        then
+            // Keep eta-expanded delegates as closures in unoptimized builds so the user's lambda parameter
+            // names survive for debugging; non-eta parameters are synthesized, so nothing is lost there.
+            None
+        else
+            match classifyForwardingTarget (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit) g tmvs body with
+            | DirectDelegateForwardingTargetCandidate.FSharpVal(vref, valUseFlags, tyargs, leadingArgs) ->
+                match StorageForValRef m vref eenvouter with
+                | Method(valReprInfo, vrefM, mspec, _, _, ctps, _, _, _, _, _, _) ->
+                    let _, witnessInfos, _, _, _ =
+                        GetValReprTypeInCompiledForm g valReprInfo ctps.Length vrefM.Type m
 
-    let envForDelegeeUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
+                    let hasWitnesses = ComputeGenerateWitnesses g eenvouter && not witnessInfos.IsEmpty
 
-    let numthis = if useStaticClosure then 0 else 1
+                    match
+                        fsharpValDirectlyBindable
+                            (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit)
+                            g
+                            tmvs
+                            leadingArgs
+                            vrefM
+                            valUseFlags
+                            hasWitnesses
+                    with
+                    | ValueSome(virtualCall, takesInstanceArg) ->
+                        let ilTyArgs = GenTypeArgs cenv m eenvouter.tyenv tyargs
 
-    let tmvs, body =
-        BindUnitVars g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
+                        let numEnclILTypeArgs =
+                            if vrefM.MemberInfo.IsSome && not vrefM.IsExtensionMember then
+                                List.length (vrefM.MemberApparentEntity.Typars |> DropErasedTypars)
+                            else
+                                0
 
-    // The slot sig contains a formal instantiation. When creating delegates we're only
-    // interested in the actual instantiation since we don't have to emit a method impl.
-    let ilDelegeeParams, ilDelegeeRet =
-        GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
+                        if ilTyArgs.Length < numEnclILTypeArgs then
+                            None
+                        else
+                            let ilEnclArgTys, ilMethArgTys = List.splitAt numEnclILTypeArgs ilTyArgs
 
-    let envForDelegeeMeth =
-        AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+                            let targetMspec =
+                                mkILMethSpec (mspec.MethodRef, mspec.DeclaringType.Boxity, ilEnclArgTys, ilMethArgTys)
 
-    let ilMethodBody =
-        CodeGenMethodForExpr
-            cenv
-            cgbuf.mgbuf
-            ([],
-             delegeeMethName,
-             envForDelegeeMeth,
-             1,
-             None,
-             body,
-             (if slotSigHasVoidReturnTy slotsig then
-                  discardAndReturnVoid
-              else
-                  Return))
+                            let numBoundLeadingFormals = if takesInstanceArg then 0 else leadingArgs.Length
 
-    let delegeeInvokeMeth =
-        (if useStaticClosure then
-             mkILNonGenericStaticMethod
-         else
-             mkILNonGenericInstanceMethod) (
-            delegeeMethName,
-            ILMemberAccess.Assembly,
-            ilDelegeeParams,
-            ilDelegeeRet,
-            MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
-        )
+                            if takesInstanceArg <> targetMspec.MethodRef.CallingConv.IsInstance then
+                                None
+                            else
+                                let ilDelegeeRetTy =
+                                    let envUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvouter
 
-    let delegeeCtorMeth =
-        mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports)
+                                    let _, ilDelegeeRet =
+                                        GenActualSlotsig m cenv envUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
-    let ilCtorBody = delegeeCtorMeth.MethodBody
+                                    ilDelegeeRet.Type
 
-    let ilCloLambdas = Lambdas_return ilCtxtDelTy
+                                if
+                                    signatureMatches
+                                        numBoundLeadingFormals
+                                        numDelegeeParams
+                                        ilDelegeeRetTy
+                                        ilEnclArgTys
+                                        ilMethArgTys
+                                        targetMspec
+                                then
+                                    Some(targetMspec, receiverInfo leadingArgs virtualCall takesInstanceArg)
+                                else
+                                    None
+                    | ValueNone -> None
+                | _ -> None
 
-    let cloTypeDefs =
-        (if useStaticClosure then
-             GenStaticDelegateClosureTypeDefs
-         else
-             GenClosureTypeDefs)
-            cenv
-            (ilDelegeeTypeRef,
-             ilDelegeeGenericParams,
-             [],
-             ilCloAllFreeVars,
-             ilCloLambdas,
-             ilCtorBody,
-             [ delegeeInvokeMeth ],
-             [],
-             g.ilg.typ_Object,
-             [],
-             None)
+            | DirectDelegateForwardingTargetCandidate.ILMethod(isVirtual,
+                                                               isStruct,
+                                                               isCtor,
+                                                               valUseFlag,
+                                                               ilMethRef,
+                                                               enclTypeInst,
+                                                               methInst,
+                                                               leadingArgs) ->
+                if
+                    ilMethodDirectlyBindable
+                        (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit)
+                        g
+                        tmvs
+                        leadingArgs
+                        ilMethRef
+                        valUseFlag
+                        isCtor
+                then
+                    let ilEnclArgTys = GenTypeArgs cenv m eenvouter.tyenv enclTypeInst
+                    let ilMethArgTys = GenTypeArgs cenv m eenvouter.tyenv methInst
+                    let boxity = if isStruct then AsValue else AsObject
+                    let targetMspec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
 
-    for cloTypeDef in cloTypeDefs do
-        cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
+                    let numBoundLeadingFormals =
+                        if ilMethRef.CallingConv.IsInstance then
+                            0
+                        else
+                            leadingArgs.Length
 
-    CountClosure()
+                    // Imported metadata carries different assembly scope refs than the compiler-generated
+                    // delegee types, so structural IL type comparison reports false negatives even for
+                    // primitives; the arity check is the sound residual guard (the call is already typed).
+                    if targetMspec.FormalArgTypes.Length - numBoundLeadingFormals = numDelegeeParams then
+                        Some(targetMspec, receiverInfo leadingArgs isVirtual ilMethRef.CallingConv.IsInstance)
+                    else
+                        None
+                else
+                    None
 
-    // Push the constructor for the delegee
-    let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
+            | DirectDelegateForwardingTargetCandidate.Other -> None
 
-    if useStaticClosure then
-        GenUnit cenv eenvouter m cgbuf
-    else
-        let ilxCloSpec =
-            IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
+    match directDelegateTarget with
+    | Some(targetMspec, receiverInfo) ->
+        match receiverInfo with
+        | None ->
+            // Static target: null Target.
+            GenUnit cenv eenvouter m cgbuf
+            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
+        | Some(receiverExpr, isVirtual, isInstanceReceiver) ->
+            // The leading argument becomes the Target: an instance receiver, or a static method's closed-over first argument.
+            GenExpr cenv cgbuf eenvouter receiverExpr Continue
 
-        GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
+            if isInstanceReceiver && targetMspec.DeclaringType.Boxity.IsAsValue then
+                // Box a copy of a value-type instance receiver as the 'object' Target; invocation reaches 'this'
+                // through the runtime's unboxing stub, matching the closure's by-value capture. Only an instance
+                // receiver is boxed - a static closed-over first argument is already a reference.
+                CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box targetMspec.DeclaringType)
 
-        for fv in cloFreeVars do
-            GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
+            if isVirtual then
+                // dup the receiver so ldvirtftn can bind its runtime type's override.
+                CG.EmitInstr cgbuf (pop 0) (Push [ targetMspec.DeclaringType ]) AI_dup
+                CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_IntPtr ]) (I_ldvirtftn targetMspec)
+            else
+                CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn targetMspec)
 
-        CG.EmitInstr
-            cgbuf
-            (pop ilCloAllFreeVars.Length)
-            (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
-            (I_newobj(ilxCloSpec.Constructor, None))
+        // newobj Delegate::.ctor(object, native int)
+        let ilDelegeeCtorMethOuter =
+            mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
 
-    // Push the function pointer to the Invoke method of the delegee
-    let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
+        CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
+        GenSequel cenv eenvouter.cloc cgbuf sequel
 
-    let ilDelegeeInvokeMethOuter =
-        (if useStaticClosure then
-             mkILNonGenericStaticMethSpecInTy
-         else
-             mkILNonGenericInstanceMethSpecInTy) (
-            ilDelegeeTyOuter,
-            "Invoke",
-            typesOfILParams ilDelegeeParams,
-            ilDelegeeRet.Type
-        )
+    | None ->
+        let takenNames = List.map nameOfVal tmvs
 
-    CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn ilDelegeeInvokeMethOuter)
+        // Work out the free type variables for the morphing thunk
+        let cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner =
+            GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter takenNames expr
 
-    // Instantiate the delegate
-    let ilDelegeeCtorMethOuter =
-        mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+        let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
+        let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 
-    CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
-    GenSequel cenv eenvouter.cloc cgbuf sequel
+        // When creating a delegate that does not capture any variables, we can instead create a static closure and directly reference the method.
+        let useStaticClosure = cloFreeVars.IsEmpty
+
+        // Create a new closure class with a single "delegee" method that implements the delegate.
+        let delegeeMethName = "Invoke"
+        let ilDelegeeTyInner = mkILBoxedTy ilDelegeeTypeRef ilDelegeeGenericActualsInner
+
+        let envForDelegeeUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
+
+        let numthis = if useStaticClosure then 0 else 1
+
+        // The slot sig contains a formal instantiation. When creating delegates we're only
+        // interested in the actual instantiation since we don't have to emit a method impl.
+        let ilDelegeeParams, ilDelegeeRet =
+            GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
+
+        let envForDelegeeMeth =
+            AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+
+        let ilMethodBody =
+            CodeGenMethodForExpr
+                cenv
+                cgbuf.mgbuf
+                ([],
+                 delegeeMethName,
+                 envForDelegeeMeth,
+                 1,
+                 None,
+                 body,
+                 (if slotSigHasVoidReturnTy slotsig then
+                      discardAndReturnVoid
+                  else
+                      Return))
+
+        let delegeeInvokeMeth =
+            (if useStaticClosure then
+                 mkILNonGenericStaticMethod
+             else
+                 mkILNonGenericInstanceMethod) (
+                delegeeMethName,
+                ILMemberAccess.Assembly,
+                ilDelegeeParams,
+                ilDelegeeRet,
+                MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+            )
+
+        let delegeeCtorMeth =
+            mkILSimpleStorageCtor (
+                Some g.ilg.typ_Object.TypeSpec,
+                ilDelegeeTyInner,
+                [],
+                [],
+                ILMemberAccess.Assembly,
+                None,
+                eenvouter.imports
+            )
+
+        let ilCtorBody = delegeeCtorMeth.MethodBody
+
+        let ilCloLambdas = Lambdas_return ilCtxtDelTy
+
+        let cloTypeDefs =
+            (if useStaticClosure then
+                 GenStaticDelegateClosureTypeDefs
+             else
+                 GenClosureTypeDefs)
+                cenv
+                (ilDelegeeTypeRef,
+                 ilDelegeeGenericParams,
+                 [],
+                 ilCloAllFreeVars,
+                 ilCloLambdas,
+                 ilCtorBody,
+                 [ delegeeInvokeMeth ],
+                 [],
+                 g.ilg.typ_Object,
+                 [],
+                 None)
+
+        for cloTypeDef in cloTypeDefs do
+            cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None, m)
+
+        CountClosure()
+
+        // Push the constructor for the delegee
+        let ctxtGenericArgsForDelegee = GenGenericArgs cenv m eenvouter.tyenv cloFreeTyvars
+
+        if useStaticClosure then
+            GenUnit cenv eenvouter m cgbuf
+        else
+            let ilxCloSpec =
+                IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee, false)
+
+            GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
+
+            for fv in cloFreeVars do
+                GenGetFreeVarForClosure cenv cgbuf eenvouter m fv
+
+            CG.EmitInstr
+                cgbuf
+                (pop ilCloAllFreeVars.Length)
+                (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
+                (I_newobj(ilxCloSpec.Constructor, None))
+
+        // Push the function pointer to the Invoke method of the delegee
+        let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
+
+        let ilDelegeeInvokeMethOuter =
+            (if useStaticClosure then
+                 mkILNonGenericStaticMethSpecInTy
+             else
+                 mkILNonGenericInstanceMethSpecInTy) (
+                ilDelegeeTyOuter,
+                "Invoke",
+                typesOfILParams ilDelegeeParams,
+                ilDelegeeRet.Type
+            )
+
+        CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_IntPtr ]) (I_ldftn ilDelegeeInvokeMethOuter)
+
+        // Instantiate the delegate
+        let ilDelegeeCtorMethOuter =
+            mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+
+        CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
+        GenSequel cenv eenvouter.cloc cgbuf sequel
 
 /// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
 and ExprIsTraitCall expr =
@@ -9412,7 +9572,7 @@ and GenParams
                         if takenNames.Contains(id.idText) then
                             // Ensure that we have an g.CompilerGlobalState
                             assert (g.CompilerGlobalState |> Option.isSome)
-                            g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(id.idText, id.idRange)
+                            freshCoreName g id.idText id.idRange
                         else
                             id.idText
 
@@ -10210,9 +10370,9 @@ and GenSetStorage m cgbuf storage =
 
         CG.EmitInstr cgbuf (pop 1) Push0 (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilSetterMethRef, ilContainerTy, []), None))
 
-    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda ilGetterMethSpec.Name, m))
+    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod ilGetterMethSpec.Name), m))
 
-    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda mspec.Name, m))
+    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (RichText.mkMethod mspec.Name), m))
 
     | Null -> CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
 
@@ -10481,13 +10641,7 @@ and EmitSaveStack cenv cgbuf eenv m scopeMarks =
                 // Ensure that we have an g.CompilerGlobalState
                 assert (cenv.g.CompilerGlobalState |> Option.isSome)
 
-                AllocLocal
-                    cenv
-                    cgbuf
-                    eenv
-                    true
-                    (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName("spill", m), ty, false)
-                    scopeMarks
+                AllocLocal cenv cgbuf eenv true (freshIlxName cenv.g "spill" m, ty, false) scopeMarks
 
             idx, eenv)
 
@@ -10612,7 +10766,7 @@ and GenAttribArg amap (g: TcGlobals) eenv x (ilArgTy: ILType) =
                     else
                         string ilElemTy
 
-                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType elemTypeName, m))
+                error (Error(FSComp.SR.ilCustomAttrInvalidArrayElemType (RichText.ofQualifiedTypeName elemTypeName), m))
         else
             ILAttribElem.Array(ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
@@ -10982,7 +11136,11 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     // Generate all the anonymous record types mentioned anywhere in this module
     for anonInfo in anonRecdTypes.Values do
-        mgbuf.GenerateAnonType((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
+        mgbuf.GenerateAnonType(
+            (fun (ilThisTy, tycon) ->
+                GenRecordToStringMethod(cenv, mgbuf, EnvForTycon tycon eenv, ilThisTy, mkLocalTyconRef tycon, m, "{| ", " |}")),
+            anonInfo
+        )
 
     let withQName (loc: CompileLocation) =
         { loc with
@@ -11350,11 +11508,8 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     else
         [], [], []
 
-and GenToStringMethod cenv eenv ilThisTy m =
-    GenPrintingMethod cenv eenv "ToString" ilThisTy m
-
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
-and GenPrintingMethod cenv eenv methName ilThisTy m =
+and GenSprintfPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
 
     [
@@ -11418,6 +11573,42 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                 yield mdef
             | _ -> ()
     ]
+
+/// Emit a [<CompilerGenerated>] virtual ToString override whose body is the given string-typed expression.
+/// 'thisv' is the 'this' value (stored at arg 0) referenced by bodyExpr.
+and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, thisv: Val, bodyExpr: Expr) =
+    let g = cenv.g
+    let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
+
+    let ilMethodBody =
+        CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
+
+    let mdef =
+        mkILNonGenericVirtualInstanceMethod (
+            "ToString",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn g.ilg.typ_String,
+            MethodBody.IL(InterruptibleLazy.FromValue ilMethodBody)
+        )
+
+    [ mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ]) ]
+
+/// Generate an anonymous record's ToString as a single line "{| F1 = v1; F2 = v2 |}". Nominal records and
+/// unions get their reflection-free ToString from the type-augmentation phase instead (so the 'string'
+/// operator calls are optimized), but anonymous record types are synthesized too late for that, so they are
+/// generated here. Under non-reflection-free codegen, falls back to sprintf "%+A".
+and GenRecordToStringMethod
+    (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, ilThisTy: ILType, tcref: TyconRef, m: range, openBrace: string, closeBrace: string) =
+    let g = cenv.g
+
+    if not g.useReflectionFreeCodeGen then
+        GenSprintfPrintingMethod cenv eenv "ToString" ilThisTy m
+    else
+        let thisv, body =
+            AugmentTypeDefinitions.mkRecdToString (g, tcref, tcref.Deref, openBrace, closeBrace)
+
+        EmitToStringMethodDef(cenv, mgbuf, eenv, thisv, body)
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option =
     let g = cenv.g
@@ -12002,8 +12193,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         then
                             yield mkILSimpleStorageCtor (Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
-                        if not (tycon.HasMember g "ToString" []) then
-                            yield! GenToStringMethod cenv eenv ilThisTy m
+                        // Reflection-free nominal records get their ToString from the type-augmentation phase; here we
+                        // only emit the sprintf "%+A" ToString for the non-reflection-free case.
+                        if not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" []) then
+                            yield! GenSprintfPrintingMethod cenv eenvinner "ToString" ilThisTy m
 
                     | TFSharpTyconRepr r when tycon.IsFSharpDelegateTycon ->
 
@@ -12026,8 +12219,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             yield! mkILDelegateMethods reprAccess g.ilg (g.iltyp_AsyncCallback, g.iltyp_IAsyncResult) (parameters, ret)
                         | _ -> ()
 
-                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when not (tycon.HasMember g "ToString" []) ->
-                        yield! GenToStringMethod cenv eenv ilThisTy m
+                    // Reflection-free nominal unions get their ToString from the type-augmentation phase; here we
+                    // only emit the sprintf "%+A" ToString for the non-reflection-free case.
+                    | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } when
+                        not g.useReflectionFreeCodeGen && not (tycon.HasMember g "ToString" [])
+                        ->
+                        yield! GenSprintfPrintingMethod cenv eenvinner "ToString" ilThisTy m
                     | _ -> ()
                 ]
 
@@ -12202,7 +12399,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | None ->
                             errorR (
                                 Error(
-                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (tdef.Name, fdef.Name.Replace("@", "")),
+                                    FSComp.SR.ilFieldDoesNotHaveValidOffsetForStructureLayout (
+                                        RichText.ofQualifiedTypeName tdef.Name,
+                                        RichText.mkField (fdef.Name.Replace("@", ""))
+                                    ),
                                     (trimRangeToLine m)
                                 )
                             )
@@ -12258,18 +12458,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         }
 
                     let layout =
-                        // Structs with no instance fields get size 1, pack 0
+                        // Multi-case struct unions carry a hidden tag field; single-case struct unions
+                        // are handled by the CLR's minimum-1-byte guarantee. No explicit size needed.
                         if isStructTy g thisTy then
-                            if
-                                (tycon.AllFieldsArray.Length = 0
-                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
-                                && (alternatives
-                                    |> Array.collect (fun a -> a.FieldDefs)
-                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
-                            then
-                                ILTypeDefLayout.Sequential { Size = None; Pack = None }
-                            else
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
+                            ILTypeDefLayout.Sequential { Size = None; Pack = None }
                         else
                             ILTypeDefLayout.Auto
 
@@ -12651,7 +12843,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     && not (exnc.HasMember g "Message" [])
                     && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
-                    yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
+                    yield! GenSprintfPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]
 
         let interfaces =

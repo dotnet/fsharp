@@ -4,6 +4,7 @@ namespace FSharp.Core.UnitTests.Portable.SurfaceArea
 
 open Xunit
 open System.IO
+open System.Reflection
 open FSharp.Test
 
 type SurfaceAreaTest() =
@@ -18,13 +19,10 @@ type SurfaceAreaTest() =
     // Linux/macOS:
     //    export TEST_UPDATE_BSL=1
     [<Fact>]
-    member this.VerifySurfaceAreaFSharpCore () : unit =
+    member _.VerifySurfaceAreaFSharpCore () : unit =
         let platform =
 
 // We are testing the surface area of the FSharp.Core assembly.
-// NETCOREAPP builds with netstandard2.1
-// Net472 builds with netstandard1.0
-//
 #if NETCOREAPP
             "netstandard21"
 #else
@@ -38,4 +36,27 @@ type SurfaceAreaTest() =
 #endif
         let assembly = typeof<int list>.Assembly
         let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Core.SurfaceArea.{platform}.{flavor}.bsl")
+#if NETCOREAPP
+        SurfaceArea.verifyIgnoringAssemblyReferences assembly baseline
+#else
         SurfaceArea.verify assembly baseline
+#endif
+
+#if NETCOREAPP
+    [<Fact>]
+    member _.VerifyNetStandard21SurfaceAreaFSharpCore () : unit =
+#if DEBUG
+        let configuration = "Debug"
+        let flavor = "debug"
+#else
+        let configuration = "Release"
+        let flavor = "release"
+#endif
+        let assemblyPath =
+            Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "FSharp.Core", configuration, "netstandard2.1", "FSharp.Core.dll")
+            |> Path.GetFullPath
+
+        let assembly = Assembly.LoadFile assemblyPath
+        let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Core.SurfaceArea.netstandard21.{flavor}.bsl")
+        SurfaceArea.verify assembly baseline
+#endif

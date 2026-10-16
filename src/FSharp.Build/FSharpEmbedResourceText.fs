@@ -393,9 +393,20 @@ open Printf
     static member SwallowResourceText: bool with get, set
     // END BOILERPLATE"
 
-    let generateResxAndSource (fileName: string) =
+    /// Marks a generated file as having the overloads taking classified text, and brings RichText into
+    /// scope for them
+    let richTextOpen = "open FSharp.Compiler.Text"
+
+    let generateResxAndSource (item: ITaskItem) =
+        let fileName = item.ItemSpec
+
         try
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
+
+            // Opt in with <RichText>true</RichText> on the EmbeddedText item. Only assemblies that can
+            // see FSharp.Compiler.Text.RichText are able to compile the classified overloads.
+            let richText =
+                System.String.Equals(item.GetMetadata "RichText", "true", System.StringComparison.OrdinalIgnoreCase)
 
             let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
 
@@ -424,7 +435,14 @@ open Printf
                 condition4
                 && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
 
-            if condition5 then
+            // A generated file does not record whether it was generated with RichText, so the flag has
+            // to be recovered from the open the generator emits for it, or an existing file would be
+            // taken as up-to-date after the flag changed
+            let condition6 =
+                condition5
+                && (richText = (File.ReadLines(outFileName) |> Seq.truncate 40 |> Seq.contains richTextOpen))
+
+            if condition6 then
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
 
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
@@ -438,7 +456,8 @@ open Printf
                      elif not condition2 then 2
                      elif not condition3 then 3
                      elif not condition4 then 4
-                     else 5)
+                     elif not condition5 then 5
+                     else 6)
 
                 printMessage "Reading %s" fileName
 
@@ -499,6 +518,11 @@ open Printf
                 fprintfn outSignature "namespace %s" justFileName
                 fprintfn out "%s" stringBoilerPlatePrefix
                 fprintfn outSignature "%s" stringBoilerPlatePrefix
+
+                if richText then
+                    fprintfn out "%s" richTextOpen
+                    fprintfn outSignature "%s" richTextOpen
+
                 fprintfn out "type internal SR private() ="
                 fprintfn outSignature "type internal SR ="
                 fprintfn outSignature "    private new: unit -> SR"
@@ -552,20 +576,28 @@ open Printf
                         | None -> ""
                         | Some n -> sprintf "%d, " n
 
-                    fprintfn
-                        out
-                        "    static member %s%s = (%sGetStringFunc(\"%s\",\"%s\") %s)"
-                        ident
-                        (formalArgs.ToString())
-                        errPrefix
-                        ident
-                        justPercentsFromFormatString
-                        (actualArgs.ToString())
+                    // A numbered message is a diagnostic message, and a diagnostic is created from rich
+                    // text, so the accessor returns text that is already converted - a message with
+                    // nothing classified in it is one unclassified part. Unnumbered messages are plain
+                    // strings spliced into other text and stay strings.
+                    let numberedReturnsRichText = richText && optErrNum.IsSome
+
+                    let messageExpr =
+                        let getString =
+                            sprintf "GetStringFunc(\"%s\",\"%s\") %s" ident justPercentsFromFormatString (actualArgs.ToString())
+
+                        if numberedReturnsRichText then
+                            sprintf "RichText.mkText (%s)" getString
+                        else
+                            getString
+
+                    fprintfn out "    static member %s%s = (%s%s)" ident (formalArgs.ToString()) errPrefix messageExpr
 
                     let signatureMember =
                         let returnType =
                             match optErrNum with
                             | None -> "string"
+                            | Some _ when numberedReturnsRichText -> "int * RichText"
                             | Some _ -> "int * string"
 
                         if Array.isEmpty holes then
@@ -576,7 +608,59 @@ open Printf
                             |> String.concat " * "
                             |> fun parameters -> sprintf "    static member %s: %s -> %s" ident parameters returnType
 
-                    fprintfn outSignature "%s" signatureMember)
+                    fprintfn outSignature "%s" signatureMember
+
+                    // An overload taking the string holes as classified text, so that callers can keep
+                    // the classification of types and names they splice into the message. The string
+                    // overload is called with a sentinel per hole, which RichMessage then replaces with
+                    // the parts it stands for - see the RichMessage module.
+                    if richText && holes |> Array.contains "System.String" then
+                        let richHole holeType =
+                            if holeType = "System.String" then
+                                "RichText"
+                            else
+                                holeType
+
+                        let richFormalArgs =
+                            holes
+                            |> Array.mapi (fun idx holeType -> sprintf "a%d : %s" idx (richHole holeType))
+                            |> String.concat ", "
+
+                        let richActualArgs =
+                            holes
+                            |> Array.mapi (fun idx holeType ->
+                                if holeType = "System.String" then
+                                    sprintf "rich a%d" idx
+                                else
+                                    sprintf "a%d" idx)
+                            |> String.concat ", "
+
+                        let format, richReturnType =
+                            match optErrNum with
+                            | None -> "text", "RichText"
+                            | Some _ -> "numbered", "int * RichText"
+
+                        fprintfn out "    /// %s" str
+                        fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
+
+                        fprintfn
+                            out
+                            "    static member %s(%s) = RichMessage.%s (fun rich -> SR.%s(%s))"
+                            ident
+                            richFormalArgs
+                            format
+                            ident
+                            richActualArgs
+
+                        let richParameters =
+                            holes
+                            |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx (richHole holeType))
+                            |> String.concat " * "
+
+                        fprintfn outSignature "    /// %s" str
+                        fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
+
+                        fprintfn outSignature "    static member %s: %s -> %s" ident richParameters richReturnType)
 
                 printMessage "Generating .resx for %s" outFileName
                 fprintfn out ""
@@ -632,9 +716,7 @@ open Printf
     override this.Execute() =
 
         try
-            let generatedFiles =
-                this.EmbeddedText
-                |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
+            let generatedFiles = this.EmbeddedText |> Array.choose generateResxAndSource
 
             let generatedSource, generatedResx =
                 [|
