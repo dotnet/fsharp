@@ -17,57 +17,13 @@ Host-neutral API for IDEs: checker, incremental builder, snapshots, workspace, n
 
 A public FCS signature change must update `FSharp.Compiler.Service.SurfaceArea.netstandard20.bsl`, including when the API is marked experimental.
 
-3. **Internal type leakage** — Internal compiler data structures must not leak through the FCS (F# Compiler Service) public API. Leakage creates permanent API commitments from implementation details.
-
+- Internal compiler types must not appear on the public FCS API.
+- The FCS Symbol API must be safe for concurrent callers.
+- An async implementation change must not change the public FCS signature.
+- A new public argument and a changed exception need an XML doc in the `.fsi`.
 - `CheckFileInProject` wins over `CheckFileInProjectAllowingStaleCachedResults` unless the caller uses the stale API.
-
-### 7. FCS API Surface Control
-
-The FCS public API is a permanent commitment. Internal types must never leak.
-
-**CHECK:**
-- Keep internal implementation details out of the public FCS API.
-- The FCS Symbol API must be thread-safe for concurrent access.
-- When changing internal implementation to async, keep FCS API signatures unchanged.
-- Document the purpose of new public API arguments in XML docs.
-- Update exception XML docs in `.fsi` files when behavior changes.
-
-**Severity:** Unintended public API break → **critical**. Internal type leakage → **high**. Missing XML docs → **medium**.
-
-Hotspots: `src/Compiler/Service/`.
-
----
-
-### 10. IDE Responsiveness
-
-The compiler service must respond to editor keystrokes without unnecessary recomputation.
-
-**CHECK:**
-- Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
-- Verify changes do not trigger endless project rechecks.
-- Caching must prevent duplicate work per project.
-
-An endless recheck through `InvalidateConfiguration` is critical.
-
-**Hotspots:** `src/Compiler/Service/`, `src/FSharp.Compiler.LanguageServer/`, `vsintegration/`
-
----
-
-### 14. Incremental Checking Correctness
-
-Incremental checking must invalidate stale results correctly. Stale data causes timing-dependent glitches.
-
-**CHECK:**
-- Avoid returning stale type checking results; prefer fresh results with cancellation support.
-- Verify that caching prevents redundant checks and that cache invalidation is correct.
-- Verify that project setup handles clean solutions or unrestored packages without silently dropping references.
-- Ensure error loggers are consistent across all checking phases to avoid missing errors.
-
-**Severity:** Stale results causing glitches → **critical**. Missed invalidation → **high**.
-
-**Hotspots:** `src/Compiler/Service/`
-
----
+- Project setup must not drop references for a clean solution or an unrestored package.
+- Error loggers must be the same object across checking phases.
 
 All FCS requests must support cancellation.
 

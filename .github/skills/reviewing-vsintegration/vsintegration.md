@@ -12,27 +12,9 @@ Review `FSharpLanguageDebugInfoService` and `FSharpBreakpointResolutionService` 
 - A cache entry must stay findable until it is evicted, and an idle editor cache must stay collectable.
 - Editor behavior that depends on a language-rule relaxation must follow language version, not apply to every project.
 - A green compiler suite does not prove a host feature; the editor test has to call the host provider and cover the shapes the feature claims.
-
-### 10. IDE Responsiveness
-
-The compiler service must respond to editor keystrokes without unnecessary recomputation.
-
-**CHECK:**
-- Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
-- Verify changes do not trigger endless project rechecks.
-- Caching must prevent duplicate work per project.
-
-**Severity:** Endless recheck loop → **critical**. UI thread block → **critical**.
-
-**Hotspots:** `src/Compiler/Service/`, `src/FSharp.Compiler.LanguageServer/`, `vsintegration/`
-
----
-
-(Exception: top-level language service entry points should catch all to prevent IDE crashes — but log, don't silence.)
-
+- An editor callback must not call `Async.RunSynchronously`.
+- A keystroke must not call `BackgroundCompiler.InvalidateConfiguration` when `FSharpProjectOptions.AreSameForChecking` is true.
 - Separate cancellation from logged faults at IDE entry points, as `FSharpNavigation.TryGoToDefinition` and `RoslynHelpers.StartAsyncAsTask` do.
-
-Cancellation hotspot: `vsintegration/`.
 
 ### UI thread affinity
 

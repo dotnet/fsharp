@@ -1,11 +1,11 @@
 ---
 name: expert-reviewer
-description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, concurrency, IDE performance, diagnostics, and code quality across 19 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, concurrency, diagnostics, and code quality across 16 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks. Invoke @ide-integration for vsintegration/, src/Compiler/Service/, and src/Compiler/Symbols/."
 ---
 
 # Expert Reviewer
 
-Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
+Evaluates F# compiler changes across 16 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
 
 **Related tools:** `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues), `@ide-integration` (IDE host and compiler service).
 
@@ -17,7 +17,6 @@ Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-
 - **Determinism is a correctness property.** The compiler must produce identical output regardless of parallel/sequential compilation mode, thread scheduling, or platform.
 - **Feature gating protects users.** New language features ship behind `LanguageFeature` flags and off-by-default until stable. Breaking changes require an RFC. Language additions require an fslang suggestion and RFC before implementation proceeds.
 - **Diagnostics are user-facing.** Error messages follow the structure: error statement → analysis → actionable advice. Wording changes need the same care as API changes.
-- Moved to @ide-integration. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
 - **Prefer general solutions over special cases.** Do not hardwire specific library optimizations into the compiler. Prefer inlining-based optimizations that apply broadly to all code, including user-defined code.
 - **Evidence-based performance.** Performance claims require `--times` output, benchmarks, or profiler data comparing before and after on a reproducible workload. Do not inline large functions without performance evidence.
 - **Guard the API surface.** Public API additions to FSharp.Core must be carefully controlled. FSharp.Core must remain stable. The FCS half of this rule moved to @ide-integration.
@@ -28,18 +27,16 @@ Push back against these recurring patterns:
 
 1. **Reformatting + logic in one PR** — Separate formatting into its own PR. Mixed diffs obscure logic changes and block review.
 2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. The language-service exception moved to @ide-integration.
-3. **Internal type leakage** — Moved to @ide-integration.
-4. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
-5. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
-6. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
-7. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
-8. **Stale type-checking results** — Moved to @ide-integration.
-9. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
-10. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
-11. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
-12. **Large closures capturing unnecessary data** — Verify that long-lived closures don't capture more data than needed, causing memory leaks.
-13. **Returning `Unchecked.defaultof<_>` to swallow exceptions** — This hides the root cause. Investigate and fix exception propagation failures.
-14. **Band-aid ad-hoc patches** — Flag `if condition then specialCase else normalPath` that patches a consumer rather than fixing the source.
+3. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
+4. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
+5. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
+6. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
+7. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
+8. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
+9. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
+10. **Large closures capturing unnecessary data** — Verify that long-lived closures don't capture more data than needed, causing memory leaks.
+11. **Returning `Unchecked.defaultof<_>` to swallow exceptions** — This hides the root cause. Investigate and fix exception propagation failures.
+12. **Band-aid ad-hoc patches** — Flag `if condition then specialCase else normalPath` that patches a consumer rather than fixing the source.
 
 ## Review Dimensions
 
@@ -149,11 +146,7 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 
 ---
 
-### 7. FCS API Surface Control
-
-Moved to @ide-integration. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
-
-### 8. Type System Correctness
+### 7. Type System Correctness
 
 Type checking and inference must be sound. Subtle bugs in constraint solving, overload resolution, or scope handling produce incorrect programs.
 
@@ -168,7 +161,7 @@ Type checking and inference must be sound. Subtle bugs in constraint solving, ov
 
 ---
 
-### 9. Struct Type Awareness
+### 8. Struct Type Awareness
 
 Structs have value semantics that differ fundamentally from reference types. Incorrect handling causes subtle bugs.
 
@@ -184,11 +177,7 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 
 ---
 
-### 10. IDE Responsiveness
-
-Moved to @ide-integration. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
-
-### 11. Overload Resolution Correctness
+### 9. Overload Resolution Correctness
 
 Overload resolution is one of the most complex and specification-sensitive areas of the compiler.
 
@@ -205,7 +194,7 @@ Overload resolution is one of the most complex and specification-sensitive areas
 
 ---
 
-### 12. Binary Compatibility & Metadata Safety
+### 10. Binary Compatibility & Metadata Safety
 
 The pickled metadata format is a cross-version contract. DLLs compiled with any F# version must be consumable by any other version.
 
@@ -225,7 +214,7 @@ The pickled metadata format is a cross-version contract. DLLs compiled with any 
 
 ---
 
-### 13. Concurrency & Cancellation Safety
+### 11. Concurrency & Cancellation Safety
 
 Async and concurrent code must handle cancellation, thread safety, and exception propagation correctly.
 
@@ -245,11 +234,7 @@ FCS request cancellation and the `vsintegration/` hotspot moved to @ide-integrat
 
 ---
 
-### 14. Incremental Checking Correctness
-
-Moved to @ide-integration. Invoke it when the change touches vsintegration/, src/Compiler/Service/, or src/Compiler/Symbols/.
-
-### 15. Syntax Tree & Parser Integrity
+### 12. Syntax Tree & Parser Integrity
 
 AST nodes must accurately represent source code. Parser changes are high-risk because they affect every downstream phase.
 
@@ -265,7 +250,7 @@ AST nodes must accurately represent source code. Parser changes are high-risk be
 
 ---
 
-### 16. Exception Handling Discipline
+### 13. Exception Handling Discipline
 
 Exception handling must be precise. Catch-all handlers and swallowed exceptions hide bugs.
 
@@ -284,7 +269,7 @@ The language-service boundary bullet moved to @ide-integration.
 
 ---
 
-### 17. Diagnostic Quality
+### 14. Diagnostic Quality
 
 Error and warning messages are the compiler's user interface. They must be precise, consistent, and actionable.
 
@@ -299,7 +284,7 @@ Error and warning messages are the compiler's user interface. They must be preci
 
 ---
 
-### 18. Debug Experience Quality
+### 15. Debug Experience Quality
 
 Debug stepping, breakpoints, and locals display must work correctly. Debug experience regressions silently break developer workflows.
 
@@ -314,7 +299,7 @@ Debug stepping, breakpoints, and locals display must work correctly. Debug exper
 
 ---
 
-### 19. Feature Gating & Compatibility
+### 16. Feature Gating & Compatibility
 
 New features must be gated behind language version checks. Breaking changes require RFC process.
 
@@ -428,28 +413,26 @@ Execute review in six waves, each building on the previous.
 ### Wave 1: Structural Scan
 
 1. Verify every behavioral change has a corresponding test (Dimension 1).
-2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 19).
-3. IDE impact and incremental checking moved to @ide-integration (Dimensions 10 and 14).
-4. Check for binary compatibility concerns in pickle/import code (Dimension 12).
+2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 16).
+3. If the diff touches `vsintegration/`, `src/Compiler/Service/`, or `src/Compiler/Symbols/`, invoke @ide-integration. Do not review those trees here.
+4. Check for binary compatibility concerns in pickle/import code (Dimension 10).
 5. If FSharp.Core is touched, apply FSharp.Core Stability checks (Dimension 2).
 
 ### Wave 2: Correctness Deep-Dive
 
-1. Trace type checking changes through constraint solving and inference (Dimension 8).
+1. Trace type checking changes through constraint solving and inference (Dimension 7).
 2. Verify IL emission correctness with both Debug and Release optimizations (Dimension 5).
-3. Validate AST node accuracy against source syntax (Dimension 15).
+3. Validate AST node accuracy against source syntax (Dimension 12).
 4. Check parallel determinism if checking/name-generation code is touched.
 5. Verify optimization correctness — no semantic-altering transforms (Dimension 6).
-6. Verify struct semantics if value types are involved (Dimension 9).
+6. Verify struct semantics if value types are involved (Dimension 8).
 
 ### Wave 3: Runtime & Integration
 
-1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 13).
-2. IDE impact moved to @ide-integration (Dimension 10).
-3. Verify overload resolution correctness if constraint solving changes (Dimension 11).
-4. Incremental checking moved to @ide-integration (Dimension 14).
-5. Review diagnostic message quality (Dimension 17).
-6. Verify debug experience — stepping, breakpoints, locals (Dimension 18).
+1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 11).
+2. Verify overload resolution correctness if constraint solving changes (Dimension 9).
+3. Review diagnostic message quality (Dimension 14).
+4. Verify debug experience — stepping, breakpoints, locals (Dimension 15).
 
 ### Wave 4: Quality & Polish
 

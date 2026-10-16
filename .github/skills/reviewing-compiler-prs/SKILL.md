@@ -1,6 +1,6 @@
 ---
 name: reviewing-compiler-prs
-description: "Performs multi-agent, multi-model code review of F# compiler PRs across 19 dimensions including type checking, IL emission, binary compatibility, and IDE performance. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Performs multi-agent, multi-model code review of F# compiler PRs across 16 dimensions including type checking, IL emission, and binary compatibility. Dispatches parallel assessment agents per dimension, consolidates with cross-model agreement scoring, and filters false positives. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks. Invoke @ide-integration for vsintegration/, src/Compiler/Service/, and src/Compiler/Symbols/."
 ---
 
 # Reviewing Compiler PRs
