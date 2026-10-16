@@ -32,7 +32,8 @@ ImplFile
                                  (2,19--2,20)), Ident x, (2,17--2,20)),
                            Const (Int32 2, (2,21--2,22)), (2,17--2,22)),
                         (2,4--2,13), No, { ArrowRange = None
-                                           BarRange = None })], (2,4--2,22),
+                                           BarRange = None
+                                           WhenKeyword = None })], (2,4--2,22),
                     { MatchKeyword = (2,4--2,22)
                       WithKeyword = (2,4--2,22) }),
                  Some
@@ -65,9 +66,10 @@ ImplFile
                                     (2,19--2,20)), Ident x, (2,17--2,20)),
                               Const (Int32 2, (2,21--2,22)), (2,17--2,22)),
                            (2,4--2,13), No, { ArrowRange = None
-                                              BarRange = None })], (2,4--2,22),
-                       { MatchKeyword = (2,4--2,22)
-                         WithKeyword = (2,4--2,22) })), (2,0--2,22),
+                                              BarRange = None
+                                              WhenKeyword = None })],
+                       (2,4--2,22), { MatchKeyword = (2,4--2,22)
+                                      WithKeyword = (2,4--2,22) })), (2,0--2,22),
                  { ArrowRange = Some (2,14--2,16) }), (2,0--2,22))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []

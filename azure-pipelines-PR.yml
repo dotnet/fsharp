@@ -729,6 +729,38 @@ stages:
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
 
+          - pwsh: |
+              $ErrorActionPreference = 'Stop'
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]false"
+              $source = "$(Build.SourcesDirectory)\tests\ILVerify"
+              if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+                Write-Host "No ILVerify actual baselines: source directory is absent."
+                return
+              }
+              $actuals = @(Get-ChildItem -LiteralPath $source -Filter '*.bsl.actual' -File)
+              if ($actuals.Count -eq 0) {
+                Write-Host "No ILVerify actual baselines found."
+                return
+              }
+              $destination = "$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)"
+              New-Item -ItemType Directory -Path $destination | Out-Null
+              foreach ($actual in $actuals) {
+                Copy-Item -LiteralPath $actual.FullName -Destination $destination
+              }
+              Write-Host "Staged $($actuals.Count) ILVerify actual baseline(s)."
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]true"
+            displayName: Stage ILVerify actual baselines
+            condition: failed()
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish ILVerify actual baselines
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)'
+              artifactName: 'ILVerify actual baselines Attempt $(System.JobAttempt)'
+            condition: and(failed(), eq(variables['ILVerifyActualBaselinesFound'], 'true'))
+            continueOnError: true
+
   #-------------------------------------------------------------------------------------------------------------------#
   #                              F# Compiler Regression Tests                                                         #
   #-------------------------------------------------------------------------------------------------------------------#

@@ -771,60 +771,59 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
     // see test ``Warn for invalid tailcalls in seq expression because of bind`` for an example
     // see test ``Warn successfully for rec call in binding`` for an example
     // see test ``Warn for simple rec call in try-with`` for an example
-    if cenv.g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-        match bind.Expr with
-        | Expr.TyLambda(bodyExpr = bodyExpr)
-        | Expr.Lambda(bodyExpr = bodyExpr) ->
-            let rec checkTailCall (insideSubBindingOrTry: bool) expr =
-                match expr with
-                | Expr.Val(valRef = valRef; range = m) ->
-                    if isRec && insideSubBindingOrTry && cenv.mustTailCall.Contains valRef.Deref then
-                        warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName cenv.g valRef.Deref), m))
-                | Expr.App(funcExpr = funcExpr; args = argExprs) ->
-                    checkTailCall insideSubBindingOrTry funcExpr
-                    argExprs |> List.iter (checkTailCall insideSubBindingOrTry)
-                | Expr.Link exprRef -> checkTailCall insideSubBindingOrTry exprRef.Value
-                | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
-                | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
-                | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
-                    // detect continuation shapes like MakeAsync
-                    let isContinuation =
-                        match bodyExpr with
-                        | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
-                            match valRef.GeneralizedType with
-                            | [ _ ],
-                              TType_fun(domainType = TType_fun(domainType = TType_app _; rangeType = TType_app _); rangeType = TType_app _) ->
-                                true
-                            | _ -> false
+    match bind.Expr with
+    | Expr.TyLambda(bodyExpr = bodyExpr)
+    | Expr.Lambda(bodyExpr = bodyExpr) ->
+        let rec checkTailCall (insideSubBindingOrTry: bool) expr =
+            match expr with
+            | Expr.Val(valRef = valRef; range = m) ->
+                if isRec && insideSubBindingOrTry && cenv.mustTailCall.Contains valRef.Deref then
+                    warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName cenv.g valRef.Deref), m))
+            | Expr.App(funcExpr = funcExpr; args = argExprs) ->
+                checkTailCall insideSubBindingOrTry funcExpr
+                argExprs |> List.iter (checkTailCall insideSubBindingOrTry)
+            | Expr.Link exprRef -> checkTailCall insideSubBindingOrTry exprRef.Value
+            | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
+            | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
+            | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
+                // detect continuation shapes like MakeAsync
+                let isContinuation =
+                    match bodyExpr with
+                    | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
+                        match valRef.GeneralizedType with
+                        | [ _ ],
+                          TType_fun(domainType = TType_fun(domainType = TType_app _; rangeType = TType_app _); rangeType = TType_app _) ->
+                            true
                         | _ -> false
+                    | _ -> false
 
-                    checkTailCall (not isContinuation) binding.Expr
+                checkTailCall (not isContinuation) binding.Expr
 
-                    let warnForBodyExpr =
-                        insideSubBindingOrTry
-                        || match stripDebugPoints bodyExpr with
-                           | Expr.Op _ -> true
-                           | _ -> false
+                let warnForBodyExpr =
+                    insideSubBindingOrTry
+                    || match stripDebugPoints bodyExpr with
+                       | Expr.Op _ -> true
+                       | _ -> false
 
-                    checkTailCall warnForBodyExpr bodyExpr
-                | Expr.Match(targets = decisionTreeTargets) ->
-                    decisionTreeTargets
-                    |> Array.iter (fun target -> checkTailCall insideSubBindingOrTry target.TargetExpression)
-                | Expr.Op(args = exprs; op = TOp.TryWith _)
-                | Expr.Op(args = exprs; op = TOp.TryFinally _) ->
-                    // warn for recursive calls in TryWith/TryFinally operations
-                    exprs |> Seq.iter (checkTailCall true)
-                | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBindingOrTry)
-                | Expr.Sequential(expr1 = expr1; expr2 = expr2) ->
-                    match expr1 with
-                    | Expr.Op(op = TOp.IntegerForLoop _) -> checkTailCall insideSubBindingOrTry expr1
-                    | _ -> ()
-
-                    checkTailCall insideSubBindingOrTry expr2
+                checkTailCall warnForBodyExpr bodyExpr
+            | Expr.Match(targets = decisionTreeTargets) ->
+                decisionTreeTargets
+                |> Array.iter (fun target -> checkTailCall insideSubBindingOrTry target.TargetExpression)
+            | Expr.Op(args = exprs; op = TOp.TryWith _)
+            | Expr.Op(args = exprs; op = TOp.TryFinally _) ->
+                // warn for recursive calls in TryWith/TryFinally operations
+                exprs |> Seq.iter (checkTailCall true)
+            | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBindingOrTry)
+            | Expr.Sequential(expr1 = expr1; expr2 = expr2) ->
+                match expr1 with
+                | Expr.Op(op = TOp.IntegerForLoop _) -> checkTailCall insideSubBindingOrTry expr1
                 | _ -> ()
 
-            checkTailCall false bodyExpr
-        | _ -> ()
+                checkTailCall insideSubBindingOrTry expr2
+            | _ -> ()
+
+        checkTailCall false bodyExpr
+    | _ -> ()
 
     CheckBinding cenv true PermitByRefExpr.Yes bind
 
@@ -883,18 +882,14 @@ and CheckModuleSpec cenv isRec mbind =
 
     | ModuleOrNamespaceBinding.Module(_mspec, rhs) -> CheckDefnInModule cenv rhs
 
-let CheckImplFile (g: TcGlobals, amap, reportErrors, implFileContents) =
-    if
-        reportErrors
-        && g.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage
-    then
-        let cenv =
-            {
-                g = g
-                stackGuard = StackGuard("CheckImplFile")
-                amap = amap
-                mustTailCall = Zset.empty valOrder
-                hasPinnedLocals = false
-            }
+let CheckImplFile (g: TcGlobals, amap, implFileContents) =
+    let cenv =
+        {
+            g = g
+            stackGuard = StackGuard("CheckImplFile")
+            amap = amap
+            mustTailCall = Zset.empty valOrder
+            hasPinnedLocals = false
+        }
 
-        CheckDefnInModule cenv implFileContents
+    CheckDefnInModule cenv implFileContents

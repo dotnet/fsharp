@@ -46,9 +46,11 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (D, None), Fields [], PreXmlDocEmpty, None,
-                       (4,49--4,50), { BarRange = None }), None,
+                       (4,49--4,50), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((4,39), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (4,39--4,50)), None, [], (4,39--4,50)), (4,39--4,50));
+                    None, (4,39--4,50), { ExceptionKeyword = (4,39--4,48) }),
+                 None, [], (4,39--4,50)), (4,39--4,50));
            ModuleAbbrev (E, [C], (4,52--4,64));
            Let
              (false,

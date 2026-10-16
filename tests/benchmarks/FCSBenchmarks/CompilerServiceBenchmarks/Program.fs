@@ -21,6 +21,9 @@ let main args =
     | [| "retain-project"; responseFile; projectDir |] ->
         RetainProjectProbe.run responseFile projectDir
         0
+    | [| "check-project"; iterations; responseFile; projectDir |] ->
+        CheckProjectProbe.run (int iterations) responseFile projectDir
+        0
     // Single-file check then hold alive for an external heap dump; see CheckFileProbe.
     | [| "check-file"; responseFile; projectDir; fileToCheck |] ->
         CheckFileProbe.run responseFile projectDir fileToCheck

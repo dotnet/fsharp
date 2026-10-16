@@ -26,7 +26,7 @@ let q1' (ds : seq<int>) =
     query {
         for i in ds do
         let aFunc =
-            let inline f x = x + 1
+            let inline f (x: int) = x + 1
             f
         select (aFunc i)
     } |> Seq.toList

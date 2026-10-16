@@ -27,7 +27,8 @@ ImplFile
                                  (OriginalNotationWithParen
                                     ((2,6--2,7), "[]", (2,8--2,9)))), Fields [],
                             PreXmlDoc ((2,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (2,6--2,10), { BarRange = Some (2,4--2,5) });
+                            None, (2,6--2,10), { BarRange = Some (2,4--2,5)
+                                                 OfKeyword = None });
                          SynUnionCase
                            ([],
                             SynIdent
@@ -55,7 +56,8 @@ ImplFile
                                   None, (3,28--3,41), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,6--3,41), { BarRange = Some (3,4--3,5) })],
+                            None, (3,6--3,41), { BarRange = Some (3,4--3,5)
+                                                 OfKeyword = Some (3,14--3,16) })],
                         (2,4--3,41)), (2,4--3,41)), [], None, (1,5--3,41),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,14--1,15)

@@ -35,18 +35,21 @@ module EnumTypes =
 
     [<Theory; FileInlineData("ExtensionBitwiseOrOnCharEnum.fs")>]
     let ``ExtensionBitwiseOrOnCharEnum_fs - ExtensionConstraintSolutions`` compilation =
-        compilation
-        |> getCompilation
-        |> asExe
-        |> withLangVersionPreview
-        |> compileExeAndRun
-        |> shouldSucceed
+        for version in ["default"; "preview"] do
+            compilation
+            |> getCompilation
+            |> asExe
+            |> withLangVersion version
+            |> compileExeAndRun
+            |> shouldSucceed
+            |> ignore
 
     [<Theory; FileInlineData("ExtensionBitwiseOrOnCharEnum.fs")>]
     let ``ExtensionBitwiseOrOnCharEnum_fs - error without ExtensionConstraintSolutions`` compilation =
         compilation
         |> getCompilation
         |> asExe
+        |> withOptions ["--disableLanguageFeature:ExtensionConstraintSolutions"]
         |> typecheck
         |> shouldFail
         |> withErrorCode 1

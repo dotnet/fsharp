@@ -73,10 +73,13 @@ let f () =
         |> withErrorCode 3350
         |> withDiagnosticMessageMatches "calls to 'reraise' in a computation expression handler"
 
-    [<Fact>]
-    let ``preview → success`` () =
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``default, 11.2 and preview → success`` langVersion =
         FSharp source
-        |> withLangVersionPreview
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldSucceed
 
