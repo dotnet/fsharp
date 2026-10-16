@@ -1,5 +1,9 @@
 # Performance-improvement review corpus
 
+<!-- BEGIN CURRENT SCOPE STATUS -->
+**Current scope freeze:** [485-PR index and policy](mining/README.md), [exposure ledger](mining/evaluation/exposure.json), and [evaluation protocol](mining/evaluation/protocol.json). Historical sections below are preserved; previous holdout labels do not establish freshness. Real-source availability gaps block evaluation acceptance, not inventory accounting.
+<!-- END CURRENT SCOPE STATUS -->
+
 ## Snapshot and scope
 
 This is an acquisition record, not a reviewer, evidence-derived rules, or a review checklist. It preserves candidate selection, source provenance, historical revisions and an untouched family-level evaluation reserve.
