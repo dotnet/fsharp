@@ -1564,10 +1564,15 @@ type internal TypeCheckInfo
             loc,
             filterCtors,
             resolveOverloads,
-            isInRangeOperator,
+            completionContext: CompletionContext option,
             allSymbols: unit -> AssemblySymbol list,
             options: FSharpCodeCompletionOptions
         ) =
+        let isInRangeOperator =
+            match completionContext with
+            | Some CompletionContext.RangeOperator -> true
+            | _ -> false
+
         let isSpread =
             FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)
             |> Option.exists (fun i ->
@@ -1761,6 +1766,19 @@ type internal TypeCheckInfo
                                         &&
 
                                         match x.Symbol with
+                                        | :? FSharpActivePatternCase as symbol ->
+                                            match symbol.Item, completionContext with
+                                            | Item.ActivePatternCase case, Some(CompletionContext.Pattern _) ->
+                                                not (
+                                                    ItemIsUnseen
+                                                        ad
+                                                        g
+                                                        ncenv.amap
+                                                        m
+                                                        options.SuggestObsoleteSymbols
+                                                        (Item.Value case.ActivePatternVal)
+                                                )
+                                            | _ -> false
                                         | :? FSharpMemberOrFunctionOrValue as m when
                                             m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs
                                             ->
@@ -1831,6 +1849,16 @@ type internal TypeCheckInfo
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
+        let pos = mkPos line colAtEndOfNamesAndResidue
+
+        let completionContext =
+            match completionContextAtPos with
+            | Some(contextForPos, context) when contextForPos = pos -> context
+            | _ ->
+                parseResultsOpt
+                |> Option.map (fun x -> x.ParseTree)
+                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
+
         let getDeclaredItemsNotInRangeOpWithAllSymbols () =
             GetDeclaredItems(
                 parseResultsOpt,
@@ -1843,23 +1871,10 @@ type internal TypeCheckInfo
                 loc,
                 filterCtors,
                 resolveOverloads,
-                false,
+                completionContext,
                 getAllSymbols,
                 options
             )
-
-        let pos = mkPos line colAtEndOfNamesAndResidue
-
-        // Look for a "special" completion context
-        let completionContext =
-            // If the completion context we have computed higher up the stack is for the same position,
-            // reuse it, otherwise recompute
-            match completionContextAtPos with
-            | Some(contextForPos, context) when contextForPos = pos -> context
-            | _ ->
-                parseResultsOpt
-                |> Option.map (fun x -> x.ParseTree)
-                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
 
         let res =
             match completionContext with
@@ -1905,7 +1920,7 @@ type internal TypeCheckInfo
                             loc,
                             filterCtors,
                             resolveOverloads,
-                            false,
+                            None,
                             (fun () -> []),
                             options
                         )
@@ -1930,7 +1945,7 @@ type internal TypeCheckInfo
                             loc,
                             filterCtors,
                             resolveOverloads,
-                            false,
+                            None,
                             (fun () -> []),
                             options
                         )
@@ -1952,7 +1967,7 @@ type internal TypeCheckInfo
                         loc,
                         filterCtors,
                         resolveOverloads,
-                        false,
+                        None,
                         (fun () -> []),
                         options
                     )
@@ -2121,11 +2136,6 @@ type internal TypeCheckInfo
                     // because providing generic parameters list is context aware, which we don't have here (yet).
                     None
                 | _ ->
-                    let isInRangeOperator =
-                        (match cc with
-                         | Some CompletionContext.RangeOperator -> true
-                         | _ -> false)
-
                     GetDeclaredItems(
                         parseResultsOpt,
                         lineStr,
@@ -2137,7 +2147,7 @@ type internal TypeCheckInfo
                         loc,
                         filterCtors,
                         resolveOverloads,
-                        isInRangeOperator,
+                        cc,
                         getAllSymbols,
                         options
                     )
@@ -2229,13 +2239,19 @@ type internal TypeCheckInfo
                             items
 
                     let getAccessibility item =
-                        FSharpSymbol.Create(cenv, item).Accessibility
+                        match item with
+                        | Item.ActivePatternCase case -> FSharpAccessibility(case.ActivePatternVal.Accessibility)
+                        | _ -> FSharpSymbol.Create(cenv, item).Accessibility
 
-                    let currentNamespaceOrModule =
+                    let scopeInfo =
                         parseResultsOpt
                         |> Option.map (fun x -> x.ParseTree)
-                        |> Option.map (fun parsedInput ->
-                            ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
+                        |> Option.map (fun parsedInput -> ParsedInput.getScopeInfo (mkPos line 0, parsedInput))
+
+                    let currentNamespaceOrModule =
+                        scopeInfo |> Option.map (fun struct (path, _) -> path)
+
+                    let currentScope = scopeInfo |> Option.map (fun struct (_, scope) -> scope)
 
                     let isAttributeApplication =
                         match ctx with
@@ -2250,6 +2266,7 @@ type internal TypeCheckInfo
                         getAccessibility,
                         items,
                         currentNamespaceOrModule,
+                        currentScope,
                         isAttributeApplication
                     ))
             (fun msg ->

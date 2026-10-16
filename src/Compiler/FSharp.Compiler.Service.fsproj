@@ -578,8 +578,6 @@
     <Compile Include="Service\ServiceCompilerDiagnostics.fsi" />
     <Compile Include="Service\ServiceCompilerDiagnostics.fs" />
     <Compile Include="Service\ServiceConstants.fs" />
-    <Compile Include="Service\ServiceDeclarationLists.fsi" />
-    <Compile Include="Service\ServiceDeclarationLists.fs" />
     <Compile Include="Service\ServiceLexing.fsi" />
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />
@@ -596,6 +594,8 @@
     <Compile Include="Service\FSharpParseFileResults.fs" />
     <Compile Include="Service\ServiceParsedInputOps.fsi" />
     <Compile Include="Service\ServiceParsedInputOps.fs" />
+    <Compile Include="Service\ServiceDeclarationLists.fsi" />
+    <Compile Include="Service\ServiceDeclarationLists.fs" />
     <Compile Include="Service\ServiceAssemblyContent.fsi" />
     <Compile Include="Service\ServiceAssemblyContent.fs" />
     <Compile Include="Service\ServiceXmlDocParser.fsi" />

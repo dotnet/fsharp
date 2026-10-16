@@ -17,6 +17,7 @@
     <Compile Include="Helpers\RoslynHelpers.fs" />
     <Compile Include="Helpers\ProjectOptionsBuilder.fs" />
     <Compile Include="Helpers\AssemblyResolver.fs" />
+    <Compile Include="AssemblyContentProviderTests.fs" />
     <Compile Include="BraceMatchingServiceTests.fs" />
     <Compile Include="BreakpointResolutionServiceTests.fs" />
     <Compile Include="QuickInfoProviderTests.fs" />
@@ -34,6 +35,7 @@
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
+    <Compile Include="ActivePatternEditorTests.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
     <Compile Include="CodeFixes\ChangeToUpcastTests.fs" />
