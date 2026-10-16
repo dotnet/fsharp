@@ -1155,10 +1155,11 @@ let private CompilePatternBasic
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
             let tg = TTarget([], throwExpr(), None)
-            let _ = matchBuilder.AddTarget tg
+            let targetIndex = matchBuilder.AddTarget tg
             let clause = MatchClause(TPat_wild mMatch, None, tg, mMatch)
-            firstIncompleteMatchClauseWithThrowExpr <- Some clause
-            clause
+            let result = clause, targetIndex
+            firstIncompleteMatchClauseWithThrowExpr <- Some result
+            result
 
     // Helpers to get the variables bound at a target.
     // We conceptually add a dummy clause that will always succeed with a "throw".
@@ -1166,13 +1167,9 @@ let private CompilePatternBasic
     let nClauses = clausesA.Length
     let GetClause i refuted =
         if i < nClauses then
-            clausesA[i]
+            clausesA[i], i
         elif i = nClauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
-
-    let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
-
-    let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
 
     // Different uses of parameterized active patterns have different identities as far as paths are concerned.
     // Here we generate unique numbers that are completely different to any stamp by using negative numbers.
@@ -1314,14 +1311,15 @@ let private CompilePatternBasic
                     finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
-        let vs2 = GetValsBoundByClause i refuted
+        let clause, targetIndex = GetClause i refuted
+        let vs2 = clause.BoundVals
         let es2 =
             vs2 |> List.map (fun v ->
                 match valMap.TryFind v with
                 | None -> mkUnit g v.Range
                 | Some res -> res)
-        let successTree = TDSuccess(es2, i)
-        match GetWhenGuardOfClause i refuted with
+        let successTree = TDSuccess(es2, targetIndex)
+        match clause.GuardExpr with
         | Some whenExpr ->
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
@@ -1887,7 +1885,7 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused preserveMatchShape actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
 
@@ -1898,20 +1896,92 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
         let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
         let warnOnIncomplete = false
 
+        let rec stripBindings = function
+            | TPat_as(p, _, _) -> stripBindings p
+            | p -> p
+        let isBinding p = match stripBindings p with TPat_wild _ -> true | _ -> false
+        let pairPattern p =
+            match stripBindings p with
+            | TPat_tuple(_, [token; stack], _, _) -> ValueSome(token, stack)
+            | _ -> ValueNone
+        let listPattern shallow headPattern p =
+            match stripBindings p with
+            | TPat_unioncase(ucref, _, [head; tail], _) when tyconRefEq g ucref.TyconRef g.list_tcr_canon ->
+                headPattern head && (not shallow || isBinding tail)
+            | p -> shallow && isBinding p
+        let simpleConstant = function
+            | Const.Bool _ -> true
+            | c -> canCompactConstantClass c
+        let retainedTest p =
+            match stripBindings p with
+            | TPat_const(c, _) -> simpleConstant c
+            | TPat_unioncase(ucref, _, args, _) ->
+                let cases = ucref.Tycon.UnionCasesArray
+                not ucref.Tycon.IsStructRecordOrUnionTycon
+                && cases.Length > 1
+                && (cases.Length >= 4 || (cases |> Array.forall (fun case -> case.RecdFieldsArray.Length = 0)))
+                && List.forall isBinding args
+            | _ -> false
+        let rec discriminatorPattern (guard: StackGuard) first bindingFields p =
+            Cancellable.CheckAndThrow()
+            guard.Guard(fun () ->
+                match stripBindings p, first with
+                | TPat_wild _, _ -> true
+                | TPat_disjs(ps, _), _ -> not (isNil ps) && List.forall (discriminatorPattern guard first bindingFields) ps
+                | TPat_const(c, _), TPat_const _ -> simpleConstant c
+                | TPat_unioncase(ucref, _, args, _), TPat_unioncase(first, _, _, _) ->
+                    tyconRefEq g ucref.TyconRef first.TyconRef && (not bindingFields || List.forall isBinding args)
+                | _ -> false)
+        let trySplitGuardedRun (group: MatchClause list) =
+            match group with
+            | first :: rest when group.Length >= 12 ->
+                Cancellable.CheckAndThrow()
+                let guard = StackGuard("GuardedMatchGrouping")
+                match pairPattern first.Pattern with
+                | ValueSome(firstToken, firstStack) ->
+                    match stripBindings firstStack with
+                    | TPat_unioncase(ucref, _, [firstHead; firstTail], _)
+                        when tyconRefEq g ucref.TyconRef g.list_tcr_canon
+                             && retainedTest firstToken && retainedTest firstHead && isBinding firstTail ->
+                        let firstToken, firstHead = stripBindings firstToken, stripBindings firstHead
+                        let middle, suffix =
+                            rest |> List.takeUntil (fun clause ->
+                                match pairPattern clause.Pattern with
+                                | ValueSome(token, _) -> not (isBinding token)
+                                | ValueNone -> true)
+                        if suffix.Length >= 4
+                           && ((first :: middle) |> List.count (fun clause -> clause.GuardExpr.IsSome)) >= 8
+                           && (middle |> List.forall (fun clause ->
+                               match pairPattern clause.Pattern with
+                               | ValueSome(_, stack) -> listPattern false (discriminatorPattern guard firstHead false) stack
+                               | ValueNone -> false))
+                           && (suffix |> List.forall (fun clause ->
+                               match pairPattern clause.Pattern with
+                               | ValueSome(token, stack) -> discriminatorPattern guard firstToken true token && listPattern true isBinding stack
+                               | ValueNone -> false)) then
+                            ValueSome([first], middle, suffix)
+                        else ValueNone
+                    | _ -> ValueNone
+                | _ -> ValueNone
+            | _ -> ValueNone
+
         // Partial and when clauses cause major code explosion if treated naively
         // Hence treat any pattern matches with any partial clauses clause-by-clause
         let rec atMostOneProblematicClauseAtATime clauses =
-            match List.takeUntil isProblematicClause clauses with
-            | l, [] ->
-                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
-            | l, h :: t ->
-                // Add the problematic clause.
-                doGroupWithAtMostOneProblematic (l @ [h]) t
+            let group, rest =
+                match List.takeUntil isProblematicClause clauses with
+                | l, [] -> l, []
+                | l, h :: t -> l @ [h], t
+            match (if preserveMatchShape then ValueNone else trySplitGuardedRun group) with
+            | ValueSome(first, middle, suffix) ->
+                atMostOneProblematicClauseAtATime (suffix @ rest)
+                |> compileWithRest middle
+                |> compileWithRest first
+            | ValueNone when isNil rest ->
+                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) group inputTy resultTy
+            | ValueNone -> atMostOneProblematicClauseAtATime rest |> compileWithRest group
 
-        and doGroupWithAtMostOneProblematic group rest =
-            // Compile the remaining clauses.
-            let decisionTree, targets, joins = atMostOneProblematicClauseAtATime rest
-
+        and compileWithRest group (decisionTree, targets, joins) =
             // Make the expression that represents the remaining cases of the pattern match.
             let expr = mkLetsBind mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
 

@@ -247,6 +247,8 @@ type TcEnv =
 
       eInNameOf: bool
 
+      ePreserveMatchShape: bool
+
       /// Are we checking the body of an object expression? Such a body has family access to the
       /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
       eInObjectExpr: bool
@@ -268,6 +270,10 @@ type TcEnv =
     member tenv.NameEnv = tenv.eNameResEnv
 
     member tenv.AccessRights = tenv.eAccessRights
+
+    member tenv.WithPreservedMatchShape =
+        if tenv.ePreserveMatchShape then tenv
+        else { tenv with ePreserveMatchShape = true }
 
     /// Makes this environment available in a form that can be stored into a trait during solving.
     /// The context is only ever consumed when extension members may solve SRTP constraints

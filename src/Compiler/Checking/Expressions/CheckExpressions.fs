@@ -520,7 +520,11 @@ let MakeInnerEnv addOpenToNameEnv env nm moduleKind =
     MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc moduleKind, moduleTyAcc
 
 /// Make an environment suitable for processing inside a type definition
-let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension =
+let MakeInnerEnvForTyconRef env (tcref: TyconRef) isExtrinsicExtension =
+    let env =
+        if env.ePreserveMatchShape || EntityHasWellKnownAttribute env.DisplayEnv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute tcref.Deref then
+            env.WithPreservedMatchShape
+        else env
     if isExtrinsicExtension then
         // Extension members don't get access to protected stuff
         env
@@ -5534,11 +5538,16 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
         TcExprFlex2 cenv desiredTy env false tpenv synExpr
 
 and TcExprFlex2 (cenv: cenv) desiredTy env isMethodArg tpenv synExpr =
+    let env = if isMethodArg then env.WithPreservedMatchShape else env
     TcExpr cenv (MustConvertTo (isMethodArg, desiredTy)) env tpenv synExpr
 
-and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
+and TcExpr (cenv: cenv) (ty: OverallTy) (env: TcEnv) tpenv (synExpr: SynExpr) =
 
     let g = cenv.g
+    let env =
+        if not env.ePreserveMatchShape && (isLinqExpressionTy g ty.Commit || isQuotedExprTy g ty.Commit) then
+            env.WithPreservedMatchShape
+        else env
 
     // Guard the stack for deeply nested expressions
     cenv.stackGuard.Guard(fun () ->
@@ -8652,7 +8661,7 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
     UnifyTypes cenv env m overallTy.Commit (if raw then mkRawQuotedExprTy g else mkQuotedExprTy g astTy)
 
     // Check the expression
-    let expr, tpenv = TcExpr cenv (MustEqual astTy) env tpenv ast
+    let expr, tpenv = TcExpr cenv (MustEqual astTy) env.WithPreservedMatchShape tpenv ast
 
     // Wrap the expression
     let expr = Expr.Quote (expr, ref None, isFromQueryExpression, m, overallTy.Commit)
@@ -9034,7 +9043,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
             checkLanguageFeatureRuntimeAndRecover cenv.infoReader LanguageFeature.RuntimeAsync m
 
-            let arg, tpenv = TcExprFlex2 cenv bodyResultTy env false tpenv synArg
+            let arg, tpenv = TcExprFlex2 cenv bodyResultTy env.WithPreservedMatchShape false tpenv synArg
             let marker =
                 Expr.App(Expr.Val(vref, flags, m), vref.Type, markerTyargs, [ arg ], mExprAndArg)
 
@@ -9121,7 +9130,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     else
                         env
 
-                TcExprFlex2 cenv domainTy env false tpenv synArg
+                TcExprFlex2 cenv domainTy env.WithPreservedMatchShape false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv env leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
@@ -11563,6 +11572,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             |> TcAttrs AttributeTargets.ReturnValue true
 
         let valAttribFlags = computeValWellKnownFlags g valAttribs
+        let envinner =
+            if hasFlag valAttribFlags (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) then
+                envinner.WithPreservedMatchShape
+            else envinner
 
         let isVolatile = hasFlag valAttribFlags WellKnownValAttributes.VolatileFieldAttribute
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding

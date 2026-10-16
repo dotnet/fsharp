@@ -96,6 +96,7 @@ let CompilePatternForMatch
             mExpr
             mMatch
             warnOnUnused
+            env.ePreserveMatchShape
             actionOnFailure
             (inputVal, generalizedTypars, inputExprOpt)
             clauses

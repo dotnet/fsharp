@@ -2987,6 +2987,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote" cenv env mBuilderVal ad builderTy
+    let env = if isAutoQuote then env.WithPreservedMatchShape else env
 
     let customOperationMethods =
         getCustomOperationMethods cenv env ad mBuilderVal builderTy

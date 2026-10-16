@@ -1383,7 +1383,12 @@ module MutRecBindingChecking =
                             let envInstance =
                                 match incrCtorInfoOpt with
                                 | None -> envInstance
-                                | Some incrCtorInfo -> List.foldBack (AddLocalValPrimitive g) incrCtorInfo.InstanceCtorArgs envInstance
+                                | Some incrCtorInfo ->
+                                    let envInstance =
+                                        if ValHasWellKnownAttribute g (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) incrCtorInfo.InstanceCtorVal then
+                                            envInstance.WithPreservedMatchShape
+                                        else envInstance
+                                    List.foldBack (AddLocalValPrimitive g) incrCtorInfo.InstanceCtorArgs envInstance
                             let envNonRec =
                                 match incrCtorInfoOpt with
                                 | None -> envNonRec
@@ -1805,7 +1810,10 @@ module MutRecBindingChecking =
         let g = cenv.g
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs
             (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->
-                MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+                let env = MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind
+                if EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute moduleEntity then
+                    env.WithPreservedMatchShape
+                else env)
 
             (fun envAbove decls ->
 
@@ -5998,8 +6006,13 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
                 TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs ct
 
 
-and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
+and TcModuleOrNamespaceElements (cenv: cenv) parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
+    let env =
+        match parent with
+        | Parent entity when EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute entity.Deref ->
+            env.WithPreservedMatchShape
+        | _ -> env
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds
     if cenv.compilingCanonicalFslibModuleType then
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -6097,6 +6110,7 @@ let emptyTcEnv g =
       eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
+      ePreserveMatchShape = false
       eInObjectExpr = false
       eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
