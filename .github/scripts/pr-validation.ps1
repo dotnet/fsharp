@@ -36,7 +36,7 @@ switch ($Mode) {
     'Prepare' {
         if ($event.comment.user.type -isnot [string] -or $event.comment.user.type -cne 'User') { throw 'Only user comments can request validation.' }
         if ($event.comment.body -isnot [string] -or $event.comment.body.Trim() -cnotmatch '\A/(dart|pr-val) ([0-9a-f]{40})\z') {
-            throw 'Use a standalone /dart <sha> or /pr-val <sha> with the full 40-character current PR head SHA.'
+            throw 'Use a standalone /dart <sha> or /pr-val <sha> with the full 40-character reviewed PR commit SHA.'
         }
         $requestedSha = $Matches[2]
         $permission = Invoke-Api "$repoApi/collaborators/$login/permission" $env:GITHUB_TOKEN
@@ -48,19 +48,30 @@ switch ($Mode) {
             $pr.base.ref -isnot [string] -or $pr.base.ref -cne 'main') {
             throw 'Only open PRs targeting dotnet/fsharp main are supported.'
         }
-        $headSha, $baseSha = $pr.head.sha, $pr.base.sha
-        foreach ($sha in $headSha, $baseSha) {
-            if ($sha -isnot [string] -or $sha -cnotmatch '\A[0-9a-f]{40}\z') { throw 'GitHub did not return full head/base commit SHAs.' }
+        if ($pr.head.sha -isnot [string] -or $pr.head.sha -cnotmatch '\A[0-9a-f]{40}\z') {
+            throw 'GitHub did not return a full PR head commit SHA.'
         }
-        if ($requestedSha -cne $headSha) {
-            throw 'The requested SHA does not match the current PR head. Review the current commit and request a new run.'
+        $found = $false
+        for ($page = 1; $page -le 3; $page++) {
+            $commits = Invoke-Api "$repoApi/pulls/$prNumber/commits?per_page=100&page=$page" $env:GITHUB_TOKEN
+            if ($commits -isnot [array] -or $commits.Count -gt 100) { throw 'GitHub returned an invalid PR commit list.' }
+            foreach ($commit in $commits) {
+                if ($commit -isnot [System.Management.Automation.PSCustomObject] -or
+                    $commit.PSObject.Properties.Name -cnotcontains 'sha' -or
+                    $commit.sha -isnot [string] -or $commit.sha -cnotmatch '\A[0-9a-f]{40}\z') { throw 'GitHub returned an invalid PR commit SHA.' }
+                if ($commit.sha -ceq $requestedSha) { $found = $true }
+            }
+            if ($found -or $commits.Count -lt 100) { break }
+        }
+        if (!$found) {
+            throw 'The requested SHA was not found in the PR commit list (GitHub exposes at most 250 commits). Review a listed commit and request a new run.'
         }
         $request = @{
             resources = @{ repositories = @{ self = @{ refName = "refs/pull/$prNumber/head"; version = $requestedSha } } }
-            templateParameters = @{ prNumber = "$prNumber"; headSha = $headSha; baseSha = $baseSha }
+            templateParameters = @{ prNumber = "$prNumber"; headSha = $requestedSha }
         }
         $json = ConvertTo-Json -InputObject $request -Depth 10 -Compress
-        Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8 -Value "body=$json", "head=$headSha", "base=$baseSha"
+        Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8 -Value "body=$json", "head=$requestedSha"
     }
     'Membership' {
         $null = Invoke-Api "https://api.github.com/orgs/microsoft/members/$login" $env:GITHUB_TOKEN -ExpectedStatus 204
@@ -79,10 +90,10 @@ switch ($Mode) {
     'Report' {
         $workflowUrl = "$env:GITHUB_SERVER_URL/dotnet/fsharp/actions/runs/$env:GITHUB_RUN_ID"
         $body = if ($env:RUN_URL) {
-            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nReviewed PR head and pipeline YAML: ``$env:HEAD_SHA```nBase: ``$env:BASE_SHA```n`nThe run verifies the PR merge against this snapshot before building. Changes require review and a new ``/dart <sha>`` or ``/pr-val <sha>`` comment."
+            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nReviewed commit and pipeline YAML: ``$env:HEAD_SHA```n`nThe run tests a PR merge containing this commit if it is still the PR head; otherwise it tests this commit directly. The setup log records the selected mode and tested SHA. New commits require review and a new ``/dart <sha>`` or ``/pr-val <sha>`` comment."
         }
         else {
-            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart <sha>`` or ``/pr-val <sha>`` with the full current PR head SHA after reviewing code and pipeline YAML. The PR must target ``main`` and the requester needs repository write access and Microsoft-org membership."
+            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart <sha>`` or ``/pr-val <sha>`` with a full commit SHA listed in the PR after reviewing code and pipeline YAML. The PR must target ``main`` and the requester needs repository write access and Microsoft-org membership."
         }
         $null = Invoke-Api "$repoApi/issues/$prNumber/comments" $env:GITHUB_TOKEN -Method POST -Body @{ body = $body } -ExpectedStatus 201
     }
