@@ -1,7 +1,29 @@
 {
-  "timestamp": "2026-10-17T08:58:21Z",
-  "result": "no_eligible_prs",
-  "prs_processed": 0,
-  "prs": {},
-  "notes": "No open pull requests have the AI-Issue-Regression-PR label."
+  "last_run": "2026-10-17T16:58:36Z",
+  "prs": {
+    "20706": {
+      "category": "C",
+      "head_sha": "5870e60c5512025affb8191503ff9d0f71343bd6",
+      "issue": 6036,
+      "last_review_comment_timestamp": null,
+      "processed_at": "2026-10-06T20:58:27Z",
+      "last_checked_at": "2026-10-09T05:01:11Z",
+      "result": "healthy",
+      "actions": [
+        "removed AI-thinks-issue-fixed from issue 6036",
+        "commented on issue 6036",
+        "commented on PR 20706"
+      ],
+      "note": "A new fix commit landed after the prior B3 diagnosis; all 55 checks pass, the PR is clean, and the latest human activity is an approval with no review comments."
+    },
+    "20799": {
+      "category": "C",
+      "head_sha": "ea0ee39d02d401a550555adffd2a9ac0a19dc1de",
+      "issue": 13084,
+      "last_review_comment_timestamp": null,
+      "last_checked_at": "2026-10-17T16:58:36Z",
+      "result": "healthy",
+      "note": "All 53 checks pass, the branch is conflict-free, and there are no PR comments, reviews, or review threads."
+    }
+  }
 }
