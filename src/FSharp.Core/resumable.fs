@@ -76,6 +76,57 @@ type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<
 /// Defines the implementation of the code run after the creation of a struct state machine.
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
+#if NET
+[<Sealed>]
+type RuntimeAsyncFragmentResult<'T>(result: Result<'T, System.Runtime.ExceptionServices.ExceptionDispatchInfo>) =
+
+    let flowSuppressed = ExecutionContext.IsFlowSuppressed()
+
+    let context =
+        if flowSuppressed then
+            ExecutionContext.RestoreFlow()
+
+            try
+                ExecutionContext.Capture()
+            finally
+                ExecutionContext.SuppressFlow() |> ignore
+        else
+            ExecutionContext.Capture()
+
+    let synchronizationContext = SynchronizationContext.Current
+
+    member internal _.Restore() =
+        ExecutionContext.Restore(context)
+        SynchronizationContext.SetSynchronizationContext(synchronizationContext)
+
+        if flowSuppressed then
+            ExecutionContext.SuppressFlow() |> ignore
+
+        match result with
+        | Ok value -> value
+        | Error error ->
+            error.Throw()
+            Unchecked.defaultof<'T>
+
+[<Struct; NoEquality; NoComparison>]
+type RuntimeAsyncFragmentAwaiter<'T> =
+    val private Awaiter: ValueTaskAwaiter<RuntimeAsyncFragmentResult<'T>>
+
+    new(fragment: ValueTask<RuntimeAsyncFragmentResult<'T>>) = { Awaiter = fragment.GetAwaiter() }
+
+    member this.IsCompleted = this.Awaiter.IsCompleted
+
+    member this.GetResult() =
+        this.Awaiter.GetResult().Restore()
+
+    interface ICriticalNotifyCompletion with
+        member this.OnCompleted(continuation) =
+            this.Awaiter.OnCompleted(continuation)
+
+        member this.UnsafeOnCompleted(continuation) =
+            this.Awaiter.UnsafeOnCompleted(continuation)
+#endif
+
 [<AutoOpen>]
 module StateMachineHelpers =
 
@@ -125,6 +176,20 @@ module StateMachineHelpers =
 
         failwith
             "__runtimeAsyncReturnValueTask is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    let inline __runtimeAsyncOutline
+        ([<InlineIfLambda>] callback: 'Arg -> 'T)
+        : 'Arg -> ValueTask<RuntimeAsyncFragmentResult<'T>> =
+        fun argument ->
+            __runtimeAsyncReturnValueTask (
+                let result =
+                    try
+                        Ok(callback argument)
+                    with error ->
+                        Error(System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error))
+
+                RuntimeAsyncFragmentResult(result)
+            )
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __runtimeAsyncReturnUnit () : Task =

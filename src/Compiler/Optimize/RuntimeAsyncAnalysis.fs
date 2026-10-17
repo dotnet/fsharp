@@ -2,22 +2,19 @@
 
 module internal FSharp.Compiler.RuntimeAsyncAnalysis
 
+open System.Collections.Generic
+
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
-open System.Collections.Generic
-
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypeRelations
-
-open FSharp.Compiler.RuntimeAsync
 
 let rec private containsRecipeConstruction visit expr =
     match stripDebugPoints expr with
@@ -32,6 +29,7 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
     let suspensionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
     let valueCache = Dictionary<Stamp, bool>()
     let visitingValues = HashSet<Stamp>()
+    let stackGuard = StackGuard("RuntimeAsyncAnalyzer")
 
     let rec containsValue (vref: ValRef) =
         match valueCache.TryGetValue vref.Stamp with
@@ -53,6 +51,9 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
             result, complete
 
     and containsExpression expr =
+        stackGuard.Guard(fun () -> containsExpressionCore expr)
+
+    and containsExpressionCore expr =
         match expressionCache.TryGetValue expr with
         | true, result -> result, true
         | _ ->
@@ -90,6 +91,9 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
     member _.ContainsFragment expr = containsExpression expr |> fst
 
     member this.ContainsSuspension expr =
+        stackGuard.Guard(fun () -> this.ContainsSuspensionCore expr)
+
+    member private this.ContainsSuspensionCore expr =
         match suspensionCache.TryGetValue expr with
         | true, result -> result
         | _ ->
@@ -138,134 +142,87 @@ let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeA
                 | _ -> false)
             args)
 
-let rec private IsRuntimeAsyncEffectFree expr =
-    match stripExpr expr with
-    | Expr.Const _
-    | Expr.Lambda _
-    | Expr.TyLambda _ -> true
-    | Expr.Val(vref, _, _) -> not vref.IsMutable && not vref.IsTypeFunction
-    | Expr.App(funcExpr, _, _, [], _) -> IsRuntimeAsyncEffectFree funcExpr
-    | Expr.Op(TOp.Tuple _, _, args, _)
-    | Expr.Op(TOp.AnonRecd _, _, args, _) -> List.forall IsRuntimeAsyncEffectFree args
-    | _ -> false
+let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) expr =
+    let stackGuard = StackGuard("ReduceRuntimeAsyncReturnedClosureApplications")
 
-let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
-    let rec isLambdaExpression expr =
+    let rec effectFree expr =
         match stripExpr expr with
-        | Expr.DebugPoint(_, innerExpr) -> isLambdaExpression innerExpr
-        | Expr.Let(TBind(_, rhs, _), innerExpr, _, _) -> IsRuntimeAsyncEffectFree rhs && isLambdaExpression innerExpr
+        | Expr.Const _
         | Expr.Lambda _
         | Expr.TyLambda _ -> true
+        | Expr.Val(vref, _, _) -> not vref.IsMutable && not vref.IsTypeFunction
+        | Expr.App(funcExpr, _, _, [], _) -> effectFree funcExpr
         | _ -> false
 
-    let rec stripLambdaDebugPoints expr =
-        match expr with
-        | Expr.DebugPoint(_, innerExpr) ->
-            match stripDebugPoints innerExpr with
-            | Expr.Lambda _
-            | Expr.TyLambda _ -> stripLambdaDebugPoints innerExpr
-            | _ -> expr
-        | Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, bodyExpr, m, overallType) ->
-            match bodyExpr with
-            | Expr.DebugPoint(_, innerExpr) ->
-                match stripDebugPoints innerExpr with
-                | Expr.Lambda _
-                | Expr.TyLambda _ ->
-                    Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, stripLambdaDebugPoints bodyExpr, m, overallType)
-                | _ -> expr
-            | _ -> expr
-        | Expr.TyLambda(unique, typeParams, bodyExpr, m, overallType) ->
-            match bodyExpr with
-            | Expr.DebugPoint(_, innerExpr) ->
-                match stripDebugPoints innerExpr with
-                | Expr.Lambda _
-                | Expr.TyLambda _ -> Expr.TyLambda(unique, typeParams, stripLambdaDebugPoints bodyExpr, m, overallType)
-                | _ -> expr
-            | _ -> expr
-        | _ -> expr
+    let rec apply f fty tyargs args m =
+        stackGuard.Guard(fun () -> applyCore f fty tyargs args m)
 
-    let rec betaReduceLambdaApplication expr =
-        let rec apply f fty tyargs args m =
-            match args with
-            | [] -> None
-            | firstArg :: rest ->
-                let f = stripLambdaDebugPoints f
-
-                match f with
-                | Expr.Let(bind, body, mLet, _) -> apply body (tyOfExpr g body) tyargs args m |> Option.map (mkLetBind mLet bind)
-                | Expr.Lambda(_, _, _, valParams, body, _, _) when
-                    valParams.Length = 1
-                    && not rest.IsEmpty
-                    && (IsRuntimeAsyncEffectFree body || List.forall IsRuntimeAsyncEffectFree rest)
-                    ->
-                    let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ firstArg ], m)
-
-                    match reduced with
-                    | Expr.Let(bind, body, mLet, _) ->
-                        match apply body (tyOfExpr g body) [] rest m with
-                        | Some bodyR -> Some(mkLetBind mLet bind bodyR)
-                        | None -> Some(mkAppsAux g reduced (tyOfExpr g reduced) [] rest m)
-                    | _ -> Some reduced
-                | Expr.Lambda _
-                | Expr.TyLambda _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
-                | _ -> None
-
-        match stripDebugPoints expr with
-        | Expr.App(f, fty, tyargs, args, m) -> apply f fty tyargs args m
+    and applyCore f fty tyargs args m =
+        match f, args with
+        | Expr.DebugPoint(_, inner), _ when
+            match stripDebugPoints inner with
+            | Expr.Lambda _ -> true
+            | _ -> false
+            ->
+            apply inner fty tyargs args m
+        | Expr.DebugPoint(point, inner), _ ->
+            apply inner fty tyargs args m
+            |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Let(binding, body, mLet, _), _ ->
+            apply body (tyOfExpr g body) tyargs args m
+            |> Option.map (mkLetBind mLet binding)
+        | Expr.LetRec(bindings, body, mLet, _), _ ->
+            apply body (tyOfExpr g body) tyargs args m
+            |> Option.map (mkLetRecBinds mLet bindings)
+        | Expr.Sequential(first, rest, NormalSeq, mSeq), _ ->
+            apply rest (tyOfExpr g rest) tyargs args m
+            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, mSeq))
+        | Expr.Match(point, matchRange, tree, targets, mMatch, _), _ when List.forall effectFree args ->
+            // Each target after the first needs its own copy of any values bound by the arguments.
+            TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, mMatch) (fun i body ->
+                let args = if i = 0 then args else List.map (copyExpr g CloneAll) args
+                apply body (tyOfExpr g body) tyargs args m)
+        | Expr.Lambda(_, _, _, [ _ ], _, _, _), first :: (_ :: _ as rest) when List.forall effectFree rest ->
+            let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ first ], m)
+            apply reduced (tyOfExpr g reduced) [] rest m
+        | Expr.Lambda _, _ :: _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
+        | _ when not (analyzer.ContainsSuspension f) && List.forall effectFree args -> Some(mkAppsAux g f fty [ tyargs ] args m)
         | _ -> None
 
-    let mkRwenv (preIntercept: (Expr -> Expr) -> Expr -> Expr option) : ExprRewritingEnv =
+    let rwenv =
         {
-            PreIntercept = Some preIntercept
+            PreIntercept = None
             PreInterceptBinding = None
-            PostTransform = betaReduceLambdaApplication
+            PostTransform =
+                (fun expression ->
+                    match expression with
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
+                        not args.IsEmpty && analyzer.ContainsSuspension expression
+                        ->
+                        apply f fty tyargs args m
+                    | _ -> None)
             RewriteQuotations = false
-            StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
+            StackGuard = stackGuard
         }
 
-    let rec inlineBinding (boundVal: Val) boundExpr body =
-        match boundExpr with
-        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineBinding boundVal inner body)
-        | Expr.Let(binding, rest, m, _) -> mkLetBind m binding (inlineBinding boundVal rest body)
-        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineBinding boundVal rest body, NormalSeq, m)
-        | _ ->
-            let rwenv =
-                mkRwenv (fun _ expr ->
-                    match betaReduceLambdaApplication expr with
-                    | Some reduced -> Some reduced
-                    | None ->
-                        match stripExpr expr with
-                        | Expr.App(f, _, tyargs, args, m) ->
-                            match stripDebugPoints f with
-                            | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
-                                Some(
-                                    MakeApplicationAndBetaReduce
-                                        g
-                                        (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m)
-                                )
-                            | _ -> None
-                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
-                        | _ -> None)
+    RewriteExpr rwenv expr
 
-            RewriteExpr rwenv body
-
+let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
     let rwenv =
-        mkRwenv (fun cont expr ->
-            match stripExpr expr with
-            | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
-                (boundVal.InlineIfLambda
-                 && (isLambdaExpression boundExpr
-                     || isRuntimeAsyncFragment boundExpr
-                     || match stripExpr boundExpr with
-                        | Expr.App(_, _, _, args, _) -> List.isEmpty args
-                        | _ -> true))
-                || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
-                ->
-                if not boundVal.InlineIfLambda then
-                    boundVal.SetInlineIfLambda()
-
-                Some(cont (inlineBinding boundVal boundExpr body))
-            | _ -> None)
+        {
+            PreIntercept = None
+            PreInterceptBinding = None
+            PostTransform =
+                (fun expression ->
+                    match expression, TryGetRuntimeAsyncReturn g expression with
+                    | Expr.App(f, fty, tyargs, [ body ], range), Some _ ->
+                        match body with
+                        | Expr.DebugPoint _ -> None
+                        | _ -> Some(Expr.App(f, fty, tyargs, [ mkDebugPoint m body ], range))
+                    | _ -> None)
+            RewriteQuotations = false
+            StackGuard = StackGuard("PreserveRuntimeAsyncCallSiteDebugPoint")
+        }
 
     RewriteExpr rwenv expr
 
@@ -321,12 +278,13 @@ let private TryGetRuntimeAsyncNonPreservableAlias (g: TcGlobals) expr =
 
 let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
     let cache = Dictionary<Expr, RuntimeAsyncFlowSummary>(HashIdentity.Reference)
+    let stackGuard = StackGuard("AnalyzeRuntimeAsyncFlow")
 
     let rec analyzeExpr expr =
         match cache.TryGetValue expr with
         | true, summary -> summary
         | _ ->
-            let summary = analyzeExprCore expr
+            let summary = stackGuard.Guard(fun () -> analyzeExprCore expr)
             cache[expr] <- summary
             summary
 
@@ -502,6 +460,9 @@ let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
             analyzeExpr targetExpr |> removeRuntimeAsyncBoundVals boundVals
 
         let rec analyzeTree tree =
+            stackGuard.Guard(fun () -> analyzeTreeCore tree)
+
+        and analyzeTreeCore tree =
             match tree with
             | TDSuccess(results, targetNum) ->
                 let resultSummary =

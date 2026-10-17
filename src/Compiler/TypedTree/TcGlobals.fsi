@@ -453,6 +453,8 @@ type internal TcGlobals =
     member cgh__runtimeAsyncSequence_vref: TypedTree.ValRef
 
     member cgh__runtimeAsyncSequenceCancellationToken_vref: TypedTree.ValRef
+    member runtimeAsyncFragmentAwaiter_tcref: TypedTree.EntityRef
+    member cgh__runtimeAsyncOutline_vref: TypedTree.ValRef
 
     member cgh__useResumableCode_vref: TypedTree.ValRef
 

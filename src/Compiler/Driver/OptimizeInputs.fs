@@ -397,6 +397,24 @@ let ApplyAllOptimizations
 
     addPhase "firstLoop" firstLoop
 
+    let runtimeAsyncReportedRanges =
+        System.Collections.Concurrent.ConcurrentDictionary<range, unit>()
+
+    let lowerRuntimeAsync
+        ({
+             File = file
+             PrevPhase = prevPhase
+             PrevFile = _prevFile
+         }: PhaseInputs)
+        : PhaseRes =
+        let file =
+            LowerRuntimeAsync.TransformImplFile tcGlobals importMap prevPhase.FirstLoopRes.OptDuringCodeGen runtimeAsyncReportedRanges file
+
+        file, prevPhase
+
+    // Must precede lowerLocalMutables: outlined callbacks capture shared mutable locals.
+    addPhase "lowerRuntimeAsync" lowerRuntimeAsync
+
     let lowerLocalMutables
         ({
              File = file

@@ -8,6 +8,30 @@ open System
 open System.Runtime.CompilerServices
 open System.Threading
 
+#if NET
+/// Carries an outlined runtime-async fragment's outcome and final ambient contexts.
+[<Sealed>]
+type RuntimeAsyncFragmentResult<'T> =
+    /// Captures an outcome and the current execution and synchronization contexts.
+    new: result: Result<'T, System.Runtime.ExceptionServices.ExceptionDispatchInfo> -> RuntimeAsyncFragmentResult<'T>
+
+/// Awaits an outlined fragment and restores its final contexts when retrieving the outcome.
+[<Struct; NoEquality; NoComparison>]
+type RuntimeAsyncFragmentAwaiter<'T> =
+    val private Awaiter: ValueTaskAwaiter<RuntimeAsyncFragmentResult<'T>>
+
+    /// Creates an awaiter for an outlined fragment.
+    new: fragment: System.Threading.Tasks.ValueTask<RuntimeAsyncFragmentResult<'T>> -> RuntimeAsyncFragmentAwaiter<'T>
+
+    /// Indicates whether the fragment has completed.
+    member IsCompleted: bool
+
+    /// Restores the fragment's final contexts, then returns its value or rethrows its exception.
+    member GetResult: unit -> 'T
+
+    interface ICriticalNotifyCompletion
+#endif
+
 /// Acts as a template for struct state machines introduced by __stateMachine, and also as a reflective implementation
 [<Struct; NoComparison; NoEquality>]
 type ResumableStateMachine<'Data> =
@@ -203,6 +227,10 @@ module StateMachineHelpers =
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __runtimeAsyncReturnValueTask : 'T -> System.Threading.Tasks.ValueTask<'T>
+
+    /// Outlines a callback as a runtime-async fragment that captures its outcome and final ambient contexts.
+    val inline __runtimeAsyncOutline:
+        [<InlineIfLambda>] callback: ('Arg -> 'T) -> ('Arg -> System.Threading.Tasks.ValueTask<RuntimeAsyncFragmentResult<'T>>)
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __runtimeAsyncReturnUnit : unit -> System.Threading.Tasks.Task

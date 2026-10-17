@@ -3,11 +3,19 @@
 module internal FSharp.Compiler.RuntimeAsync
 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 type RuntimeAsyncReturnInfo = { Body: Expr; TypeArgs: TType list }
+
+/// Rebuilds a match with every target rewritten, or returns None if any target cannot be.
+val TryMapRuntimeAsyncMatchTargets:
+    g: TcGlobals ->
+    matchInfo: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget array * range ->
+        mapTarget: (int -> Expr -> Expr option) ->
+            Expr option
 
 val TryGetRuntimeAsyncReturn: g: TcGlobals -> expr: Expr -> RuntimeAsyncReturnInfo option
 
