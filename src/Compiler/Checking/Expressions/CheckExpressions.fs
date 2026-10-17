@@ -4202,6 +4202,31 @@ let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern
     | None -> eliminateNull inputTy pat
     | _ -> inputTy
 
+[<return: Struct>]
+let (|PrimitiveConstText|_|) (c: Const) =
+    match c with
+    | Const.SByte n -> ValueSome(string n)
+    | Const.Int16 n -> ValueSome(string n)
+    | Const.Int32 n -> ValueSome(string n)
+    | Const.Int64 n -> ValueSome(string n)
+    | Const.Byte n -> ValueSome(string n)
+    | Const.UInt16 n -> ValueSome(string n)
+    | Const.UInt32 n -> ValueSome(string n)
+    | Const.UInt64 n -> ValueSome(string n)
+    | Const.Decimal n -> ValueSome(string n)
+    | Const.Char n -> ValueSome(string n)
+    | Const.Bool n -> ValueSome(string n)
+    | _ -> ValueNone
+
+let tryConstantHoleText (g: TcGlobals) (formatting: SynInterpolationFormatting) (mHole: range) (hole: Expr) =
+    match formatting, EvalLiteralExprOrAttribArg g hole with
+    | (SynInterpolationFormatting.DotNet(None, None) | SynInterpolationFormatting.Printf("%s", _)), Expr.Const(Const.String text, _, _) -> ValueSome text
+    | SynInterpolationFormatting.DotNet(None, None), Expr.Const(PrimitiveConstText text, _, ty) when not (isEnumTy g ty) -> ValueSome text
+    | _, Expr.Const _ ->
+        errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
+        ValueNone
+    | _ -> ValueNone
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -5048,7 +5073,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
-        let te, tpenv' = TcExprNoRecover cenv (MustEqual kind) env tpenv e
+        let te, tpenv' = TcExprNoRecover cenv (MustEqual kind) { env with eInConstantContext = true } tpenv e
 
         // Evaluate the constant expression using static attribute argument rules
         let te = EvalLiteralExprOrAttribArg g te
@@ -7802,6 +7827,26 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
 
+and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
+    let g = cenv.g
+
+    let tryPartTexts, tpenv =
+        (tpenv, parts) ||> List.mapFold (fun tpenv part ->
+            match part with
+            | SynInterpolatedStringPart.String(text, _) -> (fun () -> ValueSome(text.Replace("%%", "%"))), tpenv
+            | SynInterpolatedStringPart.FillExpr(synFill, formatting) ->
+                let hole, tpenv = TcExprFlex2 cenv (NewInferenceType g) env false tpenv synFill
+                (fun () -> tryConstantHoleText g formatting synFill.Range hole), tpenv)
+
+    let text =
+        tryPartTexts
+        |> Seq.map (fun tryPartText -> tryPartText ())
+        |> Seq.takeWhile _.IsSome
+        |> Seq.map _.Value
+        |> String.concat ""
+
+    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkString g m text, tpenv)
+
 /// Check an interpolated string expression
 and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
     match argTys, synFillExprs with
@@ -7949,6 +7994,8 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             else
                 let str = mkString g m printfFormatString
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
+        elif isString && env.eInConstantContext && g.langVersion.SupportsFeature LanguageFeature.ConstantInterpolatedStrings then
+            TcConstantInterpolatedString (cenv, overallTy, env, m, tpenv, parts)
         elif isString then
             // String-typed interpolation: lower to a reflection-free System.String.Concat of the parts,
             // type-checking each hole in place (no separate batch, no flat fill-expression list).
@@ -11805,7 +11852,7 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
         hasFlag valFlags WellKnownValAttributes.LiteralAttribute
 
     if hasLiteralAttr then
-        let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) env tpenv synLiteralValExpr
+        let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) { env with eInConstantContext = true } tpenv synLiteralValExpr
         match EvalLiteralExprOrAttribArg g literalValExpr with
         | Expr.Const (c, _, ty) ->
             if c = Const.Zero && isStructTy g ty then
@@ -12011,7 +12058,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
                 let afterResolution = ForNewConstructors cenv.tcSink env tyId.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ =
-                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
+                  TcMethodApplication true cenv { env with eInConstantContext = true } tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr g expr)
 
