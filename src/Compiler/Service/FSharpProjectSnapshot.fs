@@ -644,9 +644,13 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
         |> FSharpProjectSnapshot
 
-    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
-        let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
-
+    static member private SnapshotOfOptions
+        (
+            options: FSharpProjectOptions,
+            getFileSnapshot,
+            snapshotAccumulator: Dictionary<FSharpProjectOptions, FSharpProjectSnapshot>,
+            getReferenceStamp: string -> DateTime
+        ) =
         async {
 
             // TODO: check if options is a good key here
@@ -662,7 +666,13 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     |> Seq.map (function
                         | FSharpReferencedProject.FSharpReference(outputName, options) ->
                             async {
-                                let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot, snapshotAccumulator)
+                                let! snapshot =
+                                    FSharpProjectSnapshot.SnapshotOfOptions(
+                                        options,
+                                        getFileSnapshot,
+                                        snapshotAccumulator,
+                                        getReferenceStamp
+                                    )
 
                                 return FSharpReferencedProjectSnapshot.FSharpReference(outputName, snapshot)
                             }
@@ -683,7 +693,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
                             {
                                 Path = path
-                                LastModified = FileSystem.GetLastWriteTimeShim(path)
+                                LastModified = getReferenceStamp path
                             })
                     )
 
@@ -708,6 +718,22 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
             return snapshotAccumulator[options]
         }
+
+    static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
+        FSharpProjectSnapshot.SnapshotOfOptions(
+            options,
+            getFileSnapshot,
+            defaultArg snapshotAccumulator (Dictionary()),
+            fun path -> FileSystem.GetLastWriteTimeShim path
+        )
+
+    /// The snapshot `FromOptions` builds, with the last-modified time of every reference on disk answered by
+    /// the host rather than read from the file system: a host that already tracks those files - as an IDE
+    /// watching them does - knows the time without a call per reference per snapshot.
+    static member internal FromOptionsWithReferenceStamps
+        (options: FSharpProjectOptions, getFileSnapshot, getReferenceStamp: string -> DateTime, ?snapshotAccumulator)
+        =
+        FSharpProjectSnapshot.SnapshotOfOptions(options, getFileSnapshot, defaultArg snapshotAccumulator (Dictionary()), getReferenceStamp)
 
     static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
         FSharpProjectSnapshot.FromOptions(options, fun _ fileName -> FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource))
