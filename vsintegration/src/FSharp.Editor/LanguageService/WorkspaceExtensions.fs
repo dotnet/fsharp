@@ -161,12 +161,42 @@ module internal FSharpProjectSnapshotSerialization =
 open FSharpProjectSnapshotSerialization
 open System.Collections.Concurrent
 
+/// The project snapshots built for the transparent compiler, kept per Roslyn project. Every entry holds the
+/// `Project` it was built from, and through it the whole `Solution`, and `latest` is never trimmed, so an
+/// entry has to go when its project leaves the workspace.
+[<RequireQualifiedAccess>]
+module internal ProjectSnapshotCache =
+
+    let snapshots =
+        AsyncMemoize<ProjectId, Project, FSharpProjectSnapshot>(1000, 500, "SnapshotCache")
+
+    /// What the last snapshot of each project was built from, for the next one to reuse.
+    let latest =
+        ConcurrentDictionary<ProjectId, Project * VersionStamp * Set<string> * FSharpProjectOptions * FSharpProjectSnapshot>()
+
+    let mutable private removals = 0
+
+    /// How many removals the workspace has reported so far. A request that finds it moved while it was under
+    /// way may have built a snapshot of a project the workspace dropped, and the project's id cannot tell:
+    /// a reload brings the same ids back.
+    let removalsSoFar () =
+        System.Threading.Volatile.Read &removals
+
+    let forget (projectId: ProjectId) =
+        snapshots.Clear(fun key -> key = projectId)
+        latest.TryRemove projectId |> ignore
+
+    let removeProject (projectId: ProjectId) =
+        System.Threading.Interlocked.Increment &removals |> ignore
+        forget projectId
+
+    let clear () =
+        System.Threading.Interlocked.Increment &removals |> ignore
+        snapshots.Clear()
+        latest.Clear()
+
 [<AutoOpen>]
 module private CheckerExtensions =
-
-    let snapshotCache = AsyncMemoize(1000, 500, "SnapshotCache")
-
-    let latestSnapshots = ConcurrentDictionary<_, _>()
 
     let exist xs = xs |> Seq.isEmpty |> not
 
@@ -241,7 +271,7 @@ module private CheckerExtensions =
             let! referenceVersions = getReferencedProjectVersions project
 
             let updatedSnapshot =
-                match project.IsTransparentCompilerSnapshotReuseEnabled, latestSnapshots.TryGetValue project.Id with
+                match project.IsTransparentCompilerSnapshotReuseEnabled, ProjectSnapshotCache.latest.TryGetValue project.Id with
                 | true, (true, (_, _, oldReferenceVersions, _, _)) when referenceVersions <> oldReferenceVersions ->
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
@@ -362,7 +392,7 @@ module private CheckerExtensions =
             let latestSnapshotData =
                 project, projectVersion, referenceVersions, options, newSnapshot
 
-            latestSnapshots.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
+            ProjectSnapshotCache.latest.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
             |> ignore
 
             return newSnapshot
@@ -377,16 +407,29 @@ module private CheckerExtensions =
                 member _.GetLabel() = project.FilePath
             }
 
-        snapshotCache.Get(
-            key,
-            async {
-                let! ct = Async.CancellationToken
+        async {
+            let removalsAtStart = ProjectSnapshotCache.removalsSoFar ()
 
-                return!
-                    createProjectSnapshot snapshotAccumulatorOpt project options ct
-                    |> Async.AwaitTask
-            }
-        )
+            let! snapshot =
+                ProjectSnapshotCache.snapshots.Get(
+                    key,
+                    async {
+                        let! ct = Async.CancellationToken
+
+                        return!
+                            createProjectSnapshot snapshotAccumulatorOpt project options ct
+                            |> Async.AwaitTask
+                    }
+                )
+
+            // The handler that follows the workspace may have run before this request stored its entries, and a
+            // reload brings the project's id back, so the id says nothing: if a removal happened meanwhile, this
+            // project's entries go, and the next request builds them again.
+            if ProjectSnapshotCache.removalsSoFar () <> removalsAtStart then
+                ProjectSnapshotCache.forget project.Id
+
+            return snapshot
+        }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
         getOrCreateSnapshotForProject document.Project (Some options) None
