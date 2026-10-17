@@ -247,6 +247,8 @@ type TcEnv =
 
       eInNameOf: bool
 
+      eInConstantContext: bool
+
       /// Are we checking the body of an object expression? Such a body has family access to the
       /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
       eInObjectExpr: bool
