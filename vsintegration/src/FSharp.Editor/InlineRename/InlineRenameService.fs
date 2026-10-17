@@ -102,6 +102,35 @@ type internal InlineRenameInfo
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 
+    /// The search reads the text the workspace holds for a document, so the ranges it finds are ranges of that
+    /// text. Where the rename's solution holds another text, the uses are found in the text the rename edits.
+    let usesInTextOf (document: Document) (text: SourceText) (found: range[]) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+            let! searchedThisText =
+                match document.Project.Solution.Workspace.CurrentSolution.GetDocument document.Id with
+                | null -> CancellableTask.singleton false
+                | searched ->
+                    cancellableTask {
+                        let! searchedText = searched.GetTextAsync cancellationToken
+                        return text.ContentEquals searchedText
+                    }
+
+            if searchedThisText then
+                return found
+            else
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof (InlineRenameInfo))
+
+                return
+                    checkFileResults.GetUsesOfSymbolInFile(
+                        symbolUse.Symbol,
+                        relatedSymbolKinds = RelatedSymbolUseKind.All,
+                        cancellationToken = cancellationToken
+                    )
+                    |> Array.map _.Range
+        }
+
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
     override _.TriggerSpan = triggerSpan
@@ -151,23 +180,32 @@ type internal InlineRenameInfo
         cancellableTask {
             let! symbolUsesByDocumentId = symbolUses
 
+            // Roslyn's rename session commits only documents of the solution it started from, and the search can
+            // find a document through the workspace's newer solution: such a use cannot be part of this rename.
+            let solution = document.Project.Solution
+
             let! results =
                 seq {
                     for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
+                        match solution.GetDocument documentId with
+                        | null -> ()
+                        | document ->
+                            yield
+                                cancellableTask {
+                                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                                    let! sourceText = document.GetTextAsync(cancellationToken)
+                                    let! symbolUses = usesInTextOf document sourceText symbolUses
 
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
-                            let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken)
-
-                            return
-                                [|
-                                    for symbolUse in symbolUses do
-                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName) with
-                                        | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
-                                        | ValueNone -> ()
-                                |]
-                        }
+                                    return
+                                        [|
+                                            for symbolUse in symbolUses do
+                                                match
+                                                    Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName)
+                                                with
+                                                | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
+                                                | ValueNone -> ()
+                                        |]
+                                }
                 }
                 |> CancellableTask.whenAll
 
