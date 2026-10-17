@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/test-bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../../../.tools/fsharp-diag/test-obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
