@@ -6,6 +6,19 @@ open Xunit
 open FSharp.Test.Compiler
 
 module ``StringFormatAndInterpolation`` =
+    [<Fact>]
+    let ``Issue 20752 - fallback formats retain sprintf and Concat lowering`` () =
+        FSharp """
+module StringFormatAndInterpolation
+let f (flag: bool) = $"%b{flag} %b{flag}"
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyILPresent [
+            "Microsoft.FSharp.Core.PrintfModule::PrintFormatToStringThen"
+            "System.String::Concat"
+        ]
+
 #if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
     [<Fact>]
     let ``Interpolated string with no holes is reduced to a string or simple format when used in printf``() =
