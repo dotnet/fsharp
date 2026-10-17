@@ -1104,6 +1104,13 @@ module CancellableTasks =
         let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
             fun ct -> Task.parallelLimit maxDegreeOfParallelism ct tasks
 
+        /// Runs the work over the items with at most maxDegreeOfParallelism of them in flight.
+        let forEachThrottled maxDegreeOfParallelism (work: 'T -> CancellableTask<unit>) (items: 'T seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                return! Task.parallelDoLimit maxDegreeOfParallelism ct (items |> Seq.map work)
+            }
+
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
