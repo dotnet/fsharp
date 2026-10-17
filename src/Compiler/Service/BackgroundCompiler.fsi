@@ -131,6 +131,9 @@ type internal IBackgroundCompiler =
 
     abstract NotifyProjectCleaned: options: FSharpProjectOptions * userOpName: string -> Async<unit>
 
+    /// Host-supplied last-write times of referenced assemblies; builders created afterwards consult it instead of the file system.
+    abstract SetReferenceStampProvider: getReferenceStamp: (string -> System.DateTime) -> unit
+
     abstract ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
@@ -241,3 +244,5 @@ type internal BackgroundCompiler =
     static member ActualCheckFileCount: int
 
     static member ActualParseFileCount: int
+
+    member SetReferenceStampProvider: getReferenceStamp: (string -> System.DateTime) -> unit

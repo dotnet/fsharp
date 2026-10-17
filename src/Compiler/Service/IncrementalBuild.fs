@@ -1435,7 +1435,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            getReferenceStamp: (string -> DateTime) voption
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1573,9 +1574,17 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
+                // A host that tracks the referenced files itself answers their stamps; otherwise they are stat'd.
+                // Creation and IsReferencesInvalidated must stamp through the same source, or a host view that
+                // lags the disk would recreate the builder on every request.
+                let stampReferencedAssembly =
+                    match getReferenceStamp with
+                    | ValueSome getReferenceStamp -> fun fileName (_: TimeStampCache) -> getReferenceStamp fileName
+                    | ValueNone -> fun fileName (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName
+
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
-                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
+                    yield (Choice1Of2 fileName, stampReferencedAssembly fileName)
 
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
