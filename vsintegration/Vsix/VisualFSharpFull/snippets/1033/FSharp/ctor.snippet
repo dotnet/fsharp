@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>ctor</Title>
+      <Shortcut>ctor</Shortcut>
+      <Description>Code snippet for an additional constructor</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>arguments</ID>
+          <ToolTip>Constructor arguments</ToolTip>
+          <Default>arg: int</Default>
+        </Literal>
+        <Literal Editable="false">
+          <ID>classname</ID>
+          <ToolTip>Class name</ToolTip>
+          <Function>ClassName()</Function>
+          <Default>ClassNamePlaceholder</Default>
+        </Literal>
+        <Literal>
+          <ID>values</ID>
+          <ToolTip>Arguments passed to the primary constructor</ToolTip>
+          <Default>arg</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[new($arguments$) = $classname$($values$)
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
