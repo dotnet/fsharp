@@ -5479,6 +5479,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     let inner = CG.GenerateDelayMark cgbuf "for_inner"
     let test = CG.GenerateDelayMark cgbuf "for_test"
     let stack, eenvinner = EmitSaveStack cenv cgbuf eenv m (start, finish)
+    let eenvstack = eenvinner
 
     let isUp =
         (match dir with
@@ -5512,7 +5513,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     | DebugPointAtFor.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
     | DebugPointAtFor.No -> ()
 
-    GenExpr cenv cgbuf eenv e1 Continue
+    GenExpr cenv cgbuf eenvstack e1 Continue
     GenStoreVal cgbuf eenvinner m v
 
     if isFSharpStyle then
@@ -5567,7 +5568,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
         CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
         GenSequel cenv eenv.cloc cgbuf e2Sequel
     else
-        GenExpr cenv cgbuf eenv e2 e2Sequel
+        GenExpr cenv cgbuf eenvinner e2 e2Sequel
 
     // .finish - loop-exit here
     CG.SetMarkToHere cgbuf finish
