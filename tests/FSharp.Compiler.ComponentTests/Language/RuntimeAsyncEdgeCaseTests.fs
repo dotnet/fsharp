@@ -12,9 +12,6 @@ module Language.RuntimeAsyncEdgeCaseTests
 // sources (single async method, clean assembly), because ILChecker's NotPresent check is
 // assembly-scoped and the CE builder's own inline members legitimately contain `tail.`/`MoveNext`.
 // The CE `Run` lowers `do!`/`let!` to exactly this intrinsic form (see the execution facts).
-//
-// The "undiagnosed forbidden pattern" facts below pin restrictions that docs/runtime-async.md
-// records as known and currently NOT diagnosed by the F# compiler (tail./localloc forbidden).
 
 open Xunit
 open FSharp.Test.Compiler
@@ -26,7 +23,7 @@ let private builderPath = Path.Combine(runtimeAsyncDir, "RuntimeTaskBuilder.fs")
 
 // Builds a minimal direct-intrinsic compilation unit: the module header plus the opens every
 // StateMachineHelpers.__runtimeAsyncReturn body needs, then the supplied one-liner body. Used for the
-// shape / absence / undiagnosed-pattern assertions, which must run on a single-method assembly.
+// IL-shape and diagnostic assertions that need a single-method assembly.
 let private directIntrinsicSource body =
     String.concat "\n" [
         "module M"
