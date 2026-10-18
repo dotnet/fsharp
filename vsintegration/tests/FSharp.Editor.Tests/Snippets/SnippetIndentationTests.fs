@@ -125,6 +125,22 @@ let ``Selected lines a snippet puts inside its own string are that string's cont
         kindsOf (ValueSome(1, 2)) [ opening; "    ()"; "()"; closing; "()" ]
     )
 
+[<Fact>]
+let ``Selected lines that open and close an interpolation hole in the snippet's string leave the lines after it in place`` () =
+    Assert.Equal<LineKind list>(
+        [ Template; InsideString; SelectedRest; SelectedRest; InsideString; Template ],
+        kindsOf
+            (ValueSome(1, 3))
+            [
+                "let text = $\"\"\""
+                "    { Field ="
+                "        1"
+                "    }"
+                "\"\"\""
+                "ignore text"
+            ]
+    )
+
 [<Theory>]
 [<InlineData("printfn \"a\"", "\"b\" |> printfn \"%s\"")>]
 [<InlineData("let s = $\"\"\"a {", "  1 } b\"\"\"")>]
