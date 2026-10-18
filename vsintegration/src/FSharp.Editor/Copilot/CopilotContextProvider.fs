@@ -23,6 +23,14 @@ open Microsoft.VisualStudio.Text.PatternMatching
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
+[<Struct>]
+type internal PickedDeclaration =
+    {
+        File: string
+        ProjectName: string
+        Line: int
+    }
+
 /// Where a declaration sits relative to what the user is working on, best first. The picker merges
 /// answers from every provider and ranks them by the priority each one reports, so a match has to say
 /// where it sits rather than rely on its position.
@@ -386,43 +394,54 @@ module internal CopilotSymbolQuery =
                 | implementations -> implementations
         }
 
-    /// The declarations of a name in the implementation file its mention was picked in, the one on the
-    /// picked line first - an edit above it moves that line, and the file is then still the one to answer.
+    /// The declarations of a name in the file its mention was picked in, the one on the picked line first.
+    /// A file linked into several projects is read as the picked project compiled it, while that project
+    /// still has it: its defines decide which declarations exist and on which lines.
     let private declarationsPickedAt
         (cache: FSharpNavigableItemsCache)
         (solution: Solution)
         (fullyQualifiedName: string)
-        (struct (filePath: string, line: int))
+        (picked: PickedDeclaration)
         =
         cancellableTask {
-            let pickedIn =
-                solution.GetDocumentIdsWithFilePath filePath
+            let inFile =
+                solution.GetDocumentIdsWithFilePath picked.File
                 |> Seq.map (fun documentId -> solution.GetDocument documentId)
-                |> Seq.tryFindV (fun document -> document.Project.IsFSharp && not document.IsFSharpSignatureFile)
+                |> Seq.filter (fun document -> document.Project.IsFSharp && not document.IsFSharpSignatureFile)
+                |> Seq.toArray
 
-            match pickedIn with
-            | ValueNone -> return Array.empty
-            | ValueSome document ->
+            let isPickedProject (document: Document) =
+                String.Equals(document.Project.Name, picked.ProjectName, StringComparison.Ordinal)
+
+            let documents =
+                match Array.filter isPickedProject inFile with
+                | [||] -> inFile
+                | inPickedProject -> inPickedProject
+
+            let found = ResizeArray()
+
+            for document in documents do
                 let! items = cache.GetNavigableItems document
 
-                return
-                    items
-                    |> Seq.filter (CopilotSymbolMapping.hasFullyQualifiedName fullyQualifiedName)
-                    |> Seq.sortBy (fun item -> if item.Range.StartLine = line then 0 else 1)
-                    |> Seq.map (fun item -> struct (item, document))
-                    |> Seq.toArray
+                for item in items do
+                    if CopilotSymbolMapping.hasFullyQualifiedName fullyQualifiedName item then
+                        found.Add(struct (item, document))
+
+            return
+                found
+                |> Seq.sortBy (fun (struct (item, _)) -> item.Range.StartLine <> picked.Line)
+                |> Seq.toArray
         }
 
     /// Declarations carrying exactly this fully qualified name, the one a mention was picked for first.
-    /// Overloads, partial definitions and the same type of two projects all answer to one name, and a line
-    /// tells them apart only within a file - so the file `picked` names answers alone while it still
-    /// declares the name, and the solution is searched for a mention typed by hand, which records neither.
+    /// The solution is searched when the mention records nothing about where it was picked, or that
+    /// file no longer declares the name.
     let declarationsOf
         (cache: FSharpNavigableItemsCache)
         (openDocumentIds: DocumentId seq)
         (solution: Solution)
         (fullyQualifiedName: string)
-        (picked: struct (string * int) voption)
+        (picked: PickedDeclaration voption)
         =
         cancellableTask {
             let! pickedDeclarations =
@@ -454,7 +473,7 @@ module internal CopilotSymbolQuery =
         (openDocumentIds: DocumentId seq)
         (solution: Solution)
         (fullyQualifiedName: string)
-        (picked: struct (string * int) voption)
+        (picked: PickedDeclaration voption)
         =
         cancellableTask {
             let! declarations = declarationsOf cache openDocumentIds solution fullyQualifiedName picked
@@ -552,6 +571,12 @@ type internal FSharpCopilotContextProvider
                     IsRequired = false
                 )
                 CopilotInputDescriptor(
+                    CopilotSymbolMapping.DeclarationProjectInput,
+                    "Project the picked declaration is compiled in.",
+                    CopilotDefaultTypes.StringName,
+                    IsRequired = false
+                )
+                CopilotInputDescriptor(
                     CopilotSymbolMapping.DeclarationLineInput,
                     "Line the picked overload or partial definition is declared on.",
                     CopilotDefaultTypes.IntegerName,
@@ -575,14 +600,16 @@ type internal FSharpCopilotContextProvider
         | DocumentFocus.Elsewhere -> CopilotQueriedMentionPriority.None
 
     let mentionFor (item: NavigableItem) (document: Document) focus =
-        let inputs = Dictionary<string, CopilotValue>(3, StringComparer.Ordinal)
+        let inputs = Dictionary<string, CopilotValue>(4, StringComparer.Ordinal)
 
         inputs[CopilotSymbolMapping.FullyQualifiedNameInput] <-
             CopilotValue(CopilotDefaultTypes.StringName, CopilotSymbolMapping.fullyQualifiedName item)
 
         match document.FilePath with
         | null -> ()
-        | filePath -> inputs[CopilotSymbolMapping.DeclarationFileInput] <- CopilotValue(CopilotDefaultTypes.StringName, filePath)
+        | filePath ->
+            inputs[CopilotSymbolMapping.DeclarationFileInput] <- CopilotValue(CopilotDefaultTypes.StringName, filePath)
+            inputs[CopilotSymbolMapping.DeclarationProjectInput] <- CopilotValue(CopilotDefaultTypes.StringName, document.Project.Name)
 
         inputs[CopilotSymbolMapping.DeclarationLineInput] <- CopilotValue(CopilotDefaultTypes.IntegerName, item.Range.StartLine)
 
@@ -664,8 +691,18 @@ type internal FSharpCopilotContextProvider
     /// Which overload or partial definition of a fully qualified name a mention was picked for -
     /// several of them share the same name, so navigating one has to tell them apart by more than that.
     let pickedAt inputs =
-        match textOf CopilotSymbolMapping.DeclarationFileInput inputs, declarationLineOf inputs with
-        | ValueSome filePath, ValueSome line -> ValueSome(struct (filePath, line))
+        match
+            textOf CopilotSymbolMapping.DeclarationFileInput inputs,
+            textOf CopilotSymbolMapping.DeclarationProjectInput inputs,
+            declarationLineOf inputs
+        with
+        | ValueSome file, ValueSome project, ValueSome line ->
+            ValueSome
+                {
+                    File = file
+                    ProjectName = project
+                    Line = line
+                }
         | _ -> ValueNone
 
     interface IExportedBrokeredService with

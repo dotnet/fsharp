@@ -118,6 +118,14 @@ let twice x = x * 2
     let private declarationsPickedIn cache solution name picked =
         CopilotSymbolQuery.declarationsOf cache Seq.empty solution name picked |> run
 
+    let private pickedIn file line =
+        ValueSome
+            {
+                File = file
+                ProjectName = "C:\\many.fsproj"
+                Line = line
+            }
+
     let private lineOf (struct (item: NavigableItem, _: Document)) = item.Range.StartLine
 
     let private fileOf (struct (_: NavigableItem, document: Document)) = document.FilePath
@@ -173,6 +181,32 @@ let twice x = x * 2
             |> String.concat "\n"
 
         solutionOf [ "C:\\overloads.fs", $"module Overloads\n\ntype Counter() =\n{overloads}" ]
+
+    /// A file linked into two projects whose defines put the one declaration on different lines.
+    let private linkedSolution =
+        let source = "module M\n#if A\nlet shared = 1\n#else\nlet shared = \"B\"\n#endif\n"
+
+        let projects =
+            [
+                for path, defines in [ "C:\\a.fsproj", [| "--define:A" |]; "C:\\b.fsproj", [||] ] ->
+                    let id = ProjectId.CreateNewId()
+
+                    id,
+                    defines,
+                    RoslynTestHelpers.CreateProjectInfo id path [ RoslynTestHelpers.CreateDocumentInfo id "C:\\shared.fs" source ]
+            ]
+
+        let solution =
+            RoslynTestHelpers.CreateSolution [ for _, _, info in projects -> info ]
+
+        for id, defines, _ in projects do
+            { RoslynTestHelpers.DefaultProjectOptions with
+                SourceFiles = [| "C:\\shared.fs" |]
+                OtherOptions = defines
+            }
+            |> RoslynTestHelpers.SetProjectOptions id solution
+
+        solution
 
     /// One name on one line of two files, as when two projects declare the same type or share a linked file.
     let private twinsSolution =
@@ -416,20 +450,20 @@ let twice x = x * 2
         Assert.Equal(6, (Array.distinct lines).Length)
 
         for line in lines do
-            let picked = overloadsPickedAt (ValueSome(struct ("C:\\overloads.fs", line)))
+            let picked = overloadsPickedAt (pickedIn "C:\\overloads.fs" (line))
             Assert.Equal(line, Array.head picked)
             Assert.Equal(6, picked.Length)
 
         // An edit above an overload moves its line, and a renamed file no longer answers for it.
-        Assert.Equal<int>(lines, overloadsPickedAt (ValueSome(struct ("C:\\overloads.fs", -1))))
-        Assert.Equal<int>(lines, overloadsPickedAt (ValueSome(struct ("C:\\renamed.fs", lines[5]))))
+        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn "C:\\overloads.fs" (-1)))
+        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn "C:\\renamed.fs" (lines[5])))
 
     [<Fact>]
     let ``a context starts from the overload its mention was picked for`` () =
         let lastOverload = Array.last (overloadsPickedAt ValueNone)
 
         let context =
-            contextPickedIn cache overloadsSolution "Overloads.Counter.Bump" (ValueSome(struct ("C:\\overloads.fs", lastOverload)))
+            contextPickedIn cache overloadsSolution "Overloads.Counter.Bump" (pickedIn "C:\\overloads.fs" (lastOverload))
 
         Assert.StartsWith("member _.Bump(step: byte)", context.Snippet.TrimStart(), StringComparison.Ordinal)
         Assert.Equal(4, Seq.length context.SnippetLocations)
@@ -441,9 +475,34 @@ let twice x = x * 2
     [<InlineData("C:\\second.fs", 40)>]
     let ``a mention goes to the file it was picked in when two files declare its name on one line`` (filePath: string, line: int) =
         let declarations =
-            declarationsPickedIn cache twinsSolution "Twins.Twin.Value" (ValueSome(struct (filePath, line)))
+            declarationsPickedIn cache twinsSolution "Twins.Twin.Value" (pickedIn filePath (line))
 
         Assert.Equal<string>([| filePath |], declarations |> Array.map fileOf)
+
+    [<Theory>]
+    [<InlineData("C:\\a.fsproj", 3, "C:\\a.fsproj", 3)>]
+    [<InlineData("C:\\b.fsproj", 5, "C:\\b.fsproj", 5)>]
+    [<InlineData("C:\\a.fsproj", 40, "C:\\a.fsproj", 3)>]
+    [<InlineData("C:\\b.fsproj", 40, "C:\\b.fsproj", 5)>]
+    [<InlineData("C:\\gone.fsproj", 5, "C:\\b.fsproj", 5)>]
+    let ``a mention goes to the project it was picked in when a file is linked into two``
+        (project: string, line: int, expectedProject: string, expectedLine: int)
+        =
+        let declarations =
+            declarationsPickedIn
+                cache
+                linkedSolution
+                "M.shared"
+                (ValueSome
+                    {
+                        File = "C:\\shared.fs"
+                        ProjectName = project
+                        Line = line
+                    })
+
+        let struct (item, document) = Array.head declarations
+        Assert.Equal(expectedProject, document.Project.Name)
+        Assert.Equal(expectedLine, item.Range.StartLine)
 
     /// A signature answers only when no implementation declares the name, wherever the mention was picked.
     [<Fact>]
@@ -456,7 +515,7 @@ let twice x = x * 2
                 ]
 
         let declarations =
-            declarationsPickedIn (freshCache ()) solution "Lib.twice" (ValueSome(struct ("C:\\lib.fsi", 3)))
+            declarationsPickedIn (freshCache ()) solution "Lib.twice" (pickedIn "C:\\lib.fsi" (3))
 
         Assert.Equal<string>([| "C:\\lib.fs" |], declarations |> Array.map fileOf)
 
