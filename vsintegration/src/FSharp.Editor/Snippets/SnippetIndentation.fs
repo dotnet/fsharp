@@ -81,25 +81,42 @@ module internal SnippetIndentation =
         endState
 
     /// `selectedLines` are the first and last index filled from `$selected$`. Those lines are lexed apart from the
-    /// snippet's own, so a directive or string one of them leaves open does not reach into the other - except a
-    /// string the snippet itself opens around the field, which the selected lines are the content of.
+    /// snippet's own, so a directive or string one of them leaves open does not reach into the other - unless the
+    /// snippet opens a string around the field, which makes them that string's content.
     let classify tabSize selectedLines (lines: string list) =
         let tokenizer = FSharpSourceTokenizer([], None, None)
 
-        lines
-        |> List.indexed
-        |> List.mapFold
-            (fun struct (template, selection) (index, text) ->
-                let origin = originOf selectedLines index
+        let classifyRun lexState indexedLines =
+            indexedLines
+            |> List.mapFold (fun state (index, text) -> classifyLine tokenizer tabSize (originOf selectedLines index) state text) lexState
 
-                if origin.IsTemplate || isInsideString tokenizer template then
-                    let line, template = classifyLine tokenizer tabSize origin template text
-                    line, struct (template, selection)
-                else
-                    let line, selection = classifyLine tokenizer tabSize origin selection text
-                    line, struct (template, selection))
-            struct (FSharpTokenizerLexState.Initial, FSharpTokenizerLexState.Initial)
-        |> fst
+        let indexed = List.indexed lines
+
+        let isSnippetsOwn (index, _) =
+            (originOf selectedLines index).IsTemplate
+
+        let leading = indexed |> List.takeWhile isSnippetsOwn
+
+        let selection =
+            indexed |> List.skip leading.Length |> List.takeWhile (not << isSnippetsOwn)
+
+        let trailing = indexed |> List.skip (leading.Length + selection.Length)
+
+        let leadingLines, snippetState = classifyRun FSharpTokenizerLexState.Initial leading
+        let isStringContent = isInsideString tokenizer snippetState
+
+        let selectionLines, selectionEnd =
+            classifyRun
+                (if isStringContent then
+                     snippetState
+                 else
+                     FSharpTokenizerLexState.Initial)
+                selection
+
+        let trailingLines, _ =
+            classifyRun (if isStringContent then selectionEnd else snippetState) trailing
+
+        [ yield! leadingLines; yield! selectionLines; yield! trailingLines ]
 
     /// How far each line has to move. Positive inserts, negative removes, zero leaves it alone.
     let deltas placement (lines: Line list) =

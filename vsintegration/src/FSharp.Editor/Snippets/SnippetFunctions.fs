@@ -116,6 +116,13 @@ module internal SnippetFunctionHelpers =
         else
             $"``%s{name}``"
 
+    /// F# writes the cases of its list type `[]` and `::`; the names they are stored under are not patterns.
+    let private listRules =
+        seq {
+            "| [] -> ()"
+            "| _ :: _ -> ()"
+        }
+
     let private matchRulesFor checkResults position (entity: FSharpEntity) =
         if entity.IsFSharpUnion then
             let prefix =
@@ -156,6 +163,7 @@ module internal SnippetFunctionHelpers =
 
             let rules =
                 match checkResults.TryGetCapturedType range |> Option.map _.StripAbbreviations() with
+                | Some fsharpType when fsharpType.IsFSharpList -> listRules
                 | Some fsharpType when fsharpType.HasTypeDefinition -> matchRulesFor checkResults range.Start fsharpType.TypeDefinition
                 | _ -> Seq.empty
 
