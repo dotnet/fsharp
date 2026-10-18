@@ -18,13 +18,6 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 open CancellableTasks
 
-// Push-based file watching for FSharp.Editor, modelled on Roslyn's
-// Microsoft.VisualStudio.LanguageServices FileChangeWatcher (which is internal and not
-// exposed through ExternalAccess.FSharp). Uses the free-threaded IVsAsyncFileChangeEx2
-// service: subscriptions are batched off the UI thread and callbacks never marshal to it.
-
-/// A directory to watch recursively (with optional extension filters) so that individual
-/// files under it don't each need their own advise cookie.
 [<Sealed>]
 type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<string>) =
     let path =
@@ -50,31 +43,25 @@ type internal WatchedDirectory(path: string, extensionFilters: ImmutableArray<st
     static member FilePathCoveredByWatchedDirectories(watchedDirectories: ImmutableArray<WatchedDirectory>, filePath: string) =
         watchedDirectories |> Seq.exists (fun w -> WatchedDirectory.Covers(w, filePath))
 
-/// A single watched file; disposing stops watching.
 type internal IFSharpWatchedFile =
     inherit IDisposable
 
-    /// True once the underlying advise has succeeded; false while queued or after it has
-    /// failed. A consumer that caches something derived from a watch must gate the cache on
-    /// this, not on the watch merely existing - there is no gap in which a change could be
-    /// missed once it is true.
+    /// True once the advise has succeeded. A consumer caching something derived from a watch must gate on this.
     abstract IsActive: bool
 
-/// A group of file/directory watches sharing one event sink. Disposing unsubscribes everything.
 type internal IFSharpFileChangeContext =
     inherit IDisposable
 
     [<CLIEvent>]
     abstract FileChanged: IEvent<string>
 
-    /// Starts watching a file without waiting for the OS registration. No-op (but still valid
-    /// to dispose) when the path is already covered by one of the context's watched directories.
+    /// A path under one of the context's watched directories gets a watch that needs no advise of its own.
     abstract EnqueueWatchingFile: filePath: string -> IFSharpWatchedFile
 
 type internal IFSharpFileChangeWatcher =
     abstract CreateContext: watchedDirectories: ImmutableArray<WatchedDirectory> -> IFSharpFileChangeContext
 
-/// Last-write stamps of watched reference files; a path nobody watches is stat'd directly.
+/// A path nobody watches is stat'd directly.
 type internal IReferenceStamps =
     abstract GetLastWriteTimeUtc: fullFilePath: string -> DateTime
     abstract Invalidate: fullFilePath: string -> unit
@@ -84,25 +71,20 @@ type private WatchedReference =
         Token: IFSharpWatchedFile
         mutable Count: int
         mutable Stamp: DateTime voption
-        /// Bumped whenever the stamp is dropped. A stat taken under an older generation is discarded
-        /// when it comes to be stored, so a value read before a change can never shadow the change.
-        mutable Generation: int
+        mutable StampDrops: int
     }
 
-/// What a stamp read finds under the lock, before any I/O happens.
 [<Struct; RequireQualifiedAccess>]
 type private StampLookup =
     | Cached of stamp: DateTime
-    | Cold of entry: WatchedReference * generation: int
+    | Cold of entry: WatchedReference * stampDropsAtLookup: int
     | Unwatched
 
 [<AutoOpen>]
 module private FileChangeWatcherImpl =
 
-    // What a watch on a single file asks to be told about. Roslyn asks for size and time; a reference is
-    // also watched before the project that produces it has been built, and is replaced by a rename rather
-    // than a write, so its appearance and its removal have to arrive too. A directory watch takes no flags -
-    // `AdviseDirChange` reports every kind - which is why the callback filter below names all four.
+    // A reference is watched before the project that produces it is built, and is replaced by a rename:
+    // its creation and its deletion have to arrive as well.
     let watchFlags =
         _VSFILECHANGEFLAGS.VSFILECHG_Size
         ||| _VSFILECHANGEFLAGS.VSFILECHG_Time
@@ -115,15 +97,17 @@ module private FileChangeWatcherImpl =
         ||| _VSFILECHANGEFLAGS.VSFILECHG_Del
         ||| _VSFILECHANGEFLAGS.VSFILECHG_Size
 
-    /// Empirically strong batching window during high activity (solution open/close); see
-    /// Roslyn's FileChangeWatcher.
-    let defaultBatchingDelay = TimeSpan.FromMilliseconds 500.
+    let roslynBatchingDelay = TimeSpan.FromMilliseconds 500.
 
 [<Sealed>]
 type internal FSharpWatchedFileToken() =
     member val Cookie: uint32 voption = ValueNone with get, set
 
-/// Subscription operations queued for batched application against the file change service.
+    member this.TakeCookie() =
+        let cookie = this.Cookie
+        this.Cookie <- ValueNone
+        cookie
+
 type private WatcherOperation =
     | WatchDir of
         path: string *
@@ -141,9 +125,6 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
     let applyBatch (service: IVsAsyncFileChangeEx2) (ops: WatcherOperation list) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
-
-            // Coalesce adjacent same-kind operations into single service calls, preserving order
-            // between kinds (a watch enqueued before an unwatch must be applied first).
             let mutable pending = ops
 
             while not pending.IsEmpty do
@@ -207,17 +188,14 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
 
                     pending <- pending |> List.skip batch.Length
 
-                    // A token whose watch never got a cookie (or was already unadvised) is a no-op.
                     let cookies =
                         [|
                             for op in batch do
                                 match op with
                                 | UnwatchFiles tokens ->
                                     for token in tokens do
-                                        match token.Cookie with
-                                        | ValueSome cookie ->
-                                            token.Cookie <- ValueNone
-                                            cookie
+                                        match token.TakeCookie() with
+                                        | ValueSome cookie -> cookie
                                         | ValueNone -> ()
                                 | _ -> ()
                         |]
@@ -242,9 +220,6 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
 
     let cancellationTokenSource = new CancellationTokenSource()
 
-    // Single consumer loop: waits for the first queued operation, sleeps out the batching
-    // window, drains the queue and applies everything in one pass. Nothing ever blocks on the
-    // service being available.
     let agent =
         MailboxProcessor<WatcherOperation>
             .Start(
@@ -270,19 +245,16 @@ type internal FSharpFileChangeWatcher(fileChangeService: Task<IVsAsyncFileChange
                                     |> CancellableTask.startAsTask ct
                                     |> Async.AwaitTask
                             with ex when not (ex :? OperationCanceledException) ->
-                                // Never let a failed advise/unadvise (e.g. non-existent path) kill the
-                                // subscription loop; we simply won't get events for that path.
                                 FSharpOutputPane.logExceptionWithContext (ex, nameof FSharpFileChangeWatcher)
                     }),
                 cancellationTokenSource.Token
             )
 
-    new(fileChangeService) = new FSharpFileChangeWatcher(fileChangeService, defaultBatchingDelay)
+    new(fileChangeService) = new FSharpFileChangeWatcher(fileChangeService, roslynBatchingDelay)
 
     member private _.Enqueue(op: WatcherOperation) = agent.Post op
 
-    /// Production factory: obtains SVsFileChangeEx asynchronously without blocking any
-    /// background thread on UI-thread availability.
+    /// Asks for SVsFileChangeEx asynchronously, so no background thread waits on the UI thread for it.
     static member CreateDefaultServiceTask() =
         task {
             let! service = AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof<SVsFileChangeEx>)
@@ -307,13 +279,11 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
     let directoryCookies = List<uint32>()
     let fileChanged = Event<string>()
 
-    // One activation flag per watched directory: a path it covers is only ever cached once that
-    // directory's own advise has succeeded, never while still queued or after it has failed.
-    let directoryActive =
+    let directoryAdviseSucceeded =
         watchedDirectories |> Seq.map (fun _ -> ref false) |> Seq.toArray
 
     let directoryWatchedFiles =
-        directoryActive
+        directoryAdviseSucceeded
         |> Array.map (fun active ->
             { new IFSharpWatchedFile with
                 member _.IsActive = active.Value
@@ -339,7 +309,7 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
                     watchedDirectory.ExtensionFilters,
                     this :> IVsFreeThreadedFileChangeEvents2,
                     directoryCookies,
-                    directoryActive[i]
+                    directoryAdviseSucceeded[i]
                 )
             ))
 
@@ -379,7 +349,6 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
                 enqueue (UnwatchDirs directoryCookies)
                 enqueue (UnwatchFiles(lock gate (fun () -> List.ofSeq activeFileTokens)))
 
-    // Free-threaded sink: callbacks arrive on background threads and stay there.
     interface IVsFreeThreadedFileChangeEvents2 with
         member _.FilesChanged(cChanges, rgpszFile, rggrfChange) =
             raiseChanges cChanges rgpszFile rggrfChange
@@ -403,11 +372,7 @@ and [<Sealed>] private FileChangeContext(enqueue: WatcherOperation -> unit, watc
 
         member _.DirectoryChanged _ = VSConstants.E_NOTIMPL
 
-/// Ref-counted watching of reference assemblies (or any other off-workspace files), modelled on
-/// Roslyn's ReferenceFileChangeTracker without its change callback: a change only drops the path's
-/// cached last-write stamp, which consumers read through IReferenceStamps. Multiple projects
-/// watching the same dll share one subscription. The stamp lives inside the watch entry, so a
-/// cached stamp is only ever served while a change notification can still reach it.
+/// Ref-counted watches on off-workspace files, each caching its last-write stamp until a change notification drops it.
 [<Sealed>]
 type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, getLastWriteTimeUtc: string -> DateTime) =
 
@@ -419,11 +384,9 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
     let dropStamp (entry: WatchedReference) =
         entry.Stamp <- ValueNone
-        entry.Generation <- entry.Generation + 1
+        entry.StampDrops <- entry.StampDrops + 1
 
-    // On each platform there is a place framework reference assemblies live; these rarely change
-    // but account for most watched paths, so cover them with directory watches up front.
-    static let defaultWatchedDirectories () =
+    static let frameworkAndPackageDirectories () =
         let dotnetRoot = Environment.GetEnvironmentVariable "DOTNET_ROOT"
         let nugetPackages = Environment.GetEnvironmentVariable "NUGET_PACKAGES"
 
@@ -453,9 +416,8 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
     let context =
         lazy
-            (let ctx = watcher.CreateContext(defaultWatchedDirectories ())
+            (let ctx = watcher.CreateContext(frameworkAndPackageDirectories ())
 
-             // Directory watches cover whole trees; a path nobody watches has no entry and costs a lookup.
              ctx.FileChanged.Add(fun path ->
                  lock gate (fun () ->
                      match watchedFiles.TryGetValue path with
@@ -466,7 +428,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
     new(watcher) = new FSharpReferenceChangeTracker(watcher, IO.File.GetLastWriteTimeUtc)
 
-    /// Starts watching a path, ref-counted. Call StopWatchingReference exactly once per start.
+    /// Each start needs one StopWatchingReference.
     member _.StartWatchingReference(fullFilePath: string) =
         lock gate (fun () ->
             if not disposed then
@@ -478,7 +440,7 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
                             Token = context.Value.EnqueueWatchingFile fullFilePath
                             Count = 1
                             Stamp = ValueNone
-                            Generation = 0
+                            StampDrops = 0
                         })
 
     member _.StopWatchingReference(fullFilePath: string) =
@@ -493,30 +455,27 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
     interface IReferenceStamps with
         member _.GetLastWriteTimeUtc fullFilePath =
-            // The stat runs outside the lock: the same lock serves every change notification from the
-            // watched roots, and a slow disk must not hold those up. The entry and its generation pin
-            // what the stat was taken for; a notification or Invalidate in between bumps the generation,
-            // and the value is returned but not stored.
             let lookup =
                 lock gate (fun () ->
                     match watchedFiles.TryGetValue fullFilePath with
                     | true, entry when entry.Token.IsActive ->
                         match entry.Stamp with
                         | ValueSome stamp -> StampLookup.Cached stamp
-                        | ValueNone -> StampLookup.Cold(entry, entry.Generation)
+                        | ValueNone -> StampLookup.Cold(entry, entry.StampDrops)
                     | _ -> StampLookup.Unwatched)
 
             match lookup with
             | StampLookup.Cached stamp -> stamp
             | StampLookup.Unwatched -> getLastWriteTimeUtc fullFilePath
-            | StampLookup.Cold(entry, generation) ->
+            | StampLookup.Cold(entry, stampDropsAtLookup) ->
+                // Outside the lock, which every change notification also takes.
                 let stamp = getLastWriteTimeUtc fullFilePath
 
                 lock gate (fun () ->
                     match watchedFiles.TryGetValue fullFilePath with
                     | true, current when
                         obj.ReferenceEquals(current, entry)
-                        && current.Generation = generation
+                        && current.StampDrops = stampDropsAtLookup
                         && current.Token.IsActive
                         ->
                         current.Stamp <- ValueSome stamp
@@ -544,13 +503,10 @@ type internal FSharpReferenceChangeTracker(watcher: IFSharpFileChangeWatcher, ge
 
 #nowarn "57" // ReferenceOnDisk is part of the experimental FCS snapshot API
 
-/// The `ReferencesOnDisk` comparison behind snapshot reuse, keeping the stamp cache honest as it goes.
 [<RequireQualifiedAccess>]
 module internal ReferenceStamps =
 
-    /// Whether `current` differs from `previous`. A same-path pair with different stamps means one
-    /// side is behind, so that path's cached stamp is dropped and the next read re-stats it; any
-    /// difference in the path lists is a reference-set change and leaves the stamps alone.
+    /// A path with a different stamp on both sides also has its cached stamp dropped; a different path list drops nothing.
     let changed (stamps: IReferenceStamps) (current: ReferenceOnDisk list) (previous: ReferenceOnDisk list) =
         let rec walk changed current previous =
             match current, previous with
