@@ -58,8 +58,6 @@ module internal PervasiveAutoOpens =
 
         member inline StartsWithOrdinal: value: string -> bool
 
-        member inline StartsWithOrdinalIgnoreCase: value: string -> bool
-
         member inline EndsWithOrdinal: value: string -> bool
 
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
