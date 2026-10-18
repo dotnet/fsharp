@@ -226,96 +226,35 @@ module internal SymbolHelpers =
         // This is not expected: NewDef only occurs within checking
         | Item.NewDef _  -> None
 
-    /// The module or type of another assembly that an item is declared in, or the item itself when it is one.
-    let rec declaringEntityOfItem d =
-        let ofValRef (vref: ValRef) =
-            if vref.IsLocalRef then ValueNone else ValueSome vref.nlr.EnclosingEntity
+    let startsWithDirectory (dir: string) (file: string) =
+        file.Length > dir.Length && file.StartsWithOrdinal dir && (file[dir.Length] = '\\' || file[dir.Length] = '/')
 
-        let ofArbitraryValRef (vref: ValRef option) =
-            match vref with
-            | Some vref -> ofValRef vref
-            | None -> ValueNone
+    let isCompiledFileOf (ccu: CcuThunk) (fileIndex: int) =
+        let rec declaresEntityIn (mty: ModuleOrNamespaceType) =
+            mty.AllEntities
+            |> Seq.exists (fun entity ->
+                entity.Range.FileIndex = fileIndex
+                || (entity.IsNamespace && declaresEntityIn entity.ModuleOrNamespaceType))
 
-        match d with
-        | Item.Value vref
-        | Item.CustomBuilder (_, vref) -> ofValRef vref
-        | Item.ActivePatternCase apref -> ofValRef apref.ActivePatternVal
-        | Item.UnionCase(ucinfo, _)
-        | Item.UnionCaseField (ucinfo, _) -> ValueSome ucinfo.TyconRef
-        | Item.RecdField rfinfo -> ValueSome rfinfo.TyconRef
-        | Item.ExnCase tcref -> ValueSome tcref
-        | Item.Event einfo -> ofArbitraryValRef einfo.ArbitraryValRef
-        | Item.Property(info = pinfo :: _) -> ofArbitraryValRef pinfo.ArbitraryValRef
-        | Item.MethodGroup(_, minfo :: _, _)
-        | Item.CtorGroup(_, minfo :: _) ->
-            match minfo.ArbitraryValRef with
-            | Some vref -> ofValRef vref
-            | None -> ValueSome minfo.DeclaringTyconRef
-        | Item.Types(_, ty :: _)
-        | Item.DelegateCtor ty ->
-            match tryNiceEntityRefOfTyOption ty with
-            | Some tcref -> ValueSome tcref
-            | None -> ValueNone
-        | Item.ModuleOrNamespaces (eref :: _)
-        | Item.UnqualifiedType (eref :: _) -> ValueSome eref
-        | Item.SetterArg (_, item) -> declaringEntityOfItem item
-        | _ -> ValueNone
+        let implementsSignatureOf (v: Val) = v.DefinitionRange.FileIndex = fileIndex && v.Range.FileIndex <> fileIndex
 
-    /// The module or type directly under a namespace that an entity of another assembly lies in, or is.
-    let outermostDeclaringEntity (eref: EntityRef) =
-        if eref.IsLocalRef then
-            ValueNone
-        else
-            let (NonLocalEntityRef(ccu, path)) = eref.nlr
-
-            let rec search length =
-                if length > path.Length then
-                    ValueNone
-                else
-                    match NonLocalEntityRef(ccu, path[.. length - 1]).TryDeref(canError = false) with
-                    | ValueSome entity when not entity.IsNamespace -> ValueSome entity
-                    | ValueSome _ -> search (length + 1)
-                    | ValueNone -> ValueNone
-
-            search 1
+        let contents = ccu.Contents.ModuleOrNamespaceType
+        declaresEntityIn contents || (allValsOfModuleOrNamespaceTy contents |> List.exists implementsSignatureOf)
 
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName
         if verbose then dprintf "file stored in metadata is '%s'\n" file
-
-        // Compilers before F# 10 named whatever follows a #line directive by the directive, and such a name can
-        // start with the directory too. The directive leaves the item in another file than the module or type
-        // around it, though, where a compiled file holds both. An entity read from a signature says nothing
-        // of the file its implementation is in.
-        let namedByLineDirective () =
-            match declaringEntityOfItem h |> ValueOption.bind outermostDeclaringEntity with
-            | ValueSome entity ->
-                let declaredIn = entity.Range
-
-                m.FileIndex <> declaredIn.FileIndex
-                && not (CompilerConfig.FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix declaredIn.FileName))
-            | ValueNone -> false
-
-        // A relative name is relative to the directory the assembly was compiled in, as the #line names that
-        // compilers before F# 10 wrote are. A path map rewrites that directory along with the files compiled
-        // from under it, though, so such a file already starts with the directory: joining them repeats it.
-        let underDirectory (dir: string) =
-            let startsWithDirectory =
-                file.Length > dir.Length
-                && file.StartsWithOrdinal dir
-                && (file[dir.Length] = '\\' || file[dir.Length] = '/')
-
-            if startsWithDirectory && not (namedByLineDirective ()) then file else Path.Combine(dir, file)
-
         if not (FileSystem.IsPathRootedShim file) then
             match ccuOfItem g h with
+            // A relative #line name a compiler before F# 10 wrote is relative to the directory even when it starts with it
+            | Some ccu when startsWithDirectory ccu.SourceCodeDirectory file && isCompiledFileOf ccu m.FileIndex -> file
             | Some ccu ->
-                underDirectory ccu.SourceCodeDirectory
+                Path.Combine(ccu.SourceCodeDirectory, file)
             | None ->
                 match qualProjectDir with
                 | None     -> file
-                | Some dir -> underDirectory dir
+                | Some dir -> Path.Combine(dir, file)
          else file
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo =
