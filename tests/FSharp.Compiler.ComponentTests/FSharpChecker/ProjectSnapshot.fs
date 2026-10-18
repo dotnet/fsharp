@@ -32,13 +32,14 @@ let private emptySource _ path =
 let private january = DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
 let private february = DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc)
 
-/// A file system whose every reference stat answers `stamp`, or fails the test when `stamp` is `ValueNone`.
-let private fileSystemStamping (stamp: DateTime voption) =
+let private fileSystemAnswering (stamp: DateTime) =
     { new DefaultFileSystem() with
-        override _.GetLastWriteTimeShim _ =
-            match stamp with
-            | ValueSome stamp -> stamp
-            | ValueNone -> failwith "unexpected reference stat"
+        override _.GetLastWriteTimeShim _ = stamp
+    }
+
+let private fileSystemRejectingStats =
+    { new DefaultFileSystem() with
+        override _.GetLastWriteTimeShim _ = failwith "unexpected reference stat"
     }
 
 let private withFileSystem (fileSystem: IFileSystem) (test: unit -> Task) : Task =
@@ -56,39 +57,31 @@ let private mainWithLib () =
     let lib = projectOptions "Lib.fsproj" [ "LibRef.dll" ] [||]
     projectOptions "Main.fsproj" [ "MainRef.dll" ] [| FSharpReferencedProject.FSharpReference("Lib.dll", lib) |]
 
-let private referencesOnDisk (snapshot: FSharpProjectSnapshot) =
+let private assertReferencesOnDisk (snapshot: FSharpProjectSnapshot) mainStamp libStamp =
     let libSnapshot =
         match snapshot.ReferencedProjects with
         | [ FSharpReferencedProjectSnapshot.FSharpReference(_, lib) ] -> lib
         | other -> failwith $"Expected one referenced project, got %A{other}"
 
-    snapshot.ReferencesOnDisk, libSnapshot.ReferencesOnDisk
+    Assert.Equal<ReferenceOnDisk list>([ { Path = "MainRef.dll"; LastModified = mainStamp } ], snapshot.ReferencesOnDisk)
+    Assert.Equal<ReferenceOnDisk list>([ { Path = "LibRef.dll"; LastModified = libStamp } ], libSnapshot.ReferencesOnDisk)
 
 [<Fact>]
-let ``FromOptionsWithReferenceStamps takes reference stamps from the host, including referenced projects`` () : Task =
-    withFileSystem (fileSystemStamping ValueNone) (fun () ->
+let ``Reference stamps come from the host when it gives them and from the file system current at build time when not`` () : Task =
+    withFileSystem fileSystemRejectingStats (fun () ->
         task {
             let stamps = dict [ "MainRef.dll", january; "LibRef.dll", february ]
 
-            let! snapshot =
+            let! hosted =
                 FSharpProjectSnapshot.FromOptionsWithReferenceStamps(mainWithLib (), emptySource, (fun path -> stamps[path]))
 
-            let mainReferences, libReferences = referencesOnDisk snapshot
+            assertReferencesOnDisk hosted january february
 
-            Assert.Equal<ReferenceOnDisk list>([ { Path = "MainRef.dll"; LastModified = january } ], mainReferences)
-            Assert.Equal<ReferenceOnDisk list>([ { Path = "LibRef.dll"; LastModified = february } ], libReferences)
-        })
-
-[<Fact>]
-let ``FromOptions reads reference stamps from the file system current when the snapshot is built`` () : Task =
-    withFileSystem (fileSystemStamping (ValueSome january)) (fun () ->
-        task {
+            FileSystem <- fileSystemAnswering january
             let work = FSharpProjectSnapshot.FromOptions(mainWithLib (), emptySource)
-            FileSystem <- fileSystemStamping (ValueSome february)
+            FileSystem <- fileSystemAnswering february
 
-            let! snapshot = work
-            let mainReferences, libReferences = referencesOnDisk snapshot
+            let! built = work
 
-            Assert.Equal<ReferenceOnDisk list>([ { Path = "MainRef.dll"; LastModified = february } ], mainReferences)
-            Assert.Equal<ReferenceOnDisk list>([ { Path = "LibRef.dll"; LastModified = february } ], libReferences)
+            assertReferencesOnDisk built february february
         })

@@ -727,9 +727,6 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             fun path -> FileSystem.GetLastWriteTimeShim path
         )
 
-    /// The snapshot `FromOptions` builds, with the last-modified time of every reference on disk answered by
-    /// the host rather than read from the file system: a host that already tracks those files - as an IDE
-    /// watching them does - knows the time without a call per reference per snapshot.
     static member internal FromOptionsWithReferenceStamps
         (options: FSharpProjectOptions, getFileSnapshot, getReferenceStamp: string -> DateTime, ?snapshotAccumulator)
         =
