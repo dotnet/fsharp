@@ -76,6 +76,7 @@ let matchCases: obj[][] =
             "value"
             "| Circle _ -> ()\n| Square _ -> ()\n| Empty -> ()"
         |]
+        [| "a list"; "let values = [ 1 ]"; "values"; "| [] -> ()\n| _ :: _ -> ()" |]
         [|
             "a union case that needs backticks"
             "type U = | ``A B`` | C\nlet value = C"
