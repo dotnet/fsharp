@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.IO
 open System.Diagnostics
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
@@ -31,46 +30,33 @@ type internal PickedDeclaration =
         Line: int
     }
 
-/// Where a declaration sits relative to what the user is working on, best first. The picker merges
-/// answers from every provider and ranks them by the priority each one reports, so a match has to say
-/// where it sits rather than rely on its position.
 [<RequireQualifiedAccess>]
 type internal DocumentFocus =
-    /// Declared around the caret or selection of the focused file.
     | Selected
     | Focused
     | Open
     | Elsewhere
 
-/// Solution-wide lookup of F# declarations behind the Copilot chat "#" mention picker.
-/// Kept apart from the brokered service so it can be exercised without a Visual Studio workspace.
 module internal CopilotSymbolQuery =
 
-    /// Also the point at which the search stops parsing files nobody has opened, so it bounds the cold
-    /// scan as much as the answer.
     [<Literal>]
     let private MaxMentions = 20
 
-    /// Overloads and partial definitions share one fully qualified name; a handful of them is plenty of context.
     [<Literal>]
     let private MaxDeclarations = 4
 
     [<Literal>]
     let private UserOpName = "CopilotSymbolContext"
 
-    /// How long a query keeps parsing files nobody has opened yet. Copilot cancels on its own schedule
-    /// and takes no partial results, so an answer from what is already parsed beats a complete answer.
+    /// Copilot drops the partial answer of a cancelled query, so a long cold scan stops itself instead.
     [<Literal>]
     let private ColdSearchBudgetMs = 1500L
 
-    /// A shorter text matches too much of the solution to be worth parsing it for, so it is looked up in the
-    /// files the user has open.
     [<Literal>]
     let private MinSolutionWideSearchLength = 3
 
     let private parallelism = max 1 (Environment.ProcessorCount - 1)
 
-    /// A bare "#" asks with no text at all, and is answered with every declaration of the open files.
     let private matcherFor (cache: FSharpNavigableItemsCache) (searchText: string) =
         match searchText with
         | "" -> fun (_: NavigableItem) -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
@@ -82,8 +68,7 @@ module internal CopilotSymbolQuery =
     let private isFocused (focus: EditorFocus) (document: Document) =
         String.Equals(focus.FilePath, document.FilePath, StringComparison.OrdinalIgnoreCase)
 
-    /// Focus counts only while the file is still open: the tracker is not told when its tab closes.
-    let private focusOf
+    let private documentFocusOf
         (focus: EditorFocus voption)
         (openIds: HashSet<DocumentId>)
         (isSelected: NavigableItem -> bool)
@@ -108,7 +93,6 @@ module internal CopilotSymbolQuery =
         | DocumentFocus.Open -> 2
         | DocumentFocus.Elsewhere -> 3
 
-    /// The source of a document and the constructs it declares, by line.
     [<Struct>]
     type private Outline =
         {
@@ -138,9 +122,7 @@ module internal CopilotSymbolQuery =
 
     let private notSelected (_: NavigableItem) = false
 
-    /// Whether a declaration of the focused document spans a line the caret or selection is on - the whole
-    /// declaration, so the caret in a member's body selects the member, its type and the modules around them.
-    let private selectionIn (focus: EditorFocus) (document: Document) =
+    let private isSelectedIn (focus: EditorFocus) (document: Document) =
         cancellableTask {
             let! outline = outlineOf document
 
@@ -152,10 +134,6 @@ module internal CopilotSymbolQuery =
                     firstLine <= focus.LastLine && focus.FirstLine <= lastLine
         }
 
-    /// The documents in the order a query visits them: the ones the user has open, the ones the cache
-    /// already answers for, and the rest, which have to be read and may have to be parsed. Only the open
-    /// ones are resolved up front, by id rather than by walking the solution; the other two tiers are walked
-    /// when they are reached, so a query the open files already answer never looks at the rest.
     let tiers (cache: FSharpNavigableItemsCache) (openIds: HashSet<DocumentId>) (solution: Solution) =
         let opened =
             openIds
@@ -173,8 +151,7 @@ module internal CopilotSymbolQuery =
                         document
             }
 
-        // Navigate To and other queries fill the same cache, also between the two walks: the cold tier is
-        // what the cached tier did not answer for, not what the cache still lacks by the time it is walked.
+        // Navigate To fills the same cache between the two walks: cold is what the cached walk did not answer.
         let answered = HashSet<DocumentId>()
 
         let cached =
@@ -196,9 +173,6 @@ module internal CopilotSymbolQuery =
 
         struct (opened, cached, cold)
 
-    /// Visits the documents tier by tier until `enough` answers, parsing the cold ones for at most
-    /// `budgetMs`. The budget stops handing out documents rather than cancelling a parse under way:
-    /// the first query of a session has to survive its first parse to answer at all.
     let private scanTiers
         (cache: FSharpNavigableItemsCache)
         (openIds: HashSet<DocumentId>)
@@ -217,7 +191,7 @@ module internal CopilotSymbolQuery =
                     collect document items
                 }
 
-            do! opened |> CancellableTask.forEachThrottled parallelism parseAndCollect
+            do! Task.parallelDoLimit parallelism ct (opened |> Seq.map parseAndCollect)
 
             if not (enough ()) then
                 for struct (document, items) in cached do
@@ -229,11 +203,12 @@ module internal CopilotSymbolQuery =
 
                 let scan (document: Document) =
                     cancellableTask {
+                        // Gates the next parse rather than cancelling one: a session's first query must survive its first parse.
                         if budget.ElapsedMilliseconds < budgetMs && not (enough ()) then
                             do! parseAndCollect document
                     }
 
-                do! cold |> CancellableTask.forEachThrottled parallelism scan
+                do! Task.parallelDoLimit parallelism ct (cold |> Seq.map scan)
         }
 
     [<Struct>]
@@ -253,8 +228,6 @@ module internal CopilotSymbolQuery =
             | order -> order
         | order -> order
 
-    /// Declarations whose fully qualified name matches each search text, best match first, one entry
-    /// per name. Every document is visited once for all of the texts.
     let search
         (cache: FSharpNavigableItemsCache)
         (openDocumentIds: DocumentId seq)
@@ -279,7 +252,6 @@ module internal CopilotSymbolQuery =
             let gate = obj ()
             let mutable focusedDocument = ValueNone
 
-            // Matching runs outside the lock; a document's hits join the shared lists in one step.
             let collect (document: Document) (items: NavigableItem array) =
                 let queries =
                     if openIds.Contains document.Id then
@@ -330,7 +302,7 @@ module internal CopilotSymbolQuery =
 
             let! isSelected =
                 match focus, focusedDocument with
-                | ValueSome focus, ValueSome document -> selectionIn focus document
+                | ValueSome focus, ValueSome document -> isSelectedIn focus document
                 | _ -> CancellableTask.singleton notSelected
 
             return
@@ -342,7 +314,7 @@ module internal CopilotSymbolQuery =
                     let ranked =
                         query.Hits
                         |> Seq.map (fun hit ->
-                            let focus = focusOf focus openIds isSelected hit.Document hit.Item
+                            let focus = documentFocusOf focus openIds isSelected hit.Document hit.Item
                             struct (rankOf focus * 2 + (if hit.Document.IsFSharpSignatureFile then 1 else 0), hit), focus)
                         |> Seq.sortWith (fun (ranked1, _) (ranked2, _) -> compareRanked ranked1 ranked2)
 
@@ -353,8 +325,6 @@ module internal CopilotSymbolQuery =
                     mentions.ToArray())
         }
 
-    /// Declarations carrying exactly this fully qualified name. Signature files answer only when no
-    /// implementation declares the name, so the search stops once an implementation has answered.
     let private declarationsFound
         (cache: FSharpNavigableItemsCache)
         (openDocumentIds: DocumentId seq)
@@ -394,9 +364,7 @@ module internal CopilotSymbolQuery =
                 | implementations -> implementations
         }
 
-    /// The declarations of a name in the file its mention was picked in, the one on the picked line first.
-    /// A file linked into several projects is read as the picked project compiled it, while that project
-    /// still has it: its defines decide which declarations exist and on which lines.
+    /// The picked project's copy of a linked file answers first: its defines decide what is declared where.
     let private declarationsPickedAt
         (cache: FSharpNavigableItemsCache)
         (solution: Solution)
@@ -433,9 +401,6 @@ module internal CopilotSymbolQuery =
                 |> Seq.toArray
         }
 
-    /// Declarations carrying exactly this fully qualified name, the one a mention was picked for first.
-    /// The solution is searched when the mention records nothing about where it was picked, or that
-    /// file no longer declares the name.
     let declarationsOf
         (cache: FSharpNavigableItemsCache)
         (openDocumentIds: DocumentId seq)
@@ -454,7 +419,6 @@ module internal CopilotSymbolQuery =
             | declarations -> return declarations
         }
 
-    /// The source of the whole declaration `item` names, together with the span it occupies.
     let private snippetOf (outline: Outline) (item: NavigableItem) =
         let struct (firstLine, lastLine) =
             CopilotSymbolSnippets.definitionLines outline.Lines outline.Declared item
@@ -486,7 +450,6 @@ module internal CopilotSymbolQuery =
                 let locations = ResizeArray()
                 let mutable outlined: struct (DocumentId * Outline) voption = ValueNone
 
-                // Overloads and partial definitions of one name mostly share a file: outline it once.
                 for struct (item, document: Document) in declarations do
                     let! outline =
                         match outlined with
@@ -510,8 +473,6 @@ module internal CopilotSymbolQuery =
                     )
         }
 
-/// Offers F# declarations to Copilot chat, which merges them into the picker shown for "#".
-/// Copilot's own symbol provider reads the Roslyn compilation, which F# projects do not have.
 [<ExportBrokeredService(FSharpConstants.copilotSymbolProviderName,
                         CopilotDescriptors.CurrentContextProviderVersion,
                         [| typeof<ICopilotMentionQueryable>; typeof<ICopilotMentionBatchQueryable> |],
@@ -524,14 +485,11 @@ type internal FSharpCopilotContextProvider
         [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null
     ) =
 
-    /// The client Copilot's own document-context provider uses to reach the broker; never disposed, since
-    /// disposing it would dispose the broker it wraps, and it is meant to outlive every query.
+    // Never disposed: disposing it would dispose the broker it wraps.
     let documentContexts =
         new ServiceBrokerClient(serviceBroker, ThreadHelper.JoinableTaskFactory)
 
-    /// Where the user is, from the service that answers the same question for Copilot's own C# provider.
-    /// The proxy is null when Copilot is not installed; the picker then ranks nothing as focused.
-    let focusOf () =
+    let editorFocus () =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             use! rental = documentContexts.GetProxyAsync<ICopilotDocumentContextProvider>(CopilotDescriptors.Context.Document, ct).AsTask()
@@ -636,15 +594,13 @@ type internal FSharpCopilotContextProvider
         )
         :> CopilotQueriedMention
 
-    /// One pass over the solution for the whole batch: Copilot's picker asks for several texts at once
-    /// and each of them would otherwise walk the same documents.
     let mentionsFor (searchTexts: string voption[]) =
         cancellableTask {
             match workspace, searchTexts |> Seq.chooseV id |> Seq.distinct |> Seq.toArray with
             | null, _
             | _, [||] -> return Array.create searchTexts.Length noMentions
             | workspace, distinct ->
-                let! focus = focusOf ()
+                let! focus = editorFocus ()
 
                 let! hits = CopilotSymbolQuery.search cache (workspace.GetOpenDocumentIds()) focus workspace.CurrentSolution distinct
 
@@ -663,38 +619,14 @@ type internal FSharpCopilotContextProvider
                         | ValueNone -> noMentions)
         }
 
-    let textOf (input: string) (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
-        match inputs with
-        | null -> ValueNone
-        | inputs ->
-            match inputs.TryGetValue input with
-            | true, value ->
-                match value.TryGetValue<string>() with
-                | true, text when not (String.IsNullOrWhiteSpace text) -> ValueSome text
-                | _ -> ValueNone
-            | _ -> ValueNone
-
     let fullyQualifiedNameOf inputs =
-        textOf CopilotSymbolMapping.FullyQualifiedNameInput inputs
+        CopilotSymbolMapping.textOf CopilotSymbolMapping.FullyQualifiedNameInput inputs
 
-    let declarationLineOf (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
-        match inputs with
-        | null -> ValueNone
-        | inputs ->
-            match inputs.TryGetValue CopilotSymbolMapping.DeclarationLineInput with
-            | true, value ->
-                match value.TryGetValue<int>() with
-                | true, line -> ValueSome line
-                | _ -> ValueNone
-            | _ -> ValueNone
-
-    /// Which overload or partial definition of a fully qualified name a mention was picked for -
-    /// several of them share the same name, so navigating one has to tell them apart by more than that.
     let pickedAt inputs =
         match
-            textOf CopilotSymbolMapping.DeclarationFileInput inputs,
-            textOf CopilotSymbolMapping.DeclarationProjectInput inputs,
-            declarationLineOf inputs
+            CopilotSymbolMapping.textOf CopilotSymbolMapping.DeclarationFileInput inputs,
+            CopilotSymbolMapping.textOf CopilotSymbolMapping.DeclarationProjectInput inputs,
+            CopilotSymbolMapping.inputOf<int> CopilotSymbolMapping.DeclarationLineInput inputs
         with
         | ValueSome file, ValueSome project, ValueSome line ->
             ValueSome
@@ -786,7 +718,6 @@ type internal FSharpCopilotContextProvider
                 }
                 |> CancellableTask.start cancellationToken
 
-    // Copilot's own picker providers answer through the batch interface, one result collection per query.
     interface ICopilotMentionBatchQueryable with
         member _.QueryMentionBatchAsync(queries, cancellationToken) : Task<IReadOnlyList<IReadOnlyCollection<CopilotQueriedMention>>> =
             mentionsFor (queries |> Seq.map CopilotSymbolMapping.searchTextOf |> Seq.toArray)

@@ -10,12 +10,13 @@ open System.Threading.Tasks
 open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Options
 open Microsoft.ServiceHub.Framework
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Copilot
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.NativeInterop
+open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -24,13 +25,12 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Shell.ServiceBroker
 open Microsoft.VisualStudio.Text.Outlining
-open Microsoft.VisualStudio.Editor
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
-open FSharp.Compiler
-open FSharp.Compiler.CodeAnalysis
-open FSharp.NativeInterop
-open FSharp.Compiler.Text
 open CancellableTasks
+open FSharp.Compiler.Text
+open Microsoft.VisualStudio.Editor
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff
@@ -413,10 +413,11 @@ type internal FSharpPackage() as this =
                 |> CancellableTask.startAsTask cancellationToken)
         )
 
-    override this.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+#if DEBUG
+    override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        // The base schedules LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync, which registers Copilot.
         base.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks)
 
-#if DEBUG
         afterPackageLoadedTasks.AddTask(
             false,
             fun _ _ ->
@@ -428,25 +429,18 @@ type internal FSharpPackage() as this =
         )
 #endif
 
-    /// Copilot's registration service is an exported brokered service whose MEF part constructor blocks waiting
-    /// for the main thread. Asking for the proxy from a background thread therefore deadlocks against anyone
-    /// asking for it from the main thread - the Git provider does, while creating its services at solution open -
-    /// so take the main thread dependency deliberately, the way Roslyn does for a proxy that has one.
     member private this.RegisterCopilotContextProviderAsync(cancellationToken: CancellationToken) : Task =
         task {
             try
-                DebugHelpers.FSharpOutputPane.logInfo "Copilot: registering context provider (switching to main thread)…"
+                // Copilot's registration part blocks on the main thread while MEF constructs it, so a background
+                // request deadlocks against the Git provider's request for it on the main thread at solution open.
                 do! this.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield = true, cancellationToken = cancellationToken)
 
-                DebugHelpers.FSharpOutputPane.logInfo "Copilot: getting brokered service container…"
                 let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
 
                 match container with
                 | :? IBrokeredServiceContainer as container ->
-                    // The Interactions service also serves the registration interface. It is absent when
-                    // GitHub Copilot is not installed, in which case the proxy is null and F# stays out of the picker.
-                    DebugHelpers.FSharpOutputPane.logInfo "Copilot: getting registration service proxy…"
-
+                    // The Interactions service also serves ICopilotRegistrationService.
                     let! registration =
                         container
                             .GetFullAccessServiceBroker()
@@ -455,10 +449,8 @@ type internal FSharpPackage() as this =
                     use registration = registration
 
                     match registration with
-                    | null -> DebugHelpers.FSharpOutputPane.logInfo "Copilot: service proxy is null (Copilot not installed)"
+                    | null -> ()
                     | registration ->
-                        DebugHelpers.FSharpOutputPane.logInfo "Copilot: registering F# context provider…"
-
                         let moniker =
                             ServiceMoniker(
                                 FSharpConstants.copilotSymbolProviderName,
@@ -466,16 +458,12 @@ type internal FSharpPackage() as this =
                             )
 
                         do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
-                        DebugHelpers.FSharpOutputPane.logInfo "Copilot: registration complete"
-                | _ -> DebugHelpers.FSharpOutputPane.logInfo "Copilot: container is not IBrokeredServiceContainer"
-            // A Copilot failure - a contract version the installed build does not serve, say - must not take the
-            // rest of the post-load work down with it.
+                | _ -> ()
             with ex when not (ex :? OperationCanceledException) ->
                 DebugHelpers.FSharpOutputPane.logExceptionWithContext (ex, "Registering the Copilot context provider")
         }
 
     override this.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken) : Task =
-        // 'base' cannot be captured by the state machine, so start the base work before entering it.
         let baseComponents =
             base.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken)
 

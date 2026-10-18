@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Translates F# navigable items into the shapes the Copilot chat "#" mention picker understands.
 module internal Microsoft.VisualStudio.FSharp.Editor.CopilotSymbolMapping
 
 open System
@@ -12,29 +11,37 @@ open Microsoft.VisualStudio.Imaging
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
-/// Name of the context member. It becomes the mention prefix the user sees and re-types,
-/// as in "#fsharpSymbol:Namespace.Type.Member".
+/// Also the mention prefix the user types and sees: "#fsharpSymbol:Namespace.Type.Member".
 [<Literal>]
 let SymbolMember = "fsharpSymbol"
 
 [<Literal>]
 let FullyQualifiedNameInput = "fullyQualifiedName"
 
-/// Disambiguates which overload or partial definition a mention was picked for - several of them share
-/// one fully qualified name, and only the one at this line is the one the user meant.
 [<Literal>]
 let DeclarationLineInput = "declarationLine"
 
-/// A line tells declarations apart only within a file, and a file linked into two projects can declare
-/// one name on different lines of each when its defines differ.
 [<Literal>]
 let DeclarationFileInput = "declarationFile"
 
 [<Literal>]
 let DeclarationProjectInput = "declarationProject"
 
-/// The parse tree cannot tell an interface, struct or record apart from a plain class, so every
-/// type-like declaration is reported as a class.
+let inputOf<'T> name (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
+    match inputs with
+    | null -> ValueNone
+    | inputs ->
+        match inputs.TryGetValue name with
+        | true, value ->
+            match value.TryGetValue<'T>() with
+            | true, input -> ValueSome input
+            | _ -> ValueNone
+        | _ -> ValueNone
+
+let textOf name inputs =
+    inputOf<string> name inputs
+    |> ValueOption.filter (fun text -> not (String.IsNullOrWhiteSpace text))
+
 let symbolContextType kind =
     match kind with
     | NavigableItemKind.Module
@@ -66,13 +73,10 @@ let private imageId kind =
 let icon kind =
     CopilotImageMoniker(Guid = KnownImageIds.ImageCatalogGuid, Id = imageId kind)
 
-/// A name F# spells in double backticks keeps them: bare, a value ``a.b`` in module M and the value b of
-/// M's nested module a would both be "M.a.b". A file's top-level module is left bare - NavigateTo names it
-/// by its whole dotted path, joined, so its segments are not known apart.
+/// FCS joins dotted paths: only a container's last segment can be quoted, and a file's top-level module not at all.
 let private isQuoted (item: NavigableItem) =
     item.NeedsBackticks && not (item.Kind.IsModule && item.Container.Type.IsFile)
 
-/// FCS joins a container's path into one string, so of its segments only the last can be spelled.
 let private isContainerQuoted (container: NavigableContainer) =
     container.Name.Length > 0
     && not container.Type.IsFile
@@ -86,7 +90,6 @@ let private containerPath (container: NavigableContainer) =
     else
         path
 
-/// Dotted path that identifies a picked mention when it is resolved back to source.
 let fullyQualifiedName (item: NavigableItem) =
     let name =
         if isQuoted item then
@@ -98,8 +101,6 @@ let fullyQualifiedName (item: NavigableItem) =
     | "" -> name
     | container -> String.Concat(container, ".", name)
 
-/// How Copilot's own tooltip names a declaration: a member by the container it is declared in, a type
-/// or module by itself.
 let tooltipName (item: NavigableItem) =
     match symbolContextType item.Kind, item.Container.Type, item.Container.Name with
     | CopilotSymbolContextType.Class, _, _
@@ -107,51 +108,13 @@ let tooltipName (item: NavigableItem) =
     | _, _, "" -> item.Name
     | _, _, container -> $"{container}.{item.Name}"
 
-/// How much of `candidate` is left in front of `segment` - spelled in double backticks when `quoted` -
-/// or -1 when the candidate does not end with it.
-let private lengthBefore (candidate: ReadOnlySpan<char>) (segment: string) quoted =
-    let quotes = if quoted then 2 else 0
-    let length = segment.Length + quotes * 2
-
-    if candidate.Length < length then
-        -1
-    else
-        let tail = candidate.Slice(candidate.Length - length)
-
-        if
-            tail.Slice(quotes, segment.Length).Equals(segment.AsSpan(), StringComparison.Ordinal)
-            && (not quoted
-                || tail.StartsWith("``".AsSpan(), StringComparison.Ordinal)
-                   && tail.EndsWith("``".AsSpan(), StringComparison.Ordinal))
-        then
-            candidate.Length - length
-        else
-            -1
-
-/// Answers what comparing against `fullyQualifiedName` would, without building the dotted path -
-/// a solution-wide scan asks this of every declaration it walks past.
+/// The suffix test spares a solution-wide scan from building the name of every declaration it passes.
 let hasFullyQualifiedName (candidate: string) (item: NavigableItem) =
-    let candidate = candidate.AsSpan()
-    let container = item.Container
-    let path = container.FullName
-    let beforeName = lengthBefore candidate item.Name (isQuoted item)
+    (candidate.EndsWith(item.Name, StringComparison.Ordinal)
+     || candidate.EndsWith("``", StringComparison.Ordinal))
+    && String.Equals(candidate, fullyQualifiedName item, StringComparison.Ordinal)
 
-    if beforeName < 0 then
-        false
-    elif path.Length = 0 then
-        beforeName = 0
-    elif beforeName = 0 || candidate[beforeName - 1] <> '.' then
-        false
-    else
-        let spelledPath = candidate.Slice(0, beforeName - 1)
-        let enclosing = path.Length - container.Name.Length
-
-        lengthBefore spelledPath container.Name (isContainerQuoted container) = enclosing
-        && spelledPath.Slice(0, enclosing).Equals(path.AsSpan(0, enclosing), StringComparison.Ordinal)
-
-/// The text a picker query searches for. The inputs are positional: the member name first once the
-/// mention has been committed, as in "#fsharpSymbol:Namespace.Type", then the search text, then
-/// qualifiers the search ignores. The picker asks before it has resolved what kind of mention is typed.
+/// The typed text split on ':' ("#fsharpSymbol:Ns.Type:15" arrives as three inputs), asked as Unknown before the picker resolves it.
 let searchTextOf (query: CopilotMentionQuery) =
     let searchTextAt index (inputs: IReadOnlyList<string>) =
         if index < inputs.Count then
@@ -171,8 +134,6 @@ let searchTextOf (query: CopilotMentionQuery) =
             searchTextAt 0 inputs
     | _ -> ValueNone
 
-/// The number of lines before `offset` in `content`, 1-based - `DocumentSelection.Caret` is always the
-/// offset of the start of a line, so no column arithmetic is needed.
 let private lineOf (content: string) offset =
     let mutable line = 1
 
@@ -182,52 +143,33 @@ let private lineOf (content: string) offset =
 
     line
 
-let private totalLinesIn (content: string) = lineOf content content.Length
-
-/// Where Copilot's document context says the user is. Copilot widens an empty selection to the
-/// enclosing block, and to the whole file when a language has no block expander, as F# has not: the
-/// caret line then comes from the selection's caret, which Copilot leaves out when the caret is on the
-/// range's first or last line - so a caret on the file's first or last line reports no line.
+/// Copilot widens an empty selection to the whole file for F#, so a whole-file range means no line is known.
 let editorFocusOf (document: DocumentContext) =
     match document.FilePath with
     | null -> ValueNone
     | filePath ->
-        match document.Selections |> Seq.tryHeadV with
-        | ValueSome selection when selection.Caret.HasValue ->
-            let line = lineOf document.Content selection.Caret.Value
-
+        let focusOn firstLine lastLine =
             ValueSome
                 {
                     FilePath = filePath
-                    FirstLine = line
-                    LastLine = line
+                    FirstLine = firstLine
+                    LastLine = lastLine
                 }
+
+        match document.Selections |> Seq.tryHeadV with
+        | ValueSome selection when selection.Caret.HasValue ->
+            let line = lineOf document.Content selection.Caret.Value
+            focusOn line line
         | ValueSome selection when selection.LineRange.HasValue ->
             let range = selection.LineRange.Value
 
             let totalLines =
                 document.TotalLinesInFile
                 |> ValueOption.ofNullable
-                |> ValueOption.defaultWith (fun () -> totalLinesIn document.Content)
+                |> ValueOption.defaultWith (fun () -> lineOf document.Content document.Content.Length)
 
             if range.StartLine <= 1 && range.EndLine >= totalLines then
-                ValueSome
-                    {
-                        FilePath = filePath
-                        FirstLine = 0
-                        LastLine = 0
-                    }
+                focusOn 0 0
             else
-                ValueSome
-                    {
-                        FilePath = filePath
-                        FirstLine = range.StartLine
-                        LastLine = range.EndLine
-                    }
-        | _ ->
-            ValueSome
-                {
-                    FilePath = filePath
-                    FirstLine = 0
-                    LastLine = 0
-                }
+                focusOn range.StartLine range.EndLine
+        | _ -> focusOn 0 0

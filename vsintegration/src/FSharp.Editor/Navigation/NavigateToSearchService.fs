@@ -7,9 +7,8 @@ open System.IO
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Concurrent
-open System.Globalization
-open System.Linq
 open System.Threading.Tasks
+open System.Globalization
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
@@ -20,23 +19,19 @@ open Microsoft.VisualStudio.Text.PatternMatching
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
-/// Parse-tree navigable items per document, cached on the document's text version.
-/// Shared by NavigateTo and by the Copilot chat mention provider.
 [<Export; Shared>]
 type internal FSharpNavigableItemsCache
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache =
-        ConcurrentDictionary<DocumentId, struct (VersionStamp * NavigableItem array)>()
+    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 
     do
-        match workspace with
-        | null -> ()
-        | workspace ->
-            workspace.WorkspaceChanged.Add(fun e ->
+        if workspace <> null then
+            workspace.WorkspaceChanged.Add
+            <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
-                    cache.Clear())
+                    cache.Clear()
 
     member _.GetNavigableItems(document: Document) =
         cancellableTask {
@@ -44,19 +39,18 @@ type internal FSharpNavigableItemsCache
             let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
-            | true, struct (version, items) when version = currentVersion -> return items
+            | true, (version, items) when version = currentVersion -> return items
             | _ ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- struct (currentVersion, items)
+                cache[document.Id] <- currentVersion, items
                 return items
         }
 
-    /// The items of the document's text, when its parse is cached and telling so reads no file: a closed
-    /// document knows its version once its text has been loaded, and one changed on disk has yet to load it.
+    /// Uses the version the document already knows: asking for it could read a closed file from disk.
     member _.TryGetCachedNavigableItems(document: Document) =
         match cache.TryGetValue document.Id, document.TryGetTextVersion() with
-        | (true, struct (version, items)), (true, currentVersion) when version = currentVersion -> ValueSome items
+        | (true, (version, items)), (true, currentVersion) when version = currentVersion -> ValueSome items
         | _ -> ValueNone
 
     member _.CreateMatcherFor(searchPattern: string) =
@@ -172,7 +166,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             let! items = getNavigableItems document
 
             let processed =
-                seq {
+                [|
                     for item in items do
                         let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
                         let patternMatch = tryMatch item
@@ -202,9 +196,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                                         )
                                     )
                         | _ -> ()
-                }
+                |]
 
-            return processed |> Seq.toImmutableArray
+            return processed
         }
 
     interface IFSharpNavigateToSearchService with
@@ -214,17 +208,31 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results =
-                    project.Documents
-                    |> Seq.map (processDocument tryMatch kinds)
-                    |> CancellableTask.whenAll
+                let tasks =
+                    [|
+                        for doc in project.Documents do
+                            yield processDocument tryMatch kinds doc
+                    |]
 
-                return results |> Seq.collect _.AsEnumerable() |> Seq.toImmutableArray
+                let! results = CancellableTask.whenAll tasks
+
+                let results' = ImmutableArray.CreateBuilder()
+
+                for navResults in results do
+                    for navResult in navResults do
+                        results'.Add navResult
+
+                return results'.ToImmutable()
+
             }
             |> CancellableTask.start cancellationToken
 
         member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
-            processDocument (createMatcherFor searchPattern) kinds document cancellationToken
+            cancellableTask {
+                let! result = processDocument (createMatcherFor searchPattern) kinds document
+                return Array.toImmutableArray result
+            }
+            |> CancellableTask.start cancellationToken
 
         member _.KindsProvided = kindsProvided
 

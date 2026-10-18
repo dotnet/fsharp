@@ -44,7 +44,6 @@ module internal FSharpConstants =
     let FSharpLanguageServiceCallbackName = "F# Language Service"
 
     [<Literal>]
-    /// Brokered service offering F# declarations to the Copilot chat "#" mention picker.
     let copilotSymbolProviderName =
         "Microsoft.VisualStudio.FSharp.CopilotSymbolContextProvider"
 
