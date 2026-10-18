@@ -112,12 +112,13 @@ type FromLiteral = Provided.Text<Items>"""
         |> shouldSucceed
 
     [<Theory>]
-    [<InlineData("{1.5}", 3925)>]
-    [<InlineData("{Root,10}", 3925)>]
-    [<InlineData("%d{Version}", 3925)>]
-    [<InlineData("%s{Version}", 3925)>]
-    [<InlineData("{NoValue}", 3925)>]
-    [<InlineData("{System.DayOfWeek.Monday}", 3925)>]
+    [<InlineData("{1.5}", 267)>]
+    [<InlineData("{Root,10}", 267)>]
+    [<InlineData("%d{Version}", 267)>]
+    [<InlineData("%s{Version}", 267)>]
+    [<InlineData("%s{(Root :> obj)}", 267)>]
+    [<InlineData("{NoValue}", 267)>]
+    [<InlineData("{System.DayOfWeek.Monday}", 267)>]
     [<InlineData("{dir}", 267)>]
     [<InlineData("{dir + dir}{missing}", 39)>]
     let ``A hole must be a non-null constant string, integer, decimal, character or Boolean`` (hole: string, errorCode: int) =
@@ -148,10 +149,14 @@ module Program
 let Twice = $"{1.5}{1.5}"
 """
         |> typecheck
-        |> withSingleDiagnostic (Error 3925, Line 5, Col 16, Line 5, Col 19, "This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.")
+        |> withDiagnostics
+            [ Error 267, Line 5, Col 16, Line 5, Col 19, "This is not a valid constant expression or custom attribute value"
+              Error 837, Line 5, Col 13, Line 5, Col 26, "This is not a valid constant expression" ]
 
-    [<Fact>]
-    let ``Before the preview language version interpolated strings in literals are unchanged`` () =
+    [<Theory>]
+    [<InlineData("preview")>]
+    [<InlineData("11.2")>]
+    let ``An interpolated string that is not evaluated is not checked as a constant`` (langVersion: string) =
         FSharp """
 module Program
 
@@ -159,10 +164,22 @@ module Program
 let Root = "api/v2"
 
 [<Literal>]
-let Unevaluated = false && ($"{1}" = "1")
+let Unevaluated = false && ($"{1.5}" = "1.5")
 
 [<Literal>]
-let Picked = if true then Root else $"{1}"
+let Picked = if true then Root else $"{1.5}"
+"""
+        |> withLangVersion langVersion
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Before the preview language version a constant interpolated string is still rejected`` () =
+        FSharp """
+module Program
+
+[<Literal>]
+let Root = "api/v2"
 
 [<Literal>]
 let Items = $"{Root}/items"
@@ -171,5 +188,5 @@ let Items = $"{Root}/items"
         |> typecheck
         |> shouldFail
         |> withDiagnostics
-            [ Error 267, Line 14, Col 13, Line 14, Col 28, "This is not a valid constant expression or custom attribute value"
-              Error 837, Line 14, Col 13, Line 14, Col 28, "This is not a valid constant expression" ]
+            [ Error 267, Line 8, Col 13, Line 8, Col 28, "This is not a valid constant expression or custom attribute value"
+              Error 837, Line 8, Col 13, Line 8, Col 28, "This is not a valid constant expression" ]

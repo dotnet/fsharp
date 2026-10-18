@@ -1337,11 +1337,6 @@
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcConstantInterpolatedStringHole">
-        <source>This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</source>
-        <target state="new">This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">Cette expression d'enregistrement de copie et de mise à jour modifie tous les champs du type d'enregistrement '{0}'. Envisagez d'utiliser la syntaxe de construction d'enregistrement à la place.</target>

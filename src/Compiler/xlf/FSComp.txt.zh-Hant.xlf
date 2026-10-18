@@ -1337,11 +1337,6 @@
         <target state="translated">屬性無法套用到類型延伸模組。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcConstantInterpolatedStringHole">
-        <source>This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</source>
-        <target state="new">This interpolated string must be a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">此複製和更新記錄運算式將變更記錄類型為 '{0}' 的所有欄位。請考慮改用記錄建構語法。</target>
