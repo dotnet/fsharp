@@ -161,24 +161,18 @@ module internal FSharpProjectSnapshotSerialization =
 open FSharpProjectSnapshotSerialization
 open System.Collections.Concurrent
 
-/// The project snapshots built for the transparent compiler, kept per Roslyn project. Every entry holds the
-/// `Project` it was built from, and through it the whole `Solution`, and `latest` is never trimmed, so an
-/// entry has to go when its project leaves the workspace.
+/// Every snapshot roots the `Project`, and through it the `Solution`, it was built from: the entries follow the workspace.
 [<RequireQualifiedAccess>]
 module internal ProjectSnapshotCache =
 
     let snapshots =
         AsyncMemoize<ProjectId, Project, FSharpProjectSnapshot>(1000, 500, "SnapshotCache")
 
-    /// What the last snapshot of each project was built from, for the next one to reuse.
     let latest =
         ConcurrentDictionary<ProjectId, Project * VersionStamp * Set<string> * FSharpProjectOptions * FSharpProjectSnapshot>()
 
     let mutable private removals = 0
 
-    /// How many removals the workspace has reported so far. A request that finds it moved while it was under
-    /// way may have built a snapshot of a project the workspace dropped, and the project's id cannot tell:
-    /// a reload brings the same ids back.
     let removalsSoFar () =
         System.Threading.Volatile.Read &removals
 
@@ -194,6 +188,10 @@ module internal ProjectSnapshotCache =
         System.Threading.Interlocked.Increment &removals |> ignore
         snapshots.Clear()
         latest.Clear()
+
+    let isGone (project: Project) removalsAtStart =
+        removalsSoFar () <> removalsAtStart
+        || not (project.Solution.Workspace.CurrentSolution.ContainsProject project.Id)
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -254,7 +252,7 @@ module private CheckerExtensions =
             })
         |> Seq.toList
 
-    let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
+    let createProjectSnapshot removalsAtStart (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
 
             let! options =
@@ -392,8 +390,9 @@ module private CheckerExtensions =
             let latestSnapshotData =
                 project, projectVersion, referenceVersions, options, newSnapshot
 
-            ProjectSnapshotCache.latest.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
-            |> ignore
+            if not (ProjectSnapshotCache.isGone project removalsAtStart) then
+                ProjectSnapshotCache.latest.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
+                |> ignore
 
             return newSnapshot
         }
@@ -410,25 +409,21 @@ module private CheckerExtensions =
         async {
             let removalsAtStart = ProjectSnapshotCache.removalsSoFar ()
 
-            let! snapshot =
-                ProjectSnapshotCache.snapshots.Get(
-                    key,
-                    async {
-                        let! ct = Async.CancellationToken
+            try
+                return!
+                    ProjectSnapshotCache.snapshots.Get(
+                        key,
+                        async {
+                            let! ct = Async.CancellationToken
 
-                        return!
-                            createProjectSnapshot snapshotAccumulatorOpt project options ct
-                            |> Async.AwaitTask
-                    }
-                )
-
-            // The handler that follows the workspace may have run before this request stored its entries, and a
-            // reload brings the project's id back, so the id says nothing: if a removal happened meanwhile, this
-            // project's entries go, and the next request builds them again.
-            if ProjectSnapshotCache.removalsSoFar () <> removalsAtStart then
-                ProjectSnapshotCache.forget project.Id
-
-            return snapshot
+                            return!
+                                createProjectSnapshot removalsAtStart snapshotAccumulatorOpt project options ct
+                                |> Async.AwaitTask
+                        }
+                    )
+            finally
+                if ProjectSnapshotCache.isGone project removalsAtStart then
+                    ProjectSnapshotCache.forget project.Id
         }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
