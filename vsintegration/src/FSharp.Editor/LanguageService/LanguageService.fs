@@ -207,7 +207,6 @@ type internal FSharpWorkspaceServiceFactory
 
             let optionsManager = FSharpProjectOptionsManager(checker, workspace)
 
-            // The snapshot caches hold the Roslyn project, and through it the solution, of every snapshot they keep.
             workspace.WorkspaceChanged.Add(fun args ->
                 match args.Kind with
                 | WorkspaceChangeKind.ProjectRemoved -> ProjectSnapshotCache.removeProject args.ProjectId
