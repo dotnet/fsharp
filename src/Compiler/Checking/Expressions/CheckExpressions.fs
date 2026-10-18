@@ -4247,18 +4247,16 @@ let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern
     | None -> eliminateNull inputTy pat
     | _ -> inputTy
 
-let tryConstantHoleText (g: TcGlobals) (formatting: SynInterpolationFormatting) (mHole: range) (hole: Expr) =
-    match formatting with
-    | SynInterpolationFormatting.DotNet(None, None) when isStringTy g (tyOfExpr g hole) ->
-        match EvalLiteralExprOrAttribArg g hole with
-        | Expr.Const(Const.String text, _, _) -> ValueSome text
-        | Expr.Const(Const.Zero, _, _) ->
-            errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
-            ValueNone
-        | _ -> ValueNone
-    | _ ->
-        errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
+let tryEvalConstant (g: TcGlobals) (expr: Expr) =
+    try
+        suppressErrorReporting (fun () -> ValueSome(EvalLiteralExprOrAttribArg g expr))
+    with ReportedError _ ->
         ValueNone
+
+let tryConstantHoleText (g: TcGlobals) (formatting: SynInterpolationFormatting) (hole: Expr) =
+    match formatting, tryEvalConstant g hole with
+    | SynInterpolationFormatting.DotNet(None, None), ValueSome(Expr.Const(Const.String text, _, _)) -> ValueSome text
+    | _ -> ValueNone
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints
@@ -7880,22 +7878,23 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
-    let tryPartTexts, tpenv =
+    let partTexts, tpenv =
         (tpenv, parts) ||> List.mapFold (fun tpenv part ->
             match part with
-            | SynInterpolatedStringPart.String(text, _) -> (fun () -> ValueSome(text.Replace("%%", "%"))), tpenv
+            | SynInterpolatedStringPart.String(text, _) -> Choice1Of2(text.Replace("%%", "%")), tpenv
             | SynInterpolatedStringPart.FillExpr(synFill, formatting) ->
                 let hole, tpenv = TcExprFlex2 cenv (NewInferenceType g) env false tpenv synFill
-                (fun () -> tryConstantHoleText g formatting synFill.Range hole), tpenv)
 
-    let text =
-        tryPartTexts
-        |> Seq.map (fun tryPartText -> tryPartText ())
-        |> Seq.takeWhile _.IsSome
-        |> Seq.map _.Value
-        |> String.concat ""
+                match tryConstantHoleText g formatting hole with
+                | ValueSome text -> Choice1Of2 text, tpenv
+                | ValueNone -> Choice2Of2(mkCallStringOperator g synFill.Range (tyOfExpr g hole) hole), tpenv)
 
-    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkString g m text, tpenv)
+    let expr =
+        match partTexts |> List.tryPick (function Choice2Of2 nonConstant -> Some nonConstant | Choice1Of2 _ -> None) with
+        | Some nonConstant -> nonConstant
+        | None -> mkString g m (partTexts |> List.map (function Choice1Of2 text -> text | Choice2Of2 _ -> "") |> String.concat "")
+
+    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> expr, tpenv)
 
 /// Check an interpolated string expression
 and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
