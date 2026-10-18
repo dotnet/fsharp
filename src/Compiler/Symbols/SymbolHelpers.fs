@@ -226,24 +226,35 @@ module internal SymbolHelpers =
         // This is not expected: NewDef only occurs within checking
         | Item.NewDef _  -> None
 
+    let startsWithDirectory (dir: string) (file: string) =
+        file.Length > dir.Length && file.StartsWithOrdinal dir && (file[dir.Length] = '\\' || file[dir.Length] = '/')
+
+    let isCompiledFileOf (ccu: CcuThunk) (fileIndex: int) =
+        let rec declaresEntityIn (mty: ModuleOrNamespaceType) =
+            mty.AllEntities
+            |> Seq.exists (fun entity ->
+                entity.Range.FileIndex = fileIndex
+                || (entity.IsNamespace && declaresEntityIn entity.ModuleOrNamespaceType))
+
+        let implementsSignatureOf (v: Val) = v.DefinitionRange.FileIndex = fileIndex && v.Range.FileIndex <> fileIndex
+
+        let contents = ccu.Contents.ModuleOrNamespaceType
+        declaresEntityIn contents || (allValsOfModuleOrNamespaceTy contents |> List.exists implementsSignatureOf)
+
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName
         if verbose then dprintf "file stored in metadata is '%s'\n" file
-
-        // A build that maps its source paths maps the directory it compiled in as well, so that directory
-        // and the file name reach the same unrecorded root on their own: joining them repeats the directory.
-        let underDirectory (dir: string) =
-            if FileSystem.IsPathRootedShim dir then Path.Combine(dir, file) else file
-
         if not (FileSystem.IsPathRootedShim file) then
             match ccuOfItem g h with
+            // A relative #line name a compiler before F# 10 wrote is relative to the directory even when it starts with it
+            | Some ccu when startsWithDirectory ccu.SourceCodeDirectory file && isCompiledFileOf ccu m.FileIndex -> file
             | Some ccu ->
-                underDirectory ccu.SourceCodeDirectory
+                Path.Combine(ccu.SourceCodeDirectory, file)
             | None ->
                 match qualProjectDir with
                 | None     -> file
-                | Some dir -> underDirectory dir
+                | Some dir -> Path.Combine(dir, file)
          else file
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo =
