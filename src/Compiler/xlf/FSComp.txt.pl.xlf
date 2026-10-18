@@ -1337,11 +1337,6 @@
         <target state="translated">Atrybutów nie można stosować do rozszerzeń typu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcConstantInterpolatedStringHole">
-        <source>This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</source>
-        <target state="new">This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">To wyrażenie rekordu kopiowania i aktualizacji zmienia wszystkie pola typu rekordu „{0}”. Zamiast tego rozważ użycie składni konstrukcji rekordu.</target>

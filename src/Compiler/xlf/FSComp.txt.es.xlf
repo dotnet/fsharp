@@ -1337,11 +1337,6 @@
         <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcConstantInterpolatedStringHole">
-        <source>This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</source>
-        <target state="new">This interpolated string must be a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">Esta expresión de copia y actualización de registros cambia todos los campos de tipo de registro "{0}". Es preferible utilizar la sintaxis de construcción de registros.</target>
