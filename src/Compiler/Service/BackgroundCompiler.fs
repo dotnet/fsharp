@@ -176,7 +176,6 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
-    /// Host-supplied last-write times of referenced assemblies; builders created afterwards consult it instead of the file system.
     abstract member SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
 
 type internal ParseCacheLockToken() =
@@ -260,7 +259,6 @@ type internal BackgroundCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
-    // Written by the host's thread and read wherever a builder is created: an option, so the write is one reference.
     [<VolatileField>]
     let mutable referenceStampProvider: (string -> DateTime) option = None
 

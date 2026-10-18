@@ -1574,9 +1574,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-                // A host that tracks the referenced files itself answers their stamps; otherwise they are stat'd.
-                // Creation and IsReferencesInvalidated must stamp through the same source, or a host view that
-                // lags the disk would recreate the builder on every request.
                 let stampReferencedAssembly =
                     match getReferenceStamp with
                     | ValueSome getReferenceStamp -> fun fileName (_: TimeStampCache) -> getReferenceStamp fileName
