@@ -3,8 +3,6 @@ parameters:
   type: string
 - name: headSha
   type: string
-- name: baseSha
-  type: string
 - name: visualStudioBootstrapperURI
   type: string
   default: '(default)'
@@ -127,6 +125,11 @@ stages:
       displayName: Verify and check out PR snapshot
       scriptBlock: |
         $ErrorActionPreference = 'Stop'
+        Import-Module DartLab.Modules.Git -ErrorAction Stop
+        Install-Git -InstallationDirectory 'C:\Test\Git' -Scope Process
+        $env:PATH = "C:\Test\Git\cmd;$env:PATH"
+        & 'C:\Test\Git\cmd\git.exe' --version
+        if ($LASTEXITCODE -ne 0) { throw 'The provisioned DartLab Git is not usable.' }
         $sourceRoot = 'C:\Test\FSharp'
         if (Test-Path -LiteralPath $sourceRoot) {
             throw "$sourceRoot already exists; refusing to reuse an unverified checkout."
@@ -136,7 +139,7 @@ stages:
         git -C $sourceRoot remote add origin https://github.com/dotnet/fsharp.git
         if ($LASTEXITCODE -ne 0) { throw 'git remote add failed.' }
         if ($env:PIPELINE_SOURCE_SHA -cne $env:HEAD_SHA) {
-            throw 'The pipeline YAML revision does not match the reviewed PR head.'
+            throw 'The pipeline YAML revision does not match the reviewed PR commit.'
         }
         git -C $sourceRoot fetch --no-tags --depth=1 origin $env:PIPELINE_SOURCE_SHA
         if ($LASTEXITCODE -ne 0) { throw 'Fetching the reviewed pipeline source revision failed.' }
@@ -147,7 +150,7 @@ stages:
         }
         Push-Location $sourceRoot
         try {
-            & .\eng\setup-pr-validation.ps1 -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA -baseSha $env:BASE_SHA
+            & .\eng\setup-pr-validation.ps1 -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA
         }
         finally {
             Pop-Location
@@ -156,5 +159,4 @@ stages:
         PIPELINE_SOURCE_SHA: $(Build.SourceVersion)
         PR_NUMBER: ${{ parameters.prNumber }}
         HEAD_SHA: ${{ parameters.headSha }}
-        BASE_SHA: ${{ parameters.baseSha }}
       timeout: 0:0:10:0
