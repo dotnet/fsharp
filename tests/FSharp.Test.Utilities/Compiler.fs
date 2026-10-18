@@ -2567,7 +2567,6 @@ $ code --diff {outFile} {expectedFile}
     let runFsiProcess (args: string list) : ProcessResult =
         runToolProcess TestFramework.initialConfig.FSI (Directory.GetCurrentDirectory()) args
 
-    /// Run FSC as a subprocess in the given directory, which the compiled assembly records as the one it was compiled in.
     let runFscProcessIn (workingDirectory: string) (args: string list) : ProcessResult =
         runToolProcess TestFramework.initialConfig.FSC workingDirectory args
 
