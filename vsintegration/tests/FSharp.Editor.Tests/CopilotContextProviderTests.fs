@@ -18,7 +18,7 @@ open CancellableTasks
 
 module CopilotContextProviderTests =
 
-    let fileContents =
+    let private widgets =
         """
 module Widgets
 
@@ -45,42 +45,56 @@ let describeShape shape =
 let twice x = x * 2
 """
 
-    let solution = RoslynTestHelpers.CreateSolution fileContents
+    let private solution = RoslynTestHelpers.CreateSolution widgets
 
-    /// One matcher and one parse cache per test, so what a test leaves parsed cannot answer the next one.
-    let private freshCache () =
+    let private cache =
         MefHelpers.createExportProvider().GetExportedValue<FSharpNavigableItemsCache>()
-
-    let private cache = freshCache ()
 
     let private run computation =
         CancellableTask.runSynchronouslyWithoutCancellation computation
 
-    let private solutionOf files =
-        let projectId = ProjectId.CreateNewId()
+    let private manyProject = "C:\\many.fsproj"
 
-        let documents =
-            files
-            |> List.map (fun (path, source) -> RoslynTestHelpers.CreateDocumentInfo projectId path source)
+    let private solutionOfProjects projects =
+        let projects =
+            [
+                for projectPath, defines, files in projects ->
+                    let projectId = ProjectId.CreateNewId()
+
+                    let documents =
+                        files
+                        |> List.map (fun (path, source) -> RoslynTestHelpers.CreateDocumentInfo projectId path source)
+
+                    struct (projectId, defines, files, RoslynTestHelpers.CreateProjectInfo projectId projectPath documents)
+            ]
 
         let solution =
-            RoslynTestHelpers.CreateSolution [ RoslynTestHelpers.CreateProjectInfo projectId "C:\\many.fsproj" documents ]
+            RoslynTestHelpers.CreateSolution [ for struct (_, _, _, info) in projects -> info ]
 
-        { RoslynTestHelpers.DefaultProjectOptions with
-            SourceFiles = files |> List.map fst |> Array.ofList
-        }
-        |> RoslynTestHelpers.SetProjectOptions projectId solution
+        for struct (projectId, defines, files, _) in projects do
+            { RoslynTestHelpers.DefaultProjectOptions with
+                SourceFiles = files |> List.map fst |> Array.ofList
+                OtherOptions = defines
+            }
+            |> RoslynTestHelpers.SetProjectOptions projectId solution
 
         solution
 
-    let private documentsOf (solution: Solution) =
-        solution.Projects |> Seq.exactlyOne |> _.Documents |> Seq.toArray
+    let private solutionOf files =
+        solutionOfProjects [ manyProject, [||], files ]
 
-    let private documentNamed (name: string) solution =
-        documentsOf solution
-        |> Array.find _.FilePath.EndsWith(name, StringComparison.Ordinal)
+    let private documentAt (filePath: string) (solution: Solution) =
+        solution.Projects
+        |> Seq.collect _.Documents
+        |> Seq.find (fun document -> document.FilePath = filePath)
 
-    let private hitsIn cache openDocumentIds focus solution pattern =
+    let private parse (document: Document) =
+        cache.GetNavigableItems document |> run |> ignore
+
+    let private isParsed (document: Document) =
+        (cache.TryGetCachedNavigableItems document).IsSome
+
+    let private hitsIn openDocumentIds focus solution pattern =
         CopilotSymbolQuery.search cache openDocumentIds focus solution [| pattern |]
         |> run
         |> Array.head
@@ -89,90 +103,70 @@ let twice x = x * 2
         hits
         |> Array.map (fun (struct (item, _, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
 
-    let private searchFocused cache openDocumentIds focus solution pattern =
-        hitsIn cache openDocumentIds focus solution pattern |> namesOf
+    let private namesIn openDocumentIds focus solution pattern =
+        hitsIn openDocumentIds focus solution pattern |> namesOf
 
-    let private searchIn cache openDocumentIds solution pattern =
-        searchFocused cache openDocumentIds ValueNone solution pattern
-
-    let private search pattern =
-        searchIn cache Seq.empty solution pattern
-
-    let private itemNamed (fullyQualifiedName: string) =
-        hitsIn cache Seq.empty ValueNone solution fullyQualifiedName
-        |> Array.tryPick (fun (struct (item, _, _)) ->
+    let private itemNamed fullyQualifiedName =
+        hitsIn Seq.empty ValueNone solution fullyQualifiedName
+        |> Array.pick (fun (struct (item, _, _)) ->
             if CopilotSymbolMapping.fullyQualifiedName item = fullyQualifiedName then
                 Some item
             else
                 None)
-        |> Option.defaultWith (fun () -> failwith $"no declaration named {fullyQualifiedName}")
 
-    let private contextPickedIn cache solution (name: string) picked =
+    let private contextIn solution (name: string) picked =
         CopilotSymbolQuery.symbolContext cache Seq.empty solution name picked
         |> run
         |> ValueOption.defaultWith (fun () -> failwith $"expected a symbol context for {name}")
 
-    let private contextIn cache solution name =
-        contextPickedIn cache solution name ValueNone
-
-    let private declarationsPickedIn cache solution name picked =
+    let private declarationsPickedIn solution name picked =
         CopilotSymbolQuery.declarationsOf cache Seq.empty solution name picked |> run
-
-    let private pickedIn file line =
-        ValueSome
-            {
-                File = file
-                ProjectName = "C:\\many.fsproj"
-                Line = line
-            }
 
     let private lineOf (struct (item: NavigableItem, _: Document)) = item.Range.StartLine
 
     let private fileOf (struct (_: NavigableItem, document: Document)) = document.FilePath
 
-    let private contextOf name = contextIn cache solution name
+    let private pickedIn file line =
+        ValueSome
+            {
+                File = file
+                ProjectName = manyProject
+                Line = line
+            }
 
-    /// A file holding more declarations matching `name` than one query reports.
+    let private focusOn filePath firstLine lastLine =
+        ValueSome
+            {
+                FilePath = filePath
+                FirstLine = firstLine
+                LastLine = lastLine
+            }
+
+    let private caretOn filePath line = focusOn filePath line line
+
     let private manyDeclarations name count =
         let members =
             [ for i in 1..count -> $"    member _.{name}{i} = {i}" ] |> String.concat "\n"
 
         $"module {name}Module\n\ntype {name}Holder() =\n{members}\n"
 
-    let private coldFile = "C:\\cold.fs", "module Cold\n\nlet widgetCounter = 1\n"
+    let private coldPath = "C:\\cold.fs"
 
-    /// The holder's declaration loses on every other part of the ordering - the name it is matched
-    /// against is longer - so it can only come first through where its file sits.
-    let private twoWidgets =
-        [
-            "C:\\elsewhere.fs", "module Elsewhere\n\ntype Widget() =\n    member _.Value = 1\n"
-            "C:\\holder.fs", "module Holder\n\ntype WidgetHolder() =\n    member _.Value = 2\n"
-        ]
+    let private coldFile = coldPath, "module Cold\n\nlet widgetCounter = 1\n"
 
-    /// A value and a module whose names hold a dot, beside the nested paths that would spell the same
-    /// without the double backticks.
-    let private dottedSolution =
+    let private openPath = "C:\\open.fs"
+
+    let private multilinePath = "C:\\multiline.fs"
+
+    let private multilineSolution =
         solutionOf
             [
-                "C:\\dotted.fs",
-                "module M\n\nlet ``a.b`` = 1\n\nmodule a =\n    let b = 2\n\nmodule ``x.y`` =\n    let z = 3\n\nmodule x =\n    module y =\n        let z = 4\n"
+                multilinePath,
+                "module Multiline\n\n/// Adds.\nlet add\n    (x: int)\n    (y: int) =\n    x + y\n\ntype Calculator() =\n    member _.Sum\n        (\n            x: int,\n            y: int\n        ) =\n        x * y\n"
             ]
 
-    let private caretOn filePath line =
-        ValueSome
-            {
-                FilePath = filePath
-                FirstLine = line
-                LastLine = line
-            }
+    let private overloadsPath = "C:\\overloads.fs"
 
-    /// A function and a member whose parameters each take a line, so their headers end lines below their names.
-    let private multilineHeaders =
-        "module Multiline\n\n/// Adds.\nlet add\n    (x: int)\n    (y: int) =\n    x + y\n\ntype Calculator() =\n    member _.Sum\n        (\n            x: int,\n            y: int\n        ) =\n        x * y\n"
-
-    let private multilineSolution = solutionOf [ "C:\\multiline.fs", multilineHeaders ]
-
-    /// More overloads of one member than a context carries, each naming its parameter type in its body.
     let private overloadsSolution =
         let overloads =
             [ "int"; "string"; "float"; "bool"; "char"; "byte" ]
@@ -180,38 +174,14 @@ let twice x = x * 2
                 $"    member _.Bump(step: {parameterType}) =\n        ignore step\n        \"{parameterType}\"\n")
             |> String.concat "\n"
 
-        solutionOf [ "C:\\overloads.fs", $"module Overloads\n\ntype Counter() =\n{overloads}" ]
+        solutionOf [ overloadsPath, $"module Overloads\n\ntype Counter() =\n{overloads}" ]
 
-    /// A file linked into two projects whose defines put the one declaration on different lines.
-    let private linkedSolution =
-        let source = "module M\n#if A\nlet shared = 1\n#else\nlet shared = \"B\"\n#endif\n"
-
-        let projects =
+    let private dottedSolution =
+        solutionOf
             [
-                for path, defines in [ "C:\\a.fsproj", [| "--define:A" |]; "C:\\b.fsproj", [||] ] ->
-                    let id = ProjectId.CreateNewId()
-
-                    id,
-                    defines,
-                    RoslynTestHelpers.CreateProjectInfo id path [ RoslynTestHelpers.CreateDocumentInfo id "C:\\shared.fs" source ]
+                "C:\\dotted.fs",
+                "module M\n\nlet ``a.b`` = 1\n\nmodule a =\n    let b = 2\n\nmodule ``x.y`` =\n    let z = 3\n\nmodule x =\n    module y =\n        let z = 4\n"
             ]
-
-        let solution =
-            RoslynTestHelpers.CreateSolution [ for _, _, info in projects -> info ]
-
-        for id, defines, _ in projects do
-            { RoslynTestHelpers.DefaultProjectOptions with
-                SourceFiles = [| "C:\\shared.fs" |]
-                OtherOptions = defines
-            }
-            |> RoslynTestHelpers.SetProjectOptions id solution
-
-        solution
-
-    /// One name on one line of two files, as when two projects declare the same type or share a linked file.
-    let private twinsSolution =
-        let twin = "namespace Twins\n\ntype Twin() =\n    member _.Value = 1\n"
-        solutionOf [ "C:\\first.fs", twin; "C:\\second.fs", twin ]
 
     [<Theory>]
     [<InlineData("Counter", "Widgets.Counter")>]
@@ -219,7 +189,7 @@ let twice x = x * 2
     [<InlineData("Circle", "Widgets.Shape.Circle")>]
     [<InlineData("describeShape", "Widgets.describeShape")>]
     let ``search finds a declaration by its fully qualified name`` (pattern: string, expected: string) =
-        Assert.Contains(expected, search pattern)
+        Assert.Contains(expected, namesIn Seq.empty ValueNone solution pattern)
 
     [<Theory>]
     [<InlineData("Widgets.Counter", true)>]
@@ -239,7 +209,6 @@ let twice x = x * 2
     let ``a tooltip names a member by its container and a type by itself`` (fullyQualifiedName: string, expected: string) =
         Assert.Equal(expected, CopilotSymbolMapping.tooltipName (itemNamed fullyQualifiedName))
 
-    /// The inputs of a query are split on ':', so "#fsharpSymbol:Ns.Type:15" arrives as three of them.
     [<Theory>]
     [<InlineData("Widget", "Widget")>]
     [<InlineData("", "")>]
@@ -260,7 +229,7 @@ let twice x = x * 2
 
     [<Fact>]
     let ``search reports each declaration once`` () =
-        let names = search "Counter"
+        let names = namesIn Seq.empty ValueNone solution "Counter"
         Assert.Equal((Array.distinct names).Length, names.Length)
 
     [<Fact>]
@@ -275,85 +244,69 @@ let twice x = x * 2
     [<InlineData(true)>]
     [<InlineData(false)>]
     let ``a known file answers without parsing the rest of the solution`` (isOpen: bool) =
-        let cache = freshCache ()
         let solution = solutionOf [ "C:\\known.fs", manyDeclarations "Widget" 25; coldFile ]
-        let known = documentNamed "known.fs" solution
+        let known = documentAt "C:\\known.fs" solution
 
         let openDocumentIds =
             if isOpen then
                 [ known.Id ]
             else
-                cache.GetNavigableItems known |> run |> ignore
+                parse known
                 []
 
-        let names = searchIn cache openDocumentIds solution "Widget"
+        let names = namesIn openDocumentIds ValueNone solution "Widget"
 
         Assert.Equal(20, names.Length)
         Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
-        Assert.True((cache.TryGetCachedNavigableItems(documentNamed "cold.fs" solution)).IsNone)
+        Assert.False(isParsed (documentAt coldPath solution))
 
     [<Fact>]
     let ``the search stops once it has enough declarations`` () =
-        let cache = freshCache ()
-
         let solution =
             solutionOf
                 [
                     for i in 1..150 -> $"C:\\cold{i}.fs", $"module Cold{i}\n\ntype Counter{i}() =\n    member _.Value = {i}\n"
                 ]
 
-        let names = searchIn cache Seq.empty solution "Counter"
+        Assert.Equal(20, (namesIn Seq.empty ValueNone solution "Counter").Length)
+        Assert.NotEmpty(solution.Projects |> Seq.collect _.Documents |> Seq.filter (isParsed >> not))
 
-        Assert.Equal(20, names.Length)
-
-        Assert.NotEmpty(
-            documentsOf solution
-            |> Array.filter (fun document -> (cache.TryGetCachedNavigableItems document).IsNone)
-        )
-
-    /// Navigate To and other queries fill the same cache, so it can learn of a document between a
-    /// query's walk of the cached documents and its walk of the rest.
     [<Theory>]
     [<InlineData(false, false)>]
     [<InlineData(true, false)>]
     [<InlineData(false, true)>]
     let ``an unopened document is visited once whenever the cache learns of it`` (cachedBefore: bool, cachedBetween: bool) =
-        let cache = freshCache ()
         let solution = solutionOf [ coldFile ]
-        let document = documentNamed "cold.fs" solution
+        let document = documentAt coldPath solution
 
         if cachedBefore then
-            cache.GetNavigableItems document |> run |> ignore
+            parse document
 
         let struct (_, cached, cold) = CopilotSymbolQuery.tiers cache (HashSet()) solution
         let answeredFromCache = Seq.length cached
 
         if cachedBetween then
-            cache.GetNavigableItems document |> run |> ignore
+            parse document
 
         Assert.Equal(1, answeredFromCache + Seq.length cold)
 
-    /// A file nobody has open still changes - on disk, or by closing its tab without saving - and what
-    /// was parsed of it before then names declarations and lines its text no longer has.
     [<Fact>]
     let ``a parse of an earlier text does not answer for a document`` () =
-        let cache = freshCache ()
-
         let solution =
             solutionOf
                 [
                     "C:\\edited.fs", "module Edited\n\nlet before = 1\n\n\n\n\nlet removedLater = 2\n"
                 ]
 
-        let document = documentNamed "edited.fs" solution
-        cache.GetNavigableItems document |> run |> ignore
+        let document = documentAt "C:\\edited.fs" solution
+        parse document
 
         let edited = document.WithText(SourceText.From("module Edited\n\nlet after = 1\n"))
         let solution = edited.Project.Solution
 
-        Assert.True((cache.TryGetCachedNavigableItems edited).IsNone)
-        Assert.Equal<string>([| "Edited.after" |], searchIn cache Seq.empty solution "after")
-        Assert.Empty(searchIn cache Seq.empty solution "removedLater")
+        Assert.False(isParsed edited)
+        Assert.Equal<string>([| "Edited.after" |], namesIn Seq.empty ValueNone solution "after")
+        Assert.Empty(namesIn Seq.empty ValueNone solution "removedLater")
 
         Assert.True(
             (CopilotSymbolQuery.symbolContext cache Seq.empty solution "Edited.removedLater" ValueNone
@@ -361,121 +314,110 @@ let twice x = x * 2
                 .IsNone
         )
 
-    /// Focus outranks being open, which outranks the rest; a focused file that is no longer open counts
-    /// for nothing, since nothing tells the tracker that its tab has closed.
+    /// WidgetHolder loses to Widget on name length, so it can only come first through where its file sits.
     [<Theory>]
     [<InlineData(false, false, "Elsewhere.Widget")>]
     [<InlineData(true, false, "Holder.WidgetHolder")>]
     [<InlineData(true, true, "Holder.WidgetHolder")>]
     [<InlineData(false, true, "Elsewhere.Widget")>]
     let ``the file the user works in answers first`` (holderIsOpen: bool, holderIsFocused: bool, expected: string) =
-        let cache = freshCache ()
-        let solution = solutionOf twoWidgets
-        let holder = documentNamed "holder.fs" solution
+        let holderPath = "C:\\holder.fs"
+
+        let solution =
+            solutionOf
+                [
+                    "C:\\elsewhere.fs", "module Elsewhere\n\ntype Widget() =\n    member _.Value = 1\n"
+                    holderPath, "module Holder\n\ntype WidgetHolder() =\n    member _.Value = 2\n"
+                ]
 
         let openDocumentIds =
             [
                 if holderIsOpen then
-                    holder.Id
+                    (documentAt holderPath solution).Id
             ]
 
-        let focus =
-            if holderIsFocused then
-                caretOn "C:\\holder.fs" 1
-            else
-                ValueNone
-
-        let names = searchFocused cache openDocumentIds focus solution "Widget"
+        let focus = if holderIsFocused then caretOn holderPath 1 else ValueNone
+        let names = namesIn openDocumentIds focus solution "Widget"
 
         Assert.Equal(expected, Array.head names)
         Assert.Equal(2, names.Length)
 
-    /// A bare "#" is the first thing the picker asks, and Copilot's own provider fills it from the open files.
     [<Fact>]
     let ``no text at all answers with the declarations of the open files`` () =
-        let cache = freshCache ()
-        let solution = solutionOf [ "C:\\open.fs", manyDeclarations "Widget" 3; coldFile ]
+        let solution = solutionOf [ openPath, manyDeclarations "Widget" 3; coldFile ]
 
         let names =
-            searchFocused cache [ (documentNamed "open.fs" solution).Id ] (caretOn "C:\\open.fs" 1) solution ""
+            namesIn [ (documentAt openPath solution).Id ] (caretOn openPath 1) solution ""
 
         Assert.Contains("WidgetModule.WidgetHolder", names)
         Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
-        Assert.True((cache.TryGetCachedNavigableItems(documentNamed "cold.fs" solution)).IsNone)
+        Assert.False(isParsed (documentAt coldPath solution))
 
     [<Theory>]
     [<InlineData("wi")>]
     [<InlineData("widgetCounter")>]
     let ``a short text is looked up in the open files alone`` (pattern: string) =
-        let cache = freshCache ()
-
-        let solution =
-            solutionOf [ "C:\\open.fs", "module Open\n\nlet other = 1\n"; coldFile ]
-
-        let names =
-            searchIn cache [ (documentNamed "open.fs" solution).Id ] solution pattern
+        let solution = solutionOf [ openPath, "module Open\n\nlet other = 1\n"; coldFile ]
+        let names = namesIn [ (documentAt openPath solution).Id ] ValueNone solution pattern
 
         Assert.Equal(pattern.Length >= 3, Array.contains "Cold.widgetCounter" names)
 
-    /// The type around the caret loses on name length to the other one, so it can only come first by
-    /// holding the caret - on a line of its member's body, not of its own name.
+    /// AroundTheCaret loses to Short on name length, so it can only come first by holding the caret in its member's body.
     [<Theory>]
     [<InlineData(4, "Selection.Short")>]
     [<InlineData(8, "Selection.AroundTheCaret")>]
     let ``the declaration around the caret answers before the rest of the focused file`` (caretLine: int, expected: string) =
-        let cache = freshCache ()
+        let path = "C:\\selection.fs"
 
         let source =
             "module Selection\n\ntype Short() =\n    member _.Value = 1\n\ntype AroundTheCaret() =\n    member _.Compute() =\n        2\n"
 
-        let solution = solutionOf [ "C:\\selection.fs", source ]
-        let focused = documentNamed "selection.fs" solution
+        let solution = solutionOf [ path, source ]
 
         let names =
-            searchFocused cache [ focused.Id ] (caretOn "C:\\selection.fs" caretLine) solution ""
+            namesIn [ (documentAt path solution).Id ] (caretOn path caretLine) solution ""
             |> Array.filter (fun name -> name = "Selection.Short" || name = "Selection.AroundTheCaret")
 
         Assert.Equal(expected, Array.head names)
 
     let private overloadsPickedAt picked =
-        declarationsPickedIn cache overloadsSolution "Overloads.Counter.Bump" picked
+        declarationsPickedIn overloadsSolution "Overloads.Counter.Bump" picked
         |> Array.map lineOf
 
-    /// Overloads answer to the same fully qualified name, so navigating one after the picker has
-    /// closed - when there is no caret to consult any more - has to go by where it was picked,
-    /// not by whichever overload a solution-wide scan happens to reach first.
     [<Fact>]
     let ``navigating a mention goes to the overload it was picked for`` () =
         let lines = overloadsPickedAt ValueNone
         Assert.Equal(6, (Array.distinct lines).Length)
 
         for line in lines do
-            let picked = overloadsPickedAt (pickedIn "C:\\overloads.fs" (line))
+            let picked = overloadsPickedAt (pickedIn overloadsPath line)
             Assert.Equal(line, Array.head picked)
             Assert.Equal(6, picked.Length)
 
-        // An edit above an overload moves its line, and a renamed file no longer answers for it.
-        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn "C:\\overloads.fs" (-1)))
-        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn "C:\\renamed.fs" (lines[5])))
+        // A stale line leaves the file's own order; a renamed file falls back to the solution-wide answer.
+        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn overloadsPath -1))
+        Assert.Equal<int>(lines, overloadsPickedAt (pickedIn "C:\\renamed.fs" lines[5]))
 
     [<Fact>]
     let ``a context starts from the overload its mention was picked for`` () =
         let lastOverload = Array.last (overloadsPickedAt ValueNone)
 
         let context =
-            contextPickedIn cache overloadsSolution "Overloads.Counter.Bump" (pickedIn "C:\\overloads.fs" (lastOverload))
+            contextIn overloadsSolution "Overloads.Counter.Bump" (pickedIn overloadsPath lastOverload)
 
         Assert.StartsWith("member _.Bump(step: byte)", context.Snippet.TrimStart(), StringComparison.Ordinal)
         Assert.Equal(4, Seq.length context.SnippetLocations)
 
-    /// A line the picked file no longer declares the name on still leaves the file to go by.
     [<Theory>]
     [<InlineData("C:\\first.fs", 4)>]
     [<InlineData("C:\\second.fs", 4)>]
     [<InlineData("C:\\second.fs", 40)>]
     let ``a mention goes to the file it was picked in when two files declare its name on one line`` (filePath: string, line: int) =
+        let twin = "namespace Twins\n\ntype Twin() =\n    member _.Value = 1\n"
+        let solution = solutionOf [ "C:\\first.fs", twin; "C:\\second.fs", twin ]
+
         let declarations =
-            declarationsPickedIn cache twinsSolution "Twins.Twin.Value" (pickedIn filePath (line))
+            declarationsPickedIn solution "Twins.Twin.Value" (pickedIn filePath line)
 
         Assert.Equal<string>([| filePath |], declarations |> Array.map fileOf)
 
@@ -488,23 +430,30 @@ let twice x = x * 2
     let ``a mention goes to the project it was picked in when a file is linked into two``
         (project: string, line: int, expectedProject: string, expectedLine: int)
         =
-        let declarations =
-            declarationsPickedIn
-                cache
-                linkedSolution
-                "M.shared"
-                (ValueSome
-                    {
-                        File = "C:\\shared.fs"
-                        ProjectName = project
-                        Line = line
-                    })
+        let linked =
+            "C:\\shared.fs", "module M\n#if A\nlet shared = 1\n#else\nlet shared = \"B\"\n#endif\n"
 
-        let struct (item, document) = Array.head declarations
+        let solution =
+            solutionOfProjects
+                [
+                    "C:\\a.fsproj", [| "--define:A" |], [ linked ]
+                    "C:\\b.fsproj", [||], [ linked ]
+                ]
+
+        let picked =
+            ValueSome
+                {
+                    File = fst linked
+                    ProjectName = project
+                    Line = line
+                }
+
+        let struct (item, document) =
+            declarationsPickedIn solution "M.shared" picked |> Array.head
+
         Assert.Equal(expectedProject, document.Project.Name)
         Assert.Equal(expectedLine, item.Range.StartLine)
 
-    /// A signature answers only when no implementation declares the name, wherever the mention was picked.
     [<Fact>]
     let ``a mention picked in a signature file goes to the implementation`` () =
         let solution =
@@ -515,7 +464,7 @@ let twice x = x * 2
                 ]
 
         let declarations =
-            declarationsPickedIn (freshCache ()) solution "Lib.twice" (pickedIn "C:\\lib.fsi" (3))
+            declarationsPickedIn solution "Lib.twice" (pickedIn "C:\\lib.fsi" 3)
 
         Assert.Equal<string>([| "C:\\lib.fs" |], declarations |> Array.map fileOf)
 
@@ -523,7 +472,7 @@ let twice x = x * 2
     [<InlineData("Multiline.add", "/// Adds.", "x + y")>]
     [<InlineData("Multiline.Calculator.Sum", "member _.Sum", "x * y")>]
     let ``a header over several lines keeps its declaration whole`` (name: string, firstLine: string, lastLine: string) =
-        let snippet = (contextIn cache multilineSolution name).Snippet.Trim()
+        let snippet = (contextIn multilineSolution name ValueNone).Snippet.Trim()
 
         Assert.StartsWith(firstLine, snippet, StringComparison.Ordinal)
         Assert.EndsWith(lastLine, snippet, StringComparison.Ordinal)
@@ -532,10 +481,10 @@ let twice x = x * 2
     [<InlineData(7, "Multiline.add", "Multiline.Calculator.Sum")>]
     [<InlineData(15, "Multiline.Calculator.Sum", "Multiline.add")>]
     let ``the caret in a body under a header over several lines selects its declaration`` (caretLine: int, around: string, apart: string) =
-        let focused = documentNamed "multiline.fs" multilineSolution
+        let focused = documentAt multilinePath multilineSolution
 
         let hits =
-            hitsIn (freshCache ()) [ focused.Id ] (caretOn "C:\\multiline.fs" caretLine) multilineSolution ""
+            hitsIn [ focused.Id ] (caretOn multilinePath caretLine) multilineSolution ""
 
         let focusOf name =
             hits
@@ -550,8 +499,6 @@ let twice x = x * 2
 
     [<Fact>]
     let ``a batch of texts answers like the same texts one by one`` () =
-        let cache = freshCache ()
-
         let solution =
             solutionOf
                 [
@@ -564,12 +511,12 @@ let twice x = x * 2
             |> run
             |> Array.map namesOf
 
-        Assert.Equal<string>(searchIn cache Seq.empty solution "alpha", batched[0])
-        Assert.Equal<string>(searchIn cache Seq.empty solution "beta", batched[1])
+        Assert.Equal<string>(namesIn Seq.empty ValueNone solution "alpha", batched[0])
+        Assert.Equal<string>(namesIn Seq.empty ValueNone solution "beta", batched[1])
 
     [<Fact>]
     let ``a type context carries the whole declaration and its doc comment`` () =
-        let context = contextOf "Widgets.Counter"
+        let context = contextIn solution "Widgets.Counter" ValueNone
 
         Assert.Equal("Widgets.Counter", context.FullyQualifiedName)
         Assert.Equal("Counter", context.UnqualifiedName)
@@ -578,14 +525,14 @@ let twice x = x * 2
 
     [<Fact>]
     let ``a member context carries the member body alone`` () =
-        let context = contextOf "Widgets.Counter.Bump"
+        let context = contextIn solution "Widgets.Counter.Bump" ValueNone
 
         Assert.Contains("value <- value + 1", context.Snippet)
         Assert.DoesNotContain("type Counter", context.Snippet)
 
     [<Fact>]
     let ``a one-line declaration keeps its doc comment`` () =
-        let context = contextOf "Widgets.twice"
+        let context = contextIn solution "Widgets.twice" ValueNone
 
         Assert.Contains("Twice the value.", context.Snippet)
         Assert.Contains("let twice x", context.Snippet)
@@ -598,11 +545,11 @@ let twice x = x * 2
     [<InlineData("Widgets.Shape.Circle", CopilotSymbolContextType.Union)>]
     [<InlineData("Widgets.describeShape", CopilotSymbolContextType.Function)>]
     let ``declaration kinds map onto Copilot symbol types`` (name: string, expected: CopilotSymbolContextType) =
-        Assert.Equal(expected, (contextOf name).SymbolType)
+        Assert.Equal(expected, (contextIn solution name ValueNone).SymbolType)
 
     [<Fact>]
     let ``a context points back at the source it was taken from`` () =
-        let context = contextOf "Widgets.Counter"
+        let context = contextIn solution "Widgets.Counter" ValueNone
         let location = Assert.Single<SnippetLocation> context.SnippetLocations
         let document = RoslynTestHelpers.GetSingleDocument solution
 
@@ -611,7 +558,7 @@ let twice x = x * 2
 
     [<Fact>]
     let ``names that differ only in double backticks answer as two mentions`` () =
-        let names = searchIn cache Seq.empty dottedSolution "a.b"
+        let names = namesIn Seq.empty ValueNone dottedSolution "a.b"
 
         Assert.Contains("M.``a.b``", names)
         Assert.Contains("M.a.b", names)
@@ -622,10 +569,8 @@ let twice x = x * 2
     [<InlineData("M.``x.y``.z", "let z = 3")>]
     [<InlineData("M.x.y.z", "let z = 4")>]
     let ``a name holding a dot resolves to its own declaration`` (fullyQualifiedName: string, declaration: string) =
-        Assert.Equal(declaration, (contextIn cache dottedSolution fullyQualifiedName).Snippet.Trim())
+        Assert.Equal(declaration, (contextIn dottedSolution fullyQualifiedName ValueNone).Snippet.Trim())
 
-    /// Six lines, counting newlines: "module M", "", "let a = 1", "", "let b = 2", and the blank line a
-    /// trailing newline leaves after it.
     let private focusContent = "module M\n\nlet a = 1\n\nlet b = 2\n"
 
     let private focusFilePath = "C:\\focus.fs"
@@ -645,9 +590,7 @@ let twice x = x * 2
         DocumentContext(focusContent, FilePath = focusFilePath, TotalLinesInFile = 6, Selections = [| selection |])
         |> CopilotSymbolMapping.editorFocusOf
 
-    /// Copilot reports the caret as the offset of its line's start (10, the start of "let a = 1"), a
-    /// line range as 1-based line numbers, and the whole file as a range covering every line - which no
-    /// declaration can be "around", so it answers "focused, no line known", the same as no selection at all.
+    /// Offset 10 starts "let a = 1"; a range over all six lines of the file means "focused, no line known".
     [<Theory>]
     [<InlineData(10, -1, -1, 3, 3)>]
     [<InlineData(-1, 2, 5, 2, 5)>]
@@ -659,31 +602,14 @@ let twice x = x * 2
         (expectedFirst: int)
         (expectedLast: int)
         =
-        let expected =
-            ValueSome
-                {
-                    FilePath = focusFilePath
-                    FirstLine = expectedFirst
-                    LastLine = expectedLast
-                }
-
-        Assert.Equal(expected, documentFocus caretOffset startLine endLine)
+        Assert.Equal(focusOn focusFilePath expectedFirst expectedLast, documentFocus caretOffset startLine endLine)
 
     [<Fact>]
     let ``no selection at all is focused with no line known`` () =
         let document = DocumentContext(focusContent, FilePath = focusFilePath)
 
-        let expected =
-            ValueSome
-                {
-                    FilePath = focusFilePath
-                    FirstLine = 0
-                    LastLine = 0
-                }
-
-        Assert.Equal(expected, CopilotSymbolMapping.editorFocusOf document)
+        Assert.Equal(focusOn focusFilePath 0 0, CopilotSymbolMapping.editorFocusOf document)
 
     [<Fact>]
     let ``a document with no file path is not focused`` () =
-        let document = DocumentContext(focusContent)
-        Assert.True((CopilotSymbolMapping.editorFocusOf document).IsNone)
+        Assert.True((CopilotSymbolMapping.editorFocusOf (DocumentContext(focusContent))).IsNone)
