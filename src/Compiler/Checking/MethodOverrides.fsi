@@ -162,8 +162,7 @@ val GetAbstractMethInfosForSynMethodDecl:
     bindm: range *
     typToSearchForAbstractMembers: (TType * SlotImplSet option) *
     valSynData: SynValInfo *
-    memberFlags: SynMemberFlags *
-    findFlag: FindMemberFlag ->
+    memberFlags: SynMemberFlags ->
         MethInfo list * MethInfo list
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information

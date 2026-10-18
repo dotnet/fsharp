@@ -1435,7 +1435,6 @@ let testFlag tcConfigB =
                     { tcConfigB.optSettings with
                         reportHasEffect = true
                     }
-            | "NoErrorText" -> FSComp.SR.SwallowResourceText <- true
             | "EmitFeeFeeAs100001" -> tcConfigB.testFlagEmitFeeFeeAs100001 <- true
             | "DumpDebugInfo" -> tcConfigB.dumpDebugInfo <- true
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
