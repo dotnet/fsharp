@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 namespace Internal.Utilities.Library
 
@@ -53,26 +53,6 @@ module internal PervasiveAutoOpens =
 
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
-
-    type String with
-
-        member inline StartsWithOrdinal: value: string -> bool
-
-        member inline EndsWithOrdinal: value: string -> bool
-
-        member inline EndsWithOrdinalIgnoreCase: value: string -> bool
-
-        member inline IndexOfOrdinal: value: string -> int
-
-        member inline IndexOfOrdinal: value: string * startIndex: int -> int
-
-        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
-
-    [<AbstractClass; Sealed; Extension>]
-    type ReadOnlySpanCharExtensions =
-
-        [<Extension>]
-        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
     type Async with
 

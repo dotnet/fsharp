@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 namespace Internal.Utilities.Library
 
@@ -91,32 +91,6 @@ module internal PervasiveAutoOpens =
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
-
-    type String with
-
-        member inline x.StartsWithOrdinal(value: string) =
-            x.StartsWith(value, StringComparison.Ordinal)
-
-        member inline x.EndsWithOrdinal(value: string) =
-            x.EndsWith(value, StringComparison.Ordinal)
-
-        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
-            x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
-
-        member inline x.IndexOfOrdinal(value: string) =
-            x.IndexOf(value, StringComparison.Ordinal)
-
-        member inline x.IndexOfOrdinal(value: string, startIndex) =
-            x.IndexOf(value, startIndex, StringComparison.Ordinal)
-
-        member inline x.IndexOfOrdinal(value: string, startIndex, count) =
-            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
-
-    [<AbstractClass; Sealed>]
-    type ReadOnlySpanCharExtensions =
-
-        static member inline StartsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
-            str.StartsWith(value.AsSpan(), StringComparison.Ordinal)
 
     /// Get an initialization hole
     let getHole (r: _ ref) =
