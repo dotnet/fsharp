@@ -124,17 +124,17 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
     /// Scan a token from a line. This should only be used in cases where color information is irrelevant.
     /// Used by GetFullLineInfo (and only thus in a small workaround in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
     member ws.ScanTokenWithDetails (lexState: _ ref) =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(lexState.Value)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanTokenValue(lexState.Value)
         lexState.Value <- newLexState
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
     member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState: _ ref) =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanTokenValue(!lexState)
         lexState.Value <- newLexState
         match colorInfoOption with
-        | None -> false
-        | Some colorInfo ->
+        | ValueNone -> false
+        | ValueSome colorInfo ->
             let color = colorInfo.ColorClass
             tokenInfo.Trigger <- enum (int32 colorInfo.FSharpTokenTriggerClass) // cast one enum to another
             tokenInfo.StartIndex <- colorInfo.LeftColumn
@@ -259,10 +259,10 @@ type internal FSharpColorizer_DEPRECATED
         scanner.SetLineText lineText
         let rec tokens() =
             seq { match scanner.ScanTokenWithDetails(refState) with
-                  | Some tok ->
+                  | ValueSome tok ->
                       yield tok
                       yield! tokens()
-                  | None -> () }
+                  | ValueNone -> () }
         tokens() |> Array.ofSeq
 
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
@@ -342,8 +342,8 @@ type internal FSharpColorizer_DEPRECATED
 
         let rec searchForToken () =
             match scanner.ScanTokenWithDetails lexState with
-            |   None -> None
-            |   Some ti as result ->
+            | ValueNone -> ValueNone
+            | ValueSome ti as result ->
                 if col >= ti.LeftColumn && col <= ti.RightColumn then
                     result
                 else
