@@ -38,6 +38,7 @@
     <Compile Include="CopilotContextProviderTests.fs" />
     <Compile Include="CrossLanguageSymbolNavigationTests.fs" />
     <Compile Include="MultiTargetNavigateToSearchTests.fs" />
+    <Compile Include="FocusedCaretTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
