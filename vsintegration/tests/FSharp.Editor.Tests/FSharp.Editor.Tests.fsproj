@@ -87,6 +87,7 @@
     <Compile Include="Refactors\ExtractLetBindingTests.fs" />
     <Compile Include="Refactors\ExtractFunctionTests.fs" />
     <Compile Include="Refactors\ConvertActivePatternReturnTests.fs" />
+    <Compile Include="Refactors\ConvertOptionalParameterStructTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlayParameterNameHintTests.fs" />
