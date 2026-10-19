@@ -17,6 +17,21 @@
         <target state="translated">Siga analizando toda la solución para los diagnósticos como una tarea en segundo plano de prioridad baja (requiere un reinicio)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Annotate_parameters_always">
+        <source>Annotate every parameter</source>
+        <target state="new">Annotate every parameter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Annotate_parameters_never">
+        <source>Leave parameter types to type inference</source>
+        <target state="new">Leave parameter types to type inference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Annotate_parameters_when_needed">
+        <source>Annotate parameters whose type inference cannot determine from the extracted code</source>
+        <target state="new">Annotate parameters whose type inference cannot determine from the extracted code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
         <target state="translated">Análisis en segundo plano</target>
@@ -40,6 +55,11 @@
       <trans-unit id="Enable_partial_type_checking">
         <source>Enable partial type checking</source>
         <target state="translated">Habilitar la comprobación parcial de tipos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Extract_function_parameter_annotations">
+        <source>Parameter types in Extract to function</source>
+        <target state="new">Parameter types in Extract to function</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
