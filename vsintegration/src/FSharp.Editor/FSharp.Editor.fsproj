@@ -117,12 +117,14 @@
     <Compile Include="Snippets\SnippetFunctions.fs" />
     <Compile Include="Snippets\SnippetExpansionClient.fs" />
     <Compile Include="Snippets\SnippetCommandHandler.fs" />
+    <Compile Include="Refactor\RefactoringHelpers.fs" />
     <Compile Include="Refactor\AddReturnType.fs" />
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
     <Compile Include="Refactor\ConvertDotLambda.fs" />
     <Compile Include="Refactor\ConvertNamespaceModule.fs" />
+    <Compile Include="Refactor\ExtractLetBinding.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
