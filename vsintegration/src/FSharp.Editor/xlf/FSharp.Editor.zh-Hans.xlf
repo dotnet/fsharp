@@ -403,6 +403,11 @@ Show remarks in Quick Info</source>
         <target state="translated">使用 "nameof"</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">使用三引号字符串内插。</target>
@@ -426,6 +431,11 @@ Show remarks in Quick Info</source>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">对取消引用表达式使用 ".Value"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

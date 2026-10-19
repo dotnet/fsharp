@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="UseValueOptionForOptionalParameter" xml:space="preserve">
+    <value>Use 'voption' for optional parameter</value>
+  </data>
+  <data name="UseOptionForOptionalParameter" xml:space="preserve">
+    <value>Use 'option' for optional parameter</value>
+  </data>
 </root>
