@@ -157,6 +157,7 @@
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
+    <MessagePackVersion>2.5.303</MessagePackVersion>
     <XUnitVersion>2.9.0</XUnitVersion>
     <XUnitRunnerVersion>3.1.4</XUnitRunnerVersion>
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>

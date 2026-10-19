@@ -39,6 +39,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
+		<PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup>

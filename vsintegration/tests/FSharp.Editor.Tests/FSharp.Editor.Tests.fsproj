@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
    
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

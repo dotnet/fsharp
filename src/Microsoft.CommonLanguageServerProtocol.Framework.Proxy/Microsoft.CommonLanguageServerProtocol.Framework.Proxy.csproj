@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" PrivateAssets="all" Version="4.13.0-3.24579.1" />
+		<PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
 	</ItemGroup>
 

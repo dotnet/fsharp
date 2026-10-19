@@ -8,6 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
+		<PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
 		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />

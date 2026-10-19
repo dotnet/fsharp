@@ -13,6 +13,10 @@
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+  </ItemGroup>
+
   <!-- When building with desktop MSBuild (Full), fall back to legacy resources so the CTO merger (VSSDK) can read .resources files. -->
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' != 'Core'">
     <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>

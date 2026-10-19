@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
+		<PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
 		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
