@@ -944,6 +944,9 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
 
         CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
 
+    member _.TryGetCachedOptionsByProjectId(projectId) =
+        reactor.TryGetCachedOptionsByProjectId(projectId)
+
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
 
