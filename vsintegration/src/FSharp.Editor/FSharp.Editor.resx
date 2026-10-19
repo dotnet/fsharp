@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -378,5 +378,11 @@ Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="SurroundWith" xml:space="preserve">
     <value>Surround With</value>
+  </data>
+  <data name="ConvertToShorthandLambda" xml:space="preserve">
+    <value>Convert to '_.' shorthand lambda</value>
+  </data>
+  <data name="ConvertToFunLambda" xml:space="preserve">
+    <value>Convert to 'fun' lambda</value>
   </data>
 </root>
