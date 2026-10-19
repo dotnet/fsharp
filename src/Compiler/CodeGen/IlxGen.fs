@@ -3282,7 +3282,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             let lowering =
                 if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false expr
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap None expr
                 else
                     None
 
@@ -3297,7 +3297,6 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
                     let eenv = RemoveTemplateReplacement eenv
-                    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     GenStructStateMachine cenv cgbuf eenv res sequel
                     true
                 | LoweredStateMachineResult.UseAlternative(msg, altExpr) ->
@@ -3305,13 +3304,11 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                     // type for the internal state of any enclosing state machine, as they do not interact. This
                     // is important if the nested state machine generates dynamic code (LoweredStateMachineResult.UseAlternative).
                     let eenv = RemoveTemplateReplacement eenv
-                    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     warning (Error(FSComp.SR.reprStateMachineNotCompilable (RichText.mkText msg), expr.Range))
                     GenExpr cenv cgbuf eenv altExpr sequel
                     true
                 | LoweredStateMachineResult.NoAlternative msg ->
                     let eenv = RemoveTemplateReplacement eenv
-                    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative (RichText.mkText msg), expr.Range))
                     GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
                     true
@@ -4210,12 +4207,19 @@ and GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel =
         // Do an extra check - should not be needed
         TypeFeasiblySubsumesType 0 g cenv.amap m tgtTy NoCoerce srcTy
     then
-        if isInterfaceTy g tgtTy then
+        let preserveTaskUpcast =
+            eenv.inRuntimeAsyncMethod
+            && (match tgtTy with
+                | NonGenericSysType g (struct ([ "System"; "Threading"; "Tasks" ], "Task")) -> true
+                | _ -> false)
+
+        if isInterfaceTy g tgtTy || preserveTaskUpcast then
             GenExpr cenv cgbuf eenv e Continue
             let ilToTy = GenType cenv m eenv.tyenv tgtTy
+            let coercion = if preserveTaskUpcast then [ I_castclass ilToTy ] else []
             // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
             // is required, but we still push the coerced type on to the code gen buffer.
-            CG.EmitInstrs cgbuf (pop 1) (Push [ ilToTy ]) []
+            CG.EmitInstrs cgbuf (pop 1) (Push [ ilToTy ]) coercion
             GenSequel cenv eenv.cloc cgbuf sequel
         else
             GenExpr cenv cgbuf eenv e sequel
@@ -7179,40 +7183,16 @@ and GenSequenceExpr
             )
 
     let closeMethod =
-        let marker = TryGetRuntimeAsyncReturn g closeExpr
-
-        let body =
-            marker |> Option.map (fun info -> info.Body) |> Option.defaultValue closeExpr
-
-        let name = if marker.IsSome then "DisposeAsync" else "Close"
-
-        let methodEnv =
-            { eenvinner with
-                inRuntimeAsyncMethod = marker.IsSome
-                inInlineMethod = false
-            }
-
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, 1, None, body, discardAndReturnVoid)
-            |> fun code ->
-                { code with
-                    IsRuntimeAsync = marker.IsSome
-                }
-
-        let resultTy =
-            if marker.IsSome then
-                GenType cenv m eenvinner.tyenv (tyOfExpr g closeExpr)
-            else
-                ILType.Void
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
         mkILNonGenericVirtualInstanceMethod (
-            name,
+            "Close",
             ILMemberAccess.Public,
             [],
-            mkILReturn resultTy,
+            mkILReturn ILType.Void,
             MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
-        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let checkCloseMethod =
         let ilCode =
@@ -7233,10 +7213,22 @@ and GenSequenceExpr
 
         let marker = TryGetRuntimeAsyncReturn g generateNextExpr
 
-        let body =
-            marker
-            |> Option.map (fun info -> info.Body)
-            |> Option.defaultValue generateNextExpr
+        let eenvinner, body =
+            match marker with
+            | Some info ->
+                // Release the base class move guard before the returned task completes.
+                let selfVal, selfExpr =
+                    mkCompGenLocal m "this" (g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy)
+
+                let completeMove =
+                    let mspec =
+                        mkILNonGenericInstanceMethSpecInTy (ilCloBaseTy, "CompleteMoveNext", [], ILType.Void)
+
+                    mkAsmExpr ([ I_call(Normalcall, mspec, None) ], [], [ selfExpr ], [], m)
+
+                eenvinner |> AddStorageForLocalVals g [ (selfVal, Arg 0) ],
+                mkTryFinally g (info.Body, completeMove, m, tyOfExpr g info.Body, DebugPointAtTry.No, DebugPointAtFinally.No)
+            | None -> eenvinner, generateNextExpr
 
         let name = if marker.IsSome then "MoveNextAsync" else "GenerateNext"
 
@@ -7307,13 +7299,6 @@ and GenSequenceExpr
             getFreshMethod
         ]
 
-    let ilInterfaceTys =
-        if directRuntimeSequence then
-            AllInterfacesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes (g.mk_IAsyncEnumerator_ty seqElemTy)
-            |> List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
-        else
-            []
-
     let cloTypeDefs =
         GenClosureTypeDefs
             cenv
@@ -7326,7 +7311,7 @@ and GenSequenceExpr
              cloMethods,
              [],
              ilCloBaseTy,
-             ilInterfaceTys,
+             [],
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do

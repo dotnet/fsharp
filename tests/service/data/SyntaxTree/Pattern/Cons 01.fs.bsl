@@ -12,7 +12,8 @@ ImplFile
                         { ColonColonRange = (4,4--4,6) }), None,
                      Const (Unit, (4,12--4,14)), (4,2--4,14), Yes,
                      { ArrowRange = Some (4,9--4,11)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,14),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,14),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,9--3,13) }), (3,0--4,14));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],

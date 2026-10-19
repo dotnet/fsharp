@@ -449,6 +449,95 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData(false, "Task")>]
+[<InlineData(true, "Task")>]
+[<InlineData(false, "Task<int>")>]
+[<InlineData(true, "Task<int>")>]
+[<InlineData(false, "ValueTask")>]
+[<InlineData(true, "ValueTask")>]
+[<InlineData(false, "ValueTask<int>")>]
+[<InlineData(true, "ValueTask<int>")>]
+let ``Issue 20686 - await upcast Task`` (optimize: bool, carrier: string) =
+    let marker, value, toTask =
+        match carrier with
+        | "Task" -> "__runtimeAsyncReturnUnit", "()", ""
+        | "Task<int>" -> "__runtimeAsyncReturn", "42", ""
+        | "ValueTask" -> "__runtimeAsyncReturnValueTaskUnit", "()", ".AsTask()"
+        | "ValueTask<int>" -> "__runtimeAsyncReturnValueTask", "42", ".AsTask()"
+        | _ -> failwith $"Unexpected carrier: {carrier}"
+    FSharp $"""
+module TaskUpcasts
+
+open System
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type BaseTask = Task
+
+let inline awaitTask (work: Task) = AsyncHelpers.Await work
+
+let run input =
+    {marker} (
+        AsyncHelpers.Await(Task.FromResult input :> Task)
+        AsyncHelpers.Await((Task.FromResult input :> Task).ConfigureAwait false)
+        AsyncHelpers.Await((Task.FromResult input :> Task).ConfigureAwait true)
+        AsyncHelpers.Await(Task.FromResult input :> BaseTask)
+        awaitTask (Task.FromResult input)
+        {value})
+
+let awaitSource (source: TaskCompletionSource<int>) shape =
+    {marker} (
+        match shape with
+        | "direct" -> AsyncHelpers.Await(source.Task :> Task)
+        | "configured false" -> AsyncHelpers.Await((source.Task :> Task).ConfigureAwait false)
+        | "configured true" -> AsyncHelpers.Await((source.Task :> Task).ConfigureAwait true)
+        | _ -> failwith "Unexpected await shape"
+        {value})
+
+let wait (work: {carrier}) =
+    let result = (work{toTask}).WaitAsync(TimeSpan.FromSeconds 30.).GetAwaiter().GetResult()
+    if result <> {value} then failwith "Incorrect result"
+
+[<EntryPoint>]
+let main _ =
+    wait (run 1)
+    wait (run "result")
+    wait (run ())
+    for shape in ["direct"; "configured false"; "configured true"] do
+        for outcome in ["success"; "fault"; "cancel"] do
+            let source = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+            let work = awaitSource source shape
+            if work.IsCompleted then failwith "Expected suspension"
+            match outcome with
+            | "success" ->
+                source.SetResult 1
+                wait work
+            | "fault" ->
+                let failure = InvalidOperationException("await failed")
+                source.SetException failure
+                try
+                    wait work
+                    failwith "Expected fault"
+                with :? InvalidOperationException as observed when Object.ReferenceEquals(failure, observed) -> ()
+            | "cancel" ->
+                let token = CancellationToken(true)
+                source.SetCanceled token
+                try
+                    wait work
+                    failwith "Expected cancellation"
+                with :? OperationCanceledException as observed when observed.CancellationToken = token -> ()
+            | _ -> failwith "Unexpected outcome"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
 [<Fact>]
 let ``runtime async supports inlining of a lambda`` () =
     FSharp """
@@ -930,28 +1019,32 @@ let ``runtime async specializes nested inline suspensions without optimization``
     |> compile
     |> verifyILContains [ "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)" ]
 
+let runtimeAsyncFixture name =
+    Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", name)
+
+/// The sample async2, runtimeTask and asyncSeq2 builders, followed by the given fixture sources.
+let withSampleBuilders sources =
+    FsFromPath (runtimeAsyncFixture "Async2Builder.fs")
+    |> withAdditionalSourceFiles (
+        [ "RuntimeTaskBuilder.fs"; "AsyncSeq2Builder.fs" ] @ sources
+        |> List.map (runtimeAsyncFixture >> SourceFromPath)
+    )
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
 let ``runtime task builder fixture executes through runtime async`` (optimize: bool) =
-    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-    |> withAdditionalSourceFile (
-        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasks.fs"))
-    )
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
+    withSampleBuilders [ "RuntimeTasks.fs" ]
+    |> withAdditionalSourceFile (FsSource "RuntimeTasks.runAllTests () |> exit")
     |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 
 [<Fact>]
 let ``runtime task AsyncLocal values propagate through runtime async`` () =
-    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-    |> withAdditionalSourceFile (
-        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncAsyncLocal.fs"))
-    )
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
+    withSampleBuilders [ "RuntimeAsyncAsyncLocal.fs" ]
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -979,59 +1072,56 @@ let ``runtime async low level async enumerable fixture executes`` (optimize: boo
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async sequence builder fixture executes`` (optimize: bool) =
+    withSampleBuilders [ "EnumerableTests.fs" ]
+    |> withAdditionalSourceFile (FsSource "EnumerableTests.runTests().Result |> exit")
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
-    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-    |> withAdditionalSourceFile (
-        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs"))
-    )
-    |> withAdditionalSourceFile (
-        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerableTests.fs"))
-    )
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
+    withSampleBuilders [ "RuntimeAsyncEnumerableTests.fs" ]
     |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 
 [<Fact>]
-let ``runtime async enumerable CE debug points stay at call sites`` () =
+let ``runtime async sequence CE debug points stay at call sites`` () =
     let source =
-        """module RuntimeAsyncEnumerableDebug
+        """module RuntimeAsyncSequenceDebug
 open System.Threading.Tasks
-open RuntimeAsyncEnumerable
+open Microsoft.FSharp.Control
 
 let first () =
-    asyncSeq {
+    asyncSeq2 {
         do! Task.Delay 1
         yield 1
     }
 
 let second () =
-    asyncSeq {
+    asyncSeq2 {
         do! Task.Delay 1
         yield 2
     }
 """
 
-    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-    |> withAdditionalSourceFile (
-        SourceFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncEnumerable.fs"))
-    )
-    |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncEnumerableDebug.fs" source)
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
+    withSampleBuilders []
+    |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncSequenceDebug.fs" source)
     |> withPortablePdb
     |> withNoOptimize
     |> compile
     |> shouldSucceed
     |> verifyPdb [
-        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncEnumerableDebug.fs", 6, 8)
-        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncEnumerableDebug.fs", 12, 14)
+        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncSequenceDebug.fs", 6, 8)
+        VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncSequenceDebug.fs", 12, 14)
     ]
 
 [<Fact>]
 let ``runtime async suspension in exception region executes`` () =
-    Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")
+    runtimeAsyncFixture "RuntimeTasksAsyncDisposalException.fs"
     |> FsFromPath
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
