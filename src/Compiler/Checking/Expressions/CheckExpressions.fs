@@ -11751,6 +11751,25 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
+        // The parameters of a function binding are the binders of its outer lambda chain
+        let parameterCandidates () =
+            let candidates = ImmutableArrayBuilder.create 4
+
+            let rec addBinders expr =
+                match stripDebugPoints expr with
+                | Expr.Lambda (_, _, _, vs, body, _, _) ->
+                    for v in vs do
+                        if not (v.IsMemberThisVal || v.IsCtorThisVal || v.IsCompilerGenerated) then
+                            candidates.Add(struct (v.LogicalName, Item.Value(mkLocalValRef v)))
+
+                    addBinders body
+                | _ -> ()
+
+            addBinders rhsExprChecked
+            candidates.ToImmutable()
+
+        ReportXmlDocRefUses cenv.tcSink xmlDoc parameterCandidates (fun () -> XmlDocTyparCandidates declaredTypars)
+
         match apinfoOpt with
         | Some (apinfo, apOverallTy, m) ->
             let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
@@ -13654,9 +13673,14 @@ let private PublishArguments (cenv: cenv) (env: TcEnv) vspec (synValSig: SynValS
         |> Seq.collect (fun x -> x ||> Seq.zip)
         |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
 
+    let parameters = ImmutableArrayBuilder.create 4
+
     for (argTy, argReprInfo), ident in argData do
         let item = Item.OtherName (Some ident, argTy, Some argReprInfo, None, ident.idRange)
         CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
+        parameters.Add(struct (ident.idText, item))
+
+    parameters.ToImmutable()
 
 let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind : DeclKind, memFlagsOpt, tpenv, synValSig) =
 
@@ -13745,7 +13769,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, isGeneratedEventVal)
 
-        PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
+        let parameters = PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
+        ReportXmlDocRefUses cenv.tcSink xmlDoc (fun () -> parameters) (fun () -> XmlDocTyparCandidates allDeclaredTypars)
 
         assert(vspec.InlineInfo = inlineFlag)
 

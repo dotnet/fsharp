@@ -244,3 +244,36 @@ module FindReferences =
         // Should find 1 reference (the call site) - the identifier "get" must NOT be filtered
         if foundReferences.Count <> 1 then
             failwith $"Expected 1 reference but found {foundReferences.Count}"
+
+    /// The `<param>` tag of a parameter is for Rename and highlighting, not a reference to list.
+    [<Fact>]
+    let ``Find references does not list the param tag of a parameter`` () =
+
+        let project =
+            SyntheticProject.Create(
+                { sourceFile "First" [] with
+                    SignatureFile = No
+                    ExtraSource =
+                        "/// <param name=\"funcParam\">The input.</param>\n"
+                        + "let documented funcParam = funcParam * 1\n"
+                }
+            )
+
+        let solution, _ = RoslynTestHelpers.CreateSolution project
+
+        let context, foundDefinitions, foundReferences = getContext ()
+
+        let documentPath = project.GetFilePath "First"
+
+        let document =
+            solution.TryGetDocumentFromPath documentPath
+            |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
+
+        findUsagesService.FindReferencesAsync(document, getPositionOf "funcParam =" documentPath, context).Wait()
+
+        if foundDefinitions.Count <> 1 then
+            failwith $"Expected 1 definition but found {foundDefinitions.Count}"
+
+        // The use in the body only; the `<param>` tag stays out
+        if foundReferences.Count <> 1 then
+            failwith $"Expected 1 reference but found {foundReferences.Count}"

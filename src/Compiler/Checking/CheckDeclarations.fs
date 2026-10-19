@@ -597,6 +597,22 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
+
+        match parent with
+        | Parent tcref ->
+            let fieldCandidates () =
+                let candidates = ImmutableArrayBuilder.create rfields.Length
+
+                rfields
+                |> List.iteri (fun i f ->
+                    if not f.rfield_name_generated then
+                        candidates.Add(struct (f.LogicalName, Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i))))
+
+                candidates.ToImmutable()
+
+            ReportXmlDocRefUses cenv.tcSink xmlDoc fieldCandidates (fun () -> ImmutableArray.empty)
+        | ParentNone -> ()
+
         let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
@@ -2927,6 +2943,7 @@ module EstablishTypeDefinitionCores =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames )
+        ReportXmlDocRefUses cenv.tcSink xmlDoc (fun () -> ImmutableArray.empty) (fun () -> XmlDocTyparCandidates checkedTypars)
         Construct.NewTycon
             (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)

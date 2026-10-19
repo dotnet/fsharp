@@ -1829,7 +1829,7 @@ module RecordSpreads =
 type R1 = { A : int; B : int }
 type R2 = { ...R1; C : int }
 """
-        let items = checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        let items = checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.AllInCode)
         let badItems =
             items
             |> Array.filter (fun i ->
