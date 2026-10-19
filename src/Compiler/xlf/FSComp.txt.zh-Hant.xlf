@@ -322,11 +322,6 @@
         <target state="translated">布爾值傳回和傳回類型導向的部分現用模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">允許宣告類型、模組上的隱含擴充屬性</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果 'TailCall' 屬性用於非遞迴函數，則引發警告。</target>
