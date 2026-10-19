@@ -94,7 +94,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
                     let symbolUses =
                         checkFileResults.GetUsesOfSymbolInFile(
                             symbolUse.Symbol,
-                            relatedSymbolKinds = FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind.All,
+                            relatedSymbolKinds = FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind.AllInCode,
                             cancellationToken = ct
                         )
 

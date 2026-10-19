@@ -291,7 +291,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             // remembering that would pin the version to no colours.
             | ValueSome(struct (_, checkResults)) when checkResults.HasFullTypeCheckInfo ->
                 let classificationData =
-                    checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+                    checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.AllInCode)
 
                 // A checked file can have nothing to classify - `namespace global` over declarations
                 // an inactive #if hides - and that is the answer for this version.

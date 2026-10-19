@@ -344,11 +344,11 @@ type BoundModel private (
                             builder.Write(cnr.Range, cnr.Item))
 
                     sResolutions.CapturedRelatedSymbolUses
-                    |> Seq.iter (fun (m, item, _kind) ->
+                    |> Seq.iter (fun struct (m, item, _kind) ->
                         if not m.IsSynthetic then
                             builder.Write(m, item))
 
-                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)
+                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.AllInCode)
 
                     let sckBuilder = SemanticClassificationKeyStoreBuilder()
                     sckBuilder.WriteAll semanticClassification
