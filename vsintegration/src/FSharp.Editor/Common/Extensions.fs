@@ -309,6 +309,15 @@ type SourceText with
             let line = this.Lines[i]
             text.AsMemory(line.Start, line.End - line.Start))
 
+    member this.LineBreakAt(position: int) =
+        let rec lineBreakOf (line: TextLine) =
+            match this.ToString(TextSpan(line.End, line.EndIncludingLineBreak - line.End)) with
+            | "" when line.LineNumber > 0 -> lineBreakOf this.Lines[line.LineNumber - 1]
+            | "" -> Environment.NewLine
+            | lineBreak -> lineBreak
+
+        lineBreakOf (this.Lines.GetLineFromPosition position)
+
 type NavigationItem with
 
     member x.RoslynGlyph: FSharpRoslynGlyph =
