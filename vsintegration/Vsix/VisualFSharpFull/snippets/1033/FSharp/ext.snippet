@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>ext</Title>
+      <Shortcut>ext</Shortcut>
+      <Description>Code snippet for a type extension</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>type</ID>
+          <ToolTip>Type to extend</ToolTip>
+          <Default>System.String</Default>
+        </Literal>
+        <Literal>
+          <ID>member</ID>
+          <ToolTip>Member name</ToolTip>
+          <Default>Member</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[type $type$ with
+    member this.$member$() =
+        $end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

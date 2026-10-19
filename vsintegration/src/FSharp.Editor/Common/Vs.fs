@@ -97,6 +97,14 @@ module internal ServiceProviderExtensions =
 
         member sp.TextManager = sp.GetService<SVsTextManager, IVsTextManager>()
 
+        member sp.ExpansionManager =
+            match sp.GetService<SVsTextManager, IVsTextManager2>() with
+            | null -> null
+            | textManager ->
+                match textManager.GetExpansionManager() with
+                | hr, expansionManager when Com.Succeeded hr -> expansionManager
+                | _ -> null
+
         member sp.RunningDocumentTable =
             sp.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
 
