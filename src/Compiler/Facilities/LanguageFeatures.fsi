@@ -11,7 +11,6 @@ type LanguageFeature =
     | WitnessPassing
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | CSharpExtensionAttributeNotRequired
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
