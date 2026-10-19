@@ -87,6 +87,7 @@
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
     <Compile Include="TokenizerCacheConcurrencyTests.fs" />
+    <Compile Include="ProjectOptionsReactorTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
