@@ -20,7 +20,6 @@ type LanguageFeature =
     | RuntimeAsync
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | CSharpExtensionAttributeNotRequired
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     | PreferExtensionMethodOverPlainProperty
@@ -106,9 +105,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let features =
         dict
             [
-                // F# 8.0
-                LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
-
                 // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
                 LanguageFeature.ReuseSameFieldsInStructUnions, languageVersion90
@@ -262,7 +258,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
-        | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()

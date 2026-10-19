@@ -1385,10 +1385,6 @@ let main _ =
         |> ignore
 
     [<Fact>]
-    // NOTE: With langversion 8.0 and the CSharpExtensionAttributeNotRequired feature,
-    // extension methods with [<Extension>] attribute on the method (but not the type)
-    // are treated as true C# extension methods and are NOT accessible via open type.
-    // This is the correct behavior - they should be used as extension methods, not static calls.
     let ``Opened types do allow unqualified access to C#-style extension methods if type has no [<Extension>] attribute`` () =
         FSharp """
 open System.Runtime.CompilerServices

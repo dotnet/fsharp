@@ -10,7 +10,6 @@ type LanguageFeature =
     | RuntimeAsync
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | CSharpExtensionAttributeNotRequired
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
