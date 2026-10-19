@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
@@ -40,10 +41,18 @@ type TokenizerCacheConcurrencyTests() =
             |]
         )
 
-    // Dropping every `*)` leaves the first block comment open to the end of the file: the lines keep
-    // their text and hash but change lex state, which is what drives cached entries out of the cache.
+    // Blanking every `*)` leaves the first block comment open to the end of the file. Every line keeps its
+    // position, and all but the blanked ones their text, so only the lex state tells the two texts apart.
+    // The edit is applied as an editor would, so the commented text knows what changed.
     let sourceText = SourceText.From source
-    let commentedText = SourceText.From(source.Replace(" *)", ""))
+
+    let commentedText =
+        let rec closings from =
+            match source.IndexOf(" *)", from, StringComparison.Ordinal) with
+            | -1 -> []
+            | at -> TextChange(TextSpan(at, 3), "   ") :: closings (at + 3)
+
+        sourceText.WithChanges(closings 0)
 
     let newDocumentId () =
         DocumentId.CreateNewId(ProjectId.CreateNewId())
@@ -117,6 +126,58 @@ type TokenizerCacheConcurrencyTests() =
 
         let diverged = String.concat Environment.NewLine failures
         Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+
+    [<Fact>]
+    member _.``A line below an edit that kept it in place is not classified with its old lex state``() =
+        let documentId = newDocumentId ()
+        let lastLine = sourceText.Lines.Count - 1
+
+        classify documentId sourceText (lineSpan sourceText 0 lastLine) |> ignore
+
+        let expected = (scanEveryLine commentedText).[lastLine]
+
+        let actual =
+            classify documentId commentedText (lineSpan commentedText lastLine lastLine)
+
+        Assert.Equal<(string * TextSpan)[]>(expected, actual)
+
+    /// Scans a text under the given defines and then deletes all of it, as emptying a large file does.
+    /// A frame of its own: once it returns, the test holds the deleted text only weakly.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member private ScanThenDeleteEverything(scan: string list -> SourceText -> unit, defines: string list) =
+        let deleted = SourceText.From("let x = 1\n" + String(' ', 1 <<< 20))
+        scan defines deleted
+
+        struct (WeakReference deleted, deleted.WithChanges(TextChange(TextSpan(0, deleted.Length), "let z = 0")))
+
+    // Each define set of a document has a cache of its own, and one the project no longer uses stays for
+    // as long as the document is scanned under another. It must not keep the text it last saw alive.
+    [<Fact>]
+    member _.``The cache of a define set no longer scanned does not keep its last text alive``() =
+        let documentId = newDocumentId ()
+
+        let scan defines (text: SourceText) =
+            Tokenizer.classifySpans (
+                documentId,
+                text,
+                lineSpan text 0 0,
+                Some fileName,
+                defines,
+                langVersion,
+                ResizeArray(),
+                CancellationToken.None
+            )
+
+        let struct (deleted, remaining) =
+            TokenizerCacheConcurrencyTests.ScanThenDeleteEverything(scan, [ "OLD" ])
+
+        scan [ "NEW" ] remaining
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
+        GC.Collect()
+
+        Assert.False(deleted.IsAlive, "The cache of the abandoned define set still holds the deleted text.")
+        GC.KeepAlive remaining
 
     [<Fact>]
     member _.``Concurrent reads of two versions of a document keep invalidating the cache correctly``() =
