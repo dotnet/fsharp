@@ -141,6 +141,15 @@
       <Private>True</Private>
     </ProjectReference>
 
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Interactive.Window\FSharp.Interactive.Window.fsproj">
+      <Name>FSharp.Interactive.Window</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <Ngen>true</Ngen>
+      <NgenPriority>2</NgenPriority>
+      <Private>True</Private>
+    </ProjectReference>
+
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj">
       <Project>{c4586a06-1402-48bc-8e35-a1b8642f895b}</Project>
       <Name>FSharp.UIResources</Name>
