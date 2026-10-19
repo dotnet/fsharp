@@ -2,6 +2,8 @@
 
 namespace FSharp.Editor.Tests
 
+open System
+open System.Threading
 open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -9,8 +11,8 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Editor.Tests.Helpers
+open FSharp.Test.ProjectGeneration
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
-open System.Threading
 
 module GoToDefinitionServiceTests =
 
@@ -149,3 +151,216 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let expected = Some(3, 3, 20, 34)
 
         GoToDefinitionTest(fileContents, caretMarker, expected)
+
+    let private symbolUseAt (document: Document) (sourceText: SourceText) position =
+        maybe {
+            let textLine = sourceText.Lines.GetLineFromPosition position
+            let fcsTextLineNumber = Line.fromZ (sourceText.Lines.GetLinePosition position).Line
+
+            let! lexerSymbol =
+                Tokenizer.getSymbolAtPosition (
+                    document.Id,
+                    sourceText,
+                    position,
+                    document.FilePath,
+                    [],
+                    SymbolLookupKind.Greedy,
+                    false,
+                    false,
+                    None,
+                    CancellationToken.None
+                )
+
+            let _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync userOpName
+                |> CancellableTask.runSynchronouslyWithoutCancellation
+
+            return!
+                checkFileResults.GetSymbolUseAtLocation(
+                    fcsTextLineNumber,
+                    lexerSymbol.Ident.idRange.EndColumn,
+                    textLine.ToString(),
+                    lexerSymbol.FullIsland
+                )
+        }
+
+    /// An app project referencing a library project. The app document comes from a snapshot that
+    /// predates the library's document, the way Roslyn hands out documents while a solution is
+    /// still loading, while the workspace's current solution already has it. The app document also
+    /// holds an edit of its buffer that the workspace has not seen.
+    module internal StaleSnapshot =
+
+        let library = SyntheticProject.Create("Library", sourceFile "Library" [])
+
+        let app =
+            { SyntheticProject.Create(
+                  "App",
+                  { sourceFile "App" [ "Library" ] with
+                      ExtraSource = "let mapped = List.map id [ 1 ]\nlet again = ModuleLibrary.f 2"
+                  }
+              ) with
+                DependsOn = [ library ]
+            }
+
+        let struct (solution, _) = RoslynTestHelpers.CreateMultiProjectSolution app
+        let appPath = app.GetFilePath "App"
+        let libraryPath = library.GetFilePath "Library"
+        let unsavedEdit = "// not saved yet"
+
+        let private documentId path =
+            solution.GetDocumentIdsWithFilePath path |> Seq.exactlyOne
+
+        /// The app document of the stale snapshot, holding the text `edit` makes of the saved one.
+        let appDocumentWith (edit: string -> string) =
+            let appId = documentId appPath
+
+            let savedText =
+                solution.GetDocument(appId).GetTextAsync(CancellationToken.None).Result.ToString()
+
+            solution.RemoveDocument(documentId libraryPath).WithDocumentText(appId, SourceText.From(edit savedText)).GetDocument(appId)
+
+        let appDocument =
+            appDocumentWith (fun saved -> $"{saved}{Environment.NewLine}{unsavedEdit}")
+
+        let appSourceText = appDocument.GetTextAsync(CancellationToken.None).Result
+
+        /// The position of the last character of the text, inside the identifier it ends with.
+        let positionOf (text: string) =
+            appSourceText.ToString().IndexOf(text, StringComparison.Ordinal) + text.Length
+            - 1
+
+        let findDefinitionAt position =
+            GoToDefinition(FSharpMetadataAsSourceService()).FindDefinitionAtPosition(appDocument, position)
+            |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    [<Fact>]
+    let ``goto definition finds the target document through the workspace when the origin snapshot predates it`` () =
+        let position = StaleSnapshot.positionOf "ModuleLibrary.f"
+        let document = StaleSnapshot.appDocument
+
+        let range =
+            findDefinition (document, StaleSnapshot.appSourceText, position, [], None)
+            |> Option.defaultWith (fun () -> failwith "declaration not found")
+
+        Assert.Equal(StaleSnapshot.libraryPath, range.FileName)
+        Assert.True(Option.isNone (document.Project.Solution.TryGetDocumentFromFSharpRange(range, document.Project.Id)))
+
+        match document.TryGetSolutionDocumentFromFSharpRange range with
+        | ValueSome target -> Assert.Equal(StaleSnapshot.libraryPath, target.FilePath)
+        | ValueNone -> failwith "the workspace's current solution has the library document"
+
+        match StaleSnapshot.findDefinitionAt position with
+        | ValueSome(FSharpGoToDefinitionResult.NavigableItem item, _) -> Assert.Equal(StaleSnapshot.libraryPath, item.Document.FilePath)
+        | result -> failwith $"expected a navigable item, got %A{result}"
+
+    [<Fact>]
+    let ``goto definition treats a symbol whose file is in no solution as external`` () =
+        match StaleSnapshot.findDefinitionAt (StaleSnapshot.positionOf "List.map") with
+        | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly _, _) -> ()
+        | result -> failwith $"expected an external assembly, got %A{result}"
+
+    [<Fact>]
+    let ``find references scope includes the declaring project the origin snapshot does not know`` () =
+        let position = StaleSnapshot.positionOf "ModuleLibrary.f"
+
+        let symbolUse =
+            symbolUseAt StaleSnapshot.appDocument StaleSnapshot.appSourceText position
+            |> Option.defaultWith (fun () -> failwith "symbol not found")
+
+        match symbolUse.GetSymbolScope StaleSnapshot.appDocument with
+        | Some(SymbolScope.Projects(projects, _)) -> Assert.Contains(StaleSnapshot.library.Name, projects |> List.map _.Name)
+        | scope -> failwith $"expected a project scope, got %A{scope}"
+
+    [<Theory>]
+    [<InlineData("", "")>]
+    [<InlineData("", "\n// not saved yet")>]
+    [<InlineData("(* x *) ", "")>]
+    let ``rename from a snapshot that predates the declaring document edits the documents of that snapshot``
+        (insertedBeforeUse: string, appended: string)
+        =
+        let useOfF = "ModuleLibrary.f"
+
+        let document =
+            StaleSnapshot.appDocumentWith (fun saved -> saved.Replace($"= {useOfF}", $"= {insertedBeforeUse}{useOfF}") + appended)
+
+        let snapshot = document.Project.Solution
+
+        let originText = document.GetTextAsync(CancellationToken.None).Result.ToString()
+
+        let position =
+            originText.LastIndexOf(useOfF, StringComparison.Ordinal) + useOfF.Length - 1
+
+        let renameInfo =
+            InlineRenameService().GetRenameInfoAsync(document, position, CancellationToken.None).Result
+
+        Assert.NotNull renameInfo
+
+        let locations =
+            renameInfo.FindRenameLocationsAsync(false, false, CancellationToken.None).Result
+
+        Assert.Equal(2, locations.Locations.Count)
+
+        Assert.All(
+            locations.Locations,
+            (fun location ->
+                Assert.Same(snapshot, location.Document.Project.Solution)
+                Assert.Equal("f", location.Document.GetTextAsync(CancellationToken.None).Result.ToString location.TextSpan))
+        )
+
+        let newSolution =
+            locations.GetReplacementsAsync("g", CancellationToken.None).Result.NewSolution
+
+        // What Roslyn's rename session commits: the documents changed against the solution it started from.
+        let changedDocuments =
+            newSolution.GetChanges(snapshot).GetProjectChanges()
+            |> Seq.collect _.GetChangedDocuments()
+            |> Seq.toList
+
+        Assert.Equal<DocumentId list>([ document.Id ], changedDocuments)
+
+        let renamedText =
+            newSolution.GetDocument(document.Id).GetTextAsync(CancellationToken.None).Result.ToString()
+
+        Assert.Equal(originText.Replace(useOfF, "ModuleLibrary.g"), renamedText)
+
+    [<Fact>]
+    let ``goto definition from a signature reaches the implementation its own target instance compiles`` () =
+        let project =
+            SyntheticProject.Create(
+                "MultiTarget",
+                { sourceFile "A" [] with
+                    Source = "#if NET\nlet onlyOnNet = 1\n#endif"
+                    SignatureFile = SignatureFile.Custom "#if NET\nval onlyOnNet: int\n#endif"
+                }
+            )
+
+        let struct (solution, instances) =
+            RoslynTestHelpers.CreateMultiTargetSolution(
+                project,
+                [
+                    { Defines = []; ExcludedFileIds = [] }
+                    {
+                        Defines = [ "NET" ]
+                        ExcludedFileIds = []
+                    }
+                ]
+            )
+
+        let netInstance = solution.GetProject(List.last instances)
+
+        let signature =
+            netInstance.Documents
+            |> Seq.find (fun document -> document.FilePath = project.GetSignatureFilePath "A")
+
+        let position =
+            signature.GetTextAsync(CancellationToken.None).Result.ToString().IndexOf("onlyOnNet", StringComparison.Ordinal)
+
+        let result =
+            GoToDefinition(FSharpMetadataAsSourceService()).FindDefinitionAtPosition(signature, position)
+            |> CancellableTask.runSynchronouslyWithoutCancellation
+
+        match result with
+        | ValueSome(FSharpGoToDefinitionResult.NavigableItem item, _) ->
+            Assert.Equal(project.GetFilePath "A", item.Document.FilePath)
+            Assert.Equal(netInstance.Id, item.Document.Project.Id)
+        | result -> failwith $"expected the implementation, got %A{result}"
