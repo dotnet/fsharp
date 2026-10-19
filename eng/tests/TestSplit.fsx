@@ -75,6 +75,7 @@ let excludedPrefixes =
 let excludedProjects =
     [ "tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj"  // shared test utility library, not a test project
       "tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj"  // LSP tests, run in a dedicated CI job
+      "tests/FSharp.Build.UnitTests/resources/EmbeddedText/Runtime.fsproj"  // executable fixture built by ResourceTests
     ]
 
 // ── validation mode ──

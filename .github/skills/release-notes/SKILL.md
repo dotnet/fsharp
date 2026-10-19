@@ -1,9 +1,16 @@
 ---
 name: release-notes
-description: Write release notes for completed changes. Use when PR modifies tracked paths and needs release notes entry.
+description: Write per-PR changelog entries for completed F# changes, or draft and review F# release announcements and articles for .NET preview, RC, and stable milestones.
 ---
 
 # Release Notes
+
+## Choose the task
+
+- **Per-PR changelog entry:** Use the rules below when a PR changes tracked paths.
+- **Milestone announcement:** Read [F# release announcements](references/release-announcements.md) before drafting or reviewing a .NET/F# release article.
+
+The announcement workflow does not replace the per-PR helper or CI check.
 
 ## Version
 From GitHub repo variable `VNEXT` (e.g., `10.0.300`)
