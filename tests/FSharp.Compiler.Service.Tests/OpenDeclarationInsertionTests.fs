@@ -7,16 +7,10 @@ open FSharp.Compiler.Service.Tests.Common
 /// Computes the position an `open` would be inserted at, mirroring the real editor consumer
 /// (RoslynHelpers.insertContext): `FindNearestPointToInsertOpenDeclaration` followed by
 /// `AdjustInsertionPoint`. Asserting on the adjusted position is what the user actually sees.
-let private findOpenInsertion (insertionPoint: OpenStatementInsertionPoint) (fileName: string) (source: string) (entity: string) =
+let private findOpenInsertionAt currentLine insertionPoint fileName (source: string) (entity: string) =
     let parseTree = parseSourceCode (fileName, source)
 
     let lines = source.Replace("\r\n", "\n").Split('\n')
-
-    let currentLine =
-        let mutable i = lines.Length - 1
-        while i > 0 && System.String.IsNullOrWhiteSpace(lines.[i]) do
-            i <- i - 1
-        i + 1
 
     let idents = entity.Split('.')
 
@@ -28,6 +22,9 @@ let private findOpenInsertion (insertionPoint: OpenStatementInsertionPoint) (fil
 
     let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
     pos.Line, pos.Column
+
+let private findOpenInsertion insertionPoint fileName (source: string) entity =
+    findOpenInsertionAt (source.TrimEnd().Split('\n').Length) insertionPoint fileName source entity
 
 let private findOpenInsertionLine fileName source entity =
     findOpenInsertion OpenStatementInsertionPoint.TopLevel fileName source entity |> fst
@@ -116,8 +113,40 @@ let ``Open not forced above named module in fsx`` () =
 let x = System.IO.File.ReadAllText "a"
 """
     let line = findOpenInsertionLine "test.fsx" source "System.IO"
-    // Below the `module Foo` header (line 1), inside the module.
-    Assert.Equal(2, line)
+    Assert.Equal(3, line)
+
+[<Theory>]
+[<InlineData("""[<AutoOpen>] module Foo
+
+let x = System.IO.File.ReadAllText "a"
+""", 3)>]
+[<InlineData("""module Foo
+let x = System.IO.File.ReadAllText "a"
+""", 2)>]
+[<InlineData("""namespace Ns
+type T() =
+    member _.M() = System.IO.File.ReadAllText "a"
+""", 2)>]
+let ``Open goes below the header of a module or namespace, with or without a blank line`` (source: string, expectedLine: int) =
+    Assert.Equal(expectedLine, findOpenInsertionLine "test.fs" source "System.IO")
+
+[<Fact>]
+let ``Open placed at the first declaration of a nested module declared on one line`` () =
+    let source = """module Top
+
+module M = let x = System.IO.File.ReadAllText "a"
+"""
+    let pos = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
+    Assert.Equal((3, 11), pos)
+
+[<Theory>]
+[<InlineData("module M = let y = 1", 2)>]
+[<InlineData("[<Obsolete>] module M = let y = 1", 2)>]
+[<InlineData("[<Obsolete>] module M = let y = 1", 3)>]
+let ``Open stays out of a nested module declared on one line that the use is not in`` (nestedModule: string, useLine: int) =
+    let source = $"module Top\nlet x = Console.WriteLine 42\n{nestedModule}\n"
+    let pos = findOpenInsertionAt useLine OpenStatementInsertionPoint.Nearest "test.fs" source "System"
+    Assert.Equal((2, 0), pos)
 
 [<Fact>]  // Only #r/#load drive placement; other directives (#time/#help/#I/...) must not
 let ``Non reference directive does not drive placement in fsx`` () =
