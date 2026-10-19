@@ -1,0 +1,111 @@
+name: Build failure workflow test notifications
+
+on:
+  workflow_run:
+    workflows: [Build failure workflow tests]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: build-failure-analysis-test-notifications
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: >-
+      github.repository == 'dotnet/fsharp' &&
+      contains(fromJSON('["failure","timed_out","startup_failure"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      # workflow_run uses the default-branch script, never failed PR code/artifacts.
+      - name: Notify the PR author or repository owners
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            if (run.path !== ".github/workflows/build-failure-analysis-tests.yml" ||
+                !Number.isSafeInteger(run.id) || run.id < 1 ||
+                !Number.isSafeInteger(run.run_attempt) || run.run_attempt < 1 ||
+                !/^[a-f0-9]{40}$/.test(run.head_sha)) {
+              throw new Error("Unexpected regression workflow or run identity.");
+            }
+            const {data: current} = await github.rest.actions.getWorkflowRun({
+              ...context.repo, run_id: run.id,
+            });
+            if (current.run_attempt !== run.run_attempt || current.status !== "completed" ||
+                current.conclusion !== run.conclusion) {
+              core.notice("Skipping a regression attempt superseded by a rerun.");
+              return;
+            }
+            const marker = "<!-- build-failure-analysis-test-failure -->";
+            const owner = "@dotnet/fsharp-team-msft";
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${run.id}`;
+            const body = `${marker}\n### Build-failure workflow regression\n\n` +
+              `[Regression run](${url}) failed (\`${run.conclusion}\`) at \`${run.head_sha}\`.\n\n` +
+              `${owner} owns triage under CODEOWNERS. Inspect the failed step, reproduce with ` +
+              "`python3 -m unittest discover -s .github/workflows/tests -v` and the pinned " +
+              "`gh aw compile build-failure-analysis build-failure-analysis-command --strict --validate`. " +
+              "Repair or revert the breaking change; do not disable the check or dismiss a reproducible failure as unrelated.";
+            const isReport = item => item.user?.login === "github-actions[bot]" &&
+              item.user?.type === "Bot" && item.body?.includes(marker);
+            if (run.event === "pull_request") {
+              const associated = run.pull_requests.length ? run.pull_requests :
+                await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
+                  ...context.repo, commit_sha: run.head_sha, per_page: 100,
+                });
+              if (associated.length > 10) {
+                throw new Error("Too many PRs associated with the failed regression run.");
+              }
+              for (const candidate of associated) {
+                const {data: pr} = await github.rest.pulls.get({
+                  ...context.repo, pull_number: candidate.number,
+                });
+                if (pr.state !== "open" || pr.head.sha !== run.head_sha ||
+                    pr.base.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                  core.info(`Skipping stale or unrelated PR #${pr.number}.`);
+                  continue;
+                }
+                if (!/^[a-z0-9-]+$/i.test(pr.user.login)) {
+                  throw new Error("Invalid PR author identity.");
+                }
+                const comments = await github.paginate(github.rest.issues.listComments, {
+                  ...context.repo, issue_number: pr.number, per_page: 100,
+                });
+                const report = comments.find(isReport);
+                const prBody = `${body}\n\n@${pr.user.login}: as PR author, fix this before merge; ` +
+                  "the owners can help with shared tooling or infrastructure failures.";
+                if (report) {
+                  if (report.body !== prBody) {
+                    await github.rest.issues.updateComment({...context.repo, comment_id: report.id, body: prBody});
+                  }
+                } else {
+                  await github.rest.issues.createComment({...context.repo, issue_number: pr.number, body: prBody});
+                }
+              }
+              if (associated.length) {
+                return;
+              }
+              core.warning("GitHub supplied no associated PR; escalating the run to repository owners.");
+            } else if (!["push", "schedule", "workflow_dispatch"].includes(run.event) ||
+                       run.head_branch !== context.payload.repository.default_branch) {
+              core.notice("Ignoring a regression run outside the default branch.");
+              return;
+            }
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo, state: "open", creator: "github-actions[bot]", per_page: 100,
+            });
+            const report = issues.find(item => !item.pull_request && isReport(item));
+            if (report) {
+              await github.rest.issues.update({...context.repo, issue_number: report.number, body});
+            } else {
+              await github.rest.issues.create({
+                ...context.repo, title: "Build-failure workflow regressions need owner triage", body,
+              });
+            }
