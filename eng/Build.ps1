@@ -549,9 +549,8 @@ try {
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
-    $nativeTools = InitializeNativeTools
-
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $nativeTools = InitializeNativeTools
         $env:PERL5Path = Join-Path $nativeTools "perl\5.38.2.2\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
         $nativeTools
@@ -569,8 +568,16 @@ try {
             $perlInstallerPath = Join-Path $PSScriptRoot "common\native\install-tool.ps1"
             $perlEngCommonBaseDir = Join-Path $PSScriptRoot "common\native\"
             & $perlInstallerPath -ToolName "perl" -InstallPath $perlInstallBin -BaseUri "https://netcorenativeassets.blob.core.windows.net/resource-packages/external" -CommonLibraryDirectory $perlEngCommonBaseDir -Version "5.38.2.2"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Perl installation failed with exit code $LASTEXITCODE."
+            }
             $env:PERL5Path = Join-Path $ToolsDir "bin\perl\5.38.2.2\perl\bin\perl.exe"
+            if (-not (Test-Path $env:PERL5Path)) {
+                throw "Perl installation did not produce $env:PERL5Path."
+            }
+            $env:PATH = "$(Split-Path $env:PERL5Path);$env:PATH"
         }
+        $nativeTools = InitializeNativeTools
         write-host "variable:NativeToolsOnMachine = true"
         write-host "Path = $env:PERL5Path"
     }
