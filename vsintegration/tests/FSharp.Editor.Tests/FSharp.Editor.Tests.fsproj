@@ -89,6 +89,7 @@
     <Compile Include="Refactors\ConvertActivePatternReturnTests.fs" />
     <Compile Include="Refactors\ConvertOptionalParameterStructTests.fs" />
     <Compile Include="Refactors\ConvertOptionalParameterDefaultValueTests.fs" />
+    <Compile Include="Refactors\ConvertTupleTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlayParameterNameHintTests.fs" />

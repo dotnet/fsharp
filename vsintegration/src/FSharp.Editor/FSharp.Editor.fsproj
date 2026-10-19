@@ -129,6 +129,9 @@
     <Compile Include="Refactor\ConvertActivePatternReturn.fs" />
     <Compile Include="Refactor\ConvertOptionalParameterStruct.fs" />
     <Compile Include="Refactor\ConvertOptionalParameterDefaultValue.fs" />
+    <Compile Include="Refactor\TupleConversion.fs" />
+    <Compile Include="Refactor\TuplePropagation.fs" />
+    <Compile Include="Refactor\ConvertTuple.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />

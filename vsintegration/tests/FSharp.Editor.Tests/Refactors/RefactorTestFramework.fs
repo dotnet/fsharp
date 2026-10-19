@@ -1,4 +1,4 @@
-module FSharp.Editor.Tests.Refactors.RefactorTestFramework
+﻿module FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
 open System
 open System.Collections.Generic
@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
 
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
 
 open FSharp.Editor.Tests.Helpers
@@ -157,3 +158,57 @@ let offeredTitles (provider: CodeRefactoringProvider) (context: TestContext) (co
     tryGetRefactoringActionsForSpan code span context provider
     |> Seq.map _.Title
     |> String.concat ";"
+
+let caretOffset (code: string) (marker: string) =
+    code.IndexOf(marker, StringComparison.Ordinal)
+
+let textOf (document: Document) =
+    (document.GetTextAsync() |> GetTaskResult).ToString()
+
+let errorsOf (document: Document) =
+    let _, checkResults =
+        document.GetFSharpParseAndCheckResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    checkResults.Diagnostics
+    |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+let private moduleHeader (body: string) =
+    let lineBreak = body[.. body.IndexOf('\n')]
+    lineBreak + "module M" + lineBreak
+
+let inModuleM (body: string) = moduleHeader body + body
+
+let refactorAt (provider: 'T :> CodeRefactoringProvider) (context: TestContext) (code: string) (marker: string) =
+    tryRefactor code (caretOffset code marker) context provider
+
+let refactoredBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marker: string) =
+    let code = inModuleM body
+    use context = TestContext.CreateWithCode code
+    let document = refactorAt provider context code marker
+    Assert.Empty(errorsOf document)
+
+    let header = moduleHeader body
+    let text = textOf document
+    Assert.StartsWith(header, text, StringComparison.Ordinal)
+    text.Substring header.Length
+
+let actionsBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marker: string) =
+    let code = inModuleM body
+    use context = TestContext.CreateWithCode code
+    tryGetRefactoringActions code (caretOffset code marker) context provider
+
+// The checker reads the other file of a synthetic project from disk, so the result is checked as a new project.
+let refactoredAcrossFiles (provider: 'T :> CodeRefactoringProvider) (dependency: string) (code: string) (marker: string) =
+    use context = TestContext.CreateWithCodeAndDependency code dependency
+    let document = refactorAt provider context code marker
+
+    let dependencyAfter =
+        (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
+
+    use checkContext =
+        TestContext.CreateWithCodeAndDependency (textOf document) dependencyAfter
+
+    Assert.Empty((checkContext.Solution.Projects |> Seq.head).Documents |> Seq.last |> errorsOf)
+
+    struct (textOf document, dependencyAfter)
