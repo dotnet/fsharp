@@ -195,13 +195,7 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range ->
-                            rangeToDocumentSpans (
-                                document,
-                                range,
-                                symbol.Ident.idText,
-                                symbolUse.Symbol.Assembly.SimpleName
-                            )
+                        | Some range -> rangeToDocumentSpans (document, range, symbol.Ident.idText, symbolUse.Symbol.Assembly.SimpleName)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =

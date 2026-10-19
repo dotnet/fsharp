@@ -376,8 +376,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
 
                         if result.Success then
                             entry.Emitted()
+
                             if publication.Current = epoch then
                                 lastSuccessfulCompilations.[projectId] <- comp
+
                             ms.Position <- 0L
                             ms :> Stream |> Some
                         else
@@ -419,7 +421,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     let createPEReference (epoch: int) (referencedProject: Project) (version: VersionStamp) (comp: Compilation) =
         let entry = PEReferenceCacheEntry(version, comp)
         let fsRefProj = buildPEReference epoch referencedProject entry
-        publication.TryPublish(epoch, fun () -> peReferences.[referencedProject.Id] <- (entry, fsRefProj)) |> ignore
+
+        publication.TryPublish(epoch, fun () -> peReferences.[referencedProject.Id] <- (entry, fsRefProj))
+        |> ignore
+
         fsRefProj
 
     let rec tryComputeOptionsBySingleScriptOrFileUnder (epoch: int) (document: Document) userOpName =

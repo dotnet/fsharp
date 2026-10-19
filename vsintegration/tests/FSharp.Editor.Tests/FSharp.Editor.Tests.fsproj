@@ -134,8 +134,6 @@
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
 	<PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" />
-	<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-	<PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" />
 
 	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />

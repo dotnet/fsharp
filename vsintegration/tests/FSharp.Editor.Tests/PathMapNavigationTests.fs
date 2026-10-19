@@ -365,7 +365,7 @@ let private declarationSpans (solution: Solution) (binary: MappedBinary) =
 
         match checkResults.GetDeclarationLocation(linePosition.Line + 1, linePosition.Character + 1, line, names, false) with
         | FindDeclResult.DeclFound range ->
-            return! FSharpFindUsagesService.rangeToDocumentSpans (solution, range, "value", symbolUse.Symbol.Assembly.SimpleName)
+            return! FSharpFindUsagesService.rangeToDocumentSpans (consumer, range, "value", symbolUse.Symbol.Assembly.SimpleName)
         | result -> return failwith $"expected the declaration of the library's value, got %A{result}"
     }
     |> CancellableTask.runSynchronouslyWithoutCancellation

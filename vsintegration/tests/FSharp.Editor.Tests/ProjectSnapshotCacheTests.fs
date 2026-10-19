@@ -77,7 +77,17 @@ let private snapshotBuiltWhile (disturb: Project -> ProjectInfo -> unit) =
             TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
         let loader, projectInfo, project = createProjectWithGatedText release.Task
-        let pending = Task.Run(Func<Task<_>>(fun () -> snapshotOf project))
+
+        let pending =
+            Task.Factory
+                .StartNew(
+                    Func<_>(fun () -> snapshotOf project),
+                    CancellationToken.None,
+                    TaskCreationOptions.DenyChildAttach,
+                    TaskScheduler.Default
+                )
+                .Unwrap()
+
         do! loader.Asked
 
         disturb project projectInfo

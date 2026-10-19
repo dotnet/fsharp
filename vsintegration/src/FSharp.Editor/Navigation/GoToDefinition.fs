@@ -511,9 +511,14 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             )
 
                         let withoutLocation =
-                            if isRootedPath targetRange.FileName then ValueNone else externalDeclaration
+                            if isRootedPath targetRange.FileName then
+                                ValueNone
+                            else
+                                externalDeclaration
 
-                        match originDocument.TryGetSolutionDocumentFromFSharpRange(targetRange, targetSymbolUse.Symbol.Assembly.SimpleName) with
+                        match
+                            originDocument.TryGetSolutionDocumentFromFSharpRange(targetRange, targetSymbolUse.Symbol.Assembly.SimpleName)
+                        with
                         | ValueNone ->
                             // No document for the file anywhere in the workspace: the symbol comes from an assembly.
                             let metadataReferences = originDocument.Project.MetadataReferences
@@ -553,6 +558,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             return
                                 navItem
                                 |> ValueOption.map (fun navItem -> FSharpGoToDefinitionResult.NavigableItem navItem, idRange)
+                                |> ValueOption.orElse withoutLocation
                     | _ -> return ValueNone
         }
 
