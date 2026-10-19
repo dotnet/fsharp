@@ -1830,7 +1830,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
             AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m e)
         |> List.unzip
 
-    objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds
+    objArgPreBinder, objArgs, allArgsPreBinders, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds
 
 
 //-------------------------------------------------------------------------
@@ -2429,7 +2429,3 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
         Choice2Of2 (mkMemberLambdas g m [] None None vsl (expr, tyOfExpr g expr))
     | None ->
         Choice1Of2 traitInfo
-
-/// Generate the arguments passed for a set of (solved) traits in non-generic code
-let GenWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =
-    [ for traitInfo in traitInfos -> GenWitnessExprLambda amap g m traitInfo ]

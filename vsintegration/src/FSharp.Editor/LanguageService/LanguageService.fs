@@ -54,6 +54,15 @@ type internal FSharpWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (editorOptions: EditorOptions, metadataAsSourceService: FSharpMetadataAsSourceService) =
 
+    static do
+        FSharp.Compiler.Caches.EvictionProcessor.Error.Add(fun ex ->
+            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw()
+                })
+            |> ignore)
+
     let tryGetMetadataSnapshot (workspace: VisualStudioWorkspace) (path, timeStamp) =
         try
             let md =

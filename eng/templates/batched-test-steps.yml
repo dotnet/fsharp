@@ -33,10 +33,16 @@ steps:
   env: ${{ parameters.buildEnv }}
   displayName: Build / Test
 
-- template: /eng/templates/publish-test-results.yml
-  parameters:
-    configuration: ${{ parameters.configuration }}
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testResultsFormat: 'XUnit'
     testRunTitle: ${{ parameters.testRunTitlePrefix }} Batch$(batchNumber)
+    mergeTestResults: true
+    testResultsFiles: '*.xml'
+    searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+  continueOnError: true
+  condition: succeededOrFailed()
 
 - ${{ if parameters.publishBinLog }}:
   - task: PublishBuildArtifacts@1

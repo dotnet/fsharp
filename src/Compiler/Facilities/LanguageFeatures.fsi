@@ -9,14 +9,8 @@ type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
     | WitnessPassing
-    | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | AttributesToRightOfModuleKeyword
-    | ErrorOnDeprecatedRequireQualifiedAccess
-    | CSharpExtensionAttributeNotRequired
-    | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | WarningWhenMultipleRecdTypeChoice
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
