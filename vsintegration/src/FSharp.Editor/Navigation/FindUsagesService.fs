@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -62,14 +62,14 @@ module FSharpFindUsagesService =
         }
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (document: Document, range: range, symbolName: string) =
+    let rangeToDocumentSpans (document: Document, range: range, symbolName: string, declaringAssembly: string) =
         if range.Start = range.End then
             CancellableTask.singleton [||]
         else
             cancellableTask {
                 let! spans =
                     seq {
-                        for doc in document.GetSolutionDocumentsWithFilePath range.FileName do
+                        for doc in document.GetSolutionDocumentsWithFSharpFileName(range.FileName, declaringAssembly) do
                             cancellableTask {
                                 let! cancellationToken = CancellableTask.getCancellationToken ()
                                 let! sourceText = doc.GetTextAsync(cancellationToken)
@@ -195,7 +195,13 @@ module FSharpFindUsagesService =
 
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans (document, range, symbol.Ident.idText)
+                        | Some range ->
+                            rangeToDocumentSpans (
+                                document,
+                                range,
+                                symbol.Ident.idText,
+                                symbolUse.Symbol.Assembly.SimpleName
+                            )
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
