@@ -322,11 +322,6 @@
         <target state="translated">Логические возвращаемые и направленные на возвращаемый тип частичные активные шаблоны</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Разрешить атрибут неявного расширения для объявляющих типов, модулей</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Выдает предупреждения, если атрибут TailCall используется в нерекурсивных функциях.</target>

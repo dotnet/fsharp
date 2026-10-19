@@ -322,11 +322,6 @@
         <target state="translated">Modèles actifs partiels à retour booléen et orientés par le type de retour</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Autoriser l’attribut implicite Extension lors de la déclaration des types, modules</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Émet des avertissements si l’attribut « TailCall » est utilisé sur des fonctions non récursives.</target>

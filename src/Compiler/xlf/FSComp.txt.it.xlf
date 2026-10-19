@@ -322,11 +322,6 @@
         <target state="translated">Criteri attivi parziali che restituiscono valori booleani e diretti dal tipo restituito</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Consentire l'attributo estensione implicito per i tipi dichiarabili, i moduli</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
