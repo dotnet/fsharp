@@ -231,7 +231,7 @@ module internal RoslynHelpers =
         Async.Start(computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
-    let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : TextChange =
+    let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (declaration: string) : TextChange =
         let getLineStr line =
             if line >= 0 && line < sourceText.Lines.Count then
                 sourceText.Lines[line].ToString().Trim()
@@ -269,7 +269,7 @@ module internal OpenDeclarationHelper =
         let textBeforeDeclaration =
             sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
 
-        let openLine = margin + "open " + ns + lineBreak
+        let openLine = margin + declaration + lineBreak
 
         if textBeforeDeclaration.Length > 0 then
             TextChange(
@@ -286,7 +286,7 @@ module internal OpenDeclarationHelper =
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
     let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : SourceText * int =
-        let change = getOpenDeclarationChange sourceText ctx ns
+        let change = getOpenDeclarationChange sourceText ctx ("open " + ns)
         sourceText.WithChanges change, change.Span.Start
 
 // http://www.fssnip.net/7S3/title/Intersperse-a-list

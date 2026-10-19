@@ -158,6 +158,7 @@ type InsertionContextEntity =
         FullRelativeName: string
         Qualifier: string
         Namespace: string option
+        NamespaceIdentCount: int
         FullDisplayName: string
         LastIdent: ShortIdent
     }
@@ -254,12 +255,16 @@ module Entity =
                     | _ ->
                         let fullRelativeName = Array.append (getRelativeNs fullOpenableNs) restIdents
 
+                        let withoutQualifierWritten (idents: ShortIdents) =
+                            if identCount > 1 && relativeNs.Length >= identCount then
+                                idents[0 .. idents.Length - identCount]
+                            else
+                                idents
+
                         let ns =
                             match relativeNs with
                             | [||] -> None
-                            | _ when identCount > 1 && relativeNs.Length >= identCount ->
-                                Some(relativeNs[0 .. relativeNs.Length - identCount] |> String.concat ".")
-                            | _ -> Some(relativeNs |> String.concat ".")
+                            | _ -> Some(withoutQualifierWritten relativeNs |> String.concat ".")
 
                         let qualifier =
                             if fullRelativeName.Length > 1 && fullRelativeName.Length >= identCount then
@@ -272,6 +277,7 @@ module Entity =
                                 FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
                                 Qualifier = String.concat "." qualifier
                                 Namespace = ns
+                                NamespaceIdentCount = (withoutQualifierWritten openableNs).Length
                                 FullDisplayName =
                                     match restIdents with
                                     | [| _ |] -> ""

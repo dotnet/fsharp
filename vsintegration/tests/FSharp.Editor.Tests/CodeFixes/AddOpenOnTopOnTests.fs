@@ -390,6 +390,92 @@ module M1 =
 
     Assert.Equal(expected, actual)
 
+let openSuggestions =
+    scenarios
+        [
+            ("a type nested in a type is opened with open type",
+             "let folder () = SpecialFolder.Desktop",
+             [| "open type System.Environment" |])
+
+            ("every namespace the name resolves from",
+             "let readFile () = File.ReadAllText \"example.txt\"",
+             [| "open System.IO"; "open type System.Net.WebRequestMethods" |])
+
+            ("every type a static member resolves from",
+             "let write () = WriteLine \"hi\"",
+             [|
+                 "open type System.Console"
+                 "open type System.Diagnostics.Debug"
+                 "open type System.Diagnostics.Trace"
+                 "open type Microsoft.VisualBasic.FileSystem"
+             |])
+
+            ("a type in a namespace is opened with a plain open", "let write () = Console.WriteLine \"hi\"", [| "open System" |])
+
+            ("a generic type is not opened", "let keys (collection: KeyCollection) = collection", [||])
+        ]
+
+[<Theory; MemberData(nameof openSuggestions)>]
+let ``Offers the opens that resolve the name`` (_scenario: string, usage: string, declarations: string[]) =
+    let expected =
+        [
+            for declaration in declarations do
+                {
+                    Message = declaration
+                    FixedCode = $"module Module1\n\n{declaration}\n\n{usage}\n"
+                }
+        ]
+
+    let actual = codeFix |> openFixes $"module Module1\n\n{usage}\n" Auto
+
+    Assert.Equal<TestCodeFix list>(expected, actual)
+
+let suggestionMessages =
+    scenarios
+        [
+            ("the qualifications follow the opens",
+             "let readFile () = File.ReadAllText \"example.txt\"",
+             [|
+                 "open System.IO"
+                 "open type System.Net.WebRequestMethods"
+                 "System.IO.File"
+                 "System.IO.File.ReadAllText"
+                 "System.Net.WebRequestMethods.File"
+             |])
+
+            ("the System qualifications come first",
+             "let write () = WriteLine \"hi\"",
+             [|
+                 "open type System.Console"
+                 "open type System.Diagnostics.Debug"
+                 "open type System.Diagnostics.Trace"
+                 "open type Microsoft.VisualBasic.FileSystem"
+                 "System.Console.WriteLine"
+                 "System.Diagnostics.Debug.WriteLine"
+                 "System.Diagnostics.Trace.WriteLine"
+             |])
+        ]
+
+[<Theory; MemberData(nameof suggestionMessages)>]
+let ``Lists the suggestions in the order of the lightbulb`` (_scenario: string, usage: string, messages: string[]) =
+    let actual =
+        codeFix |> allFixes $"module Module1\n\n{usage}\n" Auto |> List.map _.Message
+
+    Assert.Equal<string list>(List.ofArray messages, actual)
+
+[<Fact>]
+let ``Qualifying a partly qualified name replaces what is written before the unresolved part`` () =
+    let code =
+        "module Review\nmodule M = let marker = ()\nmodule N =\n    module M =\n        type FixTarget817() = class end\nlet x = M.FixTarget817()\n"
+
+    let actual =
+        codeFix
+        |> allFixes code Auto
+        |> List.filter (fun fix -> fix.Message = "N.M.FixTarget817")
+        |> List.map _.FixedCode
+
+    Assert.Equal<string list>([ code.Replace("x = M.", "x = N.M.") ], actual)
+
 [<Fact>]
 let ``Doesn't fix FS0039 for random undefined symbols`` () =
     let code =

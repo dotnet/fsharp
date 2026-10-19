@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 open System.Collections.Immutable
 
@@ -9,6 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -18,19 +20,36 @@ open CancellableTasks
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
+    let maxOpenSuggestions = 5
+    let maxQualifySuggestions = 3
+
+    let systemFirst (name: ReadOnlySpan<char>) (sortText: string) =
+        let isInSystem =
+            name.Equals("System".AsSpan(), StringComparison.Ordinal)
+            || name.StartsWith("System.".AsSpan(), StringComparison.Ordinal)
+
+        (if isInSystem then 0 else 1), sortText
+
+    let openOrder (declaration: string) =
+        systemFirst (declaration.AsSpan(declaration.LastIndexOf ' ' + 1)) declaration
+
+    let qualificationOrder (fullName: string) =
+        systemFirst (fullName.AsSpan()) fullName
+
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
+    let qualifySymbolFix (firstIdentSpan: TextSpan) (fullName, qualifier) =
         {
             Name = CodeFix.AddOpen
             Message = fixUnderscoresInMenuText fullName
-            Changes = [ TextChange(context.Span, qualifier) ]
+            Changes = [ TextChange(firstIdentSpan, qualifier) ]
         }
 
-    let openNamespaceFix ctx name ns multipleNames sourceText =
-        let displayText = $"open {ns}" + (if multipleNames then " (" + name + ")" else "")
+    let openNamespaceFix ctx name declaration multipleNames sourceText =
+        let displayText = declaration + (if multipleNames then " (" + name + ")" else "")
 
-        let change = OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx ns
+        let change =
+            OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx declaration
 
         {
             Name = CodeFix.AddOpen
@@ -38,44 +57,76 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ change ]
         }
 
+    let declaringEntity (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpEntity as entity -> entity.DeclaringEntity
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DeclaringEntity
+        | _ -> None
+
+    let rec tryFindModuleOrTypeNamedByLeading (leadingIdentCount: int) (nameIdentCount: int) (symbol: FSharpSymbol) =
+        match declaringEntity symbol with
+        | Some parent when not parent.IsNamespace ->
+            if nameIdentCount - 1 = leadingIdentCount then
+                ValueSome parent
+            else
+                tryFindModuleOrTypeNamedByLeading leadingIdentCount (nameIdentCount - 1) parent
+        | _ -> ValueNone
+
+    let tryGetOpenDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
+        match tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+        | ValueSome opened when opened.IsFSharpModule -> ValueSome $"open {ns}"
+        | ValueSome opened when opened.GenericParameters.Count > 0 -> ValueNone
+        | ValueSome _ -> ValueSome $"open type {ns}"
+        | ValueNone -> ValueSome $"open {ns}"
+
+    let isQualifiable (entity: InsertionContextEntity) = not (entity.LastIdent.StartsWith "op_")
+
     let getSuggestionsAsCodeFixes
-        (context: CodeFixContext)
+        (firstIdentSpan: TextSpan)
         (sourceText: SourceText)
-        (candidates: (InsertionContextEntity * InsertionContext) list)
+        (candidates: (InsertionContextEntity * InsertionContext * AssemblySymbol) list)
         =
         seq {
             candidates
-            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.FullDisplayName, ctx))
-            |> Seq.groupBy (fun (ns, _, _) -> ns)
-            |> Seq.map (fun (ns, xs) ->
-                ns,
+            |> Seq.chooseV (fun (entity, ctx, symbol) ->
+                match entity.Namespace with
+                | Some ns ->
+                    tryGetOpenDeclaration entity symbol ns
+                    |> ValueOption.map (fun declaration -> declaration, entity.FullDisplayName, ctx)
+                | None -> ValueNone)
+            |> Seq.groupBy (fun (declaration, _, _) -> declaration)
+            |> Seq.map (fun (declaration, xs) ->
+                declaration,
                 xs
                 |> Seq.map (fun (_, name, ctx) -> name, ctx)
                 |> Seq.distinctBy (fun (name, _) -> name)
                 |> Seq.sortBy fst
                 |> Seq.toArray)
-            |> Seq.map (fun (ns, names) ->
+            |> Seq.sortBy (fst >> openOrder)
+            |> Seq.map (fun (declaration, names) ->
                 let multipleNames = names |> Array.length > 1
-                names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
+                names |> Seq.map (fun (name, ctx) -> declaration, name, ctx, multipleNames))
             |> Seq.concat
-            |> Seq.map (fun (ns, name, ctx, multipleNames) -> openNamespaceFix ctx name ns multipleNames sourceText)
+            |> Seq.truncate maxOpenSuggestions
+            |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
-            |> Seq.filter (fun (entity, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
-            |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
+            |> Seq.filter (fun (entity, _, _) -> isQualifiable entity)
+            |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
-            |> Seq.sort
-            |> Seq.map (qualifySymbolFix context)
+            |> Seq.sortBy (fst >> qualificationOrder)
+            |> Seq.truncate maxQualifySuggestions
+            |> Seq.map (qualifySymbolFix firstIdentSpan)
 
         }
         |> Seq.concat
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFixes this
 
-    interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync context =
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
             cancellableTask {
                 let document = context.Document
 
@@ -130,7 +181,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
                             |> Array.collect (fun s ->
                                 [|
-                                    yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
+                                    yield s, (s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents)
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
 
@@ -139,17 +190,18 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             && s.Kind LookupType.Precise = EntityKind.Attribute
                                         then
                                             yield
-                                                s.TopRequireQualifiedAccessParent,
-                                                s.AutoOpenParent,
-                                                s.Namespace,
-                                                s.CleanedIdents
-                                                |> Array.replace
-                                                    (s.CleanedIdents.Length - 1)
-                                                    (lastIdent.Substring(0, lastIdent.Length - 9))
+                                                s,
+                                                (s.TopRequireQualifiedAccessParent,
+                                                 s.AutoOpenParent,
+                                                 s.Namespace,
+                                                 s.CleanedIdents
+                                                 |> Array.replace
+                                                     (s.CleanedIdents.Length - 1)
+                                                     (lastIdent.Substring(0, lastIdent.Length - 9)))
                                 |])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
-                        |> Option.bind (fun longIdent ->
+                        |> Option.map (fun longIdent ->
                             let maybeUnresolvedIdents =
                                 longIdent
                                 |> List.map (fun ident ->
@@ -173,11 +225,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     insertionPoint
 
                             entities
-                            |> Seq.map createEntity
-                            |> Seq.concat
+                            |> Seq.collect (fun (symbol, candidate) ->
+                                createEntity candidate |> Seq.map (fun (entity, ctx) -> entity, ctx, symbol))
                             |> Seq.toList
-                            |> getSuggestionsAsCodeFixes context sourceText
-                            |> Seq.tryHead))
+                            |> getSuggestionsAsCodeFixes
+                                (RoslynHelpers.FSharpRangeToTextSpan(sourceText, longIdent.Head.idRange))
+                                sourceText))
 
-                    |> ValueOption.ofOption
+                    |> Option.defaultValue Seq.empty
             }

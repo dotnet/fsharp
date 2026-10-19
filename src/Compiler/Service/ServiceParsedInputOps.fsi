@@ -163,6 +163,10 @@ type public InsertionContextEntity =
         /// Namespace that is needed to open to make the entity resolvable in the current scope.
         Namespace: string option
 
+        /// How many leading idents of the entity's full name `Namespace` covers: what tells whether a plain `open`
+        /// reaches it (a namespace or F# module) or only `open type` does (a type).
+        NamespaceIdentCount: int
+
         /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
         FullDisplayName: string
 
