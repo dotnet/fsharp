@@ -445,6 +445,95 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData(false, "Task")>]
+[<InlineData(true, "Task")>]
+[<InlineData(false, "Task<int>")>]
+[<InlineData(true, "Task<int>")>]
+[<InlineData(false, "ValueTask")>]
+[<InlineData(true, "ValueTask")>]
+[<InlineData(false, "ValueTask<int>")>]
+[<InlineData(true, "ValueTask<int>")>]
+let ``Issue 20686 - await upcast Task`` (optimize: bool, carrier: string) =
+    let marker, value, toTask =
+        match carrier with
+        | "Task" -> "__runtimeAsyncReturnUnit", "()", ""
+        | "Task<int>" -> "__runtimeAsyncReturn", "42", ""
+        | "ValueTask" -> "__runtimeAsyncReturnValueTaskUnit", "()", ".AsTask()"
+        | "ValueTask<int>" -> "__runtimeAsyncReturnValueTask", "42", ".AsTask()"
+        | _ -> failwith $"Unexpected carrier: {carrier}"
+    FSharp $"""
+module TaskUpcasts
+
+open System
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type BaseTask = Task
+
+let inline awaitTask (work: Task) = AsyncHelpers.Await work
+
+let run input =
+    {marker} (
+        AsyncHelpers.Await(Task.FromResult input :> Task)
+        AsyncHelpers.Await((Task.FromResult input :> Task).ConfigureAwait false)
+        AsyncHelpers.Await((Task.FromResult input :> Task).ConfigureAwait true)
+        AsyncHelpers.Await(Task.FromResult input :> BaseTask)
+        awaitTask (Task.FromResult input)
+        {value})
+
+let awaitSource (source: TaskCompletionSource<int>) shape =
+    {marker} (
+        match shape with
+        | "direct" -> AsyncHelpers.Await(source.Task :> Task)
+        | "configured false" -> AsyncHelpers.Await((source.Task :> Task).ConfigureAwait false)
+        | "configured true" -> AsyncHelpers.Await((source.Task :> Task).ConfigureAwait true)
+        | _ -> failwith "Unexpected await shape"
+        {value})
+
+let wait (work: {carrier}) =
+    let result = (work{toTask}).WaitAsync(TimeSpan.FromSeconds 30.).GetAwaiter().GetResult()
+    if result <> {value} then failwith "Incorrect result"
+
+[<EntryPoint>]
+let main _ =
+    wait (run 1)
+    wait (run "result")
+    wait (run ())
+    for shape in ["direct"; "configured false"; "configured true"] do
+        for outcome in ["success"; "fault"; "cancel"] do
+            let source = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+            let work = awaitSource source shape
+            if work.IsCompleted then failwith "Expected suspension"
+            match outcome with
+            | "success" ->
+                source.SetResult 1
+                wait work
+            | "fault" ->
+                let failure = InvalidOperationException("await failed")
+                source.SetException failure
+                try
+                    wait work
+                    failwith "Expected fault"
+                with :? InvalidOperationException as observed when Object.ReferenceEquals(failure, observed) -> ()
+            | "cancel" ->
+                let token = CancellationToken(true)
+                source.SetCanceled token
+                try
+                    wait work
+                    failwith "Expected cancellation"
+                with :? OperationCanceledException as observed when observed.CancellationToken = token -> ()
+            | _ -> failwith "Unexpected outcome"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
 [<Fact>]
 let ``runtime async supports inlining of a lambda`` () =
     FSharp """
