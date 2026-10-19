@@ -86,9 +86,10 @@ let inline addBindDebugPoint spBind e =
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
 
-/// Make a builder.Method(...) call
-let mkSynCall nm (m: range) args builderValName =
+/// The method identifier range is where an overload resolution failure of the call is reported
+let mkSynCallWithMethodRange nm (mMethod: range) (m: range) args builderValName =
     let m = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
+    let mMethod = mMethod.MakeSynthetic()
 
     let args =
         match args with
@@ -97,7 +98,11 @@ let mkSynCall nm (m: range) args builderValName =
         | args -> SynExpr.Paren(SynExpr.Tuple(false, args, [], m), range0, None, m)
 
     let builderVal = mkSynIdGet m builderValName
-    mkSynApp1 (SynExpr.DotGet(builderVal, range0, SynLongIdent([ mkSynId m nm ], [], [ None ]), m)) args m
+    mkSynApp1 (SynExpr.DotGet(builderVal, range0, SynLongIdent([ mkSynId mMethod nm ], [], [ None ]), m)) args m
+
+/// Make a builder.Method(...) call
+let mkSynCall nm (m: range) args builderValName =
+    mkSynCallWithMethodRange nm m m args builderValName
 
 // Optionally wrap sources of "let!", "yield!", "use!" in "query.Source"
 let mkSourceExpr callExpr sourceMethInfo builderValName =
@@ -2080,7 +2085,7 @@ let rec TryTranslateComputationExpression
                     let rhsExpr =
                         mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
-                    mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
+                    mkSynCallWithMethodRange "Bind" rhsExpr.Range mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
                     |> addBindDebugPoint spBind
 
                 Some(translatedCtxt bindExpr)
@@ -2340,7 +2345,7 @@ let rec TryTranslateComputationExpression
                 SynExpr.MatchLambda(false, trivia.MatchBangKeyword, clauses, DebugPointAtBinding.NoneAtInvisible, trivia.MatchBangKeyword)
 
             let callExpr =
-                mkSynCall "Bind" trivia.MatchBangKeyword [ inputExpr; consumeExpr ] ceenv.builderValName
+                mkSynCallWithMethodRange "Bind" expr.Range trivia.MatchBangKeyword [ inputExpr; consumeExpr ] ceenv.builderValName
                 |> addBindDebugPoint spMatch
 
             Some(translatedCtxt callExpr)
@@ -2692,6 +2697,11 @@ and TranslateComputationExpressionBind
 
     let innerRange = innerComp.Range
 
+    let mSources =
+        match bindArgs with
+        | first :: rest -> rest |> List.fold (fun m (e: SynExpr) -> unionRanges m e.Range) first.Range
+        | [] -> bindRange
+
     let innerCompReturn = convertSimpleReturnToExpr ceenv comp varSpace innerComp
 
     match innerCompReturn with
@@ -2711,7 +2721,7 @@ and TranslateComputationExpressionBind
                     innerRange
                 )
 
-            translatedCtxt (mkSynCall bindName bindRange (bindArgs @ [ consumeExpr ]) ceenv.builderValName)
+            translatedCtxt (mkSynCallWithMethodRange bindName mSources bindRange (bindArgs @ [ consumeExpr ]) ceenv.builderValName)
 
         match customOpInfo with
         | None -> dataCompPriorToOp
@@ -2737,7 +2747,7 @@ and TranslateComputationExpressionBind
                 )
 
             let bindCall =
-                mkSynCall bindName holeFill.Range (bindArgs @ [ consumeExpr ]) ceenv.builderValName
+                mkSynCallWithMethodRange bindName mSources holeFill.Range (bindArgs @ [ consumeExpr ]) ceenv.builderValName
 
             translatedCtxt (bindCall |> addBindDebugPoint))
 

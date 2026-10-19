@@ -3,7 +3,8 @@ module RuntimeAsyncAsyncLocal
 open System.Threading
 open System.Threading.Tasks
 
-open RuntimeTaskBuilder.RuntimeTask
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 
 let private context = AsyncLocal<string>()
 
@@ -46,6 +47,51 @@ let private isolatesChildTaskChanges () =
             failwith "AsyncLocal child change leaked to parent"
     }
 
+let private queuedAsync2ChildSeesParentContext () =
+    runtimeTask {
+        let leaf = async2 { return context.Value }
+
+        let middle =
+            async2 {
+                context.Value <- "middle"
+                return! leaf
+            }
+
+        let outer = async2 { return! middle }
+
+        context.Value <- "caller"
+        let! actual = outer.Start CancellationToken.None
+
+        if actual <> "middle" then
+            failwithf "Queued async2 child observed AsyncLocal value '%s' instead of 'middle'" actual
+    }
+
+let private queuedAsync2SiblingsUseTheirCapturedContexts () =
+    runtimeTask {
+        let overwrite =
+            Async2<unit>(fun _ ->
+                context.Value <- "preceding child"
+                ValueTask<unit>(()))
+
+        let observe = Async2<string>(fun _ -> ValueTask<string>(context.Value))
+
+        let middle =
+            async2 {
+                context.Value <- "middle"
+                let! observed = observe
+                and! () = overwrite
+                return observed
+            }
+
+        let outer = async2 { return! middle }
+
+        context.Value <- "caller"
+        let! actual = outer.Start CancellationToken.None
+
+        if actual <> "middle" then
+            failwithf "Queued async2 sibling observed AsyncLocal value '%s' instead of 'middle'" actual
+    }
+
 [<EntryPoint>]
 let main _ =
     context.Value <- "main"
@@ -54,6 +100,8 @@ let main _ =
         preservesValueAcrossAwait ()
         propagatesValueToNestedRuntimeTask ()
         isolatesChildTaskChanges ()
+        queuedAsync2ChildSeesParentContext ()
+        queuedAsync2SiblingsUseTheirCapturedContexts ()
     |]
     |> Task.WhenAll
     |> _.Result

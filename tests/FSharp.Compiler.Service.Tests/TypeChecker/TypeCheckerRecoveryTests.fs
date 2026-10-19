@@ -63,6 +63,189 @@ Math.Max(a,b,)
 
     assertHasSymbolUsages ["Max"] checkResults
 
+module NamedArgs =
+    let private types = """
+[<AutoOpen>]
+module Types
+
+type T(?a: int, ?b: string) =
+    member _.M(a: int, b: string) = ()
+    member _.M(a: int, b: string, c: float) = ()
+    member _.N(a: int, b: string) = ()
+    member _.N(a: string, b: int) = ()
+    member _.O(?a: int, ?b: string) = ()
+    member _.R(a: int, b: string) = ()
+    member _.R(x: int, y: int, z: int, b: string, c: float) = ()
+    member val A = 0 with get, set
+    member val B = "" with get, set
+
+let x = T()
+"""
+
+    let private check source =
+        let options = createProjectOptionsFromNamedSources [ "Types.fs", types; "Test.fs", source ] [ "--target:exe" ]
+        let filePath = options.SourceFiles |> Array.find (fun path -> path.EndsWith "Test.fs")
+        let _, checkResults = parseAndCheckFile filePath source options
+        checkResults
+
+    let private checkAtCaret markedSource =
+        let context = Checker.getResolveContext markedSource
+        let checkResults = check context.SourceContext.Source
+        checkResults.GetSymbolUsesAtLocation(context.Pos.Line, context.Pos.Column, context.SourceContext.LineText, context.Names)
+        |> List.exactlyOne
+
+    [<Fact>]
+    let ``Named arg 01 - Unfinished`` () =
+        check "x.M(a = 1, b =)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+            "(1,11--1,12)", "parameter b"
+        ]
+
+    [<Fact>]
+    let ``Named arg 02 - Unfinished, EOF`` () =
+        check "x.M(a = 1, b =" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+            "(1,11--1,12)", "parameter b"
+        ]
+
+    [<Fact>]
+    let ``Named arg 03 - Missing required arg`` () =
+        check "x.M(a =)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+        ]
+
+        let symbolUse = checkAtCaret "x.M{caret}(a =)"
+        let m = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        m.CurriedParameterGroups |> Seq.concat |> Seq.map _.DisplayName |> List.ofSeq |> shouldEqual [ "a"; "b" ]
+
+    [<Fact>]
+    let ``Named arg 04 - Unknown`` () =
+        check "x.M(a = 1, z = 2)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+        ]
+
+    [<Fact>]
+    let ``Named arg 05 - Overload by assigned names`` () =
+        check "x.M(a = 1, c = 2)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+            "(1,11--1,12)", "parameter c"
+        ]
+
+        let symbolUse = checkAtCaret "x.M{caret}(a = 1, c = 2)"
+        let m = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        m.CurriedParameterGroups |> Seq.concat |> Seq.map _.DisplayName |> List.ofSeq |> shouldEqual [ "a"; "b"; "c" ]
+
+    [<Fact>]
+    let ``Named arg 06 - Ident, first arg`` () =
+        check "x.M(a)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+        ]
+
+    [<Fact>]
+    let ``Named arg 07 - Ident, first arg, value in scope`` () =
+        check "let a = 1 in x.O(a)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,13--1,14)", "val x"
+            "(1,13--1,16)", "member O"
+            "(1,17--1,18)", "val a"
+        ]
+
+    [<Fact>]
+    let ``Named arg 08 - Ident after named`` () =
+        let checkResults = check "x.M(a = 1, b)"
+
+        dumpDiagnosticNumbers checkResults |> shouldEqual [
+            "(1,11--1,12)", 691
+        ]
+
+        dumpSymbolUses 1 checkResults |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+            "(1,11--1,12)", "parameter b"
+        ]
+
+    [<Fact>]
+    let ``Named arg 09 - Ident after named, unknown`` () =
+        let checkResults = check "x.M(a = 1, z)"
+
+        dumpDiagnosticNumbers checkResults |> shouldEqual [
+            "(1,11--1,12)", 691
+            "(1,0--1,13)", 505
+        ]
+
+        dumpSymbolUses 1 checkResults |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member M"
+            "(1,4--1,5)", "parameter a"
+        ]
+
+    [<Fact>]
+    let ``Named arg 10 - Lambda mismatch`` () =
+        check "x.O(a = 1, b = fun () -> \"\")" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member O"
+            "(1,4--1,5)", "parameter a"
+            "(1,11--1,12)", "parameter b"
+        ]
+
+    [<Fact>]
+    let ``Named arg 11 - No overload`` () =
+        check "x.N(a = 1.0, b = 1.0)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member N"
+            "(1,4--1,5)", "parameter a"
+            "(1,13--1,14)", "parameter b"
+        ]
+
+    [<Fact>]
+    let ``Named arg 12 - Positional fit`` () =
+        check "x.R(1, 2, 3, b =)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,0--1,1)", "val x"
+            "(1,0--1,3)", "member R"
+            "(1,13--1,14)", "parameter b"
+        ]
+
+        let symbolUse = checkAtCaret "x.R{caret}(1, 2, 3, b =)"
+        let m = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        m.CurriedParameterGroups |> Seq.concat |> Seq.map _.DisplayName |> List.ofSeq |> shouldEqual [ "x"; "y"; "z"; "b"; "c" ]
+
+    [<Fact>]
+    let ``Setter 01 - Unfinished`` () =
+        check "new T(a = 1, B =)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,4--1,5)", "T"
+            "(1,4--1,5)", "member .ctor"
+            "(1,6--1,7)", "parameter a"
+            "(1,13--1,14)", "property B"
+        ]
+
+    [<Fact>]
+    let ``Setter 02 - Ident after named`` () =
+        check "new T(A = 1, B)" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,4--1,5)", "T"
+            "(1,4--1,5)", "member .ctor"
+            "(1,6--1,7)", "property A"
+            "(1,13--1,14)", "property B"
+        ]
+
+    [<Fact>]
+    let ``Setter 03 - No overload`` () =
+        check "new T(z = 1, B = \"\")" |> dumpSymbolUses 1 |> shouldEqual [
+            "(1,4--1,5)", "T"
+            "(1,4--1,5)", "member .ctor"
+            "(1,13--1,14)", "property B"
+        ]
+
 module Constraints =
     [<Fact>]
     let ``Type 01`` () =
