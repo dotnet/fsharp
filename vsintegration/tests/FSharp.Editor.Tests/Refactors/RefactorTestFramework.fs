@@ -193,6 +193,11 @@ let refactoredBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marke
     Assert.StartsWith(header, text, StringComparison.Ordinal)
     text.Substring header.Length
 
+let convertsBothWaysBy (provider: 'T :> CodeRefactoringProvider) (markers: string seq) (reference: string) (structs: string) =
+    for marker in markers do
+        Assert.Equal(structs, refactoredBy provider reference marker)
+        Assert.Equal(reference, refactoredBy provider structs marker)
+
 let actionsBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marker: string) =
     let code = inModuleM body
     use context = TestContext.CreateWithCode code

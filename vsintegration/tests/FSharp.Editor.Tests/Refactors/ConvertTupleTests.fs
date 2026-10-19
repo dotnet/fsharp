@@ -13,9 +13,7 @@ let private actionsAt (body: string) (marker: string) =
     actionsBy (new FSharpConvertTupleRefactoring()) body marker
 
 let private convertsBothWays (markers: string seq) (reference: string) (structs: string) =
-    for marker in markers do
-        Assert.Equal(structs, refactored reference marker)
-        Assert.Equal(reference, refactored structs marker)
+    convertsBothWaysBy (new FSharpConvertTupleRefactoring()) markers reference structs
 
 [<Theory>]
 [<InlineData("""
@@ -507,6 +505,28 @@ let value = C().Twice(p = pair)
              "1, 2")>]
 let ``Named argument converts with the parameter it names`` (reference: string, structs: string, markers: string) =
     convertsBothWays (markers.Split '|') reference structs
+
+[<Theory>]
+[<InlineData("""
+let pair a b = (a, b)
+let (x, y) = pair 1 2
+""",
+             "x, y",
+             """
+let pair a b = struct (a, b)
+let struct (x, y) = pair 1 2
+""")>]
+[<InlineData("""
+let first (a, b) = a
+let one = first (1, 2)
+""",
+             "1, 2",
+             """
+let first struct (a, b) = a
+let one = first struct (1, 2)
+""")>]
+let ``Tuple of generic elements converts with the function it goes through`` (reference: string, useMarker: string, structs: string) =
+    convertsBothWays [ "a, b"; useMarker ] reference structs
 
 [<Fact>]
 let ``Comment between struct and its parenthesis is kept`` () =
