@@ -90,8 +90,16 @@ type internal FSharpNavigableItemsCache
         let optionsManager =
             document.Project.Solution.GetFSharpWorkspaceService().FSharpProjectOptionsManager
 
-        match optionsManager.TryGetCachedOptionsByProjectId document.Project.Id, document.TryGetTextVersion() with
-        | Some(_, parsingOptions, _), (true, currentVersion) ->
+        let parsingOptions =
+            match optionsManager.TryGetCachedOptionsByProjectId document.Project.Id with
+            | Some(_, parsingOptions, _) -> ValueSome parsingOptions
+            | None ->
+                match ProjectCache.Projects.TryGetValue document.Project with
+                | true, options -> ValueSome options.ParsingOptions
+                | _ -> ValueNone
+
+        match parsingOptions, document.TryGetTextVersion() with
+        | ValueSome parsingOptions, (true, currentVersion) ->
             let cached key =
                 match cache.TryGetValue key with
                 | true, (version, items) when version = currentVersion -> ValueSome items

@@ -135,7 +135,7 @@ module HeyHo =
         Assert.IsAssignableFrom<System.OperationCanceledException>(searching.GetBaseException())
 
     [<Fact>]
-    let ``a repeated search of an unchanged standalone script does not parse it again`` () =
+    let ``an unchanged standalone script reuses its parse and exposes its cached declarations`` () =
         let path = "C:\\Standalone.fsx"
         let projectId = ProjectId.CreateNewId()
 
@@ -148,10 +148,13 @@ module HeyHo =
             |> RoslynTestHelpers.CreateSolution
 
         let script = solution.GetProject projectId
+        let document = script.Documents |> Seq.exactlyOne
+        let itemsCache = provider.GetExportedValue<FSharpNavigableItemsCache>()
 
         let searchTwice () =
             for _ in 1..2 do
                 Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
+                Assert.True((itemsCache.TryGetCachedNavigableItems document).IsSome)
 
         Assert.Equal(1, countParseRequests path searchTwice)
 
