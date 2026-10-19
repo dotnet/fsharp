@@ -322,11 +322,6 @@
         <target state="translated">Teilweise aktive boolesche Rückgabemuster und rückgabetypgesteuerte Muster</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Implizites Erweiterungsattribut für deklarierende Typen und Module zulassen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Löst Warnungen aus, wenn das Attribut "TailCall" für nicht rekursive Funktionen verwendet wird.</target>

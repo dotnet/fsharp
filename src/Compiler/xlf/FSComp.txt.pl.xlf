@@ -322,11 +322,6 @@
         <target state="translated">Zwracane wartości logiczne i zwracane częściowe wzorce aktywne kierowane do typu zwrotnego</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Zezwalaj na niejawny atrybut Rozszerzenie dla deklarujących typów, modułów</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Zgłasza ostrzeżenia, jeśli atrybut „TailCall” jest używany w funkcjach niekursywnych.</target>
