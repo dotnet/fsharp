@@ -322,11 +322,6 @@
         <target state="translated">Padrões ativos parciais com retorno booleano e direcionados por tipo de retorno</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">Permitir atributo de Extensão implícito em tipos declarativos, módulos</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Gera avisos se o atributo "TailCall" for usado em funções não recursivas.</target>
