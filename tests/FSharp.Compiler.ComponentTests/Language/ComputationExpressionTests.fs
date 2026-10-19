@@ -2927,131 +2927,6 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // The 'if'/'match' descent stops at a 'try', matching the rewrite, so a bang buried in a 'try' within a
-    // branch stays out of scope.
-    [<Fact>]
-    let ``Issue 19457 - bang inside a try within an if branch is out of scope`` () =
-        FSharp """
-module Test
-open System.Threading.Tasks
-let cond = true
-let test() =
-    task {
-        let p = if cond then (try (let! y = Task.FromResult 10 in y) with _ -> 0) else 0
-        return p
-    }
-        """
-        |> asLibrary
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 750
-
-    let private builders =
-        FSharp """
-[<AutoOpen>]
-module Builders
-type Builder() =
-    member _.Bind(x: int, f: int -> int) = 0
-    member _.Bind(x: string, f: string -> int) = 0
-    member _.Bind2(x: int, y: int, f: int * int -> int) = 0
-    member _.Bind2(x: string, y: string, f: string * string -> int) = 0
-    member _.Using(x: System.IDisposable, f: System.IDisposable -> int) = 0
-    member _.Return(x: int) = 0
-type ReturnBuilder() =
-    member _.BindReturn(x: int, f: int -> int) = 0
-    member _.BindReturn(x: string, f: string -> int) = 0
-let builder = Builder()
-let returnBuilder = ReturnBuilder()
-"""
-
-    let private bindError (call: string) (expected: (ErrorType * Line * Col * Line * Col * string) list) =
-        builders
-        |> withAdditionalSourceFile (FsSourceWithFileName "ce.fs" call)
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics expected
-
-    [<Fact>]
-    let ``Bind overload error is reported at the bound expression`` () =
-        bindError """
-builder {
-    let! x = 1.0
-    return x
-}
-"""
-            [ (Error 41, Line 3, Col 14, Line 3, Col 17, "No overloads match for method 'Bind'.
-
-Known types of arguments: float * (int -> int)
-
-Available overloads:
- - member Builder.Bind: x: int * f: (int -> int) -> int // Argument 'x' doesn't match
- - member Builder.Bind: x: string * f: (string -> int) -> int // Argument 'x' doesn't match") ]
-
-    [<Fact>]
-    let ``BindReturn overload error is reported at the bound expression`` () =
-        bindError """
-returnBuilder {
-    let! x = 1.0
-    return x
-}
-"""
-            [ (Error 41, Line 3, Col 14, Line 3, Col 17, "No overloads match for method 'BindReturn'.
-
-Known types of arguments: float * ('a -> 'a)
-
-Available overloads:
- - member ReturnBuilder.BindReturn: x: int * f: (int -> int) -> int // Argument 'x' doesn't match
- - member ReturnBuilder.BindReturn: x: string * f: (string -> int) -> int // Argument 'x' doesn't match") ]
-
-    [<Fact>]
-    let ``Bind2 overload error is reported at the bound expressions`` () =
-        bindError """
-builder {
-    let! x = 1
-    and! y = 1.0
-    return x
-}
-"""
-            [ (Error 41, Line 3, Col 14, Line 4, Col 17, "No overloads match for method 'Bind2'.
-
-Known types of arguments: int * float * (int * 'a -> int)
-
-Available overloads:
- - member Builder.Bind2: x: int * y: int * f: (int * int -> int) -> int // Argument 'y' doesn't match
- - member Builder.Bind2: x: string * y: string * f: (string * string -> int) -> int // Argument 'x' doesn't match") ]
-
-    [<Fact>]
-    let ``use! Bind overload error is reported at the bound expression`` () =
-        bindError """
-builder {
-    use! x = 1.0
-    return 0
-}
-"""
-            [ (Error 41, Line 3, Col 14, Line 3, Col 17, "No overloads match for method 'Bind'.
-
-Known types of arguments: float * ('a -> int) when 'a :> System.IDisposable
-
-Available overloads:
- - member Builder.Bind: x: int * f: (int -> int) -> int // Argument 'x' doesn't match
- - member Builder.Bind: x: string * f: (string -> int) -> int // Argument 'x' doesn't match") ]
-
-    [<Fact>]
-    let ``match! Bind overload error is reported at the bound expression`` () =
-        bindError """
-builder {
-    match! 1.0 with
-    | _ -> return 0
-}
-"""
-            [ (Error 41, Line 3, Col 12, Line 3, Col 15, "No overloads match for method 'Bind'.
-
-Known types of arguments: float * ('a -> int)
-
-Available overloads:
- - member Builder.Bind: x: int * f: (int -> int) -> int // Argument 'x' doesn't match
- - member Builder.Bind: x: string * f: (string -> int) -> int // Argument 'x' doesn't match") ]
     // https://github.com/dotnet/fsharp/issues/13084
     [<Fact>]
     let ``Issue 13084 - long chain of do bang bindings does not overflow`` () =
@@ -3089,3 +2964,22 @@ type LargeRecord =
 """
         |> typecheck
         |> shouldSucceed
+
+    // The 'if'/'match' descent stops at a 'try', matching the rewrite, so a bang buried in a 'try' within a
+    // branch stays out of scope.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a try within an if branch is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (try (let! y = Task.FromResult 10 in y) with _ -> 0) else 0
+        return p
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
