@@ -844,7 +844,8 @@ stages:
           displayName: FsharpPlus_NET10_Test_Debug
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
-          buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
+          # build.proj hardcodes Test configuration and rebuilds the library in three configurations.
+          buildScript: dotnet test tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release --blame-hang-timeout 30s --logger:trx -bl
           displayName: FsharpPlus_NET10_Test_Release
         - repo: fsprojects/FSharpPlus
           commit: 2648efe
