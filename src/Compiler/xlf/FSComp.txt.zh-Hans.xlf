@@ -322,11 +322,6 @@
         <target state="translated">布尔返回模式和返回类型定向部分活动模式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
-        <source>Allow implicit Extension attribute on declaring types, modules</source>
-        <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>

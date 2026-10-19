@@ -3305,10 +3305,55 @@ let GetMethodArgs arg =
                   // do not abort overload resolution in case if named arguments are mixed with errors
                   match argExpr with
                   | SynExpr.ArbitraryAfterError _ -> None
+                  | SynExpr.Ident id ->
+                      errorR (Error(FSComp.SR.tcNameArgumentsMustAppearLast(), argExpr.Range))
+                      Some(false, id, SynExpr.ArbitraryAfterError("namedArgWithoutValue", id.idRange.EndRange))
                   | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), argExpr.Range))
               | namedArg -> namedArg)
 
     unnamedCallerArgs, namedCallerArgs
+
+let RecordNamedArgsOfMethodApplication (cenv: cenv) (env: TcEnv) (ad: AccessorDomain) (calledMeth: CalledMeth<'T>) =
+    let container = ArgumentContainer.Method calledMeth.Method
+
+    for argSet in calledMeth.ArgSets do
+        for assignedArg in argSet.AssignedNamedArgs do
+            match assignedArg.NamedArgIdOpt with
+            | None -> ()
+            | Some id ->
+                let calledArgId = defaultArg assignedArg.CalledArg.NameOpt id
+                let item = Item.OtherName (Some calledArgId, assignedArg.CalledArg.CalledArgumentType, None, Some container, calledArgId.idRange)
+                CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad)
+
+let RecordFailedMethodApplication (cenv: cenv) (env: TcEnv) (ad: AccessorDomain) afterResolution (calledMethGroup: CalledMeth<'T> list) =
+    match cenv.tcSink.CurrentSink, calledMethGroup with
+    | None, _ -> ()
+    | Some _, [] ->
+        match afterResolution with
+        | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
+        | AfterResolution.DoNothing -> ()
+    | Some _, _ ->
+        let calledMeth =
+            calledMethGroup
+            |> List.maxBy (fun calledMeth ->
+                calledMeth.TotalNumUnnamedCalledArgs >= calledMeth.TotalNumUnnamedCallerArgs,
+                calledMeth.TotalNumAssignedNamedArgs + calledMeth.NumAssignedProps)
+
+        match afterResolution with
+        | AfterResolution.RecordResolution(_, _, callSink, _) -> callSink (calledMeth.Method, calledMeth.AssociatedPropertyInfo, calledMeth.CalledTyparInst)
+        | AfterResolution.DoNothing -> ()
+
+        RecordNamedArgsOfMethodApplication cenv env ad calledMeth
+
+        // TcSetterArgExpr does not run for an unresolved call
+        for AssignedItemSetter(id, setter, _) in calledMeth.AssignedItemSetters do
+            let defnItem =
+                match setter with
+                | AssignedPropSetter (_, pinfo, _, _) -> Item.Property (pinfo.PropertyName, [pinfo], None)
+                | AssignedILFieldSetter finfo -> Item.ILField finfo
+                | AssignedRecdFieldSetter rfinfo -> Item.RecdField rfinfo
+
+            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, Item.SetterArg (id, defnItem), emptyTyparInst, ItemOccurrence.Use, ad)
 
 let NotNullIfNotNullParamNames g (minfo: MethInfo) =
     match minfo with
@@ -7712,19 +7757,25 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
             mkString g m fmtString, tpenv
         )
 
-/// Lower a string-typed interpolated string to a reflection-free System.String.Concat of its parts,
+and MakeCapturedPrintfFormat (cenv: cenv) m newFormatMethod printfFormatString argTys fillExprs percentATys =
+    let g = cenv.g
+    let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+    let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
+    let percentATysExpr =
+        if Array.isEmpty percentATys then
+            mkNull m (mkArrayType g g.system_Type_ty)
+        else
+            let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
+            mkArray (g.system_Type_ty, tyExprs, m)
+    MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None
+
+/// Lower a string-typed interpolated string to System.String.Concat of its rendered parts,
 /// type-checking each part in place.
-and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
+and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list, argTys: TType list) =
     let g = cenv.g
     let mSynth = m.MakeSynthetic()
     let strLit (s: string) = SynExpr.Const(SynConst.String(s, SynStringKind.Regular, mSynth), mSynth)
     let paren (e: SynExpr) = SynExpr.Paren(e, range0, None, mSynth)
-
-    // '(sprintf spec e : string)': format a printf-specifier hole (still reflection-based).
-    let sprintfOp (spec: string, e: SynExpr) =
-        let f = mkSynApp1 (mkSynLidGet mSynth [ "Microsoft"; "FSharp"; "Core"; "ExtraTopLevelOperators" ] "sprintf") (strLit spec) mSynth
-        let call = mkSynApp1 f (paren e) mSynth
-        SynExpr.Typed(call, SynType.LongIdent(SynLongIdent([ mkSynId mSynth "string" ], [], [ None ])), mSynth)
 
     // 'String.Format(InvariantCulture, "{0,align:format}", e)': format an aligned or '{e:fmt}' hole.
     let stringFormatOp (alignment: SynExpr option, format: Ident option, e: SynExpr) =
@@ -7736,7 +7787,7 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
         mkSynApp1 (mkSynLidGet mSynth [ "System"; "String" ] "Format") args mSynth
 
     // Type-check one hole and convert it to a (string expression, may-be-null) pair.
-    let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, tpenv: UnscopedTyparEnv) =
+    let convertHole (synFill: SynExpr, formatting: SynInterpolationFormatting, argTy: TType, tpenv: UnscopedTyparEnv) =
         // Constrain the hole to 'constraintTy', then render it with 'string' as for a plain '{x}' hole. Used for
         // bare specifiers (no flags/width/precision) that act only as a type annotation: the value renders the
         // same through 'string' as through the specifier. ('%u' is not one of these: it reinterprets a signed
@@ -7756,7 +7807,16 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
             | "%d" | "%i" -> convertViaString (CheckFormatStrings.mkFlexibleIntFormatTypar g m)
             | "%M" -> convertViaString (CheckFormatStrings.mkFlexibleDecimalFormatTypar g m)
             | _ ->
-                let arg, tpenv = TcExpr cenv (MustEqual g.string_ty) env tpenv (sprintfOp (spec, synFill))
+                let fill, tpenv = TcExprFlex2 cenv argTy env false tpenv synFill
+                let formatTy = mkPrintfFormatTy g g.string_ty g.unit_ty g.string_ty g.string_ty (mkRefTupledTy g [argTy])
+                let newFormatMethod =
+                    match GetIntrinsicConstructorInfosOfType cenv.infoReader mSynth formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
+                    | [ctorInfo] -> ctorInfo
+                    | _ -> error (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod "Microsoft.FSharp.Core.PrintfFormat.ctor"), m))
+                let percentATys = if spec.EndsWith("A", StringComparison.Ordinal) then [| argTy |] else [||]
+                let format = MakeCapturedPrintfFormat cenv mSynth newFormatMethod (spec + "%P()") [argTy] [fill] percentATys
+                let sprintf = g.sprintf_vref
+                let arg = mkApps g ((exprForValRef mSynth sprintf, sprintf.Type), [[g.string_ty]], [format], mSynth)
                 (arg, false), tpenv
         | SynInterpolationFormatting.DotNet (alignment, format) ->
             // Type-checking the hole here is also where a function value gets warned about.
@@ -7783,13 +7843,15 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
     let argExprs, tpenv =
         let ra = ResizeArray()
         let mutable tpenvAcc = tpenv
+        let mutable remainingArgTys = argTys
         for part in parts do
             match part with
             | SynInterpolatedStringPart.String (s, _) ->
                 if s <> "" then
                     ra.Add((mkString g m (s.Replace("%%", "%")), false))
             | SynInterpolatedStringPart.FillExpr (synFill, formatting) ->
-                let argExpr, tpenvAfter = convertHole (synFill, formatting, tpenvAcc)
+                let argExpr, tpenvAfter = convertHole (synFill, formatting, remainingArgTys.Head, tpenvAcc)
+                remainingArgTys <- remainingArgTys.Tail
                 ra.Add argExpr
                 tpenvAcc <- tpenvAfter
         List.ofSeq ra, tpenvAcc
@@ -7843,15 +7905,6 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
         if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty) then
-
-            // And if that succeeds, the result of printing is a string
-            UnifyTypes cenv env m printerArgTy g.unit_ty
-            UnifyTypes cenv env m printerResidueTy g.string_ty
-            UnifyTypes cenv env m printerResultTy overallTy.Commit
-
-            // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
-            UnifyTypes cenv env m printerTy printerResultTy
-
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
@@ -7878,6 +7931,14 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         else
             Choice1Of2 (true, newFormatMethod)
+
+    match stringKind with
+    | Choice1Of2 (true, _) ->
+        UnifyTypes cenv env m printerArgTy g.unit_ty
+        UnifyTypes cenv env m printerResidueTy g.string_ty
+        UnifyTypes cenv env m printerResultTy g.string_ty
+        UnifyTypes cenv env m printerTy printerResultTy
+    | Choice1Of2 (false, _) | Choice2Of2 _ -> ()
 
     let isFormattableString = (match stringKind with Choice2Of2 _ -> true | _ -> false)
 
@@ -7950,9 +8011,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                 let str = mkString g m printfFormatString
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         elif isString then
-            // String-typed interpolation: lower to a reflection-free System.String.Concat of the parts,
+            // String-typed interpolation: concatenate rendered parts,
             // type-checking each hole in place (no separate batch, no flat fill-expression list).
-            TcInterpolatedStringViaConcat (cenv, overallTy, env, m, tpenv, parts)
+            TcInterpolatedStringViaConcat (cenv, overallTy, env, m, tpenv, parts, argTys)
         else
             // $"...{x}..." used as a PrintfFormat value: build a PrintfFormat that captures the args.
             let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
@@ -7960,17 +8021,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             if g.langVersion.SupportsFeature LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg then
                 warnForFunctionValuesInFillExprs g argTys synFillExprs
 
-            let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
-
-            let argsExpr = mkArray (g.obj_ty_withNulls, fillExprsBoxed, m)
-            let percentATysExpr =
-                if percentATys.Length = 0 then
-                    mkNull m (mkArrayType g g.system_Type_ty)
-                else
-                    let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
-                    mkArray (g.system_Type_ty, tyExprs, m)
-
-            MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None, tpenv
+            MakeCapturedPrintfFormat cenv m newFormatMethod printfFormatString argTys fillExprs percentATys, tpenv
 
     // The case for $"..." used as type FormattableString or IFormattable
     | Choice2Of2 createFormattableStringMethod ->
@@ -10770,18 +10821,15 @@ and TcMethodApplication
     let unnamedCurriedCallerArgs, namedCurriedCallerArgs, lambdaVars, returnTy, tpenv =
         TcMethodApplication_CheckArguments cenv env exprTy curriedCallerArgsOpt candidates preArgumentTypeCheckingCalledMethGroup callerObjArgTys ad mMethExpr mItem tpenv
 
-    let preArgumentTypeCheckingCalledMethGroup =
-       preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
-
     let uniquelyResolved =
         match uniquelyResolved with
-        | ErrorResult _ ->
-            match afterResolution with
-            | AfterResolution.DoNothing -> ()
-            | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
+        | ErrorResult _ -> RecordFailedMethodApplication cenv env ad afterResolution preArgumentTypeCheckingCalledMethGroup
         | _ -> ()
 
         uniquelyResolved |> CommitOperationResult
+
+    let preArgumentTypeCheckingCalledMethGroup =
+       preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
 
     // STEP 3. Resolve overloading
     /// Select the called method that's the result of overload resolution
@@ -10869,8 +10917,8 @@ and TcMethodApplication
         | AfterResolution.RecordResolution(_, _, callSink, _), Some result ->
             (result.Method, result.AssociatedPropertyInfo, result.CalledTyparInst) |> callSink
 
-        | AfterResolution.RecordResolution(_, _, _, onFailure), None ->
-            onFailure()
+        | AfterResolution.RecordResolution _, None ->
+            RecordFailedMethodApplication cenv env ad afterResolution postArgumentTypeCheckingCalledMethGroup
 
         // Raise the errors from the constraint solving
         RaiseOperationResult errors
@@ -10909,23 +10957,11 @@ and TcMethodApplication
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
-    let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
+    let objArgPreBinder, objArgs, allArgsPreBinders, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
-    // Record the resolution of the named argument for the Language Service
-    allArgs |> List.iter (fun assignedArg ->
-        match assignedArg.NamedArgIdOpt with
-        | None -> ()
-        | Some id ->
-            let idOpt = Some (defaultArg assignedArg.CalledArg.NameOpt id)
-            let m =
-                match assignedArg.CalledArg.NameOpt with
-                | Some id -> id.idRange
-                | None -> id.idRange
-            let container = ArgumentContainer.Method finalCalledMethInfo
-            let item = Item.OtherName (idOpt, assignedArg.CalledArg.CalledArgumentType, None, Some container, m)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad))
+    RecordNamedArgsOfMethodApplication cenv env ad finalCalledMeth
 
     /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
 

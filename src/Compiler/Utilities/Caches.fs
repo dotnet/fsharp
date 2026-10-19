@@ -20,7 +20,6 @@ module CacheMetrics =
     let allCounters = [ adds; updates; hits; misses; evictions; evictionFails ]
 
     let creations = Meter.CreateCounter<int64>("creations", "count")
-    let disposals = Meter.CreateCounter<int64>("disposals", "count")
 
     let mkTags (name: string) =
         // Avoid TagList(ReadOnlySpan<...>) to support net472 runtime
@@ -37,7 +36,6 @@ module CacheMetrics =
     let Eviction (tags: inref<TagList>) = evictions.Add(1L, &tags)
     let EvictionFail (tags: inref<TagList>) = evictionFails.Add(1L, &tags)
     let Created (tags: inref<TagList>) = creations.Add(1L, &tags)
-    let Disposed (tags: inref<TagList>) = disposals.Add(1L, &tags)
 
     type Stats() =
         let totals = Map [ for counter in allCounters -> counter.Name, ref 0L ]
@@ -203,9 +201,29 @@ type CachedEntity<'Key, 'Value> =
     override this.ToString() = $"{this.Key}"
 
 [<Struct>]
-type EvictionQueueMessage<'Entity, 'Target> =
-    | Add of 'Entity * 'Target
+type EvictionQueueMessage<'Entity, 'Store> =
+    | Add of 'Entity * 'Store
     | Update of 'Entity
+
+module EvictionProcessor =
+    // Shared work queue for all caches running in EvictionMode.MailboxProcessor.
+    let private agent =
+        MailboxProcessor.Start(
+            (fun inbox ->
+                let rec loop () =
+                    async {
+                        let! work = inbox.Receive()
+                        work ()
+                        return! loop ()
+                    }
+
+                loop ()),
+            cancellationToken = CancellationToken.None
+        )
+
+    let Error = agent.Error
+
+    let post = agent.Post
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
@@ -228,7 +246,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     let capacity = options.TotalCapacity - headroom
 
     let mutable store =
-        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+        ConcurrentDictionary(Environment.ProcessorCount, capacity, options.Comparer)
 
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
@@ -237,16 +255,13 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
     let tags = CacheMetrics.mkTags name
 
-    // Track disposal state (0 = not disposed, 1 = disposed)
-    let mutable disposed = 0
-
     let mutable deadKeysCount = 0
 
     // Keys with unreliable identity can prevent eviction, taking up space in the cache.
     // In such case we rebuild the store to remove dead keys.
     let rebuildStore () =
         let newStore =
-            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+            ConcurrentDictionary(Environment.ProcessorCount, capacity, options.Comparer)
 
         for entity in evictionQueue do
             newStore.TryAdd(entity.Key, entity) |> ignore
@@ -286,38 +301,17 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         // Store updates are not synchronized with evictionQueue. It is possible the entity is no longer in the queue or already added.
         | _ -> ()
 
-    let startEvictionProcessor ct =
-        MailboxProcessor.Start(
-            (fun mb ->
-                let rec processNext () =
-                    async {
-                        let! message = mb.Receive()
-                        processEvictionMessage message
-                        return! processNext ()
-                    }
-
-                processNext ()),
-            ct
-        )
-
     let immediate msg =
         lock evictionQueue <| fun () -> processEvictionMessage msg
 
-    let post, disposeEvictionProcessor =
+    let queued msg =
+        EvictionProcessor.post <| fun () -> processEvictionMessage msg
+
+    let post =
         match options.EvictionMode with
-        | EvictionMode.NoEviction -> ignore, ignore
-        | EvictionMode.Immediate -> immediate, ignore
-        | EvictionMode.MailboxProcessor ->
-            let cts = new CancellationTokenSource()
-            let evictionProcessor = startEvictionProcessor cts.Token
-            let post = evictionProcessor.Post
-
-            let dispose () =
-                cts.Cancel()
-                cts.Dispose()
-                evictionProcessor.Dispose()
-
-            post, dispose
+        | EvictionMode.NoEviction -> ignore
+        | EvictionMode.Immediate -> immediate
+        | EvictionMode.MailboxProcessor -> queued
 
     do CacheMetrics.Created &tags
 
@@ -383,19 +377,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         else
             CacheMetrics.Update &tags
             post (EvictionQueueMessage.Update result)
-
-    member _.Dispose() =
-        if Interlocked.Exchange(&disposed, 1) = 0 then
-            disposeEvictionProcessor ()
-            CacheMetrics.Disposed &tags
-
-    interface IDisposable with
-        member this.Dispose() =
-            this.Dispose()
-            GC.SuppressFinalize(this)
-
-    // Finalizer to ensure eviction loop is cancelled if Dispose wasn't called.
-    override this.Finalize() = this.Dispose()
 
 #if DEBUG
     // Shows the totals aggregated for this cache's name. Populated only while a metrics listener
