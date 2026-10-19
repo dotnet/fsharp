@@ -106,6 +106,7 @@
     <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="BlockStructureServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
+    <Compile Include="ProjectSnapshotCacheTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
     <Compile Include="TokenizerCacheConcurrencyTests.fs" />
     <Compile Include="ProjectOptionsReactorTests.fs" />

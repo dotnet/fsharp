@@ -169,12 +169,40 @@ module internal FSharpProjectSnapshotSerialization =
 open FSharpProjectSnapshotSerialization
 open System.Collections.Concurrent
 
+/// Every snapshot roots the `Project`, and through it the `Solution`, it was built from: the entries follow the workspace.
+[<RequireQualifiedAccess>]
+module internal ProjectSnapshotCache =
+
+    let snapshots =
+        AsyncMemoize<ProjectId, Project, FSharpProjectSnapshot>(1000, 500, "SnapshotCache")
+
+    let latest =
+        ConcurrentDictionary<ProjectId, Project * VersionStamp * Set<string> * FSharpProjectOptions * FSharpProjectSnapshot>()
+
+    let mutable private removals = 0
+
+    let removalsSoFar () =
+        System.Threading.Volatile.Read &removals
+
+    let forget (projectId: ProjectId) =
+        snapshots.Clear(fun key -> key = projectId)
+        latest.TryRemove projectId |> ignore
+
+    let removeProject (projectId: ProjectId) =
+        System.Threading.Interlocked.Increment &removals |> ignore
+        forget projectId
+
+    let clear () =
+        System.Threading.Interlocked.Increment &removals |> ignore
+        snapshots.Clear()
+        latest.Clear()
+
+    let isGone (project: Project) removalsAtStart =
+        removalsSoFar () <> removalsAtStart
+        || not (project.Solution.Workspace.CurrentSolution.ContainsProject project.Id)
+
 [<AutoOpen>]
 module private CheckerExtensions =
-
-    let snapshotCache = AsyncMemoize(1000, 500, "SnapshotCache")
-
-    let latestSnapshots = ConcurrentDictionary<_, _>()
 
     let exist xs = xs |> Seq.isEmpty |> not
 
@@ -256,7 +284,7 @@ module private CheckerExtensions =
 
         ReferenceStamps.changed stamps (getOnDiskReferences stamps options) oldSnapshot.ProjectSnapshot.ReferencesOnDisk
 
-    let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
+    let createProjectSnapshot removalsAtStart (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
 
             let! options =
@@ -273,7 +301,7 @@ module private CheckerExtensions =
             let! referenceVersions = getReferencedProjectVersions project
 
             let updatedSnapshot =
-                match project.IsTransparentCompilerSnapshotReuseEnabled, latestSnapshots.TryGetValue project.Id with
+                match project.IsTransparentCompilerSnapshotReuseEnabled, ProjectSnapshotCache.latest.TryGetValue project.Id with
                 | true, (true, (_, _, oldReferenceVersions, _, _)) when referenceVersions <> oldReferenceVersions ->
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
@@ -391,8 +419,9 @@ module private CheckerExtensions =
             let latestSnapshotData =
                 project, projectVersion, referenceVersions, options, newSnapshot
 
-            latestSnapshots.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
-            |> ignore
+            if not (ProjectSnapshotCache.isGone project removalsAtStart) then
+                ProjectSnapshotCache.latest.AddOrUpdate(project.Id, latestSnapshotData, (fun _ _ -> latestSnapshotData))
+                |> ignore
 
             return newSnapshot
         }
@@ -406,16 +435,25 @@ module private CheckerExtensions =
                 member _.GetLabel() = project.FilePath
             }
 
-        snapshotCache.Get(
-            key,
-            async {
-                let! ct = Async.CancellationToken
+        async {
+            let removalsAtStart = ProjectSnapshotCache.removalsSoFar ()
 
+            try
                 return!
-                    createProjectSnapshot snapshotAccumulatorOpt project options ct
-                    |> Async.AwaitTask
-            }
-        )
+                    ProjectSnapshotCache.snapshots.Get(
+                        key,
+                        async {
+                            let! ct = Async.CancellationToken
+
+                            return!
+                                createProjectSnapshot removalsAtStart snapshotAccumulatorOpt project options ct
+                                |> Async.AwaitTask
+                        }
+                    )
+            finally
+                if ProjectSnapshotCache.isGone project removalsAtStart then
+                    ProjectSnapshotCache.forget project.Id
+        }
 
     let getProjectSnapshotForDocument (document: Document, options: FSharpProjectOptions) =
         getOrCreateSnapshotForProject document.Project (Some options) None
