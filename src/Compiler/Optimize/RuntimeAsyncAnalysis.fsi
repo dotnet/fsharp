@@ -10,7 +10,10 @@ type RuntimeAsyncAnalyzer =
 
     new: g: TcGlobals * getLambdaBody: (ValRef -> Expr option) -> RuntimeAsyncAnalyzer
 
-    member ContainsFragment: expr: Expr -> bool
+    /// A marker or suspension, directly or through the inline and local values the expression references.
+    member ContainsRuntimeAsyncCode: expr: Expr -> bool
+
+    /// A suspension in the expression itself, or in the construction of a sequence recipe it contains.
     member ContainsSuspension: expr: Expr -> bool
 
 val ShouldForceRuntimeAsyncInline:

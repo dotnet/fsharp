@@ -149,25 +149,32 @@ argument. The marked expression is forced to `HasEffect = true` and
 The marker therefore survives optimization as an ordinary `Expr.App` node;
 nothing else in the typed tree records that a method is runtime-async.
 
-Inline values whose bodies contain a return marker or an `AsyncHelpers`
+Inline values whose bodies contain a marker or an `AsyncHelpers`
 suspension are recursively specialized at their call sites, including when
 optimization is disabled. The analysis follows inline and local values with a
 cycle guard, and `InlineIfLambda` arguments are forced through when the caller
 is already in a runtime-async context.
 
+Method splitting never moves an expression containing a suspension into a
+separate method, since that method would not be runtime-async. A method whose
+body is a return marker is never exported as an inline definition: its
+suspensions are valid only in the generated runtime-async method.
+
 ### Custom optimizations
 
+The terms used here are defined in
+[Runtime-async optimizations](optimizations.md#runtime-async-optimizations).
 These runtime-async-specific rewrites supplement forced ordinary optimizations
 such as inlining and eta-expansion. Some are needed to keep suspensions in the
 enclosing runtime-async method.
 
 | Rewrite | Behavior and implementation |
 |---|---|
-| Await-input local elimination | `Optimizer.fs` (`inlineAwaitInput`) folds a single-use local into a suspension argument through calls, coercions, and constructions, moving only past safe expressions. This preserves evaluation order and exposes adjacent task-producing calls and awaits for runtime fusion. |
+| Await-input local elimination | `Optimizer.fs` (`inlineAwaitInput`) folds a single-use local into a suspension argument through calls, coercions, and constructions, moving only past safe expressions. This preserves evaluation order and exposes adjacent task-producing calls and awaits for the runtime to fuse. |
 | Callback-capture floating | `Optimizer.fs` (`FloatInlineIfLambdaCaptures`) moves capture bindings and effect prefixes outside an `InlineIfLambda` lambda or delegate binding, exposing the callback to ordinary inlining without changing when captures are evaluated. |
-| Returned-closure application fusion | `RuntimeAsyncAnalysis.fs` (`ReduceRuntimeAsyncReturnedClosureApplications`) pushes applications through bindings, sequencing, and match targets to beta-reduce returned lambdas, subject to argument-movement safety. This exposes suspensions in closures returned by builder combinators. |
-| Single-use suspending delegate fusion | `LowerRuntimeAsync.fs` (`tryPrepareDelegateInvocation` / `inlineDelegate`) substitutes a residual `InlineIfLambda` delegate body at its sole direct invocation when its wrapped or conditional construction is safe to move. |
-| Branch-selected callback defunctionalization | `LowerRuntimeAsync.fs` (`tryDefunctionalizeCallback` / `mkCallbackDispatch`) replaces branch-selected suspending callbacks with a tag and hoisted captures. Construction runs once; each invocation binds its argument once and dispatches to copied branch bodies with shared mutable state. Copies across all invocations, including those nested in arguments, have a total 2000-expression-node budget. |
+| Returned-closure reduction | `RuntimeAsyncAnalysis.fs` (`ReduceRuntimeAsyncReturnedClosureApplications`) pushes applications through bindings, sequencing, and match targets to beta-reduce returned lambdas, subject to argument-movement safety. This exposes suspensions in closures returned by builder combinators. |
+| Single-use delegate inlining | `LowerRuntimeAsync.fs` (`tryPrepareDelegateInvocation` / `inlineDelegate`) substitutes a residual `InlineIfLambda` delegate body at its sole direct invocation when its wrapped or conditional construction is safe to move. |
+| Callback defunctionalization | `LowerRuntimeAsync.fs` (`tryDefunctionalizeCallback` / `mkCallbackDispatch`) replaces branch-selected suspending callbacks with a tag and hoisted captures. Construction runs once; each invocation binds its argument once and dispatches to copied branch bodies with shared mutable state. Copies across all invocations, including those nested in arguments, have a total 2000-expression-node budget. |
 
 There is also a runtime-async-specific reoptimization step in
 `Optimizer.fs` (`OptimizeDebugPipeRights`): after rebuilding a debug pipe chain,
@@ -175,7 +182,7 @@ it reoptimizes with synthetic pipe-input bindings in scope. This enables
 existing optimizations on callbacks that capture those inputs; it is not a
 separate rewrite.
 
-Returned-closure fusion and callback lowering share construction-prefix
+Returned-closure reduction and callback lowering share construction-prefix
 recognition and rebuilding (`RuntimeAsyncConstructionPrefix` in `RuntimeAsync.fs`).
 Each rewrite retains its own movement checks, branch handling, and lambda reduction.
 
@@ -349,13 +356,13 @@ type RuntimeTaskBuilder() =
 
 Sample builders for tasks (`runtimeTask`), cancellable computations (`async2`) and async sequences (`asyncSeq2`) live with the [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md). They are examples, not FSharp.Core APIs.
 
-### Unsupported inline-fragment positions
+### Unsupported positions for inline runtime-async code
 
-An inline fragment that escapes as a first-class value, is passed to a
-non-inline function, or is dynamically dispatched cannot be preserved as a
-runtime-async suspension fragment. If the suspension remains in the generated
-non-runtime-async method, code generation reports FS3916 rather than emitting
-an unsafe closure. Fragments in statically eliminated branches do not trigger
+Inline runtime-async code that escapes as a first-class value, is passed to a
+non-inline function, or is dynamically dispatched cannot be inlined into the
+enclosing runtime-async method. If a suspension remains in the generated
+non-runtime-async method, code generation reports FS3918 rather than emitting
+an unsafe closure. Code in statically eliminated branches does not trigger
 this diagnostic.
 
 ## Async sequences

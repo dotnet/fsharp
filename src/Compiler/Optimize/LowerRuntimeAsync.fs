@@ -432,16 +432,16 @@ let private inlineCallback (g: TcGlobals) runtimeAsyncContext (expr: Expr) =
             )
     | _ -> None
 
-let private isRuntimeAsyncEntry g expr =
+let private isRuntimeAsyncMarker g expr =
     (TryGetRuntimeAsyncReturn g expr).IsSome
     || (TryGetRuntimeAsyncSequence g expr).IsSome
 
-let private containsRuntimeAsyncEntry g implFile =
+let private containsRuntimeAsyncMarker g implFile =
     let folder =
         { ExprFolder0 with
             exprIntercept =
                 fun _ noInterceptF acc expr ->
-                    if acc || isRuntimeAsyncEntry g expr then
+                    if acc || isRuntimeAsyncMarker g expr then
                         true
                     else
                         noInterceptF acc expr
@@ -533,7 +533,7 @@ let private prepareBodies g (reportedRanges: ConcurrentDictionary<range, unit>) 
         implFile
 
 let TransformImplFile (g: TcGlobals) reportedRanges (implFile: CheckedImplFile) =
-    if containsRuntimeAsyncEntry g implFile then
+    if containsRuntimeAsyncMarker g implFile then
         // Bodies inlined from an assembly compiled with the feature are still prepared.
         let implFile =
             if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then

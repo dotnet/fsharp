@@ -3911,13 +3911,13 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         else
             None
 
-    let containsRuntimeAsyncFragment expr =
+    let containsRuntimeAsyncCode expr =
         match runtimeAsyncAnalyzer with
-        | Some analyzer -> analyzer.ContainsFragment expr
+        | Some analyzer -> analyzer.ContainsRuntimeAsyncCode expr
         | None -> false
 
     let reoptimizeRuntimeAsync reduced =
-        if containsRuntimeAsyncFragment reduced then
+        if containsRuntimeAsyncCode reduced then
             let preserveCallSite = not cenv.settings.LocalOptimizationsEnabled
             let cenv =
                 { cenv with
@@ -4740,7 +4740,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     cenv.emitTailcalls &&
     not env.disableMethodSplitting &&
     // Never split a runtime-async body: the split-off method would not be a runtime-async
-    // method, so its Await calls would be rejected by IlxGen (FS3916).
+    // method, so its Await calls would be rejected by IlxGen (FS3918).
     not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g).ContainsSuspension e) &&
     einfo.FunctionSize >= threshold &&
 

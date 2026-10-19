@@ -88,7 +88,7 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
 
     new(g: TcGlobals) = RuntimeAsyncAnalyzer(g, fun _ -> None)
 
-    member _.ContainsFragment expr = containsExpression expr |> fst
+    member _.ContainsRuntimeAsyncCode expr = containsExpression expr |> fst
 
     member this.ContainsSuspension expr =
         stackGuard.Guard(fun () -> this.ContainsSuspensionCore expr)
@@ -114,24 +114,24 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
             result
 
 let ShouldForceRuntimeAsyncInline (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (vref: ValRef) inlineBody =
-    let containsRuntimeAsyncFragment =
+    let containsRuntimeAsyncCode =
         match inlineBody with
-        | Some body -> analyzer.ContainsFragment body
-        | None -> analyzer.ContainsFragment(exprForValRef vref.Range vref)
+        | Some body -> analyzer.ContainsRuntimeAsyncCode body
+        | None -> analyzer.ContainsRuntimeAsyncCode(exprForValRef vref.Range vref)
 
-    if containsRuntimeAsyncFragment then
+    if containsRuntimeAsyncCode then
         true
     elif runtimeAsyncContext && vref.InlineIfLambda && not vref.ShouldInline then
         true
     elif not (vref.ShouldInline || vref.IsLocalRef) then
         false
     else
-        analyzer.ContainsFragment(exprForValRef vref.Range vref)
+        analyzer.ContainsRuntimeAsyncCode(exprForValRef vref.Range vref)
 
 let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (vref: ValRef) inlineBody args =
     ShouldForceRuntimeAsyncInline analyzer runtimeAsyncContext vref inlineBody
     || ((vref.ShouldInline || vref.InlineIfLambda)
-        && List.exists analyzer.ContainsFragment args)
+        && List.exists analyzer.ContainsRuntimeAsyncCode args)
     || (runtimeAsyncContext
         && vref.ShouldInline
         && List.exists
