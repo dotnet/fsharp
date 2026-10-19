@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="ConvertToShorthandLambda" xml:space="preserve">
+    <value>Convert to '_.' shorthand lambda</value>
+  </data>
+  <data name="ConvertToFunLambda" xml:space="preserve">
+    <value>Convert to 'fun' lambda</value>
+  </data>
 </root>
