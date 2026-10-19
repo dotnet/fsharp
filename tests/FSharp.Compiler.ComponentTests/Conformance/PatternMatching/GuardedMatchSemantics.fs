@@ -29,6 +29,7 @@ module GuardedMatchSemantics =
     [<InlineData(true, true)>]
     let ``Issue 20632 - preserve committed observations and projection demand`` optimize realSignature =
         let alternatives = [ for i in 1..64 -> string i ] |> String.concat " | "
+        let smallHeadGuards = [ for i in 1..7 -> $"    | _, Second _ :: _ when not takeFirst -> {10 + i}" ] |> String.concat "\n"
         FSharp $"""module Test
 open System
 let trace = ResizeArray<int>()
@@ -63,6 +64,9 @@ let demand (input: (int * int) * bool) =
     | _, true when guard 6 -> 6
     | _, true when guard 7 -> 7
     | _, true when guard 8 -> 8
+    | (0, _), true -> -1
+    | (3, _), true -> -1
+    | (4, _), true -> -1
     | ((1, _) | (2, _)), true when guard 9 -> 9
     | _ -> 10
 type U = A | B
@@ -95,7 +99,7 @@ let cli token cell =
 type SmallToken = First of int | Second of int
 let nullDefault takeFirst token (stack: int list) =
     match token, stack with
-    | First _, _ :: _ when takeFirst -> 10
+    | First _, 1 :: _ when takeFirst -> 10
     | _, _ :: _ when not takeFirst -> 11
     | _, _ :: _ when not takeFirst -> 12
     | _, _ :: _ when not takeFirst -> 13
@@ -109,6 +113,15 @@ let nullDefault takeFirst token (stack: int list) =
     | (First _ | Second _), _ :: _ when not takeFirst -> 23
     | _ -> 24
 type Token = T0 | T1 | T2 | T3
+let nullHead takeFirst token stack =
+    match token, stack with
+    | T0, First _ :: _ when takeFirst -> 10
+{smallHeadGuards}
+    | T1, _ :: _ when not takeFirst -> 20
+    | T2, _ :: _ when not takeFirst -> 21
+    | T3, _ :: _ when not takeFirst -> 22
+    | (T1 | T2 | T3), _ :: _ when not takeFirst -> 23
+    | _ -> 24
 type Head = H0 of string | H1 of int | H2 | H3
 let (|Probe|) head = match head with H0 text -> text.Length | _ -> 0
 let refutedActive takeFirst token stack =
@@ -149,6 +162,7 @@ let main _ =
         failwith "success argument observation"
     if cli 2 {{ Item = P 7 }} <> 7 then failwith "CLR-settable parent"
     if nullDefault true Unchecked.defaultof<SmallToken> [1] <> 10 then failwith "exhaustive null default"
+    if nullHead true T0 [Unchecked.defaultof<SmallToken>] <> 10 then failwith "exhaustive head null default"
     if refutedActive false T0 [H0 Unchecked.defaultof<string>] <> 24 then failwith "refuted active demand"
     0
 """
@@ -204,13 +218,24 @@ let main _ =
         |> fun size -> Assert.True(size < 6000, $"Context match emitted {size} IL bytes")
 
     [<Theory>]
-    [<InlineData(false, false)>]
-    [<InlineData(false, true)>]
-    [<InlineData(true, false)>]
-    [<InlineData(true, true)>]
-    let ``Issue 20632 - grouped actions keep byrefs and rethrow in their original scope`` byrefResult optimize =
+    [<InlineData("byref", false)>]
+    [<InlineData("byref", true)>]
+    [<InlineData("rethrow", false)>]
+    [<InlineData("rethrow", true)>]
+    [<InlineData("protected", false)>]
+    [<InlineData("protected", true)>]
+    [<InlineData("tail", false)>]
+    [<InlineData("tail", true)>]
+    [<InlineData("task", false)>]
+    [<InlineData("task", true)>]
+#if NETCOREAPP
+    [<InlineData("runtime", false)>]
+    [<InlineData("runtime", true)>]
+#endif
+    let ``Issue 20632 - grouped actions keep their original scope`` scope optimize =
         let source =
-            if byrefResult then
+            match scope with
+            | "byref" ->
                 let body = contextMatch (fun value -> $"&data[({value}) %% data.Length]") "&data[0]"
                 "let run (data: int[]) token stack col : byref<int> =\n" + indent body + """
 [<EntryPoint>]
@@ -221,7 +246,7 @@ let main _ =
     if data[115] <> 99 || data[5] <> 77 then failwith "byref target"
     0
 """
-            else
+            | "rethrow" ->
                 let body = contextMatch (fun _ -> "reraise()") "reraise()"
                 "let expected = System.Exception(\"identity\")\nlet run token stack col : int =\n    try raise expected with _ ->\n" + indent (indent body) + """
 [<EntryPoint>]
@@ -233,7 +258,52 @@ let main _ =
         with error when obj.ReferenceEquals(error, expected) -> ()
     0
 """
+            | "protected" ->
+                let body = contextMatch (fun value -> $"this.MemberwiseClone() |> ignore; {value}") "-1"
+                "type Holder() =\n    member this.Run(token, stack, col) =\n" + indent (indent body) + """
+[<EntryPoint>]
+let main _ =
+    let holder = Holder()
+    if holder.Run(5, [C15 0], 0) <> 115 || holder.Run(5, [C0 0], 1000) <> 5 then failwith "protected target"
+    0
+"""
+            | "tail" ->
+                let body = contextMatch (fun value -> $"loop (remaining - 1) ({value})") "loop (remaining - 1) -1"
+                "let run token stack col =\n    let rec loop remaining result =\n        if remaining = 0 then result else\n" + indent (indent body) + """
+    loop 100000 0
+[<EntryPoint>]
+let main _ =
+    if run 5 [C15 0] 0 <> 115 || run 5 [C0 0] 1000 <> 5 then failwith "tail target"
+    0
+"""
+            | "task" ->
+                let body = contextMatch id "-1" |> indent |> indent |> indent
+                "let run token stack col =\n    task {\n        do! System.Threading.Tasks.Task.Yield()\n        return (\n" + body + """
+        )
+    }
+[<EntryPoint>]
+let main _ =
+    if (run 5 [C15 0] 0).Result <> 115 || (run 5 [] 0).Result <> -1 then
+        failwith "task target"
+    0
+"""
+            | "runtime" ->
+                let body = contextMatch (fun value -> $"System.Runtime.CompilerServices.AsyncHelpers.Await ready; {value}") "-1"
+                "open System.Threading.Tasks\nlet run (ready: Task) token stack col : Task<int> =\n    Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers.__runtimeAsyncReturn (\n" + indent (indent body) + """
+    )
+[<EntryPoint>]
+let main _ =
+    let ready = TaskCompletionSource<unit>()
+    let work = run ready.Task 5 [C15 0] 0
+    if work.IsCompleted then failwith "missing suspension"
+    ready.SetResult(())
+    if work.GetAwaiter().GetResult() <> 115 || (run Task.CompletedTask 5 [] 0).GetAwaiter().GetResult() <> -1 then
+        failwith "runtime async target"
+    0
+"""
+            | _ -> failwith $"Unknown scope {scope}"
         FSharp (contextPrelude + source)
+        |> (if scope = "runtime" then withLangVersionPreview >> withFSharpCoreShippedNet else id)
         |> withOptimization optimize
         |> compileExeAndRun
         |> shouldSucceed
@@ -288,6 +358,76 @@ let main _ =
 """
         |> withOptimization optimize
         |> withOptions [ if realSignature then "--realsig+" else "--realsig-" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Issue 20632 - payload observations precede tail tests and throwing guards`` partialPattern optimize =
+        let payload = if partialPattern then "Read 0 (Observe values)" else "Observe values"
+        let guards =
+            [ for i in 0..7 -> $"            | _, C0 ({payload}) :: (_ :: _) when guard {i} values -> {100 + i} + values[0]" ]
+            |> String.concat "\n"
+        FSharp $"""module Test
+open System
+type Context = C0 of int[] | C1 | C2 | C3
+let trace = ResizeArray<string>()
+let expected = InvalidOperationException("guard")
+let mutable throwAt = -2
+let guard n (values: int[]) =
+    trace.Add($"g{{n}}:{{values[0]}}")
+    values[0] <- values[0] + 1
+    if n = throwAt then raise expected
+    n = 6 && throwAt = -2
+let (|Observe|) (values: int[]) =
+    trace.Add($"a:{{values[0]}}")
+    values
+let (|Read|_|) n (values: int[]) =
+    trace.Add($"p{{n}}:{{values[0]}}")
+    if values[0] >= n then Some values else None
+let run token stack =
+    try
+        try
+            match token, stack with
+            | 0, C0 values :: tail when guard -1 values -> -100 + tail.Length
+{guards}
+            | 1, _ :: tail -> 201 + tail.Length
+            | 2, _ :: tail -> 202 + tail.Length
+            | 3, _ :: tail -> 203 + tail.Length
+            | (4 | 5), _ :: tail when token >= 0 -> 204 + tail.Length
+            | _ -> -1
+        with error when (trace.Add("filter"); obj.ReferenceEquals(error, expected)) -> -2
+    finally trace.Add("finally")
+let check stop length expectedResult expectedValue expectedTrace =
+    let values = [|1|]
+    throwAt <- stop
+    trace.Clear()
+    let stack = if length = 1 then [C0 values] else [C0 values; C3]
+    if run 2 stack <> expectedResult || values[0] <> expectedValue || List.ofSeq trace <> expectedTrace then
+        failwith (String.concat "," trace)
+[<EntryPoint>]
+let main _ =
+    let partialPattern = {if partialPattern then "true" else "false"}
+    let observations value = if partialPattern then [$"p0:{{value}}"; $"a:{{value}}"] else []
+    let prefix = if partialPattern then [] else ["a:1"]
+    let traceThrough last =
+        [ yield! prefix
+          for n in 0..last do
+              yield! observations (n + 1)
+              yield $"g{{n}}:{{n + 1}}" ]
+    let shortTrace = if partialPattern then List.replicate 8 ["p0:1"; "a:1"] |> List.concat else ["a:1"]
+    check -2 1 202 1 (shortTrace @ ["finally"])
+    check -2 2 114 8 (traceThrough 6 @ ["finally"])
+    check -1 2 203 9 (traceThrough 7 @ ["finally"])
+    for stop in 0..7 do
+        check stop 2 -2 (stop + 2) (traceThrough stop @ ["filter"; "finally"])
+    0
+"""
+        |> withOptimization optimize
+        |> withOptions [ "--nowarn:75"; "--extraoptimizationloops:1"; "--parallelcompilation+" ]
         |> compileExeAndRun
         |> shouldSucceed
 
