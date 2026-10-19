@@ -1061,6 +1061,34 @@ let make (gate: Task<int>) =
     [<InlineData(false)>]
     [<InlineData(true)>]
     [<Theory>]
+    let ``runtime async rejects suspension in an object expression base constructor call`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncObjectBaseCallTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<AbstractClass>]
+type Base(value: int) =
+    member _.Value = value
+    abstract Get : unit -> int
+
+let make (gate: Task<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        { new Base(AsyncHelpers.Await gate) with
+            member this.Get() = this.Value })
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3918
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
     let ``runtime async marker inside an object member remains supported`` (optimize: bool) =
         FSharp """
 module RuntimeAsyncMarkedObjectMemberTest

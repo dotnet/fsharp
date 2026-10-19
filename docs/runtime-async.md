@@ -216,6 +216,15 @@ or delegate inlining moves into a handler is still rewritten.
 prepares their `MoveNextAsync` body after state-machine conversion, which is
 where sequence `try`/`with` is lowered.
 
+The later optimization loops (`ExtraLoop`, `FinalSimplify`) do not repeat the
+preparation. They rely on every suspending body having been inlined by the
+first loop, so they cannot move a suspension into a handler or a closure.
+
+Hoisted mutable captures keep their source name through `TOp.DebugLocalScope`.
+IlxGen relies on `LowerLocalMutables` having boxed every such capture that a
+closure reads, so the scope names either the local slot itself or a copy of
+the shared reference cell.
+
 When runtime-async specialization is forced in a debug build, the builder
 combinator is copied with its definition-site debug ranges remarked at the
 call site. User continuation arguments keep their own ranges, and the marked

@@ -3138,7 +3138,12 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
 
     (ilLocals, maxStack, lab2pc, code, exnSpecs, localDebugSpecs, hasDebugPoints)
 
-let CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, codeGenFunction, m) =
+/// Each method states whether it is runtime-async, so the flag never leaks from an enclosing method's env.
+let CodeGenMethod cenv mgbuf isRuntimeAsync (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, codeGenFunction, m) =
+    let eenv =
+        { eenv with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
 
     let locals, maxStack, lab2pc, instrs, exns, localDebugSpecs, hasDebugPoints =
         CodeGenThen cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, codeGenFunction, m)
@@ -3369,6 +3374,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
 
                     GenGetVal cenv cgbuf eenv (vref, m) Continue
                     EmitSetLocal cgbuf index
+                // Optimized code does not spend a local on the name of a value held elsewhere.
                 | _ -> ()
 
                 GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
@@ -3538,13 +3544,14 @@ and GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel =
 and GenExprs cenv cgbuf eenv es =
     List.iter (fun e -> GenExpr cenv cgbuf eenv e Continue) es
 
-and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0) =
+and CodeGenMethodForExpr cenv mgbuf isRuntimeAsync (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0) =
     let eenv = { eenv with exitSequel = sequel0 }
 
     let _, code =
         CodeGenMethod
             cenv
             mgbuf
+            isRuntimeAsync
             (entryPointInfo,
              methodName,
              eenv,
@@ -3555,7 +3562,7 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
 
     code
 
-and DelayCodeGenMethodForExpr cenv mgbuf (_, _, eenv, _, _, _, _ as args) =
+and DelayCodeGenMethodForExpr cenv mgbuf isRuntimeAsync (_, _, eenv, _, _, _, _ as args) =
     let change3rdOutOf7 (a1, a2, _, a4, a5, a6, a7) newA3 = (a1, a2, newA3, a4, a5, a6, a7)
 
     if eenv.delayCodeGen then
@@ -3567,12 +3574,12 @@ and DelayCodeGenMethodForExpr cenv mgbuf (_, _, eenv, _, _, _, _ as args) =
         let newArgs = change3rdOutOf7 args { eenv with delayCodeGen = false }
 
         let lazyMethodBody =
-            InterruptibleLazy(fun _ -> CodeGenMethodForExpr cenv mgbuf newArgs)
+            InterruptibleLazy(fun _ -> CodeGenMethodForExpr cenv mgbuf isRuntimeAsync newArgs)
 
         cenv.delayedGenMethods.Enqueue(fun () -> lazyMethodBody.Force() |> ignore)
         lazyMethodBody
     else
-        notlazy (CodeGenMethodForExpr cenv mgbuf args)
+        notlazy (CodeGenMethodForExpr cenv mgbuf isRuntimeAsync args)
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -6572,11 +6579,10 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
         let ilMethodBody =
             let eenvForMeth =
                 { eenvForMeth with
-                    inRuntimeAsyncMethod = false
                     inInlineMethod = false
                 }
 
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =
             GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
@@ -6766,11 +6772,10 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 let ilCode =
                     let eenvinner =
                         { eenvinner with
-                            inRuntimeAsyncMethod = false
                             inInlineMethod = false
                         }
 
-                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
+                    CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
 
                 let ilParams =
                     (ilArgTys, argVals)
@@ -6980,7 +6985,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     let eenvinner = bindBaseOrThisVarOpt cenv eenvinner baseValOpt
 
     let ilCtorBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], cloName, eenvinner, 1, None, basecall, discardAndReturnVoid)
+        CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], cloName, eenvinner, 1, None, basecall, discardAndReturnVoid)
 
     let genMethodAndOptionalMethodImpl tmethod useMethodImpl =
         [
@@ -7146,6 +7151,7 @@ and GenSequenceExpr
             CodeGenMethod
                 cenv
                 cgbuf.mgbuf
+                false
                 ([],
                  "GetFreshEnumerator",
                  eenvinner,
@@ -7193,7 +7199,7 @@ and GenSequenceExpr
             let body = mkValSet m cancellationTokenValRef cancellationTokenArgExpr
 
             let ilCode =
-                CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "SetCancellationToken", methodEnv, 2, None, body, discardAndReturnVoid)
+                CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], "SetCancellationToken", methodEnv, 2, None, body, discardAndReturnVoid)
 
             Some(
                 mkILNonGenericVirtualInstanceMethod (
@@ -7210,7 +7216,7 @@ and GenSequenceExpr
 
     let closeMethod =
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
         mkILNonGenericVirtualInstanceMethod (
             "Close",
@@ -7222,7 +7228,7 @@ and GenSequenceExpr
 
     let checkCloseMethod =
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_CheckClose", eenvinner, 1, None, checkCloseExpr, Return)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], "get_CheckClose", eenvinner, 1, None, checkCloseExpr, Return)
 
         mkILNonGenericVirtualInstanceMethod (
             "get_CheckClose",
@@ -7260,7 +7266,6 @@ and GenSequenceExpr
 
         let methodEnv =
             { eenvinner with
-                inRuntimeAsyncMethod = isRuntimeAsync
                 inInlineMethod = false
             }
 
@@ -7282,7 +7287,7 @@ and GenSequenceExpr
         let ilCode =
             MethodBody.IL(
                 InterruptibleLazy(fun _ ->
-                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, usedArgs, None, body, Return)
+                    CodeGenMethodForExpr cenv cgbuf.mgbuf isRuntimeAsync ([], name, methodEnv, usedArgs, None, body, Return)
                     |> fun code ->
                         { code with
                             IsRuntimeAsync = isRuntimeAsync
@@ -7300,7 +7305,7 @@ and GenSequenceExpr
                 "get_LastGenerated"
 
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, eenvinner, 1, None, exprForValRef m currvref, Return)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf false ([], name, eenvinner, 1, None, exprForValRef m currvref, Return)
 
         mkILNonGenericVirtualInstanceMethod (
             name,
@@ -7481,15 +7486,10 @@ and GenClosureBody cenv (cgbuf: CodeGenBuffer) eenv (cloinfo: IlxClosureInfo) en
     if isRuntimeAsync then
         CheckRuntimeAsyncFreeVars cenv.g m cloinfo
 
-    let eenv =
-        { eenv with
-            inRuntimeAsyncMethod = isRuntimeAsync
-        }
-
     let sequel = if isRuntimeAsyncUnit then discardAndReturnVoid else Return
 
     let ilBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenv, 1, None, body, sequel)
+        CodeGenMethodForExpr cenv cgbuf.mgbuf isRuntimeAsync (entryPointInfo, cloinfo.cloName, eenv, 1, None, body, sequel)
 
     let ilBody =
         if isRuntimeAsync then
@@ -8140,19 +8140,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         let ilDelegeeParams, ilDelegeeRet =
             GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
-        // The enclosing method's runtime-async marker does not apply to the delegate's Invoke.
         let envForDelegeeMeth =
-            let env =
-                AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
-
-            { env with
-                inRuntimeAsyncMethod = false
-            }
+            AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
 
         let ilMethodBody =
             CodeGenMethodForExpr
                 cenv
                 cgbuf.mgbuf
+                false
                 ([],
                  delegeeMethName,
                  envForDelegeeMeth,
@@ -9522,7 +9517,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
         let ilMethodDef =
             let ilLazyCode =
-                DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
+                DelayCodeGenMethodForExpr cenv cgbuf.mgbuf false ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
 
             let ilMethodBody = MethodBody.IL(ilLazyCode)
 
@@ -10298,7 +10293,6 @@ and GenMethodForBinding
                 eenvForMeth
 
         { eenvForMeth with
-            inRuntimeAsyncMethod = isRuntimeAsync
             inInlineMethod = v.InlineInfo = ValInline.Always
         }
 
@@ -10365,7 +10359,7 @@ and GenMethodForBinding
                 | _ -> None
 
             let ilLazyCode =
-                DelayCodeGenMethodForExpr cenv mgbuf (tailCallInfo, mspec.Name, eenvForMeth, 0, selfValOpt, bodyExpr, sequel)
+                DelayCodeGenMethodForExpr cenv mgbuf isRuntimeAsync (tailCallInfo, mspec.Name, eenvForMeth, 0, selfValOpt, bodyExpr, sequel)
 
             // This is the main code generation for most methods
             false, MethodBody.IL(ilLazyCode), false
@@ -11386,7 +11380,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
 
     // Generate the declarations in the module and its initialization code
     let _, body =
-        CodeGenMethod cenv cgbuf.mgbuf ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
+        CodeGenMethod cenv cgbuf.mgbuf false ([], eenv.staticInitializationName, eenv, 0, None, codeGenInitFunc, m)
 
     let codeDoesSomething = CheckCodeDoesSomething body.Code
 
@@ -11685,6 +11679,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
         CodeGenMethod
             cenv
             mgbuf
+            false
             ([],
              methodName,
              eenv,
@@ -12046,7 +12041,7 @@ and EmitToStringMethodDef (cenv: cenv, mgbuf: AssemblyBuilder, eenv: IlxGenEnv, 
     let eenvForMeth = AddStorageForLocalVals g [ (thisv, Arg 0) ] eenv
 
     let ilMethodBody =
-        CodeGenMethodForExpr cenv mgbuf ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
+        CodeGenMethodForExpr cenv mgbuf false ([], "ToString", eenvForMeth, 0, Some thisv, bodyExpr, Return)
 
     let mdef =
         mkILNonGenericVirtualInstanceMethod (
@@ -13416,6 +13411,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                         CodeGenMethod
                             cenv
                             mgbuf
+                            false
                             ([],
                              "unused",
                              eenv,
