@@ -3286,7 +3286,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             let lowering =
                 if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false expr
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap None expr
                 else
                     None
 
@@ -7209,36 +7209,16 @@ and GenSequenceExpr
             )
 
     let closeMethod =
-        let struct (isRuntimeAsync, _, body) = GetRuntimeAsyncMethodBody g closeExpr
-        let name = if isRuntimeAsync then "DisposeAsync" else "Close"
-
-        let methodEnv =
-            { eenvinner with
-                inRuntimeAsyncMethod = isRuntimeAsync
-                inInlineMethod = false
-            }
-
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, 1, None, body, discardAndReturnVoid)
-            |> fun code ->
-                { code with
-                    IsRuntimeAsync = isRuntimeAsync
-                }
-
-        let resultTy =
-            if isRuntimeAsync then
-                GenType cenv m eenvinner.tyenv (tyOfExpr g closeExpr)
-            else
-                ILType.Void
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
         mkILNonGenericVirtualInstanceMethod (
-            name,
+            "Close",
             ILMemberAccess.Public,
             [],
-            mkILReturn resultTy,
+            mkILReturn ILType.Void,
             MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
-        |> fun methodDef -> methodDef.WithAsync(isRuntimeAsync)
 
     let checkCloseMethod =
         let ilCode =
@@ -7258,6 +7238,24 @@ and GenSequenceExpr
             eenvinner |> AddStorageForLocalVals g [ (nextEnumeratorValRef.Deref, Arg 1) ]
 
         let struct (isRuntimeAsync, _, body) = GetRuntimeAsyncMethodBody g generateNextExpr
+
+        let eenvinner, body =
+            if isRuntimeAsync then
+                // Release the base class move guard before the returned task completes.
+                let selfVal, selfExpr =
+                    mkCompGenLocal m "this" (g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy)
+
+                let completeMove =
+                    let mspec =
+                        mkILNonGenericInstanceMethSpecInTy (ilCloBaseTy, "CompleteMoveNext", [], ILType.Void)
+
+                    mkAsmExpr ([ I_call(Normalcall, mspec, None) ], [], [ selfExpr ], [], m)
+
+                eenvinner |> AddStorageForLocalVals g [ (selfVal, Arg 0) ],
+                mkTryFinally g (body, completeMove, m, tyOfExpr g body, DebugPointAtTry.No, DebugPointAtFinally.No)
+            else
+                eenvinner, body
+
         let name = if isRuntimeAsync then "MoveNextAsync" else "GenerateNext"
 
         let methodEnv =
@@ -7327,13 +7325,6 @@ and GenSequenceExpr
             getFreshMethod
         ]
 
-    let ilInterfaceTys =
-        if directRuntimeSequence then
-            AllInterfacesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes (g.mk_IAsyncEnumerator_ty seqElemTy)
-            |> List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
-        else
-            []
-
     let cloTypeDefs =
         GenClosureTypeDefs
             cenv
@@ -7346,7 +7337,7 @@ and GenSequenceExpr
              cloMethods,
              [],
              ilCloBaseTy,
-             ilInterfaceTys,
+             [],
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do
