@@ -757,10 +757,15 @@ module AsyncTaskLikeAwaitTests =
 
         // This should not pollute the continuation observed
         asyncLocal.Value <- "root-context"
+        // Complete on a dedicated thread so thread-pool starvation cannot stall this test.
         let completion =
-            Task.Run(fun () ->
-                asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
-                tcs.SetResult())
+            Task.Factory.StartNew(
+                (fun () ->
+                    asyncLocal.Value <- "completing-context" // if ExecutionContext is not propagated correctly to the continuation, it will see this
+                    tcs.SetResult()),
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default)
 
         Assert.True(completion.Wait(TimeSpan.FromSeconds 5.), "Completion task hung?")
         Assert.True(t.Wait(TimeSpan.FromSeconds 5.), "Awaited subject task hung?")
