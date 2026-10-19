@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-10-19T09:03:25Z",
+  "last_run": "2026-10-19T13:04:09Z",
   "prs": {
     "20706": {
       "category": "C",
@@ -21,16 +21,20 @@
       "head_sha": "ea0ee39d02d401a550555adffd2a9ac0a19dc1de",
       "issue": 13084,
       "last_review_comment_timestamp": null,
-      "last_checked_at": "2026-10-19T09:03:25Z",
-      "result": "push blocked",
-      "note": "GitHub reports a merge conflict. Replayed the sole test change onto current main as local commit 3aa5cb431, preserving the new main tests at the shared insertion point. The Release component project built and the focused Issue 13084 test passed. The authorized push bridge repeatedly failed because its publishing workspace could not locate the PR head branch, so GitHub remains unchanged."
+      "last_checked_at": "2026-10-19T13:04:09Z",
+      "result": "push blocked; maintainers notified",
+      "actions": [
+        "prepared the conflict resolution on current main",
+        "commented on PR 20799 after the publishing bridge rejected the branch update"
+      ],
+      "note": "GitHub still reports a merge conflict. Replayed the sole test change onto current main as local commit 01575c382, preserving the new main tests at the shared insertion point; the diff changes only ComputationExpressionTests.fs. The exact resolution passed the Release component build and focused Issue 13084 test in the prior run. This runner lacked the required .NET SDK, and the authorized publishing bridge again could not access the PR head branch, so the prepared update could not be pushed."
     },
     "20805": {
       "category": "C",
       "head_sha": "775f6f88177b1f6612644f221859b70e488ec00f",
       "issue": 12449,
       "last_review_comment_timestamp": null,
-      "last_checked_at": "2026-10-19T09:03:25Z",
+      "last_checked_at": "2026-10-19T13:04:09Z",
       "result": "healthy",
       "note": "All 53 checks pass, GitHub reports no merge conflict, and there are no PR comments, reviews, or review threads."
     }
