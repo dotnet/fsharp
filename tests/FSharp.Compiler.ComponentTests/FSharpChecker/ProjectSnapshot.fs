@@ -1,104 +1,87 @@
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharpChecker.ProjectSnapshot
 
-open Xunit
 open System
+open System.IO
+open System.Threading.Tasks
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open FSharp.Compiler.IO
+open Xunit
 
+#nowarn "57"
 
-// TODO: restore tests
+let private projectOptions projectFileName references referencedProjects =
+    {
+        ProjectFileName = projectFileName
+        ProjectId = None
+        SourceFiles = [| Path.ChangeExtension(projectFileName, ".fs") |]
+        OtherOptions = [| for path in references -> $"-r:{path}" |]
+        ReferencedProjects = referencedProjects
+        IsIncompleteTypeCheckEnvironment = false
+        UseScriptResolutionRules = false
+        LoadTime = DateTime.UtcNow
+        UnresolvedReferences = None
+        OriginalLoadReferences = []
+        Stamp = None
+    }
 
-//[<Fact>]
-//let WithoutImplFilesThatHaveSignatures () =
+let private emptySource _ path =
+    async { return FSharpFileSnapshot.CreateFromString(path, "") }
 
-//    let snapshot = FSharpProjectSnapshot.Create(
-//        projectFileName = "Dummy.fsproj",
-//        projectId = None,
-//        sourceFiles = [
-//            { FileName = "A.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "C.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//        ],
-//        referencesOnDisk = [],
-//        otherOptions = [],
-//        referencedProjects = [],
-//        isIncompleteTypeCheckEnvironment = true,
-//        useScriptResolutionRules = false,
-//        loadTime = DateTime(1234, 5, 6),
-//        unresolvedReferences = None,
-//        originalLoadReferences = [],
-//        stamp = None
-//    )
+let private january = DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+let private february = DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc)
 
-//    let result = snapshot.WithoutImplFilesThatHaveSignatures
+let private fileSystemAnswering (stamp: DateTime) =
+    { new DefaultFileSystem() with
+        override _.GetLastWriteTimeShim _ = stamp
+    }
 
-//    let expected = [| "A.fsi"; "B.fs"; "C.fsi" |]
+let private fileSystemRejectingStats =
+    { new DefaultFileSystem() with
+        override _.GetLastWriteTimeShim _ = failwith "unexpected reference stat"
+    }
 
-//    Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
+let private withFileSystem (fileSystem: IFileSystem) (test: unit -> Task) : Task =
+    task {
+        let current = FileSystem
 
-//    Assert.Equal<byte array>(result.FullVersion, snapshot.SignatureVersion)
+        try
+            FileSystem <- fileSystem
+            do! test ()
+        finally
+            FileSystem <- current
+    }
 
-//[<Fact>]
-//let WithoutImplFilesThatHaveSignaturesExceptLastOne () =
+let private mainWithLib () =
+    let lib = projectOptions "Lib.fsproj" [ "LibRef.dll" ] [||]
+    projectOptions "Main.fsproj" [ "MainRef.dll" ] [| FSharpReferencedProject.FSharpReference("Lib.dll", lib) |]
 
-//    let snapshot = FSharpProjectSnapshot.Create(
-//        projectFileName = "Dummy.fsproj",
-//        projectId = None,
-//        sourceFiles = [
-//            { FileName = "A.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "C.fsi"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//        ],
-//        referencesOnDisk = [],
-//        otherOptions = [],
-//        referencedProjects = [],
-//        isIncompleteTypeCheckEnvironment = true,
-//        useScriptResolutionRules = false,
-//        loadTime = DateTime(1234, 5, 6),
-//        unresolvedReferences = None,
-//        originalLoadReferences = [],
-//        stamp = None
-//    )
+let private assertReferencesOnDisk (snapshot: FSharpProjectSnapshot) mainStamp libStamp =
+    let libSnapshot =
+        match snapshot.ReferencedProjects with
+        | [ FSharpReferencedProjectSnapshot.FSharpReference(_, lib) ] -> lib
+        | other -> failwith $"Expected one referenced project, got %A{other}"
 
-//    let result = snapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne
+    Assert.Equal<ReferenceOnDisk list>([ { Path = "MainRef.dll"; LastModified = mainStamp } ], snapshot.ReferencesOnDisk)
+    Assert.Equal<ReferenceOnDisk list>([ { Path = "LibRef.dll"; LastModified = libStamp } ], libSnapshot.ReferencesOnDisk)
 
-//    let expected = [| "A.fsi"; "B.fs"; "C.fsi"; "C.fs" |]
+[<Fact>]
+let ``Reference stamps come from the host when it gives them and from the file system current at build time when not`` () : Task =
+    withFileSystem fileSystemRejectingStats (fun () ->
+        task {
+            let stamps = dict [ "MainRef.dll", january; "LibRef.dll", february ]
 
-//    Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
+            let! hosted =
+                FSharpProjectSnapshot.FromOptionsWithReferenceStamps(mainWithLib (), emptySource, (fun path -> stamps[path]))
 
-//    Assert.Equal<byte array>(result.FullVersion, snapshot.LastFileVersion)
+            assertReferencesOnDisk hosted january february
 
+            FileSystem <- fileSystemAnswering january
+            let work = FSharpProjectSnapshot.FromOptions(mainWithLib (), emptySource)
+            FileSystem <- fileSystemAnswering february
 
-//[<Fact>]
-//let WithoutImplFilesThatHaveSignaturesExceptLastOne_2 () =
+            let! built = work
 
-//    let snapshot = FSharpProjectSnapshot.Create(
-//        projectFileName = "Dummy.fsproj",
-//        projectId = None,
-//        sourceFiles = [
-//            { FileName = "A.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "B.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//            { FileName = "C.fs"; Version = "1"; GetSource = Unchecked.defaultof<_> }
-//        ],
-//        referencesOnDisk = [],
-//        otherOptions = [],
-//        referencedProjects = [],
-//        isIncompleteTypeCheckEnvironment = true,
-//        useScriptResolutionRules = false,
-//        loadTime = DateTime(1234, 5, 6),
-//        unresolvedReferences = None,
-//        originalLoadReferences = [],
-//        stamp = None
-//    )
-
-//    let result = snapshot.WithoutImplFilesThatHaveSignaturesExceptLastOne
-
-//    let expected = [| "A.fs"; "B.fs"; "C.fs" |]
-
-//    Assert.Equal<string array>(expected, result.SourceFileNames |> List.toArray)
-
-//    Assert.Equal<byte array>(result.FullVersion, snapshot.LastFileVersion)
-
+            assertReferencesOnDisk built february february
+        })
