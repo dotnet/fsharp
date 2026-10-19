@@ -238,17 +238,23 @@ module private CheckerExtensions =
         |> CancellableTask.whenAll
         |> CancellableTask.map (Seq.map (fun x -> x.ToString()) >> Set)
 
-    let getOnDiskReferences (options: FSharpProjectOptions) =
-        options.OtherOptions
-        |> Seq.filter (fun x -> x.StartsWith("-r:"))
-        |> Seq.map (fun x ->
-            let path = x.Substring(3)
+    let getOnDiskReferences (stamps: IReferenceStamps) (options: FSharpProjectOptions) =
+        [
+            for option in options.OtherOptions do
+                if option.StartsWith("-r:", StringComparison.Ordinal) then
+                    let path = option.Substring "-r:".Length
 
-            {
-                Path = path
-                LastModified = System.IO.File.GetLastWriteTimeUtc path
-            })
-        |> Seq.toList
+                    {
+                        Path = path
+                        LastModified = stamps.GetLastWriteTimeUtc path
+                    }
+        ]
+
+    let referencesOnDiskChanged (project: Project) (oldSnapshot: FSharpProjectSnapshot) options =
+        let stamps =
+            project.Solution.GetFSharpWorkspaceService().FSharpProjectOptionsManager.ReferenceStamps
+
+        ReferenceStamps.changed stamps (getOnDiskReferences stamps options) oldSnapshot.ProjectSnapshot.ReferencesOnDisk
 
     let createProjectSnapshot (snapshotAccumulatorOpt) (project: Project) (options: FSharpProjectOptions option) =
         cancellableTask {
@@ -272,9 +278,7 @@ module private CheckerExtensions =
                     System.Diagnostics.Trace.TraceWarning "Reference versions changed"
                     None
 
-                | true, (true, (_, _, _, _, oldSnapshot: FSharpProjectSnapshot)) when
-                    oldSnapshot.ProjectSnapshot.ReferencesOnDisk <> (getOnDiskReferences options)
-                    ->
+                | true, (true, (_, _, _, _, oldSnapshot: FSharpProjectSnapshot)) when referencesOnDiskChanged project oldSnapshot options ->
                     System.Diagnostics.Trace.TraceWarning "References on disk changed"
                     None
 
@@ -321,7 +325,6 @@ module private CheckerExtensions =
                 | _ -> None
 
             let! newSnapshot =
-
                 match updatedSnapshot with
                 | Some snapshot -> snapshot
                 | _ ->
@@ -699,7 +702,6 @@ type Document with
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
 
             let! symbolUses =
-
                 if this.Project.UseTransparentCompiler then
                     checker.FindBackgroundReferencesInFile(this.FilePath, projectSnapshot, symbol)
                 else
