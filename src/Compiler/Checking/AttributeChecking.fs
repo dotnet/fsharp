@@ -6,6 +6,7 @@ module internal FSharp.Compiler.AttributeChecking
 
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open FSharp.Compiler.Text.Range
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -471,32 +472,47 @@ let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProv
     TryGetProvidedObsoleteInfo g m provAttribs |> reportObsoleteDiagnostic m
 #endif
 
-/// Indicate if IL attributes contain 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-/// Uses cached well-known flags for O(1) check when ILAttributesStored is available.
-/// See also: CheckILAttributesForUnseen for the non-cached variant on ILAttributes.
-let CheckILAttributesForUnseenStored (g: TcGlobals) (cattrsStored: ILAttributesStored) =
-    if cattrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.ObsoleteAttribute) then
-        not (cattrsStored.HasWellKnownAttribute(g, WellKnownILAttributes.IsByRefLikeAttribute))
-    else
-        false
+[<Flags>]
+type UnseenItems =
+    | None = 0
+    | Obsolete = 1
+    | EditorBrowsableNever = 2
+    | CompilerMessageHidden = 4
+    | EditorBrowsableAdvanced = 8
 
-/// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-/// Non-cached variant operating on ILAttributes directly. See CheckILAttributesForUnseenStored for cached version.
-let CheckILAttributesForUnseen (cattrs: ILAttributes) =
-    cattrs.HasWellKnownAttribute(WellKnownILAttributes.ObsoleteAttribute)
-    && not (cattrs.HasWellKnownAttribute(WellKnownILAttributes.IsByRefLikeAttribute))
+module UnseenItems =
+    let All = ~~~UnseenItems.None
 
-/// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
-/// items to be suppressed from intellisense.
-let CheckFSharpAttributesForHidden g attribs =
-    not (isNil attribs) &&
-    (match attribs with
-        | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
-        | _ -> false)
-    ||
-    (match attribs with
-     | EntityAttrib g WellKnownEntityAttributes.EditorBrowsableAttribute (Attrib(_, _, [AttribInt32Arg state], _, _, _, _)) -> state = int System.ComponentModel.EditorBrowsableState.Never
-     | _ -> false)
+    let ofBool cond unseen = if cond then unseen else UnseenItems.None
+
+let IsUnseen (allowUnseen: UnseenItems) (unseen: UnseenItems) =
+    unseen &&& ~~~allowUnseen <> UnseenItems.None
+
+let private ILWellKnownFlagsUnseenItems (flags: WellKnownILAttributes) =
+    let has flag = flags &&& flag <> WellKnownILAttributes.None
+    UnseenItems.ofBool (has WellKnownILAttributes.ObsoleteAttribute && not (has WellKnownILAttributes.IsByRefLikeAttribute)) UnseenItems.Obsolete
+    ||| UnseenItems.ofBool (has WellKnownILAttributes.EditorBrowsableNever) UnseenItems.EditorBrowsableNever
+    ||| UnseenItems.ofBool (has WellKnownILAttributes.EditorBrowsableAdvanced) UnseenItems.EditorBrowsableAdvanced
+
+let ILAttributesStoredUnseenItems (g: TcGlobals) (cattrsStored: ILAttributesStored) =
+    cattrsStored.GetOrComputeWellKnownFlags(computeILWellKnownFlags g) |> ILWellKnownFlagsUnseenItems
+
+let ILAttributesUnseenItems (g: TcGlobals) (cattrs: ILAttributes) =
+    computeILWellKnownFlags g cattrs |> ILWellKnownFlagsUnseenItems
+
+let private FSharpAttributesEditorBrowsableUnseenItems g attribs =
+    match attribs with
+    | EntityAttribInt g WellKnownEntityAttributes.EditorBrowsableAttribute state ->
+        match enum<EditorBrowsableState> state with
+        | EditorBrowsableState.Never -> UnseenItems.EditorBrowsableNever
+        | EditorBrowsableState.Advanced -> UnseenItems.EditorBrowsableAdvanced
+        | _ -> UnseenItems.None
+    | _ -> UnseenItems.None
+
+let private CheckFSharpAttributesForCompilerMessageHidden g attribs =
+    match attribs with
+    | EntityAttrib g WellKnownEntityAttributes.CompilerMessageAttribute (Attrib(_, _, _, ExtractAttribNamedArg "IsHidden" (AttribBoolArg v), _, _, _)) -> v
+    | _ -> false
 
 /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckFSharpAttributesForObsolete (g: TcGlobals) attribs =
@@ -507,16 +523,30 @@ let CheckFSharpAttributesForObsolete (g: TcGlobals) attribs =
        // like Span and ReadOnlySpan in completion lists due to their dual attributes.
     not (attribsHaveEntityFlag g WellKnownEntityAttributes.IsByRefLikeAttribute attribs)
 
-/// Indicates if a list of F# attributes contains 'ObsoleteAttribute' or CompilerMessageAttribute', which has an IsHidden argument
-/// May be used to suppress items from intellisense.
-let CheckFSharpAttributesForUnseen g attribs allowObsolete =
-    not (isNil attribs) &&
-    (not allowObsolete && CheckFSharpAttributesForObsolete g attribs || CheckFSharpAttributesForHidden g attribs)
+let FSharpAttributesUnseenItems g attribs =
+    if isNil attribs then
+        UnseenItems.None
+    else
+        let flags = computeEntityWellKnownFlags g attribs
+        let has flag = flags &&& flag <> WellKnownEntityAttributes.None
+
+        UnseenItems.ofBool (has WellKnownEntityAttributes.ObsoleteAttribute && not (has WellKnownEntityAttributes.IsByRefLikeAttribute)) UnseenItems.Obsolete
+        ||| (if has WellKnownEntityAttributes.EditorBrowsableAttribute then FSharpAttributesEditorBrowsableUnseenItems g attribs else UnseenItems.None)
+        ||| UnseenItems.ofBool (has WellKnownEntityAttributes.CompilerMessageAttribute && CheckFSharpAttributesForCompilerMessageHidden g attribs) UnseenItems.CompilerMessageHidden
+
+let CheckFSharpAttributesForUnseen g attribs allowUnseen =
+    FSharpAttributesUnseenItems g attribs |> IsUnseen allowUnseen
+
+let CheckFSharpAttributesForHidden g attribs =
+    CheckFSharpAttributesForUnseen g attribs (UnseenItems.Obsolete ||| UnseenItems.EditorBrowsableAdvanced)
 
 #if !NO_TYPEPROVIDERS
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
-let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m =
-    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), !! typeof<ObsoleteAttribute>.FullName).IsSome), m)
+let ProvidedAttributesUnseenItems (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m =
+    if provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), !! typeof<ObsoleteAttribute>.FullName).IsSome), m) then
+        UnseenItems.Obsolete
+    else
+        UnseenItems.None
 #endif
 
 /// Check the attributes associated with a property, returning warnings and errors as data.
@@ -642,21 +672,21 @@ let TryGetMethodObsoleteInfo minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'.
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete =
-    let isUnseenByObsoleteAttrib () =
+let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowUnseen =
+    let isUnseenItemsObsoleteAttrib () =
         match BindMethInfoAttributes m minfo
-                (fun ilAttribs -> Some(not allowObsolete && CheckILAttributesForUnseen ilAttribs))
-                (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs allowObsolete))
+                (fun ilAttribs -> Some(ILAttributesUnseenItems g ilAttribs))
+                (fun fsAttribs -> Some(FSharpAttributesUnseenItems g fsAttribs))
 #if !NO_TYPEPROVIDERS
-                (fun provAttribs -> Some(not allowObsolete && CheckProvidedAttributesForUnseen provAttribs m))
+                (fun provAttribs -> Some(ProvidedAttributesUnseenItems provAttribs m))
 #else
                 (fun _provAttribs -> None)
 #endif
                     with
-        | Some res -> res
+        | Some unseen -> IsUnseen allowUnseen unseen
         | None -> false
 
-    let isUnseenByHidingAttribute () =
+    let isUnseenItemsHidingAttribute () =
 #if !NO_TYPEPROVIDERS
         not (isObjTyAnyNullness g ty) &&
         isAppTy g ty &&
@@ -681,43 +711,43 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete =
         false
 #endif
 
-    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute ()
+    isUnseenItemsObsoleteAttrib () || isUnseenItemsHidingAttribute ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
-let PropInfoIsUnseen _m allowObsolete pinfo =
+let PropInfoIsUnseen _m allowUnseen pinfo =
     match pinfo with
     | ILProp (ILPropInfo(_, pdef) as ilpinfo) ->
         // Properties on .NET tuple types are resolvable but unseen
         isAnyTupleTy pinfo.TcGlobals ilpinfo.ILTypeInfo.ToType ||
-        CheckILAttributesForUnseen pdef.CustomAttrs
+        (ILAttributesUnseenItems pinfo.TcGlobals pdef.CustomAttrs |> IsUnseen allowUnseen)
     | FSProp (g, _, Some vref, _)
-    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs allowObsolete
+    | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs allowUnseen
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
 #if !NO_TYPEPROVIDERS
     | ProvidedProp (_amap, pi, m) ->
-        CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
+        ProvidedAttributesUnseenItems (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m |> IsUnseen allowUnseen
 #endif
 
 /// Indicate if an ILFieldInfo has 'Obsolete' attribute.
 /// Used to suppress the item in intellisense.
-let ILFieldInfoIsUnseen (finfo: ILFieldInfo) =
+let ILFieldInfoIsUnseen allowUnseen (finfo: ILFieldInfo) =
     match finfo with
-    | ILFieldInfo(_, fdef) -> CheckILAttributesForUnseen fdef.CustomAttrs
+    | ILFieldInfo(_, fdef) -> ILAttributesUnseenItems finfo.TcGlobals fdef.CustomAttrs |> IsUnseen allowUnseen
 #if !NO_TYPEPROVIDERS
     | ProvidedField(_amap, fi, m) ->
-        CheckProvidedAttributesForUnseen (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
+        ProvidedAttributesUnseenItems (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m |> IsUnseen allowUnseen
 #endif
 
 /// Indicate if an EventInfo has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
-let EventInfoIsUnseen allowObsolete (einfo: EventInfo) =
+let EventInfoIsUnseen allowUnseen (einfo: EventInfo) =
     match einfo with
-    | ILEvent(ILEventInfo(_, ilEventDef)) -> CheckILAttributesForUnseen ilEventDef.CustomAttrs
-    | FSEvent(g, _, addValRef, _) -> CheckFSharpAttributesForUnseen g addValRef.Attribs allowObsolete
+    | ILEvent(ILEventInfo(_, ilEventDef)) -> ILAttributesUnseenItems einfo.TcGlobals ilEventDef.CustomAttrs |> IsUnseen allowUnseen
+    | FSEvent(g, _, addValRef, _) -> CheckFSharpAttributesForUnseen g addValRef.Attribs allowUnseen
 #if !NO_TYPEPROVIDERS
     | ProvidedEvent(_amap, ei, m) ->
-        CheckProvidedAttributesForUnseen (ei.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
+        ProvidedAttributesUnseenItems (ei.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m |> IsUnseen allowUnseen
 #endif
 
 /// Check the attributes on a union case, returning errors and warnings as data.
