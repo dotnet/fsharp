@@ -222,5 +222,5 @@ module ILChecker =
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
-        let _, _, errors = exec ilasmPath [ $"%s{ilFilePath} /output=%s{dllFilePath} /dll" ]
+        let _, _, errors = exec ilasmPath [ $"%s{ilFilePath} -output=%s{dllFilePath} -dll" ]
         errors
