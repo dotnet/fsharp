@@ -434,21 +434,21 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                 // FCS reads the caret only to skip resolving the `#r "nuget: …"` line being typed, and only scripts have those.
                 let focusedCaret =
                     if isScriptFile document.FilePath then
-                        FocusedCaret.TryGet sourceText
+                        FocusedCaret.TryGetOrCreate sourceText
                     else
                         ValueNone
 
-                let getProjectOptionsFromScript () =
+                let getProjectOptionsFromScript (text: ISourceText) =
                     checker.GetProjectOptionsFromScript(
                         document.FilePath,
-                        sourceText.ToFSharpSourceText(),
+                        text,
                         ?caret = (focusedCaret |> ValueOption.toOption |> Option.bind _.Position),
                         previewEnabled = SessionsProperties.fsiPreview,
                         assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
                         userOpName = userOpName
                     )
 
-                let! scriptProjectOptions, _ = getProjectOptionsFromScript ()
+                let! scriptProjectOptions, _ = getProjectOptionsFromScript (sourceText.ToFSharpSourceText())
                 let project = document.Project
 
                 let otherOptions =
@@ -488,7 +488,8 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
                         TimeSpan.FromMilliseconds 500.,
                         fun () ->
                             backgroundTask {
-                                let! scriptProjectOptions, _ = getProjectOptionsFromScript ()
+                                let! scriptProjectOptions, _ =
+                                    getProjectOptionsFromScript (sourceText.Container.CurrentText.ToFSharpSourceText())
 
                                 do! checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                             }
@@ -889,6 +890,19 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
             match args.Kind with
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ())
+
+        // Options computed while a script was closed read its text from disk, with no buffer to follow the
+        // caret of: opening it may keep the text's version, so the cached entry would outlive the open.
+        workspace.DocumentOpened.Add(fun args ->
+            let doc = args.Document
+            let proj = doc.Project
+
+            if
+                proj.IsFSharp
+                && proj.IsFSharpMiscellaneousOrMetadata
+                && isScriptFile doc.FilePath
+            then
+                reactor.ClearSingleFileOptionsCache(doc.Id))
 
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
