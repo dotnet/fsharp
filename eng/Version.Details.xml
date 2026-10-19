@@ -74,9 +74,9 @@
       <Uri>https://github.com/dotnet/roslyn</Uri>
       <Sha>60ab01e72e3c390ccddb22b93dbba55a331901ca</Sha>
     </Dependency>
-    <Dependency Name="System.Security.Cryptography.Xml" Version="9.0.18">
+    <Dependency Name="System.Security.Cryptography.Xml" Version="9.0.21">
       <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
+      <Sha>d280e4fb388c6deed22d480daada060b6b456008</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
