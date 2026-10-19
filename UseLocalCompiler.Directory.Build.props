@@ -7,39 +7,51 @@
 
   <PropertyGroup>
     <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
-    
     <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
+    <LocalFSharpCompilerPath Condition="'$(LocalFSharpCompilerPath)' == ''">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
+  </PropertyGroup>
 
-    <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
-
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  <!-- Gate 1: redirect the SDK to the locally built F# compiler, build tasks and targets (via FSharpTargetsShim).
+       See: https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets -->
+  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
     <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
     <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
-
-    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
-
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
-  </PropertyGroup>
 
-  <!-- 
-    Use FSharpTargetsShim to redirect the SDK to use the locally built F# targets.
-    This replaces all the individual UsingTask overrides since Microsoft.FSharp.NetSdk.targets
-    imports Microsoft.FSharp.Targets which registers all the F# build tasks.
-    See: https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
-  -->
-  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
     <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/$(FSharpNetCoreProductTargetFramework)</LocalFSharpBuildBinPath>
+    <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
     <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
     <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
     <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+
+    <OtherFlags>$(OtherFlags) --nowarn:75 --times</OtherFlags>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- Gate 2 (regression matrix only): serve the local FSharp.Core the SDK's own way. FSCorePackageVersion pins the
+       implicit reference; FSCorePackageVersionSet suppresses the SDK default that inits _FSharpCoreLibraryPacksFolder,
+       so we point that (the restore feed) at RegressionLocalCorePackagesDir from the runner, else a co-located library-packs. -->
+  <PropertyGroup Condition="'$(RegressionLocalCore)' == 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(FSCorePackageVersionSet)' != 'true'">
+    <FSCorePackageVersion>$(RegressionLocalCoreVersion)</FSCorePackageVersion>
+    <FSCorePackageVersionSet>true</FSCorePackageVersionSet>
+    <_FSharpCoreLibraryPacksFolder>$([MSBuild]::ValueOrDefault('$(RegressionLocalCorePackagesDir)', '$(MSBuildThisFileDirectory)library-packs'))</_FSharpCoreLibraryPacksFolder>
+  </PropertyGroup>
+
+  <Target Name="_ValidateRegressionLocalCore" BeforeTargets="CollectPackageReferences;CoreCompile"
+          Condition="'$(RegressionLocalCore)' == 'true' and '$(RegressionLocalCoreVersion)' == ''">
+    <Error Text="RegressionLocalCore is set but RegressionLocalCoreVersion is empty. The regression job must pass the exact local FSharp.Core package version." />
+  </Target>
+
+  <!-- Gate 3 (CompilerCompat and VS integration): reference the locally built FSharp.Core directly. The regression
+       matrix uses Gate 2's library-packs flow instead, so it is excluded here. -->
+  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True' and '$(RegressionLocalCore)' != 'true'">
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(LoadLocalFSharpBuild)' == 'True' and '$(RegressionLocalCore)' != 'true'">
     <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
   </ItemGroup>
 </Project>

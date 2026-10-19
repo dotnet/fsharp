@@ -203,10 +203,9 @@ module LayoutRender =
 
     let bufferL os layout = renderL (bufferR os) layout |> ignore
 
-    let emitL f layout =
-        renderL (taggedTextListR f) layout |> ignore
-
     let toArray layout =
         let output = ResizeArray()
         renderL (taggedTextListR output.Add) layout |> ignore
         output.ToArray()
+
+    let toRichText layout = RichText.ofParts (toArray layout)

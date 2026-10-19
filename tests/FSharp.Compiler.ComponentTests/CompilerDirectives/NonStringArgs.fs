@@ -143,6 +143,14 @@ match None with None -> ()      // creates FS0025 - ignored due to flag
                 (Warning 988, Line 3, Col 3, Line 3, Col 3, "Main module of program is empty: nothing will happen when it is run")
             ]
 
+    [<Fact>]
+    let ``--warnaserror ignores unknown diagnostic identifiers`` () =
+        FSharp """ "" """
+        |> withOptions ["--warnaserror:NU1605;FS20"]
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 20
+
 
     [<InlineData("8.0")>]
     [<InlineData("9.0")>]

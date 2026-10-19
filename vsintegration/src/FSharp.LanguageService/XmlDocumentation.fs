@@ -15,11 +15,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.TaggedText
 
-[<AutoOpen>]
-module internal Utils2 =
-    let taggedTextToString (tts: TaggedText[]) =
-        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
-
 type internal ITaggedTextCollector_DEPRECATED =
     abstract Add: text: TaggedText -> unit
     abstract EndsWithLineBreak: bool
@@ -157,9 +152,9 @@ module internal XmlDocumentation =
                     addSeparatorIfNecessary add
                     if showText then 
                         let AppendOverload (item :ToolTipElementData) = 
-                            if taggedTextToString item.MainDescription <> "" then
+                            if item.MainDescription.Text <> "" then
                                 if not textCollector.IsEmpty then textCollector.Add TaggedText.lineBreak
-                                item.MainDescription |> Seq.iter textCollector.Add
+                                item.MainDescription.Parts |> Seq.iter textCollector.Add
 
                         AppendOverload(overloads.[0])
                         if len >= 2 then AppendOverload(overloads.[1])
@@ -174,7 +169,7 @@ module internal XmlDocumentation =
 
                     item0.Remarks |> Option.iter (fun r -> 
                         textCollector.Add TaggedText.lineBreak
-                        r |> Seq.iter textCollector.Add |> ignore)
+                        r.Parts |> Seq.iter textCollector.Add |> ignore)
 
                     AppendXmlComment_DEPRECATED(documentationProvider, xmlCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 

@@ -15,8 +15,6 @@ open FSharp.Compiler.Caches
 
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
-    let syncObj = obj ()
-
     [<VolatileField>]
     // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
     let mutable valueFactory: objnull = valueFactory
@@ -34,7 +32,7 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
         match valueFactory with
         | null -> value
         | _ ->
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match valueFactory with
@@ -44,7 +42,7 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
                     value <- (valueFactory |> unbox<unit -> 'T>) ()
                     valueFactory <- Unchecked.defaultof<_>
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
             value
 
@@ -136,25 +134,21 @@ module internal PervasiveAutoOpens =
     let notFound () = raise (KeyNotFoundException())
 
     type Async with
+        static member RunSynchronouslyImmediate(computation: Async<'T>, ?cancellationToken) =
+            let tcs = TaskCompletionSource<'T>()
 
-        static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-
-            let ts = TaskCompletionSource<'T>()
-
-            let task = ts.Task
-
-            Async.StartWithContinuations(computation, ts.SetResult, ts.SetException, (fun _ -> ts.SetCanceled()), cancellationToken)
-
-            try
-                task.Result
-            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-                raise (ex.InnerExceptions[0])
+            Async.StartWithContinuations(
+                computation,
+                tcs.SetResult,
+                tcs.SetException,
+                tcs.SetException,
+                ?cancellationToken = cancellationToken
+            )
+            // Synchronously block waiting for the result (i.e. even if continuations run on another thread, caller thread will be blocked)
+            tcs.Task.GetAwaiter().GetResult() // GetResult() unpacks the AggregateException that .Result would present
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
-    let syncObj = obj ()
-
     let mutable arrayStore: (_ array | null) = null
     let mutable dictStore: (_ | null) = null
 
@@ -164,7 +158,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
         match arrayStore with
         | NonNull value -> value
         | _ ->
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match arrayStore with
@@ -176,14 +170,14 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                     func <- Unchecked.defaultof<_>
                     freshArray
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
     member this.GetDictionary() =
         match dictStore with
         | NonNull value -> value
         | _ ->
             let array = this.GetArray()
-            Monitor.Enter(syncObj)
+            Monitor.Enter(this)
 
             try
                 match dictStore with
@@ -193,9 +187,35 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                     dictStore <- dict
                     dict
             finally
-                Monitor.Exit(syncObj)
+                Monitor.Exit(this)
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
+
+[<AbstractClass>]
+type DelayInitValue<'T when 'T: not null and 'T: not struct>() =
+    // Locks the instance and stores in place: a sync object or a lazy would add an object per value.
+    [<VolatileField>]
+    let mutable value: objnull = null
+
+    abstract Compute: unit -> 'T
+
+    member private this.Realise() =
+        Monitor.Enter this
+
+        try
+            match value with
+            | null ->
+                let computed = this.Compute()
+                value <- box computed
+                computed
+            | v -> unbox<'T> v
+        finally
+            Monitor.Exit this
+
+    member this.Value =
+        match value with
+        | null -> this.Realise()
+        | v -> unbox<'T> v
 
 //-------------------------------------------------------------------------
 // Library: projections

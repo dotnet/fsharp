@@ -81,7 +81,7 @@ module internal WarnScopes =
                 None
             | false, _ -> Some(s, s)
 
-        let parseInt (intString: string, argString) =
+        let parseInt (intString: string, argString: string) =
             match System.Int32.TryParse intString with
             | true, i -> Some i
             | false, _ ->
@@ -143,7 +143,7 @@ module internal WarnScopes =
             | "warnon" -> argCaptures |> List.choose (mkDirective WarnCmd.Warnon)
             | "nowarn" -> argCaptures |> List.choose (mkDirective WarnCmd.Nowarn)
             | _ -> // like "warnonx"
-                errorR (Error(FSComp.SR.fsiInvalidDirective ($"#{dIdent}", ""), directiveRange))
+                errorR (Error(FSComp.SR.fsiInvalidDirective (RichText.mkKeyword $"#{dIdent}", RichText.empty), directiveRange))
                 []
 
         {
@@ -244,7 +244,7 @@ module internal WarnScopes =
                 | WarnScope.OpenOff m' :: _
                 | WarnScope.On m' :: _ ->
                     if scopedNowarnFeatureIsSupported then
-                        informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
+                        informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch (RichText.mkKeyword "#nowarn", m'.StartLine), m))
 
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOff(mkScope m m) :: scopes)
@@ -253,7 +253,7 @@ module internal WarnScopes =
                 | WarnScope.OpenOff m' :: t -> warnScopeMap.Add(n, WarnScope.Off(mkScope m' m) :: t)
                 | WarnScope.OpenOn m' :: _
                 | WarnScope.Off m' :: _ ->
-                    warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#warnon", m'.EndLine), m))
+                    warning (Error(FSComp.SR.lexWarnDirectivesMustMatch (RichText.mkKeyword "#warnon", m'.EndLine), m))
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOn(mkScope m m) :: scopes)
 

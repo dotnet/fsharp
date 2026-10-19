@@ -19,21 +19,21 @@ type public ToolTipElementData =
     {
       Symbol: FSharpSymbol option
 
-      MainDescription: TaggedText[]
+      MainDescription: RichText
 
       XmlDoc: FSharpXmlDoc
 
       /// typar instantiation text, to go after xml
-      TypeMapping: TaggedText[] list
+      TypeMapping: RichText list
 
       /// Extra text, goes at the end
-      Remarks: TaggedText[] option
+      Remarks: RichText option
 
       /// Parameter name
       ParamName: string option
     }
 
-    static member internal Create: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElementData
+    static member internal Create: mainDescription: RichText * xml: FSharpXmlDoc * ?typeMapping: RichText list * ?paramName: string * ?remarks: RichText * ?symbol: FSharpSymbol  -> ToolTipElementData
 
 /// A single tool tip display element
 //
@@ -48,7 +48,7 @@ type public ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElement
+    static member Single: mainDescription: RichText * xml: FSharpXmlDoc * ?typeMapping: RichText list * ?paramName: string * ?remarks: RichText * ?symbol: FSharpSymbol  -> ToolTipElement
 
 /// Information for building a tool tip box.
 //
@@ -184,7 +184,7 @@ type public MethodGroupItemParameter =
 
     /// The representation for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: TaggedText[]
+    member Display: RichText
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -201,7 +201,7 @@ type public MethodGroupItem =
     member Description: ToolTipText
 
     /// The tagged text for the return type for the method (or other item)
-    member ReturnTypeText: TaggedText[]
+    member ReturnTypeText: RichText
 
     /// The parameters of the method in the overload set
     member Parameters: MethodGroupItemParameter[]

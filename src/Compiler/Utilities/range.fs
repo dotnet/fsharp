@@ -334,7 +334,7 @@ type Range(code1: int64, code2: int64) =
     member m.FileName = fileOfFileIndex m.FileIndex
 
     member internal m.ShortFileName =
-        Path.GetFileName(fileOfFileIndex m.FileIndex) |> nonNull
+        Path.GetFileName(fileOfFileIndex m.FileIndex) |> Unchecked.nonNull
 
     member m.ApplyLineDirectives() =
         match LineDirectives.store.TryFind m.FileIndex with

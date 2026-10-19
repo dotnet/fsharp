@@ -15,5 +15,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,0)-(5,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (3,2)-(3,2) parse error Expecting expression

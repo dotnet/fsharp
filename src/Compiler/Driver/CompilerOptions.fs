@@ -791,14 +791,6 @@ let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
-    let trimFS (s: string) =
-        if s.StartsWithOrdinal "FS" then s.Substring 2 else s
-
-    let trimFStoInt (s: string) =
-        match Int32.TryParse(trimFS s) with
-        | true, n -> Some n
-        | false, _ -> None
-
     [
         CompilerOption(
             "warnaserror",
@@ -816,7 +808,14 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             "warnaserror",
             tagWarnList,
             OptionStringListSwitch(fun n switch ->
-                match trimFStoInt n with
+                match
+                    GetWarningNumber(
+                        rangeCmdArgs,
+                        WarningDescription.String n,
+                        tcConfigB.langVersion,
+                        WarningNumberSource.CommandLineOption
+                    )
+                with
                 | Some n ->
                     let options = tcConfigB.diagnosticsOptions
 
@@ -1199,14 +1198,6 @@ let languageFlags tcConfigB =
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
-
-        CompilerOption(
-            "strict-indentation",
-            tagNone,
-            OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
-            None,
-            Some(FSComp.SR.optsStrictIndentation (formatOptionSwitch (Option.defaultValue false tcConfigB.strictIndentation)))
-        )
 
         CompilerOption(
             "always-inline",
