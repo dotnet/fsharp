@@ -86,6 +86,7 @@
     <Compile Include="RoslynSourceTextTests.fs" />
     <Compile Include="DocumentCacheTests.fs" />
     <Compile Include="SemanticClassificationServiceTests.fs" />
+    <Compile Include="BlockStructureServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
     <Compile Include="TokenizerCacheConcurrencyTests.fs" />
