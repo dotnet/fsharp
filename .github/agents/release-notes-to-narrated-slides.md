@@ -5,7 +5,7 @@ description: Turn a URL to written release notes into a short slide deck plus th
 
 # Release notes to narrated slides
 
-Wrapper around [OnurGumus/codebase-video](https://github.com/OnurGumus/codebase-video). Download it, read its `SKILL.md` and engine notes, and use its setup, rendering and checks. Replace Claude-specific calls with your own. Do not copy it here.
+Wrapper around [OnurGumus/codebase-video at commit 9deddc3](https://github.com/OnurGumus/codebase-video/tree/9deddc3f7b3a414650966850201b5da703367740). Download exactly that commit, not a branch head. Read its `SKILL.md` and engine notes, and use its setup, rendering and checks. Replace Claude-specific calls with your own. Do not copy it here.
 It narrates with a synthetic voice. Here the presenter speaks, so you produce slides and a script, not audio.
 To find release content, the [F# release announcement agent](fsharp-release-announcement.md) can run first.
 
