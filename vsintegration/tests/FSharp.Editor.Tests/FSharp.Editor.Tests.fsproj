@@ -8,6 +8,11 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- CodeMap\CallStackSample.fs is the code a debugger stops in. Its stack frames have to be the
+         ones an unoptimized build produces, whatever configuration the tests are built in. -->
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,6 +38,13 @@
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
+    <Compile Include="CodeMap\CallStackSample.fs" />
+    <!-- Compiled so the tests can run its scenarios, embedded so they can hand the very same text to
+         the workspace the resolver reads. -->
+    <EmbeddedResource Include="CodeMap\CallStackSample.fs" />
+    <Compile Include="CodeMap\FSharpStackFrameNameParserTests.fs" />
+    <Compile Include="CodeMap\FSharpCallStackPlanTests.fs" />
+    <Compile Include="CodeMap\FSharpCallStackResolverTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
