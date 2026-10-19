@@ -368,4 +368,22 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="ObjectBrowserProjectReferences" xml:space="preserve">
+    <value>Project References</value>
+  </data>
+  <data name="ObjectBrowserBaseTypes" xml:space="preserve">
+    <value>Base Types</value>
+  </data>
+  <data name="ObjectBrowserPending" xml:space="preserve">
+    <value>(analyzing...)</value>
+  </data>
+  <data name="ObjectBrowserProject" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="ObjectBrowserAssembly" xml:space="preserve">
+    <value>Assembly</value>
+  </data>
+  <data name="ObjectBrowserMemberOf" xml:space="preserve">
+    <value>Member of {0}</value>
+  </data>
 </root>
