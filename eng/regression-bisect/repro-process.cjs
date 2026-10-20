@@ -16,11 +16,27 @@ function execute(executable, args, { cwd, env, timeoutMs, signal: cancellation, 
         }
         const windows = process.platform === "win32";
         const errorMarker = `REPRO_PROCESS_${randomUUID()}:`;
-        const child = windows
-            ? spawn(path.join(env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+        let child;
+        if (windows) {
+            const systemRoot = process.env.SystemRoot;
+            if (!systemRoot) {
+                resolve({ status: "exception", complete: false, exitCode: null, stdout: "", stderr: "",
+                    error: "Windows supervisor requires the host SystemRoot environment variable" });
+                return;
+            }
+            const system32 = path.join(systemRoot, "System32");
+            const powershell = path.join(system32, "WindowsPowerShell", "v1.0");
+            // Keep PowerShell's OS bootstrap separate from the sample's explicit environment.
+            const bootstrap = Object.fromEntries([
+                "SystemRoot", "SystemDrive", "windir", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "TEMP", "TMP",
+                "ProgramFiles", "ProgramFiles(x86)", "ProgramData", "ComSpec", "__PSLockDownPolicy",
+            ].filter(name => process.env[name] !== undefined).map(name => [name, process.env[name]]));
+            bootstrap.PSModulePath = path.join(powershell, "Modules");
+            bootstrap.PATH = [powershell, system32, systemRoot].join(";");
+            child = spawn(path.join(powershell, "powershell.exe"),
                 ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "repro-process.ps1"), errorMarker],
-                { cwd, env, shell: false, windowsHide: true })
-            : spawn(executable, args, { cwd, env, shell: false, detached: true });
+                { cwd, env: bootstrap, shell: false, windowsHide: true });
+        } else child = spawn(executable, args, { cwd, env, shell: false, detached: true });
         const streams = { stdout: [], stderr: [] };
         const lengths = { stdout: 0, stderr: 0 };
         let timedOut = false, cancelled = false, terminating = false, truncated = false, launchError = null;

@@ -69,14 +69,15 @@ jobs:
           const { execute } = require("./eng/regression-bisect/repro-process.cjs");
           (async () => {
             const started = Date.now(), env = {SystemRoot:process.env.SystemRoot};
-            const result = await execute(process.execPath, ["-e", "console.log('SUPERVISOR_READY')"],
+            const script = "if (JSON.stringify(Object.keys(process.env).sort()) !== '[\"SystemRoot\"]') throw new Error('sample environment changed'); console.log('SUPERVISOR_READY')";
+            const result = await execute(process.execPath, ["-e", script],
               {cwd:process.cwd(),env,timeoutMs:10000});
             console.log(JSON.stringify({node:process.version,elapsedMs:Date.now()-started,result}));
             if (result.complete && result.exitCode === 0 && result.stdout === "SUPERVISOR_READY\n") return;
             const helper = path.resolve("eng/regression-bisect/repro-process.ps1");
             const powershell = path.join(env.SystemRoot,"System32","WindowsPowerShell","v1.0","powershell.exe");
             const command = `Set-PSDebug -Trace 1; & '${helper.replaceAll("'","''")}' 'SUPERVISOR_DIAGNOSTIC:'`;
-            const request = JSON.stringify({executable:process.execPath,args:["-e","console.log('SUPERVISOR_READY')"],
+            const request = JSON.stringify({executable:process.execPath,args:["-e",script],
               environment:[`SystemRoot=${env.SystemRoot}`]})+"\n";
             for (const mode of ["isolated","inherited"]) {
               const trace = spawnSync(powershell,["-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-Command",command],

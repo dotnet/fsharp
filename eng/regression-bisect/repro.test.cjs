@@ -611,6 +611,61 @@ test("process already cancelled does not launch", async t => {
     await assert.rejects(fs.stat(marker), { code: "ENOENT" });
 });
 
+test("Windows supervisor uses trusted OS bootstrap without changing the sample environment", async () => {
+    const { EventEmitter } = require("node:events");
+    const { PassThrough, Writable } = require("node:stream");
+    const { createRequire } = require("node:module");
+    const vm = require("node:vm");
+    const file = path.join(__dirname, "repro-process.cjs"), realRequire = createRequire(file);
+    const host = { SystemRoot: path.resolve("trusted-os"), USERPROFILE: path.resolve("trusted-profile"),
+        APPDATA: path.resolve("trusted-appdata"), LOCALAPPDATA: path.resolve("trusted-local"),
+        TEMP: path.resolve("trusted-temp"), GITHUB_TOKEN: "host-secret-canary", PATH: "untrusted-extension-path" };
+    const sample = { SystemRoot: path.resolve("sample-os"), PSModulePath: "sample-modules", REPRO_ALLOWED_ENV: "exact" };
+    let launch, request = "";
+    const fakeSpawn = (executable, args, settings) => {
+        launch = { executable, args, ...settings };
+        const child = new EventEmitter();
+        child.pid = 123;
+        child.stdout = new PassThrough();
+        child.stderr = new PassThrough();
+        child.kill = () => assert.fail("bootstrap contract fixture must not need termination");
+        child.stdin = new Writable({
+            write(bytes, encoding, done) { request += bytes; done(); },
+            final(done) {
+                done();
+                queueMicrotask(() => { child.stdout.end("READY\n"); child.stderr.end(); child.emit("close", 0); });
+            },
+        });
+        return child;
+    };
+    const loaded = { exports: {} };
+    vm.runInNewContext(await fs.readFile(file, "utf8"), {
+        require: name => name === "node:child_process" ? { spawn: fakeSpawn } : realRequire(name),
+        module: loaded, __dirname, process: { platform: "win32", env: host }, Buffer, setTimeout, clearTimeout,
+    }, { filename: file });
+    const result = await loaded.exports.execute("sample.exe", ["exact"], {
+        cwd: __dirname, env: sample, timeoutMs: 1000,
+    });
+    assert.equal(result.stdout, "READY\n");
+    assert.equal(launch.env.SystemRoot, host.SystemRoot, "the supervisor must not use the sample bootstrap environment");
+    assert.equal(launch.env.USERPROFILE, host.USERPROFILE);
+    assert.equal(launch.env.PSModulePath, path.join(host.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "Modules"));
+    assert.equal(launch.env.GITHUB_TOKEN, undefined);
+    assert.notEqual(launch.env.PATH, host.PATH);
+    assert.deepEqual(Object.keys(launch.env).sort(),
+        ["SystemRoot", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "TEMP", "PSModulePath", "PATH"].sort());
+    assert.deepEqual(Object.fromEntries(JSON.parse(request).environment.map(entry => {
+        const separator = entry.indexOf("=");
+        return [entry.slice(0, separator), entry.slice(separator + 1)];
+    })), sample);
+    delete host.SystemRoot;
+    launch = null;
+    const missing = await loaded.exports.execute("sample.exe", [], { cwd: __dirname, env: sample, timeoutMs: 1000 });
+    assert.equal(missing.status, "exception");
+    assert.match(missing.error, /host SystemRoot/);
+    assert.equal(launch, null, "missing host bootstrap must not use the sample's SystemRoot");
+});
+
 test("process preserves arguments, explicit environment, output and exit code", async t => {
     const f = await fixture(t);
     const args = ["", "with spaces", 'a\\"b', 'trailing\\', "\u96ea", "line\nbreak", "& | < > %PATH%"];
