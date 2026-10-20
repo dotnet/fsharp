@@ -7732,7 +7732,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
         // Parse the format string to work out the phantom types
         let formatStringCheckContext =
             match cenv.tcSink.CurrentSink, formatStringLiteralType with
-            | Some sink, LiteralArgumentType.Inline -> sink.FormatStringCheckContext
+            | Some sink, LiteralArgumentType.Inline when not m.IsSynthetic -> sink.FormatStringCheckContext
             | _ -> None
 
         let normalizedString = fmtString.Replace("\r\n", "\n").Replace("\r", "\n")
@@ -7742,10 +7742,10 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
             with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString (RichText.mkText errString), m))
 
         match cenv.tcSink.CurrentSink with
-        | None -> ()
-        | Some sink ->
+        | Some sink when not m.IsSynthetic ->
             for specifierLocation, numArgs in specifierLocations do
                 sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
+        | _ -> ()
 
         UnifyTypes cenv env m aty atyRequired
         UnifyTypes cenv env m ety etyRequired
