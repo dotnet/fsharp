@@ -1819,6 +1819,34 @@ let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
 let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
 """
 
+module SemanticClassification =
+    open FSharp.Compiler.EditorServices
+
+    // https://github.com/dotnet/fsharp/issues/12449
+    [<Fact>]
+    let ``Issue 12449 - for-to range does not override lexical classification`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module SyntaxHighlightingBug =
+    let list1 = [ for x in [0;1] do yield x ]
+    let list2 = [ for x = 0 to 1 do yield x ]
+    let list3 = [ for x = 0 to 1 do yield x.ToString() ]
+    let list4 =
+        [ for x = 0 to 1 do // comment
+            let x = x // comment
+            yield x // comment
+        ]
+    let list5 =
+        [ for x = 0 to 1 do // comment
+            let x = x.ToString() // comment
+            yield x // comment
+        ]
+"""
+
+        checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        |> Array.filter (fun item -> item.Type = SemanticClassificationType.Operator)
+        |> shouldBeEmpty
+
 module RecordSpreads =
     open FSharp.Compiler.EditorServices
 

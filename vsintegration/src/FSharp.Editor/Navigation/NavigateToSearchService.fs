@@ -19,8 +19,8 @@ open Microsoft.VisualStudio.Text.PatternMatching
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
-[<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
-type internal FSharpNavigateToSearchService
+[<Export; Shared>]
+type internal FSharpNavigableItemsCache
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
@@ -33,7 +33,7 @@ type internal FSharpNavigateToSearchService
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
 
-    let getNavigableItems (document: Document) =
+    member _.GetNavigableItems(document: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
@@ -41,11 +41,50 @@ type internal FSharpNavigateToSearchService
             match cache.TryGetValue document.Id with
             | true, (version, items) when version = currentVersion -> return items
             | _ ->
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 let items = NavigateTo.GetNavigableItems parseResults.ParseTree
                 cache[document.Id] <- currentVersion, items
                 return items
         }
+
+    /// Uses the version the document already knows: asking for it could read a closed file from disk.
+    member _.TryGetCachedNavigableItems(document: Document) =
+        match cache.TryGetValue document.Id, document.TryGetTextVersion() with
+        | (true, (version, items)), (true, currentVersion) when version = currentVersion -> ValueSome items
+        | _ -> ValueNone
+
+    member _.CreateMatcherFor(searchPattern: string) =
+        let patternMatcher =
+            patternMatcherFactory.CreatePatternMatcher(
+                searchPattern,
+                PatternMatcherCreationOptions(
+                    cultureInfo = CultureInfo.CurrentUICulture,
+                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
+                    containerSplitCharacters = [ '.' ]
+                )
+            )
+
+        fun (item: NavigableItem) ->
+            // PatternMatcher will not match operators and some backtick escaped identifiers.
+            // To handle them, we fall back to simple substring match.
+            let name = item.Name
+
+            if item.NeedsBackticks then
+                match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
+                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
+                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
+                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
+                | _ -> ValueNone
+            else
+                // full name with dots allows for path matching, e.g.
+                // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
+                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                |> ValueOption.ofNullable
+
+[<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
+type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache: FSharpNavigableItemsCache) =
+
+    let getNavigableItems (document: Document) = itemsCache.GetNavigableItems document
 
     let kindsProvided =
         ImmutableHashSet.Create(
@@ -115,33 +154,8 @@ type internal FSharpNavigateToSearchService
         | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Fuzzy
         | _ -> FSharpNavigateToMatchKind.None
 
-    let createMatcherFor searchPattern =
-        let patternMatcher =
-            patternMatcherFactory.CreatePatternMatcher(
-                searchPattern,
-                PatternMatcherCreationOptions(
-                    cultureInfo = CultureInfo.CurrentUICulture,
-                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
-                    containerSplitCharacters = [ '.' ]
-                )
-            )
-
-        fun (item: NavigableItem) ->
-            // PatternMatcher will not match operators and some backtick escaped identifiers.
-            // To handle them, we fall back to simple substring match.
-            let name = item.Name
-
-            if item.NeedsBackticks then
-                match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
-                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
-                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
-                | _ -> ValueNone
-            else
-                // full name with dots allows for path matching, e.g.
-                // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
-                |> ValueOption.ofNullable
+    let createMatcherFor (searchPattern: string) =
+        itemsCache.CreateMatcherFor searchPattern
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {

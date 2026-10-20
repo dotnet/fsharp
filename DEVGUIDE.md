@@ -164,6 +164,25 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 Running any of the above will build the latest changes and run tests against them.
 
+### Windows editor spot checks with the SDK compiler
+
+In a separate PowerShell session, use the repository-local SDK and keep desktop targets enabled.
+`BUILDING_USING_DOTNET=true` excludes `net472` from the editor's test utilities.
+Build the compiler solution first: the editor test fixture also requires the desktop `fsc` and `fsi` tools.
+
+```powershell
+$env:DOTNET_ROOT = (Resolve-Path .\.dotnet).Path
+$env:BUILDING_USING_DOTNET = "false"
+$compilerArgs = @("-p:DisableCompilerRedirection=true", "-p:DisableAutoSetFscCompilerPath=false")
+.\.dotnet\dotnet.exe build .\FSharp.slnx -c Release @compilerArgs
+.\.dotnet\dotnet.exe build .\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj -c Release @compilerArgs -p:EmbedUntrackedSources=false
+.\.dotnet\dotnet.exe test --project .\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj -c Release --no-build @compilerArgs --filter-class "*InlineRenameTests*" "*FindReferencesTests*"
+```
+
+Pass the compiler arguments to both build and test, even with `--no-build`, so neither imports a
+stale or incomplete `artifacts\Bootstrap` toolset. Disabling untracked-source embedding avoids
+generated XAML source-path errors in the SDK-hosted WPF build; all project references still build.
+
 ## Using your custom compiler to build this repository
 
 By removing all the subfolders called `Bootstrap` or `Proto` under `artifacts` and running the `build` script again, the proto compiler will include your changes.

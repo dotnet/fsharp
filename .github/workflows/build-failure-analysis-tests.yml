@@ -1,0 +1,36 @@
+name: Build failure workflow tests
+
+# PR authors repair failures before merge; @dotnet/fsharp-team-msft owns triage
+# under CODEOWNERS. build-failure-analysis-test-failure.yml notifies them.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+      - run: python3 -m pip install PyYAML==6.0.3
+      - name: Compile the two callers of the golden shared source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh extension install github/gh-aw --pin v0.89.21
+          gh aw compile build-failure-analysis build-failure-analysis-command --strict --validate
+          git diff --exit-code -- .github/workflows/build-failure-analysis.lock.yml .github/workflows/build-failure-analysis-command.lock.yml
+      - name: Check command publication and archive boundaries
+        run: python3 -m unittest discover -s .github/workflows/tests -v

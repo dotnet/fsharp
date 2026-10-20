@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Captured printf already exposes these Core analysis warnings; keep them visible. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <WarningsNotAsErrors>IL2055;IL2060;IL2067;IL2070;IL2072;IL2075;IL2080;IL3050</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Formatting.fs" />
+    <Compile Include="Program.fs" />
+    <ProjectReference Include="Library\PrintfInterpolationLibrary.fsproj" />
+  </ItemGroup>
+</Project>

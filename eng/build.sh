@@ -220,6 +220,7 @@ while [[ $# > 0 ]]; do
 done
 
 # Import Arcade functions
+bootstrap_multi_threaded=${msbuild_multi_threaded:-true}
 . "$scriptroot/common/tools.sh"
 
 function Test() {
@@ -334,6 +335,9 @@ function BuildSolution {
 
     BuildMessage="Error building tools"
     local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
+    if [[ "$(NormalizeBoolArg "$bootstrap_multi_threaded")" == true ]]; then
+      args+=("-mt")
+    fi
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}" || exit $?
   fi

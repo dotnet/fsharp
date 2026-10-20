@@ -508,7 +508,7 @@ module FSharpExprConvert =
 
     and GetWitnessArgs cenv (env: ExprTranslationEnv) (vref: ValRef) m tps tyargs : FSharpExpr list =
         let g = cenv.g
-        if g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing) && not env.suppressWitnesses then
+        if not env.suppressWitnesses then
             /// There are two *conditional* properties a typar can have: equality and comparison.
             /// A generic type having that constraint may be conditional on whether a specific type parameter to that generic has that
             /// constraint.

@@ -2903,7 +2903,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | E _ | P _ | M _ | C _ -> []
         match witnessInfos with
         | [] -> None
-        | _ when not (cenv.g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing)) -> None
         | _ ->
         let witnessParams =
             ((Set.empty, 0), witnessInfos) ||> List.mapFold (fun (used,i) witnessInfo ->

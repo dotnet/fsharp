@@ -25,9 +25,6 @@ let stringMethods =
         "EnumerateRunes";
 #endif
         "Equals"; "GetEnumerator"; "GetHashCode";
-#if NETCOREAPP
-        "GetPinnableReference";
-#endif
         "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
         "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
         "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";
@@ -597,6 +594,56 @@ let ``Implicit-yield seq body diagnostics are reported once`` (source: string) =
         |> Array.countBy (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)
         |> Array.filter (fun (_, n) -> n > 1)
     Assert.Empty duplicated
+
+[<Theory>]
+[<InlineData("$\"%b{true} %b{false}\"", 10, 12, 19, 21)>]
+[<InlineData("$@\"%b{true} %b{false}\"", 11, 13, 20, 22)>]
+[<InlineData("$\"\"\"%b{true} %b{false}\"\"\"", 12, 14, 21, 23)>]
+let ``Issue 20757 - foreground fallback formats preserve locations and arity`` (expression: string, firstStart: int, firstEnd: int, secondStart: int, secondEnd: int) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, "let s = " + expression, [| "--langversion:preview" |])
+    results.Diagnostics |> shouldEqual [||]
+    results.GetFormatSpecifierLocationsAndArity()
+    |> Array.map (fun (range, arity) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, arity)
+    |> shouldEqual [| (1, firstStart, 1, firstEnd, 1); (1, secondStart, 1, secondEnd, 1) |]
+
+[<Theory>]
+[<InlineData("let now = System.DateTime(2026,10,13,1,2,3)\nlet s = $\"%02d{now.Hour}:%02d{now.Minute}:%02d{now.Second}\"")>]
+[<InlineData("let s = $\"%02d{1}%02d{2}%02d{3}\"")>]
+[<InlineData("let flag = true\nlet s = $\"%b{flag} %b{flag}\"")>]
+[<InlineData("let s = $\"%d{1}%02d{2}{true}%b{false}\"")>]
+[<InlineData("let inline padded (n: ^T) = $\"%02d{n}\"\nlet s = padded 1uy, padded 1L")>]
+[<InlineData("let padded n = $\"%02d{n}\"\nlet f: int -> string = padded\nlet s = f 1")>]
+[<InlineData("let s = $\"%t{fun () -> string 1}%02d{1}%t{fun () -> string 2}\"")>]
+[<InlineData("let s = $\"%A{fun () -> 1}%O{fun () -> 2}\"")>]
+let ``Issue 20757 - foreground checks fallback boundaries and generic integers`` (source: string) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+    results.Diagnostics |> shouldEqual [||]
+
+[<Theory>]
+[<InlineData("string")>]
+[<InlineData("obj")>]
+[<InlineData("System.IComparable")>]
+[<InlineData("System.ICloneable")>]
+let ``Issue 20757 - foreground string-rendering thunks enforce state and residue types`` (targetType: string) =
+    for thunk in ["fun (_: int) -> \"bad\""; "fun () -> 42"] do
+        let source = "let value: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\""
+        let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+        results.Diagnostics
+        |> Array.map (fun d -> d.ErrorNumber, d.Range.IsSynthetic)
+        |> shouldEqual [| (1, false) |]
+
+[<Theory>]
+[<InlineData("let s = $\"%02d{true}\"", 15, 19, -1, -1)>]
+[<InlineData("let s = $\"%b{1}\"", 13, 14, -1, -1)>]
+[<InlineData("let s = $\"%b{1}%02d{true}\"", 13, 14, 20, 24)>]
+let ``Issue 20757 - foreground wrong-type holes report real ranges once`` (source: string, firstStart: int, firstEnd: int, secondStart: int, secondEnd: int) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+    results.Diagnostics
+    |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Range.IsSynthetic)
+    |> shouldEqual [|
+        (1, 1, firstStart, 1, firstEnd, false)
+        if secondStart >= 0 then (1, 1, secondStart, 1, secondEnd, false)
+    |]
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]

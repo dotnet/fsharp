@@ -1,0 +1,18 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\..\eng\Versions.props" />
+  <PropertyGroup>
+    <TargetFramework>$(FSharpCoreShippedNetTargetFramework)</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)\fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)\fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersionValue)" />
+  </ItemGroup>
+</Project>
