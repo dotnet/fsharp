@@ -348,6 +348,51 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
+    // Resolving the trait after inlining picks a method whose type parameter the trait does not determine.
+    // Without --optimize the call to M survives into IL, where the undefaulted parameter caused FS0073.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved by a static method with an undetermined type parameter`` (optimize: bool) =
+        FSharp
+            """
+type C =
+    static member M<'X>(x: int) : int = x + 1
+
+let inline call (w: ^T) = (^T : (static member M : int -> int) 1)
+
+[<EntryPoint>]
+let main _ =
+    if call Unchecked.defaultof<C> <> 2 then failwith "call failed"
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved by an instance method with an undetermined type parameter`` (optimize: bool) =
+        FSharp
+            """
+type C() =
+    member _.M<'X>(x: int) : int = x + 1
+
+let inline call (w: ^T) = (^T : (member M : int -> int) (w, 1))
+let inline wrap (w: ^T) = call w
+
+[<EntryPoint>]
+let main _ =
+    if wrap (C()) <> 2 then failwith "wrap failed"
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // Regression for PR #19602 (RFC FS-1043): a non-inline binding with an unsatisfiable operator/SRTP
     // trait must fail at compile time (FS0041), not compile into a NotSupportedException stub that throws
     // at runtime (which also leaked at feature-off langversions). The deleted neg116 shape '(1.0 - t) * p'

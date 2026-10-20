@@ -4425,19 +4425,43 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
 let CreateCodegenState tcVal g amap =
     ConstraintSolverState.New(g, amap, InfoReader(g, amap), tcVal)
 
+/// Overload resolution freshens the chosen method's type parameters. A codegen solve has no later inference pass
+/// to default those the trait's own types do not determine, e.g. 'X of 'static member M<'X>: int -> int', so
+/// default them here as inference does at the end of checking.
+let DefaultUndeterminedMethodTyparsOfCodegenSolution (csenv: ConstraintSolverEnv) m (traitInfo: TraitConstraintInfo) =
+    match traitInfo.Solution with
+    | Some(FSMethSln(minst = minst))
+    | Some(ILMethSln(minst = minst)) ->
+        let traitTypars =
+            (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes @ Option.toList traitInfo.CompiledReturnType)).FreeTypars
+
+        (freeInTypes CollectTypars minst).FreeTypars
+        |> Zset.elements
+        |> IterateD (fun tp ->
+            if tp.IsSolved || tp.Rigidity <> TyparRigidity.Flexible || Zset.contains tp traitTypars then
+                CompleteD
+            else
+                SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) (ChooseTyparSolution csenv.g csenv.amap tp))
+    | _ -> CompleteD
+
 let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintInfo) =
     match traitInfo.Solution with
     | Some _ -> ResultD true
     | None ->
         let css = CreateCodegenState tcVal g amap
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-            // Failed probes must not persist provisional solutions in generic inline bodies.
-            NoTrace.CollectThenUndoOrCommit
-                (fun (res: OperationResult<_>) -> res.IsOkResult)
-                (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
-        else
-            SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+        trackErrors {
+            let! res =
+                if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+                    // Failed probes must not persist provisional solutions in generic inline bodies.
+                    NoTrace.CollectThenUndoOrCommit
+                        (fun (res: OperationResult<_>) -> res.IsOkResult)
+                        (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
+                else
+                    SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+            do! DefaultUndeterminedMethodTyparsOfCodegenSolution csenv m traitInfo
+            return res
+        }
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
