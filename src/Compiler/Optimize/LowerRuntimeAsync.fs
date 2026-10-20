@@ -270,6 +270,14 @@ type private CallbackRewrite =
     | InlineDelegate of (Expr * TType * TType list * Expr * range -> Expr)
     | DispatchBranches of isDelegate: bool * branches: CallbackBranches
 
+/// The runtime-async return the expression ends in, past any lets and sequential prefix that unoptimized inlining leaves.
+let rec private leadsToRuntimeAsyncReturn g expr =
+    match expr with
+    | Expr.Let(_, rest, _, _)
+    | RuntimeAsyncDebugWrapper rest
+    | Expr.Sequential(_, rest, NormalSeq, _) -> leadsToRuntimeAsyncReturn g rest
+    | _ -> (TryGetRuntimeAsyncReturn g expr).IsSome
+
 let private inlineCallback (g: TcGlobals) runtimeAsyncContext (expr: Expr) =
     let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
     let freeVarOptions = CollectLocalsWithStackGuard()
@@ -354,8 +362,7 @@ let private inlineCallback (g: TcGlobals) runtimeAsyncContext (expr: Expr) =
         RewriteExpr rwenv continuation
 
     let chooseRewrite (callback: Val) construction continuation m =
-        let canInline =
-            runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
+        let canInline = runtimeAsyncContext || leadsToRuntimeAsyncReturn g continuation
 
         let shape =
             match tryDestFunTy g callback.Type with
@@ -455,13 +462,7 @@ let private containsRuntimeAsyncMarker g implFile =
 let private inlineCallbacks g implFile =
     let analyzer = RuntimeAsyncAnalyzer g
     let stackGuard = StackGuard("InlineRuntimeAsyncCallbacks")
-
-    let rec leadsToRuntimeAsyncReturn expr =
-        match expr with
-        | Expr.Let(_, rest, _, _)
-        | RuntimeAsyncDebugWrapper rest
-        | Expr.Sequential(_, rest, NormalSeq, _) -> leadsToRuntimeAsyncReturn rest
-        | _ -> (TryGetRuntimeAsyncReturn g expr).IsSome
+    let leadsToRuntimeAsyncReturn = leadsToRuntimeAsyncReturn g
 
     let rec rewriter inContext =
         {

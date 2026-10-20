@@ -1630,6 +1630,38 @@ let main _ =
     [<InlineData(false)>]
     [<InlineData(true)>]
     [<Theory>]
+    let ``runtime async inlines a conditional callback whose inline takes further arguments`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncCallbackWithFurtherArguments
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (callback() + value)
+
+let run choose (gate: Task<int>) =
+    invoke (
+        if choose then
+            fun () -> AsyncHelpers.Await gate
+        else
+            fun () -> (AsyncHelpers.Await gate) + 1) 2
+
+[<EntryPoint>]
+let main _ =
+    let gate = Task.FromResult 10
+    if (run true gate).Result = 12 && (run false gate).Result = 13 then 0 else 1
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
     let ``runtime async inlines a stateful conditional callback from an imported inline`` (optimize: bool) =
         let library =
             FSharp """
