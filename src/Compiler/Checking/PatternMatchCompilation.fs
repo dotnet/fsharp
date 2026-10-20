@@ -1885,30 +1885,22 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused preserveMatchShape actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
-    match clausesL with
-    | _ when List.exists isProblematicClause clausesL ->
-
-        // First make sure we generate at least some of the obvious incomplete match warnings.
-        let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
-        let warnOnIncomplete = true
-        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
-        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
-        let warnOnIncomplete = false
-
+let private trySplitGuardedRun (g: TcGlobals) (group: MatchClause list) =
+    match group with
+    | first :: rest when group.Length >= 12 ->
+        Cancellable.CheckAndThrow()
         let rec stripBindings = function
             | TPat_as(p, _, _) -> stripBindings p
             | p -> p
         let isBinding p = match stripBindings p with TPat_wild _ -> true | _ -> false
-        let pairPattern p =
+        let (|PairPattern|_|) p =
             match stripBindings p with
             | TPat_tuple(_, [token; stack], _, _) -> ValueSome(token, stack)
             | _ -> ValueNone
-        let listPattern shallow headPattern p =
+        let (|ConsPattern|_|) p =
             match stripBindings p with
-            | TPat_unioncase(ucref, _, [head; tail], _) when tyconRefEq g ucref.TyconRef g.list_tcr_canon ->
-                headPattern head && (not shallow || isBinding tail)
-            | p -> shallow && isBinding p
+            | TPat_unioncase(ucref, _, [head; tail], _) when g.unionCaseRefEq ucref g.cons_ucref -> ValueSome(head, tail)
+            | _ -> ValueNone
         let simpleConstant = function
             | Const.Bool _ -> true
             | c -> canCompactConstantClass c
@@ -1932,38 +1924,44 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
                 | TPat_unioncase(ucref, _, args, _), TPat_unioncase(first, _, _, _) ->
                     tyconRefEq g ucref.TyconRef first.TyconRef && (not bindingFields || List.forall isBinding args)
                 | _ -> false)
-        let trySplitGuardedRun (group: MatchClause list) =
-            match group with
-            | first :: rest when group.Length >= 12 ->
-                Cancellable.CheckAndThrow()
-                let guard = StackGuard("GuardedMatchGrouping")
-                match pairPattern first.Pattern with
-                | ValueSome(firstToken, firstStack) ->
-                    match stripBindings firstStack with
-                    | TPat_unioncase(ucref, _, [firstHead; firstTail], _)
-                        when tyconRefEq g ucref.TyconRef g.list_tcr_canon
-                             && retainedTest firstToken && retainedTest firstHead && isBinding firstTail ->
-                        let firstToken, firstHead = stripBindings firstToken, stripBindings firstHead
-                        let middle, suffix =
-                            rest |> List.takeUntil (fun clause ->
-                                match pairPattern clause.Pattern with
-                                | ValueSome(token, _) -> not (isBinding token)
-                                | ValueNone -> true)
-                        if suffix.Length >= 4
-                           && ((first :: middle) |> List.count (fun clause -> clause.GuardExpr.IsSome)) >= 8
-                           && (middle |> List.forall (fun clause ->
-                               match pairPattern clause.Pattern with
-                               | ValueSome(_, stack) -> listPattern false (discriminatorPattern guard firstHead false) stack
-                               | ValueNone -> false))
-                           && (suffix |> List.forall (fun clause ->
-                               match pairPattern clause.Pattern with
-                               | ValueSome(token, stack) -> discriminatorPattern guard firstToken true token && listPattern true isBinding stack
-                               | ValueNone -> false)) then
-                            ValueSome([first], middle, suffix)
-                        else ValueNone
-                    | _ -> ValueNone
-                | _ -> ValueNone
-            | _ -> ValueNone
+        let guard = StackGuard("GuardedMatchGrouping")
+        match first.Pattern with
+        | PairPattern(firstToken, ConsPattern(firstHead, firstTail))
+            when retainedTest firstToken && retainedTest firstHead && isBinding firstTail ->
+            let firstToken, firstHead = stripBindings firstToken, stripBindings firstHead
+            let middle, suffix =
+                rest |> List.takeUntil (fun clause ->
+                    match clause.Pattern with
+                    | PairPattern(token, _) -> not (isBinding token)
+                    | _ -> true)
+            if suffix.Length >= 4
+               && (first :: middle |> List.count (fun clause -> clause.GuardExpr.IsSome)) >= 8
+               && (middle |> List.forall (fun clause ->
+                   match clause.Pattern with
+                   | PairPattern(_, ConsPattern(head, _)) -> discriminatorPattern guard firstHead false head
+                   | _ -> false))
+               && (suffix |> List.forall (fun clause ->
+                   match clause.Pattern with
+                   | PairPattern(token, ConsPattern(head, tail)) when isBinding head && isBinding tail ->
+                       discriminatorPattern guard firstToken true token
+                   | PairPattern(token, stack) when isBinding stack ->
+                       discriminatorPattern guard firstToken true token
+                   | _ -> false)) then
+                ValueSome([first], middle, suffix)
+            else ValueNone
+        | _ -> ValueNone
+    | _ -> ValueNone
+
+let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused preserveMatchShape actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+    match clausesL with
+    | _ when List.exists isProblematicClause clausesL ->
+
+        // First make sure we generate at least some of the obvious incomplete match warnings.
+        let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
+        let warnOnIncomplete = true
+        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
+        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
+        let warnOnIncomplete = false
 
         // Partial and when clauses cause major code explosion if treated naively
         // Hence treat any pattern matches with any partial clauses clause-by-clause
@@ -1972,7 +1970,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
                 match List.takeUntil isProblematicClause clauses with
                 | l, [] -> l, []
                 | l, h :: t -> l @ [h], t
-            match (if preserveMatchShape then ValueNone else trySplitGuardedRun group) with
+            match (if preserveMatchShape then ValueNone else trySplitGuardedRun g group) with
             | ValueSome(first, middle, suffix) ->
                 atMostOneProblematicClauseAtATime (suffix @ rest)
                 |> compileWithRest middle
