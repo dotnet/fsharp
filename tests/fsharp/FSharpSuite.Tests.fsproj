@@ -103,8 +103,6 @@
     <Content Include="testconfig.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\vsintegration\shims\Microsoft.*.props;..\..\vsintegration\shims\Microsoft.*.targets"
-             Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -112,6 +110,9 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj" Condition="'$(TargetFramework)' == 'net472'">
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj">

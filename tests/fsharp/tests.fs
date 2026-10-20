@@ -66,8 +66,7 @@ module CoreTests =
 
         let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
 
-        let targetFramework = if typeof<int>.Assembly.GetName().Name = "mscorlib" then "net472" else productTfm
-        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:TargetFramework={targetFramework} -property:FSharpRepositoryPath={FSharpRepositoryPath} -property:_FSharpUseNetSdkCompilerVsOption={compilerPreference}")
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath} -property:_FSharpUseNetSdkCompilerVsOption={compilerPreference}")
 
 #if !NETCOREAPP
     // Pinned to 10.0: at 11.0 ErrorOnMissingSignatureAttribute turns FS3888 (attribute on impl but
@@ -1477,8 +1476,7 @@ module RegressionTests =
     [<Fact>]
     let ``4715-optimized`` () =
         let cfg = testConfig "regression/4715"
-        let targetProfile = if typeof<int>.Assembly.GetName().Name = "mscorlib" then "mscorlib" else "netcore"
-        fsc cfg "%s --targetprofile:%s -o:test.exe --optimize+" cfg.fsc_flags targetProfile ["date.fs"; "env.fs"; "main.fs"]
+        fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``multi-package-type-provider-test-FSI`` () = singleTestBuildAndRun "regression/13710" FSI

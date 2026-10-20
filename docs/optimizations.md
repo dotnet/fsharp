@@ -20,16 +20,6 @@ Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotne
 * Splitting large functions into multiple methods, especially at match cases, to avoid massive methods that take a long time to JIT
 * Removing tailcalls when it is determined that no code in the transitive closure does a tailcall nor recurses
 
-Large two-column discriminator/list matches also reuse ordered fall-through groups in [`PatternMatchCompilation.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/PatternMatchCompilation.fs):
-
-| Group | Required shape |
-|---|---|
-| First rule | Primitive or tagged-union tests on the first column and list head; payloads and the list tail are bindings only. |
-| Guard run | Wildcard first column and constructor-first list heads. Payload work stays after its constructor test. |
-| Suffix | Shallow first-column tests and list/binding patterns, without head or tail discrimination. |
-
-Each group uses the original saved input. Repeated first-column, root-list and head-tag tests have stable results; guards and pending binding recipes keep their original observation points. Mixed two- or three-case reference unions are excluded because their exhaustive type tests can select a different default on null. Unknown shapes and quotation-sensitive contexts keep the existing lowering. Exact-state active-pattern joins and their capture checks are unchanged.
-
 In [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/DetupleArgs.fs), tuples at call sites are eliminated if possible. Concretely, functions that accept a tuple at all call sites are replaced by functions that accept each of the tuple's arguments individually. This may require inlining to activate.
 
 Considering the following example:
@@ -108,3 +98,4 @@ let res = id 1 |> g |> f // 4
 The downside of course being that the `id` function can't propagate to composed functions, meaning the code is now different despite yielding the same result.
 
 More generally, any time a first-order function is passed as an argument to a second-order function, the first-order function is not inlined even if everything is marked as `inline`. This results in a performance penalty.
+

@@ -48,8 +48,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    do TestConsole.install ()
-
     let outWriter = defaultArg outWriter stdout
     let errWriter = defaultArg errWriter stderr
     let fsi = FsiEvaluationSession.Create (config, argv, TextReader.Null, outWriter, errWriter)

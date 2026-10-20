@@ -75,9 +75,8 @@ let test() =
 
     let compileFileAsDll (checker: FSharpChecker) filePath outputFilePath =
         try
-            let options = CompilerAssert.DefaultProjectOptions TargetFramework.Current
             let result, _ =
-                checker.Compile(Array.append [|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|] options.OtherOptions)
+                checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
                 |> Async.RunSynchronouslyImmediate
 
             if result.Length > 0 then
@@ -160,7 +159,7 @@ let x = Script1.x
             let fsOptions1 =
                 { fsOptions1 with
                     ProjectId = Some(Guid.NewGuid().ToString())
-                    OtherOptions = Array.append fsOptions1.OtherOptions [|"-r:" + dllPath1|]
+                    OtherOptions = [|"-r:" + dllPath1|]
                     ReferencedProjects = [||]
                     SourceFiles = [|filePath1|] }
 
@@ -206,6 +205,7 @@ let y = 1
         finally
             try File.Delete(dllPath1) with | _ -> ()
             try File.Delete(filePath1) with | _ -> ()
+
 
 
 

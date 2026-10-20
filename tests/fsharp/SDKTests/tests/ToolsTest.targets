@@ -2,7 +2,7 @@
 
   <Import Project="$(TargetsDirectory)\Microsoft.FSharp.ShimHelpers.props" />
 
-  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.Targets" />
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.targets" />
 
   <Target Name="Test" DependsOnTargets="FSharpSourceCodeCompileOrder">
     <Message Importance="High" Text="===========================================================================================================" />
