@@ -70,6 +70,10 @@ Linux installers keep extracted files owned by the extracting account, without r
 Worker scratch permits native SDK and product execution, which the physical inspect canary verifies with an owned executable.
 Broker scratch, `/tmp`, and `/trusted/artifacts` remain non-executable.
 Toolchain identity probes reject incomplete capture and retain process-launch errors.
+Historical bootstrap and pack commands permit only same-line runtime patches inside the verified SDK installation.
+SDK selection remains exact.
+Acquisition, evaluation, and identity commands retain disabled runtime roll-forward.
+Source command receipts record the build runtime policy.
 Source and helper files are copied as bytes into owned scratch, without restoring input ownership or requiring `CAP_FOWNER`.
 The helper uses the acquired SDK environment.
 Helper failures preserve acquired archives and command evidence.

@@ -59,7 +59,8 @@ function failure(w, stage, error) {
 async function invoke(w, stage, executable, args, settings = {}, boundary = w.execute) {
     w.signal.throwIfAborted();
     const start = Date.now();
-    const entry = { stage, executable, args, cwd: settings.cwd ?? w.sourceDirectory };
+    const entry = { stage, executable, args, cwd: settings.cwd ?? w.sourceDirectory,
+        ...(stage === "build" ? { runtimeRollForward: (settings.env ?? w.env).DOTNET_ROLL_FORWARD } : {}) };
     w.commands.push(entry);
     const result = await boundary(executable, args, {
         cwd: entry.cwd, env: w.env, maxBytes: 16 * 1024 * 1024,
@@ -356,21 +357,22 @@ async function buildRevision(w, dependencies = {}) {
         }
         await evidence(w, "evaluated-products.json", rows);
         stage = "build";
+        const buildSettings = { env: { ...w.env, DOTNET_ROLL_FORWARD: "LatestPatch" } };
         const productProject = path.join(w.sourceDirectory, "src", "Microsoft.FSharp.Compiler", "Microsoft.FSharp.Compiler.fsproj");
         if (w.options.request.platform.os === "windows") {
             await invoke(w, "build", path.join(w.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
                 ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(w.sourceDirectory, "eng", "Build.ps1"),
                     "-restore", "-build", "-c", "Release", "-pack", "-bootstrap", "-noVisualStudio", "-msbuildEngine", "dotnet",
-                    `/p:Projects=${productProject}`]);
+                    `/p:Projects=${productProject}`], buildSettings);
         } else {
             await invoke(w, "build", "/bin/bash", [path.join(w.sourceDirectory, "build.sh"),
-                "--configuration", "Release", "--pack", "--bootstrap", "--product-build"]);
+                "--configuration", "Release", "--pack", "--bootstrap", "--product-build"], buildSettings);
         }
         // Product graphs can pack dependencies elsewhere; repack the built Core into its evaluated standalone output.
         const packageOutput = path.resolve(w.sourceDirectory, rows.corePackage.PackageOutputPath);
         requireValue(inside(w.sourceDirectory, packageOutput), "Core package output escapes source checkout");
         await invoke(w, "build", w.toolchain.hostPath, ["pack", path.join(w.sourceDirectory, projects.corePackage),
-            "--configuration", "Release", "--no-build", "--no-restore", "--output", packageOutput]);
+            "--configuration", "Release", "--no-build", "--no-restore", "--output", packageOutput], buildSettings);
         stage = "identity";
         await sourceUnchanged(w);
         for (const [role, project] of Object.entries(projects)) {

@@ -324,6 +324,34 @@ test("evidence helper selects its runtime TFM consistently for restore and build
     assert.match(await fs.readFile(path.join(helper, "NuGet.Config"), "utf8"), /dnceng\/public\/_packaging\/dotnet-public/);
 });
 
+for (const os of ["windows", "linux"])
+test(`historical bootstrap permits only same-line runtime patches without changing SDK selection (${os})`, async t => {
+    const f = await controlled(t, os), execute = f.deps.execute;
+    const observed = [];
+    f.deps.execute = async (exe, args, settings) => {
+        const build = args.includes("-bootstrap") || args.includes("--bootstrap") || args[0] === "pack";
+        observed.push({ build, rollForward: settings.env.DOTNET_ROLL_FORWARD });
+        assert.equal(settings.env.DOTNET_ROLL_FORWARD, build ? "LatestPatch" : "Disable");
+        if (build) {
+            assert.equal(settings.env.DOTNET_MULTILEVEL_LOOKUP, "0");
+            assert.equal(settings.env.DOTNET_INSTALL_DIR, settings.env.DOTNET_ROOT);
+            assert.equal(settings.env.DOTNET_HOST_PATH, path.join(settings.env.DOTNET_ROOT,
+                os === "windows" ? "dotnet.exe" : "dotnet"));
+        }
+        return execute(exe, args, settings);
+    };
+    const workspace = await prepareRevisionWorkspace(f.options, f.deps);
+    assert.equal(workspace.status, "prepared", JSON.stringify(workspace));
+    const result = await buildRevision(workspace, f.deps);
+    assert.equal(result.status, "built", JSON.stringify(result));
+    assert.equal(observed.filter(row => row.build).length, 2);
+    assert.ok(observed.some(row => !row.build && row.rollForward === "Disable"));
+    assert.equal(workspace.env.DOTNET_ROLL_FORWARD, "Disable");
+    assert.equal(workspace.globalJson.before, workspace.globalJson.after);
+    assert.ok(result.commands.filter(command => command.stage === "build")
+        .every(command => command.runtimeRollForward === "LatestPatch"));
+});
+
 test("reserved source identity and a separate sample toolchain never retarget historical products", async t => {
     const f = await controlled(t);
     const buildInstanceId = "reserved-source-build-1";
