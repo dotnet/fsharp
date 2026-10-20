@@ -141,6 +141,11 @@ async function dockerFixture(t, failure) {
                         Memory: Number(args[args.indexOf("--memory") + 1].slice(0, -1)) * 1024 * 1024,
                         MemorySwap: Number(args[args.indexOf("--memory-swap") + 1].slice(0, -1)) * 1024 * 1024,
                         PidsLimit: Number(args[args.indexOf("--pids-limit") + 1]),
+                        Ulimits: args.flatMap((v, i) => {
+                            if (v !== "--ulimit") return [];
+                            const [Name, pair] = args[i + 1].split("="), [Soft, Hard] = pair.split(":").map(Number);
+                            return [{ Name, Soft, Hard }];
+                        }),
                         NanoCpus: Number(args[args.indexOf("--cpus") + 1]) * 1e9, Dns: ["127.0.0.1"] },
                     Mounts: mounts.map(m => ({ Type: "bind", RW: false,
                         Source: m.split(",")[1].slice("source=".length), Destination: m.split(",")[2].slice("target=".length) })),
@@ -213,6 +218,40 @@ async function dockerFixture(t, failure) {
     return { root, calls, resources, setResult: value => { execution = value; },
         setAcquisition: value => { acquisition = value; }, deps: { platform: "linux", command: run } };
 }
+
+test("worker file limit supports the source bootstrap without raising the broker limit", async t => {
+    const f = await dockerFixture(t);
+    const result = await runContainer(config(), {
+        operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+    }, f.deps);
+    assert.equal(result.status, "collected", result.reason);
+    const creates = f.calls.filter(args => args[0] === "container" && args[1] === "create");
+    for (const role of ["worker", "broker"]) {
+        const args = creates.find(args => args[args.indexOf("--name") + 1].endsWith(`-${role}`));
+        assert.equal(args[args.indexOf("--ulimit") + 1], role === "worker" ? "nofile=6500:6500" : "nofile=1024:1024");
+    }
+});
+
+test("a mismatched worker file limit blocks execution and removes owned resources", async t => {
+    const f = await dockerFixture(t), command = f.deps.command;
+    f.deps.command = async (executable, args, settings) => {
+        const result = await command(executable, args, settings);
+        if (args.includes("inspect") && args.at(-1).endsWith("-worker") && result.exitCode === 0) {
+            const values = JSON.parse(result.stdout);
+            values[0].HostConfig.Ulimits.find(value => value.Name === "nofile").Hard = 1024;
+            result.stdout = Buffer.from(JSON.stringify(values));
+        }
+        return result;
+    };
+    const result = await runContainer(config(), {
+        operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+    }, f.deps);
+    assert.equal(result.status, "blocked");
+    assert.match(result.reason, /worker launch isolation mismatch/);
+    assert.equal(f.calls.some(args => args.includes("--attach")), false);
+    assert.equal(f.resources.size, 0);
+    assert.ok(result.receipt.cleanup.every(row => row.removed));
+});
 
 function executionUnit() {
     const contracts = require("./fixtures/contracts.cjs");
@@ -615,7 +654,7 @@ test("network cleanup rejects permission errors and missing responses for anothe
     }
 });
 
-async function physicalFixture(t, { failCopy = false, failBuild = false, failHistorical = false, runUnit } = {}) {
+async function physicalFixture(t, { failCopy = false, failBuild = false, failHistorical = false, runUnit, onHistorical } = {}) {
     const entry = path.join(__dirname, "container-entry.cjs");
     const source = await fs.readFile(entry, "utf8"), writes = [], calls = [];
     const toolchain = { root: "/scratch/storage/acquired/dotnet",
@@ -653,7 +692,10 @@ async function physicalFixture(t, { failCopy = false, failBuild = false, failHis
                 executionEvidence: async (unit, launch, result, evidence) => ({ result, ...evidence }) };
             if (name === "./repro-process.cjs") return { execute: async (executable, args, settings) => {
                 calls.push({ executable, args, settings });
-                if (failHistorical && executable === "/usr/bin/setpriv") throw new Error("controlled historical command failure");
+                if (executable === "/usr/bin/setpriv") {
+                    await onHistorical?.(args, settings);
+                    if (failHistorical) throw new Error("controlled historical command failure");
+                }
                 return { complete: true, exitCode: failBuild && args[0] === "build" ? 1 : 0,
                     stdout: "", stderr: failBuild && args[0] === "build" ? "controlled helper compiler failure" : "" };
             } };
@@ -735,6 +777,58 @@ test(`historical command returns private scratch ownership (mode ${mode}, failur
     if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
     const historical = fixture.calls.find(row => row.executable === "/usr/bin/setpriv");
     assert.ok(historical.args.includes("--reuid=1000") && historical.args.includes("--no-new-privs"));
+});
+
+for (const failHistorical of [false, true])
+test(`historical NuGet cache root permits new sibling caches and returns ownership (failure ${failHistorical})`, async t => {
+    const root = "/scratch/work/revision/source", cache = "/scratch/work/revision/nuget";
+    const entries = new Map([root, cache, `${cache}/packages`].map(file =>
+        [file, { uid: 0, mode: 0o755, kind: "directory" }]));
+    let launched = false;
+    const fixture = await physicalFixture(t, {
+        failHistorical,
+        onHistorical: async () => {
+            launched = true;
+            assert.equal(entries.get(cache).uid, 1000, "NuGet must create its own HTTP and plugin cache directories");
+            for (const name of ["http", "plugins"]) {
+                entries.set(`${cache}/${name}`, { uid: 1000, mode: 0o700, kind: "directory" });
+                entries.set(`${cache}/${name}/entry`, { uid: 1000, mode: 0o600, kind: "file" });
+            }
+        },
+        runUnit: async (unit, deps) => {
+            t.mock.method(fs, "realpath", async file => file);
+            t.mock.method(fs, "lstat", async file => {
+                const row = entries.get(file) ?? { uid: 0, mode: 0o755, kind: "directory" };
+                return { ...row, nlink: 1, isDirectory: () => row.kind === "directory",
+                    isFile: () => row.kind === "file", isSymbolicLink: () => false };
+            });
+            t.mock.method(fs, "readdir", async directory => {
+                if (directory === "/proc") return [];
+                assert.equal(entries.get(directory).uid, 0, "reclaim private caches before reading them");
+                return [...entries.keys()].filter(file => path.posix.dirname(file) === directory).map(file => path.posix.basename(file));
+            });
+            t.mock.method(fs, "chown", async (file, uid, gid) => {
+                assert.equal(gid, uid);
+                entries.get(file).uid = uid;
+            });
+            t.mock.method(fs, "chmod", async (file, mode) => {
+                if (entries.has(file)) {
+                    assert.equal(entries.get(file).uid, 0, "cache cleanup must not need CAP_FOWNER");
+                    entries.get(file).mode = mode;
+                }
+            });
+            await deps.workspaceDependencies.execute("/bin/bash", ["build.sh"], {
+                cwd: root, env: { HOME: root, NUGET_PACKAGES: `${cache}/packages`,
+                    NUGET_HTTP_CACHE_PATH: `${cache}/http`, NUGET_PLUGINS_CACHE_PATH: `${cache}/plugins` },
+            });
+            return { status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } };
+        },
+    });
+    assert.equal(launched, true);
+    assert.ok(entries.has(`${cache}/http/entry`) && entries.has(`${cache}/plugins/entry`));
+    assert.ok([...entries.values()].every(row => row.uid === 0));
+    assert.equal(fixture.result.result.status, failHistorical ? "untestable" : "tested", fixture.result.result.error?.message);
+    if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
 });
 
 test("timeout canary keeps its parent alive until external termination", async () => {

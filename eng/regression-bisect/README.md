@@ -75,6 +75,11 @@ The helper uses the acquired SDK environment.
 Helper failures preserve acquired archives and command evidence.
 After historical descendants stop, the supervisor reclaims only their owned scratch directories.
 Ownership changes do not follow SDK links or include protected helper, control, or storage directories.
+Historical commands own their isolated NuGet cache root, including newly created HTTP and plugin caches.
+The supervisor reclaims these caches after command completion or failure.
+Worker file limits permit the source bootstrap's 6,500 descriptors and remain bounded at that value.
+The broker retains its 1,024-descriptor limit.
+Docker inspection and the physical inspect canary verify the worker limit.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
 Public Azure DevOps feeds redirect package downloads to the publisher's `*.vsblob.vsassets.io` CDN.

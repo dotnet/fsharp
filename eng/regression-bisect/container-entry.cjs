@@ -111,6 +111,8 @@ async function canary(job) {
     const status = await fs.readFile("/proc/self/status", "utf8");
     requireValue(process.getuid() === 1000 && /^CapEff:\s+0+$/m.test(status) &&
         /^NoNewPrivs:\s+1$/m.test(status) && /^Seccomp:\s+2$/m.test(status), "worker privilege controls absent");
+    const openFiles = /^Max open files\s+(\d+)\s+(\d+)/m.exec(await fs.readFile("/proc/self/limits", "utf8"));
+    requireValue(openFiles?.[1] === "6500" && openFiles[2] === "6500", "source bootstrap file limit differs from launch");
     const cgroups = {};
     for (const name of ["memory.max", "memory.swap.max", "pids.max", "cpu.max"])
         cgroups[name] = (await fs.readFile(`/sys/fs/cgroup/${name}`, "utf8")).trim();
@@ -159,6 +161,7 @@ async function canary(job) {
     catch (error) { requireValue(["EROFS", "EACCES"].includes(error.code), error.message); readonly = true; }
     requireValue(readonly, "trusted bundle is writable");
     return { mode: input.mode, denials, direct, proxied, cgroups, uid: process.getuid(),
+        openFiles: { soft: Number(openFiles[1]), hard: Number(openFiles[2]) },
         statusSha256: hash(status), legitimateTransfer: { bytes: bytes.length, sha256: hash(bytes) },
         scratchExecution: { complete: nativeExecution.complete, exitCode: nativeExecution.exitCode, sha256: hash(nativeBytes) } };
 }
@@ -220,7 +223,10 @@ async function physicalRunner(unit, launch) {
     const withProxy = async (executable, args, settings, historical = false) => {
         const env = { ...settings.env,
             ...Object.fromEntries(["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"].map(k => [k, process.env[k]])) };
-        const writable = [...new Set([settings.cwd, env.HOME, env.TEMP, env.NUGET_PACKAGES].filter(Boolean))];
+        // NuGet creates HTTP and plugin caches beside its packages directory.
+        const cacheRoots = ["NUGET_PACKAGES", "NUGET_HTTP_CACHE_PATH", "NUGET_PLUGINS_CACHE_PATH"]
+            .flatMap(key => env[key] ? [path.dirname(env[key])] : []);
+        const writable = [...new Set([settings.cwd, env.HOME, env.TEMP, ...cacheRoots].filter(Boolean))];
         const directories = writable.filter(directory => !writable.some(parent =>
             parent !== directory && directory.startsWith(`${parent}/`)));
         if (historical) {

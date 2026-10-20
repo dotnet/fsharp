@@ -305,16 +305,17 @@ async function runContainer(config, options, deps = {}) {
             "Docker did not enforce the isolated network configuration");
             receipt[internalOnly ? "privateNetwork" : "publicNetwork"] = inspected;
         }
-        const common = (containerName, network, limits, supervisor = false, executableScratch = false) => [
+        const common = (containerName, network, limits, supervisor = false, isWorker = false) => [
             "container", "create", "--name", containerName, "--label", `${label}=${receipt.launchId}`,
             "--network", network, "--user", supervisor ? "0:0" : "1000:1000", "--cap-drop", "ALL",
             ...(supervisor ? ["--cap-add", "SETUID", "--cap-add", "SETGID", "--cap-add", "KILL", "--cap-add", "CHOWN"] : []),
             "--security-opt", "no-new-privileges=true", "--security-opt", "apparmor=docker-default",
             "--read-only", "--init", "--cgroupns", "private", "--ipc", "private", "--log-driver", "none", "--restart", "no",
             "--cpus", String(limits.cpus), "--memory", `${limits.memoryMiB}m`, "--memory-swap", `${limits.memoryMiB}m`,
-            "--pids-limit", String(limits.pids), "--ulimit", "nofile=1024:1024", "--ulimit", "core=0:0",
+            "--pids-limit", String(limits.pids), "--ulimit", isWorker ? "nofile=6500:6500" : "nofile=1024:1024",
+            "--ulimit", "core=0:0",
             "--sysctl", "net.ipv4.ip_forward=0", "--sysctl", "net.ipv6.conf.all.disable_ipv6=1",
-            "--tmpfs", `/scratch:rw,${executableScratch ? "exec" : "noexec"},nosuid,nodev,size=${limits.scratchMiB}m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=${supervisor ? "0755" : "0700"}`,
+            "--tmpfs", `/scratch:rw,${isWorker ? "exec" : "noexec"},nosuid,nodev,size=${limits.scratchMiB}m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=${supervisor ? "0755" : "0700"}`,
             "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=16m,uid=1000,gid=1000,mode=0700",
             "--tmpfs", `/trusted/artifacts:rw,nosuid,nodev,noexec,size=16m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=0700`,
             "--mount", `type=bind,source=${bundle},target=/trusted,readonly`,
@@ -360,6 +361,7 @@ async function runContainer(config, options, deps = {}) {
             created.HostConfig.Memory === config.limits.memoryMiB * 1024 * 1024 &&
             created.HostConfig.MemorySwap === created.HostConfig.Memory &&
             created.HostConfig.PidsLimit === config.limits.pids && created.HostConfig.NanoCpus === config.limits.cpus * 1e9 &&
+            created.HostConfig.Ulimits?.some(limit => limit.Name === "nofile" && limit.Soft === 6500 && limit.Hard === 6500) &&
             created.HostConfig.Dns?.join() === "127.0.0.1" && !Object.keys(created.HostConfig.PortBindings ?? {}).length &&
             created.Mounts?.filter(m => m.Type === "bind").length === 2 && created.Mounts.every(m =>
                 m.Type === "tmpfs" && ["/scratch", "/tmp", "/trusted/artifacts"].includes(m.Destination) ||
