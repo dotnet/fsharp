@@ -47,7 +47,7 @@ def _identity(info):
     return info.st_dev, info.st_ino
 
 
-def _open_file(path):
+def _open_file(path, *, delete=False):
     if os.name != "nt":
         return os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
     import ctypes
@@ -60,7 +60,8 @@ def _open_file(path):
                                   ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
     kernel.CloseHandle.argtypes = [wintypes.HANDLE]
     # Deny writes/deletes while hashing or passing this same handle to the encryptor.
-    handle = kernel.CreateFileW(str(path), 0x80000000, 0x1, None, 3, 0x200000, None)
+    handle = kernel.CreateFileW(str(path), 0x80000000 | (0x10000 if delete else 0),
+                                0x1, None, 3, 0x200000, None)
     if handle == ctypes.c_void_p(-1).value:
         raise ctypes.WinError(ctypes.get_last_error())
     descriptor = None
@@ -76,7 +77,37 @@ def _open_file(path):
         raise
 
 
-def _read_file(path, *, limit=None, use=None):
+def _unlink_open_file(path, stream):
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        import msvcrt
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.SetFileInformationByHandle.argtypes = [wintypes.HANDLE, ctypes.c_int,
+                                                      ctypes.c_void_p, wintypes.DWORD]
+        kernel.SetFileInformationByHandle.restype = wintypes.BOOL
+        disposition = wintypes.BOOLEAN(True)
+        if not kernel.SetFileInformationByHandle(msvcrt.get_osfhandle(stream.fileno()), 4,
+                                                 ctypes.byref(disposition), ctypes.sizeof(disposition)):
+            raise ctypes.WinError(ctypes.get_last_error())
+    else:
+        # POSIX cannot unlink by handle. Isolate the name before checking which object moved.
+        directory = Path(tempfile.mkdtemp(prefix=".dump-cleanup-", dir=path.parent))
+        isolated = directory / "dump.dmp"
+        try:
+            path.rename(isolated)
+            if _identity(isolated.lstat()) != _identity(os.fstat(stream.fileno())):
+                os.link(isolated, path, follow_symlinks=False)  # Never overwrite a newly installed path.
+                isolated.unlink()
+                raise ValueError("Owned dump was replaced")
+            isolated.unlink()
+        finally:
+            if not isolated.exists():
+                directory.rmdir()
+
+
+def _read_file(path, *, limit=None, use=None, remove=None):
     """Check the open object as well as every ancestor; never hash a recorded path alone."""
     path = _path(path)
     before = path.stat()
@@ -85,7 +116,7 @@ def _read_file(path, *, limit=None, use=None):
     require(before.st_size <= (c.LIMITS["artifact_bytes"] if limit is None else limit),
             "Artifact size budget exceeded")
     digest, data = hashlib.sha256(), []
-    descriptor = _open_file(path)
+    descriptor = _open_file(path) if remove is None else _open_file(path, delete=True)
     with os.fdopen(descriptor, "rb") as stream:
         opened = os.fstat(stream.fileno())
         require(_identity(opened) == _identity(before), "Artifact identity changed")
@@ -101,15 +132,19 @@ def _read_file(path, *, limit=None, use=None):
                 data.append(block)
         after = os.fstat(stream.fileno())
         current = _path(path).stat()
-    # Windows handle ChangeTime can advance on reads; the sharing lock prevents writes.
-    timestamp = "st_birthtime_ns" if os.name == "nt" else "st_ctime_ns"
-    require(size == before.st_size and _identity(before) == _identity(after) == _identity(current)
-            and before.st_mtime_ns == opened.st_mtime_ns == after.st_mtime_ns == current.st_mtime_ns
-            and before.st_ctime_ns == current.st_ctime_ns
-            and (os.name == "nt" or opened.st_ctime_ns == after.st_ctime_ns)
-            and all(getattr(info, timestamp, info.st_ctime_ns) == getattr(before, timestamp, before.st_ctime_ns)
-                    for info in (opened, after, current))
-            and current.st_size == size and current.st_nlink == 1, "Artifact changed while reading")
+        # Windows handle ChangeTime can advance on reads; the sharing lock prevents writes.
+        timestamp = "st_birthtime_ns" if os.name == "nt" else "st_ctime_ns"
+        require(size == before.st_size and _identity(before) == _identity(after) == _identity(current)
+                and before.st_mtime_ns == opened.st_mtime_ns == after.st_mtime_ns == current.st_mtime_ns
+                and before.st_ctime_ns == current.st_ctime_ns
+                and (os.name == "nt" or opened.st_ctime_ns == after.st_ctime_ns)
+                and all(getattr(info, timestamp, info.st_ctime_ns) == getattr(before, timestamp, before.st_ctime_ns)
+                        for info in (opened, after, current))
+                and current.st_size == size and current.st_nlink == 1, "Artifact changed while reading")
+        if remove is not None:
+            require({"path": path, "sha256": digest.hexdigest(), "size_bytes": size,
+                     "identity": _identity(before)} == remove, "Owned dump was replaced")
+            _unlink_open_file(path, stream)
     return digest.hexdigest(), size, b"".join(data), _identity(before)
 
 
@@ -503,7 +538,7 @@ def remove_owned_dump(owned, receipt, conclusion, now):
         conclusion = "Dump analysis conclusion unavailable: invalid or oversized text"
     record = _record("dump", actual["sha256"], actual["size_bytes"], conclusion, now)
     record["reason"] = "ephemeral_dump_removed"
-    _path(actual["path"]).unlink()
+    _read_file(actual["path"], remove=receipt)
     return record
 
 

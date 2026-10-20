@@ -815,7 +815,11 @@ artifacts.** Output directories are owner-only (POSIX mode or a protected
 Windows DACL granting only the current user access).
 Collection manifests record `published: false`. The controller analyzes the
 exact owned dump, encrypts it for the configured recipient, then unlinks only
-the identity-checked plaintext file. The ciphertext is pending until a trusted
+the identity-checked plaintext file. Windows keeps its write/delete-denying handle
+through final byte/identity validation and marks that same object for deletion.
+POSIX isolates the pathname in a private cleanup directory and verifies the moved
+object before unlinking; a replacement is preserved and blocks retention.
+The ciphertext is pending until a trusted
 sink acknowledges it. Failed retention/deletion is explicit; nothing falls back
 to uploading plaintext. Removal is a filesystem unlink, not a claim of forensic
 erasure. Public summaries still require human review for sensitive content.

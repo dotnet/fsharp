@@ -515,15 +515,15 @@ class ArtifactTests(unittest.TestCase):
             with self.subTest(failure=failure):
                 path.write_bytes(b"MDMPowned bytes")
                 file = a.c.m.file_record(path)
-                original = Path.unlink
+                original = a._unlink_open_file
 
-                def unlink(target, *args, **kwargs):
+                def unlink(target, stream):
                     if failure == "delete-denied" and target == path:
                         raise PermissionError("owned plaintext deletion denied")
-                    return original(target, *args, **kwargs)
+                    return original(target, stream)
 
                 error = KeyboardInterrupt if failure == "cancelled" else PermissionError
-                with mock.patch.object(Path, "unlink", unlink), self.assertRaises(error) as raised:
+                with mock.patch.object(a, "_unlink_open_file", unlink), self.assertRaises(error) as raised:
                     a.analyze_owned_dump(owned, file, lambda _: "Heap statistics", NOW,
                                          retain=mock.Mock(side_effect=error("retention interrupted"))
                                          if failure != "delete-denied" else None)
@@ -682,6 +682,61 @@ class ArtifactTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
         self.assertTrue(path.exists())
+
+    def test_owned_dump_cleanup_rejects_replacement_after_validation(self):
+        for content in (b"MDMPoriginal", b"MDMPreplacement"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                owned = a.create_dump_workspace(Path(directory) / "dump-session")
+                path = owned.path / "heap.dmp"
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                record = a._record
+                original = owned.path / "original.dmp"
+
+                def replace_then_record(*args, **kwargs):
+                    path.rename(original)
+                    path.write_bytes(content)
+                    return record(*args, **kwargs)
+
+                with mock.patch.object(a, "_record", side_effect=replace_then_record):
+                    with self.assertRaises((ValueError, OSError)):
+                        a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                self.assertEqual(path.read_bytes(), content)
+                self.assertEqual(original.read_bytes(), b"MDMPoriginal")
+                self.assertEqual(a._identity(original.stat()), receipt["identity"])
+
+    def test_owned_dump_cleanup_holds_object_through_delete(self):
+        for content in (b"MDMPoriginal", b"MDMPreplacement"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                owned = a.create_dump_workspace(Path(directory) / "dump-session")
+                path = owned.path / "heap.dmp"
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                original = owned.path / "original.dmp"
+                unlink = a._unlink_open_file
+
+                def replace_before_delete(target, stream):
+                    if os.name == "nt":
+                        with self.assertRaises(PermissionError):
+                            path.rename(original)
+                        with self.assertRaises(PermissionError):
+                            path.write_bytes(content)
+                    else:
+                        path.rename(original)
+                        path.write_bytes(content)
+                    return unlink(target, stream)
+
+                with mock.patch.object(a, "_unlink_open_file", side_effect=replace_before_delete):
+                    if os.name == "nt":
+                        result = a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                        self.assertEqual(result["sha256"], receipt["sha256"])
+                        self.assertFalse(path.exists())
+                        self.assertFalse(original.exists())
+                    else:
+                        with self.assertRaisesRegex(ValueError, "Owned dump was replaced"):
+                            a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                        self.assertEqual(path.read_bytes(), content)
+                        self.assertEqual(original.read_bytes(), b"MDMPoriginal")
 
     def test_dump_workspace_receipt_cannot_be_reconstructed_from_a_path(self):
         entry = self.entry("heap.dmp", "dump", b"MDMPnot created by dump workspace")

@@ -744,7 +744,8 @@ assert controller.acknowledge_evidence(no_upload)["status"] == "available"
                 self.assertEqual(api.effects, [])
 
     def test_recovered_dump_cleanup_requires_original_owned_object_even_after_expiry(self):
-        for change in ("unchanged", "expired", "replaced", "denied", "workspace-lost", "workspace-replaced"):
+        for change in ("unchanged", "expired", "replaced", "denied", "workspace-lost", "workspace-replaced",
+                       "after-validation", "after-validation-expired"):
             with self.subTest(change=change), self.ready() as (repo, controller, api, transport):
                 private = controller.root / "private"
                 private.mkdir()
@@ -775,18 +776,35 @@ assert controller.acknowledge_evidence(no_upload)["status"] == "available"
                     owned.path.rename(owned.path.with_name("original-dump-session"))
                     owned.path.mkdir()
                     path.write_bytes(b"MDMPreplacement workspace")
-                now = (lambda: fixtures.NOW + timedelta(days=15)) if change == "expired" else controller.now
+                now = ((lambda: fixtures.NOW + timedelta(days=15))
+                       if change in ("expired", "after-validation-expired") else controller.now)
                 restarted = w.Controller(controller.root, repo.root, transport, api, now=now)
                 remove = w.artifacts.remove_owned_dump
+                record = w.artifacts._record
+
+                def replace_then_record(*args, **kwargs):
+                    path.rename(owned.path / "original.dmp")
+                    path.write_bytes(b"MDMPreplacement after validation")
+                    return record(*args, **kwargs)
+
                 with mock.patch.object(w.artifacts, "remove_owned_dump",
-                                       side_effect=PermissionError("delete denied") if change == "denied" else remove):
+                                       side_effect=PermissionError("delete denied") if change == "denied" else remove), \
+                        mock.patch.object(w.artifacts, "_record", side_effect=replace_then_record
+                                          if change.startswith("after-validation") else record):
                     result = restarted.stage_evidence()
-                self.assertEqual(path.exists(), change in ("replaced", "denied", "workspace-replaced"))
-                self.assertEqual(result["status"], "blocked_retention" if change in ("replaced", "denied", "workspace-replaced")
+                blocked = change in ("replaced", "denied", "workspace-replaced") or change.startswith("after-validation")
+                self.assertEqual(path.exists(), blocked)
+                self.assertEqual(result["status"], "blocked_retention" if blocked
                                  else "expired" if change == "expired" else "pending", result)
-                if change in ("replaced", "denied", "workspace-replaced"):
-                    self.assertTrue(any(f["kind"] == "dump" for f in result["files"]), result)
+                if blocked:
+                    if change != "after-validation-expired":
+                        self.assertTrue(any(f["kind"] == "dump" for f in result["files"]), result)
+                    else:
+                        self.assertEqual(result["files"], [])
                     self.assertTrue(any(s.get("reason") for s in result["staged"]))
+                if change.startswith("after-validation"):
+                    self.assertEqual(path.read_bytes(), b"MDMPreplacement after validation")
+                    self.assertEqual((owned.path / "original.dmp").read_bytes(), b"MDMPowned analyzed snapshot")
                 restarted.checkpoint()
                 retained = transport.read()[0]["discoveries"]["run-1.discovery"].get("evidence", [])
                 self.assertTrue(any(r["type"] == "dump" and r["sha256"] == entry["file"]["sha256"]
