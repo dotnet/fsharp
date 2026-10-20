@@ -7757,6 +7757,14 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | Local(_, _, Some(moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
             | _ -> ftyvs)
 
+    // A struct state machine's type can mention type variables its MoveNext body does not, e.g. through its Data type
+    let cloFreeTyvars =
+        match boxity with
+        | ILBoxity.AsValue ->
+            (cloFreeTyvars, thisVars)
+            ||> List.fold (fun ftyvs v -> unionFreeTyvars ftyvs (freeInType CollectTyparsNoCaching v.Type))
+        | ILBoxity.AsObject -> cloFreeTyvars
+
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
     // Work out if the closure captures any witnesses.

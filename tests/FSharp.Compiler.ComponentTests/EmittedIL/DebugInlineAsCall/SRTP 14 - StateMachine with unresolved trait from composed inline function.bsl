@@ -47,7 +47,7 @@ Test::h
     IL_0008:  callvirt Invoke
     IL_000d:  stloc.0
     IL_000e:  ldloca.s 2
-    IL_0010:  initobj h@19-1
+    IL_0010:  initobj 0x1b000009
     IL_0016:  ldloca.s 2
     IL_0018:  stloc.3
     IL_0019:  ldc.i4.0
@@ -63,7 +63,7 @@ Test::h$W
     IL_0009:  callvirt Invoke
     IL_000e:  stloc.0
     IL_000f:  ldloca.s 2
-    IL_0011:  initobj h@19-3
+    IL_0011:  initobj 0x1b00000b
     IL_0017:  ldloca.s 2
     IL_0019:  stloc.3
     IL_001a:  ldc.i4.0
@@ -91,14 +91,14 @@ S`1::Equals
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b00000a
+    IL_0003:  isinst 0x1b00000c
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001d
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b00000a
+    IL_000e:  unbox.any 0x1b00000c
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1
@@ -119,14 +119,14 @@ S`1::Equals
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b00000a
+    IL_0003:  isinst 0x1b00000c
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001c
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b00000a
+    IL_000e:  unbox.any 0x1b00000c
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1
