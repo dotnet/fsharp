@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" />
-    <PackageReference Include="MessagePack" Version="$(MessagePackVersion)" PrivateAssets="all" />
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Testing.SourceGenerator" Version="$(MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(MicrosoftVisualStudioLanguageIntellisenseVersion)" />

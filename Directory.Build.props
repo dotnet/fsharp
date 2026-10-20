@@ -117,6 +117,7 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cxmj-83gh-fp49" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-q2h6-ghwm-5qm8" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-qhmf-xw27-6rqr" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-qhrr-8q5h-9q3h" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-v72x-2h86-7f8m" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w567-gjr2-hm5j" />
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-wfr3-xj75-pfwh" />
