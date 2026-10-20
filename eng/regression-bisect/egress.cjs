@@ -88,7 +88,8 @@ function createEgressBroker(options = {}) {
         if (stopped || id > cap.requests || tunnels.size >= cap.active || totalBytes >= cap.totalBytes)
             return reject("capacity", "503 Service Unavailable");
         if (!hosts.has(host) || request.url !== `${host}:443`) return reject("authority");
-        if (request.headers.host !== request.url || new Set(headerNames).size !== headerNames.length ||
+        // Node omits the default HTTPS port from Host, but not the CONNECT authority.
+        if ((request.headers.host !== request.url && request.headers.host !== host) || new Set(headerNames).size !== headerNames.length ||
             headerNames.some(h => !["host", "connection", "proxy-connection", "user-agent"].includes(h)))
             return reject("headers");
         socket.emit("egress-tunnel");

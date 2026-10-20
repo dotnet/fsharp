@@ -36,11 +36,11 @@ async function fixture(t, options = {}, serve = socket => socket.pipe(socket)) {
         t.diagnostic(JSON.stringify({ transport: "owned-loopback-with-injected-DNS-and-dialer",
             resolutions, connections, events, final: broker.snapshot() }));
     });
-    const request = async (authority = "api.nuget.org:443", headers = "", head = "") => {
+    const request = async (authority = "api.nuget.org:443", headers = "", head = "", host = authority) => {
         const socket = net.connect({ host: "127.0.0.1", port });
         socket.on("error", () => {});
         await once(socket, "connect");
-        socket.write(`CONNECT ${authority} HTTP/1.1\r\nHost: ${authority}\r\n${headers}\r\n${head}`);
+        socket.write(`CONNECT ${authority} HTTP/1.1\r\nHost: ${host}\r\n${headers}\r\n${head}`);
         return socket;
     };
     return { broker, request, events, resolutions, connections, target };
@@ -77,6 +77,15 @@ test("a legitimate bounded tunnel pins the public address and transfers bytes", 
     assert.equal(f.broker.snapshot().active, 0);
 });
 
+test("Node's default-port proxy Host still pins the approved destination", async t => {
+    const f = await fixture(t);
+    const socket = await f.request(undefined, "", "", "api.nuget.org");
+    assert.match((await once(socket, "data"))[0].toString(), /^HTTP\/1.1 200 Connection Established\r\n\r\n$/);
+    socket.end();
+    await once(socket, "close");
+    assert.deepEqual(f.connections, [{ host: "13.107.246.40", port: 443, family: 4 }]);
+});
+
 test("control, metadata, credentials, redirects and alternate authorities cannot reach DNS", async t => {
     const f = await fixture(t);
     for (const authority of ["api.github.com:443", "github.com:443", "169.254.169.254:443", "localhost:443",
@@ -89,6 +98,9 @@ test("control, metadata, credentials, redirects and alternate authorities cannot
         "Cookie: canary\r\n", "X-GitHub-Token: canary\r\n", "Content-Length: 1\r\n",
         "Transfer-Encoding: chunked\r\n", "Host: api.nuget.org:443\r\n"])
         await t.test(header.trim(), async () => assert.match(await response(await f.request(undefined, header)), /403 Forbidden/));
+    for (const host of ["github.com", "api.nuget.org:80", "api.nuget.org.evil.test",
+        "api.nuget.org@evil.test", "api.nuget.org:443:443", ""])
+        await t.test(`Host: ${host}`, async () => assert.match(await response(await f.request(undefined, "", "", host)), /403 Forbidden/));
     assert.equal(f.resolutions.length, 0);
     assert.equal(f.connections.length, 0);
     assert.equal(JSON.stringify(f.events).includes("canary"), false);

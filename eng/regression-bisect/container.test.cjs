@@ -153,7 +153,8 @@ async function dockerFixture(t, failure) {
             const value = resources.get(args[2]);
             if (failure === "ownership" && args[2].endsWith("-worker") && value)
                 value.Config.Labels[label] = "not-this-launch";
-            return value ? out([value]) : { exitCode: 1, stdout: Buffer.alloc(0), stderr: Buffer.from("No such object: " + args[2]) };
+            return value ? out([value]) : { exitCode: 1, stdout: Buffer.alloc(0), stderr: Buffer.from(args[0] === "network"
+                ? `Error response from daemon: network ${args[2]} not found\n` : "No such object: " + args[2]) };
         }
         if (args[1] === "connect") {
             resources.get(args[3]).NetworkSettings.Networks[args[2]] = { IPAddress: "172.30.0.2" };
@@ -577,6 +578,26 @@ test("cleanup refuses a substituted ownership label instead of deleting a foreig
     assert.equal(f.calls.some(args => args.includes("--attach")), false);
     assert.equal(f.calls.some(args => args[1] === "rm" && args.at(-1).endsWith("-worker")), false);
     assert.equal(result.receipt.cleanup.find(r => r.name.endsWith("-worker")).removed, false);
+});
+
+test("network cleanup rejects permission errors and missing responses for another resource", async t => {
+    for (const failure of ["permission denied", "Error response from daemon: network foreign not found",
+        "No such object: foreign", "Error: No such network: foreign"]) {
+        const f = await dockerFixture(t);
+        const command = f.deps.command;
+        f.deps.command = async (executable, args, settings) => {
+            const operation = args.slice(args[2] === "--config" ? 4 : 2);
+            if (operation[0] === "network" && operation[1] === "inspect" && !f.resources.has(operation[2]))
+                return { exitCode: 1, stdout: Buffer.alloc(0), stderr: Buffer.from(failure) };
+            return command(executable, args, settings);
+        };
+        const result = await runContainer(config(), {
+            operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+        }, f.deps);
+        assert.equal(result.status, "blocked");
+        assert.ok(result.reason.includes(failure));
+        assert.ok(result.receipt.cleanup.some(r => r.kind === "network" && !r.removed));
+    }
 });
 
 test("fixed child entry and opt-in smoke reject command-like arguments in fresh processes", async t => {

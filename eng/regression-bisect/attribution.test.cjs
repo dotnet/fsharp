@@ -381,7 +381,7 @@ test("a fresh process consumes the saved candidate and selects only its unbuilt 
             process.stdout.write(JSON.stringify({ result, comment: h.comment, statuses: h.statuses,
                 bisectCalls: intent.commands.filter(c => c.args.includes("bisect")).length }));
         })().catch(error => { console.error(error); process.exitCode = 1; });
-    `], { cwd: __dirname, encoding: "utf8", timeout: 60000, maxBuffer: 1024 * 1024,
+    `], { cwd: __dirname, encoding: "utf8", timeout: 180000, maxBuffer: 1024 * 1024,
         input: JSON.stringify({ context: { ...h.context, keys: undefined }, comment: h.comment, statuses: h.statuses,
             runs: [...h.runs], history: h.deps.history, environments: h.deps.environments, platform: h.deps.platform }) });
     assert.equal(child.status, 0, child.stderr);

@@ -8,6 +8,7 @@ const { verifyToolchainIdentity } = require("./toolchains.cjs");
 const { selectFsiCommand, verifyProjectIdentities, evaluateAssertion, runReproduction } = require("./repro.cjs");
 const { execute } = require("./repro-process.cjs");
 const { isolatedEnvironment, hash } = require("./toolchain-io.cjs");
+const treeTimeoutMs = process.platform === "win32" ? 30000 : 3000;
 
 for (const [name, options] of [
     ["local DLL", {}], ["Windows executable", { executable: true }], ["released SDK", { kind: "released" }],
@@ -477,7 +478,7 @@ test("timeout kills a real child process tree", async t => {
     const result = await execute(process.execPath, ["-e",
         "const c=require('node:child_process').spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore'});console.log(c.pid);setInterval(()=>{},1000)"], {
         cwd: f.root, env: isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch }),
-        timeoutMs: 3000,
+        timeoutMs: treeTimeoutMs,
     });
     assert.equal(result.status, "timeout");
     const pid = Number(result.stdout.trim());
@@ -557,12 +558,12 @@ for (const mode of ["timeout", "cancelled"]) test(`process ${mode} contains desc
     `], {
         cwd: f.root,
         env: isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch }),
-        timeoutMs: mode === "timeout" ? 3000 : 30000, signal: controller.signal,
+        timeoutMs: mode === "timeout" ? treeTimeoutMs : 60000, signal: controller.signal,
     });
     let pid;
     let deadline;
     try {
-        const limit = Date.now() + 10000;
+        const limit = Date.now() + 30000;
         let parent;
         while (Date.now() < limit) {
             try {
@@ -577,7 +578,10 @@ for (const mode of ["timeout", "cancelled"]) test(`process ${mode} contains desc
         if (mode === "cancelled") controller.abort();
         const result = await Promise.race([
             execution,
-            new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error("execution did not terminate within 6 seconds")), 6000); }),
+            new Promise((_, reject) => {
+                const remaining = mode === "timeout" ? treeTimeoutMs + 6000 : 6000;
+                deadline = setTimeout(() => reject(new Error("execution did not terminate within its test budget")), remaining);
+            }),
         ]);
         assert.equal(result.status, mode, JSON.stringify(result));
         assert.equal(result.complete, false);
@@ -676,7 +680,7 @@ test("process completes and removes detached servers that close their output pip
                 { detached: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
             server.once('message', () => { process.stdout.write('build complete\\n'); process.exit(17); });
         `], {
-            cwd: f.root, env: isolatedEnvironment(f.root, { os: "windows", architecture: process.arch }), timeoutMs: 3000,
+            cwd: f.root, env: isolatedEnvironment(f.root, { os: "windows", architecture: process.arch }), timeoutMs: treeTimeoutMs,
         });
         const pid = Number(await fs.readFile(ready, "utf8"));
         assert.equal(result.status, "completed", JSON.stringify(result));

@@ -351,4 +351,7 @@ async function main() {
     process.stdout.write(JSON.stringify({ schemaVersion: 1, ...job.launch, result }));
 }
 
-if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
+if (require.main === module) main().catch(error => {
+    console.error([error.message, error.cause?.code, error.cause?.message].filter(Boolean).join(": "));
+    process.exitCode = 1;
+});

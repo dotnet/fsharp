@@ -228,8 +228,12 @@ async function runContainer(config, options, deps = {}) {
                 ...(cleaning ? { timeoutMs: 5000 } : { signal: options.signal }), ...settings });
         receipt.commands.push({ args, exitCode: result.exitCode, stdoutSha256: hash(result.stdout),
             stderrSha256: hash(result.stderr ?? Buffer.alloc(0)) });
-        if (allowMissing && result.exitCode !== 0 &&
-            /No such (?:object|container|network):/i.test(result.stderr?.toString("utf8") ?? "")) return null;
+        const error = (result.stderr?.toString("utf8") ?? "").trim();
+        const missing = /^(?:(?:Error response from daemon|Error): )?No such (object|container|network): (.+)$/i.exec(error);
+        if (allowMissing && result.exitCode !== 0 && args[1] === "inspect" &&
+            (missing && missing[2] === args[2] && ["object", args[0]].includes(missing[1].toLowerCase()) ||
+             args[0] === "network" && args[1] === "inspect" &&
+             error === `Error response from daemon: network ${args[2]} not found`)) return null;
         requireValue(result.exitCode === 0, `Docker ${args.slice(0, 2).join(" ")} failed: ${result.stderr?.toString("utf8").slice(0, 1024)}`);
         return result.collected ?? result.stdout;
     };

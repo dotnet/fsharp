@@ -234,6 +234,8 @@ test("scoped validation is not a second production scheduler and has no executio
     assert.equal(validation.concurrency.group,
         "regression-bisect-validation-${{ github.event.pull_request.number || github.ref }}");
     assert.equal(validation.jobs.validate["timeout-minutes"], 45);
+    assert.equal(validation.jobs.validate.steps.find(s => s.uses?.startsWith("actions/checkout@")).with["fetch-depth"], 0,
+        "controlled source fixtures need the reviewed historical base, not a shallow checkout");
     assert.deepEqual(validation.jobs.validate.steps.filter(s => s["timeout-minutes"]).map(s => s["timeout-minutes"]), [15, 30]);
 });
 
