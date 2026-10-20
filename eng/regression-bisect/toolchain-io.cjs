@@ -220,7 +220,9 @@ async function capture(request, deps) {
     const { root, executable, cwd, env, toolchain } = request;
     const command = async args => {
         const result = await deps.run(executable, args, { cwd, env, timeoutMs: 120000 });
-        requireValue(result.exitCode === 0, `${args.join(" ")} failed (${result.exitCode}): ${result.stderr || result.stdout}`);
+        requireValue(result.exitCode === 0 && result.complete !== false && !result.error,
+            `${args.join(" ")} failed (${result.exitCode}): ${result.error ||
+                (result.complete === false ? "incomplete process capture" : result.stderr || result.stdout)}`);
         return result.stdout.trim();
     };
     const info = await command(["--info"]);

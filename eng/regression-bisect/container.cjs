@@ -305,7 +305,7 @@ async function runContainer(config, options, deps = {}) {
             "Docker did not enforce the isolated network configuration");
             receipt[internalOnly ? "privateNetwork" : "publicNetwork"] = inspected;
         }
-        const common = (containerName, network, limits, supervisor = false) => [
+        const common = (containerName, network, limits, supervisor = false, executableScratch = false) => [
             "container", "create", "--name", containerName, "--label", `${label}=${receipt.launchId}`,
             "--network", network, "--user", supervisor ? "0:0" : "1000:1000", "--cap-drop", "ALL",
             ...(supervisor ? ["--cap-add", "SETUID", "--cap-add", "SETGID", "--cap-add", "KILL", "--cap-add", "CHOWN"] : []),
@@ -314,7 +314,7 @@ async function runContainer(config, options, deps = {}) {
             "--cpus", String(limits.cpus), "--memory", `${limits.memoryMiB}m`, "--memory-swap", `${limits.memoryMiB}m`,
             "--pids-limit", String(limits.pids), "--ulimit", "nofile=1024:1024", "--ulimit", "core=0:0",
             "--sysctl", "net.ipv4.ip_forward=0", "--sysctl", "net.ipv6.conf.all.disable_ipv6=1",
-            "--tmpfs", `/scratch:rw,nosuid,nodev,size=${limits.scratchMiB}m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=${supervisor ? "0755" : "0700"}`,
+            "--tmpfs", `/scratch:rw,${executableScratch ? "exec" : "noexec"},nosuid,nodev,size=${limits.scratchMiB}m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=${supervisor ? "0755" : "0700"}`,
             "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=16m,uid=1000,gid=1000,mode=0700",
             "--tmpfs", `/trusted/artifacts:rw,nosuid,nodev,noexec,size=16m,uid=${supervisor ? 0 : 1000},gid=${supervisor ? 0 : 1000},mode=0700`,
             "--mount", `type=bind,source=${bundle},target=/trusted,readonly`,
@@ -341,7 +341,7 @@ async function runContainer(config, options, deps = {}) {
         await readableTree(input);
         own("container", worker);
         const supervisor = options.operation === "execution";
-        await docker([...common(worker, internal, config.limits, supervisor), "--dns", "127.0.0.1",
+        await docker([...common(worker, internal, config.limits, supervisor, true), "--dns", "127.0.0.1",
             "--mount", `type=bind,source=${input},target=/input,readonly`,
             image, "-i", "PATH=/usr/local/bin:/usr/bin:/bin", "HOME=/scratch", "TMPDIR=/scratch",
             `HTTPS_PROXY=${proxy}`, `HTTP_PROXY=${proxy}`, `https_proxy=${proxy}`, `http_proxy=${proxy}`,

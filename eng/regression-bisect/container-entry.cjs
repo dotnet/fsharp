@@ -142,12 +142,24 @@ async function canary(job) {
     }
     const bytes = Buffer.concat(chunks);
     requireValue(Array.isArray(JSON.parse(bytes)["releases-index"]), "public egress returned unexpected bytes");
+    const nativeProbe = "/scratch/native-execution-probe";
+    const nativeBytes = await fs.readFile("/usr/bin/true");
+    await fs.writeFile(nativeProbe, nativeBytes, { flag: "wx", mode: 0o700 });
+    let nativeExecution;
+    try {
+        nativeExecution = await execute(nativeProbe, [], {
+            cwd: "/scratch", env: { PATH: "/usr/bin:/bin" }, timeoutMs: 30000, maxBytes: 1024,
+        });
+    } finally { await fs.unlink(nativeProbe); }
+    requireValue(nativeExecution.complete && nativeExecution.exitCode === 0,
+        `worker scratch cannot execute acquired native files: ${nativeExecution.error ?? nativeExecution.stderr}`);
     let readonly = false;
     try { await fs.writeFile("/trusted/probe", "must fail"); }
     catch (error) { requireValue(["EROFS", "EACCES"].includes(error.code), error.message); readonly = true; }
     requireValue(readonly, "trusted bundle is writable");
     return { mode: input.mode, denials, direct, proxied, cgroups, uid: process.getuid(),
-        statusSha256: hash(status), legitimateTransfer: { bytes: bytes.length, sha256: hash(bytes) } };
+        statusSha256: hash(status), legitimateTransfer: { bytes: bytes.length, sha256: hash(bytes) },
+        scratchExecution: { complete: nativeExecution.complete, exitCode: nativeExecution.exitCode, sha256: hash(nativeBytes) } };
 }
 
 async function terminateHistoricalProcesses() {

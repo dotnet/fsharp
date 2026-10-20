@@ -119,6 +119,11 @@ async function dockerFixture(t, failure) {
                 assert.equal(args[args.indexOf("--cap-drop") + 1], "ALL");
                 assert.ok(args.includes("no-new-privileges=true"));
                 assert.ok(args.includes("--read-only"));
+                const tmpfs = args.flatMap((value, i) => value === "--tmpfs" ? [args[i + 1]] : []);
+                assert.match(tmpfs.find(value => value.startsWith("/scratch:")),
+                    name.endsWith("-worker") ? /,exec,/ : /,noexec,/);
+                assert.match(tmpfs.find(value => value.startsWith("/tmp:")), /,noexec,/);
+                assert.match(tmpfs.find(value => value.startsWith("/trusted/artifacts:")), /,noexec,/);
                 const mounts = args.filter(a => a.startsWith("type=bind,"));
                 assert.ok(mounts.every(m => m.endsWith(",readonly")));
                 assert.ok(mounts.every(m => !/docker.sock|target=\/home/.test(m)));

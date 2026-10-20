@@ -717,6 +717,20 @@ async function captureFixture(request, {
     };
 }
 
+for (const [name, result, message] of [
+    ["spawn rejection", { exitCode: -13, complete: false, error: "spawn /scratch/dotnet EACCES", stdout: "", stderr: "" }, /EACCES/],
+    ["incomplete zero exit", { exitCode: 0, complete: false, stdout: "partial", stderr: "" }, /incomplete process capture/],
+]) {
+    test(`identity capture preserves ${name} before another command runs`, async () => {
+        let calls = 0;
+        await assert.rejects(capture({
+            root: __dirname, executable: path.join(__dirname, "dotnet"), cwd: __dirname, env: {},
+            toolchain: { sdkVersion: "10.0.402" },
+        }, { run: async () => { calls++; return result; } }), message);
+        assert.equal(calls, 1);
+    });
+}
+
 for (const packaged of [true, false]) {
     test(`captured identity with bundled package: ${packaged}`, async t => {
         const root = await directory(t);
