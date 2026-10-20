@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-10-20T01:13:48Z",
+  "last_run": "2026-10-20T04:59:24Z",
   "prs": {
     "20706": {
       "category": "C",
@@ -21,7 +21,7 @@
       "head_sha": "a18187e0eae382bd74c252f86bd2aebf83b7da38",
       "issue": 13084,
       "last_review_comment_timestamp": null,
-      "last_checked_at": "2026-10-20T01:13:48Z",
+      "last_checked_at": "2026-10-20T04:59:24Z",
       "result": "healthy",
       "actions": [
         "prepared the conflict resolution on current main",
@@ -32,7 +32,7 @@
         "published an append-only conflict resolution from the exact PR branch",
         "validated a clean merge with main, the Release component build, and the focused Issue 13084 test"
       ],
-      "note": "All 53 check runs pass on the published conflict-resolution commit, GitHub does not report a merge conflict, and there is no human review feedback after the last Regression PR Shepherd activity."
+      "note": "All 53 check runs pass on the published conflict-resolution commit, GitHub does not report a merge conflict, and the only human review is an approval posted before the latest Regression PR Shepherd activity."
     },
     "20805": {
       "category": "C",
