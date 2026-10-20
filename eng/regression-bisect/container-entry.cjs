@@ -51,7 +51,7 @@ async function canary(job) {
         return { mode: input.mode, wallSeconds, cpuSeconds };
     }
     if (input.mode === "timeout") {
-        spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { detached: true, stdio: "ignore" }).unref();
+        spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { detached: true, stdio: "ignore" });
         await new Promise(() => {});
     }
     if (input.mode === "malformed") {

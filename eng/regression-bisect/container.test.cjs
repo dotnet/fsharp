@@ -424,6 +424,26 @@ test("execution export failures block authentication and remove owned resources"
             roots.add(f.root);
             const handles = new Set(), open = fs.open, rename = fs.rename;
             let renameAttempts = 0, holder, holderExit, expiry;
+            const releaseHolder = async () => {
+                if (!holder) return;
+                if (!holder.stdin.writableEnded) holder.stdin.end("\n");
+                await holderExit;
+            };
+            const startHolder = async () => {
+                if (!fault.startsWith("receipt-sharing") || holder) return;
+                holder = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+                    "$h=[IO.File]::Open($env:RECEIPT_PATH,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite); " +
+                    "[Console]::WriteLine('locked'); [Console]::In.ReadLine() > $null; $h.Dispose()"],
+                { env: { ...process.env, RECEIPT_PATH: path.join(f.root, "receipt.json") }, stdio: ["pipe", "pipe", "pipe"] });
+                holderExit = once(holder, "close");
+                const end = holder.stdin.end.bind(holder.stdin);
+                let releases = 0;
+                t.mock.method(holder.stdin, "end", (...args) => {
+                    assert.equal(++releases, 1, "the receipt holder input must close only once");
+                    return end(...args);
+                });
+                assert.match((await once(holder.stdout, "data"))[0].toString(), /locked/);
+            };
             t.mock.method(fs, "open", async (...args) => {
                 const handle = await open(...args), close = handle.close.bind(handle);
                 handles.add(handle);
@@ -443,14 +463,6 @@ test("execution export failures block authentication and remove owned resources"
                 assert.equal(to, path.join(f.root, "receipt.json"));
                 assert.equal(handles.size, 0, "all owned handles must close before receipt replacement");
                 renameAttempts++;
-                if (fault.startsWith("receipt-sharing") && !holder) {
-                    holder = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
-                        "$h=[IO.File]::Open($env:RECEIPT_PATH,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite); " +
-                        "[Console]::WriteLine('locked'); [Console]::In.ReadLine() > $null; $h.Dispose()"],
-                    { env: { ...process.env, RECEIPT_PATH: to }, stdio: ["pipe", "pipe", "pipe"] });
-                    holderExit = once(holder, "exit");
-                    assert.match((await once(holder.stdout, "data"))[0].toString(), /locked/);
-                }
                 if (fault === "receipt-error") throw Object.assign(new Error("injected receipt EIO"), { code: "EIO" });
                 try { return await rename(from, to); }
                 catch (error) {
@@ -460,8 +472,7 @@ test("execution export failures block authentication and remove owned resources"
                     assert.equal(initial.status, "blocked", "initial receipt remains authoritative");
                     assert.equal(initial.signature, undefined);
                     if (fault === "receipt-sharing") {
-                        holder.stdin.end("\n");
-                        await holderExit;
+                        await releaseHolder();
                     } else if (fault === "receipt-sharing-exhausted") {
                         expiry?.abort(new DOMException("receipt deadline", "TimeoutError"));
                     }
@@ -490,6 +501,7 @@ test("execution export failures block authentication and remove owned resources"
             const invoke = f.deps.command;
             let blobReached = false;
             f.deps.command = async (exe, args, settings) => {
+                await startHolder();
                 const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
                 if (operation === "blob") blobReached = true;
                 if (fault === operation || fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
@@ -513,9 +525,7 @@ test("execution export failures block authentication and remove owned resources"
                 evidenceDirectory: f.root, sourceDirectory: source, sourceBundle: bundle,
                 sourceBundleSha256: contracts.digest("source"), receiptKey: key }, f.deps); }
             catch (error) { publicationError = error; }
-            finally {
-                if (holder) { holder.stdin.end("\n"); await holderExit; }
-            }
+            finally { await releaseHolder(); }
             if (["receipt-sharing-exhausted", "receipt-error"].includes(fault)) {
                 assert.match(publicationError?.message ?? "", /receipt.*(deadline|EIO)/);
                 assert.match(publicationError.message, /archive blob digest or size mismatch/, "publication must not mask the export failure");
@@ -597,6 +607,55 @@ test("network cleanup rejects permission errors and missing responses for anothe
         assert.equal(result.status, "blocked");
         assert.ok(result.reason.includes(failure));
         assert.ok(result.receipt.cleanup.some(r => r.kind === "network" && !r.removed));
+    }
+});
+
+test("timeout canary keeps its parent alive until external termination", async () => {
+    const entry = path.join(__dirname, "container-entry.cjs");
+    const child = spawn(process.execPath, ["-e", `
+        const vm = require("node:vm"), fs = require("node:fs");
+        const realRequire = require("node:module").createRequire(${JSON.stringify(entry)});
+        const processes = realRequire("node:child_process");
+        const scopedRequire = name => name === "node:child_process" ? {
+            ...processes, spawn: (...args) => {
+                const descendant = processes.spawn(...args);
+                descendant.once("spawn", () => console.log(descendant.pid));
+                return descendant;
+            },
+        } : realRequire(name);
+        vm.runInNewContext(fs.readFileSync(${JSON.stringify(entry)}, "utf8") +
+            "\\ncanary({input:{mode:'timeout'}});",
+            {require:scopedRequire,process,console,module:{},Buffer,setInterval},
+            {filename:${JSON.stringify(entry)}});
+    `], { stdio: ["ignore", "pipe", "pipe"] });
+    const exited = once(child, "close");
+    let descendant, timer, stdout = "", stderr = "";
+    child.stderr.on("data", bytes => { stderr += bytes; });
+    try {
+        const ready = new Promise(resolve => child.stdout.on("data", bytes => {
+            stdout += bytes;
+            if (/^[1-9]\d*\r?\n$/.test(stdout)) {
+                descendant = Number(stdout.trim());
+                resolve(descendant);
+            }
+        }));
+        descendant = await Promise.race([
+            ready,
+            exited.then(() => { throw new Error(`canary exited before descendant startup: ${stderr}`); }),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("canary descendant did not start")), 15000); }),
+        ]);
+        clearTimeout(timer);
+        assert.equal(await Promise.race([
+            exited.then(() => "exited"),
+            new Promise(resolve => { timer = setTimeout(() => resolve("running"), 1000); }),
+        ]), "running", "timeout canary must not exit successfully before its external deadline");
+    } finally {
+        clearTimeout(timer);
+        if (descendant) {
+            try { process.kill(descendant, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+        }
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+        await exited;
     }
 });
 

@@ -49,10 +49,12 @@ The seven physical modes retain their reports and cleanup receipts as CI artifac
 These checks do not activate production routing or establish source/product acceptance by themselves.
 Synthetic trial tests create their signed inputs with a current deadline.
 They do not change the production clock or renew an existing investigation allowance.
+
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests allow Windows to compile its supervisor before they test descendant termination.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
+The timeout canary keeps its child referenced until the external deadline terminates the container.
 
 ## Durable intake routing (not activated)
 

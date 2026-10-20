@@ -60,6 +60,35 @@ jobs:
             if ($p.ExitCode -ne 0) { throw 'Compile failed' }
             if ((Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash -ne $expected) { throw 'Compiled lock differs' }
           }
+      - name: Verify Windows process supervisor
+        shell: pwsh
+        run: |
+          $probe = @'
+          const path = require("node:path");
+          const { spawnSync } = require("node:child_process");
+          const { execute } = require("./eng/regression-bisect/repro-process.cjs");
+          (async () => {
+            const started = Date.now(), env = {SystemRoot:process.env.SystemRoot};
+            const result = await execute(process.execPath, ["-e", "console.log('SUPERVISOR_READY')"],
+              {cwd:process.cwd(),env,timeoutMs:10000});
+            console.log(JSON.stringify({node:process.version,elapsedMs:Date.now()-started,result}));
+            if (result.complete && result.exitCode === 0 && result.stdout === "SUPERVISOR_READY\n") return;
+            const helper = path.resolve("eng/regression-bisect/repro-process.ps1");
+            const powershell = path.join(env.SystemRoot,"System32","WindowsPowerShell","v1.0","powershell.exe");
+            const command = `Set-PSDebug -Trace 1; & '${helper.replaceAll("'","''")}' 'SUPERVISOR_DIAGNOSTIC:'`;
+            const request = JSON.stringify({executable:process.execPath,args:["-e","console.log('SUPERVISOR_READY')"],
+              environment:[`SystemRoot=${env.SystemRoot}`]})+"\n";
+            for (const mode of ["isolated","inherited"]) {
+              const trace = spawnSync(powershell,["-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-Command",command],
+                {env:mode==="isolated"?env:process.env,input:request,encoding:"utf8",timeout:15000,maxBuffer:65536,windowsHide:true});
+              console.log(JSON.stringify({diagnosticOnly:mode,status:trace.status,error:trace.error?.code,
+                stdout:trace.stdout?.slice(-16000),stderr:trace.stderr?.slice(-4000)}));
+            }
+            process.exitCode = 1;
+          })().catch(error => {console.error(error.message);process.exitCode=1;});
+          '@
+          $probe | node
+          if ($LASTEXITCODE -ne 0) { throw 'Windows supervisor did not complete its harmless preflight' }
       - name: Offline scoped suite
         timeout-minutes: 30
         shell: pwsh
