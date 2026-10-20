@@ -181,7 +181,8 @@ async function dockerFixture(t, failure) {
             const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
             if (operation === "egress") {
                 if (failure === "egress") throw new Error("broker counters unavailable");
-                return out({ requests: 23, active: 0, peakActive: 4, totalBytes: 1024, stopped: false, denied: { capacity: 1 } });
+                return out({ requests: 23, active: 0, pending: 0, peakActive: 4, peakPending: 2,
+                    idleReclaimed: 1, totalBytes: 1024, stopped: false, denied: { "queue-capacity": 1 } });
             }
             if (["collect", "archive", "blob"].includes(operation)) {
                 assert.deepEqual(args.slice(2, 4), ["--user", "0:0"]);
@@ -230,7 +231,8 @@ test("transport retains broker counters before removing its owned containers", a
     }, f.deps);
     assert.equal(result.status, "collected", result.reason);
     assert.deepEqual(result.receipt.egress,
-        { requests: 23, active: 0, peakActive: 4, totalBytes: 1024, stopped: false, denied: { capacity: 1 } });
+        { requests: 23, active: 0, pending: 0, peakActive: 4, peakPending: 2,
+            idleReclaimed: 1, totalBytes: 1024, stopped: false, denied: { "queue-capacity": 1 } });
     const sampled = f.calls.findIndex(args => args[1] === "exec" && args.at(-1) === "egress");
     const removed = f.calls.findIndex(args => args[1] === "rm");
     assert.ok(sampled >= 0 && sampled < removed);
@@ -247,8 +249,10 @@ test("transport reports missing broker counters without skipping owned cleanup",
     assert.ok(result.receipt.cleanup.every(resource => resource.removed));
 });
 
-for (const counters of [null, { requests: -1 }, { requests: 1, active: 0, peakActive: 1,
-    totalBytes: 0, stopped: false, denied: { capacity: "1" } }])
+for (const counters of [null, { requests: -1 }, { requests: 1, active: 0, pending: 0, peakActive: 1, peakPending: 0,
+    idleReclaimed: 0, totalBytes: 0, stopped: false, denied: { capacity: "1" } },
+    ...["pending", "peakPending", "idleReclaimed"].map(key => ({ requests: 1, active: 0, pending: 0,
+        peakActive: 1, peakPending: 0, idleReclaimed: 0, totalBytes: 0, stopped: false, denied: {}, [key]: -1 }))])
 test(`transport rejects malformed broker counters: ${JSON.stringify(counters)}`, async t => {
     const f = await dockerFixture(t), command = f.deps.command;
     f.deps.command = async (executable, args, settings) => args.at(-1) === "egress"
@@ -265,7 +269,8 @@ test(`transport rejects malformed broker counters: ${JSON.stringify(counters)}`,
 test("broker counter publication is atomic and its reader excludes linked or oversized files", async () => {
     const entry = path.join(__dirname, "container-entry.cjs"), source = await fs.readFile(entry, "utf8");
     const files = new Map(), writes = [], signals = [];
-    let audit, snapshot = { requests: 0, active: 0, peakActive: 0, totalBytes: 0, stopped: false, denied: {} };
+    let audit, snapshot = { requests: 0, active: 0, pending: 0, peakActive: 0, peakPending: 0,
+        idleReclaimed: 0, totalBytes: 0, stopped: false, denied: {} };
     let stat = { isFile: () => true, isSymbolicLink: () => false, nlink: 1, size: 128 };
     let stdout = "";
     const broker = {

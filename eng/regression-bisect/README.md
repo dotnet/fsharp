@@ -89,6 +89,8 @@ The egress broker accepts Node's default-port Host header only for the same appr
 Public Azure DevOps feeds redirect package downloads to the publisher's `*.vsblob.vsassets.io` CDN.
 Those CDN tunnels retain public-address validation and the existing header, byte, and time limits.
 The broker permits 128 concurrent public tunnels for multi-feed NuGet restores.
+Up to 128 additional requests wait in a FIFO queue without starting DNS or an upstream connection.
+Under admission pressure, the broker closes tunnels with 30 seconds of inactivity so pooled connections cannot block restores.
 The connection, byte, and time budgets remain unchanged.
 Historical commands receive a private NuGet configuration that limits concurrent HTTP requests to four per feed.
 This configuration changes neither package sources nor credentials and does not replace repository configuration.
@@ -1290,7 +1292,14 @@ are unsupported, not alternate routes.
 The hard ceilings are 128 simultaneous tunnels (including pending DNS),
 2,048 accepted TCP connections per broker lifetime, 1 MiB uploaded and 1 GiB downloaded
 per tunnel, 8 GiB transferred across all tunnels, ten seconds to receive
-headers and five minutes absolute lifetime per tunnel, including DNS/connect.
+headers and five minutes absolute lifetime per tunnel, including queueing and DNS/connect.
+Up to 128 additional requests can wait for admission without starting DNS or an upstream connection.
+The queue preserves FIFO order and the original connection, byte, and lifetime charges.
+Before the upstream connection, each request buffers at most 64 KiB.
+The existing 1 MiB upload limit still applies across the entire tunnel.
+When requests are waiting, the broker reclaims established tunnels after 30 seconds of inactivity.
+Actual byte transfers reset that idle interval.
+Without waiting requests, the broker does not reclaim idle tunnels before their absolute deadline.
 `limits` may only lower those ceilings. Byte limits are checked before
 forwarding; backpressure is preserved. Failures and timeout close both owned
 socket ends, shutdown is idempotent, and a late DNS answer cannot create a
@@ -1300,7 +1309,7 @@ and non-CONNECT traffic; reaching it stops the listener rather than allowing
 unlimited denial logs or resetting counters. These are transport counters, not a new
 investigation allowance; the existing worker/build/time budgets are unchanged.
 The active-tunnel ceiling fits the broker's unchanged 1,024-descriptor limit.
-`snapshot()` reports peak tunnel usage and denial counts by reason, without URL paths or query strings.
+`snapshot()` reports peak active and queued requests, idle reclamations, and denial counts without URL paths or query strings.
 The broker publishes these counters atomically in its private scratch directory.
 The adapter reads the bounded counter file before cleanup and includes it in the transport receipt.
 Missing or malformed counters block collection but do not skip owned cleanup.

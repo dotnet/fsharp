@@ -1,11 +1,11 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const net = require("node:net");
-const { once } = require("node:events");
+const { once, EventEmitter } = require("node:events");
 const { createEgressBroker, publicAddress, limits } = require("./egress.cjs");
 
 async function fixture(t, options = {}, serve = socket => socket.pipe(socket)) {
-    const events = [], resolutions = [], connections = [];
+    const events = [], resolutions = [], connections = [], admissions = new EventEmitter();
     const target = net.createServer(serve);
     const sockets = new Set();
     target.on("connection", socket => {
@@ -14,8 +14,19 @@ async function fixture(t, options = {}, serve = socket => socket.pipe(socket)) {
     });
     target.listen(0, "127.0.0.1");
     await once(target, "listening");
-    const broker = createEgressBroker({
-        audit: event => events.push(event),
+    let broker;
+    t.after(async () => {
+        await broker?.close();
+        for (const socket of sockets) socket.destroy();
+        await new Promise(resolve => target.close(resolve));
+        t.diagnostic(JSON.stringify({ transport: "owned-loopback-with-injected-DNS-and-dialer",
+            resolutions, connections, events, final: broker?.snapshot() }));
+    });
+    broker = createEgressBroker({
+        audit: event => {
+            events.push(event);
+            if (["queued", "denied"].includes(event.event)) admissions.emit("event", event);
+        },
         resolve: async (host, options) => {
             resolutions.push({ host, options });
             return [{ address: "13.107.246.40", family: 4 }];
@@ -29,13 +40,6 @@ async function fixture(t, options = {}, serve = socket => socket.pipe(socket)) {
     broker.server.listen(0, "127.0.0.1");
     await once(broker.server, "listening");
     const port = broker.server.address().port;
-    t.after(async () => {
-        await broker.close();
-        for (const socket of sockets) socket.destroy();
-        await new Promise(resolve => target.close(resolve));
-        t.diagnostic(JSON.stringify({ transport: "owned-loopback-with-injected-DNS-and-dialer",
-            resolutions, connections, events, final: broker.snapshot() }));
-    });
     const request = async (authority = "api.nuget.org:443", headers = "", head = "", host = authority) => {
         const socket = net.connect({ host: "127.0.0.1", port });
         socket.on("error", () => {});
@@ -43,7 +47,14 @@ async function fixture(t, options = {}, serve = socket => socket.pipe(socket)) {
         socket.write(`CONNECT ${authority} HTTP/1.1\r\nHost: ${host}\r\n${headers}\r\n${head}`);
         return socket;
     };
-    return { broker, request, events, resolutions, connections, target };
+    return { broker, request, events, resolutions, connections, target, admissions };
+}
+
+async function queuedRequest(f, ...args) {
+    const event = once(f.admissions, "event");
+    const socket = await f.request(...args);
+    assert.equal((await event)[0].event, "queued", "a permitted burst must wait without starting DNS or returning 503");
+    return socket;
 }
 
 async function response(socket) {
@@ -87,20 +98,164 @@ test("public restore bursts fit the finite tunnel ceiling without bypassing it",
     }
     assert.equal(f.broker.snapshot().active, 128);
     assert.equal(f.broker.snapshot().peakActive, 128);
-    assert.match(await response(await f.request()), /503 Service Unavailable/);
+    const queued = await queuedRequest(f);
     assert.equal(f.connections.length, 128);
-    assert.equal(f.broker.snapshot().requests, 129, "the rejected connection remains charged");
-    assert.deepEqual(f.broker.snapshot().denied, { capacity: 1 });
+    assert.equal(f.broker.snapshot().pending, 1);
+    assert.equal(f.broker.snapshot().peakPending, 1);
+    assert.equal(f.broker.snapshot().requests, 129, "the queued connection remains charged");
+    assert.deepEqual(f.broker.snapshot().denied, {});
     for (const socket of sockets) {
         socket.write("bounded");
         assert.equal((await once(socket, "data"))[0].toString(), "bounded");
     }
+    const admitted = once(queued, "data");
     const closed = sockets.map(socket => once(socket, "close"));
     for (const socket of sockets) socket.end();
+    assert.match((await admitted)[0].toString(), /200 Connection Established/);
     await Promise.all(closed);
+    queued.end();
+    await once(queued, "close");
     assert.equal(f.broker.snapshot().active, 0);
+    assert.equal(f.broker.snapshot().pending, 0);
     assert.equal(f.broker.snapshot().peakActive, 128);
     assert.ok(3 * limits.active + 8 < 1024, "active and pending sockets must fit the unchanged broker file limit");
+});
+
+test("admission is FIFO, bounded and charged without resolving queued requests", async t => {
+    const f = await fixture(t, { limits: { active: 2 } });
+    const active = [];
+    for (let n = 0; n < 2; n++) {
+        const socket = await f.request();
+        await once(socket, "data");
+        active.push(socket);
+    }
+    const first = await queuedRequest(f, "globalcdn.nuget.org:443");
+    const second = await queuedRequest(f, "pkgs.dev.azure.com:443");
+    assert.equal(f.connections.length, 2);
+    assert.equal(f.resolutions.length, 2);
+    assert.equal(f.broker.snapshot().pending, 2);
+    assert.match(await response(await f.request()), /503 Service Unavailable/);
+    assert.deepEqual(f.broker.snapshot().denied, { "queue-capacity": 1 });
+    const firstAdmitted = once(first, "data");
+    active[0].end();
+    assert.match((await firstAdmitted)[0].toString(), /200 Connection Established/);
+    assert.equal(f.resolutions.at(-1).host, "globalcdn.nuget.org");
+    assert.equal(f.broker.snapshot().pending, 1);
+    const secondAdmitted = once(second, "data");
+    first.end();
+    assert.match((await secondAdmitted)[0].toString(), /200 Connection Established/);
+    assert.equal(f.resolutions.at(-1).host, "pkgs.dev.azure.com");
+    assert.equal(f.broker.snapshot().pending, 0);
+    assert.equal(f.broker.snapshot().peakActive, 2);
+    assert.equal(f.broker.snapshot().peakPending, 2);
+    assert.equal(f.broker.snapshot().requests, 5);
+});
+
+test("queued restores reclaim idle pooled tunnels without increasing the active ceiling", async t => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    assert.equal(limits.idleMs, 30000);
+    const f = await fixture(t, { limits: { active: 1 } });
+    const first = await f.request();
+    await once(first, "data");
+    const firstClosed = once(first, "close");
+    const next = await queuedRequest(f);
+    t.mock.timers.tick(29999);
+    assert.equal(f.broker.snapshot().idleReclaimed, 0);
+    assert.equal(f.broker.snapshot().pending, 1);
+    const admitted = once(next, "data");
+    t.mock.timers.tick(1);
+    assert.match((await admitted)[0].toString(), /200 Connection Established/);
+    await firstClosed;
+    assert.equal(f.events.some(e => e.reason === "idle-pressure"), true);
+    assert.equal(f.broker.snapshot().idleReclaimed, 1);
+    assert.equal(f.broker.snapshot().peakActive, 1);
+    assert.equal(f.broker.snapshot().pending, 0);
+    assert.deepEqual(f.broker.snapshot().denied, {});
+});
+
+test("idle reclamation preserves uncontended tunnels and continuously transferred bytes", async t => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    const f = await fixture(t, { limits: { active: 1 } });
+    const first = await f.request();
+    await once(first, "data");
+    t.mock.timers.tick(60000);
+    assert.equal(f.broker.snapshot().active, 1, "no idle eviction without admission pressure");
+    first.write("still live");
+    assert.equal((await once(first, "data"))[0].toString(), "still live");
+    const next = await queuedRequest(f);
+    for (let n = 0; n < 8; n++) {
+        t.mock.timers.tick(5000);
+        first.write("bytes");
+        assert.equal((await once(first, "data"))[0].toString(), "bytes");
+        assert.equal(f.broker.snapshot().pending, 1);
+    }
+    assert.equal(f.broker.snapshot().idleReclaimed, 0);
+    const admitted = once(next, "data");
+    first.end();
+    assert.match((await admitted)[0].toString(), /200 Connection Established/);
+});
+
+test("cancelled queued requests cannot dial later or refund their connection charge", async t => {
+    const f = await fixture(t, { limits: { active: 1 } });
+    const first = await f.request();
+    await once(first, "data");
+    const queued = await queuedRequest(f);
+    queued.end();
+    await once(queued, "close");
+    const closed = once(first, "close");
+    first.end();
+    await closed;
+    assert.equal(f.connections.length, 1);
+    assert.equal(f.broker.snapshot().pending, 0);
+    assert.equal(f.broker.snapshot().requests, 2);
+    const next = await f.request();
+    assert.match((await once(next, "data"))[0].toString(), /200 Connection Established/);
+});
+
+test("shutdown cancels queued admissions as well as active DNS and sockets", async t => {
+    const f = await fixture(t, { limits: { active: 1 } });
+    const first = await f.request();
+    await once(first, "data");
+    const queued = await queuedRequest(f);
+    const closed = [once(first, "close"), once(queued, "close")];
+    await f.broker.close();
+    await Promise.all(closed);
+    assert.equal(f.connections.length, 1);
+    assert.equal(f.broker.snapshot().active, 0);
+    assert.equal(f.broker.snapshot().pending, 0);
+    assert.equal(f.broker.snapshot().requests, 2);
+});
+
+test("early queued TLS bytes are bounded and charged exactly once before forwarding", async t => {
+    const f = await fixture(t, { limits: { active: 1, uploadBytes: 4 } });
+    const first = await f.request();
+    await once(first, "data");
+    const queued = await queuedRequest(f, undefined, "", "1234");
+    assert.equal(f.broker.snapshot().totalBytes, 4);
+    assert.equal(f.connections.length, 1);
+    first.end();
+    let received = "";
+    while (!received.endsWith("1234")) received += (await once(queued, "data"))[0];
+    assert.match(received, /^HTTP\/1.1 200 Connection Established\r\n\r\n1234$/);
+    assert.equal(f.broker.snapshot().totalBytes, 8);
+    assert.equal(f.connections.length, 2);
+});
+
+for (const kind of ["uploadBytes", "earlyUploadBytes"])
+test(`queued ${kind} overflow closes the request before any DNS or upstream dial`, async t => {
+    assert.equal(limits.earlyUploadBytes, 65536);
+    const f = await fixture(t, { limits: { active: 1, [kind]: 4 } });
+    const first = await f.request();
+    await once(first, "data");
+    const queued = await queuedRequest(f, undefined, "", "1234");
+    queued.write("5");
+    assert.equal(await response(queued), "");
+    assert.equal(f.connections.length, 1);
+    assert.equal(f.resolutions.length, 1);
+    assert.equal(f.broker.snapshot().pending, 0);
+    assert.equal(f.broker.snapshot().totalBytes, 5);
+    assert.equal(f.broker.snapshot().requests, 2);
+    assert.ok(f.events.some(event => event.reason === (kind === "earlyUploadBytes" ? "early-upload" : kind)));
 });
 
 test("Node's default-port proxy Host still pins the approved destination", async t => {
@@ -178,17 +333,15 @@ test("tunnel byte, time and concurrent/request limits are enforced, not advisory
         await response(socket);
         assert.equal(f.events.some(e => e.reason === "timeout"), true);
     });
-    for (const kind of ["active", "requests"]) await t.test(kind, async t => {
-        const f = await fixture(t, { limits: { [kind]: 1 } });
+    await t.test("requests", async t => {
+        const f = await fixture(t, { limits: { requests: 1 } });
         const first = await f.request();
         await once(first, "data");
         assert.match(await response(await f.request()), /503 Service Unavailable/);
         first.end();
         await once(first, "close");
-        if (kind === "requests") {
-            await assert.rejects(f.request(), /ECONNREFUSED/);
-            assert.equal(f.broker.snapshot().stopped, true);
-        }
+        await assert.rejects(f.request(), /ECONNREFUSED/);
+        assert.equal(f.broker.snapshot().stopped, true);
         assert.equal(f.connections.length, 1);
     });
 });
