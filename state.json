@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-10-19T21:25:57Z",
+  "last_run": "2026-10-20T01:13:48Z",
   "prs": {
     "20706": {
       "category": "C",
@@ -17,12 +17,12 @@
       "note": "A new fix commit landed after the prior B3 diagnosis; all 55 checks pass, the PR is clean, and the latest human activity is an approval with no review comments."
     },
     "20799": {
-      "category": "B0",
-      "head_sha": "d8e50c3a562ae82f6297dfdb7db2cf9b22c03c77",
+      "category": "C",
+      "head_sha": "a18187e0eae382bd74c252f86bd2aebf83b7da38",
       "issue": 13084,
       "last_review_comment_timestamp": null,
-      "last_checked_at": "2026-10-19T21:25:57Z",
-      "result": "conflict resolution published",
+      "last_checked_at": "2026-10-20T01:13:48Z",
+      "result": "healthy",
       "actions": [
         "prepared the conflict resolution on current main",
         "commented on PR 20799 after the publishing bridge rejected the branch update",
@@ -32,7 +32,7 @@
         "published an append-only conflict resolution from the exact PR branch",
         "validated a clean merge with main, the Release component build, and the focused Issue 13084 test"
       ],
-      "note": "The regression test was moved above an unchanged existing test so main's end-of-file additions merge without conflict. The append-only fix changes only ComputationExpressionTests.fs, Git's merge simulation is clean, and the Release component build plus focused Issue 13084 test pass."
+      "note": "All 53 check runs pass on the published conflict-resolution commit, GitHub does not report a merge conflict, and there is no human review feedback after the last Regression PR Shepherd activity."
     },
     "20805": {
       "category": "C",
