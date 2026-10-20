@@ -1,8 +1,12 @@
 param([string] $ErrorMarker)
 $ErrorActionPreference = 'Stop'
 try {
-    [Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)
-    $request = [Console]::ReadLine() | ConvertFrom-Json
+    $encoding = [Text.UTF8Encoding]::new($false)
+    $inputStream = [Console]::OpenStandardInput()
+    $reader = [IO.StreamReader]::new($inputStream, $encoding, $false, 1024, $true)
+    try { $line = $reader.ReadLine() }
+    finally { $reader.Dispose() }
+    $request = $line | ConvertFrom-Json
 
     # Emit only P/Invoke declarations: Add-Type would spawn an uncontained compiler before the job exists.
     $assembly = [AppDomain]::CurrentDomain.DefineDynamicAssembly(

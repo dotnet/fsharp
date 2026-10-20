@@ -54,6 +54,7 @@ Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.
 It does not inherit runner credentials or user module and executable search paths.
+Its request reader decodes UTF-8 from the input pipe without changing the console encoding.
 The sample receives only its supplied environment after the supervisor joins its Job object.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
