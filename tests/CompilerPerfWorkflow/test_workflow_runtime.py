@@ -24,6 +24,14 @@ import workflow as w
 import runtime
 
 
+RUNNER_IDENTITY = {
+    "ImageOS": "ubuntu24", "ImageVersion": "20261020.1.0", "RUNNER_NAME": "fixture-runner",
+    "RUNNER_OS": "Linux", "RUNNER_ARCH": "X64", "GITHUB_RUN_ID": "123456789",
+    "GITHUB_RUN_ATTEMPT": "2", "GITHUB_JOB": "agent",
+    "PROCESSOR_IDENTIFIER": "portable fixture processor",
+}
+
+
 def container():
     return {
         "Id": "a" * 64, "Name": "/awf-agent", "State": {"Running": True},
@@ -604,8 +612,10 @@ class RuntimeTests(unittest.TestCase):
                         mock.patch.object(runtime, "probe_service", side_effect=probe), \
                         mock.patch.object(runtime.subprocess, "Popen", side_effect=child) as launch, \
                         mock.patch.dict(os.environ, {"RUNNER_TEMP": str(actions.parents[1]), "GITHUB_OUTPUT": str(output),
-                                                    "PUBLISHER_SECRET": "must-not-inherit"}), \
+                                                    "PUBLISHER_SECRET": "must-not-inherit",
+                                                    "GITHUB_UNTRUSTED_INPUT": "must-not-inherit", **RUNNER_IDENTITY}), \
                         mock.patch("sys.stdout", log):
+                    frozen_identity = w.m.host_identity({})
                     self.assertEqual(runtime.main(arguments), 0 if failure is None else
                                      130 if cancelled else 2, log.getvalue())
                     if failure is None:
@@ -628,12 +638,52 @@ class RuntimeTests(unittest.TestCase):
                 command = services[0].args[0]
                 self.assertEqual(command[:3], [sys.executable, str(Path(runtime.__file__).resolve()), "serve"])
                 self.assertEqual(command[3:], arguments[1:])
-                self.assertNotIn("PUBLISHER_SECRET", services[0].kwargs["env"])
+                environment = services[0].kwargs["env"]
+                self.assertEqual({key: environment.get(key) for key in RUNNER_IDENTITY}, RUNNER_IDENTITY)
+                with mock.patch.dict(os.environ, environment, clear=True):
+                    self.assertEqual(w.m.host_identity({}), frozen_identity)
+                for key in ("PUBLISHER_SECRET", "GITHUB_UNTRUSTED_INPUT", "GITHUB_OUTPUT"):
+                    self.assertNotIn(key, environment)
                 self.assertTrue(services[0].kwargs["start_new_session"])
                 self.assertTrue((actions / "compiler_perf_harness.cjs").is_file())
                 self.assertIn("token=" + bridge.endpoint_token(controller.root), output.read_text())
                 self.assertIn("execution_deadline_ms=", output.read_text())
                 self.assertNotIn("active", controller.load("clocks"))
+
+    def test_worker_preserves_host_identity_without_broadening_candidate_environment(self):
+        script = (
+            "import json,os,pathlib,sys\n"
+            "sys.path.insert(0,sys.argv[1])\n"
+            "import measurement as m,collection as c\n"
+            "root=pathlib.Path(sys.argv[2])\n"
+            "(root/'worker.json').write_text(json.dumps({'identity':m.host_identity({}),"
+            "'environment':dict(os.environ),'candidate':m.allowed_environment(root/'candidate'),"
+            "'diagnostic':c.target_environment(root/'diagnostic'),'tool':c.tool_environment()}))\n")
+        for available in (True, False):
+            with self.subTest(available=available), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                environment = {key: value for key, value in os.environ.items() if key not in RUNNER_IDENTITY}
+                environment.update(GH_TOKEN="trusted-journal-token", GITHUB_TOKEN="trusted-api-token",
+                                   GITHUB_STEP_SUMMARY=str(root / "summary"),
+                                   PUBLISHER_SECRET="must-not-inherit", GITHUB_UNTRUSTED_INPUT="must-not-inherit",
+                                   RUNNER_UNTRUSTED_INPUT="must-not-inherit")
+                if available:
+                    environment.update(RUNNER_IDENTITY)
+                with mock.patch.dict(os.environ, environment, clear=True):
+                    frozen_identity = w.m.host_identity({})
+                    with bridge._launch([sys.executable, "-c", script, str(Path(runtime.__file__).parent),
+                                         str(root)], SimpleNamespace(repository=root)) as child:
+                        self.assertEqual(child.wait(timeout=30), 0)
+                result = json.loads((root / "worker.json").read_text())
+                self.assertEqual(result["identity"], frozen_identity)
+                for key in ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY"):
+                    self.assertEqual(result["environment"][key], environment[key])
+                for key in ("PUBLISHER_SECRET", "GITHUB_UNTRUSTED_INPUT", "RUNNER_UNTRUSTED_INPUT"):
+                    self.assertNotIn(key, result["environment"])
+                for target in ("candidate", "diagnostic", "tool"):
+                    self.assertFalse(set(result[target]) & (set(RUNNER_IDENTITY) | {
+                        "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY", "PUBLISHER_SECRET",
+                        "GITHUB_UNTRUSTED_INPUT", "RUNNER_UNTRUSTED_INPUT"}), target)
 
     def test_skipped_engine_cli_reaches_owned_handoff(self):
         import transport

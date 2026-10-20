@@ -493,7 +493,8 @@ def main(argv=None):
                         command = [sys.executable, str(Path(__file__).resolve()), "serve", "--root", args.root,
                                    "--repository", args.repository, "--journal", args.journal, "--workspace", args.workspace]
                         environment = c.tool_environment()
-                        environment.update({k: os.environ[k] for k in ("GH_TOKEN", "GITHUB_TOKEN", "RUNNER_TEMP")
+                        environment.update({k: os.environ[k] for k in
+                                            (*m.RUNNER_KEYS, "PROCESSOR_IDENTIFIER", "GH_TOKEN", "GITHUB_TOKEN", "RUNNER_TEMP")
                                             if k in os.environ})
                         with (controller.root / "service.log").open("xb") as log:
                             child = subprocess.Popen(command, cwd=controller.repository, env=environment,

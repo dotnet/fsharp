@@ -466,6 +466,13 @@ public Git blobs into its `source` child. No controller checkout, Git metadata,
 key, journal, raw diagnostic, receipt or publisher output is mounted there.
 `start-service` rejects changed helper/policy/SDK inputs and wrong installed
 Copilot/AWF versions before preparation.
+Both trusted service and worker launches preserve the frozen, non-secret
+`measurement.RUNNER_KEYS` (`ImageOS`, `ImageVersion`, `RUNNER_NAME`, `RUNNER_OS`,
+`RUNNER_ARCH`, `GITHUB_RUN_ID`, `GITHUB_RUN_ATTEMPT`, `GITHUB_JOB`) and
+`PROCESSOR_IDENTIFIER`. Missing fields remain unavailable, not invented.
+This is not prefix-based environment forwarding: candidate, diagnostic-target
+and generic-tool allowlists are unchanged and receive neither this metadata nor
+controller/publisher credentials.
 
 Use the same protected arguments for each entry point; the executable and
 inputs named by these variables must come from trusted setup, never issue/PR text:
@@ -642,6 +649,27 @@ prerelease tokens remain rejected. Initial RED, corrected fixture failures and
 an interrupted earlier replay remain private evidence, not passing results.
 Final input hashes, Python `py_compile`, `node --check` and `git diff --check`
 were checked. No compiler build, remote write, hosted run or Linux proof is implied.
+
+The runner-identity repair was validated on the same Windows tool versions:
+
+| Command | Tests | Exit | Seconds |
+| --- | --- | --- | --- |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v` | 134 | 0 | 4327.885 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v` | 52 | 0 | 88.769 |
+
+Both suites passed without skips, including all **30 runtime tests**. Before
+the fix, the populated-identity service/worker regressions both failed; afterward,
+the same two selectors passed (exit 0, 17.965 seconds). The service-entry matrix
+checks the actual launch environment against frozen host identity, and a real
+Python worker compares its complete unmocked identity with both populated and
+unavailable runner fields. Synthetic trusted tokens remain worker-only; arbitrary
+`GITHUB_`/`RUNNER_` inputs and publisher secrets are excluded. Candidate,
+diagnostic-target and generic-tool environments remain credential/metadata-free.
+The existing measurement/collector environment siblings also passed, as did
+Python `py_compile`, `node --check` and `git diff --check` (all exit 0).
+Exact commands, failed prerequisite/RED results, final logs and executable input
+hashes are retained in private session evidence. No remote write, compiled graph,
+hosted execution or live Linux containment is claimed.
 
 ## Disposable experiment controller
 

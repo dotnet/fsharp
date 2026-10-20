@@ -99,9 +99,10 @@ def worker_command(controller, operation):
 
 def _launch(arguments, controller):
     environment = c.tool_environment()
-    # These belong only to the trusted worker; candidate tools rebuild their
-    # own allowlisted environment, and the agent command receives neither token.
-    environment.update({key: os.environ[key] for key in ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY")
+    # Preserve frozen host identity only in trusted processes. Candidate tools
+    # rebuild their own allowlisted environment and receive neither token.
+    environment.update({key: os.environ[key] for key in
+                        (*workflow.m.RUNNER_KEYS, "PROCESSOR_IDENTIFIER", "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY")
                         if key in os.environ})
     return subprocess.Popen(arguments, cwd=controller.repository, env=environment, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
