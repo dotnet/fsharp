@@ -102,6 +102,8 @@ configuration is never taken from agent messages, issues or PRs. Encryption uses
 the pinned `--encrypt --recipient ... --output ...` contract, credential-free
 tool environments, checked input handles and complete binary output; the
 executable identity/version and output framing/length are verified.
+On Windows, read handles deny writes and replacement while hashing/encrypting;
+read-only access-time updates cannot masquerade as changed diagnostic bytes.
 
 Missing/malformed configuration, tool/version/exit failures, incomplete output,
 read/write denial and budget overflow block retention explicitly, without a
@@ -110,6 +112,10 @@ cannot be retained. Evidence records keep the original kind, plaintext hash and
 byte count separately from ciphertext hash/count, recipient identity, tool hash,
 run/workload fingerprint and expiry. Ciphertext plus summaries and manifests
 share the per-run budget; repeated staging cannot renew retention or reset it.
+Accounting includes atomically moved manifests whose session save was interrupted,
+as well as recorded uploads; expired binaries do not replenish the run budget.
+Missing or changed recorded manifests block further staging rather than resetting
+that budget.
 
 `Controller.stage_evidence()` returns the exact allowlisted upload files and
 hashes, bounds, expiry and pending/expired/blocked status. Never upload a
@@ -119,6 +125,15 @@ discovery evidence without inventing an experiment or rewriting old decisions;
 artifact schema 2 distinguishes local pending transport from remote availability.
 Version 1/2 journals remain readable. Old local-summary records are not treated
 as remote receipts. Expiry removes availability, not conclusions or hashes.
+The controller seals each manifest before its atomic staging move. Restart
+recovers compact records from that authenticated manifest even after ciphertext
+expiry or deletion, or loss of its source dump workspace, without encrypting or
+uploading expired evidence again. Missing or altered manifests cannot supply
+recovered records.
+Analyzed dumps surviving interruption are removed only through their sealed
+workspace and file-identity receipts, including after expiry. A replacement
+file or denied deletion blocks retention and is never silently discarded; the
+verified encrypted upload inventory and compact records remain intact.
 
 Only `Controller.acknowledge_evidence(sink)`, called by the protected runtime,
 can advance pending records. The sink receives the checked inventory,
@@ -129,8 +144,11 @@ plus the actual transport `created_at`/`expires_at`. Those timestamps must prove
 14-day retention at the upload step. A delayed upload records its real storage
 expiry but never extends the original evidence-availability deadline. Uploads
 finishing after that deadline cannot be acknowledged. A `local_fixture` receipt never establishes
-remote availability. Lost/failed acknowledgments remain pending and require
-trusted sink reconciliation; agent-supplied receipts cannot mint approval.
+remote availability. Receipts saved in authenticated controller custody can be
+checkpointed after process restart without uploading again; partial-batch retries
+preserve completed receipts and send only manifests with unacknowledged evidence.
+Receipts lost before that sealed save remain pending and require trusted sink
+reconciliation; agent-supplied receipts cannot mint approval.
 No production uploader or additional storage service is installed here.
 
 `validate-output` freshly reconciles sealed controller captures with the pinned
@@ -283,13 +301,14 @@ Source and tool inputs were unchanged throughout; this README update is
 documentation-only. Per-command bounds, process identities, hashes, RED/GREEN
 results and logs remain private evidence.
 
-Revalidation exposed differing Windows `stat`/`fstat` ctime semantics in Python
-3.12. Artifact reads compare birth time across those APIs and ctime within each
-API, retaining hash, identity, size, link and modification-time checks. POSIX
-retains cross-API change-time checks. Birth time alone cannot detect a same-size
-rewrite with restored mtime; the read and dump-removal regressions enforce
-rejection of changed bytes. The historical results above precede that additional
-change-detection repair; its exact-input validation is recorded in private evidence.
+Windows `stat`/`fstat` expose different ctime semantics in Python 3.12, and handle
+ChangeTime can advance on read-only access. Artifact reads retain birth-time,
+hash, identity, size, link and modification-time checks, with Windows handles
+denying writes and replacement until both hashing and path verification finish.
+POSIX retains cross-API change-time checks. Timestamp-preserving rewrite tests
+require write denial on Windows or changed-byte rejection on POSIX; neither
+platform may return a stale hash or delete a replacement dump. The historical
+results above do not certify these guards; exact-input evidence remains private.
 
 No task-owned Linux executor was available: the only WSL distribution was stopped
 and both Docker engine probes failed. Live namespace, attach/dump and network/model

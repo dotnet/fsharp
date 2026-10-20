@@ -716,8 +716,20 @@ class Controller:
             return self.session["persistence"]
         self.busy = True
         try:
+            state, head = self.transport.read()
+            sealed = self.load("session")
+            for name, index in (("attempt", "attempts"), ("discovery", "discoveries")):
+                owner = self.session.get(name)
+                if owner is None:
+                    continue
+                prior = state.get(index, {}).get(owner["id"], {}).get("evidence", [])
+                for record in owner.get("evidence", []):
+                    if record.get("schema_version") == 2 and record["availability"] == "available" and record not in prior:
+                        require(sealed.get(name) is not None and sealed[name]["id"] == owner["id"]
+                                and record in sealed[name].get("evidence", []),
+                                "Artifact acknowledgment is not in authenticated custody")
+                        record["acknowledgment"]["validation"] = mem.artifact_validation(record)
             if self.session.get("discovery") is not None:
-                state, head = self.transport.read()
                 d = self.session["discovery"]
                 previous = state.get("discoveries", {}).get(d["id"])
                 require(previous is not None and
@@ -736,6 +748,7 @@ class Controller:
                     a["lease"]["checkpoint_at"] = max(mem.timestamp(old["lease"]["checkpoint_at"]),
                         min(self.now(), mem.timestamp(a["lease"]["expires_at"]))).isoformat()
                     candidate = mem.merge_attempt(candidate, a, old)
+                self.save("session", self.session)
                 receipt = (self.session["persistence"] if candidate == state and
                            head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
                 self.session.update(persistence=receipt, canonical_discovery_sha256=m.fingerprint_inputs(d))
@@ -745,7 +758,6 @@ class Controller:
                 return receipt
             a = self.session["attempt"]
             mem.validate_attempt(a)
-            state, head = self.transport.read()
             previous = state["attempts"].get(a["id"])
             require(previous is not None and previous["run"] == a["run"], "Reservation owner changed")
             baseline = self.session["canonical_attempt_sha256"]
@@ -754,6 +766,7 @@ class Controller:
             a["lease"]["checkpoint_at"] = max(mem.timestamp(previous["lease"]["checkpoint_at"]),
                 min(self.now(), mem.timestamp(a["lease"]["expires_at"]))).isoformat()
             candidate = mem.merge_attempt(state, a, previous)
+            self.save("session", self.session)
             receipt = (self.session["persistence"] if candidate == state and
                        head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
             self.session["persistence"] = receipt
@@ -859,9 +872,11 @@ class Controller:
         entries.insert(0, {"file": m.file_record(summary_path), "kind": "summary", "conclusion": summary["conclusion"]})
         provenance = {"run_id": owner["run"]["id"], "fingerprint": m.fingerprint_inputs(
             [owner["source_revision"], owner["run"], self.session.get("manifest")])}
-        job_id = m.fingerprint_inputs([summary, list(extra_entries), encryption, provenance])
+        job_id = m.fingerprint_inputs([entries, encryption, provenance])
         jobs = self.session.setdefault("retention_jobs", {})
-        if job_id not in jobs:
+        if job_id not in jobs and any(not any(
+                entry == prior and (entry["kind"] == "summary" or job["encryption"] == encryption)
+                for job in jobs.values() for prior in job["entries"]) for entry in entries):
             require(len(jobs) < artifacts.MAX_ENTRIES, "Retention job inventory exceeded")
             jobs[job_id] = {"entries": entries, "encryption": encryption, "provenance": provenance,
                             "created_at": self.now().isoformat(),
@@ -898,19 +913,20 @@ class Controller:
                 (self.session["attempt"] or self.session["discovery"])["run"]["id"], "Retention owner differs")
         owner = next(record for record in (self.session["attempt"], self.session.get("discovery"))
                      if record is not None and record["id"] == job["owner"])
-        if mem.timestamp(job["created_at"]) + timedelta(days=artifacts.RETENTION_DAYS) <= self.now():
-            return {"status": "expired", "files": [], "artifacts": [
-                dict(mem.artifact_availability(r, self.now()), artifact_id=r["artifact_id"], sha256=r["sha256"])
-                for r in owner.get("evidence", []) if r["collected_at"] == job["created_at"]]}
-        owned = active_dump
+        expired = mem.timestamp(job["created_at"]) + timedelta(days=artifacts.RETENTION_DAYS) <= self.now()
+        owned, dump_error = active_dump, None
         if job["dump"] is not None:
-            custody = job["dump"]
-            path = artifacts._path(custody["path"])
-            require(path == self.root / "private" / "dump-session"
-                    and list(artifacts._identity(path.stat())) == custody["identity"], "Dump owner changed")
-            if owned is None:
-                owned = artifacts.DumpWorkspace(path, tuple(custody["identity"]))
-                artifacts._DUMP_WORKSPACES.add(owned)  # Restored only from authenticated controller custody.
+            try:
+                custody = job["dump"]
+                path = artifacts._path(custody["path"], exists=False)
+                require(path == self.root / "private" / "dump-session", "Dump owner changed")
+                if path.exists():
+                    require(list(artifacts._identity(path.stat())) == custody["identity"], "Dump owner changed")
+                    if owned is None:
+                        owned = artifacts.DumpWorkspace(path, tuple(custody["identity"]))
+                        artifacts._DUMP_WORKSPACES.add(owned)  # Restored only from authenticated controller custody.
+            except (ValueError, OSError) as error:
+                dump_error = error
         if destination.exists():
             manifest = read_input(destination / "manifest.json")
             require(manifest["created_at"] == job["created_at"] and all(
@@ -921,49 +937,90 @@ class Controller:
             saved = next((s for s in self.session.get("artifacts", []) if s["root"] == str(destination)), None)
             if saved is not None:
                 m.verify_files([saved["manifest"]])
+            custody_name = "retention-" + identity
+            if (self.root / (custody_name + ".json")).exists():
+                require(self.load(custody_name) == manifest, "Retained manifest custody changed")
+            else:
+                require(saved is not None, "Retained manifest custody unavailable")
+        elif expired:
+            manifest = None
         else:
+            if dump_error is not None:
+                raise dump_error
             used = compact = 0
-            for staged in self.session.get("artifacts", []):
-                prior = read_input(staged["manifest"]["path"])
-                used += prior["total_bytes"]
-                compact += prior.get("compact_bytes", prior["total_bytes"])
+            for other in self.session["retention_jobs"]:
+                path = self.root / "public" / other
+                saved = next((s for s in self.session.get("artifacts", []) if s["root"] == str(path)), None)
+                custody_name = "retention-" + other
+                sealed = (self.root / (custody_name + ".json")).exists()
+                require(path.exists() or saved is None and (other == identity or not sealed),
+                        "Retained artifact inventory missing; budget unavailable")
+                if saved is not None:
+                    m.verify_files([saved["manifest"]])
+                if not path.exists():
+                    continue
+                prior = read_input(path / "manifest.json")
+                require(self.load(custody_name) == prior if sealed else saved is not None,
+                        "Retained manifest custody changed; budget unavailable")
+                inventory = [(p.suffix, artifacts._path(p).stat().st_size) for p in path.iterdir()]
+                used += max(prior["total_bytes"], sum(size for _, size in inventory))
+                compact += max(prior.get("compact_bytes", prior["total_bytes"]),
+                               sum(size for suffix, size in inventory if suffix == ".json"))
             manifest = artifacts.stage_artifacts(self.root / "private", destination, job["entries"],
                 job["created_at"], encryption=job["encryption"], provenance=job["provenance"],
-                dump_workspace=owned, used_bytes=used, used_compact_bytes=compact)
-        result = artifacts.retention_result(destination, manifest, self.now())
-        for record in manifest["artifacts"]:
-            if not any(r["artifact_id"] == record["artifact_id"] and r["collected_at"] == record["collected_at"]
-                       for r in owner.setdefault("evidence", [])):
-                owner["evidence"].append(record)
-        staged = {"root": str(destination), "manifest": m.file_record(destination / "manifest.json")}
-        if staged not in self.session.setdefault("artifacts", []):
-            self.session["artifacts"].append(staged)
-        self.save("session", self.session)
+                dump_workspace=owned, used_bytes=used, used_compact_bytes=compact,
+                seal_manifest=lambda value: self.save("retention-" + identity, value))
+        result = {"status": "expired", "files": [], "artifacts": []}
+        if manifest is not None:
+            result = artifacts.retention_result(destination, manifest, self.now())
+            for record in manifest["artifacts"]:
+                if not any(r["artifact_id"] == record["artifact_id"] and r["collected_at"] == record["collected_at"]
+                           for r in owner.setdefault("evidence", [])):
+                    owner["evidence"].append(record)
+            staged = {"root": str(destination), "manifest": m.file_record(destination / "manifest.json")}
+            if staged not in self.session.setdefault("artifacts", []):
+                self.session["artifacts"].append(staged)
+            self.save("session", self.session)
         for status in result["artifacts"]:
             acknowledged = next((r for r in owner["evidence"] if r["artifact_id"] == status["artifact_id"]
+                                 and r["collected_at"] == manifest["created_at"]
                                  and r["availability"] == "available"), None)
             if acknowledged is not None:
                 status.update(mem.artifact_availability(acknowledged, self.now()))
         if result["artifacts"] and all(s["available"] for s in result["artifacts"]):
             result["status"] = "available"
         if job["dump"] is not None and active_dump is None:
-            receipt = dict(job["dump"]["receipt"])
-            receipt.update(path=Path(receipt["path"]), identity=tuple(receipt["identity"]))
-            if receipt["path"].exists():
-                artifacts.remove_owned_dump(owned, receipt, "Recovered analyzed dump cleanup", self.now())
+            try:
+                if dump_error is not None:
+                    raise dump_error
+                receipt = dict(job["dump"]["receipt"])
+                receipt.update(path=Path(receipt["path"]), identity=tuple(receipt["identity"]))
+                if receipt["path"].exists():
+                    artifacts.remove_owned_dump(owned, receipt, "Recovered analyzed dump cleanup", self.now())
+            except (ValueError, OSError) as error:
+                result.update(status="blocked_retention", reason=artifacts._conclusion(
+                    "Owned dump cleanup: " + str(error), self.root / "private")[:512])
         return result
 
     def acknowledge_evidence(self, sink):
         """Protected runtime API only; agent messages cannot submit sink receipts."""
+        self.checkpoint()
         for staged in self.session.get("artifacts", []):
             m.verify_files([staged["manifest"]])
             manifest = read_input(staged["manifest"]["path"])
+            pending = {(r["artifact_id"], r["collected_at"])
+                       for owner in (self.session["attempt"], self.session.get("discovery")) if owner
+                       for r in owner.get("evidence", []) if r["availability"] == "pending"
+                       and mem.artifact_availability(r, self.now())["reason"] != "expired"}
+            if not any((r["artifact_id"], r["collected_at"]) in pending for r in manifest["artifacts"]):
+                continue
             records = artifacts.acknowledge_artifacts(staged["root"], manifest, self.now, sink)
             for owner in (self.session["attempt"], self.session.get("discovery")):
                 if owner is not None:
                     replacements = {(r["artifact_id"], r["collected_at"]): r for r in records
                                     if r["availability"] == "available"}
                     owner["evidence"] = [replacements.get((r["artifact_id"], r["collected_at"]), r)
+                                         if r["availability"] == "pending" else r
                                          for r in owner.get("evidence", [])]
             self.save("session", self.session)
             self.checkpoint()

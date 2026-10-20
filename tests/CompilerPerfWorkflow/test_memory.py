@@ -257,6 +257,10 @@ class MemoryTests(unittest.TestCase):
         available = mem.merge_discovery(migrated, acknowledged, retained)
         self.assertTrue(mem.artifact_availability(available["discoveries"][owner["id"]]["evidence"][0], NOW)["available"])
         self.assertEqual(available["attempts"], previous["attempts"])
+        with mock.patch.object(mem, "_VALIDATOR_KEY", b"new process validator key"):
+            self.assertEqual(mem.merge_discovery(available, acknowledged, acknowledged), available)
+            with self.assertRaisesRegex(ValueError, "Fresh trusted artifact acknowledgment"):
+                mem.merge_discovery(migrated, acknowledged, retained)
 
     def test_discovery_schema_migrates_only_on_first_reservation(self):
         old = state(attempt(outcome="rejected"))

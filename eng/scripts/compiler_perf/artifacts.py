@@ -47,6 +47,35 @@ def _identity(info):
     return info.st_dev, info.st_ino
 
 
+def _open_file(path):
+    if os.name != "nt":
+        return os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                  ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    # Deny writes/deletes while hashing or passing this same handle to the encryptor.
+    handle = kernel.CreateFileW(str(path), 0x80000000, 0x1, None, 3, 0x200000, None)
+    if handle == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    descriptor = None
+    try:
+        descriptor = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+        os.set_inheritable(descriptor, False)
+        return descriptor
+    except BaseException:
+        if descriptor is None:
+            kernel.CloseHandle(handle)
+        else:
+            os.close(descriptor)
+        raise
+
+
 def _read_file(path, *, limit=None, use=None):
     """Check the open object as well as every ancestor; never hash a recorded path alone."""
     path = _path(path)
@@ -56,7 +85,7 @@ def _read_file(path, *, limit=None, use=None):
     require(before.st_size <= (c.LIMITS["artifact_bytes"] if limit is None else limit),
             "Artifact size budget exceeded")
     digest, data = hashlib.sha256(), []
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0))
+    descriptor = _open_file(path)
     with os.fdopen(descriptor, "rb") as stream:
         opened = os.fstat(stream.fileno())
         require(_identity(opened) == _identity(before), "Artifact identity changed")
@@ -71,12 +100,13 @@ def _read_file(path, *, limit=None, use=None):
             if limit is not None:
                 data.append(block)
         after = os.fstat(stream.fileno())
-    current = _path(path).stat()
-    # Windows stat/fstat disagree on ctime; compare it within each API, not across them.
+        current = _path(path).stat()
+    # Windows handle ChangeTime can advance on reads; the sharing lock prevents writes.
     timestamp = "st_birthtime_ns" if os.name == "nt" else "st_ctime_ns"
     require(size == before.st_size and _identity(before) == _identity(after) == _identity(current)
             and before.st_mtime_ns == opened.st_mtime_ns == after.st_mtime_ns == current.st_mtime_ns
-            and before.st_ctime_ns == current.st_ctime_ns and opened.st_ctime_ns == after.st_ctime_ns
+            and before.st_ctime_ns == current.st_ctime_ns
+            and (os.name == "nt" or opened.st_ctime_ns == after.st_ctime_ns)
             and all(getattr(info, timestamp, info.st_ctime_ns) == getattr(before, timestamp, before.st_ctime_ns)
                     for info in (opened, after, current))
             and current.st_size == size and current.st_nlink == 1, "Artifact changed while reading")
@@ -173,7 +203,7 @@ def _encrypt(path, record, config, root, budget):
 
 
 def stage_artifacts(private_root, public_root, entries, now, *, encryption=None, provenance=None,
-                    dump_workspace=None, used_bytes=0, used_compact_bytes=0):
+                    dump_workspace=None, used_bytes=0, used_compact_bytes=0, seal_manifest=None):
     """Stage explicit entries, never a directory tree.
 
     Only the protected controller supplies entries, recipient and provenance.
@@ -291,6 +321,8 @@ def stage_artifacts(private_root, public_root, entries, now, *, encryption=None,
                 stream.write(data)
                 stream.flush()
                 os.fsync(stream.fileno())
+        if seal_manifest is not None:
+            seal_manifest(manifest)
         _path(public, exists=False)
         if public.exists():
             public.rmdir()
@@ -374,7 +406,8 @@ def retention_result(public_root, manifest, now):
         sha256, size, _, _ = _read_file(Path(public_root) / "manifest.json", limit=mem.LIMITS["file_bytes"])
         files.append({"path": str(Path(public_root) / "manifest.json"), "kind": "manifest",
                       "sha256": sha256, "size_bytes": size})
-    return {"status": manifest.get("status", "pending") if healthy else "blocked_retention",
+    expired = mem.timestamp(manifest["expires_at"]) <= _time(now)
+    return {"status": "expired" if expired else manifest.get("status", "pending") if healthy else "blocked_retention",
             "files": files if healthy else [], "artifacts": checked,
             "manifest_sha256": hashlib.sha256(mem.encoded(manifest)).hexdigest(),
             "retention_days": RETENTION_DAYS, "created_at": manifest["created_at"], "expires_at": manifest["expires_at"],

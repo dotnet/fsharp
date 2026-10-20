@@ -103,7 +103,7 @@ class ArtifactTests(unittest.TestCase):
                   ("st_dev", "st_ino", "st_size", "st_nlink", "st_mtime_ns", "st_ctime_ns")}
         fields["st_birthtime_ns"] = getattr(info, "st_birthtime_ns", info.st_ctime_ns)
         for platform, changed, accepted in (
-                ("nt", None, True), ("nt", "st_ctime_ns", False),
+                ("nt", None, True), ("nt", "st_ctime_ns", True),
                 ("nt", "st_birthtime_ns", False), ("nt", "st_mtime_ns", False),
                 ("nt", "st_ino", False), ("posix", None, True), ("posix", "st_ctime_ns", False)):
             with self.subTest(platform=platform, changed=changed):
@@ -114,7 +114,9 @@ class ArtifactTests(unittest.TestCase):
                 if changed:
                     setattr(after, changed, getattr(after, changed) + 100)
                 system = SimpleNamespace(**dict(vars(os), name=platform))
-                with mock.patch.object(a, "os", system), mock.patch.object(
+                with mock.patch.object(a, "_open_file", side_effect=lambda p: os.open(
+                        p, os.O_RDONLY | getattr(os, "O_BINARY", 0))), \
+                        mock.patch.object(a, "os", system), mock.patch.object(
                         system, "fstat", side_effect=[opened, after]):
                     if accepted:
                         digest, size, _, identity = a._read_file(path)
@@ -145,15 +147,30 @@ class ArtifactTests(unittest.TestCase):
                     return fstat(descriptor)
 
                 with mock.patch.object(a.os, "fstat", side_effect=rewrite_after_read):
-                    with self.assertRaisesRegex(ValueError, "Artifact changed while reading"):
+                    with self.assertRaises(PermissionError if os.name == "nt" else ValueError):
                         if operation == "read":
                             a._read_file(path)
                         else:
                             a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
                 self.assertEqual(calls, 2)
-                self.assertEqual(path.read_bytes(), b"MDMPmodified")
+                self.assertEqual(path.read_bytes(), b"MDMPoriginal" if os.name == "nt" else b"MDMPmodified")
                 self.assertEqual(path.stat().st_mtime_ns, before.st_mtime_ns)
                 self.assertEqual(a._identity(path.stat()), a._identity(before))
+
+    @unittest.skipUnless(os.name == "nt", "Windows file sharing contract")
+    def test_windows_read_handle_denies_writes_and_replacement_but_allows_readers(self):
+        entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace-private")
+        path = Path(entry["file"]["path"])
+
+        def read(stream):
+            self.assertEqual(path.read_bytes(), stream.read())
+            with self.assertRaises(PermissionError):
+                path.write_bytes(b"changed")
+            with self.assertRaises(PermissionError):
+                path.rename(self.private / "replacement.nettrace")
+
+        sha256, size, _, _ = a._read_file(path, use=read)
+        self.assertEqual((sha256, size), (entry["file"]["sha256"], entry["file"]["size_bytes"]))
 
     def test_output_is_deterministic_and_only_explicit_files_are_staged(self):
         first = self.entry("first.json", conclusion="First")
@@ -540,6 +557,29 @@ class ArtifactTests(unittest.TestCase):
         with mock.patch.dict(a.c.LIMITS, {"total_bytes": 100}), self.assertRaises(ValueError):
             self.stage(entries)
         self.assertFalse(self.public.exists())
+
+    def test_previous_staging_budget_includes_ciphertext_overhead(self):
+        with TemporaryRecipient() as key:
+            entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace" + bytes(8192))
+            entries = [self.entry(), entry]
+            reference = a.stage_artifacts(self.private, self.root / "reference", entries, NOW, encryption=key.config)
+            self.assertLess(entry["file"]["size_bytes"], reference["total_bytes"] - 1)
+            for bound in ("total", "compact"):
+                with self.subTest(bound=bound):
+                    root = self.root / bound
+                    prior = {"used_bytes": a.PUBLIC_BYTES - reference["total_bytes"] + 1} if bound == "total" else {
+                        "used_compact_bytes": a.COMPACT_BYTES - 100}
+                    if bound == "compact":
+                        with self.assertRaisesRegex(ValueError, "aggregate budget exceeded"):
+                            a.stage_artifacts(self.private, root, entries, NOW,
+                                              encryption=key.config, **prior)
+                        self.assertFalse(root.exists())
+                    else:
+                        manifest = a.stage_artifacts(self.private, root, entries, NOW,
+                                                     encryption=key.config, **prior)
+                        self.assertEqual(manifest["status"], "blocked_retention")
+                        self.assertLessEqual(manifest["total_bytes"] + prior["used_bytes"], a.PUBLIC_BYTES)
+                        self.assertEqual({p.suffix for p in root.iterdir()}, {".json"})
 
     def test_expiry_checks_current_bytes_and_never_trusts_recorded_location(self):
         manifest = self.stage([self.entry()])
