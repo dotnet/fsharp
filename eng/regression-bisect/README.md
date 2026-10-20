@@ -43,6 +43,13 @@ $tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-
 node --test --test-concurrency=4 @tests
 ```
 
+CI runs scoped validation for pull requests and pushes to `idea/dm-912`.
+An ephemeral Ubuntu runner also executes the production containment smoke with the exact pinned image.
+The seven physical modes retain their reports and cleanup receipts as CI artifacts, including on failure.
+These checks do not activate production routing or establish source/product acceptance by themselves.
+Synthetic trial tests create their signed inputs with a current deadline.
+They do not change the production clock or renew an existing investigation allowance.
+
 ## Durable intake routing (not activated)
 
 The deployed graph is:

@@ -70,7 +70,7 @@ function invokeCli(args, env = {}, started = () => {}, {
     });
 }
 
-async function fixture(t) {
+async function fixture(t, options = {}) {
     const directory = await fsp.realpath(await fsp.mkdtemp(path.join(os.tmpdir(), "rb-controller-")));
     t.after(async () => {
         const evidence = process.env.RB_TEST_EVIDENCE_DIRECTORY;
@@ -82,7 +82,7 @@ async function fixture(t) {
         }
         await fsp.rm(directory, { recursive: true, force: true });
     });
-    const original = await bootstrapFixture();
+    const original = await bootstrapFixture(options);
     const { h, approval, result, data } = original;
     const context = h.context;
     context.workflowPath = ".github/workflows/regression-bisect-controller.yml";
@@ -176,14 +176,14 @@ async function fixture(t) {
 
 function assertValue(value, message) { if (!value) throw new Error(message); }
 
-async function routingFixture(t) {
-    const value = await fixture(t);
+async function routingFixture(t, options = {}) {
+    const value = await fixture(t, options);
     const workflowPath = ".github/workflows/regression-bisect.lock.yml";
     const registration = {
         schemaVersion: 2, repository: "dotnet/fsharp", issueNumber: 123, commentId: 458, freshnessCommentId: 459,
         checkpointAnchorSha: value.config.anchorSha, bootstrapDigest: f.digest("Reviewed discovery slot"),
         freshnessBootstrapDigest: f.digest("Reviewed discovery freshness slot"),
-        provisionDeadline: "2026-10-01T00:00:00Z", workflowPath, workflowGeneration: 1,
+        provisionDeadline: options.deadline ?? "2026-10-01T00:00:00Z", workflowPath, workflowGeneration: 1,
     };
     value.env.RB_DISPATCH_TOKEN = "offline-separate-dispatch-token";
     value.update(db => {

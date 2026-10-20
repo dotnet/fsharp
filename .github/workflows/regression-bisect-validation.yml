@@ -9,10 +9,20 @@ on:
       - '.github/workflows/regression-bisect*'
       - '.github/workflows/shared/model-defaults.md'
       - '.github/aw/actions-lock.json'
+  push:
+    branches: ['idea/dm-912']
+    paths:
+      - '.gitattributes'
+      - 'eng/regression-bisect/**'
+      - '.github/regression-bisect/**'
+      - '.github/policies/regression-bisect.json'
+      - '.github/workflows/regression-bisect*'
+      - '.github/workflows/shared/model-defaults.md'
+      - '.github/aw/actions-lock.json'
 permissions:
   contents: read
 concurrency:
-  group: regression-bisect-validation-${{ github.event.pull_request.number }}
+  group: regression-bisect-validation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   validate:
@@ -62,3 +72,38 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Generated files changed' }
           git diff --check
           if ($LASTEXITCODE -ne 0) { throw 'Diff check failed' }
+  containment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+      - name: Provision the pinned image
+        run: docker pull --platform linux/amd64 docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a
+      - name: Write smoke configuration
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, "regression-containment-config.json"), JSON.stringify({
+            schemaVersion: 1,
+            image: "docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a",
+            dockerExecutable: "/usr/bin/docker",
+            limits: { cpus: 1, memoryMiB: 1024, pids: 128, scratchMiB: 64, timeoutMs: 120000 }
+          }), { flag: "wx" });
+          NODE
+      - name: Run real Linux containment
+        run: node eng/regression-bisect/containment.smoke.cjs --run "$RUNNER_TEMP/regression-containment-config.json" "$RUNNER_TEMP/regression-containment"
+      - name: Retain containment evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: regression-containment-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/regression-containment
+            ${{ runner.temp }}/regression-containment-config.json
+          if-no-files-found: error

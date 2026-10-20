@@ -32,14 +32,15 @@ async function fixture() {
     return { h, deps };
 }
 
-async function bootstrapFixture() {
+async function bootstrapFixture(options = {}) {
     const { readIssueSnapshot } = require("../intake.cjs");
     const fingerprint = model.fingerprintInput;
     const h = harness();
     const c = h.context;
+    c.now = options.now ?? c.now;
     const resultCommentId = 457;
     const allowanceId = "reviewed-first-allowance";
-    const deadline = "2026-10-01T00:00:00Z";
+    const deadline = options.deadline ?? "2026-10-01T00:00:00Z";
     const slot = {
         schemaVersion: 1, purpose: "checkpoint-slot", repository: c.repository, issueNumber: c.issueNumber,
         checkpointAnchorSha: c.checkpointAnchorSha, allowanceId, deadline,

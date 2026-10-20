@@ -13,8 +13,8 @@ const invoke = (args, env = {}, started, synthetic = false) => invokeCli(args, e
     preload: synthetic ? [path.join(__dirname, "fixtures", "trial-driver.cjs")] : [],
 });
 
-async function history(t, scenario = "linear", endpoints = {}) {
-    const f = await routingFixture(t), shas = {};
+async function history(t, scenario = "linear", endpoints = {}, options = {}) {
+    const f = await routingFixture(t, options), shas = {};
     const commit = async (name, outcome, file = "source.txt") => {
         await fs.writeFile(path.join(f.read().mirrorDirectory, file), outcome);
         f.git(["add", file]); f.git(["commit", "--quiet", "--allow-empty", "-m", name]);
@@ -236,7 +236,10 @@ test("trial helper identity prunes disposable directories before reading them", 
 });
 
 async function reviewed(t) {
-    const f = await history(t);
+    const now = new Date();
+    const f = await history(t, "linear", {}, {
+        now: now.toISOString(), deadline: new Date(now.getTime() + 720 * 60000).toISOString(),
+    });
     const files = [];
     const service = await connect(f.serviceFile);
     const { toolchain } = await require("./toolchains.cjs").resolveLatestStableSdk({
@@ -276,6 +279,8 @@ async function reviewed(t) {
 
 test("SYNTHETIC preparation freezes a signed plan without worker execution; verify is read-only and incomplete", async t => {
     const r = await reviewed(t);
+    assert.ok(Date.parse(r.f.approval.bootstrap.deadline) - Date.now() >= 660 * 60000,
+        "new synthetic trials need an unexpired allowance without changing the production clock");
     const prepared = await invoke(["--prepare", r.file, r.evidence], r.env);
     assert.equal(prepared.code, 0, prepared.stdout);
     assert.deepEqual(JSON.parse(prepared.stdout).workerUnits, 6);

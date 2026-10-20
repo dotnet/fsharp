@@ -224,11 +224,37 @@ test("controller remains the sole one-unit executor and fixed-slot publisher", (
 
 test("scoped validation is not a second production scheduler and has no execution secrets", () => {
     const validation = YAML.parse(read(".github/workflows/regression-bisect-validation.yml"));
-    assert.deepEqual(Object.keys(validation.on), ["pull_request"]);
+    assert.deepEqual(Object.keys(validation.on), ["pull_request", "push"]);
     assert.ok(validation.on.pull_request.paths.includes(".github/workflows/regression-bisect*"));
     assert.ok(validation.on.pull_request.paths.includes("eng/regression-bisect/**"));
+    assert.deepEqual(validation.on.push.branches, ["idea/dm-912"]);
+    assert.deepEqual(validation.on.push.paths, validation.on.pull_request.paths);
     assert.deepEqual(validation.permissions, { contents: "read" });
     assert.deepEqual(secrets(validation), []);
+    assert.equal(validation.concurrency.group,
+        "regression-bisect-validation-${{ github.event.pull_request.number || github.ref }}");
     assert.equal(validation.jobs.validate["timeout-minutes"], 45);
     assert.deepEqual(validation.jobs.validate.steps.filter(s => s["timeout-minutes"]).map(s => s["timeout-minutes"]), [15, 30]);
+});
+
+test("validation runs the production containment smoke on an ephemeral Linux runner", () => {
+    const validation = YAML.parse(read(".github/workflows/regression-bisect-validation.yml"));
+    const linux = validation.jobs.containment;
+    assert.ok(linux, "physical containment needs a Linux CI job, not an operator-provisioned VM");
+    assert.equal(linux["runs-on"], "ubuntu-24.04");
+    assert.equal(linux["continue-on-error"] ?? false, false);
+    assert.equal(linux.steps.find(s => s.uses?.startsWith("actions/checkout@")).with["persist-credentials"], false);
+    assert.equal(linux.steps.find(s => s.uses?.startsWith("actions/setup-node@")).with["node-version"], "24");
+    const image = read("eng/regression-bisect/container.cjs").match(/^const image = "([^"]+)";/m)[1];
+    assert.ok(linux.steps.find(s => s.name === "Provision the pinned image").run.includes(image));
+    assert.ok(linux.steps.find(s => s.name === "Write smoke configuration").run.includes(image));
+    const smoke = linux.steps.find(s => s.name === "Run real Linux containment");
+    assert.equal(smoke.run.trim(),
+        'node eng/regression-bisect/containment.smoke.cjs --run "$RUNNER_TEMP/regression-containment-config.json" "$RUNNER_TEMP/regression-containment"');
+    assert.equal(smoke["continue-on-error"] ?? false, false);
+    assert.deepEqual(secrets(linux), []);
+    const artifacts = linux.steps.find(s => s.uses?.startsWith("actions/upload-artifact@"));
+    assert.equal(artifacts.if, "always()");
+    assert.equal(artifacts.with["if-no-files-found"], "error");
+    assert.ok(artifacts.with.path.includes("${{ runner.temp }}/regression-containment"));
 });
