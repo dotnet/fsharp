@@ -183,17 +183,24 @@ async function terminateHistoricalProcesses() {
     }
 }
 
-async function historicalDirectory(directory) {
+async function historicalDirectory(directory, uid = 1000) {
     requireValue(path.resolve(directory) === directory && await fs.realpath(directory) === directory &&
         directory.startsWith("/scratch/") && !directory.startsWith("/scratch/helper") &&
-        !directory.startsWith("/scratch/control") && !directory.startsWith("/scratch/storage"),
+        !directory.startsWith("/scratch/control") && !directory.startsWith("/scratch/storage") &&
+        [0, 1000].includes(uid),
     "historical writable directory is not owned scratch");
-    for (const name of ["", ...await fs.readdir(directory, { recursive: true })]) {
-        const file = path.join(directory, name), stat = await fs.lstat(file);
-        if (stat.isSymbolicLink()) continue;
-        requireValue(stat.isDirectory() || stat.isFile() && stat.nlink === 1, "historical scratch contains nonregular files");
-        if (stat.uid === 0) await fs.chown(file, 1000, 1000);
-    }
+    const visit = async file => {
+        const stat = await fs.lstat(file);
+        if (stat.isSymbolicLink()) return;
+        requireValue((stat.isDirectory() || stat.isFile() && stat.nlink === 1) && [0, 1000].includes(stat.uid),
+            "historical scratch contains nonregular or foreign-owned files");
+        if (stat.uid !== 0) await fs.chown(file, 0, 0);
+        const access = stat.isDirectory() ? 0o700 : 0o400;
+        if ((stat.mode & access) !== access) await fs.chmod(file, (stat.mode & 0o777) | access);
+        if (stat.isDirectory()) for (const name of await fs.readdir(file)) await visit(path.join(file, name));
+        if (uid !== 0) await fs.chown(file, uid, uid);
+    };
+    await visit(directory);
 }
 
 async function historicalAccess(file) {
@@ -213,12 +220,14 @@ async function physicalRunner(unit, launch) {
     const withProxy = async (executable, args, settings, historical = false) => {
         const env = { ...settings.env,
             ...Object.fromEntries(["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"].map(k => [k, process.env[k]])) };
+        const writable = [...new Set([settings.cwd, env.HOME, env.TEMP, env.NUGET_PACKAGES].filter(Boolean))];
+        const directories = writable.filter(directory => !writable.some(parent =>
+            parent !== directory && directory.startsWith(`${parent}/`)));
         if (historical) {
             await terminateHistoricalProcesses();
             await historicalAccess(executable);
             await historicalAccess(settings.cwd + "/entry");
-            for (const directory of new Set([settings.cwd, env.HOME, env.TEMP, env.NUGET_PACKAGES].filter(Boolean)))
-                await historicalDirectory(directory);
+            for (const directory of directories) await historicalDirectory(directory);
         }
         const entry = { executable, args, cwd: settings.cwd, lane: historical ? "historical" : "trusted" };
         commands.push(entry);
@@ -227,7 +236,12 @@ async function physicalRunner(unit, launch) {
                 historical ? ["--reuid=1000", "--regid=1000", "--clear-groups", "--no-new-privs", "--", executable, ...args] : args,
                 { ...settings, signal, env });
             return entry.result;
-        } finally { if (historical) await terminateHistoricalProcesses(); }
+        } finally {
+            if (historical) {
+                await terminateHistoricalProcesses();
+                for (const directory of directories) await historicalDirectory(directory, 0);
+            }
+        }
     };
     const storage = "/scratch/storage";
     for (const name of [storage, "/scratch/work", "/scratch/evidence", "/scratch/executions"]) await fs.mkdir(name);

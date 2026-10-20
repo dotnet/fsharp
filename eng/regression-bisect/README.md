@@ -73,6 +73,8 @@ Toolchain identity probes reject incomplete capture and retain process-launch er
 Source and helper files are copied as bytes into owned scratch, without restoring input ownership or requiring `CAP_FOWNER`.
 The helper uses the acquired SDK environment.
 Helper failures preserve acquired archives and command evidence.
+After historical descendants stop, the supervisor reclaims only their owned scratch directories.
+Ownership changes do not follow SDK links or include protected helper, control, or storage directories.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
 The timeout canary keeps its child referenced until the external deadline terminates the container.

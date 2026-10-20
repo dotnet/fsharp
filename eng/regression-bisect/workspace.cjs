@@ -325,6 +325,7 @@ async function buildRevision(w, dependencies = {}) {
             throw Object.assign(new Error(acquisition.error.message), { code: acquisition.error.code });
         }
         w.toolchain = acquisition.identity;
+        stage = "setup";
         const oldRoot = w.env.DOTNET_ROOT;
         for (const [key, value] of Object.entries(w.env)) if (value === oldRoot) w.env[key] = w.toolchain.root;
         w.env.DOTNET_HOST_PATH = w.toolchain.hostPath;
@@ -376,7 +377,6 @@ async function buildRevision(w, dependencies = {}) {
             const row = await evaluated(w, project, role === "corePackage" ? undefined : w.targetFramework);
             requireValue(fingerprintInput(row) === fingerprintInput(rows[role]), "evaluated product identity changed during build");
         }
-        stage = "setup";
         await helper(w);
         stage = "identity";
         w.product = await inventory(w, rows);

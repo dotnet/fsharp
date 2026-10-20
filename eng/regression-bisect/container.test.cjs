@@ -615,7 +615,7 @@ test("network cleanup rejects permission errors and missing responses for anothe
     }
 });
 
-async function physicalFixture(t, { failCopy = false, failBuild = false } = {}) {
+async function physicalFixture(t, { failCopy = false, failBuild = false, failHistorical = false, runUnit } = {}) {
     const entry = path.join(__dirname, "container-entry.cjs");
     const source = await fs.readFile(entry, "utf8"), writes = [], calls = [];
     const toolchain = { root: "/scratch/storage/acquired/dotnet",
@@ -649,10 +649,11 @@ async function physicalFixture(t, { failCopy = false, failBuild = false } = {}) 
                 return acquired;
             } };
             if (name === "./worker.cjs") return { ...worker,
-                runExecutionUnit: async () => ({ status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } }),
+                runExecutionUnit: runUnit ?? (async () => ({ status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } })),
                 executionEvidence: async (unit, launch, result, evidence) => ({ result, ...evidence }) };
             if (name === "./repro-process.cjs") return { execute: async (executable, args, settings) => {
                 calls.push({ executable, args, settings });
+                if (failHistorical && executable === "/usr/bin/setpriv") throw new Error("controlled historical command failure");
                 return { complete: true, exitCode: failBuild && args[0] === "build" ? 1 : 0,
                     stdout: "", stderr: failBuild && args[0] === "build" ? "controlled helper compiler failure" : "" };
             } };
@@ -683,6 +684,57 @@ for (const failure of ["copy", "build"]) test(`physical helper ${failure} failur
     assert.equal(fixture.result.acquisition, fixture.acquired);
     assert.equal(fixture.result.commands.length, failure === "copy" ? 1 : 2);
     assert.equal(fixture.result.commands[0].args[0], "--info");
+});
+
+for (const mode of [0o700, 0]) for (const failHistorical of [false, true])
+test(`historical command returns private scratch ownership (mode ${mode}, failure ${failHistorical})`, async t => {
+    const root = "/scratch/work/source";
+    const entries = new Map([
+        [root, { uid: 0, mode: 0o755, kind: "directory" }],
+        [`${root}/private`, { uid: 0, mode, kind: "directory" }],
+        [`${root}/private/file`, { uid: 0, mode: 0o600, kind: "file" }],
+        [`${root}/.dotnet`, { uid: 0, mode: 0o755, kind: "link" }],
+    ]);
+    const fixture = await physicalFixture(t, { failHistorical, runUnit: async (unit, deps) => {
+        t.mock.method(fs, "realpath", async file => file);
+        t.mock.method(fs, "lstat", async file => {
+            const row = entries.get(file) ?? { uid: 0, mode: 0o755, kind: "directory" };
+            return { ...row, nlink: 1, isDirectory: () => row.kind === "directory",
+                isFile: () => row.kind === "file", isSymbolicLink: () => row.kind === "link" };
+        });
+        t.mock.method(fs, "readdir", async (directory, options) => {
+            if (directory === "/proc") return [];
+            const row = entries.get(directory);
+            if (row.uid !== 0 || !(row.mode & 0o500)) throw Object.assign(new Error("private scratch is not supervisor-readable"), { code: "EACCES" });
+            return [...entries.keys()].filter(file => file.startsWith(`${directory}/`) &&
+                (options?.recursive || !file.slice(directory.length + 1).includes("/"))).map(file => file.slice(directory.length + 1));
+        });
+        t.mock.method(fs, "chown", async (file, uid, gid) => {
+            assert.equal(gid, uid);
+            assert.ok(entries.has(file) && entries.get(file).kind !== "link", "do not change linked SDK or protected paths");
+            entries.get(file).uid = uid;
+        });
+        t.mock.method(fs, "chmod", async (file, value) => {
+            if (!entries.has(file)) return;
+            assert.equal(entries.get(file).uid, 0, "do not require CAP_FOWNER");
+            entries.get(file).mode = value;
+        });
+        let failure;
+        try { await deps.workspaceDependencies.execute("/usr/bin/git", ["status"], { cwd: root, env: { HOME: `${root}/private` } }); }
+        catch (error) { failure = error; }
+        assert.ok([...entries.values()].every(row => row.uid === 0));
+        assert.ok((entries.get(`${root}/private`).mode & 0o700) === 0o700);
+        t.mock.method(fs, "symlink", async (target, file) => {
+            if (entries.get(path.posix.dirname(file)).uid !== 0) throw Object.assign(new Error("trusted SDK link creation denied"), { code: "EACCES" });
+        });
+        await fs.symlink("/scratch/storage/dotnet", `${root}/new-sdk`);
+        if (failure) throw failure;
+        return { status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } };
+    } });
+    assert.equal(fixture.result.result.status, failHistorical ? "untestable" : "tested", fixture.result.result.error?.message);
+    if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
+    const historical = fixture.calls.find(row => row.executable === "/usr/bin/setpriv");
+    assert.ok(historical.args.includes("--reuid=1000") && historical.args.includes("--no-new-privs"));
 });
 
 test("timeout canary keeps its parent alive until external termination", async () => {
