@@ -92,18 +92,39 @@ def parse_message(raw):
 
 def worker_command(controller, operation):
     require(operation in ("profile", "validate", "dump", "select", "finish", "authorize"), "Invalid worker operation")
-    return [sys.executable, str(Path(workflow.__file__).resolve()), "worker",
+    return [sys.executable, "-I", str(Path(workflow.__file__).resolve()), "worker",
             "--root", str(controller.root), "--repository", str(controller.repository),
             "--journal", str(controller.transport.journal.repository), "--operation", operation]
 
 
-def _launch(arguments, controller):
+def trusted_environment(controller):
+    """Host configuration and scratch space must not share AWF's writable home."""
+    root = controller.root / "host"
+    for path in (root, root / "home", root / "home" / ".config", root / "tmp", root / "packages"):
+        require(e.unredirected(path, missing_ok=True), "Redirected trusted process environment")
+        if not path.exists():
+            c.private_directory(path)
+        require(path.is_dir(), "Invalid trusted process environment")
     environment = c.tool_environment()
-    # Preserve frozen host identity only in trusted processes. Candidate tools
-    # rebuild their own allowlisted environment and receive neither token.
+    environment.update({key: str(root / directory) for key, directory in (
+        ("HOME", "home"), ("USERPROFILE", "home"), ("DOTNET_CLI_HOME", "home"),
+        ("APPDATA", "home/.config"), ("LOCALAPPDATA", "home/.config"),
+        ("XDG_CONFIG_HOME", "home/.config"), ("GH_CONFIG_DIR", "home/.config/gh"),
+        ("NUGET_PACKAGES", "packages"), ("TMP", "tmp"), ("TEMP", "tmp"), ("TMPDIR", "tmp"))})
+    if sys.platform == "linux":
+        environment.update(PATH=os.pathsep.join((str(Path(sys.executable).resolve().parent),
+                           "/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")),
+                           DOTNET_ROOT=str(controller.repository / ".dotnet"),
+                           DOTNET_HOST_PATH=str(controller.repository / ".dotnet" / "dotnet"))
     environment.update({key: os.environ[key] for key in
-                        (*workflow.m.RUNNER_KEYS, "PROCESSOR_IDENTIFIER", "GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY")
+                        (*workflow.m.RUNNER_KEYS, "PROCESSOR_IDENTIFIER", "GH_TOKEN", "GITHUB_TOKEN",
+                         "GITHUB_STEP_SUMMARY", "RUNNER_TEMP")
                         if key in os.environ})
+    return environment
+
+
+def _launch(arguments, controller):
+    environment = trusted_environment(controller)
     return subprocess.Popen(arguments, cwd=controller.repository, env=environment, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             start_new_session=True)

@@ -473,15 +473,25 @@ Both trusted service and worker launches preserve the frozen, non-secret
 This is not prefix-based environment forwarding: candidate, diagnostic-target
 and generic-tool allowlists are unchanged and receive neither this metadata nor
 controller/publisher credentials.
+Trusted entry points and children use Python **`-I`**, with the Python environment
+itself included in the protected mount inventory. Provision that environment
+outside stock AWF mounts; a system-prefix or home/tool-cache installation is not
+a protected controller environment. Before transport/API reads, the entry point
+replaces inherited process configuration with owner-only `<root>/host` home,
+Git/GitHub configuration, package and temporary directories. Service and worker
+launches reuse the same boundary. Linux host command lookup uses the interpreter
+and fixed system directories, never the agent-writable home/tool-cache PATH.
+The stock agent still uses its own original home: setup seals that path so the
+service's private HOME cannot be mistaken for a new AWF mount contract.
 
 Use the same protected arguments for each entry point; the executable and
 inputs named by these variables must come from trusted setup, never issue/PR text:
 
 ```sh
-python "$PERF_RUNTIME" setup --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --input "$PERF_INPUT" --job-started-at "$PERF_JOB_STARTED_AT"
-python "$PERF_RUNTIME" start-service --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
-python "$PERF_RUNTIME" handoff --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --destination "$PERF_PUBLISHER_OUTPUT" --engine-outcome "$PERF_ENGINE_OUTCOME"
-python "$PERF_RUNTIME" finalize --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
+"$PERF_PYTHON" -I "$PERF_RUNTIME" setup --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --input "$PERF_INPUT" --job-started-at "$PERF_JOB_STARTED_AT"
+"$PERF_PYTHON" -I "$PERF_RUNTIME" start-service --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
+"$PERF_PYTHON" -I "$PERF_RUNTIME" handoff --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --destination "$PERF_PUBLISHER_OUTPUT" --engine-outcome "$PERF_ENGINE_OUTCOME"
+"$PERF_PYTHON" -I "$PERF_RUNTIME" finalize --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
 ```
 
 Run `setup` in `pre-steps`. `PERF_JOB_STARTED_AT` must be the actual enclosing
@@ -517,6 +527,14 @@ active work. Credential inspection accepts only the pinned AWF Copilot dummy
 different token is rejected. The separate bubblewrap capability probe checks empty credentials,
 zero effective capabilities, inaccessible custody/receipt paths and denied
 network; denial never falls back to host execution.
+GH AW's generated invocation is `sudo -E awf`; its root-owned mount sources
+cannot all be traversed by the controller user. Readiness therefore resolves
+the complete Docker-reported bind-source inventory with
+`/usr/bin/sudo -n -- /usr/bin/readlink --canonicalize-existing --zero -- ...`,
+using a credential-free environment, a 15-second bound and checked NUL-delimited
+results. This reads path metadata only, does not change permissions, and still
+rejects canonical aliases into custody. Denied sudo, missing sources or malformed
+results block readiness; there is no lexical-path fallback.
 
 Budget accounting is **559 seconds readiness + 14,400 active + 1 second
 scheduling margin + 40 seconds shutdown = 15,000 seconds**. Readiness begins
@@ -546,6 +564,16 @@ Built-in collection, handoff, artifact transport and
 publication share **one** 2,400-second finalization clock; `finalize` cannot
 renew it. The sealed boundary can only shorten an existing clock and survives
 restart, so stock collection before `handoff` is charged too.
+Handoff requests owned shutdown **before** engine inspection, including when
+the engine never made a readiness call. Missing/denied inspection latches an
+unhealthy result but still waits for owned cleanup and its incomplete canonical
+checkpoint. Its conservative finalization boundary uses the last host observation,
+or service arming if no container was verified, and records `observed: false`
+without inventing a container identity or claiming a confirmed engine exit.
+An owned finalizer launch/cleanup exception records `cleanup_failed`, stops the
+HTTP service and preserves outstanding work instead of leaving a serving receipt.
+In-process sealed-record reads and writes are serialized across the HTTP,
+monitor and handoff threads; evidence-file custody checks remain unchanged.
 Setup <=60 + execution <=250 + combined finalization <=40 fits 350
 minutes, leaving ten minutes of the 360-minute enclosing job for runner/action
 teardown, not another agent allowance. Hard termination can prevent the last
@@ -564,7 +592,8 @@ remains available without granting new publication authority.
 The protected artifact uploader calls `Controller.acknowledge_evidence(sink)`;
 local encrypted-sink receipts stay `local_fixture`, never remote availability.
 
-Required owner settings are the protected paths above, the actual job start,
+Required owner settings are the protected paths and `PERF_PYTHON` interpreter
+above, the actual job start, noninteractive sudo for the fixed metadata probe,
 step-scoped controller `GH_TOKEN` (canonical branch write plus PR/actions read),
 stock engine `COPILOT_GITHUB_TOKEN`, and the prior encrypted-retention
 `retention-config.json`/verified age tool. Do not put either token in job-wide
@@ -670,6 +699,27 @@ Python `py_compile`, `node --check` and `git diff --check` (all exit 0).
 Exact commands, failed prerequisite/RED results, final logs and executable input
 hashes are retained in private session evidence. No remote write, compiled graph,
 hosted execution or live Linux containment is claimed.
+
+The host-configuration and early-exit repair used the same Windows prerequisites
+and tool versions, with `tests\CompilerPerfWorkflow` on `PYTHONPATH` for selectors:
+
+| Command | Tests | Exit | Seconds |
+| --- | --- | --- | --- |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v` | 139 | 0 | 4061.099 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v` | 52 | 0 | 81.360 |
+| `python -m unittest test_measurement.MeasurementTests.test_process_arguments_environment_and_failure test_collection.CollectionTests.test_environment_and_log_redaction -v` | 2 | 0 | 0.319 |
+
+All passed without skips, including **35 runtime tests**. Coverage includes a real
+worker rejecting agent-home Git configuration, frozen-home service reentry,
+credential-free canonical mount-probe denial/corruption/alias cases, HTTP cleanup
+before agent readiness, denied finalizer launch and serialized record access.
+The missing-lock mutation fails the intended serialization assertion. Expected
+cleanup-denial logs do not represent successful cleanup or released ownership.
+Initial RED and intermediate fixture/cleanup failures remain retained as failed
+evidence. Final executable/test hashes were unchanged across the complete replay;
+Python `py_compile`, `node --check`, isolated runtime configuration and
+`git diff --check` exited zero. These results still do not establish live Linux
+containment, hosted execution, model access or remote durability.
 
 ## Disposable experiment controller
 

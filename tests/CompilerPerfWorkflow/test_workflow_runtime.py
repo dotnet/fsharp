@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 import asyncio
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import io
 import json
 import os
@@ -61,7 +61,7 @@ class RuntimeTests(unittest.TestCase):
     candidate = fixtures.fixtures.PublicationTests.candidate
 
     @contextmanager
-    def serving(self, adapter, launch):
+    def serving(self, adapter, launch, *, expected_error=None):
         controller, errors = adapter.controller, []
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
@@ -88,7 +88,11 @@ class RuntimeTests(unittest.TestCase):
                                                      "requested_at": controller.now().isoformat()})
                     thread.join(timeout=30)
                     self.assertFalse(thread.is_alive(), errors)
-                self.assertEqual(errors, [])
+                if expected_error is None:
+                    self.assertEqual(errors, [])
+                else:
+                    self.assertEqual(len(errors), 1, errors)
+                    self.assertRegex(str(errors[0]), expected_error)
 
     def test_pinned_configuration_uses_stock_hooks_and_full_envelopes(self):
         import jsonschema
@@ -112,6 +116,9 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(config["budgets"], {"job": 360, "setup": 60, "execution": 250, "finalization": 40})
         self.assertEqual(config["hooks"], {"pre-steps": "setup", "pre-agent-steps": "start-service",
                                           "post-steps": "handoff"})
+        command = bridge.worker_command(SimpleNamespace(root=Path("root"), repository=Path("source"),
+            transport=SimpleNamespace(journal=SimpleNamespace(repository=Path("journal")))), "profile")
+        self.assertEqual(command[:3], [sys.executable, "-I", str(Path(w.__file__).resolve())])
         self.assertNotIn("docker run", str(config))
         result = subprocess.run([sys.executable, runtime.__file__, "configuration"], capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -123,6 +130,43 @@ class RuntimeTests(unittest.TestCase):
             port = listener.getsockname()[1]
         with mock.patch.object(bridge, "PORT", port):
             self.assertFalse(asyncio.run(runtime.probe_service("a" * 64)))
+
+    def test_sealed_record_reads_serialize_with_background_checkpoints(self):
+        with self.discovery() as (_, controller, _, _):
+            controller.save("snapshot", {"state": "before"})
+            reading, release, writing, completed = (threading.Event() for _ in range(4))
+            read_input, values = w.read_input, []
+            def read(path):
+                value = read_input(path)
+                reading.set()
+                self.assertTrue(release.wait(10))
+                return value
+            def write():
+                writing.set()
+                controller.save("snapshot", {"state": "after"})
+                completed.set()
+            with mock.patch.object(w, "read_input", side_effect=read):
+                reader = threading.Thread(target=lambda: values.append(controller.load("snapshot")))
+                writer = threading.Thread(target=write)
+                reader.start()
+                try:
+                    self.assertTrue(reading.wait(10))
+                    writer.start()
+                    self.assertTrue(writing.wait(10))
+                    self.assertFalse(completed.wait(.1))
+                finally:
+                    release.set()
+                    reader.join(10)
+                    if writer.ident is not None:
+                        writer.join(10)
+            self.assertFalse(reader.is_alive() or writer.is_alive())
+            self.assertTrue(completed.is_set())
+            self.assertEqual(values, [{"state": "before"}])
+            self.assertEqual(controller.load("snapshot"), {"state": "after"})
+            path = controller.root / "snapshot.json"
+            path.write_bytes(path.read_bytes().replace(b"after", b"forged"))
+            with self.assertRaisesRegex(ValueError, "custody"):
+                controller.load("snapshot")
 
     def test_installed_pin_denial_precedes_any_bootstrap(self):
         with self.ready() as (_, controller, _, _):
@@ -249,6 +293,7 @@ class RuntimeTests(unittest.TestCase):
                 if not denied:
                     self.assertTrue((workspace / "source" / fixtures.SOURCE).is_file())
                     self.assertFalse((workspace / "source" / "eng").exists())
+                    self.assertEqual(controller.load("runtime")["agent_home"], str(Path.home()))
                     clock = controller.load("clocks")["setup"]
                     self.assertEqual(w.mem.timestamp(clock["start"]),
                                      controller.now() - timedelta(seconds=120))
@@ -412,10 +457,11 @@ class RuntimeTests(unittest.TestCase):
                      "Config": {"Image": "ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55"}}
             for denied in (False, True):
                 value = container()
-                value["Mounts"].append({"Type": "bind", "Source": adapter.workspace.as_posix(),
-                                        "Destination": "/host/workspace", "RW": True})
                 proxy["State"]["Running"] = not denied
-                results = [subprocess.CompletedProcess([], 0, w.mem.encoded(v), b"") for v in ([value], [proxy])]
+                results = [subprocess.CompletedProcess([], 0, data, b"") for data in (
+                    w.mem.encoded([value]),
+                    ("\0".join(p["Source"] for p in value["Mounts"]) + "\0").encode(),
+                    w.mem.encoded([proxy]))]
                 read = w.read_input
                 with self.subTest(denied=denied), mock.patch.object(runtime.subprocess, "run", side_effect=results), \
                         mock.patch.object(runtime, "validate_container", return_value=value["Mounts"]) as validate, \
@@ -430,6 +476,48 @@ class RuntimeTests(unittest.TestCase):
                         adapter.inspect_agent()
                         self.assertEqual(controller.load("runtime-container")["proxy_id"], "b" * 64)
                     validate.assert_called_once()
+
+    def test_root_owned_mounts_use_bounded_credential_free_canonical_metadata_probe(self):
+        with self.ready() as (_, controller, _, _):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            adapter.workspace = PurePosixPath("/work/public")
+            adapter.protected = ["/var/lib/compiler-perf"]
+            value = container()
+            value["Mounts"].append({"Type": "bind", "Source": "/tmp/awf-root/agent-logs",
+                                    "Destination": "/host/home/runner/.copilot/logs", "RW": True})
+            sources = [p["Source"] for p in value["Mounts"]]
+            config = controller.root.parent / "gh-aw" / "awf-config.json"
+            config.parent.mkdir()
+            w.m.write_json(config, {"container": {"imageTag": "0.25.55"},
+                                   "apiProxy": {"enabled": True, "enableTokenSteering": True}})
+            proxy = {"Id": "b" * 64, "State": {"Running": True},
+                     "Config": {"Image": "ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55"}}
+            for case in ("valid", "denied", "incomplete", "custody-alias"):
+                resolved = list(sources)
+                if case == "custody-alias":
+                    resolved[-1] = "/var/lib/compiler-perf/key"
+                data = ("\0".join(resolved) + "\0").encode()
+                if case == "incomplete":
+                    data = data.removesuffix(b"\0")
+                results = [subprocess.CompletedProcess([], 0, w.mem.encoded([value]), b""),
+                           subprocess.CompletedProcess([], 1 if case == "denied" else 0, data, b"denied"),
+                           subprocess.CompletedProcess([], 0, w.mem.encoded([proxy]), b"")]
+                with self.subTest(case=case), mock.patch.dict(os.environ, {
+                        "RUNNER_TEMP": str(config.parents[1]), "GH_TOKEN": "must-not-reach-sudo"}), \
+                        mock.patch.object(runtime.subprocess, "run", side_effect=results) as run:
+                    if case == "valid":
+                        adapter.inspect_agent()
+                        self.assertEqual(controller.load("runtime-container")["mounts"], value["Mounts"])
+                    else:
+                        with self.assertRaises(ValueError):
+                            adapter.inspect_agent()
+                    self.assertGreaterEqual(len(run.call_args_list), 2)
+                    command = run.call_args_list[1]
+                    self.assertEqual(command.args[0], [
+                        "/usr/bin/sudo", "-n", "--", "/usr/bin/readlink",
+                        "--canonicalize-existing", "--zero", "--", *sources])
+                    self.assertEqual(command.kwargs["timeout"], 15)
+                    self.assertNotIn("GH_TOKEN", command.kwargs["env"])
 
     def test_failed_engine_blocks_even_previously_authorized_handoff(self):
         with self.candidate() as (controller, api, transport):
@@ -593,9 +681,9 @@ class RuntimeTests(unittest.TestCase):
                 if failure == "output-denied":
                     output.mkdir()
                 def child(command, *args, **kwargs):
-                    if command[2:3] == ["serve"] and failure == "launch-denied":
+                    if command[3:4] == ["serve"] and failure == "launch-denied":
                         raise OSError("Denied service launch")
-                    return owned if command[2:3] == ["serve"] else popen(command, *args, **kwargs)
+                    return owned if command[3:4] == ["serve"] else popen(command, *args, **kwargs)
                 async def probe(token):
                     self.assertFalse((controller.root / "controller.lock").exists())
                     if failure == "sigterm":
@@ -603,7 +691,9 @@ class RuntimeTests(unittest.TestCase):
                     if failure in ("probe-denied", "cancelled"):
                         raise KeyboardInterrupt() if failure == "cancelled" else ValueError("Denied service probe")
                     return True
-                with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", executable=sys.executable)), \
+                with mock.patch.object(runtime, "sys", SimpleNamespace(
+                        platform="linux", executable=sys.executable, prefix=sys.prefix,
+                        flags=SimpleNamespace(isolated=1))), \
                         mock.patch.object(runtime, "validate_layout"), \
                         mock.patch.object(w, "Controller", return_value=controller), \
                         mock.patch.object(w, "GitHub", return_value=api), \
@@ -633,13 +723,15 @@ class RuntimeTests(unittest.TestCase):
                                      "cancelled" if cancelled else "blocked_setup")
                     self.assertFalse((controller.root / "approval.json").exists())
                     continue
-                services = [call for call in launch.call_args_list if call.args[0][2:3] == ["serve"]]
+                services = [call for call in launch.call_args_list if call.args[0][3:4] == ["serve"]]
                 self.assertEqual(len(services), 1)
                 command = services[0].args[0]
-                self.assertEqual(command[:3], [sys.executable, str(Path(runtime.__file__).resolve()), "serve"])
-                self.assertEqual(command[3:], arguments[1:])
+                self.assertEqual(command[:4], [sys.executable, "-I", str(Path(runtime.__file__).resolve()), "serve"])
+                self.assertEqual(command[4:], arguments[1:])
                 environment = services[0].kwargs["env"]
                 self.assertEqual({key: environment.get(key) for key in RUNNER_IDENTITY}, RUNNER_IDENTITY)
+                for key in (*w.m.OWNED_ENVIRONMENT_KEYS, "APPDATA", "LOCALAPPDATA"):
+                    self.assertTrue(Path(environment[key]).is_relative_to(controller.root), key)
                 with mock.patch.dict(os.environ, environment, clear=True):
                     self.assertEqual(w.m.host_identity({}), frozen_identity)
                 for key in ("PUBLISHER_SECRET", "GITHUB_UNTRUSTED_INPUT", "GITHUB_OUTPUT"):
@@ -650,32 +742,69 @@ class RuntimeTests(unittest.TestCase):
                 self.assertIn("execution_deadline_ms=", output.read_text())
                 self.assertNotIn("active", controller.load("clocks"))
 
+    def test_service_reentry_validates_frozen_agent_home_not_private_controller_home(self):
+        import transport
+        with self.ready() as (_, controller, api, journal):
+            workspace = controller.root.parent / "visible"
+            controller.save("runtime", {"agent_home": "frozen-agent-home"})
+            environment = bridge.trusted_environment(controller)
+            environment["RUNNER_TEMP"] = str(controller.root.parent)
+            with mock.patch.object(runtime, "sys", SimpleNamespace(
+                    platform="linux", prefix=sys.prefix, flags=SimpleNamespace(isolated=1))), \
+                    mock.patch.object(runtime, "validate_layout") as layout, \
+                    mock.patch.object(w, "Controller", return_value=controller), \
+                    mock.patch.object(w, "GitHub", return_value=api), \
+                    mock.patch.object(transport, "JournalTransport", return_value=journal), \
+                    mock.patch.object(runtime, "serve"), mock.patch.dict(os.environ, environment, clear=True), \
+                    mock.patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(runtime.main(["serve", "--root", str(controller.root), "--repository",
+                    str(controller.repository), "--journal", str(journal.journal.repository),
+                    "--workspace", str(workspace)]), 0)
+            self.assertEqual(layout.call_args.args[2], "frozen-agent-home")
+
     def test_worker_preserves_host_identity_without_broadening_candidate_environment(self):
         script = (
-            "import json,os,pathlib,sys\n"
+            "import json,os,pathlib,subprocess,sys\n"
             "sys.path.insert(0,sys.argv[1])\n"
             "import measurement as m,collection as c\n"
             "root=pathlib.Path(sys.argv[2])\n"
             "(root/'worker.json').write_text(json.dumps({'identity':m.host_identity({}),"
             "'environment':dict(os.environ),'candidate':m.allowed_environment(root/'candidate'),"
-            "'diagnostic':c.target_environment(root/'diagnostic'),'tool':c.tool_environment()}))\n")
+            "'diagnostic':c.target_environment(root/'diagnostic'),'tool':c.tool_environment(),"
+            "'git_config':subprocess.run(['git','config','--global','--get','compilerperf.poison'],"
+            "capture_output=True,env=c.tool_environment()).returncode}))\n")
         for available in (True, False):
             with self.subTest(available=available), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
+                hostile = root / "agent-home"
+                hostile.mkdir()
+                (hostile / ".gitconfig").write_text("[compilerperf]\npoison = agent-controlled\n")
                 environment = {key: value for key, value in os.environ.items() if key not in RUNNER_IDENTITY}
                 environment.update(GH_TOKEN="trusted-journal-token", GITHUB_TOKEN="trusted-api-token",
                                    GITHUB_STEP_SUMMARY=str(root / "summary"),
                                    PUBLISHER_SECRET="must-not-inherit", GITHUB_UNTRUSTED_INPUT="must-not-inherit",
                                    RUNNER_UNTRUSTED_INPUT="must-not-inherit")
+                environment.update({key: str(hostile) for key in
+                                    (*w.m.OWNED_ENVIRONMENT_KEYS, "APPDATA", "LOCALAPPDATA",
+                                     "XDG_CONFIG_HOME", "GH_CONFIG_DIR")})
                 if available:
                     environment.update(RUNNER_IDENTITY)
                 with mock.patch.dict(os.environ, environment, clear=True):
                     frozen_identity = w.m.host_identity({})
+                    bridge.trusted_environment(SimpleNamespace(root=root, repository=root))
+                    with mock.patch.object(bridge, "sys", SimpleNamespace(
+                            platform="linux", executable=sys.executable)), \
+                            mock.patch.dict(os.environ, {"PATH": str(hostile)}):
+                        trusted = bridge.trusted_environment(SimpleNamespace(root=root, repository=root))
+                        self.assertNotIn(str(hostile), trusted["PATH"].split(os.pathsep))
                     with bridge._launch([sys.executable, "-c", script, str(Path(runtime.__file__).parent),
-                                         str(root)], SimpleNamespace(repository=root)) as child:
+                                         str(root)], SimpleNamespace(root=root, repository=root)) as child:
                         self.assertEqual(child.wait(timeout=30), 0)
                 result = json.loads((root / "worker.json").read_text())
                 self.assertEqual(result["identity"], frozen_identity)
+                self.assertEqual(result["git_config"], 1, "Trusted tool read agent-controlled Git configuration")
+                for key in (*w.m.OWNED_ENVIRONMENT_KEYS, "APPDATA", "LOCALAPPDATA"):
+                    self.assertTrue(Path(result["environment"][key]).is_relative_to(root / "host"), key)
                 for key in ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY"):
                     self.assertEqual(result["environment"][key], environment[key])
                 for key in ("PUBLISHER_SECRET", "GITHUB_UNTRUSTED_INPUT", "RUNNER_UNTRUSTED_INPUT"):
@@ -690,7 +819,8 @@ class RuntimeTests(unittest.TestCase):
         with self.ready() as (_, controller, api, journal):
             adapter = runtime.Runtime(controller, controller.root.parent / "visible")
             controller.save("runtime-service", {"state": "stopped"})
-            with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux")), \
+            with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", prefix=sys.prefix,
+                    flags=SimpleNamespace(isolated=1))), \
                     mock.patch.object(runtime, "validate_layout"), \
                     mock.patch.object(w, "Controller", return_value=controller), \
                     mock.patch.object(w, "GitHub", return_value=api), \
@@ -785,6 +915,50 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
                 probe.assert_called_once()
                 self.assertEqual(launches.count("profile"), 1)
+                self.assertEqual(api.effects, [])
+
+    def test_engine_exit_before_agent_readiness_still_requests_owned_http_cleanup(self):
+        for outcome in ("success", "failure", "cancelled", "skipped", "inspection-denied"):
+            with self.subTest(outcome=outcome), self.ready() as (_, controller, api, transport):
+                adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+                started = controller.now()
+                controller.now, controller.clock = lambda: started, lambda: 0
+                adapter.arm()
+                # This is still a fake/local effect sink, not GitHub durability.
+                transport.scope = "github"
+                controller.now = lambda: started + timedelta(seconds=120)
+                if outcome == "inspection-denied":
+                    controller.save("runtime-container", {"id": "a" * 64, "last_seen_at": started.isoformat()})
+                with self.serving(adapter, fixtures.AgentTests.launch) as (_, _, probe):
+                    with mock.patch.object(adapter, "observe_engine", side_effect=ValueError("Denied Docker read")) \
+                            if outcome == "inspection-denied" else nullcontext():
+                        with self.assertRaisesRegex(ValueError, "Runtime unhealthy"):
+                            adapter.handoff(engine_outcome="success" if outcome == "inspection-denied" else outcome)
+                    self.assertTrue((controller.root / "runtime-stop.json").exists())
+                    self.assertTrue((controller.root / "runtime-error.json").exists())
+                    self.assertEqual(controller.load("runtime-service")["state"], "stopped")
+                    self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
+                    self.assertNotIn("active", controller.load("clocks"))
+                    self.assertFalse(controller.load("runtime-engine-exit")["observed"])
+                    self.assertNotIn("id", controller.load("runtime-engine-exit"))
+                    self.assertEqual(controller.remaining("finalization", w.FINALIZATION_SECONDS), 2280)
+                    self.assertFalse((controller.root / "output").exists())
+                    probe.assert_not_called()
+                    self.assertEqual(api.effects, [])
+
+    def test_shutdown_failure_reports_cleanup_failed_without_releasing_outstanding_work(self):
+        with self.ready() as (_, controller, api, transport):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            adapter.arm()
+            def denied(*_):
+                raise OSError("Denied owned finalizer launch")
+            with self.serving(adapter, denied, expected_error="Owned service cleanup incomplete"):
+                with self.assertRaisesRegex(ValueError, "Owned service cleanup incomplete"):
+                    adapter.handoff()
+                self.assertEqual(controller.load("runtime-service")["state"], "cleanup_failed")
+                self.assertIn("Denied owned finalizer", controller.load("runtime-error")["reason"])
+                self.assertIsNone(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"])
+                self.assertFalse((controller.root / "output").exists())
                 self.assertEqual(api.effects, [])
 
     def test_service_automatically_authorizes_accepted_candidate_across_active_expiry(self):

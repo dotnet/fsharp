@@ -15,6 +15,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 if __name__ == "__main__":
@@ -188,6 +189,7 @@ class Controller:
         self.transport, self.api = transport, api
         self.now = now or (lambda: datetime.now(timezone.utc))
         self.clock, self.timers, self.budgets, self.saving = clock, {}, set(), False
+        self.storage_lock = threading.RLock()
         if not self.root.exists():
             c.private_directory(self.root)
             (self.root / "key").write_bytes(secrets.token_bytes(32))
@@ -202,24 +204,26 @@ class Controller:
         self.busy = False
 
     def save(self, name, value):
-        previous, self.saving = self.saving, True
-        try:
-            require(e.unredirected(self.root / (name + ".json"), missing_ok=True) and
-                    e.unredirected(self.root / (name + ".json.tmp"), missing_ok=True), "Redirected controller record")
-            data = {"schema_version": 1, "value": value,
-                    "seal": hmac.digest(self.key, name.encode() + mem.encoded(value), "sha256").hex()}
-            require(len(mem.encoded(data)) <= mem.LIMITS["file_bytes"], "Controller record budget exceeded")
-            m.write_json(self.root / (name + ".json"), data)
-        finally:
-            self.saving = previous
+        with self.storage_lock:
+            previous, self.saving = self.saving, True
+            try:
+                require(e.unredirected(self.root / (name + ".json"), missing_ok=True) and
+                        e.unredirected(self.root / (name + ".json.tmp"), missing_ok=True), "Redirected controller record")
+                data = {"schema_version": 1, "value": value,
+                        "seal": hmac.digest(self.key, name.encode() + mem.encoded(value), "sha256").hex()}
+                require(len(mem.encoded(data)) <= mem.LIMITS["file_bytes"], "Controller record budget exceeded")
+                m.write_json(self.root / (name + ".json"), data)
+            finally:
+                self.saving = previous
 
     def load(self, name):
-        data = read_input(self.root / (name + ".json"))
-        require(set(data) == {"schema_version", "value", "seal"} and data["schema_version"] == 1
-                and isinstance(data["seal"], str) and hmac.compare_digest(
-                    data["seal"], hmac.digest(self.key, name.encode() + mem.encoded(data["value"]), "sha256").hex()),
-                "Controller record custody changed")
-        return data["value"]
+        with self.storage_lock:
+            data = read_input(self.root / (name + ".json"))
+            require(set(data) == {"schema_version", "value", "seal"} and data["schema_version"] == 1
+                    and isinstance(data["seal"], str) and hmac.compare_digest(
+                        data["seal"], hmac.digest(self.key, name.encode() + mem.encoded(data["value"]), "sha256").hex()),
+                    "Controller record custody changed")
+            return data["value"]
 
     def pages(self, page):
         result = self.api.prs(page)

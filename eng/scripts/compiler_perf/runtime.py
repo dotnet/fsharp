@@ -13,6 +13,9 @@ import tempfile
 import threading
 import time
 
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import agent_bridge as bridge
 import workflow as w
 
@@ -90,9 +93,9 @@ class Runtime:
     def __init__(self, controller, workspace):
         self.controller, self.workspace = controller, Path(workspace).absolute()
         self.protected = [controller.root, controller.repository, controller.transport.journal.repository,
-                          Path(__file__).resolve().parent]
+                          Path(__file__).resolve().parent, Path(sys.prefix).resolve()]
 
-    def setup(self, request, job_started_at):
+    def setup(self, request, job_started_at, *, agent_home=None):
         controller = self.controller
         require(controller.session is None, "Existing owner requires reconciliation, not setup replay")
         require(e.unredirected(self.workspace) and self.workspace.is_dir()
@@ -113,6 +116,7 @@ class Runtime:
             exported = bridge.export_source(controller.repository, request["base_sha"],
                                             self.workspace / "source", self.protected)
             controller.save("runtime", {"workspace": str(self.workspace), "export": exported,
+                                         "agent_home": agent_home or str(Path.home()),
                                          "pins": PINS, "service_started_at": None, "ready": False,
                                          "inputs": {"policy": m.fingerprint_inputs(m.POLICY),
                                                     "sdk": m.file_record(controller.repository / "global.json"),
@@ -163,8 +167,21 @@ class Runtime:
         require(value.returncode == 0 and len(value.stdout) <= mem.LIMITS["file_bytes"], "Denied Docker inspection")
         documents = mem.decoded(value.stdout)
         require(type(documents) is list and len(documents) == 1, "Ambiguous AWF agent")
+        sources = [p["Source"] for p in documents[0]["Mounts"] if p["Type"] == "bind"]
+        require(sources and all(type(p) is str and PurePosixPath(p).is_absolute() for p in sources),
+                "Invalid AWF mount sources")
+        # Stock sudo AWF creates root-only mount parents. Read metadata, not contents.
+        resolved = subprocess.run(["/usr/bin/sudo", "-n", "--", "/usr/bin/readlink",
+                                   "--canonicalize-existing", "--zero", "--", *sources],
+                                  capture_output=True, check=False, timeout=15, env=c.tool_environment())
+        require(resolved.returncode == 0 and len(resolved.stdout) <= mem.LIMITS["file_bytes"],
+                "Denied AWF mount canonicalization")
+        paths = resolved.stdout.decode("utf-8").split("\0")
+        require(len(paths) == len(sources) + 1 and paths[-1] == ""
+                and all(PurePosixPath(p).is_absolute() for p in paths[:-1]), "Incomplete AWF mount canonicalization")
+        canonical = dict(zip(sources, map(PurePosixPath, paths[:-1])))
         mounts = validate_container(documents[0], [str(p) for p in self.protected], str(self.workspace),
-            resolve_source=lambda source: PurePosixPath(Path(source).resolve(strict=True).as_posix()))
+                                    resolve_source=canonical.__getitem__)
         config = w.read_input(Path(os.environ["RUNNER_TEMP"]) / "gh-aw" / "awf-config.json")
         require(config["container"]["imageTag"] == PINS["awf"].lstrip("v")
                 and config["apiProxy"]["enabled"] is True and config["apiProxy"]["enableTokenSteering"] is True,
@@ -337,14 +354,23 @@ class Runtime:
     def handoff(self, destination=None, *, engine_outcome="success"):
         controller = self.controller
         require(engine_outcome in ("success", "failure", "cancelled", "skipped"), "Invalid stock engine outcome")
-        if controller.transport.scope != "local_fixture":
-            self.observe_engine()
-            require((controller.root / "runtime-engine-exit.json").exists(), "Engine has not exited")
         if engine_outcome != "success":
             controller.save("runtime-error", {"reason": "Stock engine ended " + engine_outcome})
         if not (controller.root / "runtime-stop.json").exists():
             controller.save("runtime-stop", {"reason": "Engine execution ended",
                                              "requested_at": controller.now().isoformat()})
+        if controller.transport.scope != "local_fixture":
+            try:
+                self.observe_engine()
+                require((controller.root / "runtime-engine-exit.json").exists(), "Engine has not exited")
+            except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                controller.save("runtime-error", {"reason": "Engine handoff inspection failed: " + c.sanitize(str(error))})
+                if not (controller.root / "runtime-engine-exit.json").exists():
+                    inspected = (controller.root / "runtime-container.json").exists()
+                    record = controller.load("runtime-container" if inspected else "runtime")
+                    controller.save("runtime-engine-exit", {
+                        "at": record["last_seen_at" if inspected else "service_started_at"],
+                        "observed": False})
         requested = mem.timestamp(controller.load("runtime-stop")["requested_at"])
         if (controller.root / "runtime-engine-exit.json").exists():
             requested = min(requested, mem.timestamp(controller.load("runtime-engine-exit")["at"]))
@@ -437,7 +463,11 @@ def serve(adapter, *, sockets=None, launch=bridge._launch, identify=c.snapshot_p
             except (KeyboardInterrupt, ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
                 controller.save("runtime-error", {"reason": c.sanitize(str(error)) or "Finalization deadline"})
             finally:
-                stopped = client.shutdown("Owned service shutdown; incomplete investigation")
+                stopped = False
+                try:
+                    stopped = client.shutdown("Owned service shutdown; incomplete investigation")
+                except (KeyboardInterrupt, ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                    controller.save("runtime-error", {"reason": "Owned cleanup failed: " + c.sanitize(str(error))})
                 controller.save("runtime-service", {"state": "stopped" if stopped else "cleanup_failed"})
                 server.should_exit = True
 
@@ -460,21 +490,36 @@ def main(argv=None):
         parser.add_argument("--" + name)
     parser.add_argument("--engine-outcome", choices=("success", "failure", "cancelled", "skipped"))
     args = parser.parse_args(argv)
+    original_environment, original_temp = dict(os.environ), tempfile.tempdir
     try:
         if args.command == "configuration":
             result = configuration()
         else:
             require(sys.platform == "linux", "Protected Actions runtime requires Linux; no host fallback")
+            require(sys.flags.isolated, "Protected runtime requires Python -I")
             from transport import JournalTransport
             require(all((args.root, args.repository, args.journal, args.workspace)), "Missing protected layout")
             protected = [str(bridge._local_directory(p, missing=True))
-                         for p in (args.root, args.repository, args.journal, Path(__file__).resolve().parent)]
-            validate_layout(protected, args.workspace, str(Path.home()), os.environ["RUNNER_TEMP"])
-            controller = w.Controller(args.root, args.repository, JournalTransport(args.journal), w.GitHub())
+                         for p in (args.root, args.repository, args.journal,
+                                   Path(__file__).resolve().parent, sys.prefix)]
+            agent_home = str(Path.home())
+            if args.command != "serve":
+                validate_layout(protected, args.workspace, agent_home, os.environ["RUNNER_TEMP"])
+            controller = w.Controller(args.root, args.repository, None, None)
+            if args.command == "serve":
+                validate_layout(protected, args.workspace, controller.load("runtime")["agent_home"],
+                                os.environ["RUNNER_TEMP"])
+            environment = bridge.trusted_environment(controller)
+            if "GITHUB_OUTPUT" in os.environ:
+                environment["GITHUB_OUTPUT"] = os.environ["GITHUB_OUTPUT"]
+            os.environ.clear()
+            os.environ.update(environment)
+            tempfile.tempdir = None
+            controller.transport, controller.api = JournalTransport(args.journal), w.GitHub()
             adapter = Runtime(controller, args.workspace)
             if args.command == "setup":
                 require(args.input and args.job_started_at, "Setup requires fixed input and enclosing job start")
-                result = adapter.setup(w.read_input(args.input), mem.timestamp(args.job_started_at))
+                result = adapter.setup(w.read_input(args.input), mem.timestamp(args.job_started_at), agent_home=agent_home)
             elif args.command == "start-service":
                 child, starting = None, False
                 previous = signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
@@ -490,12 +535,9 @@ def main(argv=None):
                         adapter.arm()
                         (controller.root / "agent-server").mkdir(mode=0o700)
                         controller.save("runtime-service", {"state": "launching"})
-                        command = [sys.executable, str(Path(__file__).resolve()), "serve", "--root", args.root,
+                        command = [sys.executable, "-I", str(Path(__file__).resolve()), "serve", "--root", args.root,
                                    "--repository", args.repository, "--journal", args.journal, "--workspace", args.workspace]
-                        environment = c.tool_environment()
-                        environment.update({k: os.environ[k] for k in
-                                            (*m.RUNNER_KEYS, "PROCESSOR_IDENTIFIER", "GH_TOKEN", "GITHUB_TOKEN", "RUNNER_TEMP")
-                                            if k in os.environ})
+                        environment = bridge.trusted_environment(controller)
                         with (controller.root / "service.log").open("xb") as log:
                             child = subprocess.Popen(command, cwd=controller.repository, env=environment,
                                                      stdin=subprocess.DEVNULL, stdout=log, stderr=log,
@@ -531,6 +573,10 @@ def main(argv=None):
     except (ValueError, OSError, KeyError, TypeError, ImportError, subprocess.SubprocessError) as error:
         print(mem.encoded({"outcome": "blocked_setup", "reason": c.sanitize(str(error))}).decode(), end="")
         return 2
+    finally:
+        os.environ.clear()
+        os.environ.update(original_environment)
+        tempfile.tempdir = original_temp
 
 
 if __name__ == "__main__":
