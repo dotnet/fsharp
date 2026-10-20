@@ -53,6 +53,7 @@ They do not change the production clock or renew an existing investigation allow
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.
+It loads its built-in JSON module by exact path with automatic module discovery disabled.
 It does not inherit runner credentials or user module and executable search paths.
 Its request reader decodes UTF-8 from the input pipe without changing the console encoding.
 The sample receives only its supplied environment after the supervisor joins its Job object.

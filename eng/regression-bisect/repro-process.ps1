@@ -1,6 +1,8 @@
 param([string] $ErrorMarker)
 $ErrorActionPreference = 'Stop'
 try {
+    $PSModuleAutoLoadingPreference = 'None'
+    Import-Module ([IO.Path]::Combine($PSHOME, 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop
     $encoding = [Text.UTF8Encoding]::new($false)
     $inputStream = [Console]::OpenStandardInput()
     $reader = [IO.StreamReader]::new($inputStream, $encoding, $false, 1024, $true)
