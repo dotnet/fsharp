@@ -381,7 +381,11 @@ for (const settings of [
 ]) {
   test(`installs exact ${settings.product} ${settings.rid || settings.os || 'win'} ${settings.architecture || 'x64'} ${settings.version || 'preview'}`, async t => {
     const { options, deps, state, script, helperPath } = await fixture(t, settings);
+    options.env.TAR_OPTIONS = '--same-owner --checkpoint-action=exec=untrusted';
     const result = await installArchive(options, deps);
+    for (const call of state.calls)
+      assert.equal(call.env.TAR_OPTIONS, options.platform.os.startsWith('linux') ? '--no-same-owner' : undefined,
+        'only Linux installers receive trusted options that preserve the extracting account as owner');
     assert.equal(result.archive.sha256, digest(payload, 'sha256'));
     assert.equal(result.archive.actualSha512, options.archive.sha512);
     assert.equal(result.archive.name, options.archive.name);

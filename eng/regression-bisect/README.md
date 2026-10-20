@@ -66,6 +66,7 @@ Its request reader decodes UTF-8 from the input pipe without changing the consol
 The sample receives only its supplied environment after the supervisor joins its Job object.
 Both Windows installer phases load their built-in modules explicitly, without automatic discovery.
 Installer arguments remain typed data, including switches and literal paths.
+Linux installers keep extracted files owned by the extracting account, without restoring archive owner IDs or adding container capabilities.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
 The timeout canary keeps its child referenced until the external deadline terminates the container.

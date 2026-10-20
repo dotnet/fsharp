@@ -261,6 +261,8 @@ async function installArchive(options, deps) {
       throw new Error(`Absolute ${name} is required`);
   const env = isolatedEnvironment(options.env, windows);
   if (windows) env.DOTNET_INSTALL_SKIP_TAR = archiveName.endsWith('.zip') ? '1' : '0';
+  // Archive owner IDs are not valid authority in the container without FOWNER.
+  if (os === 'linux' || os === 'linux-musl') env.TAR_OPTIONS = '--no-same-owner';
   const extension = windows ? 'ps1' : 'sh';
   const installerUrl = `https://builds.dotnet.microsoft.com/dotnet/scripts/v1/dotnet-install.${extension}`;
   const helperPath = path.join(helperRoot, `tools.${extension}`);
