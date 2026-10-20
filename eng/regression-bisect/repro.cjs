@@ -4,7 +4,7 @@ const { execute } = require("./repro-process.cjs");
 const { validateManifest, classifyAttempts, fingerprintInput } = require("./model.cjs");
 const { verifyToolchainIdentity } = require("./toolchains.cjs");
 const { verifyRetainedArchive } = require("./toolchain-installer.cjs");
-const { hash, inside, requireValue, isolatedEnvironment } = require("./toolchain-io.cjs");
+const { hash, inside, requireValue, isolatedEnvironment, copyOwnedFile } = require("./toolchain-io.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
 const untestable = reason => ({ schemaVersion: 1, outcome: "untestable", reason });
@@ -392,7 +392,7 @@ async function runReproduction(options, dependencies = {}) {
                 for (const source of manifest.sources) {
                     const destination = path.join(directory, source.path);
                     await fs.mkdir(path.dirname(destination), { recursive: true });
-                    await fs.copyFile(path.join(options.sourceDirectory, source.path), destination);
+                    await copyOwnedFile(path.join(options.sourceDirectory, source.path), destination);
                 }
                 await fs.writeFile(path.join(directory, "global.json"), JSON.stringify({
                     sdk: { version: toolchain.sdkVersion, rollForward: "disable", allowPrerelease: product.kind === "source" },
@@ -576,4 +576,4 @@ async function runReproduction(options, dependencies = {}) {
     }
 }
 
-module.exports = { runReproduction, selectFsiCommand, verifyProjectIdentities, evaluateAssertion, compileAssertion, diagnosticsExecution };
+module.exports = { runReproduction, selectFsiCommand, verifyProjectIdentities, evaluateAssertion, compileAssertion, diagnosticsExecution, prepareEnvironment };

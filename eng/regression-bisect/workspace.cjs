@@ -5,7 +5,7 @@ const { validateManifest, fingerprintInput } = require("./model.cjs");
 const { readRevisionToolchain, acquireToolchain } = require("./toolchains.cjs");
 const { runReproduction } = require("./repro.cjs");
 const { execute } = require("./repro-process.cjs");
-const { hash, inside, requireValue, isolatedEnvironment, fileIdentity } = require("./toolchain-io.cjs");
+const { hash, inside, requireValue, isolatedEnvironment, fileIdentity, copyOwnedFile } = require("./toolchain-io.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
 const trustedRoot = path.resolve(__dirname, "..", "..");
@@ -143,7 +143,7 @@ async function prepareRevisionWorkspace(options, dependencies = {}) {
             requireValue(file.sha256 === source.sha256, "frozen reproduction bytes changed");
             const target = path.join(w.sampleDirectory, source.path);
             await fs.mkdir(path.dirname(target), { recursive: true });
-            await fs.copyFile(file.path, target);
+            await copyOwnedFile(file.path, target);
         }
         w.signal.throwIfAborted();
         w.status = "prepared";

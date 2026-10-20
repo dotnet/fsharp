@@ -7,8 +7,9 @@ const { runExecutionUnit, validateExecutionUnit, executionEvidence } = require("
 const { workerArchive } = require("./worker-output.cjs");
 const { once } = require("node:events");
 const { acquireToolchain } = require("./toolchains.cjs");
+const { prepareEnvironment } = require("./repro.cjs");
 const { execute } = require("./repro-process.cjs");
-const { hash, fileIdentity, isolatedEnvironment, requireValue } = require("./toolchain-io.cjs");
+const { hash, fileIdentity, copyOwnedFile, requireValue } = require("./toolchain-io.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
 function connect(host, port, request) {
@@ -234,54 +235,69 @@ async function physicalRunner(unit, launch) {
     if (acquired.status !== "acquired") return executionEvidence(unit, launch, acquired, {
         acquisition: acquired, commands, evidenceDirectory: "/scratch/evidence", scratchDirectory: "/scratch",
     });
-    const toolchain = acquired.identity;
-    const helperDirectory = "/scratch/helper";
-    await fs.cp("/trusted/eng/regression-bisect/evidence", helperDirectory, { recursive: true });
-    const env = isolatedEnvironment("/scratch", unit.platform);
-    for (const key of ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]) env[key] = process.env[key];
-    for (const dir of [env.HOME, env.TEMP, env.APPDATA, env.LOCALAPPDATA]) await fs.mkdir(dir, { recursive: true });
-    const runtime = toolchain.compilerRuntime.version;
-    const helperOutput = path.join(helperDirectory, "output");
-    const built = await withProxy(toolchain.hostPath, ["build", path.join(helperDirectory, "Evidence.csproj"),
-        "-c", "Release", "-o", helperOutput, `-p:EvidenceTargetFramework=net${runtime.split(".")[0]}.0`, "-nr:false", "--nologo"],
-    { cwd: helperDirectory, env, timeoutMs: 300000, maxBytes: 1024 * 1024 });
-    requireValue(built.complete && built.exitCode === 0, `isolated evidence helper build failed: ${built.stderr}`);
-    const helper = { executable: toolchain.hostPath, dll: path.join(helperOutput, "Evidence.dll"),
-        hook: path.join(helperOutput, "Repro.StartupHook.dll"), runtimeVersion: runtime };
-    const inventoryReleased = async (identity, buildInstanceId) => {
-        const root = path.join(identity.sdkBasePath, "FSharp"), files = [];
-        for (const [role, name] of Object.entries({
-            fsi: "fsi.dll", compiler: "fsc.dll", core: "FSharp.Core.dll", tasks: "FSharp.Build.dll",
-            props: "Microsoft.FSharp.NetSdk.props", targets: "Microsoft.FSharp.Targets",
-            sdkTargets: "Microsoft.FSharp.NetSdk.targets", overrides: "Microsoft.FSharp.Overrides.NetSdk.targets",
-        })) {
-            const file = { role, ...await fileIdentity(path.join(root, name), root) };
-            if (["fsi", "compiler"].includes(role))
-                file.runtimeConfig = await fileIdentity(file.path.replace(/\.dll$/, ".runtimeconfig.json"), root);
-            files.push(file);
+    let result;
+    try {
+        const toolchain = acquired.identity;
+        const helperDirectory = "/scratch/helper", helperSources = "/trusted/eng/regression-bisect/evidence";
+        await fs.mkdir(helperDirectory);
+        for (const relative of await fs.readdir(helperSources, { recursive: true })) {
+            const source = path.join(helperSources, relative), target = path.join(helperDirectory, relative);
+            const stat = await fs.lstat(source);
+            requireValue(!stat.isSymbolicLink() && (stat.isDirectory() || stat.isFile() && stat.nlink === 1),
+                "evidence helper source must be a regular file or directory");
+            await fs.mkdir(stat.isDirectory() ? target : path.dirname(target), { recursive: true });
+            if (stat.isFile()) await copyOwnedFile(source, target);
         }
-        const pkg = identity.files.core.package;
-        requireValue(pkg?.id === "FSharp.Core", "released Core package missing");
-        files.push({ role: "corePackage", ...pkg });
-        const inspected = await withProxy(helper.executable, ["exec", "--fx-version", runtime, helper.dll, "inspect",
-            ...files.filter(f => f.path.endsWith(".dll") || f.role === "corePackage").map(f => f.path)],
-        { cwd: helperDirectory, env, timeoutMs: 120000, maxBytes: 1024 * 1024 });
-        requireValue(inspected.complete && inspected.exitCode === 0, "released product inspection failed");
-        for (const value of JSON.parse(inspected.stdout)) {
-            const file = files.find(f => f.path === value.path);
-            requireValue(file && file.sha256 === value.sha256, "released inventory digest mismatch");
-            Object.assign(file, value);
-        }
-        return { kind: "released", root, buildInstanceId, files, runtime: identity.compilerRuntime, corePackageVersion: pkg.version };
-    };
-    const historical = (executable, args, settings) => withProxy(executable, args, settings, !args.includes(helper.dll));
-    const result = await runExecutionUnit(unit, {
-        policy, inventoryReleased, acquireToolchain: async () => acquired,
-        workerExecute: historical, workspaceDependencies: { execute: historical, toolchains: { run: withProxy } },
-        worker: { storageDirectory: storage, scratchDirectory: "/scratch/work", evidenceDirectory: "/scratch/evidence",
-            workDirectory: "/scratch/executions", sourceDirectory: "/input/samples", mirrorDirectory: "/input/source.bundle",
-            gitExecutable: "/usr/bin/git", reproductionToolchain: toolchain, helper },
-    }, { signal });
+        const env = await prepareEnvironment("/scratch", toolchain, unit.platform);
+        for (const key of ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]) env[key] = process.env[key];
+        const runtime = toolchain.compilerRuntime.version;
+        const helperOutput = path.join(helperDirectory, "output");
+        const built = await withProxy(toolchain.hostPath, ["build", path.join(helperDirectory, "Evidence.csproj"),
+            "-c", "Release", "-o", helperOutput, `-p:EvidenceTargetFramework=net${runtime.split(".")[0]}.0`, "-nr:false", "--nologo"],
+        { cwd: helperDirectory, env, timeoutMs: 300000, maxBytes: 1024 * 1024 });
+        requireValue(built.complete && built.exitCode === 0,
+            `isolated evidence helper build failed (${built.status}, exit ${built.exitCode}): ${built.error ?? (built.stderr || built.stdout)}`);
+        const helper = { executable: toolchain.hostPath, dll: path.join(helperOutput, "Evidence.dll"),
+            hook: path.join(helperOutput, "Repro.StartupHook.dll"), runtimeVersion: runtime };
+        const inventoryReleased = async (identity, buildInstanceId) => {
+            const root = path.join(identity.sdkBasePath, "FSharp"), files = [];
+            for (const [role, name] of Object.entries({
+                fsi: "fsi.dll", compiler: "fsc.dll", core: "FSharp.Core.dll", tasks: "FSharp.Build.dll",
+                props: "Microsoft.FSharp.NetSdk.props", targets: "Microsoft.FSharp.Targets",
+                sdkTargets: "Microsoft.FSharp.NetSdk.targets", overrides: "Microsoft.FSharp.Overrides.NetSdk.targets",
+            })) {
+                const file = { role, ...await fileIdentity(path.join(root, name), root) };
+                if (["fsi", "compiler"].includes(role))
+                    file.runtimeConfig = await fileIdentity(file.path.replace(/\.dll$/, ".runtimeconfig.json"), root);
+                files.push(file);
+            }
+            const pkg = identity.files.core.package;
+            requireValue(pkg?.id === "FSharp.Core", "released Core package missing");
+            files.push({ role: "corePackage", ...pkg });
+            const inspected = await withProxy(helper.executable, ["exec", "--fx-version", runtime, helper.dll, "inspect",
+                ...files.filter(f => f.path.endsWith(".dll") || f.role === "corePackage").map(f => f.path)],
+            { cwd: helperDirectory, env, timeoutMs: 120000, maxBytes: 1024 * 1024 });
+            requireValue(inspected.complete && inspected.exitCode === 0, "released product inspection failed");
+            for (const value of JSON.parse(inspected.stdout)) {
+                const file = files.find(f => f.path === value.path);
+                requireValue(file && file.sha256 === value.sha256, "released inventory digest mismatch");
+                Object.assign(file, value);
+            }
+            return { kind: "released", root, buildInstanceId, files, runtime: identity.compilerRuntime, corePackageVersion: pkg.version };
+        };
+        const historical = (executable, args, settings) => withProxy(executable, args, settings, !args.includes(helper.dll));
+        result = await runExecutionUnit(unit, {
+            policy, inventoryReleased, acquireToolchain: async () => acquired,
+            workerExecute: historical, workspaceDependencies: { execute: historical, toolchains: { run: withProxy } },
+            worker: { storageDirectory: storage, scratchDirectory: "/scratch/work", evidenceDirectory: "/scratch/evidence",
+                workDirectory: "/scratch/executions", sourceDirectory: "/input/samples", mirrorDirectory: "/input/source.bundle",
+                gitExecutable: "/usr/bin/git", reproductionToolchain: toolchain, helper },
+        }, { signal });
+    } catch (error) {
+        result = { status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable",
+            reason: signal.aborted ? "timeout" : "setup-failure" },
+            error: { stage: "worker", code: error.code ?? error.name, message: error.message } };
+    }
     await terminateHistoricalProcesses();
     return executionEvidence(unit, launch, result, {
         acquisition: acquired, commands, evidenceDirectory: "/scratch/evidence", scratchDirectory: "/scratch",

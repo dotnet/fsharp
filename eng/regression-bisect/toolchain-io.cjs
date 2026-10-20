@@ -191,6 +191,11 @@ async function fileIdentity(file, root, fileSystem = fs) {
     return { path: real, sha256: hash(bytes) };
 }
 
+async function copyOwnedFile(source, destination) {
+    // libuv restores foreign ownership before chmod, which fails without CAP_FOWNER.
+    await fs.writeFile(destination, await fs.readFile(source), { flag: "wx", mode: 0o644 });
+}
+
 // No reproduction is executed: this fixed probe only inspects the acquired product.
 const probe = `
 open System
@@ -327,4 +332,4 @@ async function capture(request, deps) {
     };
 }
 
-module.exports = { hash, requireValue, boundedWait, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, capture };
+module.exports = { hash, requireValue, boundedWait, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, copyOwnedFile, capture };

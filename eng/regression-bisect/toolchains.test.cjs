@@ -7,7 +7,22 @@ const { createHash } = require("node:crypto");
 const { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity } = require("./toolchains.cjs");
 const { policy, admission, observation, seal, digest, archiveReceipt } = require("./fixtures/contracts.cjs");
 const { admitBisection, fingerprintInput } = require("./model.cjs");
-const { capture, publicUrl, createHttp, isolatedEnvironment } = require("./toolchain-io.cjs");
+const { capture, publicUrl, createHttp, isolatedEnvironment, copyOwnedFile } = require("./toolchain-io.cjs");
+
+test("owned source copies preserve bytes without restoring foreign file metadata", async t => {
+    const root = await fs.mkdtemp(path.join(__dirname, ".owned-copy-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const source = path.join(root, "source"), target = path.join(root, "target");
+    const bytes = Buffer.from([0, 255, 13, 10, 128, 1]);
+    await fs.writeFile(source, bytes, { mode: 0o444 });
+    t.mock.method(fs, "copyFile", () => assert.fail("libuv restores foreign ownership before chmod"));
+    t.mock.method(fs, "chown", () => assert.fail("copy must retain the creating account"));
+    t.mock.method(fs, "chmod", () => assert.fail("copy must not need CAP_FOWNER"));
+    await copyOwnedFile(source, target);
+    assert.deepEqual(await fs.readFile(target), bytes);
+    assert.deepEqual(await fs.readFile(source), bytes);
+    await assert.rejects(copyOwnedFile(source, target), { code: "EEXIST" });
+});
 
 const indexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
 const feed = "https://builds.dotnet.microsoft.com/dotnet";

@@ -615,6 +615,76 @@ test("network cleanup rejects permission errors and missing responses for anothe
     }
 });
 
+async function physicalFixture(t, { failCopy = false, failBuild = false } = {}) {
+    const entry = path.join(__dirname, "container-entry.cjs");
+    const source = await fs.readFile(entry, "utf8"), writes = [], calls = [];
+    const toolchain = { root: "/scratch/storage/acquired/dotnet",
+        hostPath: "/scratch/storage/acquired/dotnet/dotnet", compilerRuntime: { version: "10.0.13" } };
+    const acquired = { status: "acquired", identity: toolchain };
+    const normalize = name => name.replaceAll("\\", "/");
+    const copyError = () => { throw Object.assign(new Error("copyfile EPERM without FOWNER"), { code: "EPERM" }); };
+    t.mock.method(fs, "cp", copyError);
+    t.mock.method(fs, "copyFile", copyError);
+    t.mock.method(fs, "mkdir", async () => {});
+    t.mock.method(fs, "readdir", async directory => {
+        if (directory === "/proc") return [];
+        assert.equal(directory, "/trusted/eng/regression-bisect/evidence");
+        return ["AssetEvidence.cs", "StartupHook", "StartupHook/StartupHook.cs"];
+    });
+    t.mock.method(fs, "lstat", async file => ({ isDirectory: () => normalize(file).endsWith("/StartupHook"),
+        isFile: () => normalize(file).endsWith(".cs"), isSymbolicLink: () => false, nlink: 1, uid: 1001 }));
+    t.mock.method(fs, "readFile", async file => {
+        assert.ok(normalize(file).startsWith("/trusted/eng/regression-bisect/evidence/"));
+        return Buffer.from("reviewed source bytes");
+    });
+    t.mock.method(fs, "writeFile", async (file, bytes, options) => {
+        if (failCopy) throw Object.assign(new Error("owned helper write denied"), { code: "EACCES" });
+        writes.push({ file: normalize(file), bytes, options });
+    });
+    const worker = require("./worker.cjs"), context = { module: {}, Buffer, AbortSignal,
+        process: { getuid: () => 0, env: {} }, require: name => {
+            if (name === "node:path") return path.posix;
+            if (name === "./toolchains.cjs") return { acquireToolchain: async (options, deps) => {
+                await deps.run(toolchain.hostPath, ["--info"], { cwd: "/scratch/storage", env: {} });
+                return acquired;
+            } };
+            if (name === "./worker.cjs") return { ...worker,
+                runExecutionUnit: async () => ({ status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } }),
+                executionEvidence: async (unit, launch, result, evidence) => ({ result, ...evidence }) };
+            if (name === "./repro-process.cjs") return { execute: async (executable, args, settings) => {
+                calls.push({ executable, args, settings });
+                return { complete: true, exitCode: failBuild && args[0] === "build" ? 1 : 0,
+                    stdout: "", stderr: failBuild && args[0] === "build" ? "controlled helper compiler failure" : "" };
+            } };
+            return require(name);
+        } };
+    require("node:vm").runInNewContext(source + "\nmodule.exports = { physicalRunner };", context, { filename: entry });
+    return { result: await context.module.exports.physicalRunner(executionUnit(), {}), writes, calls, acquired };
+}
+
+test("physical helper sources keep supervisor ownership and use the acquired SDK environment", async t => {
+    const fixture = await physicalFixture(t);
+    assert.equal(fixture.result.result.status, "tested");
+    assert.deepEqual(fixture.writes.map(row => row.file),
+        ["/scratch/helper/AssetEvidence.cs", "/scratch/helper/StartupHook/StartupHook.cs"]);
+    assert.ok(fixture.writes.every(row => row.options.flag === "wx" && row.options.mode === 0o644));
+    const build = fixture.calls.find(row => row.args[0] === "build");
+    assert.equal(build.settings.env.DOTNET_HOST_PATH, build.executable);
+    assert.equal(build.settings.env.DOTNET_ROOT, fixture.acquired.identity.root);
+    assert.equal(build.settings.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR, fixture.acquired.identity.root);
+});
+
+for (const failure of ["copy", "build"]) test(`physical helper ${failure} failure retains acquisition and command evidence`, async t => {
+    const fixture = await physicalFixture(t, { failCopy: failure === "copy", failBuild: failure === "build" });
+    assert.equal(fixture.result.result.status, "untestable");
+    assert.equal(fixture.result.result.outcome.reason, "setup-failure");
+    assert.match(fixture.result.result.error.message,
+        failure === "copy" ? /owned helper write denied/ : /controlled helper compiler failure/);
+    assert.equal(fixture.result.acquisition, fixture.acquired);
+    assert.equal(fixture.result.commands.length, failure === "copy" ? 1 : 2);
+    assert.equal(fixture.result.commands[0].args[0], "--info");
+});
+
 test("timeout canary keeps its parent alive until external termination", async () => {
     const entry = path.join(__dirname, "container-entry.cjs");
     const child = spawn(process.execPath, ["-e", `
