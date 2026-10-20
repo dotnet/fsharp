@@ -2927,6 +2927,44 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/13084
+    [<Fact>]
+    let ``Issue 13084 - long chain of do bang bindings does not overflow`` () =
+        let properties =
+            [ 1..37 ]
+            |> List.map (fun i -> $"        Property{i}: string")
+            |> String.concat "\n"
+
+        let writes =
+            [ 1..37 ]
+            |> List.map (fun i -> $"        do! Json.write \"property{i}\" x.Property{i}")
+            |> String.concat "\n"
+
+        FSharp
+            $"""
+module Test
+
+type JsonBuilder() =
+    member _.Bind((), continuation: unit -> unit) = continuation()
+    member _.Zero() = ()
+
+let json = JsonBuilder()
+
+module Json =
+    let write (_: string) (_: string) = ()
+
+type LargeRecord =
+    {{
+%s{properties}
+    }}
+    with
+    static member ToJson(x: LargeRecord) = json {{
+%s{writes}
+    }}
+"""
+        |> typecheck
+        |> shouldSucceed
+
     // The 'if'/'match' descent stops at a 'try', matching the rewrite, so a bang buried in a 'try' within a
     // branch stays out of scope.
     [<Fact>]

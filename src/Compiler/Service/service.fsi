@@ -511,6 +511,10 @@ type public FSharpChecker =
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 
+    /// Answers a referenced assembly's last-write time to the incremental builders created after this call, in place of a
+    /// file system read per request. The value must be what `File.GetLastWriteTimeUtc` returns, kept current by the host.
+    member internal SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
+
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState
 

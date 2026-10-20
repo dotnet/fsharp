@@ -176,6 +176,8 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
+    abstract member SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
+
 type internal ParseCacheLockToken() =
     interface LockToken
 
@@ -256,6 +258,9 @@ type internal BackgroundCompiler
     let fileParsed = Event<string * FSharpProjectOptions>()
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
+
+    [<VolatileField>]
+    let mutable referenceStampProvider: (string -> DateTime) option = None
 
     // Option record copies share this reference set, so it owns the closure until those options are released.
     let scriptClosures =
@@ -390,7 +395,8 @@ type internal BackgroundCompiler
                     shareImportedAssemblies,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    referenceStampProvider |> ValueOption.ofOption
                 )
 
             match builderOpt with
@@ -1474,6 +1480,9 @@ type internal BackgroundCompiler
 
     member _.FrameworkImportsCache = frameworkTcImportsCache
 
+    member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) =
+        referenceStampProvider <- Some getReferenceStamp
+
     static member ActualParseFileCount = actualParseFileCount
 
     static member ActualCheckFileCount = actualCheckFileCount
@@ -1528,6 +1537,9 @@ type internal BackgroundCompiler
             this.FindReferencesInFile(fileName, projectSnapshot.ToOptions(), symbol, true, userOpName)
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
+
+        member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) : unit =
+            self.SetReferenceStampProvider getReferenceStamp
 
         member _.GetAssemblyData(options: FSharpProjectOptions, _fileName: string, userOpName: string) : Async<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)
