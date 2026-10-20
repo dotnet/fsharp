@@ -1381,10 +1381,7 @@ module MutRecBindingChecking =
                                 match incrCtorInfoOpt with
                                 | None -> envInstance
                                 | Some incrCtorInfo ->
-                                    let envInstance =
-                                        if ValHasWellKnownAttribute g (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) incrCtorInfo.InstanceCtorVal then
-                                            envInstance.WithPreservedMatchShape
-                                        else envInstance
+                                    let envInstance = envInstance.WithReflectedDefinition(incrCtorInfo.InstanceCtorVal)
                                     List.foldBack (AddLocalValPrimitive g) incrCtorInfo.InstanceCtorArgs envInstance
                             let envNonRec =
                                 match incrCtorInfoOpt with
@@ -1803,9 +1800,7 @@ module MutRecBindingChecking =
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs
             (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->
                 let env = MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind
-                if EntityHasWellKnownAttribute g WellKnownEntityAttributes.ReflectedDefinitionAttribute moduleEntity then
-                    env.WithPreservedMatchShape
-                else env)
+                env.WithReflectedDefinition(moduleEntity))
 
             (fun envAbove decls ->
 
@@ -5968,8 +5963,7 @@ and TcModuleOrNamespaceElements (cenv: cenv) parent endm env xml mutRecNSInfo op
   cancellable {
     let env =
         match parent with
-        | Parent entity when EntityHasWellKnownAttribute cenv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute entity.Deref ->
-            env.WithPreservedMatchShape
+        | Parent entity -> env.WithReflectedDefinition(entity.Deref)
         | _ -> env
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds
     if cenv.compilingCanonicalFslibModuleType then

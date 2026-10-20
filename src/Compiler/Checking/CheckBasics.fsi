@@ -166,6 +166,12 @@ type TcEnv =
 
     member WithPreservedMatchShape: TcEnv
 
+    member WithReflectedDefinition: flags: WellKnownValAttributes -> TcEnv
+
+    member WithReflectedDefinition: entity: Entity -> TcEnv
+
+    member WithReflectedDefinition: value: Val -> TcEnv
+
     /// Makes this environment available in a form that can be stored into a trait during solving.
     member TraitContext: ITraitContext option
 

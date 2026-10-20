@@ -22,14 +22,7 @@ let run token stack =
         try
             match token, stack with
             | 0, C0 values :: tail when guard -1 values -> -100 + tail.Length
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 0 values -> 100 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 1 values -> 101 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 2 values -> 102 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 3 values -> 103 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 4 values -> 104 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 5 values -> 105 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 6 values -> 106 + values[0]
-            | _, C0 __PAYLOAD__ :: (_ :: _) when guard 7 values -> 107 + values[0]
+{{GUARDS}}
             | 1, _ :: tail -> 201 + tail.Length
             | 2, _ :: tail -> 202 + tail.Length
             | 3, _ :: tail -> 203 + tail.Length
@@ -46,11 +39,7 @@ let check stop length expectedResult expectedValue expectedTrace =
         failwith (String.concat "," trace)
 [<EntryPoint>]
 let main _ =
-#if PARTIAL
-    let partialPattern = true
-#else
-    let partialPattern = false
-#endif
+    let partialPattern = {{PARTIAL}}
     let observations value = if partialPattern then [$"p0:{value}"; $"a:{value}"] else []
     let prefix = if partialPattern then [] else ["a:1"]
     let traceThrough last =

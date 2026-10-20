@@ -521,10 +521,7 @@ let MakeInnerEnv addOpenToNameEnv env nm moduleKind =
 
 /// Make an environment suitable for processing inside a type definition
 let MakeInnerEnvForTyconRef env (tcref: TyconRef) isExtrinsicExtension =
-    let env =
-        if env.ePreserveMatchShape || EntityHasWellKnownAttribute env.DisplayEnv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute tcref.Deref then
-            env.WithPreservedMatchShape
-        else env
+    let env = if env.ePreserveMatchShape then env else env.WithReflectedDefinition(tcref.Deref)
     if isExtrinsicExtension then
         // Extension members don't get access to protected stuff
         env
@@ -11608,10 +11605,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             |> TcAttrs AttributeTargets.ReturnValue true
 
         let valAttribFlags = computeValWellKnownFlags g valAttribs
-        let envinner =
-            if hasFlag valAttribFlags (WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False) then
-                envinner.WithPreservedMatchShape
-            else envinner
+        let envinner = envinner.WithReflectedDefinition(valAttribFlags)
 
         let isVolatile = hasFlag valAttribFlags WellKnownValAttributes.VolatileFieldAttribute
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding

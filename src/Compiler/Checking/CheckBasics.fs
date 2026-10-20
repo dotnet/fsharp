@@ -184,6 +184,9 @@ type UngeneralizableItem(computeFreeTyvars: unit -> FreeTyvars) =
 
     member _.CachedFreeTraitSolutions = cachedFreeTraitSolutions
 
+let private reflectedDefinitionValFlags =
+    WellKnownValAttributes.ReflectedDefinitionAttribute_True ||| WellKnownValAttributes.ReflectedDefinitionAttribute_False
+
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
@@ -274,6 +277,18 @@ type TcEnv =
     member tenv.WithPreservedMatchShape =
         if tenv.ePreserveMatchShape then tenv
         else { tenv with ePreserveMatchShape = true }
+
+    member private tenv.WithReflectedDefinition(present: bool) =
+        if present then tenv.WithPreservedMatchShape else tenv
+
+    member tenv.WithReflectedDefinition(flags: WellKnownValAttributes) =
+        tenv.WithReflectedDefinition(hasFlag flags reflectedDefinitionValFlags)
+
+    member tenv.WithReflectedDefinition(entity: Entity) =
+        tenv.WithReflectedDefinition(EntityHasWellKnownAttribute tenv.DisplayEnv.g WellKnownEntityAttributes.ReflectedDefinitionAttribute entity)
+
+    member tenv.WithReflectedDefinition(value: Val) =
+        tenv.WithReflectedDefinition(ValHasWellKnownAttribute tenv.DisplayEnv.g reflectedDefinitionValFlags value)
 
     /// Makes this environment available in a form that can be stored into a trait during solving.
     /// The context is only ever consumed when extension members may solve SRTP constraints

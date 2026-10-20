@@ -1934,19 +1934,21 @@ let private trySplitGuardedRun (g: TcGlobals) (group: MatchClause list) =
                     match clause.Pattern with
                     | PairPattern(token, _) -> not (isBinding token)
                     | _ -> true)
+            let isMiddleClause (clause: MatchClause) =
+                match clause.Pattern with
+                | PairPattern(_, ConsPattern(head, _)) -> discriminatorPattern guard firstHead false head
+                | _ -> false
+            let isSuffixClause (clause: MatchClause) =
+                match clause.Pattern with
+                | PairPattern(token, ConsPattern(head, tail)) when isBinding head && isBinding tail ->
+                    discriminatorPattern guard firstToken true token
+                | PairPattern(token, stack) when isBinding stack ->
+                    discriminatorPattern guard firstToken true token
+                | _ -> false
             if suffix.Length >= 4
                && (first :: middle |> List.count (fun clause -> clause.GuardExpr.IsSome)) >= 8
-               && (middle |> List.forall (fun clause ->
-                   match clause.Pattern with
-                   | PairPattern(_, ConsPattern(head, _)) -> discriminatorPattern guard firstHead false head
-                   | _ -> false))
-               && (suffix |> List.forall (fun clause ->
-                   match clause.Pattern with
-                   | PairPattern(token, ConsPattern(head, tail)) when isBinding head && isBinding tail ->
-                       discriminatorPattern guard firstToken true token
-                   | PairPattern(token, stack) when isBinding stack ->
-                       discriminatorPattern guard firstToken true token
-                   | _ -> false)) then
+               && List.forall isMiddleClause middle
+               && List.forall isSuffixClause suffix then
                 ValueSome([first], middle, suffix)
             else ValueNone
         | _ -> ValueNone

@@ -10,7 +10,7 @@ let record token cell =
     match token, cell with
     | 0, { Value = 1 } when guard 1 -> 0
     | _, { Value = 1 } when mutate cell -> 1
-    | (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 | 64), _ -> 3
+    | ({{ALTERNATIVES}}), _ -> 3
     | _, { Value = 1 } -> 4
     | _ -> 5
 let mutable calls = 0
@@ -22,18 +22,11 @@ let active token input =
     match token, input with
     | 0, Seen value when guard 10 -> value
     | _, Seen value when guard 20 -> value
-    | (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 | 64), _ -> -1
+    | ({{ALTERNATIVES}}), _ -> -1
     | _, Seen value -> value
 let demand (input: (int * int) * bool) =
     match input with
-    | _, true when guard 1 -> 1
-    | _, true when guard 2 -> 2
-    | _, true when guard 3 -> 3
-    | _, true when guard 4 -> 4
-    | _, true when guard 5 -> 5
-    | _, true when guard 6 -> 6
-    | _, true when guard 7 -> 7
-    | _, true when guard 8 -> 8
+{{DEMAND_GUARDS}}
     | (0, _), true -> -1
     | (3, _), true -> -1
     | (4, _), true -> -1
@@ -70,13 +63,7 @@ type SmallToken = First of int | Second of int
 let nullDefault takeFirst token (stack: int list) =
     match token, stack with
     | First _, 1 :: _ when takeFirst -> 10
-    | _, _ :: _ when not takeFirst -> 11
-    | _, _ :: _ when not takeFirst -> 12
-    | _, _ :: _ when not takeFirst -> 13
-    | _, _ :: _ when not takeFirst -> 14
-    | _, _ :: _ when not takeFirst -> 15
-    | _, _ :: _ when not takeFirst -> 16
-    | _, _ :: _ when not takeFirst -> 17
+{{NULL_DEFAULT_GUARDS}}
     | Second _, _ :: _ when not takeFirst -> 20
     | Second _, _ :: _ when not takeFirst -> 21
     | Second _, _ :: _ when not takeFirst -> 22
@@ -86,13 +73,7 @@ type Token = T0 | T1 | T2 | T3
 let nullHead takeFirst token stack =
     match token, stack with
     | T0, First _ :: _ when takeFirst -> 10
-    | _, Second _ :: _ when not takeFirst -> 11
-    | _, Second _ :: _ when not takeFirst -> 12
-    | _, Second _ :: _ when not takeFirst -> 13
-    | _, Second _ :: _ when not takeFirst -> 14
-    | _, Second _ :: _ when not takeFirst -> 15
-    | _, Second _ :: _ when not takeFirst -> 16
-    | _, Second _ :: _ when not takeFirst -> 17
+{{NULL_HEAD_GUARDS}}
     | T1, _ :: _ when not takeFirst -> 20
     | T2, _ :: _ when not takeFirst -> 21
     | T3, _ :: _ when not takeFirst -> 22
@@ -104,12 +85,7 @@ let refutedActive takeFirst token stack =
     match token, stack with
     | T0, H0 _ :: _ when takeFirst -> 10
     | _, (Probe 0 & H1 _) :: _ when takeFirst -> 11
-    | _, _ :: _ when takeFirst -> 12
-    | _, _ :: _ when takeFirst -> 13
-    | _, _ :: _ when takeFirst -> 14
-    | _, _ :: _ when takeFirst -> 15
-    | _, _ :: _ when takeFirst -> 16
-    | _, _ :: _ when takeFirst -> 17
+{{REFUTED_GUARDS}}
     | T1, _ :: _ when takeFirst -> 20
     | T2, _ :: _ when takeFirst -> 21
     | T3, _ :: _ when takeFirst -> 22

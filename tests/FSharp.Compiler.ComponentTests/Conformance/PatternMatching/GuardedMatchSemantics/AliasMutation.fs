@@ -18,14 +18,7 @@ let run token stack cell =
     let mutable result = -1
     match token, stack with
     | 0, C0 cell :: _ when guard -1 cell -> result
-    | _, C0 { Value = 1 } :: _ when guard 0 cell -> result <- 100 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 1 cell -> result <- 101 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 2 cell -> result <- 102 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 3 cell -> result <- 103 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 4 cell -> result <- 104 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 5 cell -> result <- 105 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 6 cell -> result <- 106 + cell.Value; result
-    | _, C0 { Value = 1 } :: _ when guard 7 cell -> result <- 107 + cell.Value; result
+{{GUARDS}}
     | 1, _ :: rest -> result <- 201 + rest.Length; result
     | 2, _ :: rest -> result <- 202 + rest.Length; result
     | 3, _ :: rest -> result <- 203 + rest.Length; result

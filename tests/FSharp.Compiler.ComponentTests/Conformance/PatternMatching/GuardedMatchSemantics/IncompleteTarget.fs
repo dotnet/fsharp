@@ -3,7 +3,7 @@ module Test
 let run input =
     match input with
     | None, (100 | 101) when false -> -1
-    // CLAUSES
+{{CLAUSES}}
     | Some value, _ when value = 0 -> value
     | Some _, _ -> 99
 
