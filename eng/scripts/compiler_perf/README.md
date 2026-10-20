@@ -76,9 +76,8 @@ clock, and backwards time cancels incomplete work. Finalization has a separate
 2,400-second bound. Cancellation preserves the last acknowledged journal timestamp
 if wall time moves backwards. A worker entering finalization is monitored against
 that existing bound, not interrupted merely because the active clock expires.
-These helper constants do **not** prove a compiled workflow
-budget: the later graph must fit setup <=60 minutes, agent execution <=250 minutes
-and combined cleanup/publication <=40 minutes inside a 360-minute job.
+`runtime.py` connects these clocks to the pinned lifecycle below. Its local
+checks do **not** prove a compiled workflow graph or live Linux containment.
 
 Candidate execution uses the existing empty Linux namespace, never a host fallback.
 Only bounded patch bytes enter the controller inbox through the data endpoint.
@@ -329,8 +328,9 @@ hotspot, hypothesis or regression selector:
 {"schema_version":2,"run_id":"12345","base_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","primary_metric":"elapsed_ms"}
 ```
 
-Run `workflow.py preflight --input discovery.json`, then `workflow.py investigate`,
-with the same protected `--repository`, `--root` and `--journal` arguments.
+For standalone helper use, run `workflow.py preflight --input discovery.json`,
+then `workflow.py investigate`, with the same protected `--repository`, `--root`
+and `--journal` arguments. Actions must use the runtime entry points below.
 Preflight checks the default branch, **all** PR pages, live owners and outstanding
 publication before canonical CAS reservation. Setup uses the pinned SDK and local
 Release FSharp.Compiler.Service compiler-source workload. Do not remove `global.json`.
@@ -389,7 +389,7 @@ Install it in a controller-only Python 3.11+ environment:
 ```powershell
 python -m venv protected-agent-env
 protected-agent-env\Scripts\python -m pip install -r eng\scripts\compiler_perf\requirements-agent.txt
-protected-agent-env\Scripts\python eng\scripts\compiler_perf\agent_bridge.py --root <protected-controller-root> --repository <protected-checkout> --journal <protected-journal-cache>
+protected-agent-env\Scripts\python eng\scripts\compiler_perf\runtime.py configuration
 ```
 
 Start the protected HTTP server before gateway initialization. It creates or
@@ -400,7 +400,7 @@ configuration fragment is `mcp-servers.compiler-perf` with `type: http`,
 header carrying **only** the endpoint capability. Never use a write-capable Git
 token. HTTP entries cannot specify `command`, `args`, `env` or `mounts`.
 Use `engine.mcp.tool-timeout: 5m` (below the supported 600-second maximum) and
-`engine.mcp.session-timeout: 5h`; a session timeout is not an active-deadline
+`engine.mcp.session-timeout: 6h`; a session timeout is not an active-deadline
 override. The server uses supported Streamable HTTP request/response, not
 server-initiated notification delivery.
 
@@ -415,11 +415,11 @@ direct backend requests.
 [mount generation](https://github.com/github/gh-aw/blob/58d1bedbb7200f59c2d224151339e38fd8687d05/pkg/workflow/awf_helpers.go)
 adds mounts to defaults; home/workspace/temp may be writable, and `/opt` readable.
 A controller placed under mounted temp is not protected; chmod on same-user files
-does not fix this. Launch with a disposable, tracked public-source export, no Git
-metadata, a private agent temp filesystem, no host/Docker socket or credential
-files, and protected roots disjoint from **all actual mounts**. The bridge's source
-export and command/mount checks are structural building blocks, not permission to
-wrap an unsafe default firewall launch. The gateway is trusted infrastructure;
+does not fix this. Use a disposable public-source export without Git metadata,
+no host/Docker socket or credential files, and protected roots disjoint from
+**all actual mounts**. Stock AWF mounts host temp; it is not a private agent tmpfs.
+The runtime inspects Docker's effective mounts and environment before readiness,
+rather than treating the bridge's structural checks as live proof. The gateway is trusted infrastructure;
 its Docker socket must never be reachable by agent code.
 Export accepts regular Git modes `100644` and `100755`, materializing both with
 mode `0644`; it never follows a source symlink or exports a submodule.
@@ -428,6 +428,151 @@ Portable tests exercise actual SDK HTTP clients, synthetic diagnostics and real
 local bare-Git CAS. They do not establish the actual Linux mount/network boundary,
 a compiled 360-minute graph, hosted execution, or a compiler-source speedup. Those
 require their separately authorized fixed-revision Linux execution.
+
+### Pinned Actions runtime contract
+
+`runtime.py` is the workflow adapter; the former unprovisioned
+`agent_command` capsule has been removed. No separate image, model proxy or
+container network is built here. Verified upstream inputs are GH AW **v0.76.1**
+(`58d1bedbb7200f59c2d224151339e38fd8687d05`), Copilot **1.0.52**, AWF **v0.25.55**
+(`39b8a59ed302636889c7f86bd015a31633b80415`) and MCP gateway **v0.3.19**.
+The retained locks use setup action
+`github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f`.
+Installed newer CLIs are not substitutes.
+
+The pinned [main-job generator](https://github.com/github/gh-aw/blob/58d1bedbb7200f59c2d224151339e38fd8687d05/pkg/workflow/compiler_yaml_main_job.go)
+places top-level `pre-steps` before checkout/install, `pre-agent-steps` after
+engine installation but before MCP gateway startup, and `post-steps` after
+built-in collection. Use those exact hooks, not `jobs.agent.post-steps` (ignored
+for built-in jobs). The pinned [Copilot engine](https://github.com/github/gh-aw/blob/58d1bedbb7200f59c2d224151339e38fd8687d05/pkg/workflow/copilot_engine_execution.go)
+supports `engine.harness`, HTTP MCP, credential-steered AWF execution and
+step-level `timeout-minutes`; the agent job retains Actions' 360-minute default.
+`runtime.py configuration` prints the exact engine/MCP fragments and budgets,
+not a compiled workflow. Merge its engine additions with the existing shared
+model defaults; do not replace those defaults or hand-edit a lock.
+
+The next graph must disable the default checkout and agent safe-output writers.
+Keep controller-only MCP permissions; do not enable wildcard bash, write-capable
+GitHub MCP or a separately timed delegated optimizer.
+Trusted setup provisions a fixed-revision checkout, Python environment, journal
+cache, encryption configuration and publisher handoff **outside** workspace,
+home/tool-cache mounts, runner temp, `/tmp`, `/opt` and system mounts. An owned
+directory under `/var/lib/compiler-perf` is suitable for stock hosted Linux.
+The default workspace must start empty: `setup` exports only bounded regular
+public Git blobs into its `source` child. No controller checkout, Git metadata,
+key, journal, raw diagnostic, receipt or publisher output is mounted there.
+`start-service` rejects changed helper/policy/SDK inputs and wrong installed
+Copilot/AWF versions before preparation.
+
+Use the same protected arguments for each entry point; the executable and
+inputs named by these variables must come from trusted setup, never issue/PR text:
+
+```sh
+python "$PERF_RUNTIME" setup --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --input "$PERF_INPUT" --job-started-at "$PERF_JOB_STARTED_AT"
+python "$PERF_RUNTIME" start-service --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
+python "$PERF_RUNTIME" handoff --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --destination "$PERF_PUBLISHER_OUTPUT" --engine-outcome "$PERF_ENGINE_OUTCOME"
+python "$PERF_RUNTIME" finalize --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
+```
+
+Run `setup` in `pre-steps`. `PERF_JOB_STARTED_AT` must be the actual enclosing
+job-attempt start from trusted Actions metadata, including time already spent
+checking out the private helper and setting up tools. It cannot be a fresh
+timestamp after installation. Preflight verifies the frozen main SHA, every PR
+page and versioned owners before bootstrap; API denial blocks. Stock installs
+then run within the same aggregate 3,600-second clock. Run `start-service` as
+the `pre-agent-steps` step with **id `controller`**. It prepares frozen inputs,
+installs only `compiler_perf_harness.cjs` alongside the unchanged stock harness,
+starts the owned service, checks a real authenticated HTTP initialize response,
+and emits masked `token` plus public `execution_deadline_ms` step outputs.
+Its foreground `serve` child is supervised through sealed stop/exit records;
+reentry cannot adopt a saved PID or duplicate a launch.
+
+Configure the printed HTTP server fragment, `engine.harness:
+compiler_perf_harness.cjs`, its deadline environment variable,
+`engine.mcp.session-timeout: 6h`, `engine.mcp.tool-timeout: 5m`, and
+workflow `timeout-minutes: 250` (the engine step). The wrapper launches the
+**unchanged stock Copilot harness**, preserving model proxy, arguments and
+retry behavior, while bounding the entire harness rather than each retry.
+The first authenticated agent tool call triggers actual Docker inspection of
+`awf-agent`, its complete mounts/environment/namespaces, the running pinned
+`awf-api-proxy` and token-steering configuration. Failed inspection cannot start
+active work. The separate bubblewrap capability probe checks empty credentials,
+zero effective capabilities, inaccessible custody/receipt paths and denied
+network; denial never falls back to host execution.
+
+Budget accounting is **559 seconds readiness + 14,400 active + 1 second
+scheduling margin + 40 seconds shutdown = 15,000 seconds**. Readiness begins
+when the service is armed, so gateway/proxy/credential-cleaning overhead consumes
+that same slack, not another ten minutes. The wrapper sends owned termination
+at the end of the active envelope, permits 20 seconds for its child group,
+and reserves 20 seconds for AWF shutdown. A late agent is blocked, not granted
+less than 240 minutes. Absolute execution and active deadlines survive reentry;
+MCP dispatch timeouts acknowledge pending work without stopping or duplicating
+workers. Output authorization runs in the existing trusted worker process,
+not a service thread with invalid main-thread signal timers.
+
+Run `handoff` in an **always-running `post-steps`** step, with
+`PERF_ENGINE_OUTCOME` bound to `steps.agentic_execution.outcome`, not agent
+output. It requests owned cancellation, waits against the existing finalization
+bound, retains incomplete evidence, and returns the exact encrypted/compact
+artifact inventory. A failed/cancelled engine or interrupted/unhealthy service
+blocks publication. Built-in collection, handoff, artifact transport and
+publication share **one** 2,400-second finalization clock; `finalize` cannot
+renew it. Setup <=60 + execution <=250 + combined finalization <=40 fits 350
+minutes, leaving ten minutes of the 360-minute enclosing job for runner/action
+teardown, not another agent allowance. Hard termination can prevent the last
+write: only the last acknowledged journal is durable.
+
+`handoff` independently reapplies and revalidates sealed output, exports only
+`safe-output.json` and `proposal.patch` to the protected publisher destination,
+and binds repository/base/run/attempt/candidate/patch/evidence. Its sealed export
+intent permits recovery of missing copies but never overwrites changed files.
+The publisher must consume **only this inventory**, not the agent-writable
+`GH_AW_SAFE_OUTPUTS` path; configure the existing one-draft `am` transport.
+`finalize` is read/reconciliation only on the CLI. The Python-only fake-publisher
+seam exercises partial branch/PR publication and lost acknowledgments locally.
+The protected artifact uploader calls `Controller.acknowledge_evidence(sink)`;
+local encrypted-sink receipts stay `local_fixture`, never remote availability.
+
+Required owner settings are the protected paths above, the actual job start,
+step-scoped controller `GH_TOKEN` (canonical branch write plus PR/actions read),
+stock engine `COPILOT_GITHUB_TOKEN`, and the prior encrypted-retention
+`retention-config.json`/verified age tool. Do not put either token in job-wide
+environment, workspace, home or temp files. Publisher credentials belong only
+to the trusted publisher boundary, never the agent step. Existing
+`GH_AW_MODEL_AGENT_COPILOT` and `GH_AW_REASONING_EFFORT` overrides retain defaults
+**gpt-5.6-sol** and **high**.
+
+Native repo-memory is suitable only for optional notes on
+`memory/compiler-self-profile`: it clones editable files into `/tmp/gh-aw`,
+uploads an agent-produced patch and pushes with merge-on-retry. Its size/glob
+limits do not authenticate journal transitions or preserve this controller's
+CAS/authority rules. Therefore `memory/compiler-self-profile-state` remains
+controller-only; no native memory push may target it.
+
+Portable validation uses local bare Git, disposable age recipients, fake
+publication, actual HTTP SDK calls and a real Node wrapper with a fixture stock
+harness. Mocked Docker mounts and capability responses are contract tests,
+**not** Linux execution, a generated graph, hosted durability or live model
+access. Those remain a separate explicit Linux gate.
+
+Runtime adapter validation on 2026-10-20 used Python **3.12.10**, MCP **1.30.0**,
+Node **25.8.0** and age **v1.2.1**, with no failures, errors or skips:
+
+| Command | Tests | Exit | Seconds |
+| --- | --- | --- | --- |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v` | 123 | 0 | 3328.406 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v` | 52 | 0 | 81.822 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_workflow_runtime.py -v` | 19 | 0 | 190.567 |
+
+The broad batch began before the final runtime-only mount-alias/blocker guards;
+the 19-test replay covers those final guards. Three focused mount/layout/setup
+selectors also passed after replacing duplicate overlap logic with the existing
+bridge helper (exit 0, 2.049 seconds). `node --check` on the wrapper, Python
+`py_compile` on changed modules and `git diff --check` exited zero. Initial RED
+runs exposed the missing adapter/wrapper and fixture/health-probe errors; exact
+commands, failed results and final logs remain in the private session evidence.
+No compiler build, hosted run, model call, remote write or Linux proof is implied.
 
 ## Disposable experiment controller
 

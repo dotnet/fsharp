@@ -124,6 +124,26 @@ def capabilities(root, repository):
     result = boundary.command([str(dotnet), "--version"], repository, environment, root, "capability", 60)
     require(result["status"] == "collected" and result["stdout"].strip() == e.runner.SDK,
             "Linux namespace or pinned SDK probe failed")
+    script = (
+        "import os,pathlib,socket,sys\n"
+        "assert not any('TOKEN' in k or 'SECRET' in k for k in os.environ)\n"
+        "assert int(next(l.split()[1] for l in pathlib.Path('/proc/self/status').read_text().splitlines() "
+        "if l.startswith('CapEff:')),16)==0\n"
+        "for name in sys.argv[1:]:\n"
+        " try: pathlib.Path(name).read_bytes()\n"
+        " except (FileNotFoundError,PermissionError): pass\n"
+        " else: raise AssertionError('Protected custody readable')\n"
+        " try: pathlib.Path(name).write_bytes(b'forged')\n"
+        " except (FileNotFoundError,PermissionError): pass\n"
+        " else: raise AssertionError('Protected custody writable')\n"
+        "s=socket.socket(); s.settimeout(1)\n"
+        "assert s.connect_ex(('1.1.1.1',443)) != 0\n"
+        "print('isolated')\n")
+    result = boundary.command(["/usr/bin/python3", "-c", script, str(root / "key"),
+                               str(root / "host-receipt")], repository, environment, root, "custody-capability", 15)
+    m.write_json(root / "isolation-probe.json", result)
+    require(result["status"] == "collected" and result["stdout"].strip() == "isolated",
+            "Linux credential, custody, capability or deny-network probe failed")
     c.verify_tools(str(dotnet), root)
 
 
@@ -1103,6 +1123,10 @@ class Controller:
                 self.finish("cancelled", "Active deadline or cancellation before publisher output")
             raise
 
+    def authorize(self):
+        with self.budget("finalization", FINALIZATION_SECONDS):
+            return self.validate_output()
+
     def _validate_output(self, payload):
         if self.session.get("discovery"):
             require(self.session["phase"] == "accepted" and self.session["discovery"]["outcome"] is None,
@@ -1216,7 +1240,8 @@ def main(argv=None):
         if name == "preflight":
             command.add_argument("--input", required=True, help="Bounded experiment request JSON")
         if name == "worker":
-            command.add_argument("--operation", required=True, choices=("profile", "validate", "dump", "select", "finish"))
+            command.add_argument("--operation", required=True,
+                                 choices=("profile", "validate", "dump", "select", "finish", "authorize"))
     args = parser.parse_args(argv)
     try:
         from transport import JournalTransport

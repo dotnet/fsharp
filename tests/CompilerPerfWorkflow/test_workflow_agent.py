@@ -932,12 +932,6 @@ assert controller.acknowledge_evidence(no_upload)["status"] == "available"
             mounts = [{"type": "bind", "source": str(source), "target": "/workspace"},
                       {"type": "tmpfs", "target": "/agent-tmp"}]
             bridge.validate_mounts(source, protected, mounts)
-            command = bridge.agent_command(source, protected, image="registry.invalid/agent@sha256:" + "a" * 64,
-                                           network="compiler-perf-fixture")
-            self.assertIn("--read-only", command)
-            self.assertIn("/usr/local/bin/copilot", command)
-            for dangerous in ("--privileged", "--pid=host", "--network=host", "docker.sock", "--env-file"):
-                self.assertNotIn(dangerous, " ".join(command))
             for extra in (
                     {"type": "bind", "source": str(root), "target": "/tmp"},
                     {"type": "bind", "source": str(protected[0]), "target": "/repo"},

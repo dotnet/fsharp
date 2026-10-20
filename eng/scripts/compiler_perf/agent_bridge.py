@@ -2,8 +2,8 @@
 
 The HTTP endpoint uses the official MCP SDK, imported only by create_app(). The
 agent sees a disposable Git export, never the controller/helper/journal mounts.
-Docker network isolation and gateway forwarding are separately trusted setup;
-constructing this command is not evidence that Linux isolation has executed.
+The pinned GH AW/AWF lifecycle is connected by runtime.py. Portable tests are
+not evidence that Linux isolation has executed.
 """
 
 import argparse
@@ -91,7 +91,7 @@ def parse_message(raw):
 
 
 def worker_command(controller, operation):
-    require(operation in ("profile", "validate", "dump", "select", "finish"), "Invalid worker operation")
+    require(operation in ("profile", "validate", "dump", "select", "finish", "authorize"), "Invalid worker operation")
     return [sys.executable, str(Path(workflow.__file__).resolve()), "worker",
             "--root", str(controller.root), "--repository", str(controller.repository),
             "--journal", str(controller.transport.journal.repository), "--operation", operation]
@@ -111,10 +111,12 @@ def _launch(arguments, controller):
 class Bridge:
     """One owned child, serialized controller writes, and sealed request receipts."""
 
-    def __init__(self, controller, *, launch=_launch, identify=c.snapshot_process):
+    def __init__(self, controller, *, launch=_launch, identify=c.snapshot_process, ready=None):
         require(type(controller.session) is dict, "Prepared controller session is required")
         self.controller, self.launch, self.identify = controller, launch, identify
+        self.ready = ready
         self.lock, self.worker = threading.RLock(), None
+        self.shutdown_lock = threading.Lock()
         self.stopping, self.thread = threading.Event(), None
         self.closed, self.blocked = False, False
         self.messages = (controller.load("messages") if (controller.root / "messages.json").exists() else {})
@@ -181,7 +183,7 @@ class Bridge:
         previous = self.receipt
         operation, session = previous["operation"], self.controller.session
         phase = session["phase"]
-        completed = self._terminal() or (code == 0 and {
+        completed = (self._terminal() and operation != "authorize") or (code == 0 and {
             "profile": phase == "awaiting_decision" and type(session.get("profile")) is dict,
             "dump": phase == "awaiting_decision" and type(session.get("dump_result")) is dict,
             "validate": phase in ("accepted", "awaiting_decision")
@@ -189,6 +191,7 @@ class Bridge:
             "select": phase in ("selected", "awaiting_decision")
                       and type(session.get("selection_result")) is dict,
             "finish": False,
+            "authorize": phase == "accepted" and (self.controller.root / "approval.json").exists(),
         }[operation])
         if previous["state"] == "cleanup_failed":
             self.blocked = False
@@ -215,7 +218,8 @@ class Bridge:
                 self._queue_finish("blocked_setup", "Trusted worker exited before completing its operation")
 
     def _queue_finish(self, outcome, reason, message_id=None):
-        if self._terminal():
+        if self._terminal() and not (self.controller.session["phase"] == "accepted"
+                                    and not (self.controller.root / "approval.json").exists()):
             return self._ack()
         require(self.worker is None and not self.closed, "Worker still owns the session")
         self.controller.session["finish_request"] = {"outcome": outcome, "reason": reason}
@@ -294,7 +298,7 @@ class Bridge:
     def _finalizing(self, clocks=None):
         if self.worker is None:
             return False
-        if self.receipt["operation"] == "finish":
+        if self.receipt["operation"] in ("finish", "authorize"):
             return True
         if clocks is None:
             clocks = (self.controller.load("clocks")
@@ -303,7 +307,7 @@ class Bridge:
 
     def _poll(self):
         self._reap()
-        if self.blocked or self._terminal():
+        if self.blocked:
             return
         clocks = (self.controller.load("clocks")
                   if (self.controller.root / "clocks.json").exists() else {})
@@ -312,6 +316,8 @@ class Bridge:
                 self._read_deadline(clocks["finalization"], "finalization", workflow.FINALIZATION_SECONDS)
             except KeyboardInterrupt:
                 self._stop()
+            return
+        if self._terminal():
             return
         if "active" not in clocks:
             if self.controller.session["phase"] == "ready":
@@ -362,6 +368,31 @@ class Bridge:
             self.thread.join(timeout=STOP_SECONDS + 2)
         return stopped and not self.blocked
 
+    def shutdown(self, reason):
+        """Owned service cancellation, not adoption or signalling of a saved PID."""
+        with self.shutdown_lock:
+            if self.closed:
+                return not self.blocked
+            with self.lock:
+                self._reload()
+                self._reap()
+                unfinished = (not self._terminal() or self.controller.session["phase"] == "accepted"
+                              and not (self.controller.root / "approval.json").exists())
+                if unfinished and not self.blocked:
+                    self._request_finish("cancelled", reason)
+            while not self.blocked:
+                with self.lock:
+                    self._reap()
+                    if self.worker is None:
+                        if (self.controller.session["phase"] == "accepted"
+                                and not (self.controller.root / "approval.json").exists()):
+                            self._queue_finish("cancelled", reason)
+                        else:
+                            break
+                self.tick()
+                time.sleep(.1)
+            return self.close()
+
     def investigate(self, message):
         try:
             envelope = parse_message(message)
@@ -378,6 +409,9 @@ class Bridge:
                     return self.error("message_id_reused")
                 return copy.deepcopy(previous["response"] or self.error("incomplete_request"))
             try:
+                if self.ready is not None and not self.blocked and not self._terminal():
+                    self.ready()
+                    self.ready = None
                 self._poll()
                 # Status is an observation, not a persistent mutation receipt.
                 # Fresh status IDs never consume the bounded mutation history.
@@ -555,45 +589,15 @@ def export_source(repository, revision, destination, protected_roots):
     return {"files": len(records), "bytes": total, "revision": revision}
 
 
-def agent_command(source, protected_roots, *, image, network):
-    """Standalone isolation contract, not a stock GH AW/AWF engine invocation.
-
-    The trusted digest-pinned image must package Copilot CLI 1.0.52 at the
-    source-verified executable path, plus /opt/compiler-perf/prompt.txt and
-    /opt/compiler-perf/mcp-config.json (gateway-returned client configuration
-    named "controller"). Its separately provisioned network must expose the MCP
-    gateway and a credential-steering model proxy, not the Internet or host
-    services. The MCP gateway alone cannot authenticate model calls. No image,
-    endpoint or proxy is provisioned here; returning this command proves none.
-    """
-    require(type(image) is str and re.fullmatch(r"[a-z0-9./_-]+@sha256:[0-9a-f]{64}", image),
-            "Agent image must be digest pinned")
-    require(type(network) is str and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", network)
-            and network not in ("host", "bridge", "none"), "A dedicated gateway network is required")
-    mounts = [{"type": "bind", "source": str(source), "target": "/workspace"},
-              {"type": "tmpfs", "target": "/agent-tmp"}]
-    validate_mounts(source, protected_roots, mounts)
-    user = f"{os.getuid()}:{os.getgid()}" if os.name != "nt" else "65532:65532"
-    require(not user.startswith("0:"), "Agent orchestration requires an unprivileged owner")
-    return ["docker", "run", "--rm", "--init", "--read-only", "--cap-drop", "ALL",
-            "--security-opt", "no-new-privileges", "--pids-limit", "256", "--user", user,
-            "--network", network, "--mount", f"type=bind,source={Path(source).resolve()},target=/workspace",
-            "--mount", "type=tmpfs,target=/agent-tmp,tmpfs-size=268435456,tmpfs-mode=1777",
-            "--workdir", "/workspace", "--env", "HOME=/agent-tmp", "--env", "TMPDIR=/agent-tmp",
-            "--entrypoint", "/usr/local/bin/copilot", image, "--disable-builtin-mcps",
-            "--no-ask-user", "--no-custom-instructions", "--allow-tool", "controller",
-            "--add-dir", "/workspace", "--prompt-file", "/opt/compiler-perf/prompt.txt",
-            "--additional-mcp-config", "@/opt/compiler-perf/mcp-config.json"]
-
-
 class HttpBoundary:
     """Authenticate and cap the complete HTTP body before the SDK JSON decoder."""
 
-    def __init__(self, app, bridge, token, allowed_hosts):
+    def __init__(self, app, bridge, token, allowed_hosts, shutdown=None):
         require(type(token) is str and re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token),
                 "Invalid endpoint capability")
         self.app, self.bridge, self.token = app, bridge, token
         self.allowed_hosts = frozenset(allowed_hosts)
+        self.shutdown = shutdown or bridge.close
 
     async def _reject(self, send, code):
         body = b'{"error":"request_rejected"}'
@@ -609,7 +613,7 @@ class HttpBoundary:
             async def close_owned_bridge():
                 nonlocal cleanup
                 if cleanup is None:
-                    cleanup = asyncio.create_task(asyncio.to_thread(self.bridge.close))
+                    cleanup = asyncio.create_task(asyncio.to_thread(self.shutdown))
                 return await asyncio.shield(cleanup)
 
             async def lifespan_send(event):
@@ -695,7 +699,7 @@ class HttpBoundary:
         await self.app(scope, replay, send)
 
 
-def create_app(bridge, token, *, allowed_hosts=None):
+def create_app(bridge, token, *, allowed_hosts=None, shutdown=None):
     from mcp.server.fastmcp import FastMCP
     from mcp.server.transport_security import TransportSecuritySettings
 
@@ -730,7 +734,7 @@ def create_app(bridge, token, *, allowed_hosts=None):
         except Exception:
             return Bridge.error("operation_failed")
 
-    return HttpBoundary(server.streamable_http_app(), bridge, token, hosts)
+    return HttpBoundary(server.streamable_http_app(), bridge, token, hosts, shutdown)
 
 
 def endpoint_token(root):
