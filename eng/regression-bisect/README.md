@@ -86,6 +86,9 @@ Public Azure DevOps feeds redirect package downloads to the publisher's `*.vsblo
 Those CDN tunnels retain public-address validation and the existing header, byte, and time limits.
 The broker permits 128 concurrent public tunnels for multi-feed NuGet restores.
 The connection, byte, and time budgets remain unchanged.
+Historical commands receive a private NuGet configuration that limits concurrent HTTP requests to four per feed.
+This configuration changes neither package sources nor credentials and does not replace repository configuration.
+The transport receipt retains peak tunnel usage and denial counts before container removal.
 The timeout canary keeps its child referenced until the external deadline terminates the container.
 
 ## Durable intake routing (not activated)
@@ -1293,6 +1296,10 @@ and non-CONNECT traffic; reaching it stops the listener rather than allowing
 unlimited denial logs or resetting counters. These are transport counters, not a new
 investigation allowance; the existing worker/build/time budgets are unchanged.
 The active-tunnel ceiling fits the broker's unchanged 1,024-descriptor limit.
+`snapshot()` reports peak tunnel usage and denial counts by reason, without URL paths or query strings.
+The broker publishes these counters atomically in its private scratch directory.
+The adapter reads the bounded counter file before cleanup and includes it in the transport receipt.
+Missing or malformed counters block collection but do not skip owned cleanup.
 
 TLS remains end-to-end: the broker does **not** inspect URL paths, HTTP
 redirects, checksums or decompressed content. Existing toolchain acquisition

@@ -465,6 +465,17 @@ async function runContainer(config, options, deps = {}) {
             receipt.resultSha256 = hash(output);
             await fs.writeFile(path.join(root, "result.json"), output, { flag: "wx" });
         }
+        receipt.egress = JSON.parse(await docker(["container", "exec", broker, "/usr/local/bin/node",
+            "/trusted/eng/regression-bisect/container-entry.cjs", "egress"], { maxBytes: 4096 }));
+        requireValue(receipt.egress && Object.keys(receipt.egress).sort().join(" ") ===
+            "active denied peakActive requests stopped totalBytes" &&
+            ["active", "peakActive", "requests", "totalBytes"].every(key =>
+                Number.isSafeInteger(receipt.egress[key]) && receipt.egress[key] >= 0) &&
+            typeof receipt.egress.stopped === "boolean" && receipt.egress.denied &&
+            Object.getPrototypeOf(receipt.egress.denied) === Object.prototype &&
+            Object.entries(receipt.egress.denied).every(([key, value]) =>
+                /^[a-z-]{1,40}$/.test(key) && Number.isSafeInteger(value) && value > 0),
+        "invalid broker counters");
         receipt.status = "collected";
     } catch (error) {
         failure = error;

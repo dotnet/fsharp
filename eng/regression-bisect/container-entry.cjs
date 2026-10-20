@@ -1,4 +1,5 @@
 const fs = require("node:fs/promises");
+const { writeFileSync, renameSync } = require("node:fs");
 const path = require("node:path");
 const net = require("node:net");
 const { spawn } = require("node:child_process");
@@ -219,7 +220,7 @@ async function physicalRunner(unit, launch) {
     validateExecutionUnit(unit);
     requireValue(process.getuid() === 0, "execution requires the protected supervisor UID");
     const signal = AbortSignal.timeout(Math.max(1, Date.parse(unit.deadline) - Date.now()));
-    const commands = [];
+    const commands = [], nugetHomes = new Set();
     const withProxy = async (executable, args, settings, historical = false) => {
         const env = { ...settings.env,
             ...Object.fromEntries(["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"].map(k => [k, process.env[k]])) };
@@ -231,6 +232,14 @@ async function physicalRunner(unit, launch) {
             parent !== directory && directory.startsWith(`${parent}/`)));
         if (historical) {
             await terminateHistoricalProcesses();
+            if (env.HOME && !nugetHomes.has(env.HOME)) {
+                const directory = path.join(env.HOME, ".nuget", "NuGet");
+                await fs.mkdir(directory, { recursive: true });
+                await fs.writeFile(path.join(directory, "NuGet.Config"),
+                    '<configuration><config><add key="maxHttpRequestsPerSource" value="4" /></config></configuration>',
+                    { flag: "wx", mode: 0o644 });
+                nugetHomes.add(env.HOME);
+            }
             await historicalAccess(executable);
             await historicalAccess(settings.cwd + "/entry");
             for (const directory of directories) await historicalDirectory(directory);
@@ -328,11 +337,27 @@ async function main() {
     const [operation] = process.argv.slice(2);
     requireValue(process.argv.length === (operation === "blob" ? 4 : 3), "fixed container entry required");
     if (operation === "broker") {
-        const broker = createEgressBroker();
+        let broker;
+        const persist = () => {
+            writeFileSync("/scratch/egress.new", JSON.stringify(broker.snapshot()), { mode: 0o600 });
+            renameSync("/scratch/egress.new", "/scratch/egress.json");
+        };
+        broker = createEgressBroker({ audit: event => {
+            process.stderr.write(`${JSON.stringify(event)}\n`);
+            persist();
+        } });
+        persist();
         broker.server.listen(3128, "0.0.0.0");
         for (const signal of ["SIGTERM", "SIGINT"]) process.once(signal, () => {
             broker.close().catch(error => { console.error(error.message); process.exitCode = 1; });
         });
+        return;
+    }
+    if (operation === "egress") {
+        const file = "/scratch/egress.json", stat = await fs.lstat(file);
+        requireValue(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.size <= 4096,
+            "broker counters must be a bounded regular file");
+        process.stdout.write(await fs.readFile(file));
         return;
     }
     if (operation === "ready") {

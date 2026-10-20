@@ -86,9 +86,11 @@ test("public restore bursts fit the finite tunnel ceiling without bypassing it",
             `public package tunnel ${n + 1} must fit the broker descriptor budget`);
     }
     assert.equal(f.broker.snapshot().active, 128);
+    assert.equal(f.broker.snapshot().peakActive, 128);
     assert.match(await response(await f.request()), /503 Service Unavailable/);
     assert.equal(f.connections.length, 128);
     assert.equal(f.broker.snapshot().requests, 129, "the rejected connection remains charged");
+    assert.deepEqual(f.broker.snapshot().denied, { capacity: 1 });
     for (const socket of sockets) {
         socket.write("bounded");
         assert.equal((await once(socket, "data"))[0].toString(), "bounded");
@@ -97,6 +99,7 @@ test("public restore bursts fit the finite tunnel ceiling without bypassing it",
     for (const socket of sockets) socket.end();
     await Promise.all(closed);
     assert.equal(f.broker.snapshot().active, 0);
+    assert.equal(f.broker.snapshot().peakActive, 128);
     assert.ok(3 * limits.active + 8 < 1024, "active and pending sockets must fit the unchanged broker file limit");
 });
 

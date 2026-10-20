@@ -41,11 +41,16 @@ function createEgressBroker(options = {}) {
     }
     const resolve = options.resolve ?? dns.lookup;
     const connect = options.connect ?? net.connect;
-    const audit = options.audit ?? (event => process.stderr.write(`${JSON.stringify(event)}\n`));
+    const emit = options.audit ?? (event => process.stderr.write(`${JSON.stringify(event)}\n`));
     requireValue(["resolve", "connect", "audit"].every(key => options[key] === undefined || typeof options[key] === "function"),
         "invalid egress callback");
     const sockets = new Set(), tunnels = new Map(), ids = new WeakMap();
-    let requests = 0, totalBytes = 0, stopped = false;
+    const denied = {};
+    let requests = 0, totalBytes = 0, peakActive = 0, stopped = false;
+    const audit = event => {
+        if (event.event === "denied") denied[event.reason] = (denied[event.reason] ?? 0) + 1;
+        emit(event);
+    };
     const server = http.createServer({ maxHeaderSize: 8192, requestTimeout: cap.headerMs, headersTimeout: cap.headerMs },
         (request, response) => {
             audit({ event: "denied", reason: "method" });
@@ -109,6 +114,7 @@ function createEgressBroker(options = {}) {
         };
         const timer = setTimeout(() => finish("timeout"), cap.tunnelMs);
         tunnels.set(id, finish);
+        peakActive = Math.max(peakActive, tunnels.size);
         socket.on("close", () => finish("client-closed"));
         socket.on("error", () => finish("client-error"));
         const forward = (bytes, destination, source, kind) => {
@@ -154,7 +160,7 @@ function createEgressBroker(options = {}) {
     let closing;
     return {
         server,
-        snapshot: () => ({ requests, active: tunnels.size, totalBytes, stopped }),
+        snapshot: () => ({ requests, active: tunnels.size, peakActive, totalBytes, stopped, denied: { ...denied } }),
         close: () => closing ??= new Promise((resolve, reject) => {
             stopped = true;
             for (const finish of tunnels.values()) finish("shutdown");

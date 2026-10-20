@@ -179,6 +179,10 @@ async function dockerFixture(t, failure) {
         if (args[1] === "exec") {
             if (failure === "ready") throw new Error("broker not responsive");
             const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
+            if (operation === "egress") {
+                if (failure === "egress") throw new Error("broker counters unavailable");
+                return out({ requests: 23, active: 0, peakActive: 4, totalBytes: 1024, stopped: false, denied: { capacity: 1 } });
+            }
             if (["collect", "archive", "blob"].includes(operation)) {
                 assert.deepEqual(args.slice(2, 4), ["--user", "0:0"]);
                 const worker = resources.get(args[4]);
@@ -218,6 +222,98 @@ async function dockerFixture(t, failure) {
     return { root, calls, resources, setResult: value => { execution = value; },
         setAcquisition: value => { acquisition = value; }, deps: { platform: "linux", command: run } };
 }
+
+test("transport retains broker counters before removing its owned containers", async t => {
+    const f = await dockerFixture(t);
+    const result = await runContainer(config(), {
+        operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+    }, f.deps);
+    assert.equal(result.status, "collected", result.reason);
+    assert.deepEqual(result.receipt.egress,
+        { requests: 23, active: 0, peakActive: 4, totalBytes: 1024, stopped: false, denied: { capacity: 1 } });
+    const sampled = f.calls.findIndex(args => args[1] === "exec" && args.at(-1) === "egress");
+    const removed = f.calls.findIndex(args => args[1] === "rm");
+    assert.ok(sampled >= 0 && sampled < removed);
+});
+
+test("transport reports missing broker counters without skipping owned cleanup", async t => {
+    const f = await dockerFixture(t, "egress");
+    const result = await runContainer(config(), {
+        operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+    }, f.deps);
+    assert.equal(result.status, "blocked");
+    assert.match(result.reason, /broker counters unavailable/);
+    assert.equal(result.receipt.cleanup.length, 4);
+    assert.ok(result.receipt.cleanup.every(resource => resource.removed));
+});
+
+for (const counters of [null, { requests: -1 }, { requests: 1, active: 0, peakActive: 1,
+    totalBytes: 0, stopped: false, denied: { capacity: "1" } }])
+test(`transport rejects malformed broker counters: ${JSON.stringify(counters)}`, async t => {
+    const f = await dockerFixture(t), command = f.deps.command;
+    f.deps.command = async (executable, args, settings) => args.at(-1) === "egress"
+        ? { exitCode: 0, stdout: Buffer.from(JSON.stringify(counters)), stderr: Buffer.alloc(0) }
+        : command(executable, args, settings);
+    const result = await runContainer(config(), {
+        operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
+    }, f.deps);
+    assert.equal(result.status, "blocked");
+    assert.match(result.reason, /invalid broker counters/);
+    assert.ok(result.receipt.cleanup.every(resource => resource.removed));
+});
+
+test("broker counter publication is atomic and its reader excludes linked or oversized files", async () => {
+    const entry = path.join(__dirname, "container-entry.cjs"), source = await fs.readFile(entry, "utf8");
+    const files = new Map(), writes = [], signals = [];
+    let audit, snapshot = { requests: 0, active: 0, peakActive: 0, totalBytes: 0, stopped: false, denied: {} };
+    let stat = { isFile: () => true, isSymbolicLink: () => false, nlink: 1, size: 128 };
+    let stdout = "";
+    const broker = {
+        snapshot: () => snapshot,
+        server: { listen: (port, host) => assert.deepEqual([port, host], [3128, "0.0.0.0"]) },
+    };
+    const context = { module: {}, Buffer, AbortSignal, process: {
+        argv: ["node", entry, "broker"], once: signal => signals.push(signal),
+        stderr: { write: () => {} }, stdout: { write: bytes => { stdout += bytes; } },
+    }, require: name => {
+        if (name === "./egress.cjs") return { createEgressBroker: options => { audit = options.audit; return broker; } };
+        if (name === "node:fs") return {
+            writeFileSync: (file, bytes, options) => {
+                assert.equal(file, "/scratch/egress.new");
+                assert.equal(options.mode, 0o600);
+                writes.push(bytes);
+                files.set(file, bytes);
+            },
+            renameSync: (from, to) => {
+                assert.deepEqual([from, to], ["/scratch/egress.new", "/scratch/egress.json"]);
+                files.set(to, files.get(from));
+                files.delete(from);
+            },
+        };
+        if (name === "node:fs/promises") return {
+            lstat: async file => { assert.equal(file, "/scratch/egress.json"); return stat; },
+            readFile: async file => files.get(file),
+        };
+        return require(name);
+    } };
+    require("node:vm").runInNewContext(source + "\nmodule.exports = { main };", context, { filename: entry });
+    await context.module.exports.main();
+    assert.equal(writes.length, 1);
+    assert.deepEqual(signals, ["SIGTERM", "SIGINT"]);
+    snapshot = { ...snapshot, requests: 129, peakActive: 128, denied: { capacity: 1 } };
+    audit({ event: "denied", reason: "capacity" });
+    assert.equal(writes.length, 2);
+    assert.equal(files.has("/scratch/egress.new"), false);
+    context.process.argv[2] = "egress";
+    await context.module.exports.main();
+    assert.deepEqual(JSON.parse(stdout), snapshot);
+    for (const change of [{ nlink: 2 }, { size: 4097 }, { isSymbolicLink: () => true }, { isFile: () => false }]) {
+        const original = stat;
+        stat = { ...stat, ...change };
+        await assert.rejects(context.module.exports.main(), /bounded regular file/);
+        stat = original;
+    }
+});
 
 test("worker file limit supports the source bootstrap without raising the broker limit", async t => {
     const f = await dockerFixture(t);
@@ -693,7 +789,7 @@ async function physicalFixture(t, { failCopy = false, failBuild = false, failHis
             if (name === "./repro-process.cjs") return { execute: async (executable, args, settings) => {
                 calls.push({ executable, args, settings });
                 if (executable === "/usr/bin/setpriv") {
-                    await onHistorical?.(args, settings);
+                    await onHistorical?.(args, settings, writes);
                     if (failHistorical) throw new Error("controlled historical command failure");
                 }
                 return { complete: true, exitCode: failBuild && args[0] === "build" ? 1 : 0,
@@ -787,8 +883,13 @@ test(`historical NuGet cache root permits new sibling caches and returns ownersh
     let launched = false;
     const fixture = await physicalFixture(t, {
         failHistorical,
-        onHistorical: async () => {
+        onHistorical: async (args, settings, writes) => {
             launched = true;
+            const configs = writes.filter(row => row.file === `${root}/.nuget/NuGet/NuGet.Config`);
+            assert.equal(configs.length, 1, "create one private concurrency config before historical restore");
+            assert.match(configs[0].bytes, /<add key="maxHttpRequestsPerSource" value="4"\s*\/>/);
+            assert.doesNotMatch(configs[0].bytes, /packageSources|credentials/i);
+            assert.equal(configs[0].options.flag, "wx", "do not overwrite historical or user configuration");
             assert.equal(entries.get(cache).uid, 1000, "NuGet must create its own HTTP and plugin cache directories");
             for (const name of ["http", "plugins"]) {
                 entries.set(`${cache}/${name}`, { uid: 1000, mode: 0o700, kind: "directory" });
@@ -816,6 +917,10 @@ test(`historical NuGet cache root permits new sibling caches and returns ownersh
                     assert.equal(entries.get(file).uid, 0, "cache cleanup must not need CAP_FOWNER");
                     entries.get(file).mode = mode;
                 }
+            });
+            await deps.workspaceDependencies.execute("/bin/bash", ["build.sh"], {
+                cwd: root, env: { HOME: root, NUGET_PACKAGES: `${cache}/packages`,
+                    NUGET_HTTP_CACHE_PATH: `${cache}/http`, NUGET_PLUGINS_CACHE_PATH: `${cache}/plugins` },
             });
             await deps.workspaceDependencies.execute("/bin/bash", ["build.sh"], {
                 cwd: root, env: { HOME: root, NUGET_PACKAGES: `${cache}/packages`,
@@ -886,6 +991,7 @@ test("fixed child entry and opt-in smoke reject command-like arguments in fresh 
         ["container-entry.cjs", ["worker", "arbitrary.js"], 1],
         ["container-entry.cjs", ["broker", "extra"], 1],
         ["container-entry.cjs", ["ready", "extra"], 1],
+        ["container-entry.cjs", ["egress", "extra"], 1],
         ["containment.smoke.cjs", [], 2],
         ["containment.smoke.cjs", ["--run", "relative.json", "relative-output"], 2],
     ]) await t.test(`${file} ${args.join(" ")}`, () => {
