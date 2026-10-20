@@ -17,7 +17,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.RuntimeAsyncAnalysis
-open FSharp.Compiler.RuntimeAsyncExceptionRewrite
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -501,9 +500,6 @@ type IncrementalOptimizationEnv =
       /// Indicates that the expression being optimized is the body of a runtime-async marker.
       runtimeAsyncContext: bool
 
-      /// Runtime async diagnostics must only be reported once across optimization passes.
-      runtimeAsyncReportedRanges: HashSet<range>
-
     }
 
     static member Empty =
@@ -519,8 +515,7 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          runtimeAsyncContext = false
-          runtimeAsyncReportedRanges = HashSet<range>() }
+          runtimeAsyncContext = false }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -1737,6 +1732,7 @@ and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
 and OpHasEffect context g m op tyargs =
     match op with
+    | TOp.DebugLocalScope _ -> false
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) ->
@@ -2721,6 +2717,38 @@ let EtaExpandUnderAppliedValBinding g expr =
     | EtaFloatableValLet g (bind, body, m, etaExpanded) -> floatEtaCaptures bind body m etaExpanded
     | _ -> expr
 
+/// `let p = (let c = e in fun x -> ...)`  ~>  `let c = e in let p = fun x -> ...`, p an [<InlineIfLambda>]
+/// binding, so the lambda or delegate becomes a `CurriedLambdaValue` the optimizer can inline. The captures
+/// are evaluated at the same point and are not in scope in the body.
+let FloatInlineIfLambdaCaptures g expr =
+    let rec isFloatable rhs =
+        match rhs with
+        | Expr.Let(_, rest, _, _)
+        | Expr.Sequential(_, rest, NormalSeq, _) -> isFloatable rest
+        | _ ->
+            match stripDebugPoints rhs with
+            | Expr.Lambda _
+            | Expr.TyLambda _
+            | NewDelegateExpr g _ -> true
+            | _ -> false
+
+    match expr with
+    | Expr.Let(bind, body, m, _) when
+        bind.Var.InlineIfLambda
+        && (match bind.Expr with
+            | Expr.Let _
+            | Expr.Sequential(_, _, NormalSeq, _) -> isFloatable bind.Expr
+            | _ -> false)
+        ->
+        let rec rebind rhs =
+            match rhs with
+            | Expr.Let(capture, rest, mLet, _) -> mkLetBind mLet capture (rebind rest)
+            | Expr.Sequential(first, rest, NormalSeq, mSeq) -> Expr.Sequential(first, rebind rest, NormalSeq, mSeq)
+            | rhs -> mkLet bind.DebugPoint m bind.Var rhs body
+
+        rebind bind.Expr
+    | _ -> expr
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard(fun () ->
@@ -2799,11 +2827,6 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
         let info = runtimeAsyncReturn.Value
         let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
-        for v in GetRuntimeAsyncNonPreservableUses g bodyR do
-            if env.runtimeAsyncReportedRanges.Add v.Range then
-                errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
-
-        let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
         Expr.App(f, fty, tyargs, [ bodyR ], m),
         { bodyInfo with
             HasEffect = true
@@ -3069,6 +3092,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ =
       match op with
+      | TOp.DebugLocalScope _ -> 0, argValues[0]
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2, value_
 
@@ -3273,6 +3297,7 @@ and OptimizeLinearExpr cenv env expr contf =
     let expr = DetectAndOptimizeForEachExpression g OptimizeAllForExpressions expr
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr
     let expr = if cenv.settings.alwaysInline then EtaExpandUnderAppliedValBinding g expr else expr
+    let expr = if env.runtimeAsyncContext && cenv.settings.alwaysInline then FloatInlineIfLambdaCaptures g expr else expr
     let expr = stripExpr expr
 
     // Matching on 'match __resumableEntry() with ...` is really a first-class language construct which we
@@ -3886,21 +3911,28 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         else
             None
 
-    let containsRuntimeAsyncFragment expr =
+    let containsRuntimeAsyncCode expr =
         match runtimeAsyncAnalyzer with
-        | Some analyzer -> analyzer.ContainsFragment expr
+        | Some analyzer -> analyzer.ContainsRuntimeAsyncCode expr
         | None -> false
 
     let reoptimizeRuntimeAsync reduced =
-        let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
-
-        let reduced =
-            if containsRuntimeAsyncFragment reduced then
-                fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-            else
-                reduced
-
-        InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+        if containsRuntimeAsyncCode reduced then
+            let preserveCallSite = not cenv.settings.LocalOptimizationsEnabled
+            let cenv =
+                { cenv with
+                    settings =
+                        { cenv.settings with
+                            alwaysInline = true
+                            localOptUser = Some true } }
+            let result = fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
+            match runtimeAsyncAnalyzer with
+            | Some analyzer ->
+                let result = ReduceRuntimeAsyncReturnedClosureApplications g analyzer result
+                if preserveCallSite then PreserveRuntimeAsyncCallSiteDebugPoint g m result else result
+            | None -> result
+        else
+            reduced
 
     let mustInlineRuntimeAsync =
         match runtimeAsyncAnalyzer, stripExpr valExpr with
@@ -4033,8 +4065,9 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 else
                     specialize ()
 
+            // InlineIfLambda callbacks keep their source points; forced inline helpers belong at the call site.
             let specLambdaR =
-                if mustInlineRuntimeAsync then
+                if mustInlineRuntimeAsync && not vref.InlineIfLambda then
                     remarkExpr m specLambdaR
                 else
                     specLambdaR
@@ -4707,7 +4740,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     cenv.emitTailcalls &&
     not env.disableMethodSplitting &&
     // Never split a runtime-async body: the split-off method would not be a runtime-async
-    // method, so its Await calls would be rejected by IlxGen (FS3916).
+    // method, so its Await calls would be rejected by IlxGen (FS3918).
     not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g).ContainsSuspension e) &&
     einfo.FunctionSize >= threshold &&
 
