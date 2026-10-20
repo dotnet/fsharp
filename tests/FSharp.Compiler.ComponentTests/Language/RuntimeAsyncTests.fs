@@ -2875,4 +2875,67 @@ let main _ =
                 Assert.Equal(inner.Index, invoked.Index))
         if insideContext then
             result |> verifyILNotPresent [ "FSharpRef" ]
+
+    [<Fact>]
+    let ``runtime async conditional callback keeps immutable capture visible in every invocation`` () =
+        let result =
+            FSharp """
+module ImmutableInContext
+
+open System
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) = callback () + callback ()
+
+let run flag (ready: Task<int>) =
+    __runtimeAsyncReturn (
+        invoke (
+            if flag then
+                let count = Environment.TickCount
+                printfn "construction %d" count
+                fun () ->
+                    let value = AsyncHelpers.Await ready
+                    printfn "callback %d" count
+                    value + count
+            else
+                fun () -> 0))
+
+[<EntryPoint>]
+let main _ =
+    if (run false (Task.FromResult 1)).Result <> 0 then failwith "Other branch result changed"
+    let result = (run true (Task.FromResult 1)).Result
+    if result % 2 <> 0 then failwith "Callback result changed"
+    0
+"""
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+            |> withPortablePdb
+            |> withNoOptimize
+            |> compileExeAndRun
+            |> shouldSucceed
+
+        use stream = File.OpenRead(Path.ChangeExtension(result.OutputPath.Value, "pdb"))
+        use provider = MetadataReaderProvider.FromPortablePdbStream stream
+        let pdb = provider.GetMetadataReader()
+
+        result |> withMetadataReader (fun md ->
+            let method =
+                md.MethodDefinitions
+                |> Seq.filter (fun handle -> md.GetString(md.GetMethodDefinition(handle).Name) = "run")
+                |> Assert.Single
+            let callbackPoints =
+                pdb.GetMethodDebugInformation(method).GetSequencePoints()
+                |> Seq.filter (fun point -> not point.IsHidden && point.StartLine = 19)
+                |> Seq.toList
+            Assert.Equal(2, callbackPoints.Length)
+            for point in callbackPoints do
+                let names =
+                    [ for handle in pdb.GetLocalScopes method do
+                        let scope = pdb.GetLocalScope handle
+                        if scope.StartOffset <= point.Offset && point.Offset < scope.EndOffset then
+                            for local in scope.GetLocalVariables() do
+                                yield pdb.GetString (pdb.GetLocalVariable local).Name ]
+                Assert.Contains("count", names))
 #endif

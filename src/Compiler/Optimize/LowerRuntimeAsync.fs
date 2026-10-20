@@ -246,7 +246,7 @@ let private mkCallbackDispatch (g: TcGlobals) (stackGuard: StackGuard) (callback
 
         (branch.Captures, body)
         ||> List.foldBack (fun v body ->
-            if v.IsMutable && not v.IsCompilerGenerated then
+            if not v.IsCompilerGenerated then
                 Expr.Op(TOp.DebugLocalScope(captureRemap[v], v.LogicalName), [], [ body ], m)
             else
                 body)
