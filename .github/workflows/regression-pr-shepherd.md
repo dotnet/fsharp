@@ -12,6 +12,8 @@ on:
   schedule: every 4h
   workflow_dispatch:
 
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+
 timeout-minutes: 30
 
 permissions: read-all
@@ -50,7 +52,8 @@ tools:
     toolsets: [all]
     min-integrity: none
   bash: true
-  repo-memory: true
+  repo-memory:
+    max-file-count: 200
 ---
 
 # Regression PR Shepherd
@@ -161,7 +164,7 @@ Before pushing any fix:
 
 ### Step 4 — Update memory
 
-Track which PRs you've processed and the last review comment timestamp you addressed, so the next run only processes new feedback.
+Track which PRs you've processed and the last review comment timestamp you addressed, so the next run only processes new feedback. Keep all of it in a single `state.json`; do not create per-run memory files, because a push with too many files fails the run.
 
 ## Guidelines
 

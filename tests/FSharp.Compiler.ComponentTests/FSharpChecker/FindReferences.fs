@@ -1,4 +1,4 @@
-﻿module FSharpChecker.FindReferences
+module FSharpChecker.FindReferences
 
 open System.Threading.Tasks
 open Xunit
@@ -25,17 +25,25 @@ let deriveOccurrence (su:FSharpSymbolUse) =
 // Test Helpers - Reduce boilerplate in single-file find-references tests
 // =============================================================================
 
-/// Finds all references to a symbol in source code using singleFileChecker.
+/// Finds all references to a symbol in source code checked as `fileName` using singleFileCheckerWithName.
 /// Returns a list of (fileName, line, startCol, endCol) tuples.
-let findRefsInSource source symbolName =
-    let fileName, options, checker = singleFileChecker source
-    let symbolUse = getSymbolUse fileName source symbolName options checker |> Async.RunSynchronously
-    checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-    |> Async.RunSynchronously
+let findRefsInFile fileName source symbolName =
+    async {
+        let! _, options, checker = singleFileCheckerWithName fileName source
+        let! symbolUse = getSymbolUse fileName source symbolName options checker
+        return! checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
+    }
+
+/// Runs a complete find-references test on `fileName`: finds symbol and asserts expected ranges.
+let testFindRefsInFile fileName source symbolName expectedRanges : Task =
+    task {
+        let! references = findRefsInFile fileName source symbolName
+        references |> expectToFind expectedRanges
+    }
 
 /// Runs a complete find-references test: finds symbol and asserts expected ranges.
 let testFindRefsInSource source symbolName expectedRanges =
-    findRefsInSource source symbolName |> expectToFind expectedRanges
+    testFindRefsInFile "test.fs" source symbolName expectedRanges
 
 /// Asserts that the given ranges contain exactly the expected line numbers.
 let expectLines expectedLines (ranges: range seq) =
@@ -450,7 +458,7 @@ let ``We find values of a type that has been aliased`` () =
     }
 
 [<Fact>]
-let ``We don't find type aliases for a type`` () =
+let ``We don't find type aliases for a type`` () : Task =
     let source = """
 type MyType =
     member _.foo = "boo"
@@ -526,7 +534,7 @@ module ActivePatterns =
 
     /// https://github.com/dotnet/fsharp/issues/14206
     [<Fact>]
-    let ``Finding references to an active pattern case shouldn't find other cases`` () =
+    let ``Finding references to an active pattern case shouldn't find other cases`` () : Task =
         let source = """
 let (|Even|Odd|) v =
     if v % 2 = 0 then Even else Odd
@@ -537,7 +545,7 @@ match 2 with
         testFindRefsInSource source "Even" ["test.fs", 2, 6, 10; "test.fs", 3, 22, 26; "test.fs", 5, 2, 6]
 
     [<Fact>]
-    let ``We don't find references to cases from other active patterns with the same name`` () =
+    let ``We don't find references to cases from other active patterns with the same name`` () : Task =
         let source = """
 module One =
 
@@ -706,7 +714,7 @@ type internal SomeType() =
         }
 
 [<Fact>]
-let ``Module with the same name as type`` () =
+let ``Module with the same name as type`` () : Task =
     let source = """
 module Foo
 
@@ -722,7 +730,7 @@ let y = MyType.Two
     testFindRefsInSource source "MyType" ["test.fs", 4, 5, 11; "test.fs", 7, 8, 14; "test.fs", 11, 8, 14]
 
 [<Fact>]
-let ``Module with the same name as type part 2`` () =
+let ``Module with the same name as type part 2`` () : Task =
     let source = """
 module Foo
 
@@ -745,7 +753,7 @@ module Properties =
     /// Documents compiler service behavior: returns property def, getter, setter, and usage references.
     /// VS layer filters out 'get'/'set' keywords using Tokenizer.tryFixupSpan.
     [<Fact>]
-    let ``We find all references for property with get and set accessors`` () =
+    let ``We find all references for property with get and set accessors`` () : Task =
         let source = """
 module Foo
 
@@ -775,7 +783,7 @@ module SingleLineInterfaceSyntax =
 
     /// Issue: https://github.com/dotnet/fsharp/issues/15399
     [<Fact>]
-    let ``We find interface members with single-line interface syntax`` () =
+    let ``We find interface members with single-line interface syntax`` () : Task =
         let source = """
 module Foo
 
@@ -793,7 +801,7 @@ foo.Bar()
         ]
 
     [<Fact>]
-    let ``We find interface type references with single-line interface syntax`` () =
+    let ``We find interface type references with single-line interface syntax`` () : Task =
         let source = """
 module Foo
 
@@ -811,55 +819,12 @@ let foo = Foo() :> IFoo
 
 module LineDirectives =
 
-    open System
-
-    /// A variant of singleFileChecker that allows a custom filename
-    /// to avoid test isolation issues with LineDirectives.store
-    let singleFileCheckerWithName (fileName: string) source =
-        let getSource _ fn =
-            FSharpFileSnapshot(
-              FileName = fn,
-              Version = "1",
-              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
-            |> async.Return
-
-        let checker = FSharpChecker.Create(
-            keepAllBackgroundSymbolUses = false,
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            enablePartialTypeChecking = true,
-            captureIdentifiersWhenParsing = true,
-            useTransparentCompiler = true)
-
-        let options =
-            let baseOptions, _ =
-                checker.GetProjectOptionsFromScript(
-                    fileName,
-                    SourceText.ofString "",
-                    assumeDotNetFramework = false
-                )
-                |> Async.RunSynchronously
-
-            { baseOptions with
-                ProjectFileName = "project"
-                ProjectId = None
-                SourceFiles = [|fileName|]
-                IsIncompleteTypeCheckEnvironment = false
-                UseScriptResolutionRules = false
-                LoadTime = DateTime()
-                UnresolvedReferences = None
-                OriginalLoadReferences = []
-                Stamp = None }
-
-        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
-
-        fileName, snapshot, checker
-
     /// https://github.com/dotnet/fsharp/issues/9928
     /// Find All References should work correctly with #line directives.
     /// When #line is used, the returned ranges should be the remapped ranges
     /// (the "fake" file name and line numbers from the directive).
     [<Fact>]
-    let ``Find references works with #line directives`` () =
+    let ``Find references works with #line directives`` () : Task =
         let source = """
 module Foo
 #line 100 "generated.fs"
@@ -868,13 +833,7 @@ let Thing = 42
 let use1 = Thing + 1
 """
         // Use a unique filename to avoid test isolation issues with LineDirectives.store
-        let fileName, options, checker = singleFileCheckerWithName "lineDirectivesTest.fs" source
-
-        let symbolUse = getSymbolUse fileName source "Thing" options checker |> Async.RunSynchronously
-
-        checker.FindBackgroundReferencesInFile(fileName, options, symbolUse.Symbol)
-        |> Async.RunSynchronously
-        |> expectToFind [
+        testFindRefsInFile "lineDirectivesTest.fs" source "Thing" [
             // Definition at #line 100 (original line 4)
             "generated.fs", 100, 4, 9
             // Use at #line 102 (original line 6)
@@ -940,6 +899,73 @@ module EventHandlerSyntheticSymbols =
 
 /// https://github.com/dotnet/fsharp/issues/15290
 module RecordCopyAndUpdate =
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(true, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, true)>]
+    let ``Issue 20791 - record references distinguish type tokens and semantic expressions`` (fast, transparent) : Task =
+        task {
+            let source = """module Main
+type State = { Count: int }
+type Outer = { Inner: State }
+let state = { Count = 0 }
+let update (state: State) = { state with Count = state.Count + 1 }
+let outer = { Inner = state }
+let nested = { outer with Inner.Count = 2 }
+let explicitNested = { outer with Inner = { state with Count = 3 } }
+"""
+            let project =
+                { SyntheticProject.Create({ sourceFile "Main" [] with Source = source }) with AutoAddModules = false }
+            let checker =
+                FSharpChecker.Create(
+                    useTransparentCompiler = transparent,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                    captureIdentifiersWhenParsing = true)
+            let! _ = SaveAndCheckProject project checker false
+            let! results = checkFile "Main" project checker
+            let check = getTypeCheckResult results
+            let symbol = check.GetSymbolUseAtLocation(2, 10, "type State = { Count: int }", ["State"]).Value.Symbol
+            let text = SourceText.ofString source
+            let describe (range: range) =
+                range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, text.GetSubTextFromRange range
+            let ordinary = check.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.None)
+            let related = check.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.CopyAndUpdateRecord)
+            let expectedOrdinary =
+                [|2, 5, 2, 10, "State"; 3, 22, 3, 27, "State"; 5, 19, 5, 24, "State"|]
+            let expectedRelated =
+                [|yield! expectedOrdinary
+                  5, 28, 5, 66, "{ state with Count = state.Count + 1 }"
+                  8, 42, 8, 66, "{ state with Count = 3 }"|]
+            for use' in related do
+                Assert.True(symbol.IsEffectivelySameAs use'.Symbol)
+            let outer = check.GetSymbolUseAtLocation(3, 10, "type Outer = { Inner: State }", ["Outer"]).Value.Symbol
+            Assert.Equal<(int * int * int * int * string) array>(
+                [|3, 5, 3, 10, "Outer"
+                  7, 13, 7, 43, "{ outer with Inner.Count = 2 }"
+                  8, 21, 8, 68, "{ outer with Inner = { state with Count = 3 } }"|],
+                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                |> Array.map (fun use' -> describe use'.Range)
+                |> Array.sort)
+            Assert.Equal<(int * int * int * int * string) array>(
+                expectedOrdinary,
+                ordinary |> Array.map (fun use' -> describe use'.Range) |> Array.sort)
+            Assert.Equal<(int * int * int * int * string) array>(
+                expectedRelated, related |> Array.map (fun use' -> describe use'.Range) |> Array.sort)
+            let options = project.GetProjectOptions checker
+            let! background =
+                if transparent then
+                    async {
+                        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
+                        return! checker.FindBackgroundReferencesInFile(project.GetFilePath "Main", snapshot, symbol)
+                    }
+                else
+                    checker.FindBackgroundReferencesInFile(project.GetFilePath "Main", options, symbol, fastCheck = fast)
+            Assert.Equal<(int * int * int * int * string) array>(
+                related |> Array.map (fun use' -> describe use'.Range) |> Array.sort,
+                background |> Seq.map describe |> Seq.sort |> Seq.toArray)
+        }
 
     [<Fact>]
     let ``Find references of record type includes copy-and-update`` () =

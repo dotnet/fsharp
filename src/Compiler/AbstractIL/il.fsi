@@ -813,6 +813,7 @@ type internal ILMethodBody =
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
+      IsRuntimeAsync: bool
       Locals: ILLocals
       Code: ILCode
       DebugRange: ILDebugPoint option
@@ -919,6 +920,9 @@ type WellKnownILAttributes =
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
+    | RequireNamedArgumentsAttribute = (1u <<< 27)
+    | EditorBrowsableNever = (1u <<< 28)
+    | EditorBrowsableAdvanced = (1u <<< 29)
     | NotComputed = (1u <<< 31)
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
@@ -927,6 +931,8 @@ type ILAttributesStored =
     member CustomAttrs: ILAttributes
 
     member HasWellKnownAttribute: flag: WellKnownILAttributes * compute: (ILAttributes -> WellKnownILAttributes) -> bool
+
+    member GetOrComputeWellKnownFlags: compute: (ILAttributes -> WellKnownILAttributes) -> WellKnownILAttributes
 
     static member CreateReader: idx: int32 * f: (int32 -> ILAttribute[]) -> ILAttributesStored
     static member CreateGiven: attrs: ILAttributes -> ILAttributesStored
@@ -1246,6 +1252,8 @@ type ILMethodDef =
     member internal WithAggressiveInlining: bool -> ILMethodDef
 
     member internal WithRuntime: bool -> ILMethodDef
+
+    member internal WithAsync: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by

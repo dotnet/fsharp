@@ -160,6 +160,27 @@ type GeneratedSequenceBase<'T> =
     interface IEnumerator
     interface IDisposable
 
+#if NET
+/// <summary>The compiler emits subclasses of this experimental runtime-async sequence host.</summary>
+/// <remarks>The sequence recipe receives the cancellation token for each enumeration and runs when the enumerator advances.</remarks>
+[<AbstractClass>]
+type GeneratedRuntimeAsyncSequenceBase<'T> =
+    new: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract SetCancellationToken: System.Threading.CancellationToken -> unit
+    abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
+
+    /// <summary>The F# compiler emits implementations of this member. DisposeAsync calls it, then runs MoveNextAsync to execute the pending cleanup.</summary>
+    abstract Close: unit -> unit
+    abstract Current: 'T
+
+    /// <summary>The F# compiler emits calls to this member when a generated move completes. It must not be called directly.</summary>
+    member CompleteMoveNext: unit -> unit
+    interface IAsyncEnumerable<'T>
+    interface IAsyncEnumerator<'T>
+    interface IAsyncDisposable
+#endif
+
 /// Collects elements and builds a list
 [<Struct; NoEquality; NoComparison>]
 type ListCollector<'T> =

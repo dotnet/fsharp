@@ -24,7 +24,7 @@ type SurfaceAreaTest() =
 
 // We are testing the surface area of the FSharp.Core assembly.
 #if NETCOREAPP
-            "netstandard21"
+            "netcore"
 #else
             "netstandard20"
 #endif

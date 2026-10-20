@@ -88,7 +88,7 @@ module Array3D =
     /// <code lang="fsharp">
     /// let inputs = Array3D.init 2 2 3 (fun i j k -> 100*i + 10*j + k)
     ///
-    /// inputs |> Array3D.iter (fun v -> printfn $"value = {v}")
+    /// inputs |> Array3D.iter (fun v -> printn $"value = {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -120,7 +120,7 @@ module Array3D =
     /// <code lang="fsharp">
     /// let inputs = Array3D.init 2 2 3 (fun i j k -> 100*i + 10*j + k)
     ///
-    /// inputs |> Array3D.iteri (fun i j k v -> printfn $"value at ({i},{j},{k}) = {v}")
+    /// inputs |> Array3D.iteri (fun i j k v -> printn $"value at ({i},{j},{k}) = {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>

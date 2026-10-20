@@ -22,9 +22,22 @@
     <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
     <NuspecProperty Include="fSharpNetCoreProductTargetFramework=$(FSharpNetCoreProductTargetFramework)" />
+    <NuspecProperty Include="fSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
     <NuspecProperty Include="configuration=$(Configuration)" />
   </ItemGroup>
 
+  <!-- fsi's JSON-RPC server ships StreamJsonRpc and its dependency closure next to fsi.dll. A source-only
+       build has no server mode (see src/fsi/fsi.targets), so it ships none of these. The nuspec takes
+       them as one token: an item's Include cannot combine `name=` with an item list, so the list is
+       kept in a property and expanded into <file> entries here. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
+    <FsiJsonRpcServerAssemblies>MessagePack.dll;MessagePack.Annotations.dll;Microsoft.VisualStudio.Threading.dll;Microsoft.VisualStudio.Validation.dll;Nerdbank.MessagePack.dll;Nerdbank.Streams.dll;Newtonsoft.Json.dll;PolyType.dll;StreamJsonRpc.dll</FsiJsonRpcServerAssemblies>
+    <FsiJsonRpcServerFiles>$([System.Text.RegularExpressions.Regex]::Replace('$(FsiJsonRpcServerAssemblies)', '([^;]+);?', '&lt;file src=&quot;fsi\$(Configuration)\$(FSharpNetCoreProductTargetFramework)\$1&quot; target=&quot;lib\$(FSharpNetCoreProductTargetFramework)&quot; /&gt; '))</FsiJsonRpcServerFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NuspecProperty Include="fsiJsonRpcServerFiles=$(FsiJsonRpcServerFiles)" />
+  </ItemGroup>
   <ItemGroup Condition="'$(IgnoreMibc)' != 'true'">
     <NuspecProperty Include="mibcRoot=$(ArtifactsDir)\mibc" />
   </ItemGroup>

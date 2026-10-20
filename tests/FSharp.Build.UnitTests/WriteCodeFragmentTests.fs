@@ -37,6 +37,17 @@ type WriteCodeFragmentFSharpTests() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
 
     [<Fact>]
+    member _.``Positional parameters with _IsLiteral suffix``() =
+        verifyAttribute "Microsoft.VisualStudio.TestTools.UnitTesting.Parallelize"
+            [
+                ("_Parameter1", "Scope = Microsoft.VisualStudio.TestTools.UnitTesting.ExecutionScope.ClassLevel");
+                ("_Parameter1_IsLiteral", "true");
+                ("_Parameter2", "Workers = 0");
+                ("_Parameter2_IsLiteral", "true")
+            ]
+            "Microsoft.VisualStudio.TestTools.UnitTesting.Parallelize(Scope = Microsoft.VisualStudio.TestTools.UnitTesting.ExecutionScope.ClassLevel, Workers = 0)"
+
+    [<Fact>]
     member _.``Named parameters with _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" [("Bool", "true"); ("Bool_IsLiteral", "true")] "SomeAttribute(Bool = true)"
 
@@ -234,4 +245,3 @@ type WriteCodeFragmentVisualBasicTests() =
                 ("EnumValue_IsLiteral", "true")
             ]
             "SomeAttribute(EnumValue = System.StringComparison.OrdinalIgnoreCase)"
-

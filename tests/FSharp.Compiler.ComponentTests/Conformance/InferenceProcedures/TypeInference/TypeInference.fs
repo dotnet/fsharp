@@ -158,6 +158,7 @@ module TypeInference =
         compilation
         |> getCompilation
         |> asLibrary
+        |> withLangVersion11
         |> withOptions ["--test:ErrorRanges"; "--flaterrors"]
         |> typecheck
         |> shouldFail

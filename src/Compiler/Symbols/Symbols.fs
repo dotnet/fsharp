@@ -567,6 +567,9 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
+    member _.WithNullnessAnnotations show =
+         FSharpDisplayContext(fun g -> { denv g with showNullnessAnnotations = Some show })
+
     member _.WithPrefixGenericParameters () =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Prefix }  )
 
@@ -2900,7 +2903,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | E _ | P _ | M _ | C _ -> []
         match witnessInfos with
         | [] -> None
-        | _ when not (cenv.g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing)) -> None
         | _ ->
         let witnessParams =
             ((Set.empty, 0), witnessInfos) ||> List.mapFold (fun (used,i) witnessInfo ->

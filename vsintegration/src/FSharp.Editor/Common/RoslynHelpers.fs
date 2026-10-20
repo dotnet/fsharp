@@ -135,7 +135,9 @@ module internal RoslynHelpers =
                     return! computation
                 }
 
-        let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+        let tcs =
+            new TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
+
         let barrier = VolatileBarrier()
 
         let reg =

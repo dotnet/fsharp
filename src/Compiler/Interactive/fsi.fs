@@ -34,6 +34,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CodeAnalysis
@@ -44,7 +45,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.InfoReader
@@ -988,11 +988,19 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let mutable fsiServerOutputCodePage = None
     let mutable fsiLCID = None
 
+    let mutable fsiServerJsonRpcPipe = ""
+    let mutable fsiServerClientProcessId = None
+
     // internal options
     let mutable probeToSeeIfConsoleWorks = true
     let mutable peekAheadOnConsoleToPermitTyping = true
 
-    let isInteractiveServer () = fsiServerName <> ""
+    let isJsonRpcServer () = fsiServerJsonRpcPipe <> ""
+
+    // Neither server mode has a user at a console, so neither uses the console reader.
+    let isInteractiveServer () =
+        fsiServerName <> "" || isJsonRpcServer ()
+
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [ arg ]
 
     let executableFileNameWithoutExtension =
@@ -1074,6 +1082,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 [ // Make internal fsi-server* options. Do not print in the help. They are used by VFSI.
                     CompilerOption("fsi-server-report-references", "", OptionString(fun s -> writeReferencesAndExit <- Some s), None, None)
                     CompilerOption("fsi-server", "", OptionString(fun s -> fsiServerName <- s), None, None) // "FSI server mode on given named channel");
+                    CompilerOption("fsi-server-jsonrpc", "", OptionString(fun s -> fsiServerJsonRpcPipe <- s), None, None) // "FSI server mode speaking JSON-RPC over the given named pipe"
+                    CompilerOption("fsi-server-client-pid", "", OptionInt(fun n -> fsiServerClientProcessId <- Some n), None, None) // "Process id of the host; the JSON-RPC server exits when it does"
                     CompilerOption("fsi-server-input-codepage", "", OptionInt(fun n -> fsiServerInputCodePage <- Some(n)), None, None) // " Set the input codepage for the console");
                     CompilerOption("fsi-server-output-codepage", "", OptionInt(fun n -> fsiServerOutputCodePage <- Some(n)), None, None) // " Set the output codepage for the console");
                     CompilerOption(
@@ -1335,15 +1345,14 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             """    #help "idn";;                                 // %s"""
             (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
-        if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in
-                dependencyProvider.GetRegisteredDependencyManagerHelpText(
-                    tcConfigB.compilerToolPaths,
-                    getOutputDir tcConfigB,
-                    tcConfigB.sdkDirOverride,
-                    reportError m
-                ) do
-                fsiConsoleOutput.uprintfn "%s" msg
+        for msg in
+            dependencyProvider.GetRegisteredDependencyManagerHelpText(
+                tcConfigB.compilerToolPaths,
+                getOutputDir tcConfigB,
+                tcConfigB.sdkDirOverride,
+                reportError m
+            ) do
+            fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
 
@@ -1384,6 +1393,16 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     member _.UseServerPrompt = isInteractiveServer ()
 
     member _.IsInteractiveServer = isInteractiveServer ()
+
+    member _.IsJsonRpcServer = isJsonRpcServer ()
+
+    member _.JsonRpcServerPipeName =
+        if isJsonRpcServer () then
+            Some fsiServerJsonRpcPipe
+        else
+            None
+
+    member _.JsonRpcClientProcessId = fsiServerClientProcessId
 
     member _.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
 
@@ -1477,7 +1496,9 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt gets "printed ahead" at start up. Tells users to start type while initialisation completes.
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
-    let mutable showPrompt = true
+
+    // A JSON-RPC host learns an interaction finished from the response to its request.
+    let mutable showPrompt = not fsiOptions.IsJsonRpcServer
 
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
@@ -1520,16 +1541,12 @@ type internal FsiConsoleInput
 
     let consoleOpt =
         // The "console.fs" code does a limited form of "TAB-completion".
-        // Currently, it turns on if it looks like we have a console.
-        if fsiOptions.EnableConsoleKeyProcessing then
+        // Currently, it turns on if it looks like we have a console. A session driven by a host has
+        // no user at a console, whatever the probe would say.
+        if fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer then
             fsi.GetOptionalConsoleReadLine(fsiOptions.ProbeToSeeIfConsoleWorks)
         else
             None
-
-    // When VFSI is running, there should be no "console", and in particular the console.fs readline code should not to run.
-    do
-        if fsiOptions.IsInteractiveServer then
-            assert consoleOpt.IsNone
 
     /// This threading event gets set after the first-line-reader has finished its work
     let consoleReaderStartupDone = new ManualResetEvent(false)
@@ -1949,7 +1966,11 @@ type internal FsiDynamicCompiler
             {
                 ilg = tcGlobals.ilg
                 outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
-                pdbfile = Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                pdbfile =
+                    if tcConfig.debuginfo then
+                        Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                    else
+                        None
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
                 portablePDB = true
@@ -2313,12 +2334,6 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
-
-        // RFC FS-1043: each FSI fragment is its own compilation unit but shares the session CcuThunk, so the
-        // extension-operator solution sink must be reset per fragment. Otherwise identical-layout submissions
-        // (same dummy file name, same ranges) leave stale entries that the range-based disambiguation cannot
-        // tell apart from the current fragment, poisoning a later same-shaped submission.
-        tcGlobals.ClearExtensionOperatorSolutions(tcState.Ccu)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
@@ -2934,12 +2949,8 @@ type internal FsiDynamicCompiler
             istate, CompletedWithAlreadyReportedError
 
         | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
-                istate, Completed None
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
-                istate, Completed None
+            fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
+            istate, Completed None
 
         | _, _ when directiveKind = Directive.Include ->
             errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))
@@ -4409,11 +4420,37 @@ type FsiInteractionProcessor
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
 
-        currState
-        |> InteractiveCatch diagnosticsLogger (fun istate ->
-            let expr = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
-            ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
-        |> commitResult
+        // The text may hold several interactions, as standard input would. Each one that completes
+        // is committed before the next is parsed, so that a failure later in the text keeps what ran
+        // before it; the value reported is that of the last interaction that produced one.
+        let rec run istate lastValue =
+            let errorsBefore = diagnosticsLogger.ErrorCount
+
+            let istate, status =
+                istate
+                |> InteractiveCatch diagnosticsLogger (fun istate ->
+                    match ParseInteraction tcConfigB.diagnosticsOptions tokenizer with
+                    | Some(ParsedScriptInteraction.Definitions([], _)) -> istate, Completed lastValue
+                    | expr -> ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
+
+            let status =
+                match status with
+                | Completed value -> Completed(Option.orElse lastValue value)
+                | status -> status
+
+            match status with
+            | Completed value when
+                diagnosticsLogger.ErrorCount = errorsBefore
+                && not tokenizer.LexBuffer.IsPastEndOfStream
+                ->
+                if cancellationToken.IsCancellationRequested then
+                    istate, CtrlC
+                else
+                    setCurrState istate
+                    run istate value
+            | _ -> istate, status
+
+        run currState None |> commitResult
 
     member this.EvalScript(ctok, scriptPath, diagnosticsLogger) =
         // Todo: this runs the script as expected but errors are displayed one line to far in debugger
@@ -4557,7 +4594,7 @@ type FsiInteractionProcessor
                 rangeStdin0
                 ad
                 lid
-                false
+                UnseenItems.None
 
         let names = nItems |> List.map (fun d -> d.DisplayName)
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
@@ -4955,6 +4992,10 @@ type FsiEvaluationSession
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member _.LCID = fsiOptions.FsiLCID
 
+    member _.JsonRpcServerPipeName = fsiOptions.JsonRpcServerPipeName
+
+    member _.JsonRpcClientProcessId = fsiOptions.JsonRpcClientProcessId
+
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member x.ReportUnhandledException exn = x.ReportUnhandledExceptionSafe true exn
 
@@ -5104,7 +5145,9 @@ type FsiEvaluationSession
         // We later switch to doing interaction-by-interaction processing on the "event loop" thread
         let ctokRun = AssumeCompilationThreadWithoutEvidence()
 
-        if fsiOptions.IsInteractiveServer then
+        // The JSON-RPC server carries interrupts on its own connection and is started by the
+        // process entry point.
+        if fsiOptions.IsInteractiveServer && not fsiOptions.IsJsonRpcServer then
             SpawnInteractiveServer(fsi, fsiOptions, fsiConsoleOutput)
 
         use _ = UseBuildPhase BuildPhase.Interactive
@@ -5123,7 +5166,10 @@ type FsiEvaluationSession
                 | _ -> ())
 
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
-            fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
+
+            // Interactions arrive on the control channel, leaving stdin to the script.
+            if not fsiOptions.IsJsonRpcServer then
+                fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
             DriveFsiEventLoop(fsi, fsiInterruptController, fsiConsoleOutput)
 

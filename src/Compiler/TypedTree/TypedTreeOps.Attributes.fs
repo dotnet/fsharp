@@ -7,6 +7,7 @@ open System
 open System.CodeDom.Compiler
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.ComponentModel
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -186,7 +187,21 @@ module internal ILExtensions =
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
                 | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
+                | "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" -> WellKnownILAttributes.RequireNamedArgumentsAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
+                | "System.ComponentModel.EditorBrowsableAttribute" ->
+                    let state =
+                        match attr with
+                        | ILAttribute.Decoded(_, [ ILAttribElem.Int32 state ], _) -> state
+                        // Read in place rather than through decodeILAttribData, which allocates: prolog, one int32, no named arguments
+                        | ILAttribute.Encoded(_, bytes, _) when bytes.Length = 8 && bytes[0] = 1uy && bytes[1] = 0uy ->
+                            BitConverter.ToInt32(bytes, 2)
+                        | _ -> int EditorBrowsableState.Always
+
+                    match enum<EditorBrowsableState> state with
+                    | EditorBrowsableState.Never -> WellKnownILAttributes.EditorBrowsableNever
+                    | EditorBrowsableState.Advanced -> WellKnownILAttributes.EditorBrowsableAdvanced
+                    | _ -> WellKnownILAttributes.None
                 | _ -> WellKnownILAttributes.None
 
     /// Compute well-known attribute flags for an ILAttributes collection.
@@ -258,7 +273,13 @@ module internal AttributeHelpers =
             | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
             | ValueNone -> struct (ValueNone, ValueNone)
         else
-            struct (ValueNone, ValueNone)
+            match tcref.Deref.PublicPath with
+            | ValueSome pubpath ->
+                match pubpath.FullPath with
+                | [| "System"; "Diagnostics"; "CodeAnalysis"; "RequireNamedArgumentsAttribute" |] as path ->
+                    struct (ValueSome path, ValueNone)
+                | _ -> struct (ValueNone, ValueNone)
+            | ValueNone -> struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
     let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =
@@ -613,6 +634,7 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
                 match name with
                 | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
+                | "RequireNamedArgumentsAttribute" -> WellKnownValAttributes.RequireNamedArgumentsAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->
@@ -657,6 +679,7 @@ module internal AttributeHelpers =
                     | "OptionalArgumentAttribute" -> WellKnownValAttributes.OptionalArgumentAttribute
                     | "ProjectionParameterAttribute" -> WellKnownValAttributes.ProjectionParameterAttribute
                     | "InlineIfLambdaAttribute" -> WellKnownValAttributes.InlineIfLambdaAttribute
+                    | "OptimizeClosureIfNotInlinedAttribute" -> WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute
                     | "StructAttribute" -> WellKnownValAttributes.StructAttribute
                     | "NoCompilerInliningAttribute" -> WellKnownValAttributes.NoCompilerInliningAttribute
                     | "GeneralizableValueAttribute" -> WellKnownValAttributes.GeneralizableValueAttribute
@@ -1319,11 +1342,11 @@ module internal AttributeHelpers =
     // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
     let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
         (tycon.IsUnionTycon
+         && TyconHasUseNullAsTrueValueAttribute g tycon
          && let ucs = tycon.UnionCasesArray in
 
             (ucs.Length = 0
-             || (TyconHasUseNullAsTrueValueAttribute g tycon
-                 && ucs |> Array.existsOne (fun uc -> uc.IsNullary)
+             || (ucs |> Array.existsOne (fun uc -> uc.IsNullary)
                  && ucs |> Array.exists (fun uc -> not uc.IsNullary))))
 
     let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon

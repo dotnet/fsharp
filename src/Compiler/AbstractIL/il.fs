@@ -1308,6 +1308,9 @@ type WellKnownILAttributes =
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
+    | RequireNamedArgumentsAttribute = (1u <<< 27)
+    | EditorBrowsableNever = (1u <<< 28)
+    | EditorBrowsableAdvanced = (1u <<< 29)
     | NotComputed = (1u <<< 31)
 
 [<Sealed; NoEquality; NoComparison>]
@@ -1639,6 +1642,7 @@ type ILMethodBody =
         MaxStack: int32
         NoInlining: bool
         AggressiveInlining: bool
+        IsRuntimeAsync: bool
         Locals: ILLocals
         Code: ILCode
         DebugRange: ILDebugPoint option
@@ -2278,6 +2282,11 @@ type ILMethodDef
 
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+
+    member x.WithAsync(condition) =
+        // MethodImplOptions.Async is not present in all target reference assemblies.
+        let asyncFlag = enum<MethodImplAttributes> 0x2000
+        x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition asyncFlag))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4288,6 +4297,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
         MaxStack = maxstack
         NoInlining = false
         AggressiveInlining = false
+        IsRuntimeAsync = false
         Locals = locals
         Code = code
         DebugRange = tag

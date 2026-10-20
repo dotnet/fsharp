@@ -57,6 +57,10 @@ let ``array-no-dot-warnings-langversion-8_0`` () =
     singleVersionedNegTest "core/array-no-dot-warnings" LangVersion.V80 "test-langversion-8.0"
 
 [<Fact>]
+let ``ref-ops-deprecation-langversion-8_0`` () =
+    singleVersionedNegTest "core/ref-ops-deprecation" LangVersion.V80 "test-langversion-preview"
+
+[<Fact>]
 let ``ref-ops-deprecation-langversion-preview`` () =
     singleVersionedNegTest "core/ref-ops-deprecation" LangVersion.Preview "test-langversion-preview"
 

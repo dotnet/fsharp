@@ -309,6 +309,26 @@ let main (args: string[]) =
         |> verifyILNotPresent ["quadruple"; "double"]
 
     [<Fact>]
+    let ``Call 17 - Inline base member`` () =
+        FSharp """
+type One() =
+    member inline _.Source1 x = x
+
+type Two() =
+    inherit One()
+    member inline this.Source2 x = base.Source1 x
+
+[<EntryPoint>]
+let main _ =
+    if (Two()).Source2 42 = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``SRTP 01`` () =
         FSharp """
 let inline add (x: ^T) (y: ^T) =
@@ -1760,6 +1780,41 @@ let main _ =
         |> verifySequencePoints
 
     [<Fact>]
+    let ``Resumable 04 - Builder Run is inlined`` () =
+        FSharp """
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+#nowarn "3501"
+#nowarn "3513"
+
+type Builder() =
+    member inline _.Run(code: ResumableCode<unit, int>) =
+        if __useResumableCode then
+            __stateMachine<unit, int>
+                (MoveNextMethodImpl<_>(fun sm -> code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun _ -> 42))
+        else
+            0
+
+let builder = Builder()
+
+[<EntryPoint>]
+let main _ =
+    let code = ResumableCode<unit, int>(fun _ -> true)
+    let result = builder.Run code
+    if result = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
         FSharp """
 let inline apply ([<InlineIfLambda>] f: int -> int) (x: int) : int =
@@ -1896,4 +1951,3 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> verifySequencePoints
-

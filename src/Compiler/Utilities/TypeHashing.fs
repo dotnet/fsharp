@@ -16,37 +16,37 @@ type ObserverVisibility =
 [<AutoOpen>]
 module internal HashingPrimitives =
 
-    type Hash = int
+    type Hash = int64
 
-    /// FNV-1a 32-bit over UTF-16 code units – deterministic across processes
+    /// FNV-1a 64-bit over UTF-16 code units – deterministic across processes
     /// (unlike String.GetHashCode which is randomized in .NET 6+).
     let hashStableString (s: string) : Hash =
-        let mutable h = 2166136261u
+        let mutable h = 0xCBF29CE484222325UL
 
         for c in s do
-            h <- (h ^^^ uint32 c) * 16777619u
+            h <- (h ^^^ uint64 c) * 0x100000001B3UL
 
-        int h
+        int64 h
 
     let hashText (s: string) : Hash = hashStableString s
 
-    let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
+    let inline combineHash (acc: Hash) (y: Hash) : Hash = (acc ^^^ y) * 1099511628211L
     let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
-    let inline addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
+    let inline addFullStructuralHash value (acc: Hash) = combineHash acc (int64 (hash value))
 
     let inline hashListOrderMatters ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
-        let mutable acc = 0
+        let mutable acc = 0L
 
         for i in items do
             let valHash = func i
             // We are calling hashListOrderMatters for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are omitted.
-            if valHash <> 0 then
+            if valHash <> 0L then
                 acc <- combineHash acc valHash
 
         acc
 
     let inline hashListOrderIndependent ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
-        let mutable acc = 0
+        let mutable acc = 0L
 
         for i in items do
             let valHash = func i
@@ -87,7 +87,7 @@ module internal HashUtilities =
             else
                 TextTag.Class
 
-        (hash tag) @@ (hashText name)
+        (int64 (hash tag)) @@ (hashText name)
 
     let hashTyconRefImpl (tcref: TyconRef) =
         let demangled = tcref.DisplayNameWithStaticParameters
@@ -104,18 +104,18 @@ module HashIL =
         |> hashListOrderMatters hashText
         |> pipeToHash (hashText tref.Name)
 
-    let private hashILArrayShape (sh: ILArrayShape) = sh.Rank
+    let private hashILArrayShape (sh: ILArrayShape) : Hash = int64 sh.Rank
 
     let rec hashILType (ty: ILType) : Hash =
         match ty with
-        | ILType.Void -> hash ILType.Void
+        | ILType.Void -> int64 (hash ILType.Void)
         | ILType.Array(sh, t) -> hashILType t @@ hashILArrayShape sh
         | ILType.Value t
         | ILType.Boxed t -> hashILTypeRef t.TypeRef @@ (t.GenericArgs |> hashListOrderMatters hashILType)
         | ILType.Ptr t
         | ILType.Byref t -> hashILType t
         | ILType.FunctionPointer t -> hashILCallingSignature t
-        | ILType.TypeVar n -> hash n
+        | ILType.TypeVar n -> int64 (hash n)
         | ILType.Modified(_, _, t) -> hashILType t
 
     and hashILCallingSignature (signature: ILCallingSignature) =
@@ -145,7 +145,7 @@ module rec HashTypes =
     let hashTyconRef tcref = hashTyconRefImpl tcref
 
     /// Hash the flags of a member
-    let hashMemberFlags (memFlags: SynMemberFlags) = hash memFlags
+    let hashMemberFlags (memFlags: SynMemberFlags) = int64 (hash memFlags)
 
     /// Hash an attribute 'Type(arg1, ..., argN)'
     let private hashAttrib (Attrib(tyconRef = tcref)) = hashTyconRefImpl tcref
@@ -210,11 +210,11 @@ module rec HashTypes =
 
         let varHash =
             measureVarsWithExponents
-            |> hashListOrderIndependent (fun (typar, exp: Rational) -> hashTyparRef typar @@ hash exp)
+            |> hashListOrderIndependent (fun (typar, exp: Rational) -> hashTyparRef typar @@ int64 (hash exp))
 
         let conHash =
             measureConsWithExponents
-            |> hashListOrderIndependent (fun (tcref, exp: Rational) -> hashTyconRef tcref @@ hash exp)
+            |> hashListOrderIndependent (fun (tcref, exp: Rational) -> hashTyconRef tcref @@ int64 (hash exp))
 
         varHash @@ conHash
 
@@ -249,7 +249,7 @@ module rec HashTypes =
         let nameHash =
             match argInfo.Name with
             | Some i -> hashText i.idText
-            | _ -> -1
+            | _ -> -1L
 
         let typeHash = hashTType g ty
 
@@ -304,7 +304,7 @@ module HashTastMemberOrVals =
         let vref = mkLocalValRef v
 
         if HashAccessibility.isHiddenToObserver vref.Accessibility observer then
-            0
+            0L
         else
             let membInfo = Option.get vref.MemberInfo
             let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm g vref
@@ -312,7 +312,7 @@ module HashTastMemberOrVals =
             let memberFlagsHash = hashMemberFlags membInfo.MemberFlags
             let parentTypeHash = hashTyconRef membInfo.ApparentEnclosingEntity
             let memberTypeHash = hashMemberType g vref typarInst argInfos retTy
-            let flagsHash = hash v.val_flags.PickledBits
+            let flagsHash = int64 (hash v.val_flags.PickledBits)
             let nameHash = hashText v.DisplayNameCoreMangled
             let attribsHash = hashAttributeList v.Attribs
 
@@ -329,35 +329,35 @@ module HashTastMemberOrVals =
     /// Hash a constant value with exhaustive pattern matching over all Const cases
     let private hashConst (constVal: Const) : Hash =
         match constVal with
-        | Const.Bool b -> hash b
-        | Const.SByte x -> hash x
-        | Const.Byte x -> hash x
-        | Const.Int16 x -> hash x
-        | Const.UInt16 x -> hash x
-        | Const.Int32 x -> hash x
-        | Const.UInt32 x -> hash x
-        | Const.Int64 x -> hash x
-        | Const.UInt64 x -> hash x
-        | Const.IntPtr x -> hash x
-        | Const.UIntPtr x -> hash x
-        | Const.Single x -> hash x
-        | Const.Double x -> hash x
-        | Const.Char x -> hash x
+        | Const.Bool b -> int64 (hash b)
+        | Const.SByte x -> int64 (hash x)
+        | Const.Byte x -> int64 (hash x)
+        | Const.Int16 x -> int64 (hash x)
+        | Const.UInt16 x -> int64 (hash x)
+        | Const.Int32 x -> int64 (hash x)
+        | Const.UInt32 x -> int64 (hash x)
+        | Const.Int64 x -> int64 (hash x)
+        | Const.UInt64 x -> int64 (hash x)
+        | Const.IntPtr x -> int64 (hash x)
+        | Const.UIntPtr x -> int64 (hash x)
+        | Const.Single x -> int64 (hash x)
+        | Const.Double x -> int64 (hash x)
+        | Const.Char x -> int64 (hash x)
         | Const.String x -> hashText x
-        | Const.Decimal x -> hash x
-        | Const.Unit -> 0
-        | Const.Zero -> 0
+        | Const.Decimal x -> int64 (hash x)
+        | Const.Unit -> 0L
+        | Const.Zero -> 0L
 
     let private hashNonMemberVal (g: TcGlobals, observer) (tps, v: Val, tau, cxs) =
         if HashAccessibility.isHiddenToObserver v.Accessibility observer then
-            0
+            0L
         else
             let valReprInfo = arityOfValForDisplay v
             let nameHash = hashText v.DisplayNameCoreMangled
             let typarHash = hashTyparDecls g tps
             let argInfos, retTy = GetTopTauTypeInFSharpForm g valReprInfo.ArgInfos tau v.Range
             let typeHash = hashTopType g argInfos retTy cxs
-            let flagsHash = hash v.val_flags.PickledBits
+            let flagsHash = int64 (hash v.val_flags.PickledBits)
             let attribsHash = hashAttributeList v.Attribs
 
             let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash
@@ -418,13 +418,13 @@ module StructuralUtilities =
         | Unsolved of int
         | Rigid of int
 
-    let private hashTokenArray (tokens: TypeToken[]) =
-        let mutable acc = 0
+    let private hashTokenArray (tokens: TypeToken[]) : int =
+        let mutable acc = 0L
 
         for t in tokens do
-            acc <- combineHash acc (hash t)
+            acc <- combineHash acc (int64 (hash t))
 
-        acc
+        int acc
 
     [<CustomEquality; NoComparison>]
     type TypeStructure =
@@ -531,7 +531,7 @@ module StructuralUtilities =
                 emitStamp ctx u.TyconRef.Stamp
 
                 if out.Count < MaxTokenCount then
-                    out.Add(TypeToken.UCase(hashText u.CaseName))
+                    out.Add(TypeToken.UCase(int (hashText u.CaseName)))
 
                 for arg in tinst do
                     emitTType ctx arg

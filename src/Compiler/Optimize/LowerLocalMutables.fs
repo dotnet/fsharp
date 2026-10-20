@@ -6,6 +6,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -105,7 +106,13 @@ let DecideExpr cenv exprF noInterceptF z expr  =
         DecideExprOp exprF noInterceptF z expr (c, tyargs, args)
 
     | _ ->
-        noInterceptF z expr
+        match TryGetRuntimeAsyncReturn g expr with
+        | Some info ->
+            let z = Zset.union z (DecideEscapes [] info.Body)
+            exprF z info.Body
+        | None ->
+            noInterceptF z expr
+
 
 /// Find all the mutable locals that escape a binding
 let DecideBinding cenv z (TBind(v, expr, _m) as bind) =
@@ -138,6 +145,10 @@ let DecideImplFile g amap implFile =
 let TransformExpr g (heapValMap: ValMap<_>) exprF expr =
 
     match expr with
+    | Expr.Op (TOp.DebugLocalScope (ValDeref(v), name), [], [body], m) when heapValMap.ContainsVal v ->
+       let nv, _ = heapValMap[v]
+       Some (Expr.Op (TOp.DebugLocalScope (mkLocalValRef nv, name), [], [exprF body], m))
+
     // Rewrite uses of mutable values
     | Expr.Val (ValDeref(v), _, m) when heapValMap.ContainsVal v ->
 
@@ -195,5 +206,3 @@ let TransformImplFile g amap implFile =
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = true
                 StackGuard = StackGuard("AutoboxRewriteStackGuardDepth") }
-
-

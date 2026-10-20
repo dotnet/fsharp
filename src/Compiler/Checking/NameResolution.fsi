@@ -4,6 +4,7 @@ module internal FSharp.Compiler.NameResolution
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
@@ -687,6 +688,18 @@ val internal ExtensionPropInfosOfTypeInScope:
     ty: TType ->
         PropInfo list
 
+/// Get the intrinsic methods of a type (both declared and inherited), without the extension methods in
+/// scope. Callers that filter extension members out again should use this and skip the extension scan.
+val internal IntrinsicMethInfosOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: TypeHierarchy.AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        MethInfo list
+
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope:
     collectionSettings: ResultCollectionSettings ->
@@ -910,7 +923,14 @@ val internal getRecordTyconsInScope:
 
 /// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:
-    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
+    NameResolver ->
+    NameResolutionEnv ->
+    range ->
+    AccessorDomain ->
+    string list ->
+    allowUnseen: UnseenItems ->
+    fieldsOnly: bool ->
+        Item list
 
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
@@ -958,7 +978,7 @@ val ResolvePartialLongIdent:
     m: range ->
     ad: AccessorDomain ->
     plid: string list ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         Item list
 
 [<RequireQualifiedAccess>]
@@ -975,7 +995,7 @@ val ResolveCompletionsInType:
     AccessorDomain ->
     bool ->
     TType ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         Item list
 
 val GetVisibleNamespacesAndModulesAtPoint:
@@ -984,7 +1004,7 @@ val GetVisibleNamespacesAndModulesAtPoint:
     FullyQualifiedFlag ->
     range ->
     AccessorDomain ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         ModuleOrNamespaceRef list
 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool

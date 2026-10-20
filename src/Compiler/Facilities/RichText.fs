@@ -45,7 +45,11 @@ module RichText =
     let ofParts (parts: TaggedText[]) =
         if Array.isEmpty parts then empty else RichText(parts)
 
-    let ofTaggedText (part: TaggedText) = RichText([| part |])
+    let ofTaggedText (part: TaggedText) =
+        if String.IsNullOrEmpty part.Text then
+            empty
+        else
+            RichText([| part |])
 
     let ofTag tag (text: string) =
         if String.IsNullOrEmpty text then

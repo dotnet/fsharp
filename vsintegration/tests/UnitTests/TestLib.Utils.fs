@@ -31,7 +31,7 @@ module Asserts =
             Assert.Fail(message)
     let ValidateOK (i:int) =
         if not (i = VSConstants.S_OK) then
-            let message = sprintf "Expected S_OK"
+            let message = "Expected S_OK"
             printfn "%s" message
             Assert.Fail(message)
     let Throws<'T when 'T:> Exception> f =

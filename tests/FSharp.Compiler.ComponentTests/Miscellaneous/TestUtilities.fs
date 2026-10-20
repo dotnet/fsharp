@@ -2,6 +2,7 @@ module FSharp.Compiler.ComponentTests.Miscellaneous.TestUtilities
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open Xunit
 open Xunit.Sdk
 open FSharp.Test
@@ -21,26 +22,50 @@ type RunOrFail(name) =
 let passing = RunOrFail "Passing"
 
 [<Fact>]
-let ``TestConsole captures output`` () =
-    let rnd = Random()
+let ``TestConsole captures output`` () : Task =
+    task {
+        let rnd = Random()
 
-    let task n =
-        async {
-            use console = new TestConsole.ExecutionCapture()
-            do! Async.Sleep(rnd.Next 50)
-            printf $"Hello, world! {n}"
-            do! Async.Sleep(rnd.Next 50)
-            eprintf $"Some error {n}"
-            return console.OutText, console.ErrorText
-        }
+        let capture n =
+            async {
+                use console = new TestConsole.ExecutionCapture()
+                do! Async.Sleep(rnd.Next 50)
+                printf $"Hello, world! {n}"
+                do! Async.Sleep(rnd.Next 50)
+                eprintf $"Some error {n}"
+                return console.OutText, console.ErrorText
+            }
 
-    let expected =
-        [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
+        let expected =
+            [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
 
-    let results =
-        Seq.init 10 task |> Async.Parallel |> Async.RunSynchronously
+        let! results = Seq.init 10 capture |> Async.Parallel
 
-    Assert.Equal(expected, results)
+        Assert.Equal(expected, results)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``TestConsole preserves nested bulk output`` useError =
+    let text (capture: TestConsole.ExecutionCapture) =
+        if useError then capture.ErrorText else capture.OutText
+
+    use outer = new TestConsole.ExecutionCapture()
+    let writer = if useError then Console.Error else Console.Out
+    writer.Write("before")
+
+    do
+        use inner = new TestConsole.ExecutionCapture()
+        writer.Write("string")
+        writer.Write(null: string)
+        writer.Write("!array!".ToCharArray(), 1, 5)
+        writer.Write('!')
+        writer.WriteLine()
+        Assert.Equal("stringarray!" + Environment.NewLine, text inner)
+
+    writer.Write("after")
+    Assert.Equal("beforestringarray!" + Environment.NewLine + "after", text outer)
 
 /// Roundtrip-serialize a CompilationHelper through xUnit3's XunitSerializationInfo
 /// and verify all fields survive the trip.
