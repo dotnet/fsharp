@@ -27,12 +27,14 @@
     <Compile Include="IndentationServiceTests.fs" />
     <Compile Include="CompletionProviderTests.fs" />
     <Compile Include="FindReferencesTests.fs" />
+    <Compile Include="InlineRenameTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="PathMapNavigationTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
+    <Compile Include="CopilotContextProviderTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
@@ -95,6 +97,7 @@
   <ItemGroup>
 	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" />
 
 	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />
