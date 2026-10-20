@@ -131,6 +131,26 @@ class RuntimeTests(unittest.TestCase):
             self.assertIn("Denied pinned AWF", result["reason"])
             prepare.assert_not_called()
 
+    def test_exact_pinned_cli_stdout_and_near_version_denial(self):
+        with self.discovery() as (repo, controller, _, _):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            controller.save("runtime", {"inputs": {"policy": w.m.fingerprint_inputs(w.m.POLICY),
+                            "sdk": w.m.file_record(repo.root / "global.json"), "helpers": []}})
+            # Checksum-verified v1.0.52 release stdout; AWF uses Commander .version().
+            copilot = b"GitHub Copilot CLI 1.0.52.\nRun 'copilot update' to check for updates.\n"
+            for version in (b"1.0.52", b"1.0.520", b"11.0.52", b"1.0.52.1", b"1.0.52-rc.1"):
+                for tool in ("copilot", "awf"):
+                    outputs = [copilot.replace(b"1.0.52", version), b"0.25.55\n"] if tool == "copilot" else [
+                        copilot, version.replace(b"1.0.52", b"0.25.55") + b"\n"]
+                    with self.subTest(tool=tool, version=version), mock.patch.object(
+                            runtime.subprocess, "run", side_effect=[
+                                subprocess.CompletedProcess([], 0, output, b"") for output in outputs]):
+                        if version == b"1.0.52":
+                            adapter.verify_tools()
+                        else:
+                            with self.assertRaisesRegex(ValueError, "pin"):
+                                adapter.verify_tools()
+
     def test_linux_capabilities_probe_custody_and_network_through_existing_isolation(self):
         with self.ready() as (_, controller, _, _):
             is_file = Path.is_file
@@ -404,12 +424,22 @@ class RuntimeTests(unittest.TestCase):
                     validate.assert_called_once()
 
     def test_failed_engine_blocks_even_previously_authorized_handoff(self):
-        with self.ready() as (_, controller, _, _):
+        with self.candidate() as (controller, api, transport):
             adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            controller.validate_output()
+            intent = controller.session["attempt"]["publication"]
             controller.save("runtime-service", {"state": "stopped"})
-            with self.assertRaisesRegex(ValueError, "Stock engine ended failure"):
-                adapter.handoff(engine_outcome="failure")
-            self.assertFalse((controller.root / "output").exists())
+            for outcome in ("failure", "cancelled", "skipped"):
+                with self.subTest(outcome=outcome):
+                    with self.assertRaisesRegex(ValueError, "Stock engine ended " + outcome):
+                        adapter.handoff(engine_outcome=outcome)
+                    with self.assertRaisesRegex(ValueError, "Runtime unhealthy"):
+                        adapter.finalize(publisher=api)
+                    self.assertEqual(api.effects, [])
+                    self.assertEqual(transport.read()[0]["attempts"][intent["attempt_id"]]["publication"], intent)
+                    self.assertTrue((controller.root / "approval.json").is_file())
+            # Read-only lost-ack reconciliation remains available without publisher authority.
+            adapter.finalize()
 
     def test_service_readiness_detects_early_exit_without_adopting_pid(self):
         for code in (0, 2):
@@ -419,6 +449,36 @@ class RuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "exited"):
                     adapter.wait_service(child, mock.Mock(return_value=False))
                 self.assertEqual(child.signals, [])
+
+    def test_startup_cleanup_shares_finalization_bound_and_preserves_unacknowledged_work(self):
+        for state in ("stopped", "stuck", "expired", "worker-unacknowledged"):
+            with self.subTest(state=state), self.ready() as (_, controller, _, transport):
+                adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+                controller.clock = lambda: 0
+                now = controller.now()
+                controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+                controller.now = lambda: now + timedelta(seconds=2400 if state == "expired" else 2390)
+                controller.save("runtime-service", {"state": "launching"})
+                child = mock.Mock()
+                child.poll.return_value = None
+                if state == "stuck":
+                    child.wait.side_effect = subprocess.TimeoutExpired("owned service", 10)
+                if state == "worker-unacknowledged":
+                    controller.save("worker", {"state": "running", "operation": "profile"})
+                if state == "stopped":
+                    adapter.abort_startup(child, ValueError("Denied readiness"))
+                    self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "blocked_setup")
+                else:
+                    with self.assertRaises(KeyboardInterrupt if state == "expired" else
+                                           ValueError if state == "worker-unacknowledged" else subprocess.TimeoutExpired):
+                        adapter.abort_startup(child, ValueError("Denied readiness"))
+                    self.assertEqual(controller.load("runtime-service")["state"], "cleanup_failed")
+                    self.assertIsNone(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"])
+                child.terminate.assert_called_once_with()
+                if state != "expired":
+                    child.wait.assert_called_once_with(timeout=10)
+                self.assertEqual(controller.load("clocks")["finalization"]["start"], now.isoformat())
+                self.assertFalse((controller.root / "approval.json").exists())
 
     def test_engine_exit_charges_stock_collection_to_shared_finalization_after_restart(self):
         with self.ready() as (repo, controller, api, transport):
@@ -509,37 +569,91 @@ class RuntimeTests(unittest.TestCase):
 
     def test_start_service_entry_point_installs_harness_and_emits_authenticated_handoff(self):
         import transport
+        for failure in (None, "launch-denied", "early-exit", "probe-denied", "cancelled", "sigterm", "output-denied"):
+            with self.subTest(failure=failure), self.ready() as (_, controller, api, journal):
+                previous = runtime.signal.getsignal(runtime.signal.SIGTERM)
+                cancelled = failure in ("cancelled", "sigterm")
+                actions = controller.root.parent / "runner-temp" / "gh-aw" / "actions"
+                actions.mkdir(parents=True)
+                (actions / "copilot_harness.cjs").write_text("stock fixture")
+                output, log = controller.root / "actions-output", io.StringIO()
+                arguments = ["start-service", "--root", str(controller.root), "--repository", str(controller.repository),
+                             "--journal", str(journal.journal.repository), "--workspace", str(controller.root.parent / "visible")]
+                popen = subprocess.Popen
+                owned = fixtures.Worker(2 if failure == "early-exit" else None)
+                owned.terminate = lambda: owned.send_signal("SIGTERM")
+                if failure == "output-denied":
+                    output.mkdir()
+                def child(command, *args, **kwargs):
+                    if command[2:3] == ["serve"] and failure == "launch-denied":
+                        raise OSError("Denied service launch")
+                    return owned if command[2:3] == ["serve"] else popen(command, *args, **kwargs)
+                async def probe(token):
+                    self.assertFalse((controller.root / "controller.lock").exists())
+                    if failure == "sigterm":
+                        runtime.signal.raise_signal(runtime.signal.SIGTERM)
+                    if failure in ("probe-denied", "cancelled"):
+                        raise KeyboardInterrupt() if failure == "cancelled" else ValueError("Denied service probe")
+                    return True
+                with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", executable=sys.executable)), \
+                        mock.patch.object(runtime, "validate_layout"), \
+                        mock.patch.object(w, "Controller", return_value=controller), \
+                        mock.patch.object(w, "GitHub", return_value=api), \
+                        mock.patch.object(transport, "JournalTransport", return_value=journal), \
+                        mock.patch.object(runtime.Runtime, "prepare", return_value={"phase": "ready"}), \
+                        mock.patch.object(runtime, "probe_service", side_effect=probe), \
+                        mock.patch.object(runtime.subprocess, "Popen", side_effect=child) as launch, \
+                        mock.patch.dict(os.environ, {"RUNNER_TEMP": str(actions.parents[1]), "GITHUB_OUTPUT": str(output),
+                                                    "PUBLISHER_SECRET": "must-not-inherit"}), \
+                        mock.patch("sys.stdout", log):
+                    self.assertEqual(runtime.main(arguments), 0 if failure is None else
+                                     130 if cancelled else 2, log.getvalue())
+                    if failure is None:
+                        armed = controller.load("runtime")
+                        self.assertEqual(runtime.main(arguments), 2, log.getvalue())
+                        self.assertEqual(controller.load("runtime"), armed)
+                        self.assertFalse((controller.root / "runtime-error.json").exists())
+                        self.assertEqual(owned.signals, [])
+                self.assertEqual(runtime.signal.getsignal(runtime.signal.SIGTERM), previous)
+                if failure is not None:
+                    self.assertEqual(owned.signals, [] if failure in ("early-exit", "launch-denied") else ["SIGTERM"])
+                    self.assertEqual(controller.load("runtime-service")["state"], "stopped")
+                    self.assertTrue((controller.root / "runtime-error.json").exists())
+                    self.assertEqual(journal.read()[0]["discoveries"]["run-1.discovery"]["outcome"],
+                                     "cancelled" if cancelled else "blocked_setup")
+                    self.assertFalse((controller.root / "approval.json").exists())
+                    continue
+                services = [call for call in launch.call_args_list if call.args[0][2:3] == ["serve"]]
+                self.assertEqual(len(services), 1)
+                command = services[0].args[0]
+                self.assertEqual(command[:3], [sys.executable, str(Path(runtime.__file__).resolve()), "serve"])
+                self.assertEqual(command[3:], arguments[1:])
+                self.assertNotIn("PUBLISHER_SECRET", services[0].kwargs["env"])
+                self.assertTrue(services[0].kwargs["start_new_session"])
+                self.assertTrue((actions / "compiler_perf_harness.cjs").is_file())
+                self.assertIn("token=" + bridge.endpoint_token(controller.root), output.read_text())
+                self.assertIn("execution_deadline_ms=", output.read_text())
+                self.assertNotIn("active", controller.load("clocks"))
+
+    def test_skipped_engine_cli_reaches_owned_handoff(self):
+        import transport
         with self.ready() as (_, controller, api, journal):
-            actions = controller.root.parent / "runner-temp" / "gh-aw" / "actions"
-            actions.mkdir(parents=True)
-            (actions / "copilot_harness.cjs").write_text("stock fixture")
-            output, log = controller.root / "actions-output", io.StringIO()
-            arguments = ["start-service", "--root", str(controller.root), "--repository", str(controller.repository),
-                         "--journal", str(journal.journal.repository), "--workspace", str(controller.root.parent / "visible")]
-            popen = subprocess.Popen
-            def child(command, *args, **kwargs):
-                return fixtures.Worker(None) if command[2:3] == ["serve"] else popen(command, *args, **kwargs)
-            with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", executable=sys.executable)), \
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            controller.save("runtime-service", {"state": "stopped"})
+            with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux")), \
                     mock.patch.object(runtime, "validate_layout"), \
                     mock.patch.object(w, "Controller", return_value=controller), \
                     mock.patch.object(w, "GitHub", return_value=api), \
                     mock.patch.object(transport, "JournalTransport", return_value=journal), \
-                    mock.patch.object(runtime.Runtime, "prepare", return_value={"phase": "ready"}), \
-                    mock.patch.object(runtime, "probe_service", new=mock.AsyncMock(return_value=True)), \
-                    mock.patch.object(runtime.subprocess, "Popen", side_effect=child) as launch, \
-                    mock.patch.dict(os.environ, {"RUNNER_TEMP": str(actions.parents[1]), "GITHUB_OUTPUT": str(output),
-                                                "PUBLISHER_SECRET": "must-not-inherit"}), \
-                    mock.patch("sys.stdout", log):
-                self.assertEqual(runtime.main(arguments), 0, log.getvalue())
-            command = launch.call_args.args[0]
-            self.assertEqual(command[:3], [sys.executable, str(Path(runtime.__file__).resolve()), "serve"])
-            self.assertEqual(command[3:], arguments[1:])
-            self.assertNotIn("PUBLISHER_SECRET", launch.call_args.kwargs["env"])
-            self.assertTrue(launch.call_args.kwargs["start_new_session"])
-            self.assertTrue((actions / "compiler_perf_harness.cjs").is_file())
-            self.assertIn("token=" + bridge.endpoint_token(controller.root), output.read_text())
-            self.assertIn("execution_deadline_ms=", output.read_text())
-            self.assertNotIn("active", controller.load("clocks"))
+                    mock.patch.dict(os.environ, {"RUNNER_TEMP": str(controller.root.parent)}), \
+                    mock.patch("sys.stdout", new_callable=io.StringIO) as output:
+                code = runtime.main(["handoff", "--root", str(controller.root), "--repository",
+                                     str(controller.repository), "--journal", str(journal.journal.repository),
+                                     "--workspace", str(adapter.workspace), "--engine-outcome", "skipped"])
+            self.assertEqual(code, 2)
+            self.assertIn("Stock engine ended skipped", output.getvalue())
+            self.assertTrue((controller.root / "runtime-stop.json").exists())
+            self.assertEqual(api.effects, [])
 
     def test_handoff_rechecks_seal_and_preserves_one_publication_after_lost_ack(self):
         with self.candidate() as (controller, api, transport):
@@ -581,15 +695,10 @@ class RuntimeTests(unittest.TestCase):
         from mcp import ClientSession
         from mcp.client.streamable_http import streamable_http_client
 
-        with self.ready() as (_, controller, api, transport), socket.socket() as listener:
-            listener.bind(("127.0.0.1", 0))
-            port = listener.getsockname()[1]
+        with self.ready() as (_, controller, api, transport):
             adapter = runtime.Runtime(controller, controller.root.parent / "visible")
             adapter.arm()
-            (controller.root / "agent-server").mkdir()
-            controller.save("runtime-service", {"state": "launching"})
-            token = bridge.endpoint_token(controller.root)
-            errors, launches = [], []
+            launches = []
 
             def launch(arguments, owner):
                 launches.append(arguments[-1])
@@ -597,56 +706,36 @@ class RuntimeTests(unittest.TestCase):
                     time.sleep(.1)
                 return fixtures.AgentTests.launch(arguments, owner)
 
-            def run():
-                try:
-                    runtime.serve(adapter, sockets=[listener], launch=launch,
-                                  identify=fixtures.identify)
-                except BaseException as error:
-                    errors.append(error)
+            with self.serving(adapter, launch) as (port, token, probe):
+                self.assertNotIn("active", controller.load("clocks"))
 
-            with mock.patch.object(bridge, "PORT", port), mock.patch.object(adapter, "inspect_agent") as probe:
-                thread = threading.Thread(target=run)
-                thread.start()
-                try:
-                    end = time.monotonic() + 15
-                    while not asyncio.run(runtime.probe_service(token)) and time.monotonic() < end:
-                        self.assertTrue(thread.is_alive(), errors)
-                        time.sleep(.05)
-                    self.assertNotIn("active", controller.load("clocks"))
-
-                    async def script():
-                        async with httpx.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=300) as http:
-                            url = f"http://127.0.0.1:{port}/mcp"
-                            denied = await http.post(url, headers={"Authorization": "Bearer invalid"}, content="{}")
-                            self.assertEqual(denied.status_code, 401)
-                            self.assertNotIn("active", controller.load("clocks"))
-                            async with streamable_http_client(url, http_client=http) as streams:
-                                async with ClientSession(streams[0], streams[1]) as session:
-                                    await session.initialize()
-                                    request = {"message": fixtures.message("start_profile")}
-                                    with mock.patch.object(bridge, "DISPATCH_SECONDS", .01):
-                                        pending = await session.call_tool("investigate", request)
-                                    self.assertEqual(pending.structuredContent["error"], "dispatch_pending")
-                                    result = await session.call_tool("investigate", request)
-                                    self.assertTrue(result.structuredContent["ok"], result)
-                                    status = await session.call_tool("investigate", {
-                                        "message": fixtures.message("status")})
-                                    self.assertTrue(status.structuredContent["status"]["diagnostics"]["stacks"])
-                    asyncio.run(script())
-                    result = adapter.handoff()
-                    self.assertIsNone(result["publication"])
-                    self.assertEqual(result["status"]["outcome"], "cancelled")
-                    self.assertTrue(result["artifacts"]["files"])
-                    self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
-                    probe.assert_called_once()
-                    self.assertEqual(launches.count("profile"), 1)
-                    self.assertEqual(api.effects, [])
-                finally:
-                    controller.save("runtime-stop", {"reason": "Owned test cleanup",
-                                                     "requested_at": controller.now().isoformat()})
-                    thread.join(timeout=30)
-                    self.assertFalse(thread.is_alive(), "Owned runtime did not stop")
-                self.assertEqual(errors, [])
+                async def script():
+                    async with httpx.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=300) as http:
+                        url = f"http://127.0.0.1:{port}/mcp"
+                        denied = await http.post(url, headers={"Authorization": "Bearer invalid"}, content="{}")
+                        self.assertEqual(denied.status_code, 401)
+                        self.assertNotIn("active", controller.load("clocks"))
+                        async with streamable_http_client(url, http_client=http) as streams:
+                            async with ClientSession(streams[0], streams[1]) as session:
+                                await session.initialize()
+                                request = {"message": fixtures.message("start_profile")}
+                                with mock.patch.object(bridge, "DISPATCH_SECONDS", .01):
+                                    pending = await session.call_tool("investigate", request)
+                                self.assertEqual(pending.structuredContent["error"], "dispatch_pending")
+                                result = await session.call_tool("investigate", request)
+                                self.assertTrue(result.structuredContent["ok"], result)
+                                status = await session.call_tool("investigate", {
+                                    "message": fixtures.message("status")})
+                                self.assertTrue(status.structuredContent["status"]["diagnostics"]["stacks"])
+                asyncio.run(script())
+                result = adapter.handoff()
+                self.assertIsNone(result["publication"])
+                self.assertEqual(result["status"]["outcome"], "cancelled")
+                self.assertTrue(result["artifacts"]["files"])
+                self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
+                probe.assert_called_once()
+                self.assertEqual(launches.count("profile"), 1)
+                self.assertEqual(api.effects, [])
 
     def test_service_automatically_authorizes_accepted_candidate_across_active_expiry(self):
         from mcp import ClientSession

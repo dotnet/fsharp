@@ -489,6 +489,12 @@ starts the owned service, checks a real authenticated HTTP initialize response,
 and emits masked `token` plus public `execution_deadline_ms` step outputs.
 Its foreground `serve` child is supervised through sealed stop/exit records;
 reentry cannot adopt a saved PID or duplicate a launch.
+Version checks accept the pinned Copilot banner's sentence-ending period but
+reject longer and prerelease version tokens. Launch, readiness, cancellation
+and step-output failures latch an unhealthy runtime and stop only the original
+child handle, after releasing the controller lock. Cleanup shares the existing
+finalization deadline; an exited child permits an incomplete canonical conclusion,
+while unconfirmed cleanup preserves outstanding work and reports `cleanup_failed`.
 
 Configure the printed HTTP server fragment, `engine.harness:
 compiler_perf_harness.cjs`, its deadline environment variable,
@@ -522,7 +528,7 @@ Run `handoff` in an **always-running `post-steps`** step, with
 `PERF_ENGINE_OUTCOME` bound to `steps.agentic_execution.outcome`, not agent
 output. It requests owned cancellation, waits against the existing finalization
 bound, retains incomplete evidence, and returns the exact encrypted/compact
-artifact inventory. A failed/cancelled engine or interrupted/unhealthy service
+artifact inventory. A failed/cancelled/skipped engine or interrupted/unhealthy service
 blocks publication. The host monitor observes the inspected container's exact
 ID through `docker ps --all --no-trunc --filter id=... --format '{{json .}}'`.
 When it stops or disappears, a sealed exit boundary conservatively uses the last
@@ -546,6 +552,8 @@ The publisher must consume **only this inventory**, not the agent-writable
 `GH_AW_SAFE_OUTPUTS` path; configure the existing one-draft `am` transport.
 `finalize` is read/reconciliation only on the CLI. The Python-only fake-publisher
 seam exercises partial branch/PR publication and lost acknowledgments locally.
+It also refuses publication after an unhealthy handoff; read-only reconciliation
+remains available without granting new publication authority.
 The protected artifact uploader calls `Controller.acknowledge_evidence(sink)`;
 local encrypted-sink receipts stay `local_fixture`, never remote availability.
 
@@ -613,6 +621,27 @@ retained in private session evidence. The checksum-verified pinned Windows CLI's
 `--version` probe exceeded 30 seconds; hooks/defaults were verified from pinned
 source, not a successful CLI or compiled workflow run. Linux containment and live
 workflow/model/publication proof remain unclaimed.
+
+The subsequent lifecycle repair passed on the same Windows tool versions:
+
+| Command | Tests | Exit | Seconds |
+| --- | --- | --- | --- |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v` | 133 | 0 | 4336.349 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v` | 52 | 0 | 91.936 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_workflow_runtime.py -k start_service_entry -k startup_cleanup -v` | 2 | 0 | 23.398 |
+
+All passed without skips. The workflow suite includes **29 runtime tests**,
+with real startup SIGTERM delivery/handler restoration, failed launch/readiness/
+output writes, same-owner reentry, bounded cleanup and unacknowledged-worker
+preservation. Accepted sealed output cannot publish after a failed/cancelled/
+skipped handoff; read-only reconciliation and the one-draft lost-ack path remain
+covered. The incomplete HTTP handoff now reuses the existing service fixture.
+The checksum-verified Copilot v1.0.52 Windows release's `--version` exited zero
+with `GitHub Copilot CLI 1.0.52.` and its update-hint line; near-version and
+prerelease tokens remain rejected. Initial RED, corrected fixture failures and
+an interrupted earlier replay remain private evidence, not passing results.
+Final input hashes, Python `py_compile`, `node --check` and `git diff --check`
+were checked. No compiler build, remote write, hosted run or Linux proof is implied.
 
 ## Disposable experiment controller
 

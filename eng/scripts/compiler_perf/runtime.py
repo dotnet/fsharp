@@ -6,6 +6,7 @@ from datetime import timedelta
 import os
 from pathlib import Path, PurePosixPath
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -208,8 +209,8 @@ class Runtime:
     def verify_tools(self):
         for command, expected in ((["copilot", "--version"], PINS["copilot"]), (["awf", "--version"], PINS["awf"])):
             result = subprocess.run(command, capture_output=True, check=False, timeout=15, env=c.tool_environment())
-            require(result.returncode == 0 and re.search(r"(?<![\d.])v?" + re.escape(expected.lstrip("v")) +
-                    r"(?![\d.])", result.stdout.decode("utf-8")), "Installed runtime pin differs")
+            require(result.returncode == 0 and re.search(r"(?<![\w.+-])v?" + re.escape(expected.lstrip("v")) +
+                    r"\.?(?=\s|$)", result.stdout.decode("utf-8")), "Installed runtime pin differs")
         record = self.controller.load("runtime")
         m.verify_files([record["inputs"]["sdk"], *record["inputs"]["helpers"]])
         require(record["inputs"]["policy"] == m.fingerprint_inputs(m.POLICY), "Frozen runtime policy changed")
@@ -240,6 +241,35 @@ class Runtime:
                 require(child.poll() is None, "Owned controller service exited during readiness")
                 return
             time.sleep(.1)
+
+    def abort_startup(self, child, error):
+        controller = self.controller
+        reason = "Owned service startup failed: " + (c.sanitize(str(error)) or "cancelled")
+        controller.save("runtime-error", {"reason": reason})
+        try:
+            try:
+                remaining = controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+            finally:
+                if not (controller.root / "runtime-stop.json").exists():
+                    controller.save("runtime-stop", {"reason": reason, "requested_at": controller.now().isoformat()})
+                if child is not None and child.poll() is None:
+                    child.terminate()
+            if child is not None:
+                child.wait(timeout=remaining)
+            with e.owned_lock(controller.root):
+                require(not (controller.root / "runtime-service.json").exists()
+                        or controller.load("runtime-service")["state"] != "cleanup_failed",
+                        "Owned service cleanup incomplete")
+                if controller.session is not None:
+                    controller.session = controller.load("session")
+                    require(not bridge.Bridge(controller).blocked, "Worker requires owner reconciliation")
+                    owner = controller.session.get("discovery") or controller.session["attempt"]
+                    if owner["outcome"] is None:
+                        controller.finish("cancelled" if isinstance(error, KeyboardInterrupt) else "blocked_setup", reason)
+                controller.save("runtime-service", {"state": "stopped"})
+        except (KeyboardInterrupt, ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError):
+            controller.save("runtime-service", {"state": "cleanup_failed"})
+            raise
 
     def export(self, destination):
         """Publisher transport is never an optimizer-writable workspace or GH_AW_SAFE_OUTPUTS."""
@@ -298,12 +328,15 @@ class Runtime:
             return {"scope": controller.transport.scope, "files": files, "binding": binding}
 
     def finalize(self, *, publisher=None):
+        if publisher is not None:
+            require(not (self.controller.root / "runtime-error.json").exists(),
+                    "Runtime unhealthy; publication blocked")
         with self.controller.budget("finalization", w.FINALIZATION_SECONDS):
             return self.controller.finalize(publisher=publisher)
 
     def handoff(self, destination=None, *, engine_outcome="success"):
         controller = self.controller
-        require(engine_outcome in ("success", "failure", "cancelled"), "Invalid stock engine outcome")
+        require(engine_outcome in ("success", "failure", "cancelled", "skipped"), "Invalid stock engine outcome")
         if controller.transport.scope != "local_fixture":
             self.observe_engine()
             require((controller.root / "runtime-engine-exit.json").exists(), "Engine has not exited")
@@ -425,7 +458,7 @@ def main(argv=None):
     parser.add_argument("command", choices=("configuration", "setup", "start-service", "serve", "handoff", "finalize"))
     for name in ("root", "repository", "journal", "workspace", "input", "job-started-at", "destination"):
         parser.add_argument("--" + name)
-    parser.add_argument("--engine-outcome", choices=("success", "failure", "cancelled"))
+    parser.add_argument("--engine-outcome", choices=("success", "failure", "cancelled", "skipped"))
     args = parser.parse_args(argv)
     try:
         if args.command == "configuration":
@@ -443,24 +476,29 @@ def main(argv=None):
                 require(args.input and args.job_started_at, "Setup requires fixed input and enclosing job start")
                 result = adapter.setup(w.read_input(args.input), mem.timestamp(args.job_started_at))
             elif args.command == "start-service":
-                with e.owned_lock(controller.root):
-                    controller.remaining("setup", w.SETUP_SECONDS)
-                    result = adapter.prepare()
-                    require(result.get("phase") == "ready", result.get("reason", "Preparation blocked"))
-                    require(not (controller.root / "runtime-service.json").exists(),
-                            "Existing service requires owner reconciliation")
-                    adapter.install_harness()
-                    adapter.arm()
-                    (controller.root / "agent-server").mkdir(mode=0o700)
-                    controller.save("runtime-service", {"state": "launching"})
-                    command = [sys.executable, str(Path(__file__).resolve()), "serve", "--root", args.root,
-                               "--repository", args.repository, "--journal", args.journal, "--workspace", args.workspace]
-                    environment = c.tool_environment()
-                    environment.update({k: os.environ[k] for k in ("GH_TOKEN", "GITHUB_TOKEN", "RUNNER_TEMP")
-                                        if k in os.environ})
-                    with (controller.root / "service.log").open("xb") as log:
-                        child = subprocess.Popen(command, cwd=controller.repository, env=environment,
-                                                 stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
+                child, starting = None, False
+                previous = signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+                try:
+                    with e.owned_lock(controller.root):
+                        require(not (controller.root / "runtime-service.json").exists(),
+                                "Existing service requires owner reconciliation")
+                        starting = True
+                        controller.remaining("setup", w.SETUP_SECONDS)
+                        result = adapter.prepare()
+                        require(result.get("phase") == "ready", result.get("reason", "Preparation blocked"))
+                        adapter.install_harness()
+                        adapter.arm()
+                        (controller.root / "agent-server").mkdir(mode=0o700)
+                        controller.save("runtime-service", {"state": "launching"})
+                        command = [sys.executable, str(Path(__file__).resolve()), "serve", "--root", args.root,
+                                   "--repository", args.repository, "--journal", args.journal, "--workspace", args.workspace]
+                        environment = c.tool_environment()
+                        environment.update({k: os.environ[k] for k in ("GH_TOKEN", "GITHUB_TOKEN", "RUNNER_TEMP")
+                                            if k in os.environ})
+                        with (controller.root / "service.log").open("xb") as log:
+                            child = subprocess.Popen(command, cwd=controller.repository, env=environment,
+                                                     stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                                     start_new_session=True)
                     adapter.wait_service(child, lambda: asyncio.run(probe_service(bridge.endpoint_token(controller.root))))
                     token = bridge.endpoint_token(controller.root)
                     print("::add-mask::" + token)
@@ -468,6 +506,12 @@ def main(argv=None):
                         stream.write("token=" + token + "\nexecution_deadline_ms=" +
                                      str(controller.load("runtime")["execution_deadline_ms"]) + "\n")
                     result = {"state": "serving"}
+                except BaseException as error:
+                    if starting:
+                        adapter.abort_startup(child, error)
+                    raise
+                finally:
+                    signal.signal(signal.SIGTERM, previous)
             elif args.command == "serve":
                 serve(adapter)
                 result = controller.status()
