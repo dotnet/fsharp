@@ -84,6 +84,8 @@ Docker cleanup recognizes the daemon's exact missing-network response, without t
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
 Public Azure DevOps feeds redirect package downloads to the publisher's `*.vsblob.vsassets.io` CDN.
 Those CDN tunnels retain public-address validation and the existing header, byte, and time limits.
+The broker permits 128 concurrent public tunnels for multi-feed NuGet restores.
+The connection, byte, and time budgets remain unchanged.
 The timeout canary keeps its child referenced until the external deadline terminates the container.
 
 ## Durable intake routing (not activated)
@@ -1268,8 +1270,9 @@ credentials; the default writes JSON lines to stderr.
 
 CONNECT is accepted only for exact, lowercase `host:443` authorities. Hosts
 are the pinned policy's SDK public-feed hosts, plus `api.nuget.org`,
-`globalcdn.nuget.org` and `pkgs.dev.azure.com`. There are no wildcard hosts or
-caller-supplied additions. Plain HTTP, IP authorities, user information,
+`globalcdn.nuget.org` and `pkgs.dev.azure.com`. Public package redirects also
+permit one valid DNS label beneath `vsblob.vsassets.io`.
+There are no caller-supplied host additions. Plain HTTP, IP authorities, user information,
 alternate ports, credentials/cookies, duplicate headers and unknown headers
 are denied. Each tunnel resolves all IPv4 answers once, rejects the entire
 answer set if any address is non-public, then dials a validated **numeric**
@@ -1277,7 +1280,7 @@ address without a second lookup. IPv6 and private, loopback, link-local,
 metadata, documentation, benchmarking and multicast/reserved IPv4 ranges
 are unsupported, not alternate routes.
 
-The hard ceilings are 32 simultaneous tunnels (including pending DNS),
+The hard ceilings are 128 simultaneous tunnels (including pending DNS),
 2,048 accepted TCP connections per broker lifetime, 1 MiB uploaded and 1 GiB downloaded
 per tunnel, 8 GiB transferred across all tunnels, ten seconds to receive
 headers and five minutes absolute lifetime per tunnel, including DNS/connect.
@@ -1289,6 +1292,7 @@ charged in the broker's counters. The connection ceiling also counts malformed
 and non-CONNECT traffic; reaching it stops the listener rather than allowing
 unlimited denial logs or resetting counters. These are transport counters, not a new
 investigation allowance; the existing worker/build/time budgets are unchanged.
+The active-tunnel ceiling fits the broker's unchanged 1,024-descriptor limit.
 
 TLS remains end-to-end: the broker does **not** inspect URL paths, HTTP
 redirects, checksums or decompressed content. Existing toolchain acquisition

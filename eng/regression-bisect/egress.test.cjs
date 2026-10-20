@@ -77,6 +77,29 @@ test("a legitimate bounded tunnel pins the public address and transfers bytes", 
     assert.equal(f.broker.snapshot().active, 0);
 });
 
+test("public restore bursts fit the finite tunnel ceiling without bypassing it", async t => {
+    const f = await fixture(t), sockets = [];
+    for (let n = 0; n < 128; n++) {
+        const socket = await f.request();
+        sockets.push(socket);
+        assert.match((await once(socket, "data"))[0].toString(), /^HTTP\/1.1 200 Connection Established\r\n\r\n$/,
+            `public package tunnel ${n + 1} must fit the broker descriptor budget`);
+    }
+    assert.equal(f.broker.snapshot().active, 128);
+    assert.match(await response(await f.request()), /503 Service Unavailable/);
+    assert.equal(f.connections.length, 128);
+    assert.equal(f.broker.snapshot().requests, 129, "the rejected connection remains charged");
+    for (const socket of sockets) {
+        socket.write("bounded");
+        assert.equal((await once(socket, "data"))[0].toString(), "bounded");
+    }
+    const closed = sockets.map(socket => once(socket, "close"));
+    for (const socket of sockets) socket.end();
+    await Promise.all(closed);
+    assert.equal(f.broker.snapshot().active, 0);
+    assert.ok(3 * limits.active + 8 < 1024, "active and pending sockets must fit the unchanged broker file limit");
+});
+
 test("Node's default-port proxy Host still pins the approved destination", async t => {
     const f = await fixture(t);
     const socket = await f.request(undefined, "", "", "api.nuget.org");

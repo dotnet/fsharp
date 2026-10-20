@@ -11,7 +11,7 @@ const hosts = new Set([
     "api.nuget.org", "globalcdn.nuget.org", "pkgs.dev.azure.com",
 ]);
 const limits = Object.freeze({
-    active: 32, requests: 2048, uploadBytes: 1024 * 1024,
+    active: 128, requests: 2048, uploadBytes: 1024 * 1024,
     downloadBytes: 1024 * 1024 * 1024, totalBytes: 8 * 1024 * 1024 * 1024,
     tunnelMs: 300000, headerMs: 10000,
 });
