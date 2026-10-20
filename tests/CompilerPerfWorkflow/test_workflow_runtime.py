@@ -2,6 +2,8 @@
 
 from datetime import timedelta
 import asyncio
+from contextlib import contextmanager
+import io
 import json
 import os
 from pathlib import Path
@@ -12,6 +14,7 @@ import socket
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -25,8 +28,10 @@ def container():
     return {
         "Id": "a" * 64, "Name": "/awf-agent", "State": {"Running": True},
         "Config": {"Image": "ghcr.io/github/gh-aw-firewall/agent:0.25.55",
-                   "Env": ["COPILOT_GITHUB_TOKEN=" + runtime.PROXY_CREDENTIAL,
-                           "COPILOT_API_KEY=" + runtime.PROXY_CREDENTIAL, "COPILOT_MODEL=gpt-5.6-sol",
+                   # AWF 39b8a59: constants/placeholders.ts and tool-specific-environment.ts.
+                   "Env": [key + "=ghu_" + "a" * 36 for key in
+                           ("COPILOT_GITHUB_TOKEN", "COPILOT_TOKEN", "COPILOT_API_KEY",
+                            "COPILOT_PROVIDER_API_KEY")] + ["COPILOT_MODEL=gpt-5.6-sol",
                            "AWF_ONE_SHOT_TOKENS=GITHUB_TOKEN,GH_TOKEN"]},
         "HostConfig": {"Privileged": False, "PidMode": "", "IpcMode": "private",
                        "NetworkMode": "awf-network", "CapAdd": ["SYS_CHROOT", "SYS_ADMIN"],
@@ -47,12 +52,54 @@ class RuntimeTests(unittest.TestCase):
     fixture = fixtures.AgentTests.fixture
     candidate = fixtures.fixtures.PublicationTests.candidate
 
+    @contextmanager
+    def serving(self, adapter, launch):
+        controller, errors = adapter.controller, []
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+            (controller.root / "agent-server").mkdir()
+            controller.save("runtime-service", {"state": "launching"})
+            token = bridge.endpoint_token(controller.root)
+            def run():
+                try:
+                    runtime.serve(adapter, sockets=[listener], launch=launch, identify=fixtures.identify)
+                except BaseException as error:
+                    errors.append(error)
+            with mock.patch.object(bridge, "PORT", port), mock.patch.object(adapter, "inspect_agent") as probe:
+                thread = threading.Thread(target=run)
+                thread.start()
+                try:
+                    end = time.monotonic() + 15
+                    while not asyncio.run(runtime.probe_service(token)) and time.monotonic() < end:
+                        self.assertTrue(thread.is_alive(), errors)
+                        time.sleep(.05)
+                    yield port, token, probe
+                finally:
+                    controller.save("runtime-stop", {"reason": "Owned test cleanup",
+                                                     "requested_at": controller.now().isoformat()})
+                    thread.join(timeout=30)
+                    self.assertFalse(thread.is_alive(), errors)
+                self.assertEqual(errors, [])
+
     def test_pinned_configuration_uses_stock_hooks_and_full_envelopes(self):
+        import jsonschema
+
         config = runtime.configuration()
         self.assertEqual(config["pins"], {
             "gh_aw": "v0.76.1", "gh_aw_commit": "58d1bedbb7200f59c2d224151339e38fd8687d05",
             "copilot": "1.0.52", "awf": "v0.25.55", "gateway": "v0.3.19"})
-        self.assertEqual(config["engine"]["mcp"], {"session-timeout": "6h", "tool-timeout": "5m"})
+        # v0.3.19 rejects the renderer's sessionTimeout property; its default is 6h.
+        self.assertEqual(config["engine"]["mcp"], {"tool-timeout": "5m"})
+        # GH AW 58d1bed, mcp_renderer.go emits camelCase gateway properties.
+        rendered = {"port": 8080, "domain": "host.docker.internal", "apiKey": "fixture"}
+        for key, value in config["engine"]["mcp"].items():
+            rendered[{"session-timeout": "sessionTimeout", "tool-timeout": "toolTimeout"}[key]] = (
+                int(value[:-1]) * 60 if key == "tool-timeout" else value)
+        schema = json.loads((Path(__file__).parent / "fixtures" / "mcpg-v0.3.19-gateway.schema.json").read_text())
+        jsonschema.validate(rendered, schema)
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(dict(rendered, sessionTimeout="6h"), schema)
         self.assertEqual(config["engine"]["harness"], "compiler_perf_harness.cjs")
         self.assertEqual(config["budgets"], {"job": 360, "setup": 60, "execution": 250, "finalization": 40})
         self.assertEqual(config["hooks"], {"pre-steps": "setup", "pre-agent-steps": "start-service",
@@ -113,6 +160,13 @@ class RuntimeTests(unittest.TestCase):
         protected = ["/var/lib/compiler-perf/source", "/var/lib/compiler-perf/custody",
                      "/var/lib/compiler-perf/journal.git", "/var/lib/compiler-perf/publisher"]
         runtime.validate_container(container(), protected, "/work/public")
+        for key in ("COPILOT_GITHUB_TOKEN", "COPILOT_TOKEN", "COPILOT_API_KEY",
+                    "COPILOT_PROVIDER_API_KEY", "GITHUB_TOKEN"):
+            value = container()
+            value["Config"]["Env"] = [item for item in value["Config"]["Env"] if not item.startswith(key + "=")]
+            value["Config"]["Env"].append(key + "=gho_" + "a" * 36)
+            with self.subTest(credential=key), self.assertRaisesRegex(ValueError, "credential"):
+                runtime.validate_container(value, protected, "/work/public")
         for mutation in ("custody", "broad", "socket", "credentials", "host-network", "host-pid",
                          "privileged", "wrong-image", "extra-network", "stopped"):
             value = container()
@@ -301,12 +355,24 @@ class RuntimeTests(unittest.TestCase):
             controller.save("clocks", clocks)
             client.tick()
             self.assertEqual(worker.signals, [])
-            controller.now = lambda: now + timedelta(seconds=w.FINALIZATION_SECONDS)
+            controller.save("runtime-engine-exit", {"at": (now - timedelta(seconds=30)).isoformat(), "id": "a" * 64})
+            controller.now = lambda: now + timedelta(seconds=w.FINALIZATION_SECONDS - 30)
             client.tick()
             self.assertEqual(len(worker.signals), 1)
             self.assertEqual(client.receipt["state"], "worker_failed")
             self.assertFalse((controller.root / "approval.json").exists())
             client.close()
+
+    def test_authorization_cannot_begin_after_active_expiry(self):
+        with self.ready() as (_, controller, _, _):
+            controller.start_active()
+            controller.session["phase"] = "accepted"
+            now = controller.now()
+            controller.now = lambda: now + timedelta(seconds=w.ACTIVE_SECONDS)
+            with self.assertRaises(KeyboardInterrupt):
+                controller.authorize()
+            self.assertNotIn("finalization", controller.load("clocks"))
+            self.assertFalse((controller.root / "approval.json").exists())
 
     def test_runtime_inspection_requires_actual_model_proxy_and_unmodified_config(self):
         with self.ready() as (_, controller, _, _):
@@ -353,6 +419,127 @@ class RuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "exited"):
                     adapter.wait_service(child, mock.Mock(return_value=False))
                 self.assertEqual(child.signals, [])
+
+    def test_engine_exit_charges_stock_collection_to_shared_finalization_after_restart(self):
+        with self.ready() as (repo, controller, api, transport):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            now = controller.now()
+            controller.clock = lambda: 0
+            adapter.arm()
+            adapter.agent_ready(lambda: None)
+            controller.save("runtime-container", {"id": "a" * 64, "last_seen_at": now.isoformat()})
+            result = subprocess.CompletedProcess([], 0, b"", b"")
+            with mock.patch.object(runtime.subprocess, "run", return_value=result):
+                adapter.observe_engine()
+            controller.save("runtime-service", {"state": "stopped"})
+            controller.now = lambda: now + timedelta(seconds=900)
+            adapter.handoff()
+            self.assertEqual(controller.remaining("finalization", w.FINALIZATION_SECONDS), 1500)
+            restarted = w.Controller(controller.root, repo.root, transport, api,
+                                     now=lambda: now + timedelta(seconds=2400), clock=lambda: 0)
+            with self.assertRaises(KeyboardInterrupt):
+                runtime.Runtime(restarted, adapter.workspace).handoff()
+            self.assertEqual(restarted.load("clocks")["finalization"]["start"], now.isoformat())
+
+    def test_engine_observation_preserves_earlier_finalization_and_denies_failed_inventory(self):
+        with self.ready() as (_, controller, _, _):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            now = controller.now()
+            controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+            controller.save("runtime-container", {"id": "a" * 64, "last_seen_at": now.isoformat()})
+            for code, data in ((1, b""), (0, b"not-json"), (0, w.mem.encoded({"ID": "b" * 64, "State": "running"}))):
+                with self.subTest(code=code, data=data), \
+                        mock.patch.object(runtime.subprocess, "run", return_value=
+                                          subprocess.CompletedProcess([], code, data, b"denied")), \
+                        self.assertRaises(ValueError):
+                    adapter.observe_engine()
+                self.assertFalse((controller.root / "runtime-engine-exit.json").exists())
+            controller.now = lambda: now + timedelta(seconds=20)
+            with mock.patch.object(runtime.subprocess, "run", return_value=subprocess.CompletedProcess(
+                    [], 0, w.mem.encoded({"ID": "a" * 64, "State": "running"}), b"")):
+                adapter.observe_engine()
+            controller.now = lambda: now + timedelta(seconds=30)
+            with mock.patch.object(runtime.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, b"", b"")):
+                adapter.observe_engine()
+            self.assertEqual(controller.remaining("finalization", w.FINALIZATION_SECONDS), 2370)
+            self.assertEqual(controller.load("runtime-engine-exit")["at"], (now + timedelta(seconds=20)).isoformat())
+
+    def test_monitor_checkpoints_engine_exit_before_stock_post_steps(self):
+        with self.ready() as (_, controller, _, transport):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            adapter.arm()
+            adapter.agent_ready(lambda: None)
+            controller.save("runtime-container", {"id": "a" * 64, "last_seen_at": controller.now().isoformat()})
+            run = subprocess.run
+            def inspect(command, *args, **kwargs):
+                return (subprocess.CompletedProcess(command, 0, b"", b"") if command[:2] == ["docker", "ps"]
+                        else run(command, *args, **kwargs))
+            with mock.patch.object(runtime.subprocess, "run", side_effect=inspect), \
+                    self.serving(adapter, fixtures.AgentTests.launch):
+                end = time.monotonic() + 15
+                while controller.load("runtime-service")["state"] != "stopped" and time.monotonic() < end:
+                    time.sleep(.05)
+                self.assertEqual(controller.load("runtime-service")["state"], "stopped")
+                self.assertTrue((controller.root / "runtime-engine-exit.json").exists())
+                self.assertFalse((controller.root / "runtime-error.json").exists())
+                self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
+                self.assertFalse((controller.root / "output").exists())
+
+    def test_frozen_sdk_helpers_and_policy_are_checked_before_preparation(self):
+        for changed in ("sdk", "helpers", "policy"):
+            with self.subTest(changed=changed), self.discovery() as (repo, controller, _, _):
+                adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+                helper = controller.root / "frozen.py"
+                helper.write_text("frozen helper")
+                inputs = {"policy": w.m.fingerprint_inputs(w.m.POLICY),
+                          "sdk": w.m.file_record(repo.root / "global.json"), "helpers": [w.m.file_record(helper)]}
+                if changed == "policy":
+                    inputs["policy"] = "0" * 64
+                else:
+                    Path(inputs["sdk"]["path"] if changed == "sdk" else str(helper)).write_text("changed")
+                controller.save("runtime", {"inputs": inputs})
+                with mock.patch.object(runtime.subprocess, "run", side_effect=[
+                        subprocess.CompletedProcess([], 0, b"1.0.52", b""),
+                        subprocess.CompletedProcess([], 0, b"v0.25.55", b"")]), \
+                        mock.patch.object(controller, "investigate") as investigate:
+                    result = adapter.prepare()
+                self.assertEqual(result["outcome"], "blocked_setup")
+                self.assertIn("changed", result["reason"])
+                investigate.assert_not_called()
+
+    def test_start_service_entry_point_installs_harness_and_emits_authenticated_handoff(self):
+        import transport
+        with self.ready() as (_, controller, api, journal):
+            actions = controller.root.parent / "runner-temp" / "gh-aw" / "actions"
+            actions.mkdir(parents=True)
+            (actions / "copilot_harness.cjs").write_text("stock fixture")
+            output, log = controller.root / "actions-output", io.StringIO()
+            arguments = ["start-service", "--root", str(controller.root), "--repository", str(controller.repository),
+                         "--journal", str(journal.journal.repository), "--workspace", str(controller.root.parent / "visible")]
+            popen = subprocess.Popen
+            def child(command, *args, **kwargs):
+                return fixtures.Worker(None) if command[2:3] == ["serve"] else popen(command, *args, **kwargs)
+            with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", executable=sys.executable)), \
+                    mock.patch.object(runtime, "validate_layout"), \
+                    mock.patch.object(w, "Controller", return_value=controller), \
+                    mock.patch.object(w, "GitHub", return_value=api), \
+                    mock.patch.object(transport, "JournalTransport", return_value=journal), \
+                    mock.patch.object(runtime.Runtime, "prepare", return_value={"phase": "ready"}), \
+                    mock.patch.object(runtime, "probe_service", new=mock.AsyncMock(return_value=True)), \
+                    mock.patch.object(runtime.subprocess, "Popen", side_effect=child) as launch, \
+                    mock.patch.dict(os.environ, {"RUNNER_TEMP": str(actions.parents[1]), "GITHUB_OUTPUT": str(output),
+                                                "PUBLISHER_SECRET": "must-not-inherit"}), \
+                    mock.patch("sys.stdout", log):
+                self.assertEqual(runtime.main(arguments), 0, log.getvalue())
+            command = launch.call_args.args[0]
+            self.assertEqual(command[:3], [sys.executable, str(Path(runtime.__file__).resolve()), "serve"])
+            self.assertEqual(command[3:], arguments[1:])
+            self.assertNotIn("PUBLISHER_SECRET", launch.call_args.kwargs["env"])
+            self.assertTrue(launch.call_args.kwargs["start_new_session"])
+            self.assertTrue((actions / "compiler_perf_harness.cjs").is_file())
+            self.assertIn("token=" + bridge.endpoint_token(controller.root), output.read_text())
+            self.assertIn("execution_deadline_ms=", output.read_text())
+            self.assertNotIn("active", controller.load("clocks"))
 
     def test_handoff_rechecks_seal_and_preserves_one_publication_after_lost_ack(self):
         with self.candidate() as (controller, api, transport):
@@ -428,7 +615,7 @@ class RuntimeTests(unittest.TestCase):
                     self.assertNotIn("active", controller.load("clocks"))
 
                     async def script():
-                        async with httpx.AsyncClient(headers={"Authorization": "Bearer " + token}) as http:
+                        async with httpx.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=300) as http:
                             url = f"http://127.0.0.1:{port}/mcp"
                             denied = await http.post(url, headers={"Authorization": "Bearer invalid"}, content="{}")
                             self.assertEqual(denied.status_code, 401)
@@ -460,6 +647,99 @@ class RuntimeTests(unittest.TestCase):
                     thread.join(timeout=30)
                     self.assertFalse(thread.is_alive(), "Owned runtime did not stop")
                 self.assertEqual(errors, [])
+
+    def test_service_automatically_authorizes_accepted_candidate_across_active_expiry(self):
+        from mcp import ClientSession
+        from mcp.client.streamable_http import streamable_http_client
+        import httpx
+
+        with fixtures.candidate_fixture() as (root, repo, original, patch):
+            _, controller, api, transport = self.fixture(root / "interaction", repo)
+            self.assertEqual(controller.preflight({"schema_version": 2, "run_id": "run-1",
+                             "base_sha": repo.sha, "primary_metric": "elapsed_ms"})["action"], "reserve")
+            manifest = controller.root / "workload.json"
+            w.m.write_json(manifest, w.c.read_bounded_json(original / "workload.json"))
+            controller.session.update(phase="ready", manifest=w.m.file_record(manifest),
+                                      ready_at=controller.now().isoformat())
+            controller.checkpoint()
+            adapter = runtime.Runtime(controller, root / "visible")
+            adapter.arm()
+            controller.clock = lambda: 0
+            now = controller.now()
+            controller.save("runtime-container", {"id": "a" * 64, "last_seen_at": now.isoformat(), "mounts": []})
+            engine_running, run = threading.Event(), subprocess.run
+            engine_running.set()
+            def inspect(command, *args, **kwargs):
+                if command[:2] == ["docker", "ps"]:
+                    data = w.mem.encoded({"ID": "a" * 64, "State": "running"}) if engine_running.is_set() else b""
+                    return subprocess.CompletedProcess(command, 0, data, b"")
+                return run(command, *args, **kwargs)
+
+            def collect(_, __, destination, **kwargs):
+                destination.mkdir()
+                w.m.write_json(destination / "evidence-manifest.json", w.c.read_bounded_json(root / "profile.json"))
+
+            launches = []
+            def launch(arguments, owner):
+                launches.append(arguments[-1])
+                # The monitor runs in a thread; production workers run in the main thread.
+                if arguments[-1] == "authorize":
+                    current = controller.current_attempt
+                    def cross_active_expiry():
+                        controller.now = lambda: now + timedelta(seconds=w.ACTIVE_SECONDS + 1)
+                        return current()
+                    with mock.patch.object(controller, "current_attempt", side_effect=cross_active_expiry):
+                        return fixtures.AgentTests.launch(arguments, owner)
+                result = fixtures.AgentTests.launch(arguments, owner)
+                if arguments[-1] == "validate":
+                    controller.now = lambda: now + timedelta(seconds=w.ACTIVE_SECONDS - 1)
+                return result
+
+            with mock.patch.object(w.c, "collect_profile", side_effect=collect), \
+                    mock.patch.object(runtime.subprocess, "run", side_effect=inspect), \
+                    self.serving(adapter, launch) as (port, token, _):
+                async def script():
+                    async with httpx.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=300) as http:
+                        async with streamable_http_client(f"http://127.0.0.1:{port}/mcp", http_client=http) as streams:
+                            async with ClientSession(streams[0], streams[1]) as session:
+                                await session.initialize()
+                                for operation, data in (
+                                        ("start_profile", None),
+                                        ("select_hypothesis", fixtures.AgentTests.selection(repo)),
+                                        ("submit_patch", {"patch": patch.decode()}),
+                                        ("start_validation", None)):
+                                    response = await session.call_tool("investigate", {
+                                        "message": fixtures.message(operation, data)})
+                                    self.assertTrue(response.structuredContent["ok"], response)
+                                    while True:
+                                        response = await session.call_tool("investigate", {
+                                            "message": fixtures.message("status")})
+                                        self.assertTrue(response.structuredContent["ok"], response)
+                                        if not response.structuredContent["worker"]:
+                                            break
+                                        await asyncio.sleep(.05)
+                asyncio.run(script())
+                end = time.monotonic() + 15
+                while not (controller.root / "approval.json").exists() and time.monotonic() < end:
+                    time.sleep(.05)
+                self.assertTrue((controller.root / "approval.json").exists(), controller.load("runtime-service"))
+                engine_running.clear()
+                end = time.monotonic() + 15
+                while controller.load("runtime-service")["state"] != "stopped" and time.monotonic() < end:
+                    time.sleep(.05)
+                self.assertEqual(controller.load("runtime-service")["state"], "stopped")
+                self.assertFalse((controller.root / "runtime-error.json").exists())
+                result = adapter.handoff(root / "publisher")
+                self.assertEqual(len(result["publication"]["files"]), 2)
+                self.assertEqual(launches.count("authorize"), 1)
+                self.assertEqual(len([a for a in transport.read()[0]["attempts"].values() if a["publication"]]), 1)
+                api.failure = "after-pr"
+                with self.assertRaises(RuntimeError):
+                    adapter.finalize(publisher=api)
+                api.failure = None
+                adapter.finalize(publisher=api)
+                adapter.finalize(publisher=api)
+                self.assertEqual(api.effects, ["branch", "pr"])
 
 
 if __name__ == "__main__":

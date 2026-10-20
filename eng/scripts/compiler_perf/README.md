@@ -399,8 +399,11 @@ configuration fragment is `mcp-servers.compiler-perf` with `type: http`,
 `url: http://127.0.0.1:8765/mcp`, `allowed: [investigate]`, and an `Authorization`
 header carrying **only** the endpoint capability. Never use a write-capable Git
 token. HTTP entries cannot specify `command`, `args`, `env` or `mounts`.
-Use `engine.mcp.tool-timeout: 5m` (below the supported 600-second maximum) and
-`engine.mcp.session-timeout: 6h`; a session timeout is not an active-deadline
+Use `engine.mcp.tool-timeout: 5m` (below the supported 600-second maximum).
+Omit `engine.mcp.session-timeout`: GH AW v0.76.1 renders it as `sessionTimeout`,
+which the pinned gateway v0.3.19 schema rejects. The gateway's
+[session default is six hours](https://github.com/github/gh-aw-mcpg/blob/a74a1c1525e1e3871370e22801ef4476de00cdfa/internal/config/config_env.go#L78-L82);
+do not shorten it through `MCP_GATEWAY_SESSION_TIMEOUT`. This is not an active-deadline
 override. The server uses supported Streamable HTTP request/response, not
 server-initiated notification delivery.
 
@@ -489,14 +492,16 @@ reentry cannot adopt a saved PID or duplicate a launch.
 
 Configure the printed HTTP server fragment, `engine.harness:
 compiler_perf_harness.cjs`, its deadline environment variable,
-`engine.mcp.session-timeout: 6h`, `engine.mcp.tool-timeout: 5m`, and
+`engine.mcp.tool-timeout: 5m` (with the gateway's six-hour session default), and
 workflow `timeout-minutes: 250` (the engine step). The wrapper launches the
 **unchanged stock Copilot harness**, preserving model proxy, arguments and
 retry behavior, while bounding the entire harness rather than each retry.
 The first authenticated agent tool call triggers actual Docker inspection of
 `awf-agent`, its complete mounts/environment/namespaces, the running pinned
 `awf-api-proxy` and token-steering configuration. Failed inspection cannot start
-active work. The separate bubblewrap capability probe checks empty credentials,
+active work. Credential inspection accepts only the pinned AWF Copilot dummy
+(`ghu_` followed by 36 `a` characters), including `COPILOT_TOKEN`; any real or
+different token is rejected. The separate bubblewrap capability probe checks empty credentials,
 zero effective capabilities, inaccessible custody/receipt paths and denied
 network; denial never falls back to host execution.
 
@@ -509,16 +514,26 @@ and reserves 20 seconds for AWF shutdown. A late agent is blocked, not granted
 less than 240 minutes. Absolute execution and active deadlines survive reentry;
 MCP dispatch timeouts acknowledge pending work without stopping or duplicating
 workers. Output authorization runs in the existing trusted worker process,
-not a service thread with invalid main-thread signal timers.
+not a service thread with invalid main-thread signal timers. Once authorization
+has begun, its independent finalization deadline applies even if active time
+expires during revalidation; it cannot start late or renew either clock.
 
 Run `handoff` in an **always-running `post-steps`** step, with
 `PERF_ENGINE_OUTCOME` bound to `steps.agentic_execution.outcome`, not agent
 output. It requests owned cancellation, waits against the existing finalization
 bound, retains incomplete evidence, and returns the exact encrypted/compact
 artifact inventory. A failed/cancelled engine or interrupted/unhealthy service
-blocks publication. Built-in collection, handoff, artifact transport and
+blocks publication. The host monitor observes the inspected container's exact
+ID through `docker ps --all --no-trunc --filter id=... --format '{{json .}}'`.
+When it stops or disappears, a sealed exit boundary conservatively uses the last
+host observation of it running, including polling latency and AWF teardown.
+Denied/malformed inventory is an explicit unhealthy runtime, not an empty result.
+The monitor checkpoints and shuts down without waiting for `post-steps`.
+Built-in collection, handoff, artifact transport and
 publication share **one** 2,400-second finalization clock; `finalize` cannot
-renew it. Setup <=60 + execution <=250 + combined finalization <=40 fits 350
+renew it. The sealed boundary can only shorten an existing clock and survives
+restart, so stock collection before `handoff` is charged too.
+Setup <=60 + execution <=250 + combined finalization <=40 fits 350
 minutes, leaving ten minutes of the 360-minute enclosing job for runner/action
 teardown, not another agent allowance. Hard termination can prevent the last
 write: only the last acknowledged journal is durable.
@@ -573,6 +588,31 @@ bridge helper (exit 0, 2.049 seconds). `node --check` on the wrapper, Python
 runs exposed the missing adapter/wrapper and fixture/health-probe errors; exact
 commands, failed results and final logs remain in the private session evidence.
 No compiler build, hosted run, model call, remote write or Linux proof is implied.
+
+The repaired runtime replay on 2026-10-20 used the same tool versions and passed
+with zero failures, errors or skips:
+
+| Command | Tests | Exit | Seconds |
+| --- | --- | --- | --- |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v` | 130 | 0 | 3829.990 |
+| `python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v` | 52 | 0 | 83.659 |
+
+The workflow suite includes all **26 runtime tests**, including direct startup
+command/output checks, frozen SDK/helper/policy denial, the pinned gateway schema,
+and automatic authorization through a real HTTP SDK session. Its synthetic
+accepted candidate crosses active expiry during revalidation, survives observed
+engine shutdown, exports sealed output and reconciles a lost publisher
+acknowledgment without a second draft. Engine-exit/restart tests charge earlier
+stock collection to the same finalization deadline.
+Disabling automatic authorization as a negative control fails specifically at
+the required sealed-approval assertion; the control command exited zero.
+The schema fixture's validation keywords were compared with the exact pinned
+gateway source; that comparison, Python `py_compile`, `node --check` and
+`git diff --check` exited zero. Initial RED logs and exact selector commands are
+retained in private session evidence. The checksum-verified pinned Windows CLI's
+`--version` probe exceeded 30 seconds; hooks/defaults were verified from pinned
+source, not a successful CLI or compiled workflow run. Linux containment and live
+workflow/model/publication proof remain unclaimed.
 
 ## Disposable experiment controller
 

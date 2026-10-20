@@ -291,6 +291,9 @@ class Bridge:
         now, tick = self.controller.now(), self.controller.clock()
         remaining = min((deadline - now).total_seconds(),
                         record["remaining_seconds"] - (now - last).total_seconds())
+        if name == "finalization" and (self.controller.root / "runtime-engine-exit.json").exists():
+            exited = mem.timestamp(self.controller.load("runtime-engine-exit")["at"])
+            remaining = min(remaining, allowance - (now - exited).total_seconds())
         origin, initial = self.controller.timers.setdefault(name, (tick, remaining))
         if now < last or now < start or tick < origin or min(remaining, initial - (tick - origin)) <= 0:
             raise KeyboardInterrupt

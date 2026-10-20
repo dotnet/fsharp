@@ -315,6 +315,11 @@ class Controller:
                 "remaining_seconds": allowance}
             self.save("clocks", clocks)
         record = clocks[name]
+        if name == "finalization" and (self.root / "runtime-engine-exit.json").exists():
+            exited = mem.timestamp(self.load("runtime-engine-exit")["at"])
+            if exited < mem.timestamp(record["start"]):
+                record.update(start=exited.isoformat(),
+                              deadline=(exited + timedelta(seconds=allowance)).isoformat())
         start, deadline, last = (mem.timestamp(record[k]) for k in ("start", "deadline", "last_seen"))
         require((deadline - start).total_seconds() == allowance, "Protected deadline differs")
         require(type(record["remaining_seconds"]) in (int, float)
@@ -1120,18 +1125,22 @@ class Controller:
             return self._validate_output(payload)
         except KeyboardInterrupt:
             if self.session.get("discovery") and self.session["discovery"]["outcome"] is None:
-                self.finish("cancelled", "Active deadline or cancellation before publisher output")
+                self.finish("cancelled", "Output validation deadline or cancellation before publisher output")
             raise
 
     def authorize(self):
+        if self.session.get("discovery") and "finalization" not in self.load("clocks"):
+            self.poll_active()
         with self.budget("finalization", FINALIZATION_SECONDS):
             return self.validate_output()
 
     def _validate_output(self, payload):
+        clock = "finalization" if "finalization" in self.budgets else "active"
+        allowance = FINALIZATION_SECONDS if clock == "finalization" else ACTIVE_SECONDS
         if self.session.get("discovery"):
             require(self.session["phase"] == "accepted" and self.session["discovery"]["outcome"] is None,
                     "Only an active accepted experiment can authorize output")
-            self.poll_active()
+            self.remaining(clock, allowance)
         a, state = self.current_attempt()
         tree = Path(state["tree"])
         # Reapply the retained bytes in a new owned clone and inspect Git's actual index.
@@ -1163,12 +1172,12 @@ class Controller:
         require(not mem.workflow_prs(mem.query_prs(self.pages)), "Outstanding optimization PR")
         self.api.verify_source({"source_ref": DEFAULT_BRANCH, "source_revision": a["source_revision"]})
         if self.session.get("discovery"):
-            self.poll_active()
+            self.remaining(clock, allowance)
         a.update(publication=intent, lifecycle="publication_pending")
         self.session.update(attempt=a, head=head)
         self.checkpoint()  # Intent acknowledgment precedes any publisher-visible output.
         if self.session.get("discovery"):
-            self.poll_active()
+            self.remaining(clock, allowance)
         output = self.root / "output"
         require(e.unredirected(output, missing_ok=True), "Publication output redirected")
         output.mkdir(exist_ok=True)
@@ -1259,9 +1268,11 @@ def main(argv=None):
                     result = controller.finish_operation()
                 else:
                     result = getattr(controller, args.operation)()
-            elif args.command in ("validate-output", "finalize"):
+            elif args.command == "validate-output":
+                result = controller.authorize()
+            elif args.command == "finalize":
                 with controller.budget("finalization", FINALIZATION_SECONDS):
-                    result = getattr(controller, args.command.replace("-", "_"))()
+                    result = controller.finalize()
             else:
                 result = getattr(controller, args.command.replace("-", "_"))()
         print(mem.encoded(result).decode(), end="")

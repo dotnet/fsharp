@@ -23,7 +23,7 @@ SHUTDOWN_SECONDS = 2 * bridge.STOP_SECONDS
 READINESS_SECONDS = w.STARTUP_SECONDS - SHUTDOWN_SECONDS - 1
 AGENT_IMAGE = "ghcr.io/github/gh-aw-firewall/agent:0.25.55"
 # AWF's credential-steered dummy token, not an owner credential.
-PROXY_CREDENTIAL = "gho_" + "a" * 36
+PROXY_CREDENTIAL = "ghu_" + "a" * 36
 
 
 def configuration():
@@ -31,7 +31,7 @@ def configuration():
                                     "harness": "compiler_perf_harness.cjs",
                                     "env": {"COMPILER_PERF_EXECUTION_DEADLINE_MS":
                                             "${{ steps.controller.outputs.execution_deadline_ms }}"},
-                                    "mcp": {"session-timeout": "6h", "tool-timeout": "5m"}},
+                                    "mcp": {"tool-timeout": "5m"}},
             "budgets": {"job": 360, "setup": 60, "execution": 250, "finalization": 40},
             "hooks": {"pre-steps": "setup", "pre-agent-steps": "start-service", "post-steps": "handoff"},
             "mcp-servers": {"controller": {"type": "http", "url": f"http://127.0.0.1:{bridge.PORT}/mcp",
@@ -79,7 +79,7 @@ def validate_container(value, protected, workspace, *, resolve_source=PurePosixP
         key, separator, data = item.partition("=")
         require(separator, "Malformed AWF environment")
         if key != "AWF_ONE_SHOT_TOKENS" and re.search(r"TOKEN|SECRET|PASSWORD|PRIVATE_KEY|CREDENTIAL|API_KEY", key):
-            require(not data or key in ("COPILOT_GITHUB_TOKEN", "COPILOT_API_KEY",
+            require(not data or key in ("COPILOT_GITHUB_TOKEN", "COPILOT_TOKEN", "COPILOT_API_KEY",
                                        "COPILOT_PROVIDER_API_KEY") and data == PROXY_CREDENTIAL,
                     "Actual AWF environment exposes a credential")
     return mounts
@@ -175,9 +175,35 @@ class Runtime:
         require(len(proxy) == 1 and proxy[0]["State"]["Running"] and proxy[0]["Config"]["Image"] ==
                 "ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55", "Pinned model proxy unavailable")
         self.controller.save("runtime-container", {"id": documents[0]["Id"],
+                                                   "last_seen_at": self.controller.now().isoformat(),
                                                    "mounts": mounts, "pins": PINS,
                                                    "proxy_id": proxy[0]["Id"], "config": m.file_record(
                                                        Path(os.environ["RUNNER_TEMP"]) / "gh-aw" / "awf-config.json")})
+
+    def observe_engine(self):
+        """Use host Docker inventory, never an agent-supplied completion timestamp."""
+        controller = self.controller
+        if (controller.root / "runtime-engine-exit.json").exists():
+            return
+        record = controller.load("runtime-container")
+        require(mem.digest(record["id"]), "Invalid owned engine identity")
+        result = subprocess.run(["docker", "ps", "--all", "--no-trunc", "--filter", "id=" + record["id"],
+                                 "--format", "{{json .}}"], capture_output=True, check=False,
+                                timeout=15, env=c.tool_environment())
+        require(result.returncode == 0 and len(result.stdout) <= mem.LIMITS["file_bytes"],
+                "Denied engine lifetime inspection")
+        rows = result.stdout.splitlines()
+        require(len(rows) <= 1, "Ambiguous engine lifetime")
+        state = mem.decoded(rows[0]) if rows else None
+        require(state is None or type(state) is dict and state["ID"] == record["id"]
+                and state["State"] in ("running", "exited", "dead", "removing"), "Invalid engine lifetime")
+        require(mem.timestamp(record["last_seen_at"]) <= controller.now(), "Engine clock moved backwards")
+        if state is not None and state["State"] == "running":
+            record["last_seen_at"] = controller.now().isoformat()
+            controller.save("runtime-container", record)
+        else:
+            # Conservatively include the observation gap and AWF teardown in cleanup.
+            controller.save("runtime-engine-exit", {"id": record["id"], "at": record["last_seen_at"]})
 
     def verify_tools(self):
         for command, expected in ((["copilot", "--version"], PINS["copilot"]), (["awf", "--version"], PINS["awf"])):
@@ -278,12 +304,17 @@ class Runtime:
     def handoff(self, destination=None, *, engine_outcome="success"):
         controller = self.controller
         require(engine_outcome in ("success", "failure", "cancelled"), "Invalid stock engine outcome")
+        if controller.transport.scope != "local_fixture":
+            self.observe_engine()
+            require((controller.root / "runtime-engine-exit.json").exists(), "Engine has not exited")
         if engine_outcome != "success":
             controller.save("runtime-error", {"reason": "Stock engine ended " + engine_outcome})
         if not (controller.root / "runtime-stop.json").exists():
             controller.save("runtime-stop", {"reason": "Engine execution ended",
                                              "requested_at": controller.now().isoformat()})
         requested = mem.timestamp(controller.load("runtime-stop")["requested_at"])
+        if (controller.root / "runtime-engine-exit.json").exists():
+            requested = min(requested, mem.timestamp(controller.load("runtime-engine-exit")["at"]))
         reader = bridge.Bridge(controller)
         while controller.load("runtime-service")["state"] not in ("stopped", "cleanup_failed"):
             elapsed = (controller.now() - requested).total_seconds()
@@ -333,7 +364,8 @@ def serve(adapter, *, sockets=None, launch=bridge._launch, identify=c.snapshot_p
         token = bridge.endpoint_token(controller.root)
 
         def shutdown():
-            if not (controller.root / "runtime-stop.json").exists():
+            if not (controller.root / "runtime-stop.json").exists() \
+                    and not (controller.root / "runtime-engine-exit.json").exists():
                 controller.save("runtime-error", {"reason": "Owned HTTP service interrupted"})
             return client.shutdown("Owned HTTP service shutdown; incomplete investigation")
 
@@ -346,6 +378,8 @@ def serve(adapter, *, sockets=None, launch=bridge._launch, identify=c.snapshot_p
             try:
                 while not stop.wait(1):
                     with client.lock:
+                        if (controller.root / "runtime-container.json").exists():
+                            adapter.observe_engine()
                         client.tick()
                         if server.started and controller.load("runtime-service")["state"] == "launching":
                             controller.save("runtime-service", {"state": "serving"})
@@ -357,10 +391,13 @@ def serve(adapter, *, sockets=None, launch=bridge._launch, identify=c.snapshot_p
                             if client.worker is None:
                                 require(client.receipt is None or client.receipt["operation"] != "authorize",
                                         "Trusted output authorization failed")
+                                controller.poll_active()
                                 controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
                                 client._start("authorize", None)
                         if (controller.root / "runtime-stop.json").exists():
                             controller.load("runtime-stop")
+                            break
+                        if (controller.root / "runtime-engine-exit.json").exists():
                             break
                         if client.worker is None and "finalization" in controller.load("clocks"):
                             controller.remaining("finalization", w.FINALIZATION_SECONDS)
