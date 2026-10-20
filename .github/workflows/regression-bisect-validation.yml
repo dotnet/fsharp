@@ -138,3 +138,43 @@ jobs:
             ${{ runner.temp }}/regression-containment
             ${{ runner.temp }}/regression-containment-config.json
           if-no-files-found: error
+  source-worker:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[source-acceptance]')
+    needs: [validate, containment]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 130
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+      - name: Provision the pinned image
+        run: docker pull --platform linux/amd64 docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a
+      - name: Write reviewed source configuration
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs"), path = require("node:path");
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, "regression-source-config.json"), JSON.stringify({
+            schemaVersion: 1,
+            image: "docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a",
+            dockerExecutable: "/usr/bin/docker",
+            limits: { cpus: 4, memoryMiB: 12288, pids: 1024, scratchMiB: 8192, timeoutMs: 6600000 }
+          }), { flag: "wx" });
+          NODE
+      - name: Verify this source worker's containment
+        run: node eng/regression-bisect/containment.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-containment"
+      - name: Build and test the frozen source inside the production worker
+        run: node eng/regression-bisect/source-worker.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker"
+      - name: Retain source worker evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: regression-source-worker-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/regression-source-config.json
+            ${{ runner.temp }}/regression-source-containment
+            ${{ runner.temp }}/regression-source-worker
+          if-no-files-found: error

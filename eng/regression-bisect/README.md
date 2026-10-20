@@ -50,6 +50,13 @@ These checks do not activate production routing or establish source/product acce
 Synthetic trial tests create their signed inputs with a current deadline.
 They do not change the production clock or renew an existing investigation allowance.
 
+Push commits with `[source-acceptance]` to `idea/dm-912` to request one contained source-worker smoke.
+This opt-in job builds the frozen harmless source fixture and runs its built FSI through the production adapter.
+A new trusted process authenticates exported evidence after worker removal.
+The job preserves its source, toolchain, build, assertion, and cleanup evidence as artifacts.
+It does not establish controller, project-matrix, immutable-producer, or full trial acceptance.
+It does not change an existing investigation journal or allowance.
+
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.
