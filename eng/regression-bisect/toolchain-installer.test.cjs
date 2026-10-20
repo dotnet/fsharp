@@ -128,15 +128,18 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', r
         };
       }
       if (args.includes('--help')) return { exitCode: 0, stdout: state.help, stderr: '' };
-      const flag = name => args[args.indexOf(windows ? `-${name}` : `--${name.replace(/[A-Z]/g, (c, i) => `${i ? '-' : ''}${c.toLowerCase()}`)}`) + 1];
+      const named = windows ? JSON.parse(execution.env.RB_INSTALLER_PARAMETERS) : null;
+      const flagName = name => `--${name.replace(/[A-Z]/g, (c, i) => `${i ? '-' : ''}${c.toLowerCase()}`)}`;
+      const flag = name => windows ? named[name] : args[args.indexOf(flagName(name)) + 1];
+      const hasFlag = name => windows ? named[name] === true : args.includes(flagName(name));
       assert.equal(flag('Version'), options.version);
       assert.equal(flag('InstallDir'), options.root);
       assert.equal(flag('Architecture'), options.platform.architecture);
       assert.equal(flag('ZipPath'), options.archivePath);
-      assert.ok(args.includes(windows ? '-KeepZip' : '--keep-zip'));
-      assert.ok(args.includes(windows ? '-NoPath' : '--no-path'));
-      assert.equal(args.includes(windows ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'), product !== 'sdk');
-      assert.equal(args.includes(windows ? '-Runtime' : '--runtime'), product !== 'sdk');
+      assert.ok(hasFlag('KeepZip'));
+      assert.ok(hasFlag('NoPath'));
+      assert.equal(hasFlag('SkipNonVersionedFiles'), product !== 'sdk');
+      assert.equal(windows ? Object.hasOwn(named, 'Runtime') : args.includes('--runtime'), product !== 'sdk');
       if (product !== 'sdk') assert.equal(flag('Runtime'), product);
       if (windows) {
         assert.equal(executable, 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
@@ -193,6 +196,21 @@ for (const conflicting of [false, true]) {
     } else await installArchive(options, deps);
   });
 }
+
+test('Windows installer explicitly loads built-in modules in both PowerShell phases', async t => {
+  const { options, deps, state } = await fixture(t);
+  await installArchive(options, deps);
+  assert.equal(state.calls.length, 2);
+  for (const call of state.calls) {
+    const commandIndex = call.args.indexOf('-Command');
+    assert.notEqual(commandIndex, -1);
+    const command = call.args[commandIndex + 1];
+    assert.match(command, /\$PSModuleAutoLoadingPreference = 'None'/);
+    assert.match(command, /Microsoft\.PowerShell\.Utility/);
+    assert.match(command, /Microsoft\.PowerShell\.Management/);
+    assert.match(command, /Import-Module.*\$PSHOME/);
+  }
+});
 
 test('approved exact historical preview measures bytes without claiming a publisher SHA512', async t => {
   const { options, deps, state } = await measuredFixture(t);
@@ -315,15 +333,16 @@ for (const phase of ['download', 'helper', 'delivery', 'installer exit', 'retent
     }
     const run = deps.run;
     deps.run = async (exe, args, execution) => {
-      if (phase === 'delivery' && args.includes('-AzureFeed')) {
-        const url = `${args[args.indexOf('-AzureFeed') + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+      const installer = execution.env.RB_INSTALLER_PARAMETERS && JSON.parse(execution.env.RB_INSTALLER_PARAMETERS);
+      if (phase === 'delivery' && installer) {
+        const url = `${installer.AzureFeed}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
         await request(url).catch(() => {});
         await fs.writeFile(`${options.archivePath}.download`, payload);
         await fs.writeFile(options.archivePath, payload);
         return { exitCode: 0 };
       }
       const result = await run(exe, args, execution);
-      if ((phase === 'helper' && args.includes('-Command')) || (phase === 'installer exit' && args.includes('-AzureFeed')))
+      if ((phase === 'helper' && !installer) || (phase === 'installer exit' && installer))
         await fs.writeFile(`${options.archivePath}.download`, changed);
       return result;
     };
@@ -448,9 +467,11 @@ for (const os of ['win', 'linux']) {
       };
       const run = deps.run;
       deps.run = async (executable, args, execution) => {
-        const feedIndex = args.indexOf(os === 'win' ? '-AzureFeed' : '--azure-feed');
-        if (feedIndex < 0) return run(executable, args, execution);
-        state.archiveUrl = `${args[feedIndex + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+        const installer = execution.env.RB_INSTALLER_PARAMETERS && JSON.parse(execution.env.RB_INSTALLER_PARAMETERS);
+        const feedIndex = args.indexOf('--azure-feed');
+        if (!installer && feedIndex < 0) return run(executable, args, execution);
+        const feed = os === 'win' ? installer.AzureFeed : args[feedIndex + 1];
+        state.archiveUrl = `${feed}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
         received = request(state.archiveUrl).then(value => value, error => error);
         await deliveryReady;
         await fs.copyFile(`${options.archivePath}.download`, options.archivePath);
@@ -497,8 +518,9 @@ for (const method of [null, 'HEAD']) {
     const { options, deps, state } = await fixture(t);
     const run = deps.run;
     deps.run = async (executable, args, execution) => {
-      if (!args.includes('-AzureFeed')) return run(executable, args, execution);
-      state.archiveUrl = `${args[args.indexOf('-AzureFeed') + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+      const installer = execution.env.RB_INSTALLER_PARAMETERS && JSON.parse(execution.env.RB_INSTALLER_PARAMETERS);
+      if (!installer) return run(executable, args, execution);
+      state.archiveUrl = `${installer.AzureFeed}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
       if (method) assert.equal((await request(state.archiveUrl, method)).status, 200);
       await fs.copyFile(`${options.archivePath}.download`, options.archivePath);
       return { exitCode: 0, stdout: 'already installed', stderr: '' };
@@ -612,7 +634,10 @@ test('real repository helper returns seeded script and parses actual PS paramete
     if (!args.some(arg => arg.includes('GetDotNetInstallScript')))
       return simulatedRun(executable, args, execution);
     helperRan = true;
-    const { stdout, stderr } = await promisify(execFile)(executable, args, {
+    const isolatedArgs = [...args];
+    const commandIndex = isolatedArgs.indexOf('-Command') + 1;
+    isolatedArgs[commandIndex] = "$PSModuleAutoLoadingPreference = 'None'\n" + isolatedArgs[commandIndex];
+    const { stdout, stderr } = await promisify(execFile)(executable, isolatedArgs, {
       cwd: execution.cwd, env: execution.env, timeout: execution.timeoutMs,
       windowsHide: true, maxBuffer: 1024 * 1024,
     });
@@ -621,6 +646,64 @@ test('real repository helper returns seeded script and parses actual PS paramete
   await installArchive(options, deps);
   assert.equal(helperRan, true);
 });
+
+for (const product of ['sdk', 'dotnet']) {
+  test(`real Windows ${product} installer binds literal named parameters without module discovery`,
+    { skip: process.platform !== 'win32' }, async t => {
+      const { options, deps } = await fixture(t, { product });
+      options.helperRoot = path.resolve(__dirname, '..', 'common');
+      options.env.SystemRoot = process.env.SystemRoot;
+      options.root = path.join(options.cwd, "SDK 'quoted'; $(throw 'not code')");
+      const originalHttp = deps.http;
+      const script = Buffer.from(`
+[CmdletBinding()]
+param(${parameters.map(name =>
+  `[${['NoPath', 'KeepZip', 'SkipNonVersionedFiles'].includes(name) ? 'switch' : 'string'}]$${name}`).join(',')})
+if ($PSModuleAutoLoadingPreference -ne 'None') { throw 'Automatic module discovery is enabled' }
+if ($env:GH_TOKEN -or $env:HTTP_PROXY -or $env:DOTNET_STARTUP_HOOKS) { throw 'Caller environment leaked' }
+$bound = @{}
+foreach ($name in $PSBoundParameters.Keys) {
+  $value = $PSBoundParameters[$name]
+  $bound[$name] = if ($value -is [System.Management.Automation.SwitchParameter]) { $value.IsPresent } else { $value }
+}
+$productDirectory = if ($Runtime) { 'Runtime' } else { 'Sdk' }
+$archiveName = [IO.Path]::GetFileName($ZipPath)
+$client = [Net.WebClient]::new()
+try { $client.DownloadFile("$AzureFeed/$productDirectory/$Version/$archiveName", $ZipPath) }
+finally { $client.Dispose() }
+Write-Output ('NATIVE_INSTALLER_RESULT=' + ($bound | ConvertTo-Json -Compress))
+exit 0
+`);
+      deps.http = async (url, transport) => {
+        const response = await originalHttp(url, transport);
+        return transport.destination ? response : { ...response, bytes: script };
+      };
+      let bound;
+      deps.run = async (executable, args, execution) => {
+        const { stdout, stderr } = await promisify(execFile)(executable, args, {
+          cwd: execution.cwd, env: execution.env, timeout: execution.timeoutMs,
+          windowsHide: true, maxBuffer: 1024 * 1024,
+        });
+        const result = stdout.split(/\r?\n/).find(line => line.startsWith('NATIVE_INSTALLER_RESULT='));
+        if (result) {
+          assert.equal(bound, undefined);
+          bound = JSON.parse(result.slice('NATIVE_INSTALLER_RESULT='.length));
+          assert.deepEqual(bound, JSON.parse(execution.env.RB_INSTALLER_PARAMETERS));
+        }
+        return { stdout, stderr, exitCode: 0 };
+      };
+      const result = await installArchive(options, deps);
+      assert.equal(bound.Version, options.version);
+      assert.equal(bound.InstallDir, options.root);
+      assert.equal(bound.Architecture, 'x64');
+      assert.equal(bound.NoPath, true);
+      assert.equal(bound.KeepZip, true);
+      assert.equal(bound.ZipPath, options.archivePath);
+      assert.equal(Object.hasOwn(bound, 'Runtime'), product !== 'sdk');
+      assert.equal(Object.hasOwn(bound, 'SkipNonVersionedFiles'), product !== 'sdk');
+      assert.equal(result.archive.retained.sha256, digest(payload, 'sha256'));
+    });
+}
 
 for (const url of [
   approval.url.replace('https:', 'http:'), approval.url.replace('/Sdk/', '/Runtime/'),

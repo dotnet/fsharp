@@ -9,8 +9,14 @@ const { validateArchiveRequest, validateArchiveReceipt } = require('./archive-pr
 const { publicUrl, validateHttpResponse } = require('./toolchain-io.cjs');
 
 const marker = 'INSTALLER_HELPER_RESULT=';
-const helperPS = `
+const bootstrapPS = `
 $ErrorActionPreference = 'Stop'
+$PSModuleAutoLoadingPreference = 'None'
+foreach ($module in @('Microsoft.PowerShell.Utility', 'Microsoft.PowerShell.Management')) {
+  Import-Module ([IO.Path]::Combine($PSHOME, 'Modules', $module, "$module.psd1")) -ErrorAction Stop
+}
+`;
+const helperPS = `${bootstrapPS}
 $prepareMachine = $false
 $ci = $false
 $restore = $false
@@ -27,6 +33,14 @@ $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [r
 if ($parseErrors.Count -ne 0 -or $null -eq $ast.ParamBlock) { throw 'Unsupported installer parameter block' }
 $names = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
 Write-Output ('INSTALLER_HELPER_RESULT=' + (@{ path = [string]$scriptPath; parameters = $names } | ConvertTo-Json -Compress))
+`;
+const installerPS = `${bootstrapPS}
+$parameters = @{}
+($env:RB_INSTALLER_PARAMETERS | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
+  $parameters[$_.Name] = $_.Value
+}
+& $env:RB_INSTALLER_PATH @parameters
+exit $LASTEXITCODE
 `;
 const helperSH = `
 set -euo pipefail
@@ -346,12 +360,19 @@ async function installArchive(options, deps) {
     if (beforeInstall.sha256 !== digests.sha256 || beforeInstall.sha512 !== digests.sha512 || beforeInstall.size !== digests.size)
       throw new Error('Downloaded archive changed before installer execution');
     feed = await startFeed(fs, download, archiveName, productDirectory, version, product, digests);
-    const args = windows
-      ? ['-File', scriptPath, '-Version', version, '-InstallDir', root, '-Architecture', platform.architecture,
-        '-NoPath', '-KeepZip', '-ZipPath', archivePath, '-AzureFeed', feed.url]
-      : [scriptPath, '--version', version, '--install-dir', root, '--architecture', platform.architecture,
+    let args;
+    if (windows) {
+      env.RB_INSTALLER_PARAMETERS = JSON.stringify({
+        Version: version, InstallDir: root, Architecture: platform.architecture,
+        NoPath: true, KeepZip: true, ZipPath: archivePath, AzureFeed: feed.url,
+        ...(product !== 'sdk' ? { Runtime: product, SkipNonVersionedFiles: true } : {}),
+      });
+      args = ['-Command', installerPS];
+    } else {
+      args = [scriptPath, '--version', version, '--install-dir', root, '--architecture', platform.architecture,
         '--no-path', '--keep-zip', '--zip-path', archivePath, '--azure-feed', feed.url, '--os', os];
-    if (product !== 'sdk') args.push(windows ? '-Runtime' : '--runtime', product, windows ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files');
+      if (product !== 'sdk') args.push('--runtime', product, '--skip-non-versioned-files');
+    }
     stage = 'installation-failure';
     await run(args, 1_200_000);
     stage = 'checksum-provenance';
