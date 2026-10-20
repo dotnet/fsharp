@@ -86,13 +86,28 @@ test("Node's default-port proxy Host still pins the approved destination", async
     assert.deepEqual(f.connections, [{ host: "13.107.246.40", port: 443, family: 4 }]);
 });
 
+for (const host of ["vwvvsblobprodcus334.vsblob.vsassets.io", "public-package-cdn.vsblob.vsassets.io"])
+test(`public Azure DevOps package CDN pins its public address: ${host}`, async t => {
+    const f = await fixture(t);
+    const socket = await f.request(`${host}:443`);
+    assert.match((await once(socket, "data"))[0].toString(), /^HTTP\/1.1 200 Connection Established\r\n\r\n$/);
+    socket.end();
+    await once(socket, "close");
+    assert.equal(f.resolutions[0].host, host);
+    assert.deepEqual(f.connections, [{ host: "13.107.246.40", port: 443, family: 4 }]);
+});
+
 test("control, metadata, credentials, redirects and alternate authorities cannot reach DNS", async t => {
     const f = await fixture(t);
     for (const authority of ["api.github.com:443", "github.com:443", "169.254.169.254:443", "localhost:443",
         "host.docker.internal:443", "api.nuget.org:80", "api.nuget.org:0443", "API.NUGET.ORG:443",
         "api.nuget.org.:443", "api.nuget.org.evil.test:443", "api.nuget.org@evil.test:443",
         "https://api.nuget.org:443", "api.nuget.org:443/path", "api.nuget.org:443?token=x",
-        "%61pi.nuget.org:443", "[::1]:443", "13.107.246.40:443"])
+        "%61pi.nuget.org:443", "[::1]:443", "13.107.246.40:443",
+        "vsblob.vsassets.io:443", "cdn.vsblob.vsassets.io.evil.test:443",
+        "cdn.evil.vsblob.vsassets.io:443", "-cdn.vsblob.vsassets.io:443",
+        "cdn-.vsblob.vsassets.io:443", "cdn.vsblob.vsassets.io.:443",
+        "cdn.vsblob.vsassets.io:80", "private.blob.core.windows.net:443"])
         await t.test(authority, async () => assert.match(await response(await f.request(authority)), /403 Forbidden/));
     for (const header of ["Authorization: Bearer harmless-canary\r\n", "Proxy-Authorization: Basic canary\r\n",
         "Cookie: canary\r\n", "X-GitHub-Token: canary\r\n", "Content-Length: 1\r\n",

@@ -77,6 +77,8 @@ After historical descendants stop, the supervisor reclaims only their owned scra
 Ownership changes do not follow SDK links or include protected helper, control, or storage directories.
 Docker cleanup recognizes the daemon's exact missing-network response, without treating permission failures as successful removal.
 The egress broker accepts Node's default-port Host header only for the same approved CONNECT destination on port 443.
+Public Azure DevOps feeds redirect package downloads to the publisher's `*.vsblob.vsassets.io` CDN.
+Those CDN tunnels retain public-address validation and the existing header, byte, and time limits.
 The timeout canary keeps its child referenced until the external deadline terminates the container.
 
 ## Durable intake routing (not activated)

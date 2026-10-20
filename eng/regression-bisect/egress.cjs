@@ -87,7 +87,8 @@ function createEgressBroker(options = {}) {
         };
         if (stopped || id > cap.requests || tunnels.size >= cap.active || totalBytes >= cap.totalBytes)
             return reject("capacity", "503 Service Unavailable");
-        if (!hosts.has(host) || request.url !== `${host}:443`) return reject("authority");
+        const packageCdn = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vsblob\.vsassets\.io$/.test(host);
+        if (!(hosts.has(host) || packageCdn) || request.url !== `${host}:443`) return reject("authority");
         // Node omits the default HTTPS port from Host, but not the CONNECT authority.
         if ((request.headers.host !== request.url && request.headers.host !== host) || new Set(headerNames).size !== headerNames.length ||
             headerNames.some(h => !["host", "connection", "proxy-connection", "user-agent"].includes(h)))
