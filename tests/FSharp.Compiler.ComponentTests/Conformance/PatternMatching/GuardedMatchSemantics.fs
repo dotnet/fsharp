@@ -360,3 +360,26 @@ let main _ =
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+
+#if NETCOREAPP
+    [<Collection(nameof NotThreadSafeResourceCollection)>]
+    type CompilerAllocation() =
+        [<Fact>]
+        member _.``Issue 20632 - guarded total active patterns retain bounded compilation allocation`` () =
+            let source =
+                template "ActivePatternGrowth.fs" [
+                    "{{CONTEXTS}}", ([for i in 0..31 -> $"C{i} of int"] |> String.concat " | ")
+                    "{{GUARDS}}", ([for i in 0..31 -> $"    | _, C{i} (Identity value) :: _ when guard {i} value col -> {100 + i}"] |> String.concat "\n")
+                    "{{TAILS}}", ([for i in 1..30 -> $"    | {i}, _ :: _ -> {i}"] |> String.concat "\n") ]
+                |> asLibrary
+                |> withLangVersionPreview
+                |> withOptimize
+                |> withRealInternalSignature false
+                |> withOptions ["--nowarn:75"; "--extraoptimizationloops:0"; "--parallelcompilation-"]
+            let compileSource () = source |> compile |> shouldSucceed |> ignore
+            compileSource ()
+            let before = System.GC.GetTotalAllocatedBytes true
+            compileSource ()
+            let allocated = System.GC.GetTotalAllocatedBytes true - before
+            Assert.True(allocated < 1_000_000_000L, $"Compiler allocated {allocated} bytes")
+#endif

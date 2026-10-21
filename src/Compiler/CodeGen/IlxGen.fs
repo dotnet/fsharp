@@ -8373,12 +8373,11 @@ and GenDecisionTreeJoin cenv cgbuf eenv (bind: Binding, body, m) sequel contf =
         mkInvisibleBinds args (args |> List.map (fun v -> mkDefault (m, v.Type)))
 
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-    CG.SetMarkToHere cgbuf startMark
     let entry = CG.GenerateDelayMark cgbuf "decisionJoin"
     let dispatch = CG.GenerateDelayMark cgbuf "decisionDispatch"
 
     let branchSequel, afterJoin, stackAfterJoin, sequelAfterJoin =
-        GenJoinPoint cenv cgbuf "decision" eenv (tyOfExpr cenv.g body) m (EndLocalScope(sequel, endMark))
+        GenJoinPoint cenv cgbuf "decision" eenv (tyOfExpr cenv.g body) m sequel
 
     let branchSequel =
         match branchSequel with
@@ -8387,8 +8386,10 @@ and GenDecisionTreeJoin cenv cgbuf eenv (bind: Binding, body, m) sequel contf =
 
     CG.EmitInstr cgbuf (pop 0) Push0 (I_br dispatch.CodeLabel)
     CG.SetMarkToHere cgbuf entry
+    CG.SetMarkToHere cgbuf startMark
     CG.SetStack cgbuf stackBefore
     GenExpr cenv cgbuf eenv joinBody branchSequel
+    CG.SetMarkToHere cgbuf endMark
     CG.SetMarkToHere cgbuf dispatch
     CG.SetStack cgbuf stackBefore
 
