@@ -84,7 +84,10 @@ async function freeze(directory, executable, injected = {}) {
         await save(`metadata-${i}`, `metadata-${i}.json`, Buffer.from(record.bytesBase64, "base64").toString("utf8"));
     const channel = latest.toolchain.metadata.map(m => JSON.parse(Buffer.from(m.bytesBase64, "base64")))
         .find(m => m["channel-version"] === "10.0");
-    const sdk = channel.releases.flatMap(r => [r.sdk, ...(r.sdks ?? [])]).find(s => s?.version === "10.0.301");
+    const sourceRelease = channel.releases.find(r => [r.sdk, ...(r.sdks ?? [])].some(s => s?.version === declared.toolchain.sdkVersion));
+    const sdk = [sourceRelease?.sdk, ...(sourceRelease?.sdks ?? [])].find(s => s?.version === declared.toolchain.sdkVersion);
+    const compilerRuntime = { name: "Microsoft.NETCore.App", version: sdk?.["runtime-version"] ?? sourceRelease?.runtime?.version };
+    requireValue(/^\d+\.\d+\.\d+$/.test(compilerRuntime.version), "source SDK lacks an exact publisher runtime version");
     const runtime = channel.releases.find(r => r.runtime?.version === "10.0.0")?.runtime;
     const archives = [];
     for (const [product, record] of [["sdk", sdk], ["dotnet", runtime]]) {
@@ -113,7 +116,7 @@ async function freeze(directory, executable, injected = {}) {
     await save("sample", path.join("sample", samplePath), sample);
     await fs.writeFile(path.join(fixtureDirectory, "manifest.json"), JSON.stringify(manifest, null, 2));
     await save("assertion", "frozen-manifest.json", manifest);
-    const result = { purpose: "SYNTHETIC ACCEPTANCE ONLY", source: { directory: mirror, base, good, candidate, main },
+    const result = { purpose: "SYNTHETIC ACCEPTANCE ONLY", source: { directory: mirror, base, good, candidate, main, compilerRuntime },
         stable, files, plan: { sourceBuilds: 5, workerUnits: 6, reservedMinutes: 660, totalMinutes: 720,
             attempts: { [good]: 2, [candidate]: 2, [main]: 1 }, actualProductRuns: 0 },
         approval: "Reviewed exact FsiEvaluationSession.Run sentinel only; issue/discussion and physical environment approval still required." };

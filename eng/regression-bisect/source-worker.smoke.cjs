@@ -13,9 +13,11 @@ const policy = require("../../.github/policies/regression-bisect.json");
 const platform = { os: "linux", architecture: "x64", rid: "linux-x64" };
 const repository = path.resolve(__dirname, "..", "..");
 
-function sourceUnit({ revision, sourceSha, manifest, resolved, archive, now = new Date() }) {
+function sourceUnit({ revision, sourceSha, manifest, resolved, archive, compilerRuntime, now = new Date() }) {
     requireValue(archive.status === 200 && /^[a-f0-9]{64}$/.test(archive.sha256) &&
         archive.sha512 === resolved.archive.sha512, "stable archive must match publisher metadata");
+    requireValue(compilerRuntime?.name === "Microsoft.NETCore.App" && /^\d+\.\d+\.\d+$/.test(compilerRuntime.version),
+        "exact source compiler runtime required");
     const unit = {
         schemaVersion: 1, repository: "dotnet/fsharp", issueNumber: manifest.issueNumber,
         buildInstanceId: `source-smoke-${randomBytes(16).toString("hex")}`,
@@ -25,7 +27,8 @@ function sourceUnit({ revision, sourceSha, manifest, resolved, archive, now = ne
             [c.id, { os: c.os, architecture: c.architecture, imageDigest: image.split(":").at(-1) }]))),
         policyDigest: fingerprint(policy), policyRevision: revision, workflowRevision: revision,
         manifest, platform, request: { kind: "source", endpoint: "good", phase: "confirmation", target: { sourceSha } },
-        resolved, stableSdk: { version: resolved.sdkVersion, origin: "official-release-index", latest: true, verified: true,
+        resolved: { ...resolved, runtimeRequirements: [...resolved.runtimeRequirements, { ...compilerRuntime, role: "sample" }] },
+        stableSdk: { version: resolved.sdkVersion, origin: "official-release-index", latest: true, verified: true,
             releaseIndexUrl: resolved.metadata[0].url, releaseIndexDigest: resolved.metadata[0].sha256,
             archives: [{ os: "linux", architecture: "x64", sha256: archive.sha256 }] },
     };
@@ -73,7 +76,8 @@ async function main(args = process.argv.slice(2)) {
         validateHttpResponse(resolved.toolchain.archive.url, archive, policy);
         const revision = execFileSync("/usr/bin/git", ["rev-parse", "HEAD"],
             { cwd: repository, encoding: "utf8", timeout: 60000 }).trim();
-        const unit = sourceUnit({ revision, sourceSha: frozen.source.good, manifest, resolved: resolved.toolchain, archive });
+        const unit = sourceUnit({ revision, sourceSha: frozen.source.good, manifest, resolved: resolved.toolchain, archive,
+            compilerRuntime: frozen.source.compilerRuntime });
         report.revision = revision;
         report.unit = unit;
         const sourceBundle = path.join(root, "source.bundle");

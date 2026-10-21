@@ -380,7 +380,7 @@ test("SYNTHETIC source freeze selects publisher runtime, never apphost, and pres
     const archive = (product, version, rid = "linux-x64") => ({ name: `${product}-${rid}.tar.gz`, rid,
         url: `${feed}/${product === "dotnet-sdk" ? "Sdk" : "Runtime"}/${version}/${product}-${version}-${rid}.tar.gz`,
         hash: "a".repeat(128) });
-    const sdk = { version: "10.0.301", files: [archive("dotnet-sdk", "10.0.301")] };
+    const sdk = { version: "10.0.301", "runtime-version": "10.0.9", files: [archive("dotnet-sdk", "10.0.301")] };
     const runtime = { version: "10.0.0", files: [archive("dotnet-apphost-pack", "10.0.0"),
         archive("dotnet-runtime", "10.0.0", "linux-arm64"), archive("dotnet-runtime", "10.0.0")] };
     const indexUrl = `${feed}/release-metadata/releases-index.json`, channelUrl = `${feed}/release-metadata/10.0/releases.json`;
@@ -407,6 +407,7 @@ test("SYNTHETIC source freeze selects publisher runtime, never apphost, and pres
             assert.deepEqual(frozen.archives.map(a => a.archive.url), [sdk.files[0].url, runtime.files.at(-1).url]);
             assert.deepEqual(calls.filter(c => c.method === "HEAD").map(c => c.url), frozen.archives.map(a => a.archive.url));
             assert.equal(result.source.base, base);
+            assert.deepEqual(result.source.compilerRuntime, { name: "Microsoft.NETCore.App", version: "10.0.9" });
             assert.deepEqual([result.source.good, result.source.candidate, result.source.main], [
                 "05e2f222e08785994d8909707054b411ea677fc4", "a23fa5514d49566559bdcc7479fbe00ceb01b577",
                 "e648b05ced2bc8f071685a7dbfacbbc15964e2f9"]);

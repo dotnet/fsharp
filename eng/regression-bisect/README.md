@@ -56,6 +56,10 @@ A new trusted process authenticates exported evidence after worker removal.
 The job preserves its source, toolchain, build, assertion, and cleanup evidence as artifacts.
 It does not establish controller, project-matrix, immutable-producer, or full trial acceptance.
 It does not change an existing investigation journal or allowance.
+The frozen source graph records the source SDK's compiler runtime from publisher metadata.
+The source smoke declares that runtime separately from the stable SDK's bundled runtime.
+The existing installer acquires and verifies a supplemental runtime when necessary.
+The worker retains its archive receipt and verifies the actual FSI runtime and Core loads.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
