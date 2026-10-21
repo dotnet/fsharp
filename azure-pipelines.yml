@@ -10,10 +10,10 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/
+    - docs/*
     - .vscode/*
     - .devcontainer/*
-    - tests/scripts/
+    - tests/scripts/*
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -29,11 +29,11 @@ variables:
   # The future "product" gets developed in main, so should be main in main.
   # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
   - name: FSharpReleaseBranchName
-    value: release/dev18.0
+    value: main
   # VS Insertion branch name (NOT the same as F# branch)
   # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   - name: VSInsertionTargetBranchName
-    value: rel/d18.0
+    value: main
   - name: _TeamName
     value: FSharp
   - name: TeamName
@@ -43,12 +43,11 @@ variables:
   - name: _SignType
     value: Real
   - name: _PublishUsingPipelines
-    value: true
+    value: "true"
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
-    value: true
-  - group: DotNet-FSharp-SDLValidation-Params
+    value: "true"
   - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
 resources:
@@ -68,6 +67,7 @@ extends:
         enabled: true
       policheck:
         enabled: true
+        exclusionsFile: '$(Build.SourcesDirectory)/eng/policheck_exclusions.xml'
       sbom:
         enabled: false # VS SBOM is generated with other steps
         justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
@@ -124,7 +124,6 @@ extends:
                   zipSources: false
 
             variables:
-            - group: DotNet-DevDiv-Insertion-Workflow-Variables
             - name: _SignType
               value: Real
             steps:
@@ -147,6 +146,7 @@ extends:
               env:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
+                  FSharp_CacheEvictionImmediate: true
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
@@ -187,16 +187,25 @@ extends:
                 targetPath: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
                 artifactName: 'NativeSymbols'
               condition: succeeded()
+            - task: AzureCLI@2
+              displayName: Get DevDiv Drop Access Token
+              inputs:
+                azureSubscription: 'dnceng-devdiv-drop-rw-code-rw-wif'
+                scriptType: pscore
+                scriptLocation: inlineScript
+                inlineScript: |
+                  $token = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
+                  Write-Host "##vso[task.setvariable variable=DevDivDropAccessToken;issecret=true]$token"
+              condition: succeeded()
             - task: 1ES.MicroBuildVstsDrop@1
               displayName: Upload VSTS Drop
               inputs:
                 dropName: $(VisualStudioDropName)
                 dropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion'
                 dropRetentionDays: 90
-                accessToken: $(dn-bot-devdiv-drop-rw-code-rw)
+                accessToken: $(DevDivDropAccessToken)
                 dropServiceUri: 'https://devdiv.artifacts.visualstudio.com'
                 vsDropServiceUri: 'https://vsdrop.corp.microsoft.com/file/v1'
-
               condition: succeeded()
 
     #---------------------------------------------------------------------------------------------------------------------#
@@ -209,23 +218,8 @@ extends:
         enableSymbolValidation: false
         # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
         enableSourceLinkValidation: false
-        # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
-        SDLValidationParameters:
-          enable: true
-          params: >-
-            -SourceToolsList @("policheck","credscan")
-            -ArtifactToolsList @("binskim")
-            -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
-            -TsaInstanceURL $(_TsaInstanceURL)
-            -TsaProjectName $(_TsaProjectName)
-            -TsaNotificationEmail $(_TsaNotificationEmail)
-            -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
-            -TsaBugAreaPath $(_TsaBugAreaPath)
-            -TsaIterationPath $(_TsaIterationPath)
-            -TsaRepositoryName "FSharp"
-            -TsaCodebaseName "FSharp-GitHub"
-            -TsaPublish $True
-            -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
+        # SDL validation (PoliCheck, CredScan, BinSkim) and TSA reporting are handled by the 1ES Pipeline
+        # Templates via the 'sdl:' block in the 'extends' section above; TSA config lives in eng/TSAConfig.gdntsa.
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                   VS Insertion                                                      #
@@ -237,3 +231,4 @@ extends:
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
+

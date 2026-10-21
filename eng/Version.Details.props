@@ -6,40 +6,44 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26515.1</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>12.0.0-beta.26505.2</MicrosoftDotNetArcadeSdkPackageVersion>
+    <!-- dotnet-dotnet dependencies -->
+    <SystemCollectionsImmutablePackageVersion>10.0.14</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.14</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.14</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.0.2</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.0.2</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.0.2</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.0.2</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>18.13.0-1.26516.14</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26516.14</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.13.0-1.26516.14</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.13.0-1.26516.14</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet-optimization dependencies -->
-    <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
-    <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationlinuxx64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntarm64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationwindows_ntarm64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
-    <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.25467.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
+    <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
+    <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationlinuxx64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationwindows_ntarm64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
+    <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.0.0-2.26514.4</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.0.0-2.26514.4</MicrosoftVisualStudioLanguageServicesPackageVersion>
-    <!-- dotnet-runtime dependencies -->
-    <SystemCollectionsImmutablePackageVersion>9.0.0</SystemCollectionsImmutablePackageVersion>
-    <SystemComponentModelCompositionPackageVersion>9.0.0</SystemComponentModelCompositionPackageVersion>
-    <SystemCompositionPackageVersion>9.0.0</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>9.0.0</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>9.0.0</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>9.0.21</SystemSecurityCryptographyXmlPackageVersion>
-    <SystemThreadingTasksDataflowPackageVersion>9.0.0</SystemThreadingTasksDataflowPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.13.0-1.26516.4</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.13.0-1.26516.4</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkVersion>$(MicrosoftDotNetArcadeSdkPackageVersion)</MicrosoftDotNetArcadeSdkVersion>
+    <!-- dotnet-dotnet dependencies -->
+    <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
+    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildVersion>$(MicrosoftBuildPackageVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildFrameworkPackageVersion)</MicrosoftBuildFrameworkVersion>
@@ -57,16 +61,8 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisCSharpVersion>$(MicrosoftCodeAnalysisCSharpPackageVersion)</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(MicrosoftCodeAnalysisEditorFeaturesPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(MicrosoftCodeAnalysisExternalAccessFSharpPackageVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
-    <!-- dotnet-runtime dependencies -->
-    <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
-    <SystemComponentModelCompositionVersion>$(SystemComponentModelCompositionPackageVersion)</SystemComponentModelCompositionVersion>
-    <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
-    <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
-    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
-    <SystemThreadingTasksDataflowVersion>$(SystemThreadingTasksDataflowPackageVersion)</SystemThreadingTasksDataflowVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessVersion>$(MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion)</MicrosoftVisualStudioLanguageServicesExternalAccessVersion>
   </PropertyGroup>
 </Project>

@@ -5,13 +5,14 @@ trigger:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - .vscode/*
     - .devcontainer/*
     - tests/scripts/*
@@ -31,13 +32,14 @@ pr:
     - main
     - dev16.1
     - feature/*
+    - feature*
     - release/*
   paths:
     include:
     - '*'
     exclude:
     - .github/*
-    - docs/*
+    - docs/**
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -57,12 +59,12 @@ variables:
     value: true
   - name: _WindowsMachineQueueName
     value: windows.vs2026preview.scout.amd64.open
+  - name: LinuxMachineQueueName
+    value: build.azurelinux.3.amd64.open
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: true
-  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -96,7 +98,7 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
           # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
+        - job: Determinism_Release
           condition: eq(variables['Build.Reason'], 'PullRequest')
           variables:
           - name: _SignType
@@ -105,13 +107,6 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 90
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
@@ -125,22 +120,23 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
-            displayName: Determinism tests with Debug configuration
+          - script: .\eng\test-determinism.cmd -configuration Release
+            displayName: Determinism tests (race detector — same flags both builds)
+          - script: .\eng\test-determinism.cmd -configuration Release -mode seq-vs-par
+            displayName: Determinism tests (1-shot diff — sequential vs parallel)
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
           # Check FSComp.txt error code sorting and code formatting
         - job: CheckCodeFormatting
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -159,6 +155,14 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.fsx --validate
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Validate test projects are registered in TestSplit.fsx
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.Tests.fsx
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check aggregate and batched test selection
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -167,7 +171,8 @@ stages:
         #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           strategy:
             maxParallel: 2
             matrix:
@@ -178,17 +183,8 @@ stages:
           steps:
           - checkout: self
             clean: true
-          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: ./eng/common/dotnet.sh
-          - pwsh: ./check.ps1 -project $(_project)
+          - script: ./check.sh $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
                 DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -212,6 +208,9 @@ stages:
           - name: 'Managed'
             container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
             buildArguments: '--source-build'
+          - name: 'Managed_MonoRuntime'
+            container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
+            buildArguments: '--source-build /p:DotNetBuildUseMonoRuntime=true'
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
@@ -228,7 +227,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -238,7 +237,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -264,7 +263,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
@@ -284,7 +283,7 @@ stages:
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: 'Windows Release build binlogs'
                 ArtifactType: Container
                 parallel: true
@@ -304,120 +303,28 @@ stages:
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
-            parallel: 4
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop batch $(System.JobPositionInPhase)
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            condition: succeededOrFailed()
-            continueOnError: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsStrictIndentation process dumps'
-                ArtifactType: Container
-                parallel: true
-
-        - job: WindowsNoStrictIndentation
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          timeoutInMinutes: 120
-          steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: always()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoStrictIndentation process dumps'
-                ArtifactType: Container
-                parallel: true
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktopBatch $(batchNumber) -configuration Release
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsNoRealsig_testDesktop'
+              artifactNamePrefix: 'WindowsNoRealsig testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
+              publishDumps: true
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
@@ -436,11 +343,6 @@ stages:
                 _configuration: Release
                 _testKind: testCoreclr
                 transparentCompiler: # Empty display name part.
-              fsharpqa_release:
-                _configuration: Release
-                _testKind: testFSharpQA
-                FSharp_CacheEvictionImmediate: true
-                transparentCompiler:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
@@ -467,7 +369,7 @@ stages:
           - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
@@ -481,13 +383,13 @@ stages:
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
-            condition: succeededOrFailed() # ne(variables['_testKind'], 'testFSharpQA')
+            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
             condition: always()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.slnx.binlog'
                 ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompiler) test binlogs
                 ArtifactType: Container
                 parallel: true
@@ -520,8 +422,16 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata Desktop
+          # Windows With Compressed Metadata Desktop (split into 3 batches)
         - job: WindowsCompressedMetadata_Desktop
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -531,70 +441,22 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
-          strategy:
-            parallel: 4
 
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Test
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: succeededOrFailed()
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
-              publishLocation: Container
-            continueOnError: true
-            condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch $(batchNumber)
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsCompressedMetadata testDesktop'
+              artifactNamePrefix: 'Windows testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
+              publishDumps: true
 
         # Mock official build
         - job: MockOfficial
@@ -607,51 +469,52 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux
+        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: Linux
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           timeoutInMinutes: 120
           variables:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
+              testRunTitlePrefix: 'Linux'
+              artifactNamePrefix: 'Linux'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
+          # Run the SDK integration once, not once per test batch.
+          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
+            displayName: Real SDK MP / MT integration
+            condition: and(succeeded(), eq(variables['batchNumber'], '1'))
+          - pwsh: |
+              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
+              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
+            displayName: Check SDK MT evidence
+            condition: and(always(), eq(variables['batchNumber'], '1'))
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['batchNumber'], '1'), eq(variables['SdkMtEvidenceAvailable'], 'true'))
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: Linux
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Linux SDK MT evidence
 
-        # MacOS
+        # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             vmImage: macos-latest
           timeoutInMinutes: 120
@@ -659,65 +522,84 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              COMPlus_DefaultStackSize: 1000000
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testResultsFiles: '*.xml'
-              testRunTitle: MacOS
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'MacOS $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Mac'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
+              buildEnv:
+                COMPlus_DefaultStackSize: 1000000
+              testRunTitlePrefix: 'MacOS'
+              artifactNamePrefix: 'MacOS'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
 
         # End to end build
         - job: EndToEndBuildTests
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release -pack
+          - script: .\Build.cmd -ci -c Release -pack
             env:
               NativeToolsOnMachine: true
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx -- .\artifacts\packages\Release
+            displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - pwsh: |
+              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
+              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
+            displayName: Check SDK MT evidence
+            condition: always()
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['SdkMtEvidenceAvailable'], 'true'))
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
+          
+          # Publish artifacts for regression testing
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Compiler FSC Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/fsc'
+              artifactName: 'FSharpCompilerFscArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Core Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/FSharp.Core'
+              artifactName: 'FSharpCoreArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - pwsh: |
+              # Stage the props and the locally built FSharp.Core so regression jobs restore it the SDK way.
+              # Arcade packs FSharp.Core into a `Shipping` leaf whose parent varies by layout, so search for it.
+              $stagingDir = "$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging"
+              $packsDir = Join-Path $stagingDir "library-packs"
+              New-Item -ItemType Directory -Force -Path $packsDir | Out-Null
+              Copy-Item "$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props" -Destination $stagingDir
+              Copy-Item "$(Build.SourcesDirectory)/eng/TargetFrameworks.props" -Destination $stagingDir
+              $core = Get-ChildItem "$(Build.SourcesDirectory)/artifacts/packages/Release" -Recurse -Filter "FSharp.Core.*.nupkg" |
+                Where-Object { $_.Name -notlike "*.symbols.nupkg" -and $_.Directory.Name -eq "Shipping" } | Select-Object -First 1
+              if (-not $core) { Write-Host "##[error]FSharp.Core.*.nupkg not found under artifacts/packages/Release/**/Shipping"; exit 1 }
+              Copy-Item $core.FullName -Destination $packsDir
+              Write-Host "Staged files for UseLocalCompilerProps artifact:"
+              Get-ChildItem $stagingDir -Recurse -Name
+            displayName: Stage UseLocalCompiler props files
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish UseLocalCompiler props file for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/UseLocalCompilerPropsStaging'
+              artifactName: 'UseLocalCompilerProps'
+              publishLocation: pipeline
+            condition: succeeded()
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
@@ -748,16 +630,17 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
         # Plain FCS build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: $(UbuntuMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(LinuxMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -766,9 +649,9 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
             condition: always()
 
@@ -784,26 +667,10 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+            displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
-            condition: always()
-
-        # Build and run fast benchmarks
-        - job: Benchmarks
-          pool:
-            name: $(DncEngPublicBuildPool)
-            demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          variables:
-          - name: _BuildConfig
-            value: Release
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration $(_BuildConfig) -testBenchmarks
-            displayName: Smoke test fast benchmarks
-            continueOnError: true
             condition: always()
 
         # Test trimming on Windows
@@ -834,7 +701,7 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\common\dotnet.cmd
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd $(_kind) -ci -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Initial build and prepare packages.
@@ -849,6 +716,7 @@ stages:
             continueOnError: true
             condition: always()
         - job: ILVerify
+          timeoutInMinutes: 120
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
@@ -870,3 +738,151 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+          - pwsh: |
+              $ErrorActionPreference = 'Stop'
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]false"
+              $source = "$(Build.SourcesDirectory)\tests\ILVerify"
+              if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+                Write-Host "No ILVerify actual baselines: source directory is absent."
+                return
+              }
+              $actuals = @(Get-ChildItem -LiteralPath $source -Filter '*.bsl.actual' -File)
+              if ($actuals.Count -eq 0) {
+                Write-Host "No ILVerify actual baselines found."
+                return
+              }
+              $destination = "$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)"
+              New-Item -ItemType Directory -Path $destination | Out-Null
+              foreach ($actual in $actuals) {
+                Copy-Item -LiteralPath $actual.FullName -Destination $destination
+              }
+              Write-Host "Staged $($actuals.Count) ILVerify actual baseline(s)."
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]true"
+            displayName: Stage ILVerify actual baselines
+            condition: failed()
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish ILVerify actual baselines
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)'
+              artifactName: 'ILVerify actual baselines Attempt $(System.JobAttempt)'
+            condition: and(failed(), eq(variables['ILVerifyActualBaselinesFound'], 'true'))
+            continueOnError: true
+
+  #-------------------------------------------------------------------------------------------------------------------#
+  #                              F# Compiler Regression Tests                                                         #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/templates/regression-test-jobs.yml
+      parameters:
+        testMatrix:
+        - repo: marklam/SlowBuildRepro
+          commit: bbe2dec4d0379b5d7d0480997858c30d442fbb42
+          buildScript: dotnet build -bl
+          displayName: UMX_Slow_Repro        
+          expectLocalCore: true
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: build.cmd
+          displayName: FSharpPlus_Windows
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: build.sh
+          displayName: FSharpPlus_Linux
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: dotnet build tests/FSharpPlus.Tests/FSharpPlus.Tests.fsproj -c Release -bl
+          displayName: FsharpPlus_NET10_Build_Lib_Tests
+          expectLocalCore: true
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: dotnet msbuild build.proj -t:Build;Test -bl
+          displayName: FsharpPlus_NET10_Test_Debug
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: dotnet msbuild build.proj -t:Build;Test -p:Configuration=Release -bl
+          displayName: FsharpPlus_NET10_Test_Release
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: dotnet msbuild build.proj -t:Build;AllDocs -bl
+          displayName: FsharpPlus_NET10_Docs
+        - repo: fsprojects/FSharpPlus
+          commit: f42f81885111c652b08218e0880c264447ae56e4
+          buildScript: build.sh
+          displayName: FsharpPlus_Net10_Linux
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet build IcedTasks.sln -bl
+          displayName: IcedTasks_Build
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet test IcedTasks.sln -bl
+          displayName: IcedTasks_Test_Debug
+        - repo: TheAngryByrd/IcedTasks
+          commit: 5453025da1cd3db8aebe9283a9ff190062a703e0
+          buildScript: dotnet test IcedTasks.sln -c Release -bl
+          displayName: IcedTasks_Test_Release
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet build FsToolkit.ErrorHandling.sln -bl
+          displayName: FsToolkit_ErrorHandling_Build
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -bl
+          displayName: FsToolkit_ErrorHandling_Test_Debug
+        - repo: demystifyfp/FsToolkit.ErrorHandling
+          commit: a7119caabe329817bee49d7094610c45db7725c1
+          buildScript: dotnet test FsToolkit.ErrorHandling.sln -c Release -bl
+          displayName: FsToolkit_ErrorHandling_Test_Release
+        - repo: opentk/opentk
+          commit: d4b1b18be03859dc066298ee191f6efa521e7e28
+          buildScript: dotnet build tests/OpenTK.Tests/OpenTK.Tests.fsproj -c Release -bl:build_1.binlog ;; dotnet build tests/OpenTK.Tests.Integration/OpenTK.Tests.Integration.fsproj -c Release -bl:build_2.binlog
+          displayName: OpenTK_FSharp_Build
+        - repo: bryanedds/Prime
+          commit: 6ddc28d46f81447eacb241b96e16ce693b210c96
+          buildScript: dotnet build Prime.sln --configuration Release
+          displayName: Prime_Build
+          expectLocalCore: true
+        - repo: bryanedds/Nu
+          commit: e81e00a464b9d35d272f61708a1a0bfbf487b6d5
+          buildScript: dotnet build Nu.sln --configuration Release
+          displayName: Nu_Build
+          expectLocalCore: true
+        # Explicit FSharp.Core PackageReference mixed with one implicit test project; the trigger for #20059 (Lanayx/Oxpecker#20065).
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.slnx -c Release
+          displayName: Oxpecker_Build
+          expectLocalCore: true
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.Solid.slnx -c Release
+          displayName: Oxpecker_Solid_Build
+          expectLocalCore: true
+        # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
+        # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
+        # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
+        # uncompressed in the zip, so grep -aF on the package finds the provider path without extra tools.)
+        - repo: fsprojects/FSharp.Data.GraphQL
+          commit: d8aba70757792f2d76a66cb8171086ca4c7c1e8e
+          buildScript: dotnet pack src/FSharp.Data.GraphQL.Shared/FSharp.Data.GraphQL.Shared.fsproj -c Release -p:TreatWarningsAsErrors=false -o "$PWD/__gqlfeed__" ;; dotnet pack src/FSharp.Data.GraphQL.Client/FSharp.Data.GraphQL.Client.fsproj -c Release -p:IsNuGet=true -p:TreatWarningsAsErrors=false --source https://api.nuget.org/v3/index.json --source "$PWD/__gqlfeed__" -o "$PWD/__gqlfeed__" && grep -qaF typeproviders/fsharp41/netstandard2.0/FSharp.Data.GraphQL.Client.DesignTime.dll "$PWD/__gqlfeed__"/FSharp.Data.GraphQL.Client.*.nupkg
+          displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
+          useVmImage: $(LinuxMachineQueueName)
+          usePool: $(DncEngPublicBuildPool)
+        # Chiron (chiron-6) exercises Aether 8.2.0 inline SRTP optics, reproducing the SDK 10.0.400 legacy inline-metadata
+        # regression (#20253, fixed by #20260): the miscompile throws NotSupportedException at run time, so run the tests.
+        - repo: xyncro/chiron
+          commit: 94cf9db1793a1bd0e6e0b69efadcfb37368a6428
+          buildScript: dotnet test tests/Chiron.Tests/Chiron.Tests.fsproj -c Release -p:AssetTargetFallback=net461 -p:RollForward=Major --filter FullyQualifiedName~Optic
+          displayName: Chiron_Aether_Inline_SRTP
+        - repo: Thorium/Linq.Expression.Optimizer
+          commit: 075e20da2712ede54b3314d5b69d6789ee68eb3d
+          buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl
+          displayName: LinqExpressionOptimizer_Test_Release
+          expectLocalCore: true
