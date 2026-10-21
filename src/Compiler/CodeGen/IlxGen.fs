@@ -6118,6 +6118,10 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             GenExpr cenv cgbuf eenv replacementExpr sequel
         | Some expr ->
             let expr = cenv.optimizeDuringCodeGen false expr
+
+            ConstraintSolver.FinishCodegenTraitSolution cenv.tcVal g cenv.amap m traitInfo
+            |> CommitOperationResult
+
             GenExpr cenv cgbuf eenv expr sequel
 
 //--------------------------------------------------------------------------

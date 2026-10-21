@@ -755,6 +755,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
                 | None ->
                     wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
                 | Some expr ->
+                    ConstraintSolver.FinishCodegenTraitSolution cenv.tcVal g cenv.amap m traitInfo |> CommitOperationResult
                     ConvExpr cenv env expr
 
         | _ ->

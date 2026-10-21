@@ -393,6 +393,127 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
+    // Inlining the method does not determine 'X either: only its body mentions it.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved by an inline method with an undetermined type parameter`` (optimize: bool) =
+        FSharp
+            """
+type C =
+    static member inline M<'X>(x: int) : int =
+        box Unchecked.defaultof<'X> |> ignore
+        x + 1
+
+let inline call (w: ^T) = (^T : (static member M : int -> int) 1)
+
+[<EntryPoint>]
+let main _ =
+    if call Unchecked.defaultof<C> <> 2 then failwith "call failed"
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The undetermined type parameter carries a member constraint obj cannot satisfy. Called directly, M is
+    // rejected when 'X is defaulted; reached through a trait it compiled into a NotSupportedException throw.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved by a method whose undetermined type parameter has an unsatisfiable member constraint`` (optimize: bool) =
+        FSharp
+            """
+type C =
+    static member inline M< ^X when ^X : (static member Foo : unit -> int)> (x: int) : int =
+        x + (^X : (static member Foo : unit -> int) ())
+
+let inline call (w: ^T) = (^T : (static member M : int -> int) 1)
+
+[<EntryPoint>]
+let main _ =
+    printfn "%d" (call Unchecked.defaultof<C>)
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withErrorCode 71
+
+    // https://github.com/dotnet/fsharp/issues/8690
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Issue 8690 - unsatisfiable trait reached through overload resolution is a compile error`` (optimize: bool) =
+        FSharp
+            """
+type T = T with
+    static member inline Mtd (f, x: 'FT) = ((^FT or ^FU) : (static member Mtd : _*_ -> _) f, x)
+    static member inline Mtd (_, _:'t when 't: struct) = ()
+
+let inline invoke x : 'FV =
+    let inline call (mthd : ^M, i1: ^I1, _output: ^R) = ((^M or ^R) : (static member Mtd : _*_ -> _) (), i1)
+    call (T, x, Unchecked.defaultof<'FV>)
+
+[<EntryPoint>]
+let main _ =
+    invoke [|1|]
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withErrorCode 71
+
+    // https://github.com/dotnet/fsharp/issues/7384
+    // 'mt is determined only by the member constraints the dead branch contributes, which the optimizer drops.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Issue 7384 - type inference does not depend on the runtime path`` (optimize: bool) =
+        FSharp
+            """
+let compiles = false
+
+type A<'t> = A of 't
+type B<'t> = B of 't
+
+type Bind = Bind with
+    static member (>>=) (A t, f: 'T -> A<'U> ) = f t
+    static member (>>=) (B t, f: 'T -> B<'U> ) = f t
+    static member inline Invoke (source: 'MT) (binder: 'T -> 'MU) : 'MU =
+        let inline call (_mthd: 'M, input: 'I, _output: 'R, f) = ((^M or ^I or ^R) : (static member (>>=) : _*_ -> _) input, f)
+        call (Bind, source, Unchecked.defaultof<'MU>, binder)
+
+type Result = Result with
+    static member Return (_: A<'a>) = A
+    static member Return (_: B<'a>) = B
+    static member inline Invoke (x: 'T) : 'MT =
+        let inline call (_mthd: ^M, output: ^R) = ((^M or ^R) : (static member Return : _ -> _) output)
+        call (Result, Unchecked.defaultof<'MT>) x
+
+type T<'m>    () = class end
+type U<'m,'t> () = class end
+
+let inline createT (_: 'mit) =
+    let _  = if compiles then Bind.Invoke (Result.Invoke Unchecked.defaultof<'t> : 'mt) ((fun _ -> Result.Invoke (U<'mt,'t>()))) else Unchecked.defaultof<'mit>
+    T() : T<'mt>
+
+type T<'m> with static member inline Return (_) = fun (_:'t) -> U() |> Result.Invoke |> createT
+
+let (u: T<A<unit>>) = Result.Invoke ()
+
+[<EntryPoint>]
+let main _ = 0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
     // Regression for PR #19602 (RFC FS-1043): a non-inline binding with an unsatisfiable operator/SRTP
     // trait must fail at compile time (FS0041), not compile into a NotSupportedException stub that throws
     // at runtime (which also leaked at feature-off langversions). The deleted neg116 shape '(1.0 - t) * p'
