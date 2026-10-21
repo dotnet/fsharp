@@ -95,6 +95,21 @@ class JournalTransportTests(unittest.TestCase):
         self.assertEqual(self.git("--git-dir", str(self.remote), "rev-parse", "refs/heads/" + mem.STATE_BRANCH),
                          receipt["commit"])
 
+    def test_interrupted_operation_admission_releases_busy_state(self):
+        assign = transport.JournalTransport.__setattr__
+
+        def interrupt(owner, name, value):
+            assign(owner, name, value)
+            if owner is self.one and name == "busy" and value:
+                raise KeyboardInterrupt()
+
+        with mock.patch.object(transport.JournalTransport, "__setattr__", interrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                self.one.read()
+        self.assertFalse(self.one.busy)
+        self.assertFalse(self.one.lock_path.exists())
+        self.assertEqual(self.one.read(), (mem.empty_state(), None))
+
     def test_verified_absence_and_exact_branch_round_trip(self):
         self.assertEqual(self.one.read(), (mem.empty_state(), None))
         receipt = self.write(self.one, attempt())

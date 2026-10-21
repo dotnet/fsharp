@@ -52,6 +52,7 @@ class JournalTransport:
         self.remote = str(_local_path(local_remote)) if local_remote is not None else REMOTE
         self.scope = "local_fixture" if local_remote is not None else "github"
         self.lock_path = self.gitdir / "compiler-perf-transport.lock"
+        self.busy = False
         self.journal = _Journal(repository, self)
         self._check_repositories()
 
@@ -111,21 +112,27 @@ class JournalTransport:
 
     @contextmanager
     def _locked(self):
-        self._check_repositories()
-        nonce = uuid.uuid4().hex.encode()
+        if self.busy:
+            raise mem.Conflict("Journal operation already active")
         try:
-            descriptor = os.open(self.lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        except FileExistsError as error:
-            raise mem.Conflict("Local journal lock exists; ownership cannot be proven") from error
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(nonce)
-                stream.flush()
-                os.fsync(stream.fileno())
-            yield
+            self.busy = True
+            self._check_repositories()
+            nonce = uuid.uuid4().hex.encode()
+            try:
+                descriptor = os.open(self.lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError as error:
+                raise mem.Conflict("Local journal lock exists; ownership cannot be proven") from error
+            try:
+                with os.fdopen(descriptor, "wb") as stream:
+                    stream.write(nonce)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                yield
+            finally:
+                if self.lock_path.is_file() and not self.lock_path.is_symlink() and self.lock_path.read_bytes() == nonce:
+                    self.lock_path.unlink()
         finally:
-            if self.lock_path.is_file() and not self.lock_path.is_symlink() and self.lock_path.read_bytes() == nonce:
-                self.lock_path.unlink()
+            self.busy = False
 
     def _list_head(self):
         output = self._git("ls-remote", "--refs", self.remote, REF, network=True).stdout.decode().splitlines()

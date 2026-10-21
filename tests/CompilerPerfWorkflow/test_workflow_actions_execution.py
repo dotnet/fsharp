@@ -97,7 +97,7 @@ class ActionsExecutionTests(unittest.TestCase):
                             no_upload.assert_not_called()
 
     def test_provision_executes_setup_before_installing_active_dependencies(self):
-        for failure in (None, "owner", "checksum", "preflight", "pip", "deadline"):
+        for failure in (None, "owner", "checksum", "preflight", "pip", "sdk", "deadline"):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory, ExitStack() as patches:
                 base = Path(directory)
                 repo, controller, api, transport = self.fixture(base)
@@ -135,7 +135,7 @@ class ActionsExecutionTests(unittest.TestCase):
                 def run(command, **kwargs):
                     if command[0] in ("git", "powershell.exe"):
                         return original_run(command, **kwargs)
-                    if "-c" in command:
+                    if command[0] == str(base / "python" / "bin" / "python3") and "-c" in command:
                         return subprocess.CompletedProcess(command, 0, w.mem.encoded({
                             "executable": str(base / "python" / "bin" / "python3"),
                             "prefix": str(base / "python"), "base_prefix": str(base / "python"),
@@ -153,6 +153,13 @@ class ActionsExecutionTests(unittest.TestCase):
                             raise subprocess.CalledProcessError(2, command)
                     elif "pip" in command and failure == "pip":
                         raise subprocess.CalledProcessError(1, command)
+                    elif command[0] == "bash":
+                        self.assertEqual(command[1:2], ["-c"])
+                        self.assertIn("InitializeDotNetCli true", command[2])
+                        self.assertIn("InstallDotNetSdk", command[2])
+                        self.assertEqual(command[-2:], [str(repo.root / ".dotnet"), "9.0.300"])
+                        if failure == "sdk":
+                            raise subprocess.CalledProcessError(1, command)
                     return subprocess.CompletedProcess(command, 0)
 
                 environment = {"GH_TOKEN": "fixture", "COMPILER_PERF_OWNER_LOGIN": "profile-owner[bot]",
@@ -179,8 +186,9 @@ class ActionsExecutionTests(unittest.TestCase):
                     with self.assertRaises((ValueError, subprocess.CalledProcessError)):
                         actions.provision(base, started.isoformat())
                     self.assertNotIn("active", controller.load("clocks") if (controller.root / "clocks.json").exists() else {})
-                    self.assertNotIn("npm", events)
-                    if failure == "pip":
+                    if failure != "sdk":
+                        self.assertNotIn("npm", events)
+                    if failure in ("pip", "sdk"):
                         saved = transport.read()[0]["discoveries"]["123.discovery"]
                         self.assertEqual(saved["outcome"], "blocked_setup")
                     else:

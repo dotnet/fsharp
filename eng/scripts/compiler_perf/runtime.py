@@ -358,28 +358,33 @@ class Runtime:
             return {"scope": controller.transport.scope, "files": files, "binding": binding}
 
     def finalize(self, *, publisher=None, sink=None):
-        if publisher is not None:
-            require(not (self.controller.root / "runtime-error.json").exists(),
-                    "Runtime unhealthy; publication blocked")
-        with self.controller.budget("finalization", w.FINALIZATION_SECONDS):
-            controller = self.controller
+        controller = self.controller
+        with e.owned_lock(controller.root):
+            require(not (controller.root / "runtime-service.json").exists()
+                    or controller.load("runtime-service")["state"] == "stopped", "Owned service cleanup incomplete")
             require(controller.session is not None, "Missing lifecycle session; setup blocked")
-            attempt = controller.session["attempt"]
-            owner = attempt or controller.session["discovery"]
-            if owner["outcome"] is None and (attempt is None or attempt["publication"] is None):
-                controller.finish("cancelled" if (controller.root / "runtime-stop.json").exists()
-                                  else "blocked_setup", "Runtime ended before a completed investigation")
-            controller.stage_evidence()
-            if sink is not None:
-                retained = controller.acknowledge_evidence(sink)
-                if publisher is not None and controller.transport.scope == "github":
-                    require(retained["status"] == "available", "Publication requires acknowledged retained evidence")
-            if attempt is not None and attempt["publication"] is not None:
-                return controller.finalize(publisher=publisher)
-            require(owner["outcome"] != "measured_improvement", "Accepted candidate lacks acknowledged output authority")
-            controller.checkpoint()
-            controller.report()
-            return {"status": controller.status(), "publication": None}
+            controller.session = controller.load("session")
+            require(not bridge.Bridge(controller).blocked, "Worker requires owner reconciliation")
+            if publisher is not None:
+                require(not (controller.root / "runtime-error.json").exists(),
+                        "Runtime unhealthy; publication blocked")
+            with controller.budget("finalization", w.FINALIZATION_SECONDS):
+                attempt = controller.session["attempt"]
+                owner = attempt or controller.session["discovery"]
+                if owner["outcome"] is None and (attempt is None or attempt["publication"] is None):
+                    controller.finish("cancelled" if (controller.root / "runtime-stop.json").exists()
+                                      else "blocked_setup", "Runtime ended before a completed investigation")
+                controller.stage_evidence()
+                if sink is not None:
+                    retained = controller.acknowledge_evidence(sink)
+                    if publisher is not None and controller.transport.scope == "github":
+                        require(retained["status"] == "available", "Publication requires acknowledged retained evidence")
+                if attempt is not None and attempt["publication"] is not None:
+                    return controller.finalize(publisher=publisher)
+                require(owner["outcome"] != "measured_improvement", "Accepted candidate lacks acknowledged output authority")
+                controller.checkpoint()
+                controller.report()
+                return {"status": controller.status(), "publication": None}
 
     def handoff(self, destination=None, *, engine_outcome="success"):
         controller = self.controller
@@ -399,7 +404,8 @@ class Runtime:
                     inspected = (controller.root / "runtime-container.json").exists()
                     record = controller.load("runtime-container" if inspected else "runtime")
                     controller.save("runtime-engine-exit", {
-                        "at": record["last_seen_at" if inspected else "service_started_at"],
+                        "at": (record["last_seen_at"] if inspected else record["service_started_at"]
+                               or controller.load("clocks")["finalization"]["start"]),
                         "observed": False})
         requested = mem.timestamp(controller.load("runtime-stop")["requested_at"])
         if (controller.root / "runtime-engine-exit.json").exists():
@@ -415,14 +421,16 @@ class Runtime:
         require(controller.load("runtime-service")["state"] == "stopped", "Owned service cleanup incomplete")
         if (controller.root / "runtime-error.json").exists():
             raise ValueError("Runtime unhealthy: " + controller.load("runtime-error")["reason"])
-        controller.session = controller.load("session")
-        with controller.budget("finalization", w.FINALIZATION_SECONDS):
-            result = {"status": controller.status(), "artifacts": controller.stage_evidence(), "publication": None}
-            controller.checkpoint()
-            if (controller.root / "approval.json").exists():
-                require(destination is not None, "A protected publisher destination is required")
-                result["publication"] = self.export(destination)
-            return result
+        with e.owned_lock(controller.root):
+            controller.session = controller.load("session")
+            require(not bridge.Bridge(controller).blocked, "Worker requires owner reconciliation")
+            with controller.budget("finalization", w.FINALIZATION_SECONDS):
+                result = {"status": controller.status(), "artifacts": controller.stage_evidence(), "publication": None}
+                controller.checkpoint()
+                if (controller.root / "approval.json").exists():
+                    require(destination is not None, "A protected publisher destination is required")
+                    result["publication"] = self.export(destination)
+                return result
 
 
 async def probe_service(token):

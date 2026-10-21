@@ -357,7 +357,7 @@ class Controller:
             if self.saving:
                 return
             self.remaining(name, allowance)
-            if self.session is not None:
+            if self.session is not None and not getattr(self.transport, "busy", False):
                 self.checkpoint()
 
         self.budgets.add(name)

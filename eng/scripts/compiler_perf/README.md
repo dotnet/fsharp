@@ -78,6 +78,12 @@ then waits for an explicit decision. Discovery ownership uses journal schema 2,
 without manufacturing a hypothesis or a rejected attempt. Version 1 journals
 upgrade on their first discovery reservation.
 
+Actions provisioning installs both the `global.json` SDK and compatibility SDK
+**9.0.300** into the protected repository's `.dotnet` using Arcade's existing
+installer. Both belong to the frozen toolchain; an ambient host SDK cannot satisfy
+the six compatibility scenarios. Installation failure records blocked setup
+before active work.
+
 One aggregate 3,600-second setup deadline includes prerequisite probes and
 preparation. Readiness must fit the separate 600-second startup allowance; a late
 agent is blocked rather than receiving a shortened investigation. The authenticated
@@ -90,6 +96,14 @@ if wall time moves backwards. A worker entering finalization is monitored agains
 that existing bound, not interrupted merely because the active clock expires.
 `runtime.py` connects these clocks to the pinned lifecycle below. Its local
 checks do **not** prove a compiled workflow graph or live Linux containment.
+
+Heartbeat deadline checks continue during canonical journal operations, but their
+checkpoint waits until the current transport operation releases its lock.
+Handoff and finalization acquire the controller ownership lock and reject
+unconfirmed service/worker cleanup before changing canonical state or uploading
+evidence. A startup failure before service arming uses its already-sealed
+finalization start for conservative engine-exit accounting, never a null timestamp
+or a renewed cleanup allowance.
 
 Candidate execution uses the existing empty Linux namespace, never a host fallback.
 Only bounded patch bytes enter the controller inbox through the data endpoint.

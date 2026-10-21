@@ -762,6 +762,130 @@ class RuntimeTests(unittest.TestCase):
                 self.assertEqual(controller.load("clocks")["finalization"]["start"], now.isoformat())
                 self.assertFalse((controller.root / "approval.json").exists())
 
+    def test_finalizer_preserves_unconfirmed_service_worker_and_lock_ownership(self):
+        for pending in ("service", "worker", "lock"):
+            with self.subTest(pending=pending), self.discovery(canonical=True) as (repo, controller, api, transport):
+                controller.save("runtime-stop", {"reason": "Owned cleanup incomplete",
+                                                 "requested_at": controller.now().isoformat()})
+                controller.save("runtime-service", {"state": "cleanup_failed" if pending == "service" else "stopped"})
+                if pending == "worker":
+                    worker = fixtures.Worker(None)
+                    worker.send_signal = worker.signals.append
+                    client = bridge.Bridge(controller, launch=lambda *_: worker, identify=fixtures.identify)
+                    client._start("profile", None)
+                    self.assertFalse(client.shutdown("Owned worker did not exit"))
+                    self.assertEqual(controller.load("worker")["state"], "cleanup_failed")
+                before, head = transport.read()
+                session = controller.load("session")
+                lock = w.e.owned_lock(controller.root) if pending == "lock" else nullcontext()
+                with lock:
+                    owner = (controller.root / "controller.lock" / "owner.json")
+                    identity = owner.read_bytes() if pending == "lock" else None
+                    restarted = w.Controller(controller.root, repo.root, transport, api, now=controller.now)
+                    adapter = runtime.Runtime(restarted, controller.root.parent / "visible")
+                    with self.assertRaisesRegex(ValueError, "cleanup|reconciliation|lock owner"):
+                        adapter.finalize(sink=mock.Mock(side_effect=AssertionError("No upload before owned exit")))
+                    self.assertEqual(transport.read(), (before, head))
+                    self.assertEqual(controller.load("session"), session)
+                    self.assertFalse((controller.root / "clocks.json").exists()
+                                     and "finalization" in controller.load("clocks"))
+                    if identity is not None:
+                        self.assertEqual(owner.read_bytes(), identity)
+                self.assertEqual(api.effects, [])
+                self.assertFalse((controller.root / "output").exists())
+
+    def test_prearm_startup_failure_survives_handoff_and_finalization_without_null_clock(self):
+        for failure in ("prepare", "harness", "arm"):
+            with self.subTest(failure=failure), self.discovery() as (_, controller, api, transport):
+                workspace = controller.root.parent / "visible"
+                controller.save("runtime", {"workspace": str(workspace), "pins": runtime.PINS,
+                    "service_started_at": None, "ready": False})
+                controller.session.update(phase="ready", ready_at=controller.now().isoformat())
+                controller.save("session", controller.session)
+                arguments = ["--root", str(controller.root), "--repository", str(controller.repository),
+                    "--journal", str(transport.journal.repository), "--workspace", str(workspace)]
+                prepare = (lambda: controller.finish("blocked_setup", "Preparation denied")) if failure == "prepare" else (
+                    lambda: {"phase": "ready"})
+                with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", executable=sys.executable,
+                        prefix=sys.prefix, flags=SimpleNamespace(isolated=1))), \
+                        mock.patch.object(runtime, "validate_layout"), \
+                        mock.patch.object(w, "Controller", return_value=controller), \
+                        mock.patch.object(w, "GitHub", return_value=api), \
+                        mock.patch("transport.JournalTransport", return_value=transport), \
+                        mock.patch.object(runtime.Runtime, "prepare", side_effect=prepare), \
+                        mock.patch.object(runtime.Runtime, "install_harness",
+                            side_effect=ValueError("Harness denied") if failure == "harness" else None), \
+                        mock.patch.object(runtime.Runtime, "arm", side_effect=ValueError("Arm denied")), \
+                        mock.patch.object(runtime.Runtime, "observe_engine", side_effect=ValueError("No engine")), \
+                        mock.patch("actions_adapter.ActionsArtifactSink", return_value=None), \
+                        mock.patch.object(transport, "scope", "github"), \
+                        mock.patch.dict(os.environ, {"RUNNER_TEMP": str(controller.root / "temp")}), \
+                        mock.patch("sys.stdout", new_callable=io.StringIO):
+                    self.assertEqual(runtime.main(["start-service", *arguments]), 2)
+                    self.assertEqual(controller.load("runtime-service")["state"], "stopped")
+                    clocks = controller.load("clocks")
+                    controller.now = lambda: w.mem.timestamp(clocks["finalization"]["start"]) + timedelta(seconds=120)
+                    self.assertEqual(runtime.main(["handoff", *arguments, "--engine-outcome", "failure"]), 2)
+                    exited = controller.load("runtime-engine-exit")["at"]
+                    self.assertEqual(exited, clocks["finalization"]["start"])
+                    self.assertEqual(runtime.main(["finalize", *arguments,
+                                                  "--destination", str(controller.root.parent / "publisher")]), 2)
+                    self.assertEqual(controller.load("clocks")["finalization"]["deadline"],
+                                     clocks["finalization"]["deadline"])
+                    self.assertLessEqual(controller.remaining("finalization", w.FINALIZATION_SECONDS), 2280)
+                    self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "blocked_setup")
+                self.assertIsNone(controller.load("runtime")["service_started_at"])
+                self.assertFalse((controller.root / "output").exists())
+                self.assertEqual(api.effects, [])
+
+    def test_heartbeat_during_journal_read_and_write_defers_only_checkpoint(self):
+        for operation, expired in [(op, expired) for op in ("_list_head", "_push") for expired in (False, True)]:
+            with self.subTest(operation=operation, expired=expired), self.ready(canonical=True) as (repo, controller, _, transport):
+                elapsed, now = [0], controller.now()
+                controller.now = lambda: now + timedelta(seconds=elapsed[0])
+                controller.clock = lambda: elapsed[0]
+                controller.start_active()
+                controller.profile()
+                controller.session["selection"] = fixtures.AgentTests.selection(repo)
+                controller.save("session", controller.session)
+                timer, fired = [], []
+                session_type, original = w.ActiveSession, getattr(transport, operation)
+
+                def session(*args, **kwargs):
+                    value = session_type(*args, **kwargs)
+                    timer.append(value)
+                    return value
+
+                def interrupt(*args, **kwargs):
+                    if not fired and timer and not controller.busy and (
+                            sys.platform != "linux" or timer[-1].previous is not None):
+                        fired.append(True)
+                        self.assertTrue(transport.lock_path.exists())
+                        if expired:
+                            elapsed[0] = w.ACTIVE_SECONDS
+                        if sys.platform == "linux":
+                            w.signal.raise_signal(w.signal.SIGALRM)
+                        else:
+                            timer[-1].poll()
+                    return original(*args, **kwargs)
+
+                with mock.patch.object(w, "ActiveSession", side_effect=session), \
+                        mock.patch.object(transport, operation, side_effect=interrupt):
+                    result = controller.select()
+                self.assertEqual(fired, [True])
+                self.assertFalse(transport.lock_path.exists())
+                self.assertFalse(transport.busy)
+                self.assertEqual(result["phase"], "finished" if expired else "selected", result)
+                if expired:
+                    self.assertEqual(result["outcome"], "cancelled")
+                    self.assertFalse((controller.root / "output").exists())
+                    continue
+                self.assertEqual(result["selection_result"]["action"], "selected")
+                controller.checkpoint()
+                saved, head = transport.read()
+                self.assertEqual(head, controller.session["persistence"]["commit"])
+                self.assertEqual(saved["attempts"][controller.session["attempt"]["id"]], controller.session["attempt"])
+
     def test_engine_exit_charges_stock_collection_to_shared_finalization_after_restart(self):
         with self.ready() as (repo, controller, api, transport):
             adapter = runtime.Runtime(controller, controller.root.parent / "visible")

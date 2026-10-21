@@ -279,7 +279,10 @@ def provision(base, job_started_at):
         run(["npm", "install", "--prefix", str(base / "transport"), "--ignore-scripts",
              "--no-audit", "--no-fund", "--save-exact", "@actions/artifact@2.3.2"])
         require(Path("/usr/bin/bwrap").is_file(), "blocked_setup: runner requires bubblewrap")
-        run(["bash", str(repository / "eng" / "common" / "dotnet.sh")], environment=environment)
+        run(["bash", "-c", 'set -e; export DOTNET_INSTALL_DIR="$2"; source "$1"; '
+             'InitializeDotNetCli true; InstallDotNetSdk "$2" "$3"',
+             "compiler-perf-sdks", str(repository / "eng" / "common" / "tools.sh"),
+             str(repository / ".dotnet"), "9.0.300"], environment=environment)
     except (ValueError, OSError, subprocess.SubprocessError) as error:
         host.finish("blocked_setup", "Provisioning: " + w.c.sanitize(str(error)))
         raise
