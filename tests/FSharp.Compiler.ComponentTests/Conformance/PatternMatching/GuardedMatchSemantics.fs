@@ -5,6 +5,7 @@ namespace Conformance.PatternMatching
 open System.IO
 open System.Reflection.Metadata
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 module GuardedMatchSemantics =
@@ -80,6 +81,23 @@ module GuardedMatchSemantics =
             "{{EXTRA_CALLS}}", (if kind = "function" then "100" else "0")
             "{{MAIN}}", main ]
 
+    let private sequenceSource kind allocationCheck =
+        let opening, closing =
+            match kind with
+            | "sequence" | "yieldFrom" -> "seq {", "}"
+            | "array" -> "[|", "|]"
+            | "list" -> "[", "]"
+            | "toArray" -> "seq {", "} |> Seq.toArray"
+            | "toList" -> "seq {", "} |> Seq.toList"
+            | _ -> failwith $"Unknown collection {kind}"
+        let prefix, caseIndent, empty, success =
+            if kind = "yieldFrom" then "yield! ", "        ", "Seq.empty", "Seq.singleton value"
+            else "", "", "()", "yield value"
+        template "SequenceResults.fs" [
+            "{{OPEN}}", opening; "{{CLOSE}}", closing
+            "{{MATCH_PREFIX}}", prefix; "{{CASE_INDENT}}", caseIndent; "{{EMPTY}}", empty; "{{SUCCESS}}", success
+            "{{ALLOCATION_CHECK}}", allocationCheck ]
+
     let private optionCases values =
         seq {
             for value in values do
@@ -91,6 +109,26 @@ module GuardedMatchSemantics =
     let sharedResultCases = optionCases [for kind in ["int"; "argument"; "function"; "interface"; "tuple"] -> box kind]
     let recursiveBindingCases = optionCases [box false; box true]
     let observationCases = optionCases [box "Observations.fs"; box "AliasMutation.fs"; box "AppliedResults.fs"]
+    let sequenceCases = optionCases [box "sequence"; box "array"; box "list"; box "toArray"; box "toList"; box "yieldFrom"]
+
+    [<Theory; MemberData(nameof sequenceCases)>]
+    let ``Issue 20632 - shared decisions retain collection continuations`` kind optimize realSignature =
+        sequenceSource kind ""
+        |> runWithSettings optimize realSignature
+
+    [<TheoryForNETCOREAPP; InlineData("sequence"); InlineData("yieldFrom")>]
+    let ``Issue 20632 - shared decisions do not allocate a sequence per yield`` kind =
+        sequenceSource kind """
+    let input = [|0..999|]
+    let consume () =
+        for _ in 1..100 do
+            for _ in choose input do ()
+    consume ()
+    let before = System.GC.GetAllocatedBytesForCurrentThread()
+    consume ()
+    let allocated = System.GC.GetAllocatedBytesForCurrentThread() - before
+    if allocated > 5_000_000L then failwithf "sequence allocation: %d bytes" allocated"""
+        |> runWithSettings true false
 
     [<Theory; MemberData(nameof sharedResultCases)>]
     let ``Issue 20632 - shared tuple3 decisions preserve result continuations`` kind optimize realSignature =
