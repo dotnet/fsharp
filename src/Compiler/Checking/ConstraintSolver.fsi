@@ -368,7 +368,8 @@ val AddCxTyparDefaultsTo: DisplayEnv -> ConstraintSolverState -> range -> Contex
 
 val SolveTypeAsError: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
 
-val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority: int -> Typar -> unit
+/// Apply the 'default' constraints of the type variables, highest priority first.
+val ApplyTyparDefaultsByPriority: DisplayEnv -> ConstraintSolverState -> Typar list -> OperationResult<unit>
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 val CodegenWitnessExprForTraitConstraint:
