@@ -74,6 +74,7 @@ Historical bootstrap and pack commands permit only same-line runtime patches ins
 SDK selection remains exact.
 Acquisition, evaluation, and identity commands retain disabled runtime roll-forward.
 Source command receipts record the build runtime policy.
+Boundary exceptions retain a command receipt and the original error without inventing a process exit code.
 Source and helper files are copied as bytes into owned scratch, without restoring input ownership or requiring `CAP_FOWNER`.
 The helper uses the acquired SDK environment.
 Helper failures preserve acquired archives and command evidence.
@@ -1311,7 +1312,9 @@ investigation allowance; the existing worker/build/time budgets are unchanged.
 The active-tunnel ceiling fits the broker's unchanged 1,024-descriptor limit.
 `snapshot()` reports peak active and queued requests, idle reclamations, and denial counts without URL paths or query strings.
 The broker publishes these counters atomically in its private scratch directory.
-The adapter reads the bounded counter file before cleanup and includes it in the transport receipt.
+The adapter reads the bounded counter file before cleanup, including after worker export failures.
+It verifies broker ownership and includes the counters in the transport receipt.
+If both operations fail, the receipt retains both errors.
 Missing or malformed counters block collection but do not skip owned cleanup.
 
 TLS remains end-to-end: the broker does **not** inspect URL paths, HTTP

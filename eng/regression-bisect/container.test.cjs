@@ -561,7 +561,7 @@ test("physical source evidence survives destroyed worker tmpfs, not merely a res
 
 test("execution export failures block authentication and remove owned resources", async t => {
     const roots = new Set();
-    for (const fault of ["collect", "binding", "archive", "truncated", "blob", "blob-digest", "cleanup",
+    for (const fault of ["collect", "collect-and-egress", "binding", "archive", "truncated", "blob", "blob-digest", "cleanup",
         ...(process.platform === "win32" ? ["receipt-sharing", "receipt-sharing-exhausted"] : []), "receipt-error"])
         await t.test(fault, async t => {
             const f = await dockerFixture(t), unit = executionUnit();
@@ -649,8 +649,9 @@ test("execution export failures block authentication and remove owned resources"
                 await startHolder();
                 const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
                 if (operation === "blob") blobReached = true;
-                if (fault === operation || fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
-                    throw new Error(`injected ${fault} failure`);
+                if (fault === operation || fault === "collect-and-egress" && ["collect", "egress"].includes(operation) ||
+                    fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
+                    throw new Error(`injected ${fault === "collect-and-egress" ? operation : fault} failure`);
                 if (operation === "blob") return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0),
                     collected: await settings.consume(Readable.from([
                         fault === "blob-digest" || fault.startsWith("receipt-") ? Buffer.alloc(bytes.length) : bytes])) };
@@ -683,12 +684,20 @@ test("execution export failures block authentication and remove owned resources"
             assert.equal(publicationError, undefined, publicationError?.stack);
             assert.equal(result.status, "blocked");
             assert.match(result.reason, {
-                collect: /injected collect failure/, binding: /protected export launch binding mismatch/,
+                collect: /injected collect failure/,
+                "collect-and-egress": /injected collect failure.*broker counters.*injected egress failure/,
+                binding: /protected export launch binding mismatch/,
                 archive: /injected archive failure/, truncated: /truncated worker archive/,
                 blob: /injected blob failure/, "blob-digest": /archive blob digest or size mismatch/,
                 "receipt-sharing": /archive blob digest or size mismatch/,
                 cleanup: /injected cleanup failure/,
             }[fault]);
+            if (fault !== "collect-and-egress") {
+                assert.equal(result.receipt.egress?.requests, 23, "retain counters even when worker export fails");
+                const sample = f.calls.findIndex(args => args.at(-1) === "egress");
+                const removal = f.calls.findIndex(args => args[1] === "rm");
+                assert.ok(sample >= 0 && sample < removal, "sample before owned broker removal");
+            }
             assert.equal(blobReached, ["blob", "blob-digest", "cleanup", "receipt-sharing"].includes(fault));
             assert.ok(renameAttempts >= (fault === "receipt-sharing" ? 2 : 1));
             assert.throws(() => verifyTransportReceipt(result.receipt, unit, key), /termination mismatch/);

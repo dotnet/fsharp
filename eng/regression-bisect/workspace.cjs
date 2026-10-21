@@ -61,16 +61,24 @@ async function invoke(w, stage, executable, args, settings = {}, boundary = w.ex
     const start = Date.now();
     const entry = { stage, executable, args, cwd: settings.cwd ?? w.sourceDirectory,
         ...(stage === "build" ? { runtimeRollForward: (settings.env ?? w.env).DOTNET_ROLL_FORWARD } : {}) };
-    w.commands.push(entry);
-    const result = await boundary(executable, args, {
-        cwd: entry.cwd, env: w.env, maxBytes: 16 * 1024 * 1024,
-        ...settings, signal: w.signal,
-        timeoutMs: Math.max(1, Math.min(w.deadline - start, w.options.request.allocation.buildTimeoutMs, settings.timeoutMs ?? Infinity)),
-    });
-    entry.durationMs = Date.now() - start;
-    entry.exitCode = result.exitCode;
-    entry.status = result.status ?? "completed";
-    await evidence(w, `command-${w.commands.length}.json`, { ...entry, result });
+    const sequence = w.commands.push(entry);
+    let result;
+    try {
+        result = await boundary(executable, args, {
+            cwd: entry.cwd, env: w.env, maxBytes: 16 * 1024 * 1024,
+            ...settings, signal: w.signal,
+            timeoutMs: Math.max(1, Math.min(w.deadline - start, w.options.request.allocation.buildTimeoutMs, settings.timeoutMs ?? Infinity)),
+        });
+        entry.exitCode = result.exitCode;
+        entry.status = result.status ?? "completed";
+    } catch (error) {
+        entry.status = "exception";
+        entry.error = { name: error.name, code: error.code ?? null, message: error.message };
+        throw error;
+    } finally {
+        entry.durationMs = Date.now() - start;
+        await evidence(w, `command-${sequence}.json`, result === undefined ? entry : { ...entry, result });
+    }
     if (result.exitCode !== 0 || result.status === "timeout" || result.status === "cancelled" || result.complete === false) {
         throw Object.assign(new Error(
             `${stage} command failed (${entry.status}, exit ${result.exitCode}): ${executable} ${args.join(" ")}\n${result.error ?? result.stderr}`),

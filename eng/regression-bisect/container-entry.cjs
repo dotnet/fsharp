@@ -197,7 +197,7 @@ async function historicalDirectory(directory, uid = 1000) {
         const stat = await fs.lstat(file);
         if (stat.isSymbolicLink()) return;
         requireValue((stat.isDirectory() || stat.isFile() && stat.nlink === 1) && [0, 1000].includes(stat.uid),
-            "historical scratch contains nonregular or foreign-owned files");
+            `historical scratch contains nonregular or foreign-owned files: ${file} (uid ${stat.uid}, mode ${stat.mode}, links ${stat.nlink})`);
         if (stat.uid !== 0) await fs.chown(file, 0, 0);
         const access = stat.isDirectory() ? 0o700 : 0o400;
         if ((stat.mode & access) !== access) await fs.chmod(file, (stat.mode & 0o777) | access);

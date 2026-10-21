@@ -228,7 +228,8 @@ async function controlled(t, os = "windows") {
     return Object.assign(f, { options, deps, shas, builds, command });
 }
 
-test("source runner output reaches the collector through physical export without scratch", async t => {
+for (const boundaryFailure of [false, true])
+test(`source runner output reaches the collector through physical export without scratch (boundary failure ${boundaryFailure})`, async t => {
     const f = await controlled(t);
     const { harness } = require("./fixtures/checkpoint.cjs");
     const state = require("./state.cjs");
@@ -264,18 +265,35 @@ test("source runner output reaches the collector through physical export without
         commands.push({ lane, executable, args, cwd: settings.cwd, result });
         return result;
     };
+    const sourceExecute = async (executable, args, settings) => {
+        const result = await f.deps.execute(executable, args, settings);
+        if (boundaryFailure && args.includes("-bootstrap"))
+            throw Object.assign(new Error("historical scratch return failed after command exit"), { code: "EOWNERSHIP" });
+        return result;
+    };
     const result = await testSourceRevision({ ...f.options, buildInstanceId: reservation.id,
-        reproductionToolchain: f.toolchain }, { ...f.deps, execute: capture(f.deps.execute, "historical"),
+        reproductionToolchain: f.toolchain }, { ...f.deps, execute: capture(sourceExecute, "historical"),
         toolchains: { ...f.deps.toolchains, run: capture(f.deps.toolchains.run, "trusted") } });
-    assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+    const expected = boundaryFailure ? "untestable" : "pass";
+    assert.equal(result.outcome.outcome, expected, JSON.stringify(result));
     const launch = { launchId: hash("source export"), unitDigest: fingerprintInput(unit), imageDigest };
     const { files } = await executionEvidence(unit, launch, result, {
         acquisition: { status: "acquired", identity: f.toolchain }, commands,
         evidenceDirectory: f.options.evidenceDirectory, scratchDirectory: f.root,
     });
+    if (boundaryFailure) {
+        assert.equal(result.error.code, "EOWNERSHIP");
+        const sourceCommands = JSON.parse(files.find(file => file.path === "commands.json").bytes).source;
+        const failed = sourceCommands.filter(command => command.status === "exception");
+        assert.equal(failed.length, 1);
+        assert.deepEqual(failed[0].error, { name: "Error", code: "EOWNERSHIP",
+            message: "historical scratch return failed after command exit" });
+        assert.equal(Object.hasOwn(failed[0], "exitCode"), false, "a boundary exception does not establish a process exit");
+        assert.equal(Object.hasOwn(failed[0], "result"), false);
+    }
     await fs.rm(f.root, { recursive: true });
     const observation = formObservation({ unit, launch, files }, reservation, context);
-    assert.equal(observation.outcome.outcome, "pass");
+    assert.equal(observation.outcome.outcome, expected);
     assert.equal(observation.buildInstanceId, reservation.id);
     assert.notEqual(result.toolchain.requested.installationRoot, f.toolchain.root);
     t.diagnostic("offline source/process fixtures; zero real worker launches");

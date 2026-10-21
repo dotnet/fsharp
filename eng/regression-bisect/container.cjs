@@ -465,17 +465,6 @@ async function runContainer(config, options, deps = {}) {
             receipt.resultSha256 = hash(output);
             await fs.writeFile(path.join(root, "result.json"), output, { flag: "wx" });
         }
-        receipt.egress = JSON.parse(await docker(["container", "exec", broker, "/usr/local/bin/node",
-            "/trusted/eng/regression-bisect/container-entry.cjs", "egress"], { maxBytes: 4096 }));
-        requireValue(receipt.egress && Object.keys(receipt.egress).sort().join(" ") ===
-            "active denied idleReclaimed peakActive peakPending pending requests stopped totalBytes" &&
-            ["active", "pending", "peakActive", "peakPending", "idleReclaimed", "requests", "totalBytes"].every(key =>
-                Number.isSafeInteger(receipt.egress[key]) && receipt.egress[key] >= 0) &&
-            typeof receipt.egress.stopped === "boolean" && receipt.egress.denied &&
-            Object.getPrototypeOf(receipt.egress.denied) === Object.prototype &&
-            Object.entries(receipt.egress.denied).every(([key, value]) =>
-                /^[a-z-]{1,40}$/.test(key) && Number.isSafeInteger(value) && value > 0),
-        "invalid broker counters");
         receipt.status = "collected";
     } catch (error) {
         failure = error;
@@ -483,6 +472,29 @@ async function runContainer(config, options, deps = {}) {
         receipt.reason = error.message;
     } finally {
         cleaning = true;
+        const broker = receipt.resources.find(resource => resource.kind === "container" && resource.name.endsWith("-broker"));
+        if (broker) {
+            try {
+                const value = await inspect("container", broker.name, true);
+                requireValue(value?.State?.Running === true && value.Config?.Labels?.[label] === receipt.launchId,
+                    "broker counters require a running container owned by this launch");
+                receipt.egress = JSON.parse(await docker(["container", "exec", broker.name, "/usr/local/bin/node",
+                    "/trusted/eng/regression-bisect/container-entry.cjs", "egress"], { maxBytes: 4096 }));
+                requireValue(receipt.egress && Object.keys(receipt.egress).sort().join(" ") ===
+                    "active denied idleReclaimed peakActive peakPending pending requests stopped totalBytes" &&
+                    ["active", "pending", "peakActive", "peakPending", "idleReclaimed", "requests", "totalBytes"].every(key =>
+                        Number.isSafeInteger(receipt.egress[key]) && receipt.egress[key] >= 0) &&
+                    typeof receipt.egress.stopped === "boolean" && receipt.egress.denied &&
+                    Object.getPrototypeOf(receipt.egress.denied) === Object.prototype &&
+                    Object.entries(receipt.egress.denied).every(([key, value]) =>
+                        /^[a-z-]{1,40}$/.test(key) && Number.isSafeInteger(value) && value > 0),
+                "invalid broker counters");
+            } catch (error) {
+                failure ??= error;
+                receipt.status = "blocked";
+                receipt.reason = [receipt.reason, `broker counters unavailable: ${error.message}`].filter(Boolean).join("; ");
+            }
+        }
         for (const resource of receipt.resources.toReversed()) {
             try {
                 const value = await inspect(resource.kind, resource.name, true);
