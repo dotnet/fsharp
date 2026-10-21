@@ -4464,19 +4464,23 @@ let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintIn
 /// then ApplyTyparDefaultsByPriority and SolveTyparWithChosenSolution apply. A trait over generic types belongs to
 /// an inline template solved again at each call site, so its solution stays open.
 let FinishCodegenTraitSolution tcVal g amap m (traitInfo: TraitConstraintInfo) =
-    let traitTys =
-        traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes @ Option.toList traitInfo.CompiledReturnType
+    let openTypars minst =
+        (freeInTypes CollectTypars minst).FreeTypars
+        |> Zset.elements
+        |> List.filter (fun tp -> tp.Rigidity <> TyparRigidity.Rigid)
 
+    let isGround () =
+        (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes @ Option.toList traitInfo.CompiledReturnType))
+            .FreeTypars
+            .IsEmpty
+
+    // Nearly every solution has nothing open, so check that before creating a solver state.
     match traitInfo.Solution with
     | Some(FSMethSln(minst = minst))
-    | Some(ILMethSln(minst = minst)) when (freeInTypes CollectTypars traitTys).FreeTypars.IsEmpty ->
+    | Some(ILMethSln(minst = minst)) when not (List.isEmpty (openTypars minst)) && isGround () ->
         let css = CreateCodegenState tcVal g amap
         let denv = DisplayEnv.Empty g
-
-        let unsolved () =
-            (freeInTypes CollectTypars minst).FreeTypars
-            |> Zset.elements
-            |> List.filter (fun tp -> tp.Rigidity <> TyparRigidity.Rigid)
+        let unsolved () = openTypars minst
 
         trackErrors {
             // Unlike CanonicalizePartialInferenceProblem, which walks the constraints recorded in a solver state,
