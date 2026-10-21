@@ -1079,11 +1079,7 @@ type TcConfigBuilder =
         // #r "Assembly"
         | NonNull path, Null -> tcConfigB.AddReferencedAssemblyByPath(m, path)
 
-        | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
+        | _, NonNull dependencyManager -> tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
 
         | Null, Null when directive = Directive.Include -> errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))
 

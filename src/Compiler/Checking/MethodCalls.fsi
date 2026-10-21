@@ -450,7 +450,6 @@ val AdjustCallerArgs:
         (Expr -> Expr) *
         Expr list *
         'b option list *
-        AssignedCalledArg<Expr> list *
         Expr list *
         (Expr -> Expr) *
         'c option list *
@@ -506,14 +505,6 @@ val GenWitnessExpr:
 /// Generate a lambda expression for the given solved trait.
 val GenWitnessExprLambda:
     amap: ImportMap -> g: TcGlobals -> m: range -> traitInfo: TraitConstraintInfo -> Choice<TraitConstraintInfo, Expr>
-
-/// Generate the arguments passed for a set of (solved) traits in non-generic code
-val GenWitnessArgs:
-    amap: ImportMap ->
-    g: TcGlobals ->
-    m: range ->
-    traitInfos: TraitConstraintInfo list ->
-        Choice<TraitConstraintInfo, Expr> list
 
 #if !NO_TYPEPROVIDERS
 module ProvidedMethodCalls =
