@@ -3925,6 +3925,9 @@ type TOp =
     /// Operation nodes representing C-style operations on byrefs type mutable vals (l-values)
     | LValueOp of LValueOperation * ValRef
 
+    /// Exposes existing storage under a source name for the scope of the single body argument.
+    | DebugLocalScope of ValRef * name: string
+
     /// IL method calls.
     ///     isProperty -- used for quotation reflection, property getters & setters
     ///     noTailCall - DllImport? if so don't tailcall

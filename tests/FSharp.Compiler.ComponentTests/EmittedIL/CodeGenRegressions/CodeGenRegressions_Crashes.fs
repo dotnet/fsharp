@@ -426,3 +426,36 @@ let main _ = Test.run(); 0
         |> shouldSucceed
         |> ignore
 
+    // https://github.com/dotnet/fsharp/issues/20732
+    [<Fact>]
+    let ``Issue_20732_ForLoopBoundLocalReusesLiveLocal`` () =
+        FSharp """
+module Test
+
+let add (a: int) (b: int) = a + b
+
+let lastFromStart k =
+    add (k * 100)
+        (let mutable last = -1
+         for i in (let d = k - 1 in if d > 0 then d else 0) .. 3 do last <- i
+         last)
+
+let lastBeforeLength (xs: int[]) (ys: int[]) k =
+    add (k * 100)
+        (let mutable last = -1
+         for i in 0 .. (let d = k - 1 in if d > 0 then xs else ys).Length - 1 do last <- i
+         last)
+
+[<EntryPoint>]
+let main _ =
+    for k in 0 .. 2 do
+        if lastFromStart k <> k * 100 + 3 then failwithf "start, k = %d" k
+        if lastBeforeLength [| 1; 2; 3 |] [| 1; 2 |] k <> k * 100 + (if k > 1 then 2 else 1) then failwithf "length, k = %d" k
+    0
+"""
+        |> withOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+

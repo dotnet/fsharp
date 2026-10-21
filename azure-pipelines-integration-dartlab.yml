@@ -22,8 +22,6 @@ parameters:
   type: string
 - name: headSha
   type: string
-- name: baseSha
-  type: string
 - name: visualStudioBootstrapperURI
   type: string
   default: '(default)'
@@ -50,7 +48,6 @@ extends:
       parameters:
         prNumber: ${{ parameters.prNumber }}
         headSha: ${{ parameters.headSha }}
-        baseSha: ${{ parameters.baseSha }}
         visualStudioBootstrapperURI: ${{ parameters.visualStudioBootstrapperURI }}
         testMachineLab: ${{ parameters.testMachineLab }}
         testMachineHoldStrategy: ${{ parameters.testMachineHoldStrategy }}
