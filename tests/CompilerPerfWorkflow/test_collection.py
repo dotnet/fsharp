@@ -207,6 +207,12 @@ class CollectionTests(unittest.TestCase):
                 path.write_text(contents)
                 with self.assertRaises(ValueError):
                     c.read_counters(path, 42)
+            for counter in ("Rate,100", "Metric,12"):
+                with self.subTest(counter=counter):
+                    path.write_text((FIXTURES / "counters.csv").read_text().replace(
+                        counter, counter.split(",")[0] + ",-2.874752"))
+                    with self.assertRaisesRegex(ValueError, "Invalid counter value"):
+                        c.read_counters(path, 42)
             for timestamp in ("9/18/2026 10:00:00 AM", "09/18/2026 10:00:00"):
                 path.write_text((FIXTURES / "counters.csv").read_text().replace(
                     "2026-09-18T10:00:00.0000000Z", timestamp))

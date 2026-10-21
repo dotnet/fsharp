@@ -1313,7 +1313,11 @@ No binary trace is loaded into Python memory.
 Portable fixtures use synthetic numbers, not performance measurements. The
 separately opt-in `COMPILER_PERF_LIVE=1` trace-adapter tests use a tiny public
 .NET child to exercise the real diagnostics tools/reducer and negative controls;
-that smoke child is **not** compiler self-compilation. Investigation conclusions
+that smoke child is **not** compiler self-compilation. Its response-file replay
+retains a 64 MiB heap cushion during allocation/full-GC churn so the positive
+collector IPC case does not depend on a near-zero approximate heap gauge.
+Negative counter values still block collection; the cushion is fixture data,
+not a retained-heap measurement or a production collector workaround. Investigation conclusions
 should cite the frozen-source trial, record tested hypotheses and sampled hot
 paths, and distinguish an infrastructure blocker from a negative finding.
 

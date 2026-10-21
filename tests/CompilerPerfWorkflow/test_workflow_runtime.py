@@ -184,7 +184,10 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(evidence["status"], "collected")
             self.assertEqual(Path(evidence["preflight"]["socket"]).parent, scratch / "tmp")
             self.assertGreater(evidence["trace"]["cpu_sample_weight"], 0)
-            self.assertTrue(evidence["counters"]["observations"])
+            heap = [o["value"] * 1_000_000 for o in evidence["counters"]["observations"]
+                    if o["name"] == "gc-heap-size"]
+            self.assertTrue(heap)
+            self.assertGreater(min(heap), 32 * 1024 * 1024)
             self.assertFalse((controller.root / "measurement.lock").exists())
 
     def test_sealed_record_reads_serialize_with_background_checkpoints(self):

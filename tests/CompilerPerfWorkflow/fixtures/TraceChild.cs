@@ -20,6 +20,8 @@ public static class TraceChild
         bool replay = args.Length == 1 && args[0].StartsWith("@");
         if (replay)
             args = File.ReadAllLines(args[0].Substring(1));
+        // Keep the replay's approximate heap gauge away from zero during full-GC churn.
+        var retained = replay ? new byte[64 * 1024 * 1024] : Array.Empty<byte>();
         File.WriteAllText(args[0], Environment.ProcessId.ToString());
         var timer = Stopwatch.StartNew();
         int seed = 1;
@@ -30,6 +32,7 @@ public static class TraceChild
             GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
         }
         GC.KeepAlive(seed);
+        GC.KeepAlive(retained);
         if (replay)
             File.WriteAllText(args[1], "Controlled public replay, not compiler output");
         if (args.Length > 1 && args[1] == "--wait")
