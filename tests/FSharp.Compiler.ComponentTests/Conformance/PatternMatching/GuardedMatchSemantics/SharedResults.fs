@@ -9,6 +9,7 @@ let {{INLINE}}run (kind, x, y) =
     {{LOCALS}}
     let result: {{TYPE}} = {{WRAP}} (
         match kind, x, y with
+{{PREFIX_CLAUSES}}
         | (A | B | C | D | E | F | G | H), _, 0 when (
             calls <- calls + 1
             let value =
@@ -24,7 +25,7 @@ let {{INLINE}}run (kind, x, y) =
 
 let check () =
     for i, kind in List.indexed [A; B; C; D; E; F; G; H] do
-        for x, y, accepted in [0, 0, true; -8, 0, false; 3, 0, false; 4, 0, true; 8, 0, false; 12, 0, false; 1, 1, false] do
+        for x, y, accepted in [0, 0, true; -8, 0, false; 3, 0, false; 4, 0, true; 8, 0, false; 12, 0, false; 1, 1, false; 99, 99, false] do
             calls <- 0
             if run (kind, x, y) <> ({{EXPECTED}}) then failwith "result continuation"
             if calls <> (if y = 0 then 1 else 0) + {{EXTRA_CALLS}} then failwith "guard observations"

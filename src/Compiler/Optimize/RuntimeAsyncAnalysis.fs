@@ -154,30 +154,33 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
         | Expr.App(funcExpr, _, _, [], _) -> effectFree funcExpr
         | _ -> false
 
-    let rec apply f fty tyargs args m =
-        stackGuard.Guard(fun () -> applyCore f fty tyargs args m)
+    let rec apply (joins: ValMap<Expr>) f fty tyargs args m =
+        stackGuard.Guard(fun () -> applyCore joins f fty tyargs args m)
 
-    and applyCore f fty tyargs args m =
+    and applyCore joins f fty tyargs args m =
         match f, args with
         | Expr.DebugPoint(_, inner), _ when
             match stripDebugPoints inner with
             | Expr.Lambda _ -> true
             | _ -> false
             ->
-            apply inner fty tyargs args m
-        | Expr.DebugPoint(_, inner), _ -> apply inner fty tyargs args m |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
-        | RuntimeAsyncConstructionPrefix(body, rebuild), _ -> apply body (tyOfExpr g body) tyargs args m |> Option.map rebuild
+            apply joins inner fty tyargs args m
+        | Expr.DebugPoint(_, inner), _ ->
+            apply joins inner fty tyargs args m
+            |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
+        | RuntimeAsyncDecisionJoin g joins (nextJoins, expanded), _ -> apply nextJoins expanded (tyOfExpr g expanded) tyargs args m
+        | RuntimeAsyncConstructionPrefix(body, rebuild), _ -> apply joins body (tyOfExpr g body) tyargs args m |> Option.map rebuild
         | Expr.LetRec(bindings, body, mLet, _), _ ->
-            apply body (tyOfExpr g body) tyargs args m
+            apply joins body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetRecBinds mLet bindings)
         | Expr.Match(point, matchRange, tree, targets, mMatch, _), _ when List.forall effectFree args ->
             // Each target after the first needs its own copy of any values bound by the arguments.
             TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, mMatch) (fun i body ->
                 let args = if i = 0 then args else List.map (copyExpr g CloneAll) args
-                apply body (tyOfExpr g body) tyargs args m)
+                apply joins body (tyOfExpr g body) tyargs args m)
         | Expr.Lambda(_, _, _, [ _ ], _, _, _), first :: (_ :: _ as rest) when List.forall effectFree rest ->
             let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ first ], m)
-            apply reduced (tyOfExpr g reduced) [] rest m
+            apply joins reduced (tyOfExpr g reduced) [] rest m
         | Expr.Lambda _, _ :: _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
         | _ when not (analyzer.ContainsSuspension f) && List.forall effectFree args -> Some(mkAppsAux g f fty [ tyargs ] args m)
         | _ -> None
@@ -193,7 +196,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
                                fty,
                                tyargs,
                                args,
-                               m) when not args.IsEmpty && analyzer.ContainsSuspension expression -> apply f fty tyargs args m
+                               m) when not args.IsEmpty && analyzer.ContainsSuspension expression -> apply ValMap.Empty f fty tyargs args m
                     | _ -> None)
             RewriteQuotations = false
             StackGuard = stackGuard

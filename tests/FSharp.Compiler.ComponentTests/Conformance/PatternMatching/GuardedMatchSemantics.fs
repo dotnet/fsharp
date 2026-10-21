@@ -53,6 +53,8 @@ module GuardedMatchSemantics =
         >> shouldSucceed
 
     let private sharedResultSource kind inlineKeyword main =
+        let runtimeImports =
+            "open System.Collections.Generic\nopen System.Threading.Tasks\nopen System.Runtime.CompilerServices\nopen Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers\n"
         let declarations, resultType, success, tail, observe =
             match kind with
             | "int" | "argument" -> "", "int", "calls", id, "result"
@@ -62,6 +64,16 @@ module GuardedMatchSemantics =
             | "delegate" ->
                 "type GetValue = delegate of unit -> int", "int", "GetValue(fun () -> calls)",
                 (fun value -> $"GetValue(fun () -> {value})"), "result"
+            | "runtimeAwait" ->
+                runtimeImports + "let ready = Task.CompletedTask\nlet inline wrap (f: int -> Task<int>) = __runtimeAsyncReturn (AsyncHelpers.Await (f 10))",
+                "Task<int>", "(fun _ -> Task.FromResult calls)", (fun value -> $"(fun _ -> Task.FromResult({value}))"), "result.GetAwaiter().GetResult()"
+            | "runtimeCallback" ->
+                runtimeImports + "let ready = Task.CompletedTask\nlet inline wrap ([<InlineIfLambda>] f: int -> int) = __runtimeAsyncReturn (f 10)",
+                "Task<int>", "(fun _ -> calls)", (fun value -> $"(fun _ -> {value})"), "result.GetAwaiter().GetResult()"
+            | "runtimeSequence" ->
+                runtimeImports,
+                "IAsyncEnumerable<int>", "(fun () -> seq { yield calls })",
+                (fun value -> $"(fun () -> seq {{ yield {value} }})"), "calls"
             | "interface" ->
                 "type I = abstract Value: int\ntype Left(n) = interface I with member _.Value = n\ntype Right(n) = interface I with member _.Value = n",
                 "I", "(Left(calls) :> I)", (fun value -> $"(Right({value}) :> I)"), "result.Value"
@@ -77,11 +89,18 @@ module GuardedMatchSemantics =
             "{{LOCALS}}", (if kind = "function" then "let mutable acc = 0" else "")
             "{{TYPE}}", resultType
             "{{SUCCESS}}", success
+            "{{PREFIX_CLAUSES}}", (match kind with
+                                  | "runtimeAwait" -> "        | A, 99, 99 -> (fun _ -> AsyncHelpers.Await ready; Task.FromResult -99)"
+                                  | "runtimeCallback" -> "        | A, 99, 99 -> (fun _ -> AsyncHelpers.Await ready; -99)"
+                                  | _ -> "")
             "{{TAILS}}", tails
             "{{OBSERVE}}", observe
-            "{{WRAP}}", (if kind = "argument" then "id" else "")
+            "{{WRAP}}", (match kind with "argument" -> "id" | "runtimeAwait" | "runtimeCallback" -> "wrap" | "runtimeSequence" -> "__runtimeAsyncSequence" | _ -> "")
             "{{APPLY}}", (if kind = "delegate" then ".Invoke()" else "")
-            "{{EXPECTED}}", (if kind = "function" then "10 + (if accepted then 202 else -i - 1)" else "if accepted then 1 else -i - 1")
+            "{{EXPECTED}}", (match kind with
+                            | "function" -> "10 + (if accepted then 202 else -i - 1)"
+                            | "runtimeAwait" | "runtimeCallback" -> "if i = 0 && x = 99 && y = 99 then -99 elif accepted then 1 else -i - 1"
+                            | _ -> "if accepted then 1 else -i - 1")
             "{{EXTRA_CALLS}}", (if kind = "function" then "100" else "0")
             "{{MAIN}}", main ]
 
@@ -111,6 +130,7 @@ module GuardedMatchSemantics =
         }
 
     let sharedResultCases = optionCases [for kind in ["int"; "argument"; "function"; "delegate"; "interface"; "tuple"] -> box kind]
+    let runtimeResultCases = optionCases [box "runtimeAwait"; box "runtimeCallback"; box "runtimeSequence"]
     let recursiveBindingCases = optionCases [box false; box true]
     let observationCases = optionCases [box "Observations.fs"; box "AliasMutation.fs"; box "AppliedResults.fs"]
     let sequenceCases = optionCases [box "sequence"; box "array"; box "list"; box "toArray"; box "toList"; box "yieldFrom"]
@@ -141,6 +161,17 @@ module GuardedMatchSemantics =
         |> (if (kind = "int" || kind = "argument") && optimize then
                 emittedILExcept "Context" >> fun size -> Assert.True(size < 1500, $"Shared tuple3 match emitted {size} IL bytes")
             else ignore)
+
+    [<TheoryForNETCOREAPP; MemberData(nameof runtimeResultCases)>]
+    let ``Issue 20632 - runtime construction keeps returned functions and diagnostics`` kind optimize realSignature =
+        let compilation =
+            sharedResultSource kind "" (if kind <> "runtimeSequence" then "[<EntryPoint>]\nlet main _ = check ()" else "")
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+            |> withOptimization optimize
+            |> withRealInternalSignature realSignature
+        if kind <> "runtimeSequence" then compilation |> compileExeAndRun |> shouldSucceed
+        else compilation |> asLibrary |> compile |> shouldFail |> withErrorCode 3922
 
     [<Theory; MemberData(nameof recursiveBindingCases)>]
     let ``Issue 20632 - shared guards retain recursive binding fixups`` selfReference optimize realSignature =
