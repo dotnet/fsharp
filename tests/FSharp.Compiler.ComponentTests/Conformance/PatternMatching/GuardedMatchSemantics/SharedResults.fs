@@ -19,8 +19,7 @@ let {{INLINE}}run (kind, x, y) =
                 | 9 -> x ^^^ 29 | 10 -> x + 31 | 11 -> x * 37
                 | _ -> x - 41
             value + y > 0) -> {{SUCCESS}}
-{{TAILS}}
-        )
+{{TAILS}}){{APPLY}}
     {{OBSERVE}}
 
 let check () =

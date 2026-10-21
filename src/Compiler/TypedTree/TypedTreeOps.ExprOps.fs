@@ -1920,7 +1920,7 @@ module internal ExprTransforms =
 
     let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
         match delExpr with
-        | Expr.Let(bind, body, mLet, _) ->
+        | Expr.Let(bind, body, mLet, _) when not bind.Var.IsDecisionTreeJoin ->
             mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, tyargs, delInvokeArg, m))
         | NewDelegateExpr g (_, argvs & _ :: _, body, m, _) ->
             let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body

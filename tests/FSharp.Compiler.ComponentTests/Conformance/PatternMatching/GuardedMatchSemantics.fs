@@ -59,6 +59,9 @@ module GuardedMatchSemantics =
             | "function" ->
                 "", "int -> int", "(fun n -> acc <- acc + calls; n + acc)", (fun value -> $"(fun n -> n + ({value}))"),
                 "calls <- calls + 100\n    result 10 |> ignore\n    result 10"
+            | "delegate" ->
+                "type GetValue = delegate of unit -> int", "int", "GetValue(fun () -> calls)",
+                (fun value -> $"GetValue(fun () -> {value})"), "result"
             | "interface" ->
                 "type I = abstract Value: int\ntype Left(n) = interface I with member _.Value = n\ntype Right(n) = interface I with member _.Value = n",
                 "I", "(Left(calls) :> I)", (fun value -> $"(Right({value}) :> I)"), "result.Value"
@@ -77,6 +80,7 @@ module GuardedMatchSemantics =
             "{{TAILS}}", tails
             "{{OBSERVE}}", observe
             "{{WRAP}}", (if kind = "argument" then "id" else "")
+            "{{APPLY}}", (if kind = "delegate" then ".Invoke()" else "")
             "{{EXPECTED}}", (if kind = "function" then "10 + (if accepted then 202 else -i - 1)" else "if accepted then 1 else -i - 1")
             "{{EXTRA_CALLS}}", (if kind = "function" then "100" else "0")
             "{{MAIN}}", main ]
@@ -106,7 +110,7 @@ module GuardedMatchSemantics =
                         yield [| value; box optimize; box realSignature |]
         }
 
-    let sharedResultCases = optionCases [for kind in ["int"; "argument"; "function"; "interface"; "tuple"] -> box kind]
+    let sharedResultCases = optionCases [for kind in ["int"; "argument"; "function"; "delegate"; "interface"; "tuple"] -> box kind]
     let recursiveBindingCases = optionCases [box false; box true]
     let observationCases = optionCases [box "Observations.fs"; box "AliasMutation.fs"; box "AppliedResults.fs"]
     let sequenceCases = optionCases [box "sequence"; box "array"; box "list"; box "toArray"; box "toList"; box "yieldFrom"]
