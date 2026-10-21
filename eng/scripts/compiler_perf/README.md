@@ -11,6 +11,18 @@ Git checkpoint and are **unavailable**, not present-day evidence. Recollect
 missing artifacts; verify any recovered file's existence and hash before reuse.
 New captures against current main require new workload fingerprints.
 
+For a controlled local trial, freeze the public source revision once and retain
+private receipts separately from Git. Use a short protected owner directory:
+Linux's complete diagnostics socket path, including the generated scratch and
+socket names, must fit its Unix-domain socket limit. Start stock AWF from the
+disposable public workspace, not the protected source checkout; setting its
+container working directory alone does not change its host workspace mount.
+Failed probes remain blocked evidence, not a no-finding or permission to reset
+an existing owner. Local bare-Git and artifact acknowledgments are `local_fixture`.
+The isolated accepted/unchanged timing fixtures also exercise protected draft
+export and restart after partial effects; their timings are synthetic, not F#
+compiler improvements.
+
 `memory.py` preserves versioned attempts, negative decisions, retry dependencies
 and outstanding publication intents in the local Git journal. Its receipts
 explicitly report `remote_acknowledged: false`; local CAS is not remote

@@ -859,6 +859,47 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                 self.assertEqual(sentinel.read_text(), "unchanged")
                 self.assertIsNone(keepalive.process.poll(), "Cancellation killed the unrelated owned sentinel")
                 self.assertEqual(repo.git("status", "--porcelain", "--untracked-files=no"), b"")
+                if failure in ("", "identical"):
+                    import actions_adapter
+                    import runtime
+                    from test_workflow import WorkflowTests
+                    from transport import JournalTransport
+
+                    _, controller, api, transport = WorkflowTests().fixture(root / "lifecycle", repo)
+                    self.assertEqual(controller.preflight(repo.request())["action"], "reserve")
+                    controller.session.update(candidate=str(owned),
+                                              manifest=e.m.file_record(owned / "workload.json"),
+                                              profile=e.m.file_record(root / "profile.json"))
+                    controller.accept_experiment(owned)
+                    if eligible:
+                        controller.authorize()
+                        adapter = runtime.Runtime(controller, root / "public")
+                        exported = adapter.export(root / "publisher")
+                        self.assertEqual({Path(f["path"]).name for f in exported["files"]},
+                                         {"safe-output.json", "proposal.patch"})
+                        for crash in ("after-branch", "after-pr"):
+                            api.failure = crash
+                            with self.assertRaises(RuntimeError):
+                                adapter.finalize(publisher=actions_adapter.ActionsPublisher(adapter, root / "publisher"))
+                            transport = JournalTransport(root / "lifecycle" / "journal.git",
+                                                         local_remote=root / "lifecycle" / "remote.git")
+                            controller = runtime.w.Controller(controller.root, repo.root, transport, api,
+                                                              now=controller.now)
+                            adapter = runtime.Runtime(controller, root / "public")
+                        api.failure = None
+                        publisher = actions_adapter.ActionsPublisher(adapter, root / "publisher")
+                        adapter.finalize(publisher=publisher)
+                        adapter.finalize(publisher=publisher)
+                        self.assertEqual(api.effects, ["branch", "pr"])
+                    else:
+                        with self.assertRaises(ValueError):
+                            controller.authorize()
+                        self.assertFalse((controller.root / "output").exists())
+                        self.assertEqual(api.effects, [])
+                    saved, _ = transport.read()
+                    self.assertEqual(saved["attempts"]["attempt-1"]["outcome"], expected)
+                    self.assertEqual(controller.session["persistence"]["scope"], "local_fixture")
+                    self.assertFalse(controller.session["persistence"]["local"]["remote_acknowledged"])
                 if eligible:
                     journal = mem.m.read_json(owned / "attempt.json")
                     mem.acceptance_ready(journal["attempts"]["attempt-1"])
