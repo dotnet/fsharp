@@ -3,6 +3,8 @@
 /// Functions to import .NET binary metadata as TAST objects
 module internal FSharp.Compiler.Import
 
+open System.Collections.Concurrent
+
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
@@ -50,6 +52,9 @@ type ImportMap =
 
     /// The TcGlobals for the import context
     member g: TcGlobals
+
+    /// Interfaces declared by an IL type definition, imported with the definition's own type parameters.
+    member internal ILInterfacesOfTyconCache: ConcurrentDictionary<struct (Stamp * bool), TType list>
 
 module Nullness =
 
