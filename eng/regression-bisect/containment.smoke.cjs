@@ -46,13 +46,12 @@ async function main() {
                     canaryDigest: hash(canary), hostAddresses: ["172.17.0.1"] },
                 evidenceDirectory, signal,
             });
-            const expectedDenial = ["malformed", "timeout", "memory"].includes(mode);
+            const expectedDenial = ["malformed", "timeout"].includes(mode);
             const cleanupComplete = result.receipt.resources.length === 4 &&
                 result.receipt.cleanup.length === 4 && result.receipt.cleanup.every(r => r.removed);
             const passed = result.receipt.workerStarted && cleanupComplete &&
                 (expectedDenial ? result.status === "blocked" &&
-                    (mode === "memory" ? result.receipt.cleanup.find(c => c.name.endsWith("-worker"))?.state?.OOMKilled === true :
-                        mode === "malformed" ? /binding/.test(result.reason) : /timeout/i.test(result.reason))
+                    (mode === "malformed" ? /binding/.test(result.reason) : /timeout/i.test(result.reason))
                     : result.status === "collected" && result.result.mode === mode);
             report.cases.push({ mode, passed, status: result.status, reason: result.reason ?? null, receipt: `${mode}/receipt.json` });
             console.log(`${mode}: ${passed ? "passed" : "incomplete"} (${result.reason ?? result.status})`);

@@ -33,8 +33,28 @@ async function canary(job) {
     const { input, limits, proxy } = job;
     requireValue(["inspect", "timeout", "disk", "pids", "memory", "cpu", "malformed"].includes(input.mode), "unknown canary mode");
     if (input.mode === "memory") {
-        const blocks = [];
-        for (;;) blocks.push(Buffer.alloc(8 * 1024 * 1024, 1));
+        const [memoryMax, swapMax, oomGroup] = await Promise.all(
+            ["memory.max", "memory.swap.max", "memory.oom.group"].map(async name =>
+                (await fs.readFile(`/sys/fs/cgroup/${name}`, "utf8")).trim()));
+        requireValue(limits.memoryMiB === 256 && memoryMax === "268435456" && swapMax === "0" && oomGroup === "0",
+            "memory canary requires the bounded per-process cgroup OOM configuration");
+        const readOomEvents = async () => {
+            const text = await fs.readFile("/sys/fs/cgroup/memory.events", "utf8");
+            return Object.fromEntries(["oom", "oom_kill"].map(name => {
+                const rows = [...text.matchAll(new RegExp(`^${name} ([0-9]+)$`, "gm"))];
+                requireValue(rows.length === 1 && Number.isSafeInteger(Number(rows[0][1])), "invalid cgroup OOM counter");
+                return [name, Number(rows[0][1])];
+            }));
+        };
+        const before = await readOomEvents();
+        const child = spawn(process.execPath, ["-e",
+            "const blocks=[];for(let n=0;n<64;n++)blocks.push(Buffer.alloc(8*1024*1024,1));"], { stdio: "ignore" });
+        const [code, signal] = await once(child, "exit");
+        const after = await readOomEvents();
+        requireValue(code === null && signal === "SIGKILL" && after.oom > before.oom && after.oom_kill > before.oom_kill,
+            "memory canary lacks positive kernel OOM enforcement evidence");
+        return { mode: input.mode, memoryMax, swapMax, oomGroup, oomBefore: before.oom, oomAfter: after.oom,
+            oomKillBefore: before.oom_kill, oomKillAfter: after.oom_kill, child: { code, signal } };
     }
     if (input.mode === "cpu") {
         const started = Date.now();

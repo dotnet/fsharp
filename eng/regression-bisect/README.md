@@ -97,6 +97,10 @@ Historical commands receive a private NuGet configuration that limits concurrent
 This configuration changes neither package sources nor credentials and does not replace repository configuration.
 The transport receipt retains peak tunnel usage and denial counts before container removal.
 The timeout canary keeps its child referenced until the external deadline terminates the container.
+The memory canary supervises a bounded allocation child inside the unchanged 256 MiB cgroup.
+It requires increases in cgroup `oom` and `oom_kill`, a `SIGKILL` child termination, and a successful supervisor exit.
+The child requests at most 512 MiB and cannot bypass the memory or zero-swap limits.
+A Docker exit code of 137 or an `OOMKilled` flag alone cannot satisfy the probe.
 
 ## Durable intake routing (not activated)
 

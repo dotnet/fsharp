@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { spawn, spawnSync } = require("node:child_process");
-const { once } = require("node:events");
+const { once, EventEmitter } = require("node:events");
 const { createHash } = require("node:crypto");
 const { validateContainerConfig, inspectRuntime, runContainer, image, loadContainerEvidence,
     verifyTransportReceipt, verifyContainerEvidence, readCollectedExecution } = require("./container.cjs");
@@ -247,6 +247,43 @@ test("transport reports missing broker counters without skipping owned cleanup",
     assert.match(result.reason, /broker counters unavailable/);
     assert.equal(result.receipt.cleanup.length, 4);
     assert.ok(result.receipt.cleanup.every(resource => resource.removed));
+});
+
+for (const fault of [null, "missing-events", "unchanged-events", "unchanged-oom", "exit-code-only", "wrong-limit", "wrong-swap", "group-kill"])
+for (const oomFlag of [false, true])
+test(`memory canary requires kernel OOM evidence (fault ${fault}, Docker flag ${oomFlag})`, async t => {
+    const f = await dockerFixture(t), cfg = config();
+    cfg.limits.memoryMiB = 256;
+    const proof = { mode: "memory", memoryMax: "268435456", swapMax: "0", oomGroup: "0",
+        oomBefore: 0, oomAfter: 1, oomKillBefore: 0, oomKillAfter: 1, child: { code: null, signal: "SIGKILL" } };
+    if (fault === "missing-events") delete proof.oomKillAfter;
+    if (fault === "unchanged-events") proof.oomKillAfter = 0;
+    if (fault === "unchanged-oom") proof.oomAfter = 0;
+    if (fault === "exit-code-only") proof.child = { code: 137, signal: null };
+    if (fault === "wrong-limit") proof.memoryMax = "536870912";
+    if (fault === "wrong-swap") proof.swapMax = "max";
+    if (fault === "group-kill") proof.oomGroup = "1";
+    const invoke = f.deps.command;
+    f.deps.command = async (executable, args, settings) => {
+        const output = await invoke(executable, args, settings);
+        if (args.includes("--attach")) {
+            const payload = JSON.parse(output.stdout);
+            payload.result = proof;
+            output.stdout = Buffer.from(JSON.stringify(payload));
+            f.resources.get(args.at(-1)).State.OOMKilled = oomFlag;
+        }
+        return output;
+    };
+    const result = await runContainer(cfg, { operation: "canary", input: { mode: "memory" },
+        evidenceDirectory: f.root }, f.deps);
+    assert.equal(result.status, fault ? "blocked" : "collected", result.reason);
+    if (fault) assert.match(result.reason, /memory.*OOM.*evidence/);
+    else {
+        assert.deepEqual(result.result, proof);
+        assert.equal(result.receipt.exit.OOMKilled, oomFlag);
+    }
+    assert.equal(f.resources.size, 0);
+    assert.equal(result.receipt.cleanup.length, 4);
 });
 
 for (const counters of [null, { requests: -1 }, { requests: 1, active: 0, pending: 0, peakActive: 1, peakPending: 0,
@@ -948,6 +985,49 @@ test(`historical NuGet cache root permits new sibling caches and returns ownersh
     assert.ok([...entries.values()].every(row => row.uid === 0));
     assert.equal(fixture.result.result.status, failHistorical ? "untestable" : "tested", fixture.result.result.error?.message);
     if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
+});
+
+for (const fault of [null, "no-kill", "wrong-signal", "unchanged-counter", "decreased-counter", "invalid-counter", "no-limit-oom",
+    "unlimited-memory", "swap", "group"])
+test(`memory canary supervises bounded child allocation and retains kernel events (fault ${fault})`, async () => {
+    const entry = path.join(__dirname, "container-entry.cjs");
+    const source = await fs.readFile(entry, "utf8"), calls = [];
+    let events = 0;
+    const environment = { module: {}, Buffer: { alloc: () => { throw new Error("unexpected allocation in canary supervisor"); } },
+        process: { execPath: "/trusted/node" }, require: name => {
+            if (name === "node:fs/promises") return { readFile: async file => {
+                if (file === "/sys/fs/cgroup/memory.max") return fault === "unlimited-memory" ? "max\n" : "268435456\n";
+                if (file === "/sys/fs/cgroup/memory.swap.max") return fault === "swap" ? "268435456\n" : "0\n";
+                if (file === "/sys/fs/cgroup/memory.oom.group") return fault === "group" ? "1\n" : "0\n";
+                assert.equal(file, "/sys/fs/cgroup/memory.events");
+                const value = fault === "invalid-counter" ? "NaN" : fault === "decreased-counter" ? 1 - events :
+                    fault === "unchanged-counter" ? 0 : events;
+                const oom = fault === "no-limit-oom" ? 0 : events;
+                events++;
+                return `low 0\nhigh 0\nmax 5\noom ${oom}\noom_kill ${value}\noom_group_kill 0\n`;
+            } };
+            if (name === "node:child_process") return { spawn: (executable, args, options) => {
+                calls.push({ executable, args, options });
+                assert.equal(executable, "/trusted/node");
+                assert.equal(args[0], "-e");
+                assert.ok(args[1].includes("n<64") && args[1].includes("8*1024*1024"), "child allocation remains finite");
+                assert.equal(options.stdio, "ignore");
+                const child = new EventEmitter();
+                queueMicrotask(() => child.emit("exit", fault === "no-kill" ? 0 : null,
+                    fault === "wrong-signal" ? "SIGTERM" : fault === "no-kill" ? null : "SIGKILL"));
+                return child;
+            } };
+            return require(name);
+        } };
+    require("node:vm").runInNewContext(source + "\nmodule.exports = { canary };", environment, { filename: entry });
+    const running = environment.module.exports.canary({ input: { mode: "memory" }, limits: { memoryMiB: 256 } });
+    if (fault) await assert.rejects(running, /cgroup|memory|OOM|SIGKILL/i);
+    else {
+        assert.deepEqual(JSON.parse(JSON.stringify(await running)), { mode: "memory", memoryMax: "268435456", swapMax: "0",
+            oomGroup: "0", oomBefore: 0, oomAfter: 1, oomKillBefore: 0, oomKillAfter: 1, child: { code: null, signal: "SIGKILL" } });
+        assert.equal(calls.length, 1);
+    }
+    if (["invalid-counter", "unlimited-memory", "swap", "group"].includes(fault)) assert.equal(calls.length, 0);
 });
 
 test("timeout canary keeps its parent alive until external termination", async () => {

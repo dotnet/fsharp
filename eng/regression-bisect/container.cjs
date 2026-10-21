@@ -456,11 +456,26 @@ async function runContainer(config, options, deps = {}) {
             });
             const stopped = await inspect("container", worker);
             receipt.exit = stopped.State;
-            requireValue(stopped.State?.Running === false && stopped.State.ExitCode === 0 && stopped.State.OOMKilled === false,
+            requireValue(stopped.State?.Running === false && stopped.State.ExitCode === 0 &&
+                (stopped.State.OOMKilled === false || options.input.mode === "memory" && stopped.State.OOMKilled === true),
                 "worker did not terminate successfully");
             const payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(output));
             requireValue(payload && Object.keys(payload).sort().join(" ") === "imageDigest launchId result schemaVersion unitDigest" &&
                 payload.schemaVersion === 1 && Object.keys(launch).every(k => payload[k] === launch[k]), "canary launch binding mismatch");
+            if (options.input.mode === "memory") {
+                const proof = payload.result;
+                requireValue(config.limits.memoryMiB === 256 && proof &&
+                    Object.keys(proof).sort().join(" ") === "child memoryMax mode oomAfter oomBefore oomGroup oomKillAfter oomKillBefore swapMax" &&
+                    proof.mode === "memory" && proof.memoryMax === String(config.limits.memoryMiB * 1024 * 1024) &&
+                    proof.swapMax === "0" && proof.oomGroup === "0" &&
+                    Number.isSafeInteger(proof.oomBefore) && proof.oomBefore >= 0 &&
+                    Number.isSafeInteger(proof.oomAfter) && proof.oomAfter > proof.oomBefore &&
+                    Number.isSafeInteger(proof.oomKillBefore) && proof.oomKillBefore >= 0 &&
+                    Number.isSafeInteger(proof.oomKillAfter) && proof.oomKillAfter > proof.oomKillBefore &&
+                    proof.child && Object.keys(proof.child).sort().join(" ") === "code signal" &&
+                    proof.child.code === null && proof.child.signal === "SIGKILL",
+                "memory canary lacks positive kernel OOM enforcement evidence");
+            }
             answer = payload.result;
             receipt.resultSha256 = hash(output);
             await fs.writeFile(path.join(root, "result.json"), output, { flag: "wx" });
