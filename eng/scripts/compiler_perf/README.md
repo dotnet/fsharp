@@ -148,7 +148,8 @@ checkpointed after process restart without uploading again; partial-batch retrie
 preserve completed receipts and send only manifests with unacknowledged evidence.
 Receipts lost before that sealed save remain pending and require trusted sink
 reconciliation; agent-supplied receipts cannot mint approval.
-No production uploader or additional storage service is installed here.
+`actions_adapter.ActionsArtifactSink` implements current-run Actions transport,
+including deterministic-name reconciliation and downloaded-byte readback.
 
 `validate-output` freshly reconciles sealed controller captures with the pinned
 runner selection, discovery and XML, recomputes measurements using immutable
@@ -167,11 +168,10 @@ the actual PR number and URL. It has no CLI push, merge, ready-for-review, issue
 or comment writer. Retrying `validate-output` after interruption freshly validates
 the candidate and reuses only the exact expected patch and payload, without
 rewriting either file. Changed or extra output stays blocked and preserved.
-The publisher transport is exercised only through a fake
-effect sink in portable tests. A future workflow must consume only the sealed,
-rechecked output in a credential-separated publisher job; these helpers do not
-install a schedule or grant permissions. Windows/local-Git fixtures do not prove
-Linux isolation or a real compiler-source improvement.
+`actions_adapter.ActionsPublisher` consumes only the sealed, rechecked export
+in a trusted post-step. Native safe-output writers are staged and have no write
+permissions. Windows/local-Git fixtures do not prove Linux isolation or a real
+compiler-source improvement.
 
 Portable lifecycle checks (Python 3.11+, Git, and the pinned SDK for the existing
 offline SDK-resolver test): install `requirements-agent.txt` in an owned Python
@@ -454,7 +454,8 @@ step-level `timeout-minutes`; the agent job retains Actions' 360-minute default.
 not a compiled workflow. Merge its engine additions with the existing shared
 model defaults; do not replace those defaults or hand-edit a lock.
 
-The next graph must disable the default checkout and agent safe-output writers.
+The compiled `compiler-self-profile` graph disables the default agent checkout
+and stages all native safe-output writers.
 Keep controller-only MCP permissions; do not enable wildcard bash, write-capable
 GitHub MCP or a separately timed delegated optimizer.
 Trusted setup provisions a fixed-revision checkout, Python environment, journal
@@ -491,15 +492,16 @@ inputs named by these variables must come from trusted setup, never issue/PR tex
 "$PERF_PYTHON" -I "$PERF_RUNTIME" setup --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --input "$PERF_INPUT" --job-started-at "$PERF_JOB_STARTED_AT"
 "$PERF_PYTHON" -I "$PERF_RUNTIME" start-service --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
 "$PERF_PYTHON" -I "$PERF_RUNTIME" handoff --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --destination "$PERF_PUBLISHER_OUTPUT" --engine-outcome "$PERF_ENGINE_OUTCOME"
-"$PERF_PYTHON" -I "$PERF_RUNTIME" finalize --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE"
+"$PERF_PYTHON" -I "$PERF_RUNTIME" finalize --root "$PERF_ROOT" --repository "$PERF_SOURCE" --journal "$PERF_JOURNAL" --workspace "$GITHUB_WORKSPACE" --destination "$PERF_PUBLISHER_OUTPUT"
 ```
 
 Run `setup` in `pre-steps`. `PERF_JOB_STARTED_AT` must be the actual enclosing
 job-attempt start from trusted Actions metadata, including time already spent
 checking out the private helper and setting up tools. It cannot be a fresh
 timestamp after installation. Preflight verifies the frozen main SHA, every PR
-page and versioned owners before bootstrap; API denial blocks. Stock installs
-then run within the same aggregate 3,600-second clock. Run `start-service` as
+page and versioned owners before bootstrap; API denial blocks. Trusted preparation
+checks the sealed 3,600-second setup admission clock. Stock steps outside these
+hooks are bounded by the enclosing job, not by the adapter's timer. Run `start-service` as
 the `pre-agent-steps` step with **id `controller`**. It prepares frozen inputs,
 installs only `compiler_perf_harness.cjs` alongside the unchanged stock harness,
 starts the owned service, checks a real authenticated HTTP initialize response,
@@ -567,10 +569,11 @@ When it stops or disappears, a sealed exit boundary conservatively uses the last
 host observation of it running, including polling latency and AWF teardown.
 Denied/malformed inventory is an explicit unhealthy runtime, not an empty result.
 The monitor checkpoints and shuts down without waiting for `post-steps`.
-Built-in collection, handoff, artifact transport and
-publication share **one** 2,400-second finalization clock; `finalize` cannot
-renew it. The sealed boundary can only shorten an existing clock and survives
-restart, so stock collection before `handoff` is charged too.
+Handoff, artifact transport and publication share **one** 2,400-second
+finalization clock; `finalize` cannot renew it. The sealed boundary can only
+shorten an existing clock and survives restart. Elapsed stock collection before
+`handoff` is charged too, but the adapter cannot interrupt a stock Actions step:
+stock collection is bounded by the enclosing job, not a shared 40-minute step timer.
 Handoff requests owned shutdown **before** engine inspection, including when
 the engine never made a readiness call. Missing/denied inspection latches an
 unhealthy result but still waits for owned cleanup and its incomplete canonical
@@ -581,10 +584,14 @@ An owned finalizer launch/cleanup exception records `cleanup_failed`, stops the
 HTTP service and preserves outstanding work instead of leaving a serving receipt.
 In-process sealed-record reads and writes are serialized across the HTTP,
 monitor and handoff threads; evidence-file custody checks remain unchanged.
-Setup <=60 + execution <=250 + combined finalization <=40 fits 350
-minutes, leaving ten minutes of the 360-minute enclosing job for runner/action
-teardown, not another agent allowance. Hard termination can prevent the last
-write: only the last acknowledged journal is durable.
+At actual authenticated readiness, admission checks the original job start
+and reserves the full 240 minutes, 40 seconds of shutdown, 40 minutes for
+adapter finalization and ten minutes for overhead. Insufficient remaining
+allowance blocks setup; it never shortens active work. GH AW v0.76.1 drops hook
+`timeout-minutes` scalars, so this is an admission check plus the 360-minute job
+boundary, **not** an enforced aggregate 60/40-minute stock-step partition.
+Hard termination can prevent the last write: only the last acknowledged journal
+is durable.
 
 `handoff` independently reapplies and revalidates sealed output, exports only
 `safe-output.json` and `proposal.patch` to the protected publisher destination,
@@ -592,8 +599,14 @@ and binds repository/base/run/attempt/candidate/patch/evidence. Its sealed expor
 intent permits recovery of missing copies but never overwrites changed files.
 The publisher must consume **only this inventory**, not the agent-writable
 `GH_AW_SAFE_OUTPUTS` path; configure the existing one-draft `am` transport.
-`finalize` is read/reconciliation only on the CLI. The Python-only fake-publisher
-seam exercises partial branch/PR publication and lost acknowledgments locally.
+`finalize --destination` acknowledges the checked evidence before allowing the
+trusted Actions publisher. It reapplies the sealed `am` patch independently,
+checks its tree/parent, and publishes only the sealed head with create-only
+branch CAS and one draft API operation. This deliberately does not call the
+pin's broad native handler, which supports branch renaming, fallback issues and
+reviews; its real `patch_path`/`base_commit`/`branch` schema is validated at the
+protected boundary instead. Local fake sinks exercise partial branch/PR
+publication and lost acknowledgments.
 It also refuses publication after an unhealthy handoff; read-only reconciliation
 remains available without granting new publication authority.
 The protected artifact uploader calls `Controller.acknowledge_evidence(sink)`;
@@ -608,6 +621,99 @@ environment, workspace, home or temp files. Publisher credentials belong only
 to the trusted publisher boundary, never the agent step. Existing
 `GH_AW_MODEL_AGENT_COPILOT` and `GH_AW_REASONING_EFFORT` overrides retain defaults
 **gpt-5.6-sol** and **high**.
+
+### Weekly workflow operation
+
+`.github/workflows/compiler-self-profile.md` runs Mondays at **03:17 UTC**, or
+by manual dispatch on the current default branch. Nonempty compiler-injected
+`aw_context` is rejected before effects; no user-selected ref, command, SDK,
+policy or duration enters the controller. One fixed workflow concurrency group
+serializes both triggers; canonical CAS independently rejects concurrent owners,
+existing optimization drafts and incomplete publication intents.
+
+Configure these owner settings before enabling the workflow:
+
+| Setting | Purpose |
+| --- | --- |
+| Secret `COMPILER_PERF_OWNER_TOKEN` | Current-repository fine-grained owner token: contents write for canonical memory and the one approved branch; pull requests write for the draft; Actions read for job metadata and artifact readback. Never forwarded to the optimizing step. No fallback to the read-only job token. |
+| Variable `COMPILER_PERF_OWNER_LOGIN` | Exact authenticated token owner's login; provision checks `GET /user`, and reconciliation checks the draft author. |
+| Variable `COMPILER_PERF_AGE_RECIPIENT` | Native public age recipient. Keep its private decryption key offline/outside Actions, agent mounts and artifacts. |
+| Secret `COPILOT_GITHUB_TOKEN` | Stock Copilot model/proxy authentication; AWF substitutes its pinned dummy token in the agent. |
+
+The host provisions a checksum-pinned standalone CPython **3.12.10**, including
+its interpreter, base prefix and stdlib, under
+`/var/lib/compiler-perf/<run-id>-<attempt>`. A venv over mounted system Python
+is not equivalent. The same root owns source, journal, endpoint/custody keys,
+age **v1.2.1**, artifact toolkit **2.3.2**, receipts and publisher inventory.
+Hosted Ubuntu x64 needs bubblewrap and the stock noninteractive sudo/Docker
+facilities. Missing credentials, recipient, tools or authenticated job metadata
+produce a blocked setup, never a simulated readiness receipt.
+
+Evidence transport uploads exactly the controller's checked compact/encrypted
+inventory with **14-day** retention, reserves archive framing within the
+**512 MiB total / 20 MiB compact** policy, then downloads and hashes every file
+and validates the current-run artifact's name/ID/expiry through authenticated
+metadata. Deterministic manifest names reconcile upload-success/ack-loss without
+another upload. Expired records retain hashes/conclusions but not availability.
+Local sinks remain `local_fixture`. The final trusted hook quarantines the
+stock agent's untrusted logs under protected custody before its automatic
+upload; the framework's separate bookkeeping artifact contains only the fixed
+`{"items":[]}` envelope, not evidence, patches or agent decisions.
+
+Run conclusions and blockers use bounded sanitized controller summaries, sealed
+report hashes and canonical history. No recurring issue/comment writer is
+configured. Failed collection, rejected/inconclusive changes, cancellation,
+completed untested discovery and measured improvement remain distinct. A
+partial publication preserves its branch, intent and candidate; rerunning does
+not grant a new experiment or silently adopt unsealed custody.
+
+| Effective boundary | Allowance / evidence |
+| --- | --- |
+| Agent job | 360-minute [Actions platform default](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes); the generated agent job has no shorter override. |
+| Trusted setup | `Runtime.setup`, provisioning subprocess bounds and `Controller.investigate`: 3,600 seconds from authenticated `listJobsForWorkflowRunAttempt.started_at`. Stock setup remains within the job boundary. |
+| Engine execution | Generated `agentic_execution.timeout-minutes: 250`. |
+| Readiness / active / shutdown | `runtime.py` and `compiler_perf_harness.cjs`: 559 + 14,400 + 1 + 40 seconds; original absolute deadline wraps stock retries and all worker operations. Admission checks the original enclosing job start again. |
+| Gateway | v0.3.19 [six-hour default](https://github.com/github/gh-aw-mcpg/blob/a74a1c1525e1e3871370e22801ef4476de00cdfa/internal/config/config_env.go#L78-L82); no unsupported `sessionTimeout` or shorter environment override. `toolTimeout: 300` bounds dispatch, not background workers. |
+| Finalization | Sealed 2,400-second adapter clock, including observed elapsed stock teardown; restarts do not renew it. Stock collection itself remains bounded by the job. |
+
+| Generated permission boundary | Effective authority |
+| --- | --- |
+| `activation` | `actions: read`, `contents: read`; repository/default-branch/empty-dispatch-context guard. |
+| `agent` | `actions: read`, `contents: read`, `pull-requests: read`; requires successful guarded activation. No GitHub MCP, shell, write or delegated-task permission for the optimizer. |
+| Provision/controller/handoff/publisher steps | Owner `GH_TOKEN` exists only in these trusted host steps and protected children. The optimizing step never receives it. |
+| `safe_outputs`, `conclusion` | `{}` job permissions. Native safe outputs remain staged, without owner credentials or an alternate writer. |
+
+Regenerate **only** this lock with checksum-verified GH AW **v0.76.1**; do not
+upgrade the global extension, shared defaults or unrelated locks. The workflow
+copies the shared aliases/model/reasoning expressions locally because this pin
+rejects two engine specifications. `requirements-test.txt` declares its YAML
+parser; `BaseLoader` preserves Actions' `on` key. Local graph/transport tests do
+not certify the separate full-helper or real Linux/end-to-end gates.
+
+```powershell
+python -m unittest discover -s tests\CompilerPerfWorkflow -p test_workflow_compiled.py -v
+python -m unittest discover -s tests\CompilerPerfWorkflow -p test_workflow_actions.py -v
+python -m unittest discover -s tests\CompilerPerfWorkflow -p test_workflow_runtime.py -v
+```
+
+These workflow/helper-only paths do not map to a consumer release-note sink;
+no compiler/Core/IDE product change or unpublished PR URL is claimed.
+
+The unmodified v0.76.1 renderer emits trailing whitespace in its logo/blank
+here-doc lines and a terminal blank line. Consequently the requested
+`git diff --check` reports exit **2** for the generated lock alone; the
+handwritten-file check passes. Keep the raw generated bytes rather than
+hand-editing a lock or hiding this result with Git whitespace configuration.
+
+Scoped portable validation on **2026-10-21** passed with no failures or skips:
+**3** parsed-graph tests (including negative mutations), **16** Actions adapter
+tests, **39** runtime tests and **23** affected lifecycle/transport selectors.
+Two unchanged v0.76.1 compilations exited zero and produced identical lock SHA-256
+`65e67366227630522b6e39d6e7a45ce5416dc2a37f3f1c5bd97dd0dc545b4e5f`.
+The final 48-file executable/test input manifest remained unchanged; its SHA-256
+is `66d9a1e8079b5e0fe69c2948d4d9cc813f4179ee8570e97a6775806049f263c0`.
+The scoped runs used finite 1,800-second bounds. Full helper discovery and real
+Linux/end-to-end execution were not run or certified by these results.
 
 Native repo-memory is suitable only for optional notes on
 `memory/compiler-self-profile`: it clones editable files into `/tmp/gh-aw`,

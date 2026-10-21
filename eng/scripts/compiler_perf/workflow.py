@@ -1205,8 +1205,10 @@ class Controller:
         intent = a["publication"]
         prs = mem.query_prs(self.pages)
         outstanding = mem.workflow_prs(prs)
+        author = (self.load("publisher-owner")["login"]
+                  if (self.root / "publisher-owner.json").exists() else AUTHOR)
         for pr in outstanding:
-            require(pr["author"] == AUTHOR and pr["base_ref"] == DEFAULT_BRANCH and pr["draft"] is True
+            require(pr["author"] == author and pr["base_ref"] == DEFAULT_BRANCH and pr["draft"] is True
                     and pr["intent_id"] == intent["intent_id"]
                     and pr["head_ref"] == mem.WORKFLOW_MARKER + "/" + a["id"],
                     "Outstanding PR differs from sealed publication")

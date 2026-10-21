@@ -93,7 +93,8 @@ class Runtime:
     def __init__(self, controller, workspace):
         self.controller, self.workspace = controller, Path(workspace).absolute()
         self.protected = [controller.root, controller.repository, controller.transport.journal.repository,
-                          Path(__file__).resolve().parent, Path(sys.prefix).resolve()]
+                          Path(__file__).resolve().parent, Path(sys.prefix).resolve(),
+                          controller.root.parent / "transport", controller.root.parent / "publisher"]
 
     def setup(self, request, job_started_at, *, agent_home=None):
         controller = self.controller
@@ -117,6 +118,7 @@ class Runtime:
                                             self.workspace / "source", self.protected)
             controller.save("runtime", {"workspace": str(self.workspace), "export": exported,
                                          "agent_home": agent_home or str(Path.home()),
+                                         "job_started_at": job_started_at.isoformat(),
                                          "pins": PINS, "service_started_at": None, "ready": False,
                                          "inputs": {"policy": m.fingerprint_inputs(m.POLICY),
                                                     "sdk": m.file_record(controller.repository / "global.json"),
@@ -156,6 +158,14 @@ class Runtime:
             raise
         require(0 <= (controller.now() - started).total_seconds() < READINESS_SECONDS,
                 "Agent readiness probe exhausted execution slack")
+        if "job_started_at" in record:
+            elapsed = (controller.now() - mem.timestamp(record["job_started_at"])).total_seconds()
+            # Stock preparation/collection are outside hook timers. Reserve their
+            # enclosing job, the full active session, shutdown and finalization.
+            require(0 <= elapsed <= 360 * 60 - w.ACTIVE_SECONDS - SHUTDOWN_SECONDS
+                    - w.FINALIZATION_SECONDS - 600, "Full investigation cannot fit the enclosing job")
+        else:
+            require(controller.transport.scope == "local_fixture", "Actual enclosing job start is required")
         controller.start_active()
         record["ready"] = True
         controller.save("runtime", record)
@@ -344,12 +354,29 @@ class Runtime:
                     "Publisher copy changed")
             return {"scope": controller.transport.scope, "files": files, "binding": binding}
 
-    def finalize(self, *, publisher=None):
+    def finalize(self, *, publisher=None, sink=None):
         if publisher is not None:
             require(not (self.controller.root / "runtime-error.json").exists(),
                     "Runtime unhealthy; publication blocked")
         with self.controller.budget("finalization", w.FINALIZATION_SECONDS):
-            return self.controller.finalize(publisher=publisher)
+            controller = self.controller
+            require(controller.session is not None, "Missing lifecycle session; setup blocked")
+            attempt = controller.session["attempt"]
+            owner = attempt or controller.session["discovery"]
+            if owner["outcome"] is None and (attempt is None or attempt["publication"] is None):
+                controller.finish("cancelled" if (controller.root / "runtime-stop.json").exists()
+                                  else "blocked_setup", "Runtime ended before a completed investigation")
+            controller.stage_evidence()
+            if sink is not None:
+                retained = controller.acknowledge_evidence(sink)
+                if publisher is not None and controller.transport.scope == "github":
+                    require(retained["status"] == "available", "Publication requires acknowledged retained evidence")
+            if attempt is not None and attempt["publication"] is not None:
+                return controller.finalize(publisher=publisher)
+            require(owner["outcome"] != "measured_improvement", "Accepted candidate lacks acknowledged output authority")
+            controller.checkpoint()
+            controller.report()
+            return {"status": controller.status(), "publication": None}
 
     def handoff(self, destination=None, *, engine_outcome="success"):
         controller = self.controller
@@ -491,6 +518,7 @@ def main(argv=None):
     parser.add_argument("--engine-outcome", choices=("success", "failure", "cancelled", "skipped"))
     args = parser.parse_args(argv)
     original_environment, original_temp = dict(os.environ), tempfile.tempdir
+    controller = None
     try:
         if args.command == "configuration":
             result = configuration()
@@ -562,7 +590,13 @@ def main(argv=None):
                 require(args.engine_outcome is not None, "Handoff requires the trusted Actions engine outcome")
                 result = adapter.handoff(args.destination, engine_outcome=args.engine_outcome)
             else:
-                result = adapter.finalize()
+                from actions_adapter import ActionsArtifactSink, ActionsPublisher
+                require(args.destination, "Finalization requires the protected publisher destination")
+                publisher = (ActionsPublisher(adapter, args.destination)
+                             if (controller.root / "approval.json").exists()
+                             and not (controller.root / "runtime-error.json").exists() else None)
+                result = adapter.finalize(publisher=publisher,
+                                          sink=ActionsArtifactSink(controller, environment=original_environment))
         print(mem.encoded(result).decode(), end="")
         status = result["status"] if type(result.get("status")) is dict else result
         if status.get("outcome") == "cancelled":
@@ -571,7 +605,9 @@ def main(argv=None):
     except KeyboardInterrupt:
         return 130
     except (ValueError, OSError, KeyError, TypeError, ImportError, subprocess.SubprocessError) as error:
-        print(mem.encoded({"outcome": "blocked_setup", "reason": c.sanitize(str(error))}).decode(), end="")
+        outcome = ("blocked_finalization" if controller is not None and controller.session is not None
+                   and args.command in ("handoff", "finalize") else "blocked_setup")
+        print(mem.encoded({"outcome": outcome, "reason": c.sanitize(str(error))}).decode(), end="")
         return 2
     finally:
         os.environ.clear()
