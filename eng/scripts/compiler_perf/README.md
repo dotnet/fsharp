@@ -548,6 +548,13 @@ workers. Output authorization runs in the existing trusted worker process,
 not a service thread with invalid main-thread signal timers. Once authorization
 has begun, its independent finalization deadline applies even if active time
 expires during revalidation; it cannot start late or renew either clock.
+An owned child wait timing out after 20 seconds is still pending if the worker
+has entered finalization. Service shutdown keeps monitoring that worker, including
+cleanup longer than 40 seconds, against its existing sealed deadline. Waits are
+capped by the remaining finalization allowance; expiry grants no extra stop
+grace. Unconfirmed exit records `cleanup_failed` and preserves outstanding work,
+not a completed canonical cancellation. Closing with pending cleanup cannot
+acknowledge success, including on a repeated shutdown request.
 
 Run `handoff` in an **always-running `post-steps`** step, with
 `PERF_ENGINE_OUTCOME` bound to `steps.agentic_execution.outcome`, not agent
@@ -611,7 +618,12 @@ controller-only; no native memory push may target it.
 
 Portable validation uses local bare Git, disposable age recipients, fake
 publication, actual HTTP SDK calls and a real Node wrapper with a fixture stock
-harness. Mocked Docker mounts and capability responses are contract tests,
+harness. Fresh isolated Python workers check the protected interpreter prefix,
+private HOME and configuration against hostile agent-home inputs, with populated
+and unavailable runner-identity controls. Shutdown cases cover cancellation,
+already-finalizing workers, completion after 40 seconds and original-deadline
+expiry without releasing an unacknowledged owner. Mocked Docker mounts and
+capability responses are contract tests,
 **not** Linux execution, a generated graph, hosted durability or live model
 access. Those remain a separate explicit Linux gate.
 

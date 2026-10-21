@@ -276,6 +276,52 @@ class RuntimeTests(unittest.TestCase):
                 runtime.validate_layout([protected], "/work/public", "/home/runner", "/runner/_temp")
         runtime.validate_layout(["/var/lib/compiler-perf"], "/work/public", "/home/runner", "/runner/_temp")
 
+    def test_protected_entry_points_refuse_nonisolated_python_before_controller_access(self):
+        with mock.patch.object(runtime, "sys", SimpleNamespace(platform="linux", flags=SimpleNamespace(isolated=0))), \
+                mock.patch.object(w, "Controller") as controller, mock.patch.object(w, "GitHub") as api:
+            for command in ("setup", "start-service", "serve", "handoff", "finalize"):
+                with self.subTest(command=command), mock.patch("sys.stdout", new_callable=io.StringIO) as output:
+                    self.assertEqual(runtime.main([command]), 2)
+                    self.assertEqual(json.loads(output.getvalue()), {
+                        "outcome": "blocked_setup", "reason": "Protected runtime requires Python -I"})
+            controller.assert_not_called()
+            api.assert_not_called()
+
+    def test_interpreter_prefix_custody_covers_entry_point_layout_and_actual_mounts(self):
+        helpers = str(Path(runtime.__file__).resolve().parent)
+        paths = {"root": "/var/lib/compiler-perf/custody", "repository": "/var/lib/compiler-perf/source",
+                 "journal": "/var/lib/compiler-perf/journal", helpers: "/var/lib/compiler-perf/helpers"}
+        for prefix in ("/usr/python", "/opt/python", "/home/runner/.local/python",
+                       "/work/public/python", "/runner/_temp/python", "/tmp/python"):
+            with self.subTest(prefix=prefix), mock.patch.object(runtime, "sys", SimpleNamespace(
+                    platform="linux", prefix=prefix, flags=SimpleNamespace(isolated=1))), \
+                    mock.patch.object(bridge, "_local_directory", side_effect=lambda path, **_:
+                                      PurePosixPath(paths.get(str(path), str(path)))), \
+                    mock.patch.object(runtime.Path, "home", return_value=PurePosixPath("/home/runner")), \
+                    mock.patch.dict(os.environ, {"RUNNER_TEMP": "/runner/_temp"}), \
+                    mock.patch.object(w, "Controller") as controller, \
+                    mock.patch("sys.stdout", new_callable=io.StringIO) as output:
+                self.assertEqual(runtime.main(["finalize", "--root", "root", "--repository", "repository",
+                                              "--journal", "journal", "--workspace", "/work/public"]), 2)
+                self.assertIn("Protected custody overlaps", json.loads(output.getvalue())["reason"])
+                controller.assert_not_called()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            owner = SimpleNamespace(root=root / "custody", repository=root / "source",
+                transport=SimpleNamespace(journal=SimpleNamespace(repository=root / "journal")))
+            prefix = root / "python"
+            with mock.patch.object(runtime, "sys", SimpleNamespace(prefix=str(prefix))):
+                adapter = runtime.Runtime(owner, root / "visible")
+            protected = [str(PurePosixPath("/", p.as_posix())) for p in adapter.protected]
+            runtime.validate_container(container(), protected, "/work/public")
+            value = container()
+            value["Mounts"].append({"Type": "bind", "Source": str(PurePosixPath("/", (prefix / "lib").as_posix())),
+                                    "Destination": "/interpreter", "RW": False})
+            with self.assertRaisesRegex(ValueError, "custody"):
+                runtime.validate_container(value, protected, "/work/public")
+            value["Mounts"][-1]["Source"] = str(PurePosixPath("/", (root / "other" / "lib").as_posix()))
+            runtime.validate_container(value, protected, "/work/public")
+
     def test_setup_preflights_before_preparation_and_exports_no_controller(self):
         for denied in (False, True):
             with self.subTest(denied=denied), tempfile.TemporaryDirectory() as directory:
@@ -406,6 +452,70 @@ class RuntimeTests(unittest.TestCase):
             self.assertTrue(client.shutdown("Authorization had not completed"))
             self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
 
+    def test_shutdown_monitors_slow_owned_finalization_until_completion_or_existing_deadline(self):
+        for mode in ("cancelling", "finalizing", "expired"):
+            with self.subTest(mode=mode), self.ready(canonical=True) as (_, controller, api, transport):
+                elapsed, now = [0.0], controller.now()
+                controller.now = lambda: now + timedelta(seconds=elapsed[0])
+                controller.clock = lambda: elapsed[0]
+                controller.start_active()
+                worker = fixtures.Worker(None)
+
+                def interrupt(value):
+                    worker.signals.append(value)
+                    if "finalization" not in controller.load("clocks"):
+                        controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+
+                def wait(timeout=None):
+                    if worker.code is None:
+                        elapsed[0] += min(timeout, max(0, 60 - elapsed[0])) if mode != "expired" else timeout
+                        if mode == "expired" or elapsed[0] < 60:
+                            raise subprocess.TimeoutExpired("slow owned cleanup", timeout)
+                        controller.finish("cancelled", "Owned worker retained incomplete evidence")
+                        worker.code = 130
+                    return worker.code
+
+                worker.send_signal, worker.wait = interrupt, wait
+                launch = mock.Mock(return_value=worker)
+                client = bridge.Bridge(controller, launch=launch, identify=fixtures.identify)
+                self.assertTrue(client.investigate(fixtures.message("start_profile"))["ok"])
+                if mode != "cancelling":
+                    controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+                if mode == "expired":
+                    elapsed[0] = w.FINALIZATION_SECONDS - 60
+                deadline = (now + timedelta(seconds=w.FINALIZATION_SECONDS)).isoformat()
+
+                def advance(seconds):
+                    elapsed[0] += 5
+                    if mode != "expired" and elapsed[0] >= 60 and worker.code is None:
+                        wait(0)
+
+                with mock.patch.object(bridge.time, "sleep", side_effect=advance):
+                    stopped = client.shutdown("Owned SIGTERM")
+                self.assertEqual(stopped, mode != "expired")
+                self.assertEqual(controller.load("clocks")["finalization"]["deadline"], deadline)
+                self.assertEqual(len(worker.signals), 0 if mode == "finalizing" else 1)
+                self.assertEqual(launch.call_count, 1)
+                outcome = transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"]
+                if mode == "expired":
+                    self.assertIsNone(outcome)
+                    self.assertEqual(client.receipt["state"], "cleanup_failed")
+                    self.assertLessEqual(elapsed[0], w.FINALIZATION_SECONDS)
+                    self.assertIs(client.worker, worker)
+                    expired_at = elapsed[0]
+                    self.assertFalse(client.shutdown("Cleanup remains unacknowledged"))
+                    self.assertEqual(elapsed[0], expired_at)
+                else:
+                    self.assertEqual(outcome, "cancelled")
+                    self.assertEqual(client.receipt["state"], "completed")
+                    self.assertEqual(client.receipt["exit_status"], 130)
+                    self.assertIsNone(client.worker)
+                    self.assertEqual(worker.poll(), 130)
+                    self.assertGreaterEqual(elapsed[0], 60)
+                    self.assertTrue(client.shutdown("Idempotent owned shutdown"))
+                self.assertFalse((controller.root / "output").exists())
+                self.assertEqual(api.effects, [])
+
     def test_authorization_worker_uses_existing_finalization_deadline_not_active_expiry(self):
         with self.ready() as (_, controller, _, _):
             controller.clock = lambda: 0
@@ -435,6 +545,19 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(client.receipt["state"], "worker_failed")
             self.assertFalse((controller.root / "approval.json").exists())
             client.close()
+
+    def test_closing_with_pending_cleanup_cannot_acknowledge_a_later_shutdown(self):
+        with self.ready() as (_, controller, _, transport):
+            worker = fixtures.Worker(None)
+            client = bridge.Bridge(controller, launch=lambda *_: worker, identify=fixtures.identify)
+            self.assertTrue(client.investigate(fixtures.message("start_profile"))["ok"])
+            controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+            self.assertFalse(client.close())
+            self.assertFalse(client.shutdown("Cleanup remains unacknowledged"))
+            self.assertEqual(client.receipt["state"], "cleanup_failed")
+            self.assertEqual(worker.signals, [])
+            self.assertIs(client.worker, worker)
+            self.assertIsNone(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"])
 
     def test_authorization_cannot_begin_after_active_expiry(self):
         with self.ready() as (_, controller, _, _):
@@ -769,6 +892,7 @@ class RuntimeTests(unittest.TestCase):
             "import measurement as m,collection as c\n"
             "root=pathlib.Path(sys.argv[2])\n"
             "(root/'worker.json').write_text(json.dumps({'identity':m.host_identity({}),"
+            "'isolated':sys.flags.isolated,'prefix':sys.prefix,"
             "'environment':dict(os.environ),'candidate':m.allowed_environment(root/'candidate'),"
             "'diagnostic':c.target_environment(root/'diagnostic'),'tool':c.tool_environment(),"
             "'git_config':subprocess.run(['git','config','--global','--get','compilerperf.poison'],"
@@ -779,11 +903,13 @@ class RuntimeTests(unittest.TestCase):
                 hostile = root / "agent-home"
                 hostile.mkdir()
                 (hostile / ".gitconfig").write_text("[compilerperf]\npoison = agent-controlled\n")
+                (hostile / "sitecustomize.py").write_text("raise RuntimeError('Agent Python configuration loaded')\n")
                 environment = {key: value for key, value in os.environ.items() if key not in RUNNER_IDENTITY}
                 environment.update(GH_TOKEN="trusted-journal-token", GITHUB_TOKEN="trusted-api-token",
                                    GITHUB_STEP_SUMMARY=str(root / "summary"),
                                    PUBLISHER_SECRET="must-not-inherit", GITHUB_UNTRUSTED_INPUT="must-not-inherit",
-                                   RUNNER_UNTRUSTED_INPUT="must-not-inherit")
+                                   RUNNER_UNTRUSTED_INPUT="must-not-inherit",
+                                   PYTHONHOME=str(hostile), PYTHONPATH=str(hostile))
                 environment.update({key: str(hostile) for key in
                                     (*w.m.OWNED_ENVIRONMENT_KEYS, "APPDATA", "LOCALAPPDATA",
                                      "XDG_CONFIG_HOME", "GH_CONFIG_DIR")})
@@ -797,10 +923,15 @@ class RuntimeTests(unittest.TestCase):
                             mock.patch.dict(os.environ, {"PATH": str(hostile)}):
                         trusted = bridge.trusted_environment(SimpleNamespace(root=root, repository=root))
                         self.assertNotIn(str(hostile), trusted["PATH"].split(os.pathsep))
-                    with bridge._launch([sys.executable, "-c", script, str(Path(runtime.__file__).parent),
-                                         str(root)], SimpleNamespace(root=root, repository=root)) as child:
+                    owner = SimpleNamespace(root=root, repository=root,
+                                            transport=SimpleNamespace(journal=SimpleNamespace(repository=root)))
+                    command = bridge.worker_command(owner, "profile")
+                    with bridge._launch([*command[:2], "-c", script, str(Path(runtime.__file__).parent),
+                                         str(root)], owner) as child:
                         self.assertEqual(child.wait(timeout=30), 0)
                 result = json.loads((root / "worker.json").read_text())
+                self.assertEqual(result["isolated"], 1)
+                self.assertEqual(result["prefix"], sys.prefix)
                 self.assertEqual(result["identity"], frozen_identity)
                 self.assertEqual(result["git_config"], 1, "Trusted tool read agent-controlled Git configuration")
                 for key in (*w.m.OWNED_ENVIRONMENT_KEYS, "APPDATA", "LOCALAPPDATA"):
@@ -808,6 +939,8 @@ class RuntimeTests(unittest.TestCase):
                 for key in ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_STEP_SUMMARY"):
                     self.assertEqual(result["environment"][key], environment[key])
                 for key in ("PUBLISHER_SECRET", "GITHUB_UNTRUSTED_INPUT", "RUNNER_UNTRUSTED_INPUT"):
+                    self.assertNotIn(key, result["environment"])
+                for key in ("PYTHONHOME", "PYTHONPATH"):
                     self.assertNotIn(key, result["environment"])
                 for target in ("candidate", "diagnostic", "tool"):
                     self.assertFalse(set(result[target]) & (set(RUNNER_IDENTITY) | {

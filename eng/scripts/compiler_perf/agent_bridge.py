@@ -291,14 +291,31 @@ class Bridge:
     def _stop(self, *, interrupt=True):
         if self.worker is None:
             return True
+        timeout = STOP_SECONDS
+        if self._finalizing():
+            try:
+                timeout = min(timeout, self._read_deadline(
+                    self.controller.load("clocks")["finalization"], "finalization", workflow.FINALIZATION_SECONDS))
+                interrupt = False
+            except KeyboardInterrupt:
+                timeout, interrupt = 0, True
         try:
             if self.worker.poll() is None and interrupt and not self.receipt.get("interrupt_sent"):
                 # Signal only the original Popen handle. The worker unwinds its
                 # candidate and collectors; their separate sessions are not ours.
                 self.worker.send_signal(signal.SIGINT)
                 self._worker_receipt("stopping", interrupt_sent=True)
-            self.worker.wait(timeout=STOP_SECONDS)
-        except (OSError, subprocess.TimeoutExpired):
+            self.worker.wait(timeout=timeout)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            if isinstance(error, subprocess.TimeoutExpired) and self._finalizing():
+                try:
+                    self._read_deadline(self.controller.load("clocks")["finalization"],
+                                        "finalization", workflow.FINALIZATION_SECONDS)
+                except KeyboardInterrupt:
+                    pass
+                else:
+                    # A short dispatch/stop wait is not the worker's cleanup deadline.
+                    return False
             self.blocked = True
             self._worker_receipt("cleanup_failed")
             return False
@@ -317,8 +334,10 @@ class Bridge:
             exited = mem.timestamp(self.controller.load("runtime-engine-exit")["at"])
             remaining = min(remaining, allowance - (now - exited).total_seconds())
         origin, initial = self.controller.timers.setdefault(name, (tick, remaining))
-        if now < last or now < start or tick < origin or min(remaining, initial - (tick - origin)) <= 0:
+        remaining = min(remaining, initial - (tick - origin))
+        if now < last or now < start or tick < origin or remaining <= 0:
             raise KeyboardInterrupt
+        return remaining
 
     def _finalizing(self, clocks=None):
         if self.worker is None:
@@ -389,6 +408,9 @@ class Bridge:
             except (ValueError, OSError, KeyError, TypeError):
                 self.blocked, interrupt = True, True
             stopped = self._stop(interrupt=interrupt)
+            if not stopped:
+                self.blocked = True
+                self._worker_receipt("cleanup_failed")
         if self.thread is not None and self.thread is not threading.current_thread():
             self.thread.join(timeout=STOP_SECONDS + 2)
         return stopped and not self.blocked
@@ -415,7 +437,8 @@ class Bridge:
                         else:
                             break
                 self.tick()
-                time.sleep(.1)
+                if not self.blocked:
+                    time.sleep(.1)
             return self.close()
 
     def investigate(self, message):
