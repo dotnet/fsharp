@@ -8,8 +8,8 @@ function Assert($Condition, $Message) {
 }
 
 function Assert-Snapshot($Request, $ExpectedSha = ('a' * 40)) {
-    Assert ($Request.resources.repositories.self.refName -ceq 'refs/pull/42/head') 'Wrong YAML ref'
-    Assert ($Request.resources.repositories.self.version -ceq $ExpectedSha) 'Wrong YAML revision'
+    Assert ($Request.resources.repositories.self.refName -ceq 'refs/heads/main') 'Wrong YAML ref'
+    Assert ($Request.resources.repositories.self.version -ceq ('d' * 40)) 'Wrong YAML revision'
     Assert ($Request.templateParameters.prNumber -is [string] -and $Request.templateParameters.prNumber -ceq '42') 'PR number must be a string'
     Assert ($Request.templateParameters.headSha -ceq $ExpectedSha) 'Wrong reviewed snapshot'
     Assert ($Request.templateParameters.PSObject.Properties.Name -cnotcontains 'baseSha') 'Base parameter must not be queued'
@@ -46,12 +46,13 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
     $permission = @{ permission = 'write' }
     $expectedSha = 'a' * 40
     $request = @{
-        resources = @{ repositories = @{ self = @{ refName = 'refs/pull/42/head'; version = 'a' * 40 } } }
+        resources = @{ repositories = @{ self = @{ refName = 'refs/heads/main'; version = 'd' * 40 } } }
         templateParameters = @{ prNumber = '42'; headSha = 'a' * 40 }
     }
     $permissionUri = 'https://api.github.com/repos/dotnet/fsharp/collaborators/maintainer/permission'
     $pullUri = 'https://api.github.com/repos/dotnet/fsharp/pulls/42'
     $commitsUri = "$pullUri/commits?per_page=100&page=1"
+    $mainUri = 'https://api.github.com/repos/dotnet/fsharp/git/ref/heads/main'
     $memberUri = 'https://api.github.com/orgs/microsoft/members/maintainer'
     $queueUri = 'https://dev.azure.com/devdiv/DevDiv/_apis/pipelines/123/runs?api-version=7.1'
     $reportUri = 'https://api.github.com/repos/dotnet/fsharp/issues/42/comments'
@@ -59,6 +60,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
         $permissionUri = @{ Method = 'GET'; Status = 200; Body = $permission }
         $pullUri = @{ Method = 'GET'; Status = 200; Body = $pr }
         $commitsUri = @{ Method = 'GET'; Status = 200; Body = @(@{ sha = 'a' * 40 }) }
+        $mainUri = @{ Method = 'GET'; Status = 200; Body = @{ ref = 'refs/heads/main'; object = @{ type = 'commit'; sha = 'd' * 40 } } }
         $memberUri = @{ Method = 'GET'; Status = 204 }
         $queueUri = @{ Method = 'POST'; Status = 200; Body = @{ id = 456 } }
         $reportUri = @{ Method = 'POST'; Status = 201; Body = @{ id = 789 } }
@@ -71,7 +73,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
     $env:GITHUB_TOKEN = 'github-token'
     $env:PIPELINE_ID = '123'; $env:AZDO_TOKEN = 'test-token'
     $env:REQUEST_BODY = ConvertTo-Json -InputObject $request -Depth 10 -Compress
-    $env:RUN_URL = ''; $env:HEAD_SHA = 'a' * 40
+    $env:RUN_URL = ''; $env:HEAD_SHA = 'a' * 40; $env:PIPELINE_SHA = 'd' * 40
     $expectedToken = if ($Mode -eq 'Queue') { $env:AZDO_TOKEN } else { $env:GITHUB_TOKEN }
     . $Change
     ConvertTo-Json -InputObject $event -Depth 10 | Set-Content -LiteralPath $env:GITHUB_EVENT_PATH -Encoding utf8
@@ -90,7 +92,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
         switch ($Mode) {
             'Prepare' {
                 $lines = @(Get-Content -LiteralPath $env:GITHUB_OUTPUT)
-                Assert ($lines.Count -eq 2 -and $lines[1] -ceq "head=$expectedSha") 'Wrong snapshot outputs'
+                Assert ($lines.Count -eq 3 -and $lines[1] -ceq "head=$expectedSha" -and $lines[2] -ceq "pipeline=$('d' * 40)") 'Wrong snapshot outputs'
                 Assert-Snapshot (ConvertFrom-Json $lines[0].Substring(5)) $expectedSha
                 Assert ($calls[0].Uri -ceq $permissionUri -and $calls[1].Uri -ceq $pullUri) 'Wrong requester or PR'
             }
@@ -105,12 +107,13 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
                 Assert ($body.StartsWith($expected)) 'Wrong PR feedback'
                 Assert ($body.Contains('`/dart <sha>`') -and $body.Contains('`/pr-val <sha>`')) 'Missing retry guidance'
                 if ($env:RUN_URL) {
-                    Assert ($body.Contains("Reviewed commit and pipeline YAML: ``$env:HEAD_SHA``") -and !$body.Contains('Base:')) 'Wrong snapshot identifiers'
+                    Assert ($body.Contains("Reviewed PR commit: ``$env:HEAD_SHA``") -and
+                        $body.Contains("Protected-main pipeline and control scripts: ``$env:PIPELINE_SHA``") -and !$body.Contains('Base:')) 'Wrong snapshot identifiers'
                     Assert ($body.Contains('otherwise it tests this commit directly')) 'Missing execution mode guidance'
                 }
             }
         }
-        if ($CallCount -lt 0) { $CallCount = if ($Mode -eq 'Prepare') { 3 } else { 1 } }
+        if ($CallCount -lt 0) { $CallCount = if ($Mode -eq 'Prepare') { 4 } else { 1 } }
     }
     if ($CallCount -ge 0) { Assert ($calls.Count -eq $CallCount) "$Name made unexpected HTTP calls" }
     $script:count++
@@ -142,7 +145,7 @@ try {
                 $responses["$pullUri/commits?per_page=100&page=$i"] = @{ Method = 'GET'; Status = 200; Body = @(1..100 | ForEach-Object { @{ sha = 'c' * 40 } }) }
             }
             $responses["$pullUri/commits?per_page=100&page=$page"] = @{ Method = 'GET'; Status = 200; Body = @(@{ sha = 'a' * 40 }) }
-        } -CallCount (2 + $page)
+        } -CallCount (3 + $page)
     }
     Test-Case 'unlisted commit across all 250 available commits' {
         foreach ($page in 1, 2, 3) {
@@ -181,11 +184,17 @@ try {
         Test-Case "bad head SHA '$sha'" { $pr.head.sha = $sha } 'full PR head'
     }
     Test-Case 'main advancing does not affect request' { $pr.base.sha = 'c' * 40 }
+    foreach ($json in 'null', '[]', '{}', '{"ref":"refs/heads/feature","object":{"type":"commit","sha":"dddddddddddddddddddddddddddddddddddddddd"}}',
+        '{"ref":"refs/heads/main","object":{"type":"tag","sha":"dddddddddddddddddddddddddddddddddddddddd"}}',
+        '{"ref":"refs/heads/main","object":{"type":"commit","sha":"abc1234"}}',
+        '{"ref":"refs/heads/main","object":{"type":"commit","sha":["dddddddddddddddddddddddddddddddddddddddd"]}}') {
+        Test-Case "invalid main ref $json" { $responses[$mainUri].Raw = $json } 'valid main orchestration commit' -CallCount 4
+    }
     Test-Case 'membership original commenter with repository token' -Mode Membership
     foreach ($status in 200, 201, 301, 302, 307, 308, 401, 403, 404, 429, 500) {
         Test-Case "membership HTTP $status" { $responses[$memberUri].Status = $status } "HTTP $status" Membership
     }
-    foreach ($endpoint in 'permissionUri', 'pullUri', 'commitsUri', 'memberUri', 'queueUri', 'reportUri') {
+    foreach ($endpoint in 'permissionUri', 'pullUri', 'commitsUri', 'mainUri', 'memberUri', 'queueUri', 'reportUri') {
         $mode = switch ($endpoint) { memberUri { 'Membership' }; queueUri { 'Queue' }; reportUri { 'Report' }; default { 'Prepare' } }
         Test-Case "$endpoint network failure" { $responses[(Get-Variable $endpoint -ValueOnly)].Failure = $true } 'HTTP request failed' $mode
         Test-Case "$endpoint API failure" { $responses[(Get-Variable $endpoint -ValueOnly)].Status = 500 } 'HTTP 500' $mode

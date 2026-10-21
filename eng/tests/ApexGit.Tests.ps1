@@ -60,8 +60,9 @@ try {
     }
     finally { Remove-Item -LiteralPath "Function:\$expectedGit" }
 
-    $fixtureApex = Join-Path $root 'eng\pipelines\apex-integration'
+    $fixtureApex = Join-Path $root 'control'
     New-Item -ItemType Directory -Path $fixtureApex -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $root 'eng') -Force | Out-Null
     (Get-Content (Join-Path $apex 'run-apex.ps1') -Raw).Replace('C:\Test\Git\cmd', (Join-Path $installation 'cmd')) |
         Set-Content (Join-Path $fixtureApex 'run-apex.ps1')
     Set-Content (Join-Path $root 'eng\SetupVSHive.ps1') @'
@@ -82,7 +83,7 @@ exit /b %ERRORLEVEL%
     foreach ($workFolder in @($null, (Join-Path $root 'stale-workspace'))) {
         $env:AGENT_WORKFOLDER = $workFolder
         $env:PATH = $systemPath
-        & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $fixtureApex 'run-apex.ps1')
+        & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $fixtureApex 'run-apex.ps1') -SourceRoot $root
         if ($LASTEXITCODE -ne 0) { throw 'Independent Apex process failed.' }
         foreach ($file in @('setup-git.txt', 'child-git.txt')) {
             if ((Get-Content (Join-Path $root $file)) -ne $expectedGit) { throw "$file used the wrong Git." }
@@ -109,7 +110,7 @@ exit /b %ERRORLEVEL%
     }
     $env:PATH = $previousPath
     $run = Join-Path $fixtureApex 'run-apex.ps1'
-    $output = & $powershell -NoProfile -ExecutionPolicy Bypass -Command "try { & '$run' } catch { Write-Output `$_; exit 1 }"
+    $output = & $powershell -NoProfile -ExecutionPolicy Bypass -Command "try { & '$run' -SourceRoot '$root' } catch { Write-Output `$_; exit 1 }"
     if ($LASTEXITCODE -eq 0 -or "$output" -notmatch 'Git was not provisioned') {
         throw 'Apex fell back to ambient Git when provisioning was missing.'
     }
