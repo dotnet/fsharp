@@ -7,6 +7,12 @@ This file should be imported by eng/Versions.props
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>12.0.0-beta.26505.2</MicrosoftDotNetArcadeSdkPackageVersion>
+    <!-- dotnet-dotnet dependencies -->
+    <SystemCollectionsImmutablePackageVersion>10.0.14</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.14</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.14</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.13.0-1.26516.14</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26516.14</MicrosoftBuildFrameworkPackageVersion>
@@ -19,25 +25,25 @@ This file should be imported by eng/Versions.props
     <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationwindows_ntx64MIBCRuntimePackageVersion>
     <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.12.0-1.26428.6</MicrosoftVisualStudioLanguageServicesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.12.0-1.26428.6</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
-    <!-- dotnet-runtime dependencies -->
-    <SystemCollectionsImmutablePackageVersion>10.0.10</SystemCollectionsImmutablePackageVersion>
-    <SystemCompositionPackageVersion>10.0.10</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.10</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>10.0.10</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>10.0.13</SystemSecurityCryptographyXmlPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.13.0-1.26516.4</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.13.0-1.26516.4</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.13.0-1.26516.4</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkVersion>$(MicrosoftDotNetArcadeSdkPackageVersion)</MicrosoftDotNetArcadeSdkVersion>
+    <!-- dotnet-dotnet dependencies -->
+    <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
+    <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
+    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildVersion>$(MicrosoftBuildPackageVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildFrameworkPackageVersion)</MicrosoftBuildFrameworkVersion>
@@ -58,11 +64,5 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftVisualStudioLanguageServicesExternalAccessVersion>$(MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion)</MicrosoftVisualStudioLanguageServicesExternalAccessVersion>
-    <!-- dotnet-runtime dependencies -->
-    <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
-    <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
-    <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
-    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
   </PropertyGroup>
 </Project>

@@ -7,6 +7,19 @@ open FSharp.Test.Compiler
 
 module ``StringFormatAndInterpolation`` =
     [<Fact>]
+    let ``Issue 20752 - fallback formats retain sprintf and Concat lowering`` () =
+        FSharp """
+module StringFormatAndInterpolation
+let f (flag: bool) = $"%b{flag} %b{flag}"
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyILPresent [
+            "Microsoft.FSharp.Core.PrintfModule::PrintFormatToStringThen"
+            "System.String::Concat"
+        ]
+
+    [<Fact>]
     let ``Issue 20757 - padded timestamp uses captured printf formats`` () =
         let result =
             FSharp """

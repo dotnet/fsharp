@@ -532,11 +532,6 @@
         <target state="translated">El captador y el establecedor de propiedades indexadas deben tener el mismo tipo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">Paso de testigo para las restricciones de rasgos en las expresiones de código delimitadas de F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores implícitamente convertibles al tipo de la primera rama, que aquí es una tupla de longitud {0} de tipo\n    {1}    \nEsta rama devuelve una tupla de longitud {2} de tipo\n    {3}    \n</target>
@@ -842,6 +837,11 @@
         <target state="translated">El valor "{0}" estaba marcado como "InlineIfLambda", pero no se ha determinado que tenga un valor lambda. Esta advertencia solo tiene fines informativos.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
@@ -888,8 +888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersionOutOfSupport">
-        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
-        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
+        <source>Language version '{0}' is out of support. The last compatible SDK feature band is .NET SDK 10.0.1xx. Download it at https://dotnet.microsoft.com/en-us/download/dotnet/{1}.</source>
+        <target state="new">Language version '{0}' is out of support. The last compatible SDK feature band is .NET SDK 10.0.1xx. Download it at https://dotnet.microsoft.com/en-us/download/dotnet/{1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">

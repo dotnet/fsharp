@@ -2483,6 +2483,9 @@ type internal TransparentCompiler
         member _.FrameworkImportsCache: FrameworkImportsCache =
             backgroundCompiler.FrameworkImportsCache
 
+        member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) : unit =
+            backgroundCompiler.SetReferenceStampProvider getReferenceStamp
+
         member this.GetAssemblyData(options: FSharpProjectOptions, fileName, userOpName: string) : Async<ProjectAssemblyDataResult> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
