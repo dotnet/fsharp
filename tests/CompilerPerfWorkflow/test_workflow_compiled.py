@@ -38,6 +38,7 @@ def assert_graph(test, graph):
     test.assertEqual(graph["concurrency"], {"group": "compiler-self-profile", "cancel-in-progress": "false"})
     test.assertEqual(graph["permissions"], {})
     jobs = graph["jobs"]
+    test.assertEqual(set(jobs), {"activation", "agent", "safe_outputs", "conclusion"})
     test.assertEqual(" ".join(jobs["activation"].get("if", "").split()), " && ".join(GUARDS))
     test.assertEqual(jobs["agent"]["needs"], "activation")
     test.assertFalse(jobs["agent"].get("if"))
@@ -53,6 +54,19 @@ def assert_graph(test, graph):
     ordered = [step(graph, key) for key in ("provision", "controller", "agentic_execution", "handoff", "publisher", "quarantine")]
     test.assertEqual([steps.index(s) for s in ordered], sorted(steps.index(s) for s in ordered))
     provision, controller, engine, handoff, publisher, quarantine = ordered
+    for item in (provision, controller, engine):
+        test.assertFalse(item.get("if"), "Required entry point must run after successful guarded activation")
+        test.assertNotEqual(item.get("continue-on-error"), "true")
+    owners = {(job_name, item.get("id", item.get("name"))) for job_name, job in jobs.items() for item in job["steps"]
+              if "COMPILER_PERF_OWNER_TOKEN" in yaml.dump(item.get("env", {}))}
+    test.assertEqual(owners, {("agent", key) for key in
+                             ("provision", "controller", "handoff", "publisher", "Redact secrets in logs")})
+    redactor = next(s for s in steps if s.get("name") == "Redact secrets in logs")
+    test.assertEqual(redactor["uses"], "actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3")
+    test.assertEqual(code(redactor), (
+        "const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');\n"
+        "setupGlobals(core, github, context, exec, io, getOctokit);\n"
+        "const { main } = require('${{ runner.temp }}/gh-aw/actions/redact_secrets.cjs');\nawait main();\n"))
     test.assertEqual(int(engine["timeout-minutes"]), 250)
     test.assertIn("listJobsForWorkflowRunAttempt", code(provision))
     test.assertIn("started_at", code(provision))
@@ -149,6 +163,15 @@ class CompiledWorkflowTests(unittest.TestCase):
             "native-writer": lambda g: g["jobs"]["safe_outputs"]["env"].update(GH_AW_SAFE_OUTPUTS_STAGED="false"),
             "unprotected-finalizer": lambda g: step(g, "publisher").update({"if": "always()"}),
             "raw-upload": lambda g: step(g, "quarantine").update({"with": {"script": "noop"}}),
+            "disabled-controller": lambda g: step(g, "controller").update({"if": "false"}),
+            "skipped-provision": lambda g: step(g, "provision").update({"if": "false"}),
+            "unguarded-owner-job": lambda g: g["jobs"].update(other_publisher={
+                "runs-on": "ubuntu-24.04", "permissions": {"contents": "read"},
+                "steps": [{"run": "gh api --method POST repos/dotnet/fsharp/pulls",
+                           "env": {"GH_TOKEN": "${{ secrets.COMPILER_PERF_OWNER_TOKEN }}"}}]}),
+            "alternate-owner-step": lambda g: g["jobs"]["activation"]["steps"].append({
+                "run": "gh api --method POST repos/dotnet/fsharp/pulls",
+                "env": {"GH_TOKEN": "${{ secrets.COMPILER_PERF_OWNER_TOKEN }}"}}),
         }
         assert_graph(self, graph)
         for name, mutate in mutations.items():

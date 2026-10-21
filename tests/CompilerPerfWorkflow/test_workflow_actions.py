@@ -101,7 +101,7 @@ class ActionsAdapterTests(unittest.TestCase):
                     raise OSError("upload succeeded, acknowledgment lost")
                 for record in inventory["files"]:
                     shutil.copyfile(record["path"], target / Path(record["path"]).name)
-                return 42
+                return {"id": 42, "retention_started_at": metadata["created_at"]}
 
             sink = actions.ActionsArtifactSink(controller, transport=transport)
             with mock.patch.object(controller.api, "get", create=True, return_value=metadata):
@@ -305,14 +305,23 @@ new (Object.getPrototypeOf(async function(){}).constructor)('require','github','
             environment = dict(w.c.tool_environment(),
                 COMPILER_PERF_ARTIFACT_MODULE=str(Path(__file__).parent / "fixtures" / "ActionsArtifact.cjs"),
                 COMPILER_PERF_FIXTURE_RECEIPT=str(receipt))
-            for index in range(2):
+            Path(str(receipt) + ".lose-ack").touch()
+            for index in range(3):
                 destination = root / str(index)
                 destination.mkdir()
                 result = subprocess.run(["node", str(Path(actions.__file__).with_name("actions_artifact.cjs"))],
                     input=json.dumps({"name": "compiler-perf-fixture", "files": [{"path": str(source)}],
+                                      "receipt_path": str(root / "upload-clock.json"),
                                       "destination": str(destination)}),
-                    text=True, capture_output=True, timeout=15, check=True, env=environment)
-                self.assertEqual(json.loads(result.stdout), {"id": 42})
+                    text=True, capture_output=True, timeout=15, env=environment)
+                if index == 0:
+                    self.assertEqual(result.returncode, 2)
+                    started = json.loads((root / "upload-clock.json").read_text())["retention_started_at"]
+                    continue
+                self.assertEqual(result.returncode, 0, result.stderr)
+                value = json.loads(result.stdout)
+                self.assertEqual(value["id"], 42)
+                self.assertEqual(value["retention_started_at"], started)
                 self.assertEqual((destination / source.name).read_bytes(), source.read_bytes())
             self.assertEqual(json.loads(receipt.read_text())["uploads"], 1)
 

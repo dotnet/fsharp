@@ -205,12 +205,24 @@ def validate_artifact(e):
                     and receipt.get("acknowledged") is True and digest(receipt.get("manifest_sha256"))
                     and identifier(receipt.get("artifact_id")) and text(receipt.get("location"))
                     and receipt.get("retention_days") == 14
-                    and timestamp(e["collected_at"]) <= timestamp(receipt.get("created_at")) < timestamp(e["expires_at"])
-                    and timestamp(receipt.get("expires_at")) - timestamp(receipt["created_at"]) == timedelta(days=14)
+                    and artifact_retention(receipt, e["collected_at"])
+                    and timestamp(receipt["created_at"]) < timestamp(e["expires_at"])
                     and digest(receipt.get("validation")),
                     "Remote evidence requires a matching trusted sink acknowledgment")
         else:
             require(receipt is None, "Pending evidence cannot claim acknowledgment")
+
+
+def artifact_retention(receipt, collected_at):
+    """The client chooses expiry before server creation; REST may round to seconds."""
+    collected = timestamp(collected_at)
+    created, expires = timestamp(receipt.get("created_at")), timestamp(receipt.get("expires_at"))
+    if "retention_started_at" not in receipt:
+        return collected <= created and expires - created == timedelta(days=14)
+    started = timestamp(receipt["retention_started_at"])
+    return (collected <= started and started.replace(microsecond=0) <= created
+            and (started + timedelta(days=14)).replace(microsecond=0) <= expires
+            <= created + timedelta(days=14))
 
 
 def artifact_validation(record):

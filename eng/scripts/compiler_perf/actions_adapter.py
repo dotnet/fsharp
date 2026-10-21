@@ -87,13 +87,15 @@ class ActionsArtifactSink:
                 "Artifact runtime belongs to another run or repository")
         environment["COMPILER_PERF_ARTIFACT_MODULE"] = str(controller.root.parent / "transport" /
                                                           "node_modules" / "@actions" / "artifact")
+        environment["TZ"] = "UTC"
         result = subprocess.run(["node", str(Path(__file__).with_name("actions_artifact.cjs"))],
             input=w.mem.encoded({"name": "compiler-perf-" + plan["manifest_sha256"], "files": plan["files"],
+                                "receipt_path": str(controller.root / ("artifact-upload-" + plan["manifest_sha256"] + ".json")),
                                 "destination": str(destination)}), capture_output=True, env=environment,
             timeout=controller.remaining("finalization", w.FINALIZATION_SECONDS))
         require(result.returncode == 0 and len(result.stdout) <= 1024,
                 "Actions artifact upload/readback failed; pending inventory preserved")
-        return w.mem.decoded(result.stdout)["id"]
+        return w.mem.decoded(result.stdout)
 
     def __call__(self, plan):
         controller = self.controller
@@ -113,8 +115,10 @@ class ActionsArtifactSink:
                 "Artifact archive overhead exceeds retention budget")
         with tempfile.TemporaryDirectory(prefix="artifact-readback-", dir=controller.root) as directory:
             destination = Path(directory)
-            identifier = self.transport(plan, destination)
-            require(type(identifier) is int and identifier > 0, "Invalid Actions artifact ID")
+            transfer = self.transport(plan, destination)
+            require(type(transfer) is dict and set(transfer) == {"id", "retention_started_at"}
+                    and type(transfer["id"]) is int and transfer["id"] > 0, "Invalid Actions artifact receipt")
+            identifier = transfer["id"]
             verify_inventory(destination, plan)
         metadata = controller.api.get(f"repos/{w.mem.REPOSITORY}/actions/artifacts/{identifier}")
         owner = controller.session["attempt"] or controller.session["discovery"]
@@ -122,14 +126,16 @@ class ActionsArtifactSink:
                 and metadata["expired"] is False and metadata["workflow_run"]["id"] == int(owner["run"]["id"])
                 and type(metadata["size_in_bytes"]) is int and 0 < metadata["size_in_bytes"]
                     <= archive_bound(plan["total_bytes"], len(plan["files"]))
-                and w.mem.timestamp(plan["created_at"]) <= w.mem.timestamp(metadata["created_at"]) <= controller.now()
-                and w.mem.timestamp(metadata["expires_at"]) - w.mem.timestamp(metadata["created_at"])
-                    == w.timedelta(days=14), "Actions artifact owner, expiry or retention differs")
+                and w.mem.timestamp(metadata["created_at"]) <= controller.now()
+                and w.mem.timestamp(transfer["retention_started_at"]) <= controller.now()
+                and w.mem.artifact_retention(dict(metadata, retention_started_at=transfer["retention_started_at"]),
+                                            plan["created_at"]), "Actions artifact owner, expiry or retention differs")
         return {"scope": "actions" if controller.transport.scope == "github" else "local_fixture",
                 "acknowledged": True, "manifest_sha256": plan["manifest_sha256"],
                 "artifact_id": str(identifier),
                 "location": f"https://github.com/{w.mem.REPOSITORY}/actions/runs/{owner['run']['id']}/artifacts/{identifier}",
-                "retention_days": 14, "created_at": metadata["created_at"], "expires_at": metadata["expires_at"]}
+                "retention_days": 14, "created_at": metadata["created_at"], "expires_at": metadata["expires_at"],
+                "retention_started_at": transfer["retention_started_at"]}
 
 
 class ActionsPublisher:

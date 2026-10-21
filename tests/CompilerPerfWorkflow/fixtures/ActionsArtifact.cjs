@@ -1,6 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const receipt = process.env.COMPILER_PERF_FIXTURE_RECEIPT;
+const receipt = process.env.COMPILER_PERF_FIXTURE_RECEIPT || path.join(__dirname, "effects.json");
 let state = fs.existsSync(receipt) ? JSON.parse(fs.readFileSync(receipt)) : { uploads: 0 };
 
 class DefaultArtifactClient {
@@ -17,6 +17,10 @@ class DefaultArtifactClient {
   }
   async downloadArtifact(id, { path: destination }) {
     if (id !== 42) throw new Error("Wrong artifact");
+    if (fs.existsSync(receipt + ".lose-ack")) {
+      fs.unlinkSync(receipt + ".lose-ack");
+      throw new Error("Upload succeeded, acknowledgment lost");
+    }
     for (const file of state.files) fs.copyFileSync(file, path.join(destination, path.basename(file)));
   }
 }

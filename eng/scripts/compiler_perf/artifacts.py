@@ -457,13 +457,14 @@ def acknowledge_artifacts(public_root, manifest, now, sink):
             "No complete verified upload inventory")
     receipt = sink(plan)
     completed = _time(now() if callable(now) else now)
-    require(type(receipt) is dict and set(receipt) == {
+    require(type(receipt) is dict and set(receipt) - {"retention_started_at"} == {
         "scope", "acknowledged", "manifest_sha256", "artifact_id", "location", "retention_days", "created_at", "expires_at"}
         and receipt["scope"] in ("actions", "local_fixture") and receipt["acknowledged"] is True
         and receipt["manifest_sha256"] == plan["manifest_sha256"]
         and receipt["retention_days"] == RETENTION_DAYS
-        and mem.timestamp(plan["created_at"]) <= mem.timestamp(receipt["created_at"]) <= completed
-        and mem.timestamp(receipt["expires_at"]) - mem.timestamp(receipt["created_at"]) == timedelta(days=RETENTION_DAYS)
+        and mem.artifact_retention(receipt, plan["created_at"])
+        and mem.timestamp(receipt["created_at"]) <= completed
+        and ("retention_started_at" not in receipt or mem.timestamp(receipt["retention_started_at"]) <= completed)
         and mem.identifier(receipt["artifact_id"]) and mem.text(receipt["location"]), "Invalid sink acknowledgment")
     if receipt["scope"] == "actions":
         require(re.fullmatch(r"https://github\.com/dotnet/fsharp/actions/runs/[0-9]+/artifacts/[0-9]+",
