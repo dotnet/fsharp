@@ -620,7 +620,11 @@ Portable validation uses local bare Git, disposable age recipients, fake
 publication, actual HTTP SDK calls and a real Node wrapper with a fixture stock
 harness. Fresh isolated Python workers check the protected interpreter prefix,
 private HOME and configuration against hostile agent-home inputs, with populated
-and unavailable runner-identity controls. Shutdown cases cover cancellation,
+and unavailable runner-identity controls. The mount-inventory fixture models
+protected Linux paths under `/var/lib/compiler-perf`, independently of the host
+temporary directory and checkout location; stock `/tmp` stays mounted. It rejects
+both the interpreter prefix and its descendants while allowing unrelated mounts.
+Shutdown cases cover cancellation,
 already-finalizing workers, completion after 40 seconds and original-deadline
 expiry without releasing an unacknowledged owner. Mocked Docker mounts and
 capability responses are contract tests,

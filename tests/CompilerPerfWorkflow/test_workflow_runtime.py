@@ -312,15 +312,18 @@ class RuntimeTests(unittest.TestCase):
             prefix = root / "python"
             with mock.patch.object(runtime, "sys", SimpleNamespace(prefix=str(prefix))):
                 adapter = runtime.Runtime(owner, root / "visible")
-            protected = [str(PurePosixPath("/", p.as_posix())) for p in adapter.protected]
+            self.assertIn(prefix.resolve(), adapter.protected)
+            # Model Linux custody independently of the host's temporary and checkout paths.
+            protected = [str(PurePosixPath("/var/lib/compiler-perf", p.name)) for p in adapter.protected]
+            self.assertIn("/var/lib/compiler-perf/python", protected)
             runtime.validate_container(container(), protected, "/work/public")
-            value = container()
-            value["Mounts"].append({"Type": "bind", "Source": str(PurePosixPath("/", (prefix / "lib").as_posix())),
-                                    "Destination": "/interpreter", "RW": False})
-            with self.assertRaisesRegex(ValueError, "custody"):
-                runtime.validate_container(value, protected, "/work/public")
-            value["Mounts"][-1]["Source"] = str(PurePosixPath("/", (root / "other" / "lib").as_posix()))
-            runtime.validate_container(value, protected, "/work/public")
+            for source, denied in (("python", True), ("python/lib", True), ("other/lib", False)):
+                with self.subTest(source=source):
+                    value = container()
+                    value["Mounts"].append({"Type": "bind", "Source": "/var/lib/compiler-perf/" + source,
+                                            "Destination": "/interpreter", "RW": False})
+                    with self.assertRaisesRegex(ValueError, "custody") if denied else nullcontext():
+                        runtime.validate_container(value, protected, "/work/public")
 
     def test_setup_preflights_before_preparation_and_exports_no_controller(self):
         for denied in (False, True):
