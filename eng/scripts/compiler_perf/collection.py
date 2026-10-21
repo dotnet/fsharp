@@ -596,7 +596,7 @@ def windows_accounting(process):
             "peak_rss_bytes": counters.PeakWorkingSetSize, "creation_filetime": str(values[0].value)}
 
 
-def preflight(root, environment, identity=None, dump=False):
+def preflight(root, environment, identity=None, dump=False, *, target=None):
     m.require(environment.get("DOTNET_EnableDiagnostics") == "1"
               and not any(k.startswith(("COMPlus_", "CORECLR_", "COR_")) for k in environment),
               "Diagnostics disabled or injected runtime configuration")
@@ -621,7 +621,18 @@ def preflight(root, environment, identity=None, dump=False):
     if identity and sys.platform == "linux":
         m.require(identity["uid"] == str(os.getuid()), "Same-UID diagnostics attachment required")
         m.require(identity["namespace"] == os.readlink("/proc/self/ns/pid"), "namespace_unavailable")
-        sockets = list(Path(environment["TMPDIR"]).glob(f"dotnet-diagnostic-{identity['pid']}-*-socket"))
+        deadline = (min(time.monotonic() + 30, target.start + LIMITS["duration_seconds"])
+                    if target is not None else None)
+        while True:
+            if target is not None:
+                target.check()
+                select_compiler_process([snapshot_process(target.process.pid)], identity)
+                m.require(target.process.poll() is None, "Target exited before diagnostics startup")
+                m.require(time.monotonic() < deadline, "Diagnostics socket startup timeout")
+            sockets = list(Path(environment["TMPDIR"]).glob(f"dotnet-diagnostic-{identity['pid']}-*-socket"))
+            if sockets or target is None:
+                break
+            time.sleep(.05)
         m.require(len(sockets) == 1 and sockets[0].is_socket()
                   and sockets[0].stat().st_uid == os.getuid(), "Diagnostics socket namespace/ownership unavailable")
         result["socket"] = str(sockets[0])
@@ -848,7 +859,7 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
         expected_session = target.process.pid if sys.platform == "linux" else parent_identity["session_id"]
         m.require(identity["session_id"] == expected_session, "Wrong target session")
         m.require(identity["uid"] == parent_identity["uid"], "Same-user diagnostics attachment required")
-        evidence["preflight"].update(preflight(root, environment, identity))
+        evidence["preflight"].update(preflight(root, environment, identity, target=target))
         process_document = {"schema_version": 1, "kind": "verified-process", "identity": identity,
                             "profiling_replay": True, "hypothesis": hypothesis, "environment": environment}
         m.write_json(root / "verified-process.json", process_document)

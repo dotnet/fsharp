@@ -457,6 +457,30 @@ class ExperimentTests(ExperimentStateCases, unittest.TestCase):
                     with self.assertRaises(ValueError):
                         e.verify_compatibility_output(text, expected)
 
+    def test_compact_compatibility_captures_are_independently_rechecked(self):
+        from test_memory import improvement
+
+        for problem in (None, "inventory", "status", "exit", "malformed"):
+            with self.subTest(problem=problem), tempfile.TemporaryDirectory() as directory:
+                attempt = improvement()
+                checks = attempt["correctness"]
+                result = next(r for r in checks["results"] if r["category"] == "compatibility")
+                evidence = result["compatibility"]
+                evidence["commands"] = [dict(command) for command in evidence["commands"]]
+                for index, command in enumerate(evidence["commands"]):
+                    path = Path(directory) / f"{index}.json"
+                    e.m.write_json(path, {"status": "blocked_collection" if problem == "status" else "collected",
+                                          "exit_status": 17 if problem == "exit" else 0})
+                    if problem == "malformed":
+                        path.write_text("{")
+                    command["capture"] = e.m.file_record(path)
+                    if problem != "inventory":
+                        evidence["files"].append(command["capture"])
+                result["execution"] = e.execution_signature(result)
+                with self.assertRaises(ValueError) if problem else nullcontext():
+                    e.validate_correctness(checks, attempt["fingerprints"]["candidate"],
+                                           attempt["fingerprints"]["policy"], current=True)
+
     def test_compatibility_pin_resolves_frozen_msbuild_sdk(self):
         dotnet = shutil.which("dotnet")
         if dotnet is None:

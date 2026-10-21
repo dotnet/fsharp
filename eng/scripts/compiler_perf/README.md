@@ -1168,6 +1168,10 @@ is included in the actual mount-denial inventory; it is not shared `/tmp`.
 This keeps Unix diagnostics socket names within the kernel path bound. Standalone
 collector callers must likewise use a sufficiently short target scratch/output
 path; a missing socket remains blocked collection, never a host fallback.
+For a freshly launched owned Linux target, preflight waits up to 30 seconds for
+CLR socket creation within the existing collection deadline, checking its full
+identity, liveness and output budget on each poll. Existing sockets still require
+the same namespace/type/owner checks; denial or target exit is not retried.
 
 Process identity includes PID, creation time, full argument array, executable
 hash, parent, session, owner and PID namespace. Windows uses CIM plus the owned

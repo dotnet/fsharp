@@ -19,6 +19,7 @@ import unittest
 from unittest import mock
 
 import test_workflow_agent as fixtures
+import test_trace_adapter
 import agent_bridge as bridge
 import workflow as w
 import runtime
@@ -140,18 +141,51 @@ class RuntimeTests(unittest.TestCase):
         with mock.patch.object(bridge, "PORT", port):
             self.assertFalse(asyncio.run(runtime.probe_service("a" * 64)))
 
+    @unittest.skipUnless(sys.platform == "linux" and os.environ.get("COMPILER_PERF_LIVE") == "1",
+                         "set COMPILER_PERF_LIVE=1 for actual Linux collector IPC")
     def test_profile_ipc_scratch_is_protected_separate_and_removed(self):
-        with self.ready() as (_, controller, _, _):
+        """Real collector/CLR/tools; only compiler workload schema and binlog timings are synthetic."""
+        with self.discovery() as (_, controller, _, _):
             adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            builder = test_trace_adapter.TraceAdapterTests()
+            builder.work = controller.root / "child-build"
+            builder.work.mkdir()
+            child = builder.build_child("net8.0")
+            response, output = controller.root / "replay.rsp", controller.root / "output.dll"
+            response.write_text(f"{controller.root / 'child.pid'}\n{output}\n")
+            compiler = {"files": {"fsc.dll": w.m.file_record(child),
+                "fsc.runtimeconfig.json": w.m.file_record(child.with_suffix(".runtimeconfig.json"))}}
+            workload = {"sources": [w.m.file_record(test_trace_adapter.FIXTURE)], "generated": [],
+                        "outputs": [str(output)], "assembly_output": str(output),
+                        "checkout": str(controller.root), "cwd": str(controller.root),
+                        "response_file": w.m.file_record(response)}
+            manifest = {"owned_root": str(controller.root), "baseline_compiler": compiler,
+                        "invariants": {"workload": workload, "toolchain": {
+                            "dotnet": w.m.file_record(os.environ["COMPILER_PERF_DOTNET"])}}}
+            inputs = [*compiler["files"].values(), workload["response_file"], *workload["sources"]]
+            timing_root = controller.root / "synthetic-timings"
+            timing_root.mkdir()
+            timings = fixtures.artifact_profile(timing_root)["timings"]
+            controller.session.update(phase="ready", ready_at=controller.now().isoformat())
             controller.start_active()
-            with mock.patch.object(w.c, "collect_profile", wraps=w.c.collect_profile) as collect:
+            with mock.patch.object(controller, "frozen_manifest", return_value=manifest), \
+                    mock.patch.object(w.c, "frozen_inputs", return_value=inputs), \
+                    mock.patch.object(w.c, "diagnostic_timings", return_value=timings), \
+                    mock.patch.object(w.c, "collect_profile", wraps=w.c.collect_profile) as collect:
                 controller.profile()
+            self.assertEqual(controller.session["phase"], "awaiting_decision",
+                             w.c.read_bounded_json(controller.root / "private/profile/profile-summary.json"))
             scratch = collect.call_args.kwargs["ipc_root"]
             self.assertEqual(scratch.parent, controller.root.parent / "ipc")
             self.assertIn(scratch.parent, adapter.protected)
             self.assertFalse(scratch.exists())
             self.assertFalse(scratch.is_relative_to(controller.root / "private"))
-            self.assertEqual(controller.session["phase"], "awaiting_decision")
+            evidence = w.c.read_bounded_json(controller.session["profile"]["path"])
+            self.assertEqual(evidence["status"], "collected")
+            self.assertEqual(Path(evidence["preflight"]["socket"]).parent, scratch / "tmp")
+            self.assertGreater(evidence["trace"]["cpu_sample_weight"], 0)
+            self.assertTrue(evidence["counters"]["observations"])
+            self.assertFalse((controller.root / "measurement.lock").exists())
 
     def test_sealed_record_reads_serialize_with_background_checkpoints(self):
         with self.discovery() as (_, controller, _, _):

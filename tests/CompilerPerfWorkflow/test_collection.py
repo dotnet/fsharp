@@ -846,6 +846,46 @@ class CollectionTests(unittest.TestCase):
                 with self.subTest(key=key), self.assertRaises(ValueError):
                     c.preflight(directory, dict(env, **{key: value}))
 
+    @unittest.skipUnless(sys.platform == "linux", "Linux diagnostics socket startup")
+    def test_owned_diagnostics_startup_wait_is_bounded_and_identity_checked(self):
+        for problem in (None, "timeout", "duration", "late-socket", "exit", "identity", "permission", "socket"):
+            with self.subTest(problem=problem), tempfile.TemporaryDirectory() as directory:
+                environment = c.target_environment(Path(directory))
+                identity = dict(profile()["process"]["start"], uid=str(os.getuid()),
+                                namespace=os.readlink("/proc/self/ns/pid"))
+                target = mock.Mock(start=0)
+                target.process.pid = identity["pid"]
+                target.process.poll.return_value = 0 if problem == "exit" else None
+                observed = dict(identity, start_time="0") if problem == "identity" else identity
+                endpoint = mock.Mock()
+                endpoint.is_socket.return_value = problem != "socket"
+                endpoint.stat.return_value.st_uid = os.getuid()
+                if problem == "permission":
+                    endpoint.stat.side_effect = PermissionError("fixture socket denied")
+                clock = [0]
+                def sleep(seconds):
+                    clock[0] += 30 if problem == "late-socket" else seconds
+                def sockets(*_):
+                    return [] if clock[0] == 0 or problem in ("timeout", "duration") else [endpoint]
+                with mock.patch.object(c, "snapshot_process", return_value=observed) as snapshot, \
+                        mock.patch.object(Path, "glob", side_effect=sockets), \
+                        mock.patch.object(c.time, "monotonic", side_effect=lambda: clock[0]), \
+                        mock.patch.object(c.time, "sleep", side_effect=sleep), \
+                        mock.patch.dict(c.LIMITS, duration_seconds=.1 if problem == "duration" else 180):
+                    if problem is None:
+                        c.preflight(directory, environment, identity, target=target)
+                        self.assertGreater(snapshot.call_count, 1)
+                        self.assertEqual(clock[0], .05)
+                    else:
+                        with self.assertRaisesRegex((ValueError, PermissionError),
+                                {"timeout": "startup timeout", "duration": "startup timeout",
+                                 "late-socket": "startup timeout",
+                                 "exit": "exited", "identity": "identity_mismatch",
+                                 "permission": "denied", "socket": "socket namespace"}[problem]):
+                            c.preflight(directory, environment, identity, target=target)
+                    self.assertLessEqual(clock[0], .15 if problem == "duration" else 30.1)
+                    target.check.assert_called()
+
     def test_collection_does_not_remove_another_collectors_lock(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

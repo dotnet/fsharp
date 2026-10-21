@@ -17,16 +17,21 @@ public static class TraceChild
 
     public static void Main(string[] args)
     {
+        bool replay = args.Length == 1 && args[0].StartsWith("@");
+        if (replay)
+            args = File.ReadAllLines(args[0].Substring(1));
         File.WriteAllText(args[0], Environment.ProcessId.ToString());
         var timer = Stopwatch.StartNew();
         int seed = 1;
-        while (timer.ElapsedMilliseconds < 2000)
+        while (timer.ElapsedMilliseconds < (replay ? 4000 : 2000))
         {
             for (int i = 0; i < 1000; i++)
                 seed = AllocateAndCompute(seed);
             GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
         }
         GC.KeepAlive(seed);
+        if (replay)
+            File.WriteAllText(args[1], "Controlled public replay, not compiler output");
         if (args.Length > 1 && args[1] == "--wait")
             Console.ReadLine();
     }
