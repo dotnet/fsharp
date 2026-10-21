@@ -635,7 +635,11 @@ def prepare_compatibility(root, manifest, compiler, isolation, environment, chec
             verify_candidate(root)
             result = isolation.command([dotnet, *suffix], project, environment, root,
                                        check["id"] + "-" + part)
-            commands.append(result)
+            capture = root / (uuid.uuid4().hex + "-compatibility.json")
+            m.write_json(capture, result)
+            reference = m.file_record(capture)
+            commands.append({"status": result["status"], "exit_status": result["exit_status"], "capture": reference})
+            files.append(reference)
             m.write_json(root / (check["id"] + "-preparation.json"), commands)
             require(result["status"] == "collected" and result["exit_status"] == 0,
                     "Required compatibility preparation failed")
@@ -729,6 +733,12 @@ def validate_correctness(checks, candidate, policy, *, current=False, passed=Tru
                         all(r["status"] == "collected" and r["exit_status"] == 0
                             for r in evidence["commands"]), "Incomplete compatibility execution")
                 m.verify_files(evidence["files"])
+                for command in evidence["commands"]:
+                    if "capture" in command:
+                        require(command["capture"] in evidence["files"], "Missing compatibility capture")
+                        captured = c.read_bounded_json(command["capture"]["path"])
+                        require(all(captured[k] == command[k] for k in ("status", "exit_status")),
+                                "Compatibility capture differs")
                 verify_compatibility_output(result["stdout"], evidence["expected"])
             require(isinstance(result.get("execution"), str) and
                     hmac.compare_digest(result["execution"], execution_signature(result)),

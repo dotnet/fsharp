@@ -63,6 +63,14 @@ class RuntimeTests(unittest.TestCase):
     @contextmanager
     def serving(self, adapter, launch, *, expected_error=None):
         controller, errors = adapter.controller, []
+
+        class SynchronousSession(w.ActiveSession):
+            # Synthetic workers run inline on service threads, not in owned processes.
+            def __enter__(self):
+                self.start = self.last = self.clock()
+                self.poll()
+                return self
+
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -74,7 +82,8 @@ class RuntimeTests(unittest.TestCase):
                     runtime.serve(adapter, sockets=[listener], launch=launch, identify=fixtures.identify)
                 except BaseException as error:
                     errors.append(error)
-            with mock.patch.object(bridge, "PORT", port), mock.patch.object(adapter, "inspect_agent") as probe:
+            with mock.patch.object(bridge, "PORT", port), mock.patch.object(adapter, "inspect_agent") as probe, \
+                    mock.patch.object(w, "ActiveSession", SynchronousSession):
                 thread = threading.Thread(target=run)
                 thread.start()
                 try:
@@ -130,6 +139,19 @@ class RuntimeTests(unittest.TestCase):
             port = listener.getsockname()[1]
         with mock.patch.object(bridge, "PORT", port):
             self.assertFalse(asyncio.run(runtime.probe_service("a" * 64)))
+
+    def test_profile_ipc_scratch_is_protected_separate_and_removed(self):
+        with self.ready() as (_, controller, _, _):
+            adapter = runtime.Runtime(controller, controller.root.parent / "visible")
+            controller.start_active()
+            with mock.patch.object(w.c, "collect_profile", wraps=w.c.collect_profile) as collect:
+                controller.profile()
+            scratch = collect.call_args.kwargs["ipc_root"]
+            self.assertEqual(scratch.parent, controller.root.parent / "ipc")
+            self.assertIn(scratch.parent, adapter.protected)
+            self.assertFalse(scratch.exists())
+            self.assertFalse(scratch.is_relative_to(controller.root / "private"))
+            self.assertEqual(controller.session["phase"], "awaiting_decision")
 
     def test_sealed_record_reads_serialize_with_background_checkpoints(self):
         with self.discovery() as (_, controller, _, _):
@@ -493,7 +515,7 @@ class RuntimeTests(unittest.TestCase):
                     if mode != "expired" and elapsed[0] >= 60 and worker.code is None:
                         wait(0)
 
-                with mock.patch.object(bridge.time, "sleep", side_effect=advance):
+                with mock.patch.object(bridge, "time", SimpleNamespace(sleep=advance)):
                     stopped = client.shutdown("Owned SIGTERM")
                 self.assertEqual(stopped, mode != "expired")
                 self.assertEqual(controller.load("clocks")["finalization"]["deadline"], deadline)
@@ -618,7 +640,8 @@ class RuntimeTests(unittest.TestCase):
                                    "apiProxy": {"enabled": True, "enableTokenSteering": True}})
             proxy = {"Id": "b" * 64, "State": {"Running": True},
                      "Config": {"Image": "ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55"}}
-            for case in ("valid", "denied", "incomplete", "custody-alias"):
+            for case, uid in ((case, uid) for case in ("valid", "denied", "incomplete", "custody-alias")
+                              for uid in (0, 1001)):
                 resolved = list(sources)
                 if case == "custody-alias":
                     resolved[-1] = "/var/lib/compiler-perf/key"
@@ -628,8 +651,9 @@ class RuntimeTests(unittest.TestCase):
                 results = [subprocess.CompletedProcess([], 0, w.mem.encoded([value]), b""),
                            subprocess.CompletedProcess([], 1 if case == "denied" else 0, data, b"denied"),
                            subprocess.CompletedProcess([], 0, w.mem.encoded([proxy]), b"")]
-                with self.subTest(case=case), mock.patch.dict(os.environ, {
+                with self.subTest(case=case, uid=uid), mock.patch.dict(os.environ, {
                         "RUNNER_TEMP": str(config.parents[1]), "GH_TOKEN": "must-not-reach-sudo"}), \
+                        mock.patch.object(runtime.os, "geteuid", return_value=uid, create=True), \
                         mock.patch.object(runtime.subprocess, "run", side_effect=results) as run:
                     if case == "valid":
                         adapter.inspect_agent()
@@ -639,9 +663,8 @@ class RuntimeTests(unittest.TestCase):
                             adapter.inspect_agent()
                     self.assertGreaterEqual(len(run.call_args_list), 2)
                     command = run.call_args_list[1]
-                    self.assertEqual(command.args[0], [
-                        "/usr/bin/sudo", "-n", "--", "/usr/bin/readlink",
-                        "--canonicalize-existing", "--zero", "--", *sources])
+                    metadata = ["/usr/bin/readlink", "--canonicalize-existing", "--zero", "--", *sources]
+                    self.assertEqual(command.args[0], metadata if uid == 0 else ["/usr/bin/sudo", "-n", "--", *metadata])
                     self.assertEqual(command.kwargs["timeout"], 15)
                     self.assertNotIn("GH_TOKEN", command.kwargs["env"])
 
@@ -887,6 +910,31 @@ class RuntimeTests(unittest.TestCase):
                     str(controller.repository), "--journal", str(journal.journal.repository),
                     "--workspace", str(workspace)]), 0)
             self.assertEqual(layout.call_args.args[2], "frozen-agent-home")
+
+    def test_service_sigterm_unwinds_and_restores_the_original_handler(self):
+        import transport
+        with self.ready() as (_, controller, api, journal):
+            controller.save("runtime", {"agent_home": "frozen-agent-home"})
+            previous = runtime.signal.signal(runtime.signal.SIGTERM, mock.Mock())
+            expected = runtime.signal.getsignal(runtime.signal.SIGTERM)
+            try:
+                with mock.patch.object(runtime, "sys", SimpleNamespace(
+                        platform="linux", prefix=sys.prefix, flags=SimpleNamespace(isolated=1))), \
+                        mock.patch.object(runtime, "validate_layout"), \
+                        mock.patch.object(w, "Controller", return_value=controller), \
+                        mock.patch.object(w, "GitHub", return_value=api), \
+                        mock.patch.object(transport, "JournalTransport", return_value=journal), \
+                        mock.patch.object(runtime, "serve", side_effect=lambda _: runtime.signal.raise_signal(
+                            runtime.signal.SIGTERM)), \
+                        mock.patch.dict(os.environ, {"RUNNER_TEMP": str(controller.root.parent)}), \
+                        mock.patch("sys.stdout", new_callable=io.StringIO):
+                    self.assertEqual(runtime.main(["serve", "--root", str(controller.root), "--repository",
+                        str(controller.repository), "--journal", str(journal.journal.repository),
+                        "--workspace", str(controller.root.parent / "visible")]), 130)
+                self.assertIs(runtime.signal.getsignal(runtime.signal.SIGTERM), expected)
+                expected.assert_not_called()
+            finally:
+                runtime.signal.signal(runtime.signal.SIGTERM, previous)
 
     def test_worker_preserves_host_identity_without_broadening_candidate_environment(self):
         script = (

@@ -395,6 +395,7 @@ class AgentTests(unittest.TestCase):
                 paths = []
 
                 def collect(manifest, compiler, destination, **request):
+                    self.assertEqual(request.pop("ipc_root").parent, controller.root.parent / "ipc")
                     self.assertEqual(request, {"dump_reason": reason, "hypothesis": "Heap grows across full GCs"})
                     destination.mkdir()
                     evidence = artifact_profile(destination)

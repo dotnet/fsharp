@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 import time
 import unittest
 import uuid
@@ -189,7 +190,9 @@ class TraceAdapterTests(unittest.TestCase):
         collection = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(collection)
         child = self.build_child("net8.0")
-        environment = collection.target_environment(self.work)
+        ipc = tempfile.TemporaryDirectory(prefix="compiler-perf-ipc-")
+        self.addCleanup(ipc.cleanup)
+        environment = collection.target_environment(Path(ipc.name))
         environment["DOTNET_DefaultDiagnosticPortSuspend"] = "0"
         dotnet = Path(shutil.which("dotnet"))
         pid_file = self.work / "dump-child.pid"

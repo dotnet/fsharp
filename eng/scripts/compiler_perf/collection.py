@@ -801,7 +801,7 @@ def diagnostic_timings(manifest, compiler, root, dotnet):
     return result
 
 
-def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis=None):
+def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis=None, *, ipc_root=None):
     root = private_directory(output_dir)
     evidence = {"schema_version": 1, "kind": "compiler-profile", "profiler_attached": True,
                 "acceptance_eligible": False, "commands": [], "limits": dict(LIMITS),
@@ -828,7 +828,7 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
         runtime = m.read_json(compiler["files"]["fsc.runtimeconfig.json"]["path"])["runtimeOptions"]["framework"]["version"]
         evidence["expected_runtime_major"] = int(runtime.split(".")[0])
         phase = "preflight"
-        environment = target_environment(root)
+        environment = target_environment(root if ipc_root is None else ipc_root)
         evidence["preflight"] = preflight(root, environment)
         tools = verify_tools(dotnet, root)
         evidence["tools"] = tools

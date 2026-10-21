@@ -16,7 +16,7 @@ require = mem.require
 def discovery_argv(command):
     separator = command.index("--")
     selectors = command[separator + 1:]
-    return [*command[:command.index("--results-directory")], "--list-tests", "json", "--",
+    return [*command[:separator], "--list-tests", "json", "--",
             *[arg for index, arg in enumerate(selectors)
               if arg not in ("--minimum-expected-tests", "--report-xunit", "--report-xunit-filename") and
               (index == 0 or selectors[index - 1] not in ("--minimum-expected-tests", "--report-xunit-filename"))]]

@@ -80,6 +80,15 @@ class Repository:
 
 
 class ExperimentTests(ExperimentStateCases, unittest.TestCase):
+    def test_discovery_preserves_writable_results_directory_and_selection(self):
+        command = ["dotnet", "test", "--project", e.COMPONENT, "-f", "net11.0", "--no-build",
+                   "--results-directory", "/capture/results", "--", "--culture", "en-US",
+                   "--filter-method", "*.regression", "--minimum-expected-tests", "1",
+                   "--fail-skips", "on", "--report-xunit", "--report-xunit-filename", "result.xml"]
+        self.assertEqual(e.runner.discovery_argv(command), [
+            *command[:command.index("--")], "--list-tests", "json", "--", "--culture", "en-US",
+            "--filter-method", "*.regression", "--fail-skips", "on"])
+
     def test_runner_capture_bound_is_not_silent_truncation(self):
         from test_memory import captured_command
 
@@ -504,6 +513,12 @@ class ExperimentTests(ExperimentStateCases, unittest.TestCase):
                     result = e.prepare_compatibility(owned, manifest, manifest["baseline_compiler"],
                                                      mock.Mock(command=command), environment, check, [])
                     self.assertEqual(len(result["commands"]), 4)
+                    for captured in result["commands"]:
+                        self.assertEqual(set(captured), {"status", "exit_status", "capture"})
+                        self.assertIn(captured["capture"], result["files"])
+                        e.m.verify_files([captured["capture"]])
+                        original = e.c.read_bounded_json(captured["capture"]["path"])
+                        self.assertEqual(original["exit_status"], captured["exit_status"])
                     self.assertFalse((tree / e.COMPATIBILITY / "global.json").exists())
                     e.m.verify_files(pins)
                     e.verify_candidate(owned)
@@ -729,7 +744,7 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                     ordinal = 0
 
                     def __init__(self, tree, readonly=(), writable=(), sealed=()):
-                        super().__init__(tree, [*readonly, artifacts / "tool.py"], writable, sealed)
+                        super().__init__(tree, [*readonly, Path(sys.prefix), artifacts / "tool.py"], writable, sealed)
 
                     def command(self, args, cwd, environment, receipts, phase, timeout=1800):
                         # Only toolchain executables are substituted; isolation, receipts,

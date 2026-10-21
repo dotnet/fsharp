@@ -543,7 +543,9 @@ cannot all be traversed by the controller user. Readiness therefore resolves
 the complete Docker-reported bind-source inventory with
 `/usr/bin/sudo -n -- /usr/bin/readlink --canonicalize-existing --zero -- ...`,
 using a credential-free environment, a 15-second bound and checked NUL-delimited
-results. This reads path metadata only, does not change permissions, and still
+results. An already-root controller executes the same fixed `readlink` probe
+directly; it does not require or install sudo. This reads path metadata only,
+does not change permissions, and still
 rejects canonical aliases into custody. Denied sudo, missing sources or malformed
 results block readiness; there is no lexical-path fallback.
 
@@ -591,6 +593,9 @@ or service arming if no container was verified, and records `observed: false`
 without inventing a container identity or claiming a confirmed engine exit.
 An owned finalizer launch/cleanup exception records `cleanup_failed`, stops the
 HTTP service and preserves outstanding work instead of leaving a serving receipt.
+The protected `serve` entry point converts re-raised SIGTERM into an owned unwind:
+Uvicorn's completed lifespan cleanup must not terminate the interpreter before the
+monitor records its final service state. The previous signal handler is restored.
 In-process sealed-record reads and writes are serialized across the HTTP,
 monitor and handoff threads; evidence-file custody checks remain unchanged.
 At actual authenticated readiness, admission checks the original job start
@@ -978,7 +983,10 @@ xUnit 3.2.2 are fixed. Outer `--output Detailed --no-ansi --no-progress` and
 `--list-tests json` precede `--`; xUnit `--culture en-US`, selectors and execution
 report flags follow it. `DOTNET_CLI_UI_LANGUAGE=en-US` pins outer messages.
 Discovery uses the same project/framework/selection but omits reports and
-`--minimum-expected-tests` (incompatible with discovery). It supplies an inventory,
+`--minimum-expected-tests` (incompatible with discovery). It preserves the explicit
+writable `--results-directory`: the pinned MTP host creates that directory even
+during discovery, and its default beside the assembly can be read-only.
+Discovery supplies an inventory,
 not completion. The pinned outer help exposes no JSON execution export; xUnit's
 CTRF and other exports are additional in-process reports, not outer-runner captures.
 
@@ -1027,7 +1035,10 @@ pack/build/runtime scenarios, pinning each SDK with `rollForward: disable` in th
 owned fixture directory. The generated pin preserves non-SDK sections of the frozen
 root `global.json`, including `msbuild-sdks`, so versionless Arcade/Helix imports
 keep their frozen package versions. It checks both SDK probes and the application's
-reported library/application SDK and compiler paths. A success banner or the presence of
+reported library/application SDK and compiler paths. Full compatibility command
+captures, including Linux namespace argv, stay in protected hash-bound files;
+the compact journal retains their statuses and references, not repeated captures.
+Fresh validation verifies those files and their status agreement. A success banner or the presence of
 .NET 9 in `--list-sdks` cannot substitute for historical compiler execution.
 On the pinned SDK, probe help before the `--` separator, and supply report
 basenames with a separate `--results-directory`. Selectors, per-application
@@ -1151,6 +1162,12 @@ profiler settings. It starts suspended using
 without resuming; `dotnet-counters` attaches and resumes the runtime. On Linux,
 both use the target's TMPDIR for the diagnostics socket. There is no PID-by-name
 selection, `sudo`, container privilege escalation, or cross-namespace fallback.
+The controller creates short-lived target scratch directories beneath its protected
+sibling `ipc` directory, separately from long profile/dump output paths. That root
+is included in the actual mount-denial inventory; it is not shared `/tmp`.
+This keeps Unix diagnostics socket names within the kernel path bound. Standalone
+collector callers must likewise use a sufficiently short target scratch/output
+path; a missing socket remains blocked collection, never a host fallback.
 
 Process identity includes PID, creation time, full argument array, executable
 hash, parent, session, owner and PID namespace. Windows uses CIM plus the owned

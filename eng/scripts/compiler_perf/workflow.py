@@ -524,8 +524,13 @@ class Controller:
                             owner.setdefault("evidence", []).append(record)
                         return record
 
-                c.collect_profile(manifest, manifest["baseline_compiler"], profile_root,
-                                  dump_reason=dump_reason, hypothesis=hypothesis)
+                ipc = self.root.parent / "ipc"
+                require(e.unredirected(ipc, missing_ok=True), "Redirected diagnostics IPC root")
+                if not ipc.exists():
+                    c.private_directory(ipc)
+                with tempfile.TemporaryDirectory(prefix="", dir=ipc) as scratch:
+                    c.collect_profile(manifest, manifest["baseline_compiler"], profile_root,
+                                      dump_reason=dump_reason, hypothesis=hypothesis, ipc_root=Path(scratch))
                 profile_path = profile_root / "evidence-manifest.json"
                 summary = c.analyze_profile(profile_path)
                 require(summary["status"] == "collected", summary.get("reason", "Diagnostic collection failed"))

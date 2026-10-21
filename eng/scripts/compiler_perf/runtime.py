@@ -94,7 +94,8 @@ class Runtime:
         self.controller, self.workspace = controller, Path(workspace).absolute()
         self.protected = [controller.root, controller.repository, controller.transport.journal.repository,
                           Path(__file__).resolve().parent, Path(sys.prefix).resolve(),
-                          controller.root.parent / "transport", controller.root.parent / "publisher"]
+                          controller.root.parent / "transport", controller.root.parent / "publisher",
+                          controller.root.parent / "ipc"]
 
     def setup(self, request, job_started_at, *, agent_home=None):
         controller = self.controller
@@ -181,8 +182,10 @@ class Runtime:
         require(sources and all(type(p) is str and PurePosixPath(p).is_absolute() for p in sources),
                 "Invalid AWF mount sources")
         # Stock sudo AWF creates root-only mount parents. Read metadata, not contents.
-        resolved = subprocess.run(["/usr/bin/sudo", "-n", "--", "/usr/bin/readlink",
-                                   "--canonicalize-existing", "--zero", "--", *sources],
+        metadata = ["/usr/bin/readlink", "--canonicalize-existing", "--zero", "--", *sources]
+        if not hasattr(os, "geteuid") or os.geteuid() != 0:
+            metadata = ["/usr/bin/sudo", "-n", "--", *metadata]
+        resolved = subprocess.run(metadata,
                                   capture_output=True, check=False, timeout=15, env=c.tool_environment())
         require(resolved.returncode == 0 and len(resolved.stdout) <= mem.LIMITS["file_bytes"],
                 "Denied AWF mount canonicalization")
@@ -584,7 +587,11 @@ def main(argv=None):
                 finally:
                     signal.signal(signal.SIGTERM, previous)
             elif args.command == "serve":
-                serve(adapter)
+                previous = signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+                try:
+                    serve(adapter)
+                finally:
+                    signal.signal(signal.SIGTERM, previous)
                 result = controller.status()
             elif args.command == "handoff":
                 require(args.engine_outcome is not None, "Handoff requires the trusted Actions engine outcome")
