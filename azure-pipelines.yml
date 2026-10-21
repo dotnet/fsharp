@@ -29,11 +29,11 @@ variables:
   # The future "product" gets developed in main, so should be main in main.
   # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
   - name: FSharpReleaseBranchName
-    value: release/10.0.4xx
+    value: main
   # VS Insertion branch name (NOT the same as F# branch)
   # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   - name: VSInsertionTargetBranchName
-    value: rel/d18.11-ltsc
+    value: main
   - name: _TeamName
     value: FSharp
   - name: TeamName
@@ -48,7 +48,6 @@ variables:
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
     value: "true"
-  - group: DotNet-FSharp-SDLValidation-Params
   - template: /eng/common/templates-official/variables/pool-providers.yml@self
 
 resources:
@@ -68,6 +67,7 @@ extends:
         enabled: true
       policheck:
         enabled: true
+        exclusionsFile: '$(Build.SourcesDirectory)/eng/policheck_exclusions.xml'
       sbom:
         enabled: false # VS SBOM is generated with other steps
         justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
@@ -218,23 +218,8 @@ extends:
         enableSymbolValidation: false
         # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
         enableSourceLinkValidation: false
-        # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
-        SDLValidationParameters:
-          enable: true
-          params: >-
-            -SourceToolsList @("policheck","credscan")
-            -ArtifactToolsList @("binskim")
-            -BinskimAdditionalRunConfigParams @("IgnorePdbLoadError < True","Recurse < True")
-            -TsaInstanceURL $(_TsaInstanceURL)
-            -TsaProjectName $(_TsaProjectName)
-            -TsaNotificationEmail $(_TsaNotificationEmail)
-            -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
-            -TsaBugAreaPath $(_TsaBugAreaPath)
-            -TsaIterationPath $(_TsaIterationPath)
-            -TsaRepositoryName "FSharp"
-            -TsaCodebaseName "FSharp-GitHub"
-            -TsaPublish $True
-            -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
+        # SDL validation (PoliCheck, CredScan, BinSkim) and TSA reporting are handled by the 1ES Pipeline
+        # Templates via the 'sdl:' block in the 'extends' section above; TSA config lives in eng/TSAConfig.gdntsa.
 
     #---------------------------------------------------------------------------------------------------------------------#
     #                                                   VS Insertion                                                      #
