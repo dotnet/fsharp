@@ -160,26 +160,15 @@ so the restriction does not require moving existing dnceng CI or enabling PR tri
 Local regression commands (no product build or DartLab access required):
 
 ```powershell
-pwsh -NoProfile -File .github\scripts\pr-validation.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\SetupPrValidation.Tests.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexGit.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexResults.Tests.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\ApexBootstrap.Tests.ps1
 ```
 
 The script tests use temporary local Git repositories and a mocked GitHub PR response.
 They cover merge identity, advancing main, current/older reviewed commits, head
 races, closed PRs and failure before checkout.
-The Git provisioning tests run offline with the installer boundary mocked. They
-cover missing initial PATH, independent Apex process setup, build/test child PATH
-inheritance, and provisioning failures without changing machine-wide PATH.
-Bootstrap tests use different main and PR commits and prove that main's preserved
-control scripts execute despite PR replacement files and a later main push.
 Result handoff tests cover copied TRX/attachments, missing results, and preserving
 the primary setup/build error when copying also fails.
-The PowerShell 7 tests run the Actions helper offline with a fake HTTP boundary.
-They cover command syntax, authorization of the original commenter (also on reruns),
-membership lookup with the repository token, the queued snapshot and PR feedback.
 
 After provisioning, use the Runs API's `previewRun` with the same repository
 ref/version, reviewed-commit parameters, `DD-CB-ReleaseVS` resource pin and confirmed
