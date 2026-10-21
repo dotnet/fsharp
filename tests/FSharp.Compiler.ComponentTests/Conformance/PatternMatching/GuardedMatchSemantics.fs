@@ -2,6 +2,7 @@
 
 namespace Conformance.PatternMatching
 
+open System
 open System.IO
 open System.Reflection.Metadata
 open Xunit
@@ -161,6 +162,33 @@ module GuardedMatchSemantics =
         |> (if (kind = "int" || kind = "argument") && optimize then
                 emittedILExcept "Context" >> fun size -> Assert.True(size < 1500, $"Shared tuple3 match emitted {size} IL bytes")
             else ignore)
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20632 - shared guards retain caller sequence points`` optimize =
+        template "GuardPoints.fs" []
+        |> asLibrary
+        |> withOptimization optimize
+        |> withOptions ["--debug:embedded"]
+        |> compile
+        |> shouldSucceed
+        |> withPeReader (fun pe ->
+            let entry =
+                pe.ReadDebugDirectory()
+                |> Seq.find (fun entry -> entry.Type = System.Reflection.PortableExecutable.DebugDirectoryEntryType.EmbeddedPortablePdb)
+            use provider = pe.ReadEmbeddedPortablePdbDebugDirectoryData entry
+            let metadata = pe.GetMetadataReader()
+            let method =
+                metadata.MethodDefinitions
+                |> Seq.find (fun handle -> metadata.GetString(metadata.GetMethodDefinition(handle).Name) = "run")
+            let points = provider.GetMetadataReader().GetMethodDebugInformation(method.ToDebugInformationHandle()).GetSequencePoints() |> Seq.toArray
+            File.ReadAllLines(fixture "GuardPoints.fs")
+            |> Array.iteri (fun index line ->
+                if line.IndexOf(" when guard ", StringComparison.Ordinal) >= 0 then
+                    let startColumn = line.IndexOf("guard ", StringComparison.Ordinal) + 1
+                    let endColumn = line.IndexOf(" -> ", StringComparison.Ordinal) + 1
+                    Assert.Contains(points, fun point ->
+                        not point.IsHidden && point.StartLine = index + 1 && point.EndLine = index + 1
+                        && point.StartColumn = startColumn && point.EndColumn = endColumn)))
 
     [<TheoryForNETCOREAPP; MemberData(nameof runtimeResultCases)>]
     let ``Issue 20632 - runtime construction keeps returned functions and diagnostics`` kind optimize realSignature =

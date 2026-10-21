@@ -1275,7 +1275,7 @@ let private CompilePatternBasic
                     let free = (freeInExpr (CollectLocalsWithStackGuard()) whenExpr).FreeLocals
                     let vs = vs |> List.filter (fun v -> free.Contains v)
                     let guard = bindSharedFunction false whenExpr.Range vs (whenExpr, g.bool_ty)
-                    cell.Value <- callSharedFunction whenExpr.Range vs guard
+                    cell.Value <- mkDebugPoint whenExpr.Range (callSharedFunction whenExpr.Range vs guard)
                 Expr.Link cell
 
     // Reference identities make key collisions conservative: distinct nodes never fuse.
