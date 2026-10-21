@@ -1155,10 +1155,11 @@ let private CompilePatternBasic
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
             let tg = TTarget([], throwExpr(), None)
-            let _ = matchBuilder.AddTarget tg
+            let targetIndex = matchBuilder.AddTarget tg
             let clause = MatchClause(TPat_wild mMatch, None, tg, mMatch)
-            firstIncompleteMatchClauseWithThrowExpr <- Some clause
-            clause
+            let result = clause, targetIndex
+            firstIncompleteMatchClauseWithThrowExpr <- Some result
+            result
 
     // Helpers to get the variables bound at a target.
     // We conceptually add a dummy clause that will always succeed with a "throw".
@@ -1166,13 +1167,9 @@ let private CompilePatternBasic
     let nClauses = clausesA.Length
     let GetClause i refuted =
         if i < nClauses then
-            clausesA[i]
+            clausesA[i], i
         elif i = nClauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
-
-    let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
-
-    let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
 
     // Different uses of parameterized active patterns have different identities as far as paths are concerned.
     // Here we generate unique numbers that are completely different to any stamp by using negative numbers.
@@ -1314,14 +1311,15 @@ let private CompilePatternBasic
                     finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
-        let vs2 = GetValsBoundByClause i refuted
+        let clause, targetIndex = GetClause i refuted
+        let vs2 = clause.BoundVals
         let es2 =
             vs2 |> List.map (fun v ->
                 match valMap.TryFind v with
                 | None -> mkUnit g v.Range
                 | Some res -> res)
-        let successTree = TDSuccess(es2, i)
-        match GetWhenGuardOfClause i refuted with
+        let successTree = TDSuccess(es2, targetIndex)
+        match clause.GuardExpr with
         | Some whenExpr ->
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
