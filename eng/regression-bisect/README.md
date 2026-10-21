@@ -82,6 +82,8 @@ After historical descendants stop, the supervisor reclaims only their owned scra
 Ownership changes do not follow SDK links or include protected helper, control, or storage directories.
 Historical commands own their isolated NuGet cache root, including newly created HTTP and plugin caches.
 The supervisor reclaims these caches after command completion or failure.
+After historical processes stop, the supervisor removes their single-link FIFOs and sockets from owned scratch.
+Prelaunch IPC nodes, foreign-owned nodes, hard links, and other nonregular nodes still fail validation.
 Worker file limits permit the source bootstrap's 6,500 descriptors and remain bounded at that value.
 The broker retains its 1,024-descriptor limit.
 Docker inspection and the physical inspect canary verify the worker limit.

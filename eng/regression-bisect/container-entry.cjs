@@ -216,6 +216,12 @@ async function historicalDirectory(directory, uid = 1000) {
     const visit = async file => {
         const stat = await fs.lstat(file);
         if (stat.isSymbolicLink()) return;
+        if (uid === 0 && stat.uid === 1000 && stat.nlink === 1 &&
+            !stat.isDirectory() && !stat.isFile() && (stat.isFIFO() || stat.isSocket())) {
+            // Runtime IPC nodes can outlive the terminated historical processes.
+            await fs.unlink(file);
+            return;
+        }
         requireValue((stat.isDirectory() || stat.isFile() && stat.nlink === 1) && [0, 1000].includes(stat.uid),
             `historical scratch contains nonregular or foreign-owned files: ${file} (uid ${stat.uid}, mode ${stat.mode}, links ${stat.nlink})`);
         if (stat.uid !== 0) await fs.chown(file, 0, 0);

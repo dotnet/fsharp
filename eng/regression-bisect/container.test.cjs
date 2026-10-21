@@ -987,6 +987,77 @@ test(`historical NuGet cache root permits new sibling caches and returns ownersh
     if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
 });
 
+for (const fault of ["fifo", "socket", "fifo-failed", "socket-failed", "foreign-uid", "root-owned",
+    "hard-linked", "device", "before-launch", "unlink-denied"])
+test(`historical IPC cleanup preserves the ownership boundary (${fault})`, async t => {
+    const root = "/scratch/work/revision/source", temp = `${root}/tmp`;
+    const kind = fault.startsWith("socket") ? "socket" : fault === "device" ? "device" : "fifo";
+    const endpoint = `${temp}/${kind === "socket" ? "dotnet-diagnostic-2436-socket" : "clr-debug-pipe-2436-in"}`;
+    const entries = new Map([root, temp].map(file =>
+        [file, { uid: 0, mode: 0o700, kind: "directory", nlink: 1 }]));
+    const ipc = { uid: fault === "foreign-uid" ? 2000 : fault === "root-owned" ? 0 : 1000,
+        mode: kind === "fifo" ? 0o10700 : kind === "socket" ? 0o140600 : 0o20600,
+        kind, nlink: fault === "hard-linked" ? 2 : 1 };
+    const events = [];
+    let launched = false, unlinked = false;
+    const accepted = ["fifo", "socket", "fifo-failed", "socket-failed"].includes(fault);
+    const failHistorical = fault.endsWith("-failed");
+    const fixture = await physicalFixture(t, {
+        failHistorical,
+        onHistorical: async () => {
+            launched = true;
+            entries.set(endpoint, ipc);
+            events.push("historical");
+        },
+        runUnit: async (unit, deps) => {
+            if (fault === "before-launch") entries.set(endpoint, ipc);
+            t.mock.method(fs, "realpath", async file => file);
+            t.mock.method(fs, "lstat", async file => {
+                const row = entries.get(file) ?? { uid: 0, mode: 0o755, kind: "directory", nlink: 1 };
+                return { ...row, isDirectory: () => row.kind === "directory", isFile: () => row.kind === "file",
+                    isSymbolicLink: () => false, isFIFO: () => row.kind === "fifo", isSocket: () => row.kind === "socket" };
+            });
+            t.mock.method(fs, "readdir", async directory => {
+                if (directory === "/proc") { events.push("settled"); return []; }
+                assert.equal(entries.get(directory).uid, 0, "reclaim directories before enumerating");
+                return [...entries.keys()].filter(file => path.posix.dirname(file) === directory).map(file => path.posix.basename(file));
+            });
+            t.mock.method(fs, "chown", async (file, uid, gid) => {
+                assert.equal(gid, uid);
+                assert.notEqual(file, endpoint, "never reclaim an IPC node as a regular artifact");
+                entries.get(file).uid = uid;
+            });
+            t.mock.method(fs, "chmod", async (file, mode) => {
+                if (entries.has(file)) entries.get(file).mode = mode;
+            });
+            t.mock.method(fs, "unlink", async file => {
+                assert.equal(file, endpoint, "delete only the observed IPC node");
+                assert.equal(events.at(-1), "settled", "terminate historical processes before IPC cleanup");
+                assert.equal(launched, true, "never remove prelaunch IPC");
+                assert.equal(ipc.uid, 1000);
+                assert.equal(ipc.nlink, 1);
+                if (fault === "unlink-denied") throw Object.assign(new Error("controlled IPC unlink denied"), { code: "EACCES" });
+                assert.equal(accepted, true, "never delete foreign, linked, or device nodes");
+                entries.delete(file);
+                unlinked = true;
+            });
+            await deps.workspaceDependencies.execute("/bin/bash", ["build.sh"], {
+                cwd: root, env: { HOME: root, TEMP: temp },
+            });
+            return { status: "tested", outcome: { schemaVersion: 1, outcome: "pass" } };
+        },
+    });
+    assert.equal(launched, fault !== "before-launch");
+    assert.equal(unlinked, accepted);
+    assert.equal(entries.has(endpoint), !accepted);
+    assert.equal(fixture.result.result.status, accepted && !failHistorical ? "tested" : "untestable",
+        fixture.result.result.error?.message);
+    if (accepted) assert.ok([...entries.values()].every(row => row.uid === 0));
+    if (failHistorical) assert.match(fixture.result.result.error.message, /controlled historical command failure/);
+    if (!accepted) assert.match(fixture.result.result.error.message,
+        fault === "unlink-denied" ? /controlled IPC unlink denied/ : /nonregular or foreign-owned/);
+});
+
 for (const fault of [null, "no-kill", "wrong-signal", "unchanged-counter", "decreased-counter", "invalid-counter", "no-limit-oom",
     "unlimited-memory", "swap", "group"])
 test(`memory canary supervises bounded child allocation and retains kernel events (fault ${fault})`, async () => {
