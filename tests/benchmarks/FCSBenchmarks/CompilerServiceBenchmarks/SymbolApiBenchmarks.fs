@@ -1,5 +1,7 @@
 namespace FSharp.Compiler.Benchmarks
 
+open System
+open System.Diagnostics
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
@@ -120,3 +122,56 @@ type SymbolApiBenchmarks() =
         for _ in 1 .. 5 do
             acc <- acc + this.Walk()
         acc
+
+/// Checks a real project from a captured fsc response file, then walks every implementation file through
+/// the symbol API, like a compiler back end does. The walk's time and allocation are printed separately
+/// from the check's.
+///
+/// Run from Program.fs: `walk-project <iterations> <response-file> <project-dir>`.
+module WalkProjectProbe =
+
+    let run iterations responseFile projectDir =
+        if iterations <= 0 then invalidArg (nameof iterations) "The sample count must be positive."
+        Environment.CurrentDirectory <- projectDir
+        let options = readProjectOptions responseFile projectDir
+        let checker = FSharpChecker.Create(projectCacheSize = 1, keepAssemblyContents = true)
+        for i in 1 .. iterations do
+            if i > 1 then checker.InvalidateConfiguration options
+            let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
+            let errors = results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then failwith $"Project check failed: %A{errors}"
+            forceGC ()
+            let before = GC.GetTotalAllocatedBytes true
+            let sw = Stopwatch.StartNew()
+            let mutable acc = 0
+            let mutable skipped = 0
+            for implFile in results.AssemblyContents.ImplementationFiles do
+                for decl in implFile.Declarations do
+                    // The expression converter can fail on code the compiler accepted, for instance witness
+                    // generation for some trait calls. Those declarations are skipped and counted.
+                    try visitDeclaration &acc decl with _ -> skipped <- skipped + 1
+            sw.Stop()
+            let allocated = GC.GetTotalAllocatedBytes true - before
+            printfn "sample %d: walk %.3f ms | allocated %d bytes | %d files | %d declarations skipped | checksum %d"
+                i sw.Elapsed.TotalMilliseconds allocated results.AssemblyContents.ImplementationFiles.Length skipped acc
+            // The IDE path: every symbol use in the project, with the queries a tooltip makes.
+            forceGC ()
+            let before = GC.GetTotalAllocatedBytes true
+            let sw = Stopwatch.StartNew()
+            let mutable acc = 0
+            let uses = results.GetAllUsesOfAllSymbols()
+            for su in uses do
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as memb -> visitMember &acc memb
+                | :? FSharpEntity as ent ->
+                    addTo &acc ent.Attributes.Count
+                    match ent.TryFullName with
+                    | Some name -> addTo &acc name.Length
+                    | None -> ()
+                | _ -> ()
+            sw.Stop()
+            let allocated = GC.GetTotalAllocatedBytes true - before
+            printfn "sample %d: uses %.3f ms | allocated %d bytes | %d uses | checksum %d"
+                i sw.Elapsed.TotalMilliseconds allocated uses.Length acc
+            GC.KeepAlive results
+        GC.KeepAlive checker

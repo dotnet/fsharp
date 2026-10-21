@@ -43,6 +43,11 @@ attributes, declaring entity and full type, as a compiler back end or an analyze
 
 Only the walk is measured: `WalkSymbols` is one pass, `WalkSymbolsRepeated` five passes over the same checked file. Compare `Mean` and `Allocated` across branches.
 
+For a real project, `walk-project` checks it from a captured fsc response file and prints, per sample, the time
+and allocation of a declaration walk over every file and of a `GetAllUsesOfAllSymbols` pass with tooltip-style
+queries on each use:
+```dotnet run -c Release -- walk-project <iterations> <response-file> <project-dir>```
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
