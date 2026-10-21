@@ -1864,6 +1864,13 @@ let rec CallableExprMayHaveFrameLocalAllocation g expr exprTy =
         let _, _, body, _ = stripTopLambda (expr, exprTy)
         ExprMayHaveFrameLocalAllocation body
 
+let HasDecisionTreeJoins expr =
+    FoldExpr
+        { ExprFolder0 with
+            nonRecBindingsIntercept = fun found bind -> found || bind.Var.IsDecisionTreeJoin }
+        false
+        expr
+
 let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
 
@@ -1872,7 +1879,7 @@ let TryEliminateBinding cenv env bind e2 _m =
     if not (cenv.optimizing && cenv.settings.EliminateImmediatelyConsumedLocals()) &&
        not vspec1.IsCompilerGenerated then
        None
-    elif vspec1.IsFixed then None
+    elif vspec1.IsFixed || vspec1.IsDecisionTreeJoin then None
     elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
@@ -2224,7 +2231,7 @@ let ExpandStructuralBindingRaw cenv expr =
 // formal arguments in method calls.
 let rec RearrangeTupleBindings expr fin =
     match expr with
-    | Expr.Let (bind, body, m, _) ->
+    | Expr.Let (bind, body, m, _) when not bind.Var.IsDecisionTreeJoin ->
         match RearrangeTupleBindings body fin with
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
@@ -4291,7 +4298,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
     // There may be more than one because of multiple 'match' branches.
     let rec strip (f: Expr) : Expr list * (Expr list -> Expr) =
         match stripExpr f with
-        | Expr.Let (bind, bodyExpr, m, _) ->
+        | Expr.Let (bind, bodyExpr, m, _) when not bind.Var.IsDecisionTreeJoin ->
             let fs, remake = strip bodyExpr
             fs, (remake >> mkLetBind m bind)
 
@@ -4753,6 +4760,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
      fvs.FreeLocals |> Zset.forall (fun v ->
           // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
+          not v.IsDecisionTreeJoin &&
           (v.ValReprInfo.IsSome ||
             // All the free variables (apart from things with an arity, i.e. compiled as methods) should be normal, i.e. not base/this etc.
             (v.BaseOrThisInfo = NormalVal &&
@@ -4923,14 +4931,26 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         let env =
             if isRec then { env with dontSplitVars = env.dontSplitVars.Add vref () }
             else env
-        
+
+        let isSharedGuard =
+            vref.IsCompilerGenerated && not vref.IsDecisionTreeJoin
+            && (match expr with SharedMatchFunction _ -> true | _ -> false)
         let exprOptimized, einfo =
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
             // Bodies of inline bindings are prepared for export (optimized later, at the expansion
             // site), which is why diagnostics depending on a complete environment are suppressed.
             let cenv = if vref.InlineInfo.ShouldInline then { cenv with optimizing=false} else cenv
-            let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
-            let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type
+            let exprOptimized, einfo =
+                if vref.IsDecisionTreeJoin then
+                    match expr with
+                    | SharedMatchFunction(args, body, bodyTy) ->
+                        let body, info = OptimizeExpr cenv (BindInternalValsToUnknown cenv args env) body
+                        mkLambdas g expr.Range [] args (body, bodyTy),
+                        { info with HasEffect = false; Info = UnknownValue }
+                    | _ -> error (InternalError("malformed decision-tree join", expr.Range))
+                else
+                    let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
+                    OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type
             let size = localVarSize
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size}
 
@@ -4945,8 +4965,9 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         let rec cut ivalue =
             match ivalue with
             | CurriedLambdaValue (_, arities, size, body, _) ->
-                if size > (cenv.settings.lambdaInlineThreshold + arities + 2) then
-                    // Discarding lambda for large binding
+                if size > (cenv.settings.lambdaInlineThreshold + arities + 2)
+                   || HasDecisionTreeJoins body
+                   || isSharedGuard && size > callSize + arities then
                     UnknownValue
                 else
                     let fvs = freeInExpr CollectLocals body
@@ -4965,7 +4986,11 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             | UnknownValue | ConstValue _ | ConstExprValue _ -> ivalue
             | SizeValue(_, a) -> MakeSizedValueInfo (cut a)
 
-        let einfo = if vref.ShouldInline || vref.InlineIfLambda then einfo else {einfo with Info = cut einfo.Info }
+        let einfo =
+            if vref.ShouldInline || vref.InlineIfLambda then
+                if HasDecisionTreeJoins exprOptimized then { einfo with Info = UnknownValue } else einfo
+            else
+                { einfo with Info = cut einfo.Info }
 
         let einfo =
             if (not vref.ShouldInline && not vref.InlineIfLambda && not cenv.settings.KeepOptimizationValues) ||

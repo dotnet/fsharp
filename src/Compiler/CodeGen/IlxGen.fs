@@ -1147,11 +1147,10 @@ and ModuleStorage =
 
     override _.ToString() = "<ModuleStorage>"
 
-/// Indicate whether a call to the value can be implemented as
-/// a branch. At the moment these are only used for generating branch calls back to
-/// the entry label of the method currently being generated when a direct tailcall is
-/// made in the method itself.
+/// A direct self-call or a compiler-owned decision join implemented by a branch.
 and BranchCallItem =
+
+    | BranchCallDecisionJoin of Val list * sequel
 
     | BranchCallClosure of ArityInfo
 
@@ -1262,9 +1261,11 @@ and IlxGenEnv =
         /// Suppress witnesses when not generating witness-passing code
         suppressWitnesses: bool
 
-        /// For optimizing direct tail recursion to a loop - mark says where to branch to.  Length is 0 or 1.
-        /// REVIEW: generalize to arbitrary nested local loops??
+        /// Entry label for direct self-recursion.
         innerVals: (ValRef * (BranchCallItem * Mark)) list
+
+        /// Compiler-owned branch targets in this method.
+        decisionJoins: ValMap<BranchCallItem * Mark>
 
         /// Full list of enclosing bound values. First non-compiler-generated element is used to help give nice names for closures and other expressions.
         letBoundVars: ValRef list
@@ -3103,6 +3104,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
             insideFinallyOrFaultHandler = false
             liveLocals = IntMap.empty ()
             innerVals = innerVals
+            decisionJoins = ValMap.Empty
         }
 
     cgbuf.SetMarkToHere finish
@@ -3883,6 +3885,8 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
                 contf Fake
 
+    | Expr.Let(bind, body, m, _) when bind.Var.IsDecisionTreeJoin -> GenDecisionTreeJoin cenv cgbuf eenv (bind, body, m) sequel contf
+
     | Expr.Let(bind, body, _, _) ->
 
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
@@ -4585,30 +4589,39 @@ and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
             | Choice1Of2 traitInfo -> GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo
             | Choice2Of2 arg -> GenExpr cenv cgbuf eenv arg Continue
 
+and TryFindBranchTarget (g: TcGlobals) eenv (v: ValRef) =
+    if v.Deref.IsDecisionTreeJoin then
+        eenv.decisionJoins.TryFind v.Deref
+    else
+        ListAssoc.tryFind g.valRefEq v eenv.innerVals
+
 and IsBranchTailcall (cenv: cenv) eenv (v: ValRef, tyargs, curriedArgs: _ list) sequel =
     let g = cenv.g
 
-    match ListAssoc.tryFind g.valRefEq v eenv.innerVals with
+    match TryFindBranchTarget g eenv v with
     | Some(kind, _) ->
         not v.IsConstructor
         &&
         // when branch-calling methods we must have the right type parameters
         (match kind with
          | BranchCallClosure _ -> true
+         | BranchCallDecisionJoin _ -> isNil tyargs
          | BranchCallMethod(_, _, tps, _, _, _) -> (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv g ty (mkTyparTy tp)) tyargs tps))
         &&
         // must be exact #args, ignoring tupling - we untuple if needed below
-        (let arityInfo =
+        (let numArgGroups =
             match kind with
+            | BranchCallDecisionJoin(vs, _) -> vs.Length
             | BranchCallClosure arityInfo
-            | BranchCallMethod(arityInfo, _, _, _, _, _) -> arityInfo
+            | BranchCallMethod(arityInfo, _, _, _, _, _) -> arityInfo.Length
 
-         arityInfo.Length = curriedArgs.Length)
+         numArgGroups = curriedArgs.Length)
         &&
         // no tailcall out of exception handler, etc.
-        (match sequelIgnoringEndScopesAndDiscard sequel with
-         | Return
-         | ReturnVoid -> true
+        (match kind, sequelIgnoringEndScopesAndDiscard sequel with
+         | BranchCallDecisionJoin(_, expected), _ -> sequelIgnoreEndScopes expected = sequelIgnoreEndScopes sequel
+         | _, Return
+         | _, ReturnVoid -> true
          | _ -> false)
     | None -> false
 
@@ -4618,7 +4631,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
     match (stripDebugPoints f, tyargs, curriedArgs) with
     // Look for tailcall to turn into branch
     | Expr.Val(v, _, _), _, _ when IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel ->
-        let kind, mark = ListAssoc.find g.valRefEq v eenv.innerVals // already checked above in when guard
+        let kind, mark = (TryFindBranchTarget g eenv v).Value // already checked above in when guard
 
         // Generate the arguments for the direct tail call.
         // We push all the arguments on the IL stack then write them back to the argument slots using
@@ -4627,6 +4640,10 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         // The arguments pushed don't include the 'this' argument for a recursive closure call (in PreallocatedArgCount)
         // The arguments _do_ include the 'this' argument for instance method calls.  The arguments do _not_ include witness arguments.
         match kind with
+        | BranchCallDecisionJoin(vs, _) ->
+            GenExprs cenv cgbuf eenv curriedArgs
+            vs |> List.rev |> List.iter (fun v -> GenStoreVal cgbuf eenv v.Range v)
+
         | BranchCallClosure arityInfo ->
             GenExprs cenv cgbuf eenv curriedArgs
 
@@ -4668,6 +4685,8 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         CG.EmitInstr cgbuf (pop 0) Push0 (I_br mark.CodeLabel)
 
         GenSequelEndScopes cgbuf sequel
+
+    | Expr.Val(v, _, _), _, _ when v.Deref.IsDecisionTreeJoin -> error (InternalError("decision-tree join escaped its continuation", m))
 
     // PhysicalEquality becomes cheap reference equality once
     // a nominal type is known. We can't replace it for variable types since
@@ -8337,6 +8356,52 @@ and GenStaticOptimization cenv cgbuf eenv (staticConditions, e2, e3, m) sequel =
 //-------------------------------------------------------------------------
 // Generate discrimination trees
 //-------------------------------------------------------------------------
+
+and GenDecisionTreeJoin cenv cgbuf eenv (bind: Binding, body, m) sequel contf =
+    let args, joinBody, resultTy =
+        match bind.Expr with
+        | SharedMatchFunction(args, body, ty) -> args, body, ty
+        | _ -> error (InternalError("malformed decision-tree join", m))
+
+    if not (typeEquiv cenv.g resultTy (tyOfExpr cenv.g body)) then
+        error (InternalError("decision-tree join changed its result continuation", m))
+
+    let stackBefore = cgbuf.GetCurrentStack()
+    let startMark, endMark as scopeMarks = StartDelayedLocalScope "decisionJoin" cgbuf
+
+    let binds =
+        mkInvisibleBinds args (args |> List.map (fun v -> mkDefault (m, v.Type)))
+
+    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
+    CG.SetMarkToHere cgbuf startMark
+    let entry = CG.GenerateDelayMark cgbuf "decisionJoin"
+    let dispatch = CG.GenerateDelayMark cgbuf "decisionDispatch"
+
+    let branchSequel, afterJoin, stackAfterJoin, sequelAfterJoin =
+        GenJoinPoint cenv cgbuf "decision" eenv (tyOfExpr cenv.g body) m (EndLocalScope(sequel, endMark))
+
+    let branchSequel =
+        match branchSequel with
+        | Br mark when isInterfaceTy cenv.g resultTy -> CastThenBr(GenType cenv m eenv.tyenv resultTy, mark)
+        | _ -> branchSequel
+
+    CG.EmitInstr cgbuf (pop 0) Push0 (I_br dispatch.CodeLabel)
+    CG.SetMarkToHere cgbuf entry
+    CG.SetStack cgbuf stackBefore
+    GenExpr cenv cgbuf eenv joinBody branchSequel
+    CG.SetMarkToHere cgbuf dispatch
+    CG.SetStack cgbuf stackBefore
+
+    let eenv =
+        { eenv with
+            decisionJoins = eenv.decisionJoins.Add bind.Var (BranchCallDecisionJoin(args, branchSequel), entry)
+        }
+
+    GenLinearExpr cenv cgbuf eenv body branchSequel true (fun Fake ->
+        CG.SetMarkToHere cgbuf afterJoin
+        CG.SetStack cgbuf stackAfterJoin
+        GenSequel cenv eenv.cloc cgbuf sequelAfterJoin
+        contf Fake)
 
 and IsSequelImmediate sequel =
     match sequel with
@@ -13462,6 +13527,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         letBoundVars = []
         liveLocals = IntMap.empty ()
         innerVals = []
+        decisionJoins = ValMap.Empty
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
         withinExnHandler = false

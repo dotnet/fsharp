@@ -45,15 +45,108 @@ module GuardedMatchSemantics =
     let private executableContext code action fallback checks =
         contextSource "" (code + "\n[<EntryPoint>]\nlet main _ =\n" + checks + "\n    0") action fallback
 
+    let private runWithSettings optimize realSignature =
+        withOptimization optimize
+        >> withRealInternalSignature realSignature
+        >> compileExeAndRun
+        >> shouldSucceed
+
+    let private sharedResultSource kind inlineKeyword main =
+        let declarations, resultType, success, tail, observe =
+            match kind with
+            | "int" | "argument" -> "", "int", "calls", id, "result"
+            | "function" ->
+                "", "int -> int", "(fun n -> acc <- acc + calls; n + acc)", (fun value -> $"(fun n -> n + ({value}))"),
+                "calls <- calls + 100\n    result 10 |> ignore\n    result 10"
+            | "interface" ->
+                "type I = abstract Value: int\ntype Left(n) = interface I with member _.Value = n\ntype Right(n) = interface I with member _.Value = n",
+                "I", "(Left(calls) :> I)", (fun value -> $"(Right({value}) :> I)"), "result.Value"
+            | "tuple" -> "", "int * string", """(calls, "yes")""", (fun value -> $"""({value}, "no")"""), "fst result"
+            | _ -> failwith $"Unknown result {kind}"
+        let tails =
+            ["A"; "B"; "C"; "D"; "E"; "F"; "G"; "H"]
+            |> List.mapi (fun i name -> $"        | {name}, _, _ -> {tail (string (-i - 1))}")
+            |> String.concat "\n"
+        template "SharedResults.fs" [
+            "{{DECLARATIONS}}", declarations
+            "{{INLINE}}", inlineKeyword
+            "{{LOCALS}}", (if kind = "function" then "let mutable acc = 0" else "")
+            "{{TYPE}}", resultType
+            "{{SUCCESS}}", success
+            "{{TAILS}}", tails
+            "{{OBSERVE}}", observe
+            "{{WRAP}}", (if kind = "argument" then "id" else "")
+            "{{EXPECTED}}", (if kind = "function" then "10 + (if accepted then 202 else -i - 1)" else "if accepted then 1 else -i - 1")
+            "{{EXTRA_CALLS}}", (if kind = "function" then "100" else "0")
+            "{{MAIN}}", main ]
+
+    let private optionCases values =
+        seq {
+            for value in values do
+                for optimize in [false; true] do
+                    for realSignature in [false; true] do
+                        yield [| value; box optimize; box realSignature |]
+        }
+
+    let sharedResultCases = optionCases [for kind in ["int"; "argument"; "function"; "interface"; "tuple"] -> box kind]
+    let recursiveBindingCases = optionCases [box false; box true]
+    let observationCases = optionCases [box "Observations.fs"; box "AliasMutation.fs"; box "AppliedResults.fs"]
+
+    [<Theory; MemberData(nameof sharedResultCases)>]
+    let ``Issue 20632 - shared tuple3 decisions preserve result continuations`` kind optimize realSignature =
+        sharedResultSource kind "" "[<EntryPoint>]\nlet main _ = check ()"
+        |> runWithSettings optimize realSignature
+        |> (if (kind = "int" || kind = "argument") && optimize then
+                emittedILExcept "Context" >> fun size -> Assert.True(size < 1500, $"Shared tuple3 match emitted {size} IL bytes")
+            else ignore)
+
+    [<Theory; MemberData(nameof recursiveBindingCases)>]
+    let ``Issue 20632 - shared guards retain recursive binding fixups`` selfReference optimize realSignature =
+        template "RecursiveBindings.fs" [
+            "{{USE}}", (if selfReference then "(id (fun () -> first)) ()" else "later")
+            "{{EXPECTED}}", (if selfReference then "-1" else "(if token = 0 then 1 else 2)") ]
+        |> withLangVersionPreview
+        |> runWithSettings optimize realSignature
+
+    [<Fact>]
+    let ``Issue 20632 - inline guard definitions remain portable`` () =
+        let library = sharedResultSource "int" "inline " "" |> asLibrary |> withName "GuardedInline"
+        FSharp """
+module Consumer
+[<EntryPoint>]
+let main _ =
+    if Test.run (Test.A, 0, 0) <> 1 || Test.run (Test.H, -8, 0) <> -8 then failwith "inline body"
+    0"""
+        |> withReferences [library]
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Theory>]
-    [<InlineData("Observations.fs", false, false)>]
-    [<InlineData("Observations.fs", false, true)>]
-    [<InlineData("Observations.fs", true, false)>]
-    [<InlineData("Observations.fs", true, true)>]
-    [<InlineData("AliasMutation.fs", false, false)>]
-    [<InlineData("AliasMutation.fs", false, true)>]
-    [<InlineData("AliasMutation.fs", true, false)>]
-    [<InlineData("AliasMutation.fs", true, true)>]
+    [<InlineData("guard")>]
+    [<InlineData("action")>]
+    let ``Issue 20632 - recursive initialization remains strict`` site =
+        (if site = "guard" then
+            template "RecursiveBindings.fs" ["{{USE}}", "first"; "{{EXPECTED}}", "-1"]
+         else template "StrictInitialization.fs" [])
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 31
+
+    [<Fact>]
+    let ``Decision join placement is not serialized`` () =
+        let flags = global.FSharp.Compiler.TypedTree.ValFlags.OfPickledBits(0L).WithIsDecisionTreeJoin
+        Assert.True(flags.IsDecisionTreeJoin)
+        Assert.False(flags.IsPinning)
+        Assert.False(global.FSharp.Compiler.TypedTree.ValFlags.OfPickledBits(0L).WithIsPinning.IsDecisionTreeJoin)
+        Assert.False(global.FSharp.Compiler.TypedTree.ValFlags.OfPickledBits(flags.PickledBits).IsDecisionTreeJoin)
+        let parameter = global.FSharp.Compiler.TypedTree.ValFlags.OfPickledBits(0L).WithIsMatchJoinParameter
+        Assert.False(parameter.IsPinning)
+        Assert.False(parameter.IsDecisionTreeJoin)
+        Assert.False(global.FSharp.Compiler.TypedTree.ValFlags.OfPickledBits(parameter.PickledBits).IsMatchJoinParameter)
+
+    [<Theory; MemberData(nameof observationCases)>]
     let ``Issue 20632 - preserve committed observations and projection demand`` file optimize realSignature =
         template file [
             "{{ALTERNATIVES}}", ([1..64] |> List.map string |> String.concat " | ")
@@ -62,27 +155,10 @@ module GuardedMatchSemantics =
             "{{NULL_HEAD_GUARDS}}", ([for i in 1..7 -> $"    | _, Second _ :: _ when not takeFirst -> {10 + i}"] |> String.concat "\n")
             "{{REFUTED_GUARDS}}", ([for i in 2..7 -> $"    | _, _ :: _ when takeFirst -> {10 + i}"] |> String.concat "\n")
             "{{GUARDS}}", ([for i in 0..7 -> $"    | _, C0 {{ Value = 1 }} :: _ when guard {i} cell -> result <- {100 + i} + cell.Value; result"] |> String.concat "\n") ]
-        |> withOptimization optimize
-        |> withRealInternalSignature realSignature
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``Issue 20632 - context guards share code across distinct completed tails`` () =
-        executableContext "let run token stack col =\n            let mutable result = -1\n{{MATCH}}"
-            (fun value -> $"result <- {value}; result") "result" """
-    for token in 1..16 do
-        if run token [C0 0] 1000 <> token then failwith "completed tail"
-    if trace.Count <> 16 then failwith ("guard count: " + string trace.Count)
-    if run 5 [C15 0] 0 <> 115 then failwith "guard success"
-    if run 5 [] 1000 <> -1 then failwith "empty list" """
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> emittedILExcept "Context"
-        |> fun size -> Assert.True(size < 6000, $"Context match emitted {size} IL bytes")
+        |> runWithSettings optimize realSignature
 
     [<Theory>]
+    [<InlineData("mutable", true)>]
     [<InlineData("byref", false)>]
     [<InlineData("byref", true)>]
     [<InlineData("rethrow", false)>]
@@ -100,6 +176,14 @@ module GuardedMatchSemantics =
     let ``Issue 20632 - grouped actions keep their original scope`` scope optimize =
         let code, checks, action, fallback =
             match scope with
+            | "mutable" ->
+                "let run token stack col =\n            let mutable result = -1\n{{MATCH}}", """
+    for token in 1..16 do
+        if run token [C0 0] 1000 <> token then failwith "completed tail"
+    if trace.Count <> 16 then failwith ("guard count: " + string trace.Count)
+    if run 5 [C15 0] 0 <> 115 then failwith "guard success"
+    if run 5 [] 1000 <> -1 then failwith "empty list" """,
+                (fun value -> $"result <- {value}; result"), "result"
             | "byref" ->
                 "let run (data: int[]) token stack col : byref<int> =\n{{MATCH}}", """
     let data = Array.zeroCreate<int> 128
@@ -138,6 +222,7 @@ module GuardedMatchSemantics =
         executableContext code action fallback checks
         |> (if scope = "runtime" then withLangVersionPreview >> withFSharpCoreShippedNet else id)
         |> withOptimization optimize
+        |> (if scope = "tail" then withOptions ["--tailcalls-"] else id)
         |> compileExeAndRun
         |> shouldSucceed
 

@@ -125,6 +125,10 @@ type ValFlags =
     member InlineIfLambda: bool
     member OptimizeClosureIfNotInlined: bool
 
+    member IsDecisionTreeJoin: bool
+
+    member IsMatchJoinParameter: bool
+
     member InlineInfo: ValInline
 
     member IsImplied: bool
@@ -166,6 +170,10 @@ type ValFlags =
 
     member WithInlineIfLambda: ValFlags
     member WithOptimizeClosureIfNotInlined: ValFlags
+
+    member WithIsDecisionTreeJoin: ValFlags
+
+    member WithIsMatchJoinParameter: ValFlags
 
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
@@ -2076,6 +2084,10 @@ type Val =
     member SetInlineIfLambda: unit -> unit
     member SetOptimizeClosureIfNotInlined: unit -> unit
 
+    member SetIsDecisionTreeJoin: unit -> unit
+
+    member SetIsMatchJoinParameter: unit -> unit
+
     /// Sets the inline information for this value. Used by the type checker
     /// to downgrade an erroneously-recursive inline binding to non-inline
     /// so that the optimizer does not cascade further diagnostics.
@@ -2199,6 +2211,12 @@ type Val =
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
     member OptimizeClosureIfNotInlined: bool
+
+    /// Compiler-owned join whose calls and body remain in the same method.
+    member IsDecisionTreeJoin: bool
+
+    /// Final synthetic parameter of a shared match function, before any result lambdas.
+    member IsMatchJoinParameter: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline

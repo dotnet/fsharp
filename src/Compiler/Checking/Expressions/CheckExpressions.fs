@@ -9178,7 +9178,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                     else
                         env
 
-                TcExprFlex2 cenv domainTy env.WithPreservedMatchShape false tpenv synArg
+                TcExprFlex2 cenv domainTy env false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv env leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
@@ -11609,6 +11609,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let isVolatile = hasFlag valAttribFlags WellKnownValAttributes.VolatileFieldAttribute
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
+        let envinner =
+            if inlineFlag.ShouldInline || hasFlag valAttribFlags WellKnownValAttributes.InlineIfLambdaAttribute then
+                envinner.WithPreservedMatchShape
+            else envinner
 
         let argAttribs =
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
@@ -13064,7 +13068,7 @@ and TcLetrecBinding
 
     let g = cenv.g
 
-    let (RecursiveBindingInfo(_, _, enclosingDeclaredTypars, _, vspec, explicitTyparInfo, _, _, baseValOpt, safeThisValOpt, safeInitInfo, _, tau, declKind)) = rbind.RecBindingInfo
+    let (RecursiveBindingInfo(_, _, enclosingDeclaredTypars, _, vspec, explicitTyparInfo, PrelimValReprInfo(argInfos, _), _, baseValOpt, safeThisValOpt, safeInitInfo, _, tau, declKind)) = rbind.RecBindingInfo
 
     let allDeclaredTypars = enclosingDeclaredTypars @ rbind.RecBindingInfo.DeclaredTypars
 
@@ -13096,6 +13100,7 @@ and TcLetrecBinding
 
     // Members can access protected members of parents of the type, and private members in the type
     let envRec = MakeInnerEnvForMember envRec vspec
+    let envRec = if isNil argInfos then envRec.WithPreservedMatchShape else envRec
 
     let checkedBind, tpenv =
         TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, explicitTyparInfo) rbind.SyntacticBinding

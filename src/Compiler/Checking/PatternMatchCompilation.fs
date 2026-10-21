@@ -1029,12 +1029,17 @@ type private MemoKey =
     { Frontiers: FrontierKey list
       Captured: Stamp list }
 
-/// Hits counts visits to one state; the thunk is built only once it is visited past the threshold.
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type private MemoJoin =
+    | Target of int
+    | Thunk of Expr * TType
+
+/// Hits counts visits to one state; the join is built only once it is visited past the threshold.
 [<NoEquality; NoComparison>]
 type private MemoEntry =
     { mutable Hits: int
       IsPromotable: Lazy<bool>
-      JoinThunk: Lazy<Expr * TType> }
+      Join: Lazy<MemoJoin> }
 
 /// Off for the throwaway diagnostics pass and for matches that cannot blow up in the first place.
 [<RequireQualifiedAccess>]
@@ -1084,6 +1089,7 @@ let private CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
         warnOnUnused
         warnOnIncomplete
+        preserveMatchShape
         (joinPromotion: JoinPromotion)
         actionOnFailure
         (origInputVal, origInputValTypars, _origInputExprOpt: Expr option)
@@ -1094,7 +1100,15 @@ let private CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable,
     // hence no need for a new sequence point.
     let matchBuilder = MatchBuilder (DebugPointAtBinding.NoneAtInvisible, mExpr)
-    clauses |> List.iter (fun clause -> matchBuilder.AddTarget clause.Target |> ignore)
+    let localActions = ResizeArray<Val list * Expr ref * Expr>()
+    clauses |> List.iter (fun clause ->
+        let (TTarget(vs, body, flags)) = clause.Target
+        if not preserveMatchShape && joinPromotion = JoinPromotion.Enabled then
+            let cell = ref body
+            localActions.Add(vs, cell, body)
+            matchBuilder.AddTarget(TTarget(vs, Expr.Link cell, flags)) |> ignore
+        else
+            matchBuilder.AddTarget clause.Target |> ignore)
 
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
@@ -1184,30 +1198,85 @@ let private CompilePatternBasic
 
     // The main recursive loop of the pattern match compiler.
 
-    // Repeated states stay inline until the threshold, preserving ordinary match output.
     let stackGuard = StackGuard("InvestigateFrontiers")
     let joinPromotionThreshold = 32
     let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
 
-    // Promoted states are let-bound thunks, not shared TTargets: re-entering a TTarget embeds a
-    // copy of the target array, so nested promotions compound (measured: 167MB vs 1.4MB at N=48).
     let joinBindings = ResizeArray<Binding>()
     let frontierMemo = Dictionary<MemoKey, MemoEntry>()
 
     // The full body includes clause targets, which may contain constructs that cannot move into a lambda.
-    let isLiftableJoinBody body =
+    let isShareableBody allowMutable returnTy body =
         let fvs = freeInExpr (CollectLocalsWithStackGuard()) body
         not fvs.UsesUnboundRethrow
         && not fvs.UsesMethodLocalConstructs
         && not (fvs.ContainsILFieldAccess && exprReferencesProtectedILField amap body)
-        && isThunkableTy resultTy
+        && isThunkableTy returnTy
         && fvs.FreeLocals
            |> Internal.Utilities.Collections.Zset.forall (fun v ->
                v.ValReprInfo.IsSome
                || (v.BaseOrThisInfo = NormalVal
                    && isThunkableTy v.Type
                    && not (IsGenericValWithGenericConstraints g v)
-                   && not v.IsMutable))
+                   && (allowMutable || not v.IsMutable)
+                   && (allowMutable || not v.IsDecisionTreeJoin)))
+
+    let bindSharedFunction isLocal m vs (body, returnTy) =
+        let parameters, body =
+            if preserveMatchShape then
+                let parameters = vs |> List.map (fun (v: Val) -> fst (mkCompGenLocal m "joinCap" v.Type))
+                let remap =
+                    { Remap.Empty with
+                        valRemap = ValMap.OfList (List.map2 (fun v p -> v, mkLocalValRef p) vs parameters) }
+                parameters, remapExpr g CloneAll remap body
+            else
+                vs, body
+        let unitV, _ = mkCompGenLocal m "unitArg" g.unit_ty
+        if not preserveMatchShape then unitV.SetIsMatchJoinParameter()
+        let lambda = mkLambdas g m [] (parameters @ [unitV]) (body, returnTy)
+        let lambda = if preserveMatchShape then lambda else copyExprForExecutableSharing g lambda
+        let ty = tyOfExpr g lambda
+        let name = if preserveMatchShape then "joinThunk" elif isLocal then "matchJoin" else "guardJoin"
+        let v, e = mkCompGenLocal m name ty
+        if isLocal then v.SetIsDecisionTreeJoin()
+        joinBindings.Add(mkInvisibleBind v lambda)
+        e, ty
+
+    let callSharedFunction m vs (e, ty) =
+        let args = List.map (exprForVal m) vs @ [mkUnit g m]
+        mkApps g ((e, ty), [], args, m)
+
+    let localActionsSafe =
+        localActions
+        |> Seq.map (fun (vs, _, body) ->
+            lazy (isShareableBody true resultTy body
+                  && List.forall (fun (v: Val) -> isThunkableTy v.Type && not v.IsMutable) vs))
+        |> Seq.toArray
+
+    let sharedActions =
+        localActions
+        |> Seq.map (fun (vs, cell, body) ->
+            lazy
+            let action = bindSharedFunction true mMatch vs (body, resultTy)
+            cell.Value <- callSharedFunction mMatch vs action)
+        |> Seq.toArray
+
+    let guardMemo = Dictionary<int, Expr ref>()
+    let shareGuard i (vs: Val list) (whenExpr: Expr) =
+        if preserveMatchShape || joinPromotion = JoinPromotion.Disabled then whenExpr
+        else
+            match guardMemo.TryGetValue i with
+            | false, _ ->
+                let cell = ref whenExpr
+                guardMemo.Add(i, cell)
+                Expr.Link cell
+            | true, cell ->
+                if obj.ReferenceEquals(cell.Value, whenExpr) && isShareableBody false g.bool_ty whenExpr then
+                    let free = (freeInExpr (CollectLocalsWithStackGuard()) whenExpr).FreeLocals
+                    let vs = vs |> List.filter (fun v -> free.Contains v)
+                    let guard = bindSharedFunction false whenExpr.Range vs (whenExpr, g.bool_ty)
+                    cell.Value <- callSharedFunction whenExpr.Range vs guard
+                Expr.Link cell
 
     // Reference identities make key collisions conservative: distinct nodes never fuse.
     let patternNodeId =
@@ -1253,7 +1322,7 @@ let private CompilePatternBasic
         let acc = System.Collections.Generic.Dictionary<Stamp, Val>()
         let addFreeLocals (e: Expr) =
             for v in Internal.Utilities.Collections.Zset.elements (freeInExpr CollectLocals e).FreeLocals do
-                if v.Stamp <> origInputVal.Stamp then acc[v.Stamp] <- v
+                if v.Stamp <> origInputVal.Stamp && (preserveMatchShape || not v.IsMutable) then acc[v.Stamp] <- v
         for Frontier(_, actives, valMap) in frontiers do
             for Active(_, subexpr, _) in actives do
                 addFreeLocals (GetSubExprOfInput subexpr)
@@ -1261,11 +1330,10 @@ let private CompilePatternBasic
                 addFreeLocals boundExpr
         acc.Values |> List.ofSeq |> List.sortBy (fun v -> v.Stamp)
 
-    let callJoinThunk (joinE: Expr) (joinThunkTy: TType) (caps: Val list) =
+    let addJoinTarget (joinE: Expr, joinThunkTy: TType) (caps: Val list) =
         let targetParams = caps |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinArg" v.Type))
-        let args = (targetParams |> List.map (exprForVal mMatch)) @ [mkUnit g mMatch]
-        let idx = matchBuilder.AddTarget(TTarget(targetParams, mkApps g ((joinE, joinThunkTy), [], args, mMatch), None))
-        TDSuccess(caps |> List.map (exprForVal mMatch), idx)
+        let call = callSharedFunction mMatch targetParams (joinE, joinThunkTy)
+        matchBuilder.AddTarget(TTarget(targetParams, call, None))
 
     let rec InvestigateFrontiers refuted frontiers =
         Cancellable.CheckAndThrow()
@@ -1322,7 +1390,7 @@ let private CompilePatternBasic
         match clause.GuardExpr with
         | Some whenExpr ->
             let m = whenExpr.Range
-            let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
+            let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) (shareGuard i vs2 whenExpr)
             let failureTree = investigateMemoized (RefutedWhenClause :: refuted) rest
             mkBoolSwitch m whenExprWithBindings successTree failureTree
 
@@ -1337,33 +1405,37 @@ let private CompilePatternBasic
             match frontierMemo.TryGetValue key with
             | true, state ->
                 state.Hits <- state.Hits + 1
-                if state.Hits > joinPromotionThreshold && state.IsPromotable.Value then
-                    let joinE, joinThunkTy = state.JoinThunk.Value
-                    callJoinThunk joinE joinThunkTy capturedVals
+                if state.Hits > (if preserveMatchShape then joinPromotionThreshold else 1) && state.IsPromotable.Value then
+                    let target =
+                        match state.Join.Value with
+                        | MemoJoin.Target target -> target
+                        | MemoJoin.Thunk(e, ty) -> addJoinTarget (e, ty) capturedVals
+                    TDSuccess(capturedVals |> List.map (exprForVal mMatch), target)
                 else
                     InvestigateFrontiers refuted frontiers
             | _ ->
                 let subtree = InvestigateFrontiers refuted frontiers
-                let joinBody =
-                    lazy (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy subtree (matchBuilder.CloseTargets()))
+                let makeJoinBody () =
+                    mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy subtree (matchBuilder.CloseTargets())
+                let joinBody = lazy (makeJoinBody())
+                let usedActions =
+                    lazy (accTargetsOfDecisionTree subtree [] |> List.filter (fun i -> i < sharedActions.Length) |> List.distinct)
                 let isPromotable =
                     lazy
                     (match subtree with TDSuccess _ -> false | TDSwitch _ | TDBind _ -> true)
-                    && isLiftableJoinBody joinBody.Value
-                let joinThunk =
+                    && isShareableBody (not preserveMatchShape) resultTy joinBody.Value
+                    && (preserveMatchShape || usedActions.Value |> List.forall (fun i -> localActionsSafe[i].Value))
+                let join =
                     lazy
-                    let paramVals = capturedVals |> List.map (fun v -> fst (mkCompGenLocal mMatch "joinCap" v.Type))
-                    let remap =
-                        { Remap.Empty with
-                            valRemap = ValMap.OfList (List.map2 (fun (c: Val) (p: Val) -> c, mkLocalValRef p) capturedVals paramVals) }
-                    let body = remapExpr g CloneAll remap joinBody.Value
-                    let unitV, _ = mkCompGenLocal mMatch "unitArg" g.unit_ty
-                    let joinThunkTy = List.foldBack (fun (p: Val) acc -> mkFunTy g p.Type acc) paramVals (mkFunTy g g.unit_ty resultTy)
-                    let joinLam = mkLambdas g mMatch [] (paramVals @ [unitV]) (body, resultTy)
-                    let joinV, joinE = mkCompGenLocal mMatch "joinThunk" joinThunkTy
-                    joinBindings.Add(mkInvisibleBind joinV joinLam)
-                    (joinE, joinThunkTy)
-                frontierMemo[key] <- { Hits = 1; IsPromotable = isPromotable; JoinThunk = joinThunk }
+                    let body =
+                        if preserveMatchShape then joinBody.Value
+                        else
+                            for i in usedActions.Value do sharedActions[i].Force()
+                            makeJoinBody()
+                    let fn = bindSharedFunction (not preserveMatchShape) mMatch capturedVals (body, resultTy)
+                    if preserveMatchShape then MemoJoin.Thunk fn
+                    else MemoJoin.Target(addJoinTarget fn capturedVals)
+                frontierMemo[key] <- { Hits = 1; IsPromotable = isPromotable; Join = join }
                 subtree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
@@ -1885,75 +1957,6 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-let private trySplitGuardedRun (g: TcGlobals) (group: MatchClause list) =
-    match group with
-    | first :: rest when group.Length >= 12 ->
-        Cancellable.CheckAndThrow()
-        let rec stripBindings = function
-            | TPat_as(p, _, _) -> stripBindings p
-            | p -> p
-        let isBinding p = match stripBindings p with TPat_wild _ -> true | _ -> false
-        let (|PairPattern|_|) p =
-            match stripBindings p with
-            | TPat_tuple(_, [token; stack], _, _) -> ValueSome(token, stack)
-            | _ -> ValueNone
-        let (|ConsPattern|_|) p =
-            match stripBindings p with
-            | TPat_unioncase(ucref, _, [head; tail], _) when g.unionCaseRefEq ucref g.cons_ucref -> ValueSome(head, tail)
-            | _ -> ValueNone
-        let simpleConstant = function
-            | Const.Bool _ -> true
-            | c -> canCompactConstantClass c
-        let retainedTest p =
-            match stripBindings p with
-            | TPat_const(c, _) -> simpleConstant c
-            | TPat_unioncase(ucref, _, args, _) ->
-                let cases = ucref.Tycon.UnionCasesArray
-                not ucref.Tycon.IsStructRecordOrUnionTycon
-                && cases.Length > 1
-                && (cases.Length >= 4 || (cases |> Array.forall (fun case -> case.RecdFieldsArray.Length = 0)))
-                && List.forall isBinding args
-            | _ -> false
-        let rec discriminatorPattern (guard: StackGuard) first bindingFields p =
-            Cancellable.CheckAndThrow()
-            guard.Guard(fun () ->
-                match stripBindings p, first with
-                | TPat_wild _, _ -> true
-                | TPat_disjs(ps, _), _ -> not (isNil ps) && List.forall (discriminatorPattern guard first bindingFields) ps
-                | TPat_const(c, _), TPat_const _ -> simpleConstant c
-                | TPat_unioncase(ucref, _, args, _), TPat_unioncase(first, _, _, _) ->
-                    tyconRefEq g ucref.TyconRef first.TyconRef && (not bindingFields || List.forall isBinding args)
-                | _ -> false)
-        let guard = StackGuard("GuardedMatchGrouping")
-        match first.Pattern with
-        | PairPattern(firstToken, ConsPattern(firstHead, firstTail))
-            when retainedTest firstToken && retainedTest firstHead && isBinding firstTail ->
-            let firstToken, firstHead = stripBindings firstToken, stripBindings firstHead
-            let middle, suffix =
-                rest |> List.takeUntil (fun clause ->
-                    match clause.Pattern with
-                    | PairPattern(token, _) -> not (isBinding token)
-                    | _ -> true)
-            let isMiddleClause (clause: MatchClause) =
-                match clause.Pattern with
-                | PairPattern(_, ConsPattern(head, _)) -> discriminatorPattern guard firstHead false head
-                | _ -> false
-            let isSuffixClause (clause: MatchClause) =
-                match clause.Pattern with
-                | PairPattern(token, ConsPattern(head, tail)) when isBinding head && isBinding tail ->
-                    discriminatorPattern guard firstToken true token
-                | PairPattern(token, stack) when isBinding stack ->
-                    discriminatorPattern guard firstToken true token
-                | _ -> false
-            if suffix.Length >= 4
-               && (first :: middle |> List.count (fun clause -> clause.GuardExpr.IsSome)) >= 8
-               && List.forall isMiddleClause middle
-               && List.forall isSuffixClause suffix then
-                ValueSome([first], middle, suffix)
-            else ValueNone
-        | _ -> ValueNone
-    | _ -> ValueNone
-
 let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused preserveMatchShape actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
@@ -1962,7 +1965,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
         let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
         let warnOnIncomplete = true
         let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
-        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
+        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete preserveMatchShape JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
         let warnOnIncomplete = false
 
         // Partial and when clauses cause major code explosion if treated naively
@@ -1972,14 +1975,9 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
                 match List.takeUntil isProblematicClause clauses with
                 | l, [] -> l, []
                 | l, h :: t -> l @ [h], t
-            match (if preserveMatchShape then ValueNone else trySplitGuardedRun g group) with
-            | ValueSome(first, middle, suffix) ->
-                atMostOneProblematicClauseAtATime (suffix @ rest)
-                |> compileWithRest middle
-                |> compileWithRest first
-            | ValueNone when isNil rest ->
-                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) group inputTy resultTy
-            | ValueNone -> atMostOneProblematicClauseAtATime rest |> compileWithRest group
+            if isNil rest then
+                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete preserveMatchShape JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) group inputTy resultTy
+            else atMostOneProblematicClauseAtATime rest |> compileWithRest group
 
         and compileWithRest group (decisionTree, targets, joins) =
             // Make the expression that represents the remaining cases of the pattern match.
@@ -1988,10 +1986,10 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)
 
-            CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
+            CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete preserveMatchShape JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
 
 
         atMostOneProblematicClauseAtATime clausesL
 
     | _ ->
-        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused true JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
+        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused true preserveMatchShape JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
