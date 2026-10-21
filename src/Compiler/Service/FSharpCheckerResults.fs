@@ -1787,15 +1787,7 @@ type internal TypeCheckInfo
                                         | :? FSharpActivePatternCase as symbol ->
                                             match symbol.Item, completionContext with
                                             | Item.ActivePatternCase case, Some(CompletionContext.Pattern _) ->
-                                                not (
-                                                    ItemIsUnseen
-                                                        ad
-                                                        g
-                                                        ncenv.amap
-                                                        m
-                                                        options.SuggestObsoleteSymbols
-                                                        (Item.Value case.ActivePatternVal)
-                                                )
+                                                not (ItemIsUnseen ad g ncenv.amap m options.AllowUnseen (Item.Value case.ActivePatternVal))
                                             | _ -> false
                                         | :? FSharpMemberOrFunctionOrValue as m when
                                             m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs

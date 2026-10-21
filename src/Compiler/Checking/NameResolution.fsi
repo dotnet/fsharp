@@ -1009,7 +1009,7 @@ val GetVisibleNamespacesAndModulesAtPoint:
 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 
-val ItemIsUnseen: AccessorDomain -> TcGlobals -> ImportMap -> range -> allowObsolete: bool -> Item -> bool
+val ItemIsUnseen: AccessorDomain -> TcGlobals -> ImportMap -> range -> allowUnseen: UnseenItems -> Item -> bool
 
 val TrySelectExtensionMethInfoOfILExtMem:
     range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option
