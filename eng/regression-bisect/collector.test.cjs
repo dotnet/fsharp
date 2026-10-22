@@ -23,8 +23,13 @@ const jsonFile = (name, value) => {
 };
 
 async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], project = false, compile = false,
-    setup, buildSdk = "10.0.100", producer, sampleRuntime = "10.0.0" } = {}) {
+    setup, buildSdk = "10.0.100", producer, sampleRuntime = "10.0.0", packageCoreSha } = {}) {
     const sample = await reproductionFixture(t, { kind, tfms });
+    if (kind === "released") {
+        const pkg = sample.product.files.find(file => file.role === "corePackage");
+        sample.toolchain.files.core.package = { path: pkg.path, sha256: pkg.sha256,
+            id: "FSharp.Core", version: sample.product.corePackageVersion };
+    }
     if (sampleRuntime !== "10.0.0") {
         const runtime = await sample.file(`dotnet/shared/Microsoft.NETCore.App/${sampleRuntime}/System.Private.CoreLib.dll`);
         sample.toolchain.runtimes.push({ name: "Microsoft.NETCore.App", version: sampleRuntime,
@@ -115,7 +120,7 @@ async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], projec
                 return record.role === "corePackage" ? { ...record, id: "FSharp.Core",
                     version: sample.product.corePackageVersion, entries: [{
                         path: "lib/netstandard2.0/FSharp.Core.dll",
-                        sha256: sample.product.files.find(p => p.role === "core").sha256,
+                        sha256: packageCoreSha ?? sample.product.files.find(p => p.role === "core").sha256,
                     }] } : record;
             })) };
         if (args[0] === "build") {
@@ -221,6 +226,12 @@ async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], projec
     ];
     return { h, context: c, reservation, started, sample, result, unit, launch, files, acquisition, build, setup };
 }
+
+for (const kind of ["released", "source"]) test(`collector distinguishes bundled and packaged Core for ${kind}`, async t => {
+    const data = await fixture(t, { kind, packageCoreSha: f.digest("publisher package asset distinct from bundled FSI Core") });
+    if (kind === "released") assert.equal(formObservation(data, data.reservation, data.context).outcome.outcome, "pass");
+    else assert.throws(() => formObservation(data, data.reservation, data.context), /Core package inventory/);
+});
 
 async function retainedFixture(t, options = {}) {
     const data = await fixture(t, options);

@@ -75,6 +75,9 @@ durable evidence. Replay with `source-worker.smoke.cjs --controller` followed by
 the absolute reviewed config, new evidence directory, and containment directory.
 These two acceptance units have their own allowance; they neither prepare nor
 confirm the separate six-unit investigation.
+Released SDKs can ship a bundled FSI Core whose bytes differ from the Core
+package's framework assets. The collector binds both to the acquired SDK,
+without treating the bundled assembly as a package asset.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.

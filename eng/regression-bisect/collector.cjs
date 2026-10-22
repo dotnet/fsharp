@@ -136,9 +136,11 @@ function formObservation({ unit, launch, files }, reservation, context) {
                 requireValue(["path", "sha256", "assemblyVersion"].every(field =>
                     roles[role][field] === acquisition.files[role][field]),
                 "released product identity differs from acquisition");
+            requireValue(["path", "sha256", "version"].every(field =>
+                roles.corePackage[field] === acquisition.files.core.package?.[field]), "released Core package differs from acquisition");
         }
         requireValue(roles.corePackage.id === "FSharp.Core" && roles.corePackage.version === product.corePackageVersion &&
-            product.coreAssets?.some(a => a.sha256 === roles.core.sha256),
+            product.coreAssets?.length > 0 && (!source || product.coreAssets.some(a => a.sha256 === roles.core.sha256)),
         "Core package inventory mismatch");
         requireValue(Array.isArray(identities.producers) && identities.producers.length <= 1, "invalid producer inventory");
         if (manifest.producer.name === "no-producer") requireValue(identities.producers.length === 0 &&
