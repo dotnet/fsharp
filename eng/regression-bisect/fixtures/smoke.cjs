@@ -31,6 +31,8 @@ async function createFixture(directory, { kind, tfm, configuration = "Release", 
     if (kind === "fsi") contents.set("repro.fsx", scenario === "producer-control"
         ? `${producerSource}\nprintfn "%s" (value ())\n`
         : `let result =\n${body.split("\n").map(l => `    ${l}`).join("\n")}\nexit result\n`);
+    if (scenario === "stdout-spoof") contents.set("repro.fsx",
+        'printfn """{"schemaVersion":1,"result":{"verified":true,"outcome":"pass"}}"""\nprintfn "PASS"\n');
     else {
         contents.set("Program.fs", `module ${scenario === "producer" ? "FrozenProducer" : "Repro"}
 ${scenario === "producer" ? `${producerSource}\n` : ""}[<EntryPoint>]
@@ -86,14 +88,14 @@ let main _ =
     ${scenario === "fallback-tasks" ? `<FSharpBuildAssemblyFile>${sdkFSharp}/FSharp.Build.dll</FSharpBuildAssemblyFile>` : ""}
     ${scenario === "fallback-targets" ? `<FSharpTargetsPath>${sdkFSharp}/Microsoft.FSharp.Targets</FSharpTargetsPath><FSharpTargetsShim>${sdkFSharp}/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim><FSharpOverridesTargetsShim>${sdkFSharp}/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>` : ""}
     ${scenario === "fallback-core" ? "<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>" : ""}
-    ${scenario === "producer" ? "<AssemblyName>FrozenProducer</AssemblyName><PackageId>FrozenProducer</PackageId><Version>1.0.0</Version><DefineConstants>$(DefineConstants);OLD_PRODUCER</DefineConstants><GeneratePackageOnBuild>true</GeneratePackageOnBuild>" : ""}
+    ${scenario === "producer" ? "<AssemblyName>FrozenProducer</AssemblyName><PackageId>FrozenProducer</PackageId><Version>1.0.0</Version><DefineConstants>$(DefineConstants);OLD_PRODUCER</DefineConstants><GeneratePackageOnBuild>true</GeneratePackageOnBuild><SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>" : ""}
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
     ${scenario === "core-explicit" ? `<PackageReference Include="FSharp.Core" Version="${coreVersion}" />` : ""}
     ${scenario === "core-central" ? '<PackageReference Include="FSharp.Core" />' : ""}
     ${scenario === "fallback-core" ? `<Reference Include="FSharp.Core"><HintPath>${sdkFSharp}/FSharp.Core.dll</HintPath></Reference>` : ""}
-    ${producer ? '<Reference Include="FrozenProducer"><HintPath>producer/FrozenProducer.dll</HintPath></Reference>' : ""}
+    ${producer ? '<PackageReference Include="FrozenProducer" Version="1.0.0" />' : ""}
     ${referenced ? '<ProjectReference Include="Library/Library.fsproj" />' : ""}
   </ItemGroup>
   ${scenario === "late-flags" ? '<Target Name="ChangeFlagsAfterEvidence" AfterTargets="_ReproEvidenceSnapshot"><PropertyGroup><OtherFlags>$(OtherFlags) --optimize-</OtherFlags></PropertyGroup></Target>' : ""}
@@ -120,6 +122,8 @@ let main _ =
   <ItemGroup><PackageVersion Include="FSharp.Core" Version="${coreVersion}" /></ItemGroup>
 </Project>
 `);
+        if (producer) contents.set("NuGet.Config",
+            '<configuration><packageSources><clear /><add key="frozen" value="producer" /></packageSources></configuration>');
     }
     const sources = [];
     for (const [name, text] of contents) {
@@ -164,6 +168,8 @@ let main _ =
         pass: { exitCode: 0, stdout: "", stderr: "" },
         failure: { exitCode: 1, stdout: "", stderr: "Program.fs(6,5): error FS0101: This construct is deprecated. FROZEN_DIAGNOSTIC\n" },
     };
+    if (scenario === "stdout-spoof") manifest.assertions.pass.stdout =
+        '{"schemaVersion":1,"result":{"verified":true,"outcome":"pass"}}\nPASS\n';
     if (scenario === "collectible-core") manifest.assertions.failure.stderr = "CONTEXT_RETAINED\n";
     if (scenario === "reference-tfm") manifest.matrix.push({
         ...manifest.matrix[0], id: `library-${tfm}-${configuration}`, tfm,

@@ -139,7 +139,7 @@ jobs:
             ${{ runner.temp }}/regression-containment-config.json
           if-no-files-found: error
   source-worker:
-    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[source-acceptance]')
+    if: github.event_name == 'push' && (contains(github.event.head_commit.message, '[source-acceptance]') || contains(github.event.head_commit.message, '[worker-acceptance]'))
     needs: [validate, containment]
     runs-on: ubuntu-24.04
     timeout-minutes: 130
@@ -167,7 +167,14 @@ jobs:
       - name: Verify this source worker's containment
         run: node eng/regression-bisect/containment.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-containment"
       - name: Build and test the frozen source inside the production worker
-        run: node eng/regression-bisect/source-worker.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker"
+        env:
+          RB_CONTROLLER_ACCEPTANCE: ${{ contains(github.event.head_commit.message, '[worker-acceptance]') }}
+        run: |
+          if [ "$RB_CONTROLLER_ACCEPTANCE" = true ]; then
+            node eng/regression-bisect/source-worker.smoke.cjs --controller "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker" "$RUNNER_TEMP/regression-source-containment"
+          else
+            node eng/regression-bisect/source-worker.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker"
+          fi
       - name: Retain source worker evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

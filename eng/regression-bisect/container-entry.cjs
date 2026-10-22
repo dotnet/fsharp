@@ -124,14 +124,23 @@ async function canary(job) {
             denials.push({ file, code: error.code });
         }
     }
-    const environment = await fs.readFile("/proc/1/environ");
+    let environment = Buffer.alloc(0), supervisorEnvironmentDenied = false;
+    try { environment = await fs.readFile("/proc/1/environ"); }
+    catch (error) {
+        requireValue(job.expectedUid === 1000 && error.code === "EACCES", error.message);
+        supervisorEnvironmentDenied = true;
+    }
     requireValue(!environment.toString("utf8").split("\0").some(v => hash(v.slice(v.indexOf("=") + 1)) === input.canaryDigest) &&
         !Object.values(process.env).some(v => hash(v) === input.canaryDigest) &&
         Object.keys(process.env).every(k => ["PATH", "HOME", "TMPDIR", "HTTPS_PROXY", "HTTP_PROXY",
             "https_proxy", "http_proxy", "NO_PROXY", "NODE_USE_ENV_PROXY"].includes(k)), "outer environment leaked");
     const status = await fs.readFile("/proc/self/status", "utf8");
-    requireValue(process.getuid() === 1000 && /^CapEff:\s+0+$/m.test(status) &&
+    const uid = job.expectedUid ?? 1000;
+    const cap = /^CapEff:\s+([a-f0-9]+)$/m.exec(status);
+    requireValue(process.getuid() === uid && cap && BigInt(`0x${cap[1]}`) === (uid === 0 ? 225n : 0n) &&
         /^NoNewPrivs:\s+1$/m.test(status) && /^Seccomp:\s+2$/m.test(status), "worker privilege controls absent");
+    const appArmor = (await fs.readFile("/proc/self/attr/current", "utf8")).trim();
+    requireValue(appArmor === "docker-default (enforce)", "worker AppArmor profile absent");
     const openFiles = /^Max open files\s+(\d+)\s+(\d+)/m.exec(await fs.readFile("/proc/self/limits", "utf8"));
     requireValue(openFiles?.[1] === "6500" && openFiles[2] === "6500", "source bootstrap file limit differs from launch");
     const cgroups = {};
@@ -166,7 +175,7 @@ async function canary(job) {
     }
     const bytes = Buffer.concat(chunks);
     requireValue(Array.isArray(JSON.parse(bytes)["releases-index"]), "public egress returned unexpected bytes");
-    const nativeProbe = "/scratch/native-execution-probe";
+    const nativeProbe = path.join(process.cwd(), "native-execution-probe");
     const nativeBytes = await fs.readFile("/usr/bin/true");
     await fs.writeFile(nativeProbe, nativeBytes, { flag: "wx", mode: 0o700 });
     let nativeExecution;
@@ -181,7 +190,19 @@ async function canary(job) {
     try { await fs.writeFile("/trusted/probe", "must fail"); }
     catch (error) { requireValue(["EROFS", "EACCES"].includes(error.code), error.message); readonly = true; }
     requireValue(readonly, "trusted bundle is writable");
+    const protectedWrites = [];
+    for (const file of ["/trusted/eng/regression-bisect/container-entry.cjs", "/input/input.json",
+        ...(uid === 1000 && job.expectedUid !== undefined ? ["/scratch/control/result.json", "/scratch/storage/probe"] : [])]) {
+        try { await fs.appendFile(file, "HARMLESS_WRITE_CANARY"); }
+        catch (error) {
+            requireValue(["EROFS", "EACCES"].includes(error.code), error.message);
+            protectedWrites.push({ file, code: error.code });
+            continue;
+        }
+        throw new Error(`protected input writable: ${file}`);
+    }
     return { mode: input.mode, denials, direct, proxied, cgroups, uid: process.getuid(),
+        appArmor, supervisorEnvironmentDenied, protectedWrites,
         openFiles: { soft: Number(openFiles[1]), hard: Number(openFiles[2]) },
         statusSha256: hash(status), legitimateTransfer: { bytes: bytes.length, sha256: hash(bytes) },
         scratchExecution: { complete: nativeExecution.complete, exitCode: nativeExecution.exitCode, sha256: hash(nativeBytes) } };
@@ -242,7 +263,7 @@ async function historicalAccess(file) {
     }
 }
 
-async function physicalRunner(unit, launch) {
+async function physicalRunner(unit, launch, acceptance = null) {
     validateExecutionUnit(unit);
     requireValue(process.getuid() === 0, "execution requires the protected supervisor UID");
     const signal = AbortSignal.timeout(Math.max(1, Date.parse(unit.deadline) - Date.now()));
@@ -275,7 +296,7 @@ async function physicalRunner(unit, launch) {
         try {
             entry.result = await execute(historical ? "/usr/bin/setpriv" : executable,
                 historical ? ["--reuid=1000", "--regid=1000", "--clear-groups", "--no-new-privs", "--", executable, ...args] : args,
-                { ...settings, signal, env });
+                { ...settings, signal: AbortSignal.any([signal, ...(settings.signal ? [settings.signal] : [])]), env });
             return entry.result;
         } finally {
             if (historical) {
@@ -341,6 +362,18 @@ async function physicalRunner(unit, launch) {
             return { kind: "released", root, buildInstanceId, files, runtime: identity.compilerRuntime, corePackageVersion: pkg.version };
         };
         const historical = (executable, args, settings) => withProxy(executable, args, settings, !args.includes(helper.dll));
+        let boundary;
+        if (acceptance) {
+            const probeJob = { ...acceptance, input: acceptance.probe };
+            const supervisor = await canary({ ...probeJob, expectedUid: 0 });
+            await fs.mkdir("/scratch/lane");
+            const lane = await historical(process.execPath, ["/trusted/eng/regression-bisect/container-entry.cjs", "lane"], {
+                cwd: "/scratch/lane", env: { PATH: process.env.PATH, HOME: "/scratch/lane", TMPDIR: "/scratch/lane",
+                    NODE_USE_ENV_PROXY: "1", NO_PROXY: "" }, timeoutMs: 120000, maxBytes: 65536,
+            });
+            requireValue(lane.complete && lane.exitCode === 0, `historical boundary probe failed: ${lane.stderr}`);
+            boundary = { supervisor, historical: JSON.parse(lane.stdout) };
+        }
         result = await runExecutionUnit(unit, {
             policy, inventoryReleased, acquireToolchain: async () => acquired,
             workerExecute: historical, workspaceDependencies: { execute: historical, toolchains: { run: withProxy } },
@@ -348,6 +381,26 @@ async function physicalRunner(unit, launch) {
                 workDirectory: "/scratch/executions", sourceDirectory: "/input/samples", mirrorDirectory: "/input/source.bundle",
                 gitExecutable: "/usr/bin/git", reproductionToolchain: toolchain, helper },
         }, { signal });
+        if (acceptance) {
+            requireValue(unit.request.kind === "source" && result.status === "tested", "acceptance requires tested source products");
+            const released = await inventoryReleased(toolchain, unit.buildInstanceId + "-released");
+            const { runMatrix } = require("./repro.smoke.cjs");
+            const config = { helper,
+                released: { product: released, toolchain, tfm: "net10.0" },
+                source: { product: result.product, toolchain, tfm: "net10.0" } };
+            try {
+                const matrixSignal = AbortSignal.any([signal, AbortSignal.timeout(60 * 60000)]);
+                result.acceptance = await runMatrix(config, "/scratch/matrix", undefined, {
+                    execute: (exe, args, settings) => historical(exe, args, { ...settings, signal: matrixSignal }),
+                });
+                result.acceptance.boundary = boundary;
+            } catch (error) {
+                let results = [];
+                try { results = JSON.parse(await fs.readFile("/scratch/matrix/smoke-results.json", "utf8")); }
+                catch (readError) { if (readError.code !== "ENOENT") throw readError; }
+                result.acceptance = { status: "incomplete", error: error.message, results };
+            }
+        }
     } catch (error) {
         result = { status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable",
             reason: signal.aborted ? "timeout" : "setup-failure" },
@@ -390,6 +443,13 @@ async function main() {
         requireValue(await connect("127.0.0.1", 3128) === "connected", "broker is not responsive");
         return;
     }
+    if (operation === "lane") {
+        const job = JSON.parse(await fs.readFile("/input/input.json", "utf8"));
+        requireValue(job.operation === "acceptance", "lane probes require explicit acceptance");
+        const result = await canary({ ...job, input: job.probe, expectedUid: 1000 });
+        process.stdout.write(JSON.stringify(result));
+        return;
+    }
     if (["collect", "archive", "blob"].includes(operation)) {
         requireValue(process.getuid() === 0, "protected export UID required");
         const deadline = Date.now() + 110 * 60000;
@@ -425,12 +485,12 @@ async function main() {
     }
     requireValue(operation === "worker" && process.argv.length === 3, "fixed container entry required");
     const job = JSON.parse(await fs.readFile("/input/input.json", "utf8"));
-    requireValue(job.schemaVersion === 1 && ["execution", "canary"].includes(job.operation), "invalid public container input");
-    if (job.operation === "execution") {
+    requireValue(job.schemaVersion === 1 && ["execution", "acceptance", "canary"].includes(job.operation), "invalid public container input");
+    if (job.operation !== "canary") {
         await fs.mkdir("/scratch/control", { mode: 0o700 });
         let descriptor;
         try {
-            const evidence = await physicalRunner(job.input, job.launch);
+            const evidence = await physicalRunner(job.input, job.launch, job.operation === "acceptance" ? job : null);
             for (const file of evidence.files)
                 await fs.writeFile(path.join("/scratch/control", file.path), file.bytes, { flag: "wx", mode: 0o400 });
             descriptor = { schemaVersion: 1, ...job.launch, historicalTerminated: true,

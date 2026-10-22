@@ -37,10 +37,11 @@ function sourceUnit({ revision, sourceSha, manifest, resolved, archive, compiler
 }
 
 async function main(args = process.argv.slice(2)) {
-    const [opt, configurationFile, directory, extra] = args;
-    requireValue(opt === "--run" && configurationFile && directory && !extra &&
+    const [opt, configurationFile, directory, containmentDirectory, extra] = args;
+    requireValue((opt === "--run" && !containmentDirectory || opt === "--controller" && path.isAbsolute(containmentDirectory ?? "")) &&
+        configurationFile && directory && !extra &&
         path.isAbsolute(configurationFile) && path.isAbsolute(directory),
-    "usage: node eng\\regression-bisect\\source-worker.smoke.cjs --run <absolute-reviewed-config.json> <absolute-new-evidence-directory>");
+    "usage: node eng\\regression-bisect\\source-worker.smoke.cjs <--run|--controller> <absolute-reviewed-config.json> <absolute-new-evidence-directory> [absolute-containment-directory]");
     requireValue(process.platform === "linux" && process.arch === "x64",
         "source-worker smoke requires the authorized disposable Linux x64 runtime");
     const stat = await fs.lstat(configurationFile);
@@ -56,8 +57,10 @@ async function main(args = process.argv.slice(2)) {
         schemaVersion: 1, purpose: "source-worker acceptance only", status: "incomplete",
         configSha256: hash(configBytes), sourceSha256: hash(await fs.readFile(__filename)),
         startedAt: new Date().toISOString(), controllerAcceptance: false, projectMatrixAcceptance: false,
+        command: [process.execPath, ...process.argv.slice(1)],
         immutableProducerAcceptance: false, fullTrialAcceptance: false,
-        allocation: { sourceBuilds: 1, workerUnits: 1, reservedMinutes: policy.limits.workerTimeoutMinutes },
+        allocation: { sourceBuilds: 1, workerUnits: opt === "--controller" ? 2 : 1,
+            reservedMinutes: policy.limits.workerTimeoutMinutes * (opt === "--controller" ? 2 : 1) },
     };
     const cancellation = new AbortController();
     const cancel = () => cancellation.abort(new Error("source-worker smoke cancelled"));
@@ -85,6 +88,14 @@ async function main(args = process.argv.slice(2)) {
             { timeout: 60000, maxBuffer: 1024 * 1024 });
         const sourceBundleSha256 = (await sourceBundleIdentity(sourceBundle, cancellation.signal)).sha256;
         report.sourceBundleSha256 = sourceBundleSha256;
+        if (opt === "--controller") {
+            Object.assign(report, await require("./controller.smoke.cjs").acceptController({
+                root, config, configBytes, containmentDirectory, revision, frozen, unit, key: randomBytes(32),
+                sourceDirectory: path.join(root, "inputs", "sample"), sourceBundle, sourceBundleSha256, signal: cancellation.signal,
+            }));
+            report.status = "passed";
+            return;
+        }
         const evidenceDirectory = path.join(root, "launch");
         await fs.mkdir(evidenceDirectory);
         const key = randomBytes(32);

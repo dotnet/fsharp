@@ -5,21 +5,21 @@ const { createFixture } = require("./fixtures/smoke.cjs");
 const { requireValue, isolatedEnvironment } = require("./toolchain-io.cjs");
 const { execute } = require("./repro-process.cjs");
 
-async function freezeProducer(root, config, results) {
+async function freezeProducer(root, config, results, dependencies) {
     const sourceDirectory = path.join(root, "producer");
     const manifest = await createFixture(sourceDirectory, { kind: "project", tfm: config.released.tfm, scenario: "producer" });
     const result = await runReproduction({
         manifest, sourceDirectory, workDirectory: path.join(root, "executions"),
         product: config.released.product, toolchain: config.released.toolchain, helper: config.helper,
         sampleRuntimes: config.released.sampleRuntimes,
-    });
+    }, dependencies);
     results.push({ id: "freeze-released-producer", expected: "pass", result });
     requireValue(result.outcome.outcome === "pass", `producer preparation failed: ${result.error ?? result.outcome.reason}`);
     const row = result.cells[0].evidence[0].projects[0];
     const nupkg = path.join(path.dirname(path.dirname(row.targetPath)), "FrozenProducer.1.0.0.nupkg");
     const env = isolatedEnvironment(path.join(root, "helper"), config.released.toolchain.requested.platform);
     for (const folder of [env.HOME, env.TEMP, env.APPDATA, env.LOCALAPPDATA]) await fs.mkdir(folder, { recursive: true });
-    const inspected = await execute(config.helper.executable,
+    const inspected = await (dependencies.execute ?? execute)(config.helper.executable,
         ["exec", "--fx-version", config.helper.runtimeVersion, config.helper.dll, "inspect", row.targetPath, nupkg],
         { cwd: root, env, timeoutMs: 120000, maxBytes: 1024 * 1024 });
     requireValue(inspected.complete && inspected.exitCode === 0, `producer inspection failed: ${inspected.stderr}`);
@@ -37,23 +37,20 @@ async function freezeProducer(root, config, results) {
     };
 }
 
-async function main() {
-    const [configurationFile, outputDirectory, phase] = process.argv.slice(2);
-    requireValue(configurationFile && outputDirectory && process.argv.length <= 5 && (!phase || ["released", "source"].includes(phase)),
-        "usage: node repro.smoke.cjs <verified-products.json> <new-output-directory> [released|source]");
-    const config = JSON.parse(await fs.readFile(configurationFile, "utf8"));
+async function runMatrix(config, outputDirectory, phase, dependencies = {}) {
     const products = phase ? [phase] : ["released", "source"];
     requireValue(config.released && config.helper && products.every(name => config[name]?.product.kind === name),
         "verified products and evidence helper are required (source must be a clean local build)");
     await fs.mkdir(outputDirectory);
     const root = await fs.realpath(outputDirectory);
     const results = [];
-    const producer = await freezeProducer(root, config, results);
+    const producer = await freezeProducer(root, config, results, dependencies);
     await fs.writeFile(path.join(root, "frozen-producer.json"), JSON.stringify(producer, null, 2));
     for (const name of products) {
         const input = config[name];
         for (const [kind, scenario, configuration] of [
             ["fsi", "pass", "Release"],
+            ["fsi", "stdout-spoof", "Release"],
             ["project", "pass", "Debug"],
             ["project", "core-explicit", "Release"],
             ["project", "core-central", "Release"],
@@ -68,9 +65,9 @@ async function main() {
             ["project", "collectible-core", "Release"],
             ["project", "reference-pass", "Release"],
             ["project", "reference-late", "Release"],
-            ...(process.platform === "win32" ? [["project", "reference-tfm", "Release"]] : []),
+            ["project", "reference-tfm", "Release"],
             ["project", "producer-consumer", "Release"],
-            ...(process.platform === "win32" ? [["project", "multi-tfm", "Release"]] : []),
+            ["project", "multi-tfm", "Release"],
             ...(name === "source" ? ["compiler", "tasks", "targets", "core"].map(role => ["project", `fallback-${role}`, "Release"]) : []),
             ["fsi", "producer-control", "Release"],
         ]) {
@@ -85,7 +82,7 @@ async function main() {
                 manifest, sourceDirectory, workDirectory: path.join(root, "executions"),
                 product: input.product, toolchain: input.toolchain, helper: config.helper,
                 sampleRuntimes: input.sampleRuntimes,
-            });
+            }, dependencies);
             const lateOverride = scenario.startsWith("late-") || scenario === "reference-late";
             const fallback = scenario.startsWith("fallback-");
             const expected = lateOverride || fallback ? "untestable"
@@ -103,14 +100,39 @@ async function main() {
                 const record = result.cells[0].evidence[0];
                 const invocation = record.commands.at(-1);
                 const env = isolatedEnvironment(path.join(root, "helper"), input.toolchain.requested.platform);
-                const baseline = await execute(invocation.executable, invocation.args, { cwd: root, env, timeoutMs: 30000 });
+                const baseline = await (dependencies.execute ?? execute)(invocation.executable, invocation.args, { cwd: root, env, timeoutMs: 30000 });
                 results.at(-1).uninstrumented = baseline;
                 await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(results, null, 2));
                 requireValue(baseline.complete && baseline.exitCode === 0 && baseline.stdout === "PASS\n" && baseline.stderr === "",
                     "collectible context must unload both with and without observation");
             }
         }
+        const wrongHost = await runReproduction({
+            manifest: await createFixture(path.join(root, `${name}-wrong-host`), { kind: "fsi", tfm: input.tfm }),
+            sourceDirectory: path.join(root, `${name}-wrong-host`), workDirectory: path.join(root, "executions"),
+            product: input.product, toolchain: { ...input.toolchain, hostPath: path.join(root, "wrong-host") }, helper: config.helper,
+        }, dependencies);
+        results.push({ id: `${name}-wrong-host`, expected: "untestable", result: wrongHost });
+        requireValue(wrongHost.outcome.reason === "wrong-identity", "wrong host must not execute a reproduction");
     }
+    const { hash } = require("./toolchain-io.cjs");
+    const retained = [];
+    for (const record of [producer.dll, producer.package]) {
+        const bytes = await fs.readFile(record.originalPath);
+        requireValue(hash(bytes) === record.sha256, "immutable producer changed across consumers");
+        retained.push({ path: record.path, sha256: record.sha256, bytesBase64: bytes.toString("base64") });
+    }
+    const report = { status: "passed", producer, retained, results };
+    await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(report, null, 2));
+    return report;
+}
+
+async function main() {
+    const [configurationFile, outputDirectory, phase] = process.argv.slice(2);
+    requireValue(configurationFile && outputDirectory && process.argv.length <= 5 && (!phase || ["released", "source"].includes(phase)),
+        "usage: node repro.smoke.cjs <verified-products.json> <new-output-directory> [released|source]");
+    return runMatrix(JSON.parse(await fs.readFile(configurationFile, "utf8")), outputDirectory, phase);
 }
 
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
+module.exports = { runMatrix };

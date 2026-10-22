@@ -102,6 +102,7 @@ async function stageHelpers(root) {
         ...(await fs.readdir(__dirname)).filter(n => n.endsWith(".cjs") && !/\.(test|smoke)\.cjs$/.test(n))
             .map(n => `eng/regression-bisect/${n}`),
         "eng/regression-bisect/ReproEvidence.targets",
+        "eng/regression-bisect/repro.smoke.cjs", "eng/regression-bisect/fixtures/smoke.cjs",
         ...(await fs.readdir(path.join(__dirname, "evidence"), { recursive: true }))
             .filter(n => /\.(cs|csproj)$/.test(n) && !n.split(/[\\/]/).some(p => ["bin", "obj"].includes(p)))
             .map(n => `eng/regression-bisect/evidence/${n.split(path.sep).join("/")}`),
@@ -219,7 +220,7 @@ async function runContainer(config, options, deps = {}) {
     receipt.evidenceDirectory = root;
     const receiptFile = path.join(root, "receipt.json");
     await fs.writeFile(receiptFile, JSON.stringify(receipt, null, 2), { flag: "wx" });
-    let staging, answer, failure, cleaning = false, files = [], blobs = [];
+    let staging, answer, failure, cleaning = false, files = [], blobs = [], probe;
     const invoke = deps.command ?? command;
     const docker = async (args, settings = {}, allowMissing = false) => {
         const result = await invoke(config.dockerExecutable,
@@ -250,8 +251,9 @@ async function runContainer(config, options, deps = {}) {
         options.signal?.throwIfAborted();
         receipt.runtime = await inspectRuntime(config, deps);
         options.signal?.throwIfAborted();
-        requireValue(["execution", "canary"].includes(options.operation), "invalid container operation");
-        if (options.operation === "execution") {
+        requireValue(["execution", "acceptance", "canary"].includes(options.operation), "invalid container operation");
+        const execution = options.operation !== "canary";
+        if (execution) {
             requireValue(Buffer.isBuffer(options.receiptKey) && options.receiptKey.length >= 32, "outer receipt authentication key required");
             validateExecutionUnit(options.input);
             requireValue(options.input.platform.os === "linux" && options.input.platform.architecture === "x64" &&
@@ -270,7 +272,7 @@ async function runContainer(config, options, deps = {}) {
         receipt.helperDigest = fingerprint(receipt.helpers);
         const launch = { launchId: receipt.launchId, imageDigest: image.split(":").at(-1), unitDigest: fingerprint(options.input) };
         receipt.launch = launch;
-        if (options.operation === "execution") {
+        if (execution) {
             for (const source of options.input.manifest.sources) {
                 const sourceRoot = await fs.realpath(options.sourceDirectory);
                 const bytes = await regularBytes(path.join(sourceRoot, source.path), 1024 * 1024);
@@ -333,15 +335,24 @@ async function runContainer(config, options, deps = {}) {
         const brokerIp = brokerState.NetworkSettings?.Networks?.[internal]?.IPAddress;
         requireValue(typeof brokerIp === "string" && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(brokerIp), "missing private broker address");
         const proxy = `http://${brokerIp}:3128`;
+        if (options.operation === "acceptance") {
+            const canary = randomBytes(32).toString("hex");
+            probe = { file: path.join(root, "outer-canary"), previous: process.env.RB_OUTER_CANARY };
+            await fs.writeFile(probe.file, canary, { flag: "wx", mode: 0o600 });
+            process.env.RB_OUTER_CANARY = canary;
+            probe.input = { mode: "inspect", outerPaths: [probe.file, `/proc/${process.pid}/environ`],
+                canaryDigest: hash(canary), hostAddresses: [] };
+        }
         await fs.writeFile(path.join(input, "input.json"), JSON.stringify({
             schemaVersion: 1, operation: options.operation, input: options.input, launch, proxy,
             hostAddresses: [receipt.privateNetwork, receipt.publicNetwork]
                 .flatMap(n => n.IPAM?.Config?.map(c => c.Gateway).filter(Boolean) ?? []),
             limits: config.limits,
+            ...(probe ? { probe: probe.input } : {}),
         }), { flag: "wx", mode: 0o444 });
         await readableTree(input);
         own("container", worker);
-        const supervisor = options.operation === "execution";
+        const supervisor = execution;
         await docker([...common(worker, internal, config.limits, supervisor, true), "--dns", "127.0.0.1",
             "--mount", `type=bind,source=${input},target=/input,readonly`,
             image, "-i", "PATH=/usr/local/bin:/usr/bin:/bin", "HOME=/scratch", "TMPDIR=/scratch",
@@ -373,7 +384,7 @@ async function runContainer(config, options, deps = {}) {
         receipt.workerConfig = created.HostConfig;
         await docker(["container", "exec", broker, "/usr/local/bin/node",
             "/trusted/eng/regression-bisect/container-entry.cjs", "ready"]);
-        const remaining = options.operation === "execution" ? Date.parse(options.input.deadline) - Date.now() : config.limits.timeoutMs;
+        const remaining = execution ? Date.parse(options.input.deadline) - Date.now() : config.limits.timeoutMs;
         requireValue(remaining > 0, "worker reservation deadline exhausted");
         receipt.workerStarted = true;
         if (supervisor) {
@@ -529,8 +540,13 @@ async function runContainer(config, options, deps = {}) {
             }
         }
         if (staging) await fs.rm(staging, { recursive: true });
+        if (probe) {
+            await fs.unlink(probe.file);
+            if (probe.previous === undefined) delete process.env.RB_OUTER_CANARY;
+            else process.env.RB_OUTER_CANARY = probe.previous;
+        }
         receipt.completedAt = new Date().toISOString();
-        if (options.operation === "execution" && Buffer.isBuffer(options.receiptKey))
+        if (options.operation !== "canary" && Buffer.isBuffer(options.receiptKey))
             receipt.signature = createHmac("sha256", options.receiptKey).update(fingerprint(receipt)).digest("hex");
         const replacement = path.join(root, "receipt.new");
         const handle = await fs.open(replacement, "wx", 0o600);
@@ -555,7 +571,7 @@ async function runContainer(config, options, deps = {}) {
         }
     }
     return failure ? { status: "blocked", reason: receipt.reason, receipt } :
-        { status: "collected", result: answer, receipt, ...(options.operation === "execution" ? { files, blobs } : {}) };
+        { status: "collected", result: answer, receipt, ...(options.operation !== "canary" ? { files, blobs } : {}) };
 }
 
 module.exports = { image, validateContainerConfig, inspectRuntime, runContainer, sourceBundleIdentity,

@@ -61,6 +61,21 @@ The source smoke declares that runtime separately from the stable SDK's bundled 
 The existing installer acquires and verifies a supplemental runtime when necessary.
 The worker retains its archive receipt and verifies the actual FSI runtime and Core loads.
 
+`[worker-acceptance]` selects the extended smoke instead, on the same authorized
+Linux job after all seven containment modes. It runs the controller library
+against a durable file-backed GitHub API, first executing the real stable endpoint
+and then the clean source endpoint. The source worker reuses `repro.smoke.cjs`
+with the production historical execution lane for producer creation and every
+consumer. Its matrix includes Linux multi-TFM, exact diagnostics, runtime-only
+failures and wrong host/compiler/tasks/targets/Core cases. The frozen producer is
+consumed as its exact NuGet package; its DLL and package bytes are retained.
+Protected-supervisor and historical-UID probes precede product execution.
+After collection, launch scratch is deleted and a new process authenticates the
+durable evidence. Replay with `source-worker.smoke.cjs --controller` followed by
+the absolute reviewed config, new evidence directory, and containment directory.
+These two acceptance units have their own allowance; they neither prepare nor
+confirm the separate six-unit investigation.
+
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.

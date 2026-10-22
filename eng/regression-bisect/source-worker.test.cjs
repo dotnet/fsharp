@@ -5,6 +5,38 @@ const { manifest: fixtureManifest, seal } = require("./fixtures/contracts.cjs");
 const { validateExecutionUnit } = require("./worker.cjs");
 const { fingerprintInput } = require("./model.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const os = require("node:os");
+const { createFixture } = require("./fixtures/smoke.cjs");
+
+test("producer preparation uses the same historical execution lane as consumers", async t => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-producer-lane-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const source = await fs.readFile(path.join(__dirname, "repro.smoke.cjs"), "utf8");
+    const dependencies = { execute: () => assert.fail("no product execution in this focused fixture") };
+    const context = { module: {}, process, console, require: name => name === "./repro.cjs" ? {
+        runReproduction: async (_, actual) => {
+            assert.equal(actual, dependencies);
+            throw new Error("historical lane selected");
+        },
+    } : require(name) };
+    require("node:vm").runInNewContext(source, context);
+    await assert.rejects(context.module.exports.runMatrix({
+        released: { product: { kind: "released" }, tfm: "net10.0" }, helper: {},
+    }, path.join(root, "matrix"), "released", dependencies), /historical lane selected/);
+});
+
+test("the reusable matrix includes Linux multi-TFM and consumes the frozen producer package", async t => {
+    assert.equal(typeof require("./repro.smoke.cjs").runMatrix, "function");
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-matrix-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const manifest = await createFixture(root, { kind: "project", tfm: "net10.0", scenario: "multi-tfm" });
+    assert.equal(new Set(manifest.matrix.map(c => c.tfm)).size, 2);
+    const source = await fs.readFile(path.join(__dirname, "fixtures", "smoke.cjs"), "utf8");
+    assert.match(source, /PackageReference Include="FrozenProducer"/);
+    assert.doesNotMatch(source, /<Reference Include="FrozenProducer"/);
+});
 
 test("source smoke binds one fresh physical unit without changing the investigation allowance", () => {
     const manifest = fixtureManifest();

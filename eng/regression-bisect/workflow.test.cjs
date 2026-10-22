@@ -265,7 +265,7 @@ test("physical source acceptance is opt-in, isolated and distinct from the inves
     const validation = YAML.parse(read(".github/workflows/regression-bisect-validation.yml"));
     const job = validation.jobs["source-worker"];
     assert.equal(job.if,
-        "github.event_name == 'push' && contains(github.event.head_commit.message, '[source-acceptance]')");
+        "github.event_name == 'push' && (contains(github.event.head_commit.message, '[source-acceptance]') || contains(github.event.head_commit.message, '[worker-acceptance]'))");
     assert.deepEqual(job.needs, ["validate", "containment"]);
     assert.equal(job["runs-on"], "ubuntu-24.04");
     assert.equal(job["timeout-minutes"], 130);
@@ -277,8 +277,11 @@ test("physical source acceptance is opt-in, isolated and distinct from the inves
     const containment = job.steps.findIndex(s => s.name === "Verify this source worker's containment");
     const source = job.steps.findIndex(s => s.name === "Build and test the frozen source inside the production worker");
     assert.ok(containment >= 0 && source > containment);
-    assert.equal(job.steps[source].run,
-        'node eng/regression-bisect/source-worker.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker"');
+    assert.ok(job.steps[source].run.includes(
+        'node eng/regression-bisect/source-worker.smoke.cjs --controller "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker" "$RUNNER_TEMP/regression-source-containment"'));
+    assert.deepEqual(job.steps[source].env, {
+        RB_CONTROLLER_ACCEPTANCE: "${{ contains(github.event.head_commit.message, '[worker-acceptance]') }}",
+    });
     const artifacts = job.steps.find(s => s.uses?.startsWith("actions/upload-artifact@"));
     assert.equal(artifacts.if, "always()");
     assert.equal(artifacts.with["if-no-files-found"], "error");

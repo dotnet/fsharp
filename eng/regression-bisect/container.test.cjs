@@ -408,7 +408,7 @@ function executionUnit() {
 }
 
 test("source bundle handoff is bounded, digest-bound and staged before worker creation", async t => {
-    for (const scenario of ["representative", "ceiling", "oversize", "empty", "missing-path", "missing-digest",
+    for (const scenario of ["acceptance", "representative", "ceiling", "oversize", "empty", "missing-path", "missing-digest",
         "missing-both", "wrong-digest", "hardlink", "symlink", "copy-change", "copy-oversize", "aborted"]) await t.test(scenario, async t => {
         const f = await dockerFixture(t);
         const sourceDirectory = path.join(f.root, "samples");
@@ -428,7 +428,7 @@ test("source bundle handoff is bounded, digest-bound and staged before worker cr
         const unit = executionUnit();
         await fs.mkdir(path.join(sourceDirectory, "fixtures"), { recursive: true });
         await fs.writeFile(path.join(sourceDirectory, unit.manifest.sources[0].path), 'printfn "ok"');
-        const options = { operation: "execution", input: unit, evidenceDirectory: f.root, sourceDirectory,
+        const options = { operation: scenario === "acceptance" ? "acceptance" : "execution", input: unit, evidenceDirectory: f.root, sourceDirectory,
             sourceBundle, sourceBundleSha256, receiptKey: Buffer.alloc(32, 7) };
         if (scenario === "missing-path" || scenario === "missing-both") delete options.sourceBundle;
         if (scenario === "missing-digest" || scenario === "missing-both") delete options.sourceBundleSha256;
@@ -467,7 +467,7 @@ test("source bundle handoff is bounded, digest-bound and staged before worker cr
             return command(exe, args, settings);
         };
         const result = await runContainer(config(), options, f.deps);
-        const accepted = ["representative", "ceiling"].includes(scenario);
+        const accepted = ["acceptance", "representative", "ceiling"].includes(scenario);
         assert.equal(result.status, accepted ? "collected" : "blocked", result.reason);
         assert.equal(staged, accepted);
         assert.equal(result.receipt.workerStarted, accepted);
