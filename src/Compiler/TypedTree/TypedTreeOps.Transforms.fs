@@ -979,6 +979,8 @@ module internal Rewriting =
         let tpsR, tmenvinner =
             tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv d.Typars
 
+        remapTyparIdentsInPlace ctxt tpsR
+
         let typarsR = LazyWithContext.NotLazy tpsR
         let attribsR = d.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner
         let tyconReprR = d.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner
@@ -994,6 +996,7 @@ module internal Rewriting =
         let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
 
         { d with
+            entity_range = remapRange ctxt d.entity_range
             entity_typars = typarsR
             entity_attribs = WellKnownEntityAttribs.Create(attribsR)
             entity_tycon_repr = tyconReprR
@@ -1011,6 +1014,7 @@ module internal Rewriting =
                     Some
                         { dd with
                             entity_accessibility = dd.entity_accessibility |> remapAccess ctxt
+                            entity_other_range = dd.entity_other_range |> remapOtherRange ctxt
                             entity_tycon_repr_accessibility = dd.entity_tycon_repr_accessibility |> remapAccess ctxt
                             entity_tycon_abbrev = tyconAbbrevR
                             entity_exn_info = exnInfoR

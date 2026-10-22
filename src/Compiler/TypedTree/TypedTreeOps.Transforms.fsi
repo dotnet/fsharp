@@ -182,7 +182,8 @@ module internal Rewriting =
     val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace
 
     /// As ApplyExportRemappingToEntity, rescoping every accessibility, so nothing is left saying
-    /// ILScopeRef.Local and reading in the consumer as internal to its own assembly.
+    /// ILScopeRef.Local and reading in the consumer as internal to its own assembly, and mapping every range
+    /// through the path map, as pickling does.
     val ApplyExportRemappingToEntityLeavingAssembly:
         TcGlobals -> Remap -> rescopeAccessTo: ILScopeRef -> ModuleOrNamespace -> ModuleOrNamespace
 

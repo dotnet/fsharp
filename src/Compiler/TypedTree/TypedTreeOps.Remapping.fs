@@ -1732,6 +1732,41 @@ module internal ExprRemapping =
             |> List.map (fun (CompPath(scoref, _, path)) -> CompPath(rescopeILScopeRef ilScopeRef scoref, SyntaxAccess.Unknown, path))
             |> TAccess
 
+    let appliesPathMap (ctxt: RemapContext) =
+        ctxt.rescopeAccessTo.IsSome && not (PathMap.isEmpty ctxt.g.pathMap)
+
+    let remapRange ctxt (m: range) =
+        if not (appliesPathMap ctxt) then
+            m
+        else
+            // as p_range does for the pickled form
+            let fileName = PathMap.apply ctxt.g.pathMap m.FileName
+
+            if fileName === m.FileName then
+                m
+            else
+                mkRange fileName m.Start m.End
+
+    let remapIdent ctxt (id: Ident) =
+        if not (appliesPathMap ctxt) then
+            id
+        else
+            let mR = remapRange ctxt id.idRange
+
+            if Range.equals mR id.idRange then
+                id
+            else
+                Ident(id.idText, mR)
+
+    let remapOtherRange ctxt (otherRange: (range * bool) option) =
+        otherRange
+        |> Option.map (fun (m, isImplementation) -> remapRange ctxt m, isImplementation)
+
+    let remapTyparIdentsInPlace ctxt (tps: Typar list) =
+        if appliesPathMap ctxt then
+            for tp in tps do
+                tp.SetIdent(remapIdent ctxt tp.Id)
+
     let rec remapAttribImpl ctxt tmenv (Attrib(tcref, kind, args, props, isGetOrSetAttr, targets, m)) =
         Attrib(
             remapOrRebindTyconRef tmenv tcref,
@@ -1757,7 +1792,7 @@ module internal ExprRemapping =
     and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
         {
             Attribs = WellKnownValAttribs.Create(remapAttribs ctxt tmenv (argInfo.Attribs.AsList()))
-            Name = argInfo.Name
+            Name = argInfo.Name |> Option.map (remapIdent ctxt)
             OtherRange = argInfo.OtherRange
         }
 
@@ -1768,6 +1803,11 @@ module internal ExprRemapping =
         let ty = d.val_type
         let valReprInfo = d.ValReprInfo
         let tyR = ty |> remapPossibleForallTyImpl ctxt tmenv
+
+        match tyR with
+        | TType_forall(tps, _) when not (tyR === ty) -> remapTyparIdentsInPlace ctxt tps
+        | _ -> ()
+
         let declaringEntityR = d.TryDeclaringEntity |> remapParentRef tmenv
         let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo ctxt tmenv)
 
@@ -1779,12 +1819,14 @@ module internal ExprRemapping =
 
         { d with
             val_type = tyR
+            val_range = remapRange ctxt d.val_range
             val_opt_data =
                 match d.val_opt_data with
                 | Some dd ->
                     Some
                         { dd with
                             val_access = dd.val_access |> remapAccess ctxt
+                            val_other_range = dd.val_other_range |> remapOtherRange ctxt
                             val_declaring_entity = declaringEntityR
                             val_repr_info = reprInfoR
                             val_member_info = memberInfoR
@@ -2206,6 +2248,7 @@ module internal ExprRemapping =
 
     and remapRecdField ctxt tmenv x =
         { x with
+            rfield_id = x.rfield_id |> remapIdent ctxt
             rfield_access = x.rfield_access |> remapAccess ctxt
             rfield_type = x.rfield_type |> remapPossibleForallTyImpl ctxt tmenv
             rfield_pattribs = x.rfield_pattribs |> remapAttribs ctxt tmenv
@@ -2219,6 +2262,7 @@ module internal ExprRemapping =
 
     and remapUnionCase ctxt tmenv (x: UnionCase) =
         { x with
+            Id = x.Id |> remapIdent ctxt
             Accessibility = x.Accessibility |> remapAccess ctxt
             FieldTable = x.FieldTable |> remapRecdFields ctxt tmenv
             ReturnType = x.ReturnType |> remapType tmenv
