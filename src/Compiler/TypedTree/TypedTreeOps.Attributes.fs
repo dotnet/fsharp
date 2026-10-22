@@ -2001,6 +2001,7 @@ module internal DebugPrint =
                     | TFSharpInterface -> "interface"
                     | TFSharpStruct -> "struct"
                     | TFSharpEnum -> "enum"
+                    | TFSharpRecord -> "record"
                     | _ -> failwith "???"
 
                 let inherits =
