@@ -1203,7 +1203,17 @@ let private CompilePatternBasic
     let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
 
     let joinBindings = ResizeArray<Binding>()
-    let frontierMemo = Dictionary<MemoKey, MemoEntry>()
+    let memo =
+        match joinPromotion with
+        | JoinPromotion.Disabled -> ValueNone
+        | JoinPromotion.Enabled ->
+            ValueSome
+                (struct {|
+                    Frontiers = Dictionary<MemoKey, MemoEntry>()
+                    Guards = Dictionary<int, Expr ref>()
+                    Patterns = Dictionary<Pattern, int>(HashIdentity.Reference)
+                    Expressions = Dictionary<Expr, int>(HashIdentity.Reference)
+                |})
 
     // The full body includes clause targets, which may contain constructs that cannot move into a lambda.
     let isShareableBody allowMutable returnTy body =
@@ -1261,14 +1271,13 @@ let private CompilePatternBasic
             cell.Value <- callSharedFunction mMatch vs action)
         |> Seq.toArray
 
-    let guardMemo = Dictionary<int, Expr ref>()
     let shareGuard i (vs: Val list) (whenExpr: Expr) =
-        if preserveMatchShape || joinPromotion = JoinPromotion.Disabled then whenExpr
-        else
-            match guardMemo.TryGetValue i with
+        match memo with
+        | ValueSome memo when not preserveMatchShape ->
+            match memo.Guards.TryGetValue i with
             | false, _ ->
                 let cell = ref whenExpr
-                guardMemo.Add(i, cell)
+                memo.Guards.Add(i, cell)
                 Expr.Link cell
             | true, cell ->
                 if obj.ReferenceEquals(cell.Value, whenExpr) && isShareableBody false g.bool_ty whenExpr then
@@ -1277,10 +1286,10 @@ let private CompilePatternBasic
                     let guard = bindSharedFunction false whenExpr.Range vs (whenExpr, g.bool_ty)
                     cell.Value <- mkDebugPoint whenExpr.Range (callSharedFunction whenExpr.Range vs guard)
                 Expr.Link cell
+        | ValueNone
+        | ValueSome _ -> whenExpr
 
     // Reference identities make key collisions conservative: distinct nodes never fuse.
-    let patternNodeIds = Dictionary<Pattern, int>(HashIdentity.Reference)
-    let boundExprNodeIds = Dictionary<Expr, int>(HashIdentity.Reference)
     let nodeId (ids: Dictionary<_, int>) node =
         match ids.TryGetValue node with
         | true, v -> v
@@ -1289,22 +1298,22 @@ let private CompilePatternBasic
             ids[node] <- v
             v
 
-    let rec boundExprKey (e: Expr) =
+    let rec boundExprKey ids (e: Expr) =
         match stripDebugPoints e with
         | Expr.Val(vref, _, _) -> BoundExprKey.Local vref.Stamp
-        | Expr.Op(TOp.TupleFieldGet(_, j), _, [ arg ], _) -> BoundExprKey.TupleField(j, boundExprKey arg)
-        | Expr.Op(TOp.ValFieldGet(RecdFieldRef(tcref, nm)), _, [ arg ], _) -> BoundExprKey.RecdField(tcref.Stamp, nm, boundExprKey arg)
-        | Expr.Op(TOp.UnionCaseFieldGet(UnionCaseRef(tcref, nm), j), _, [ arg ], _) -> BoundExprKey.UnionField(tcref.Stamp, nm, j, boundExprKey arg)
-        | Expr.Op(TOp.Coerce, _, [ arg ], _) -> BoundExprKey.Coerce(boundExprKey arg)
-        | _ -> BoundExprKey.Opaque(nodeId boundExprNodeIds e)
+        | Expr.Op(TOp.TupleFieldGet(_, j), _, [ arg ], _) -> BoundExprKey.TupleField(j, boundExprKey ids arg)
+        | Expr.Op(TOp.ValFieldGet(RecdFieldRef(tcref, nm)), _, [ arg ], _) -> BoundExprKey.RecdField(tcref.Stamp, nm, boundExprKey ids arg)
+        | Expr.Op(TOp.UnionCaseFieldGet(UnionCaseRef(tcref, nm), j), _, [ arg ], _) -> BoundExprKey.UnionField(tcref.Stamp, nm, j, boundExprKey ids arg)
+        | Expr.Op(TOp.Coerce, _, [ arg ], _) -> BoundExprKey.Coerce(boundExprKey ids arg)
+        | _ -> BoundExprKey.Opaque(nodeId ids e)
 
-    let memoKeyOf frontiers capturedVals =
+    let memoKeyOf patternNodeIds boundExprNodeIds frontiers capturedVals =
         { Frontiers =
             frontiers
             |> List.map (fun (Frontier(i, actives, valMap)) ->
                 { Clause = i
                   Actives = actives |> List.map (fun (Active(path, _, pat)) -> pathKey path, nodeId patternNodeIds pat)
-                  Bound = [ for KeyValue(stamp, e) in valMap.Contents -> stamp, boundExprKey e ] })
+                  Bound = [ for KeyValue(stamp, e) in valMap.Contents -> stamp, boundExprKey boundExprNodeIds e ] })
           Captured = capturedVals |> List.map (fun (v: Val) -> v.Stamp) }
 
     // The match input stays in scope at the outer join binding; only tree-bound locals need parameters.
@@ -1387,12 +1396,13 @@ let private CompilePatternBasic
         | None -> successTree
 
     and investigateMemoized refuted frontiers =
-        if joinPromotion = JoinPromotion.Disabled then
+        match memo with
+        | ValueNone ->
             InvestigateFrontiers refuted frontiers
-        else
+        | ValueSome memo ->
             let capturedVals = capturedValsOfFrontiers frontiers
-            let key = memoKeyOf frontiers capturedVals
-            match frontierMemo.TryGetValue key with
+            let key = memoKeyOf memo.Patterns memo.Expressions frontiers capturedVals
+            match memo.Frontiers.TryGetValue key with
             | true, state ->
                 state.Hits <- state.Hits + 1
                 if state.Hits > (if preserveMatchShape then joinPromotionThreshold else 1) && state.IsPromotable.Value then
@@ -1425,7 +1435,7 @@ let private CompilePatternBasic
                     let fn = bindSharedFunction (not preserveMatchShape) mMatch capturedVals (body, resultTy)
                     if preserveMatchShape then MemoJoin.Thunk fn
                     else MemoJoin.Target(addJoinTarget fn capturedVals)
-                frontierMemo[key] <- { Hits = 1; IsPromotable = isPromotable; Join = join }
+                memo.Frontiers[key] <- { Hits = 1; IsPromotable = isPromotable; Join = join }
                 subtree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
