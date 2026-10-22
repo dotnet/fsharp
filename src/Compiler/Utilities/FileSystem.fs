@@ -1093,9 +1093,11 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
     static member FromByteMemory(bytes: ReadOnlyByteMemory) = ByteStorage(fun () -> bytes)
 
     static member FromByteMemoryAndCopy(bytes: ReadOnlyByteMemory, useBackingMemoryMappedFile: bool) =
+        let length = bytes.Length
+
         if useBackingMemoryMappedFile then
             match MemoryMappedFile.TryFromByteMemory(bytes) with
-            | Some mmf -> ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
+            | Some mmf -> ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).Slice(0, length).AsReadOnly())
             | _ ->
                 let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
                 ByteStorage.FromByteMemory(copiedBytes)

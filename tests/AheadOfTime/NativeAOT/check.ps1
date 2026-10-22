@@ -1,63 +1,67 @@
-# Publish the test project with NativeAOT and check that it runs.
-#
-# The point of this check is that the publish succeeds: a string-typed interpolated string
-# must lower to a reflection-free form (System.String.Concat), not the reflection-based
-# printf engine. If it regresses to printf, FSharp.Reflection becomes statically reachable,
-# NativeAOT analysis emits IL2026/IL2070/IL3050, TreatWarningsAsErrors turns them into errors,
-# and this publish fails.
+# Keep reflection-free paths warning-strict and test captured printf compatibility separately.
 
 $ErrorActionPreference = "Stop"
 
-$root = "NativeAOT_Test"
-
 $cwd = Get-Location
-Set-Location $PSScriptRoot
+try {
+    foreach ($fixture in @(
+        @{ Directory = $PSScriptRoot; Name = "NativeAOT_Test"; Expected = "Finished" },
+        @{ Directory = (Join-Path $PSScriptRoot "PrintfInterpolation"); Name = "PrintfInterpolation_Test"; Expected = "01:02:03" }
+    )) {
+        Set-Location $fixture.Directory
+        $root = $fixture.Name
+        $logDirectory = Join-Path $PSScriptRoot "..\..\..\artifacts\log\Release\AheadOfTime\NativeAOT"
+        dotnet publish -restore -c release "$root.fsproj" "-bl:$logDirectory\$root.binlog"
+        $publishExit = $LASTEXITCODE
+        if ($publishExit -ne 0) {
+            throw "$root publish failed with exit code $publishExit"
+        }
 
-dotnet publish -restore -c release "$root.fsproj" -bl:"$PSScriptRoot/../../../artifacts/log/Release/AheadOfTime/NativeAOT/$root.binlog"
-if (-not ($LASTEXITCODE -eq 0)) {
-    Set-Location $cwd
-    Write-Error "NativeAOT publish failed with exit code $LASTEXITCODE" -ErrorAction Stop
-}
+        # Passing -f would override TargetFramework globally, including referenced projects.
+        $propertiesOutput = dotnet msbuild "$root.fsproj" -getProperty:TargetFramework -getProperty:FSharpCoreShippedNetTargetFramework -nologo
+        $propertiesExit = $LASTEXITCODE
+        if ($propertiesExit -ne 0) { throw "$root framework query failed with exit code $propertiesExit" }
+        $props = $propertiesOutput | ConvertFrom-Json
+        $tfm = $props.Properties.TargetFramework
+        $coreAsset = "lib/$($props.Properties.FSharpCoreShippedNetTargetFramework)/FSharp.Core.dll"
 
-# Read the frameworks from the project; passing -f above would override TargetFramework globally.
-$props = dotnet msbuild "$root.fsproj" -getProperty:TargetFramework -getProperty:FSharpCoreShippedNetTargetFramework -nologo | ConvertFrom-Json
-$tfm = $props.Properties.TargetFramework
-$coreAsset = "lib/$($props.Properties.FSharpCoreShippedNetTargetFramework)/FSharp.Core.dll"
-
-# Assert on the selected compile/runtime asset, not the "libraries" manifest, which lists every
-# lib folder and would false-pass on the netstandard2.1 fallback.
-$assets = Join-Path $PSScriptRoot "obj/project.assets.json"
-$assetsJson = Get-Content $assets -Raw | ConvertFrom-Json
-$netAssetSelected = $false
-foreach ($target in $assetsJson.targets.PSObject.Properties) {
-    foreach ($package in $target.Value.PSObject.Properties) {
-        if ($package.Name -like "FSharp.Core/*") {
-            $compileKeys = if ($package.Value.compile) { @($package.Value.compile.PSObject.Properties.Name) } else { @() }
-            $runtimeKeys = if ($package.Value.runtime) { @($package.Value.runtime.PSObject.Properties.Name) } else { @() }
-            # FSharp.Core packs only lib/{tfm}, so both must resolve there; anything else is a fallback.
-            if (($compileKeys -contains $coreAsset) -and ($runtimeKeys -contains $coreAsset)) {
-                $netAssetSelected = $true
+        $assetDirectories = @($fixture.Directory)
+        if ($root -eq "PrintfInterpolation_Test") {
+            $assetDirectories += Join-Path $fixture.Directory "Library"
+        }
+        foreach ($directory in $assetDirectories) {
+            # Check selected compile/runtime assets, not the manifest listing every packaged lib folder.
+            $assets = Join-Path $directory "obj\project.assets.json"
+            $assetsJson = Get-Content $assets -Raw | ConvertFrom-Json
+            $netAssetSelected = $false
+            foreach ($target in $assetsJson.targets.PSObject.Properties) {
+                foreach ($package in $target.Value.PSObject.Properties) {
+                    if ($package.Name -like "FSharp.Core/*") {
+                        $compileKeys = if ($package.Value.compile) { @($package.Value.compile.PSObject.Properties.Name) } else { @() }
+                        $runtimeKeys = if ($package.Value.runtime) { @($package.Value.runtime.PSObject.Properties.Name) } else { @() }
+                        if (($compileKeys -contains $coreAsset) -and ($runtimeKeys -contains $coreAsset)) {
+                            $netAssetSelected = $true
+                        }
+                    }
+                }
+            }
+            if (-not $netAssetSelected) {
+                throw "The $tfm consumer did not resolve the $coreAsset FSharp.Core compile/runtime asset. See $assets."
             }
         }
+
+        $exe = Join-Path $fixture.Directory "bin\release\$tfm\win-x64\publish\$root.exe"
+        $stderrPath = Join-Path $logDirectory "$root.stderr"
+        $lines = @(& $exe 2> $stderrPath)
+        $exitCode = $LASTEXITCODE
+        $output = $lines -join "`n"
+        $stderr = Get-Content $stderrPath -Raw
+        if ($exitCode -ne 0 -or $output -cne $fixture.Expected -or $stderr) {
+            throw "$root behavior checks failed (exit $exitCode).`nStdout:`n$output`nStderr:`n$stderr"
+        }
     }
-}
-if (-not $netAssetSelected) {
+} finally {
     Set-Location $cwd
-    Write-Error "The $tfm consumer did not resolve the $coreAsset FSharp.Core asset (it fell back to a lower target framework). The shipped net FSharp.Core target framework is not being dogfooded. See $assets." -ErrorAction Stop
-}
-
-$exe = Join-Path $PSScriptRoot "bin/release/$tfm/win-x64/publish/$root.exe"
-$output = (& $exe) -join "`n"
-$exitCode = $LASTEXITCODE
-Set-Location $cwd
-
-# The app prints a "FAILED" line per mismatch and "Finished" last, so its output is exactly "Finished" only if all checks passed.
-if (-not ($exitCode -eq 0)) {
-    Write-Error "NativeAOT app crashed with exit code $exitCode.`nOutput:`n$output" -ErrorAction Stop
-}
-
-if ($output.Trim() -ne "Finished") {
-    Write-Error "NativeAOT behavior checks failed.`nOutput:`n$output" -ErrorAction Stop
 }
 
 Write-Host "NativeAOT test passed."

@@ -81,8 +81,15 @@ printfn "%A" y
 
         CompilerAssert.Execute module2
 
-    [<Fact>]
-    let ``Static link quotes in multiple modules``() =
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Static link quotes and metadata rules in multiple modules`` optimized =
+        let options = if optimized then [|"--optimize+"|] else [||]
+        let resource name =
+            let path = TestFramework.getTemporaryFileName()
+            File.WriteAllText(path, $"""<linker><assembly fullname="{name}"><resource name="FSharpSignatureData.{name}" action="remove" /><resource name="FSharpSignatureCompressedData.{name}" action="remove" /></assembly></linker>""")
+            $"--resource:{path},ILLink.Substitutions.xml"
         let module1 =
             let source =
                 """
@@ -105,7 +112,14 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Library, options = [| |])
+            let source =
+                if optimized then source.Replace("output[i]", "output.[i]").Replace("input[i]", "input.[i]")
+                else source
+            let options =
+                [| yield! options
+                   if optimized then yield "--nowarn:3366"
+                   yield resource "QuotedLibrary" |]
+            Compilation.Create(source, Library, options = options, name = "QuotedLibrary")
 
         let module2 =
             let source =
@@ -149,81 +163,18 @@ if not test3 then
 
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
+let resources = typeof<D>.Assembly.GetManifestResourceNames()
+if resources |> Array.filter ((=) "ILLink.Substitutions.xml") |> Array.length <> 1 then failwith "Metadata rules must compose without losing quotation resources"
+let xml =
+    use reader = new System.IO.StreamReader(typeof<D>.Assembly.GetManifestResourceStream("ILLink.Substitutions.xml"))
+    reader.ReadToEnd()
+for owner in ["QuotedLibrary"; "QuotedApp"] do
+    let expected =
+        resources |> Array.filter (fun name -> name = $"FSharpSignatureData.{owner}" || name = $"FSharpSignatureCompressedData.{owner}")
+    if expected.Length = 0 || Array.exists (fun name -> not (xml.Contains($"<resource name=\"{name}\" action=\"remove\""))) expected then
+        failwithf "Removal rule missing for %s" owner
                 """
-            Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
-
-        CompilerAssert.Execute(module2, ignoreWarnings=true)
-
-    [<Fact>]
-    let ``Static link quotes in multiple modules - optimized``() =
-        let module1 =
-            let source =
-                """
-module Module1
-
-module Test =
-    let inline run() = 
-       <@ fun (output:'T[]) (input:'T[]) (length:int) ->
-          let start = 0
-          let mutable i = start
-          while i < length do
-             output.[i] <- input.[i]
-             i <- i + 1 @>
-
-    let bar() = 
-        sprintf "%A" (run())
-
-type C() = 
-
-  [<ReflectedDefinition>]
-  static member F x = (C(), System.DateTime.Now)
-                """
-            Compilation.Create(source, Library, [|"--optimize+"; "--nowarn:3366"|])
-
-        let module2 =
-            let source =
-                """
-
-let a = Module1.Test.bar()
-let b = sprintf "%A" (Module1.Test.run())
-
-let test1 = (a=b)
-type D() = 
-
-  [<ReflectedDefinition>]
-  static member F x = (Module1.C(), D(), System.DateTime.Now)
-
-
-let z2 = Quotations.Expr.TryGetReflectedDefinition(typeof<Module1.C>.GetMethod("F"))
-let s2 = (sprintf "%2000A" z2) 
-let test2 = (s2 = "Some Lambda (x, NewTuple (NewObject (C), PropertyGet (None, Now, [])))")
-
-let z3 = Quotations.Expr.TryGetReflectedDefinition(typeof<D>.GetMethod("F"))
-let s3 = (sprintf "%2000A" z3) 
-let test3 = (s3 = "Some Lambda (x, NewTuple (NewObject (C), NewObject (D), PropertyGet (None, Now, [])))")
-
-#if EXTRAS
-// Add some references to System.ValueTuple, and add a test case which statically links this DLL
-let test4 = struct (3,4)
-let test5 = struct (z2,z3)
-#endif
-
-if not test1 then 
-    stdout.WriteLine "*** test1 FAILED"; 
-    eprintf "FAILED, in-module result %s is different from out-module call %s" a b
-
-if not test2 then 
-    stdout.WriteLine "*** test2 FAILED"; 
-    eprintf "FAILED, %s is different from expected" s2
-if not test3 then 
-    stdout.WriteLine "*** test3 FAILED"; 
-    eprintf "FAILED, %s is different from expected" s3
-
-
-if test1 && test2 && test3 then ()
-else failwith "Test Failed"
-                """
-            Compilation.Create(source, Exe, [|"--optimize+"|], TargetFramework.Current, [CompilationReference.CreateFSharp(module1, staticLink=true)])
+            Compilation.Create(source, Exe, [|yield! options; resource "QuotedApp"|], TargetFramework.Current, [CompilationReference.CreateFSharp(module1, staticLink=true)], name = "QuotedApp")
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 

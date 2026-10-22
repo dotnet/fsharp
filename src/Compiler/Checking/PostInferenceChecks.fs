@@ -961,11 +961,10 @@ and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) =
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.RefCellNotationInformationals then
-            if valRefEq cenv.g v cenv.g.refcell_deref_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDeref(), m))
-            if valRefEq cenv.g v cenv.g.refcell_assign_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellAssign(), m))
-            if valRefEq cenv.g v cenv.g.refcell_incr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellIncr(), m))
-            if valRefEq cenv.g v cenv.g.refcell_decr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDecr(), m))
+        if valRefEq cenv.g v cenv.g.refcell_deref_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDeref(), m))
+        if valRefEq cenv.g v cenv.g.refcell_assign_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellAssign(), m))
+        if valRefEq cenv.g v cenv.g.refcell_incr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellIncr(), m))
+        if valRefEq cenv.g v cenv.g.refcell_decr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDecr(), m))
 
         // ByRefLike-typed values can only occur in permitting ctxts
         if ctxt.Disallow && isByrefLikeTy cenv.g m v.Type then
@@ -1342,7 +1341,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         CheckQuoteExpr cenv env (ast, savedConv, m, ty)
 
     | StructStateMachineExpr g info ->
-        CheckStructStateMachineExpr cenv env expr info
+        CheckStructStateMachineExpr cenv env info
 
     | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, m) ->
         CheckObjectExpr cenv env (ty, basev, superInitCall, overrides, iimpls, m)
@@ -1432,16 +1431,12 @@ and CheckQuoteExpr cenv env (ast, savedConv, m, ty) =
     CheckTypeNoByrefs cenv env m ty
     NoLimit
 
-and CheckStructStateMachineExpr cenv env expr info =
+and CheckStructStateMachineExpr cenv env info =
 
-    let g = cenv.g
     let (_dataTy,
          (moveNextThisVar, moveNextExpr),
          (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody),
          (afterCodeThisVar, afterCodeBody)) = info
-
-    if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-        error(Error(FSComp.SR.tcResumableCodeNotSupported(), expr.Range))
 
     BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
     CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } moveNextExpr
@@ -1597,8 +1592,6 @@ and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body
     let env =
         // Body of ResumableCode delegate
         if isResumableCodeTy cenv.g ty then
-           if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-               error(Error(FSComp.SR.tcResumableCodeNotSupported(), m))
            { env with resumableCode = Resumable.ResumableExpr false }
         else
            { env with resumableCode = Resumable.None }
@@ -2349,13 +2342,9 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     //
     // If the method has ResumableCode return attribute we check the body w.r.t. that
     let env =
-        if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
-            if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.ShouldInline then
-                warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
-
         if isReturnsResumableCodeTy g v.TauType then
+            if cenv.reportErrors && not v.ShouldInline then
+                warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
             { env with resumableCode = Resumable.ResumableExpr false }
         else
             env

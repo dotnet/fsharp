@@ -140,3 +140,30 @@ type Derived() =
         // the cref tag is written verbatim and resolved later by the IDE/FCS tooling layer.
         // (Base's own <summary> is present as Base's own member entry; that is unrelated to expansion.)
         Assert.Contains("<inheritdoc cref=\"T:Test.Base\"", generated)
+
+
+// https://github.com/dotnet/fsharp/issues/6310
+[<Fact>]
+let ``Issue 6310 - out parameters use CSharp XML doc IDs`` () =
+    let outDir = createTemporaryDirectory ()
+    let xmlPath = Path.Combine(outDir.FullName, "test.xml")
+
+    FSharp """
+namespace FSharpProject
+
+open System.Runtime.InteropServices
+
+type MyType() =
+    /// This is a method with an out parameter
+    static member StaticOutParam(s: string, [<Out>] result: string byref) =
+        result <- s
+"""
+    |> asLibrary
+    |> withOutputDirectory (Some outDir)
+    |> withOptions [ $"--doc:{xmlPath}" ]
+    |> compile
+    |> shouldSucceed
+    |> ignore
+
+    let generated = File.ReadAllText xmlPath
+    Assert.Contains("""<member name="M:FSharpProject.MyType.StaticOutParam(System.String,System.String@)">""", generated)

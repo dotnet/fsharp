@@ -84,8 +84,8 @@ let _ =
         expectFix code expected
 
     [<Fact>]
-    let ``Beginning of file: (printfn "Hello, world")`` () =
-        TopLevel.expectFix "(printfn \"Hello, world\")" "printfn \"Hello, world\""
+    let ``Beginning of file: (printn "Hello, world")`` () =
+        TopLevel.expectFix "(printn \"Hello, world\")" "printn \"Hello, world\""
 
     [<Fact>]
     let ``End of file: let x = (1)`` () =
@@ -568,12 +568,12 @@ let _ =
             """
 
             """
-            let x = (printfn $"{y}"
+            let x = (printn $"{y}"
                      2)
             in x
             """,
             """
-            let x = printfn $"{y}"
+            let x = printn $"{y}"
                     2
             in x
             """
@@ -897,21 +897,21 @@ in x
             "lazy (id 3)", "lazy (id 3)" // Technically we could remove here, but probably better not to.
 
             // Sequential
-            """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
-            """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
+            """ (printn "1"); printn "2" """, """ printn "1"; printn "2" """
+            """ printn "1"; (printn "2") """, """ printn "1"; printn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
             """
             [
                 ()
-                (printfn "1"; ())
+                (printn "1"; ())
                 ()
             ]
             """,
             """
             [
                 ()
-                (printfn "1"; ())
+                (printn "1"; ())
                 ()
             ]
             """
@@ -1138,14 +1138,14 @@ in x
 
             """
             if
-                (printfn "1"
+                (printn "1"
                  true)
             then
                 ()
             """,
             """
             if
-                (printfn "1"
+                (printn "1"
                  true)
             then
                 ()
@@ -1189,21 +1189,21 @@ in x
 
             """
             let mutable x = 3
-            x <- (printfn $"{y}"; 3)
+            x <- (printn $"{y}"; 3)
             """,
             """
             let mutable x = 3
-            x <- (printfn $"{y}"; 3)
+            x <- (printn $"{y}"; 3)
             """
 
             """
             let mutable x = 3
-            x <- (printfn $"{y}"
+            x <- (printn $"{y}"
                   3)
             """,
             """
             let mutable x = 3
-            x <- (printfn $"{y}"
+            x <- (printn $"{y}"
                   3)
             """
 
@@ -1739,7 +1739,7 @@ in x
                 "id <| (id <| fun x -> x) |> id", "id <| (id <| fun x -> x) |> id"
                 "id <| (id <| id <| id <| fun x -> x) |> id", "id <| (id <| id <| id <| fun x -> x) |> id"
                 "(id <| fun x -> x) |> id", "(id <| fun x -> x) |> id"
-                """(printfn ""; fun x -> x) |> id""", """(printfn ""; fun x -> x) |> id"""
+                """(printn ""; fun x -> x) |> id""", """(printn ""; fun x -> x) |> id"""
 
                 // MatchLambda
                 "id (function x when true -> x | y -> y)", "id (function x when true -> x | y -> y)"
@@ -2341,41 +2341,41 @@ let _ = (2 + 2) { return 5 }
         memberData {
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            (x) < (printfn $"{y}"
+            (x) < (printn $"{y}"
                    y)
             """,
             """
-            (x) < (printfn $"{y}"
+            (x) < (printn $"{y}"
                    y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            id (x) < (printfn $"{y}"
+            id (x) < (printn $"{y}"
                       y)
             """,
             """
-            id (x) < (printfn $"{y}"
+            id (x) < (printn $"{y}"
                       y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            id (id (id (x))) < (printfn $"{y}"
+            id (id (id (x))) < (printn $"{y}"
                                 y)
             """,
             """
-            id (id (id (x))) < (printfn $"{y}"
+            id (id (id (x))) < (printn $"{y}"
                                 y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            (x) <> z && x < (printfn $"{y}"
+            (x) <> z && x < (printn $"{y}"
                              y)
             """,
             """
-            (x) <> z && x < (printfn $"{y}"
+            (x) <> z && x < (printn $"{y}"
                              y)
             """
 
@@ -2395,28 +2395,28 @@ let _ = (2 + 2) { return 5 }
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn "1"; printn ("2"); (id <| match y with Some y -> let y = y
+                                                                    y
+                                                        | None -> 3)
             """,
             """
-            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn "1"; printn ("2"); (id <| match y with Some y -> let y = y
+                                                                    y
+                                                        | None -> 3)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            printfn ("1"
-                        ); printfn "2"; (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn ("1"
+                        ); printn "2"; (id <| match y with Some y -> let y = y
+                                                                     y
+                                                         | None -> 3)
             """,
             """
-            printfn ("1"
-                        ); printfn "2"; (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn ("1"
+                        ); printn "2"; (id <| match y with Some y -> let y = y
+                                                                     y
+                                                         | None -> 3)
             """
         }
 

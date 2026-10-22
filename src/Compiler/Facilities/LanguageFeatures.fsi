@@ -6,29 +6,10 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | PackageManagement
     | FromEndSlicing
-    | ResumableStateMachines
     | RuntimeAsync
-    | WitnessPassing
-    | AdditionalTypeDirectedConversions
-    | StringInterpolation
-    | ExpandedMeasurables
     | NullnessChecking
-    | RefCellNotationInformationals
     | UnionIsPropertiesVisible
-    | AttributesToRightOfModuleKeyword
-    | ReallyLongLists
-    | ErrorOnDeprecatedRequireQualifiedAccess
-    | SelfTypeConstraints
-    | MatchNotAllowedForUnionCaseWithNoData
-    | CSharpExtensionAttributeNotRequired
-    | ErrorForNonVirtualMembersOverrides
-    | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | NonInlineLiteralsAsPrintfFormat
-    | WarningWhenMultipleRecdTypeChoice
-    | ConstraintIntersectionOnFlexibleTypes
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
@@ -74,6 +55,7 @@ type LanguageFeature =
     | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion =

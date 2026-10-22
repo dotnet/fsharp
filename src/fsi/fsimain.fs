@@ -251,6 +251,12 @@ let evaluateSession (argv: string[]) =
 
         let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
+#if FSI_JSONRPC_SERVER
+        // Set when startup scripts are done and the loop interactions run on is the final one: a
+        // startup script may replace fsi.EventLoop, and a request posted to the old one is lost.
+        let eventLoopStarted = new System.Threading.ManualResetEvent(false)
+#endif
+
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig =
             { new FsiEvaluationSessionHostConfig() with
@@ -269,6 +275,9 @@ let evaluateSession (argv: string[]) =
                     fsiConfig0.ReportUserCommandLineArgs args
 
                 member _.EventLoopRun() =
+#if FSI_JSONRPC_SERVER
+                    eventLoopStarted.Set() |> ignore
+#endif
 #if !FX_NO_WINFORMS
                     match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with
                     | Some l -> (l :> IEventLoop).Run()
@@ -340,6 +349,28 @@ let evaluateSession (argv: string[]) =
                 | Some s -> s + "." + s2
                 | None -> s2
             ))
+
+        match fsiSession.JsonRpcServerPipeName with
+#if FSI_JSONRPC_SERVER
+        // Serve the host on a background thread, leaving this thread to Run() and the event loop
+        // that interactions are evaluated on.
+        | Some pipeName ->
+            FSharp.Compiler.Interactive.Server.startOnBackgroundThread
+                fsiSession
+                fsiConfig
+                pipeName
+                fsiSession.JsonRpcClientProcessId
+                eventLoopStarted
+                Console.Out
+                Console.Error
+#else
+        // Without the server the session would sit in Run() with nothing feeding it: no prompt, no
+        // standard input reader. An exit code gives the host something to report instead.
+        | Some _ ->
+            eprintfn "The JSON-RPC server mode is not available in this build of F# Interactive."
+            exit 1
+#endif
+        | None -> ()
 
         // Start the session
         fsiSession.Run()

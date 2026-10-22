@@ -147,9 +147,15 @@ type SynMatchClauseTrivia =
     {
         ArrowRange: range option
         BarRange: range option
+        WhenKeyword: range option
     }
 
-    static member Zero: SynMatchClauseTrivia = { ArrowRange = None; BarRange = None }
+    static member Zero: SynMatchClauseTrivia =
+        {
+            ArrowRange = None
+            BarRange = None
+            WhenKeyword = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynEnumCaseTrivia =
@@ -159,7 +165,14 @@ type SynEnumCaseTrivia =
     }
 
 [<NoEquality; NoComparison>]
-type SynUnionCaseTrivia = { BarRange: range option }
+type SynUnionCaseTrivia =
+    {
+        BarRange: range option
+        OfKeyword: range option
+    }
+
+[<NoEquality; NoComparison>]
+type SynExceptionDefnReprTrivia = { ExceptionKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynPatOrTrivia = { BarRange: range }

@@ -127,7 +127,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
         TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p pattribs
 
 // raise an error if any optional args precede any non-optional args
-and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
+and ValidateOptArgOrder isIndexerSetter (synSimplePats: SynSimplePats) =
 
     let rec getPats synSimplePats =
         match synSimplePats with
@@ -141,13 +141,24 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
 
     let pats, m = getPats synSimplePats
 
-    let mutable hitOptArg = false
+    let rec check hitOptArg pats =
+        match pats with
+        | [] -> ()
+        | [_] when isIndexerSetter -> ()
+        | pat :: rest ->
+            let isOpt = isOptArg pat
+            if hitOptArg && not isOpt then
+                error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))
+            check (hitOptArg || isOpt) rest
 
-    List.iter (fun pat -> if isOptArg pat then hitOptArg <- true elif hitOptArg then error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))) pats
+    check false pats
 
 
 /// Bind the patterns used in the argument position for a function, method or lambda.
 and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats (parsedPatterns: SynPat list * bool) =
+
+    let isIndexerSetter = optionalArgsOK && env.eIsIndexerSetter
+    let env = if env.eIsIndexerSetter then { env with eIsIndexerSetter = false } else env
 
     let rec collectBoundIdTextsFromPat (acc: string list) (p: SynPat) : string list =
         match p with
@@ -208,7 +219,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
             namesOut, patEnvR
 
     // 1) validate optional-arg ordering
-    ValidateOptArgOrder synSimplePats
+    ValidateOptArgOrder isIndexerSetter synSimplePats
 
     // 2) bind the current curried group
     let namesOut, patEnvOut = bindCurriedGroup synSimplePats
@@ -648,11 +659,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, m)
-            if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
-                errorR(diagnostic)
-            else
-                warning(diagnostic)
+            errorR (Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, m))
 
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
@@ -681,22 +688,19 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length
-    let warnOnUnionWithNoData =
-        g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData)
 
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args ->
-            if warnOnUnionWithNoData then
-                match args with
-                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
-                    // Here we only care about the cases where the user has written the wildcard pattern explicitly
-                    // | Case _ -> ...
-                    // let myDiscardedArgFunc(Case _) = ..."""
-                    // This needs to be a warning because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
-                    // The rest of the cases will still be reported as FS0725
-                    warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
-                | _ -> ()
+            match args with
+            | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                // Here we only care about the cases where the user has written the wildcard pattern explicitly
+                // | Case _ -> ...
+                // let myDiscardedArgFunc(Case _) = ..."""
+                // This needs to be a warning because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
+                // The rest of the cases will still be reported as FS0725
+                warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
+            | _ -> ()
             args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)

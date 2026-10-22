@@ -32,10 +32,11 @@ ImplFile
                         Named (SynIdent (exn, None), false, None, (3,15--3,18)),
                         (2,2--3,18)), None, Const (Unit, (3,22--3,24)),
                      (2,2--3,24), Yes, { ArrowRange = Some (3,19--3,21)
-                                         BarRange = Some (2,0--2,1) })],
-                 (1,0--3,24), { MatchKeyword = (1,0--1,5)
-                                WithKeyword = (1,10--1,14) }), (1,0--3,24))],
-          PreXmlDocEmpty, [], None, (1,0--3,24), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                                         BarRange = Some (2,0--2,1)
+                                         WhenKeyword = None })], (1,0--3,24),
+                 { MatchKeyword = (1,0--1,5)
+                   WithKeyword = (1,10--1,14) }), (1,0--3,24))], PreXmlDocEmpty,
+          [], None, (1,0--3,24), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

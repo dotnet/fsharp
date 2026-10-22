@@ -30,8 +30,10 @@ ImplFile
                                   None, (3,16--3,29), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((3,9), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,11--3,29), { BarRange = Some (3,9--3,10) })],
-                        (3,9--3,29)), (3,9--3,29)), [], None, (3,5--3,29),
+                            None, (3,11--3,29),
+                            { BarRange = Some (3,9--3,10)
+                              OfKeyword = Some (3,13--3,15) })], (3,9--3,29)),
+                     (3,9--3,29)), [], None, (3,5--3,29),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
                     WithKeyword = None })], (3,0--3,29));

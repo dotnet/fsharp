@@ -972,7 +972,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does
-let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags, findFlag: FindMemberFlag) =
+let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags) =
 
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
         if not infoReader.IsRuntimeSupportForVirtualStaticsInInterfaces then
@@ -983,7 +983,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) ->
             NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
         | ty, None ->
-            GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes findFlag bindm ty
+            GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes DiscardOnFirstNonOverride bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot && minfo.IsInstance = memberFlags.IsInstance)
     let valReprSynArities = SynInfo.AritiesOfArgs valSynData
 

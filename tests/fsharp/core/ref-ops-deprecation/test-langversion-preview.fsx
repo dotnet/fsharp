@@ -1,8 +1,8 @@
 let r = ref 3
-r := 4   // generates an informational in preview
-let rv = !r   // generates an informational in preview
-incr r   // generates an informational in preview
-decr r   // generates an informational in preview
+r := 4
+let rv = !r
+incr r
+decr r
 
 type X() =
     member x.M(a:int) = a
