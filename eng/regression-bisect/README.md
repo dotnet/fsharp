@@ -93,6 +93,22 @@ The task-identity negative uses an off-inventory same-byte copy of the tested
 tasks and Core, so an older SDK's incompatible task API cannot mask the actual
 identity check. It must compile successfully before identity rejection.
 
+Native Linux acceptance on 2026-10-22 passed at `501fe1b4031b15a0a614312133c81b56ad1736ba`
+in [owned-fork run 39779256564](https://github.com/T-Gro/fsharp/actions/runs/39779256564).
+Both seven-mode containment runs, the real controller stable/source endpoints,
+47 product-matrix cases, immutable `FrozenProducer` package `1.0.0`, and the
+new-process durable reread passed after worker and launch-scratch removal.
+The clean source build/FSI runner took 584,434 ms; the longest reproduction took
+28,691 ms. Released matrix consumers used SDK `10.0.402` / runtime `10.0.13`;
+local matrix consumers used the source-declared SDK `10.0.301` / runtime `10.0.9`.
+The controller's built-FSI assertions used the frozen `10.0.402` reproduction
+host with exact runtime `10.0.9`, not host `dotnet fsi`.
+The original source-worker artifact ZIP has SHA-256
+`1da00583aae62c296b3fafa7bf4196e49e5d132b84d8beac99bca021ad3ff16b`.
+The artifact retains exact configuration, commands/exits, source/product/producer
+identities, archive bytes, denial/cleanup receipts and the fresh reader PID.
+This is worker acceptance, not a completed six-unit trial or production activation.
+
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.
@@ -307,12 +323,13 @@ The model can read issue/repository/linked-PR context and write a local
 `proposal.md` artifact (16 KiB maximum, seven-day retention), but cannot post it.
 Review that untrusted artifact before manually preparing any approval.
 
-**Physical prerequisite for sprint 21:** the read-only inventory on 2026-09-22
+**Historical physical prerequisite inventory:** the read-only inventory on 2026-09-22
 found a Windows x64 host with Docker/WSL/SSH clients, but no enrolled native
 disposable Linux worker route or owner receipt. No daemon/WSL was started, no
 account provisioned and no historical product code executed. Native Linux x64,
 Docker >=28, cgroup v2, AppArmor/seccomp, containment and the known-history trial
-remain separate, unaccepted gates.
+were then separate, unaccepted gates. The later owned-fork Linux worker
+acceptance is recorded above; it does not complete the known-history trial.
 
 Focused acceptance commands (in order, then the full scoped command above):
 
@@ -579,11 +596,12 @@ exited 0 using installed SDK 10.0.112 (the helper has no managed test cases).
 The source graph and patch hashes are unchanged; refreshed publisher metadata
 and HEAD receipts identify the actual Linux SDK/runtime archives. RED/GREEN logs,
 source-bound receipts, raw ledgers, graph/patches and fresh-process read-only
-verification proof are retained privately. No historical product build, worker
-containment acceptance or physical known-history trial was performed.
+verification proof are retained privately. That September harness run performed
+no historical product build, worker containment acceptance or physical
+known-history trial.
 
-**This checkout does not activate production, approve a reproduction, prove
-physical containment, or perform the separate known-history acceptance trial.**
+**Native worker acceptance does not activate production, approve a reproduction,
+or complete the separate known-history acceptance trial.**
 The controller only supports `workflow_dispatch` of `bootstrap`, `advance`,
 or `publish`, from the trusted router or an operator. Automatic intake remains
 disabled by default and cannot execute an unapproved issue. There is no model
@@ -1267,7 +1285,8 @@ All three accept exactly
 `{ repository: "dotnet/fsharp", issueNumber: <positive integer> }`.
 The issue must match the trusted context. Extra dispatch fields, commands,
 refs, destinations, Markdown and fresh-allowance controls are rejected.
-These are library entry points, not a deployable CLI or Actions workflow.
+These are library entry points; `controller-cli.cjs` provides the separate
+concrete deployment.
 
 `runController` requires the engine dependencies above, a whole-issue
 `withLock(action)`, `runIsolated(unit, { signal })`, and the trusted
@@ -1298,7 +1317,9 @@ come from the worker's separately pinned read-only bundle, not issue text.
 The extraction does not alter historical `global.json`, install policy,
 producer bytes, FSI selection or project identity verification.
 
-**Deployment is blocked pending real containment acceptance.** The execution
+**Production activation remains disabled.** Native worker acceptance is recorded
+above; it does not provision deployment authority or complete the known-history
+trial. The execution
 unit is public data, not an authenticated launch receipt or permission to execute
 it. The Docker transport and durable collector below do not activate a
 controller/bootstrap CLI or scheduled workflow.
@@ -1389,8 +1410,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Egress and transfer tests failed' }
 deployed controller**. Neither unit
 tests with fake Docker responses nor an unsupported-host receipt establish
 containment. The collector authenticates and retains its output as described
-below; a controller CLI/workflow and real containment acceptance remain
-activation gates.
+below. The concrete controller/workflow still requires reviewed deployment and
+the known-history trial before activation; native worker acceptance is recorded
+above.
 
 The supported runtime is an already-provisioned disposable Linux x64 worker:
 Docker Engine 28 or newer, cgroup v2, built-in seccomp, AppArmor, memory/swap/PID
