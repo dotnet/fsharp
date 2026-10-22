@@ -64,8 +64,8 @@ type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceTyp
 
     // traitCtxtNone: IDE symbol API — no TcEnv available, only SymbolEnv (audited for RFC FS-1043)
     let tcVal = LightweightTcValForUsingInBuildMethodCall g traitCtxtNone
-    let memberSymbols = ConcurrentDictionary<Stamp, obj>()
-    let entitySymbols = ConcurrentDictionary<Stamp, obj>()
+    let memberSymbols = lazy (ConcurrentDictionary<Stamp, obj>())
+    let entitySymbols = lazy (ConcurrentDictionary<Stamp, obj>())
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -81,10 +81,10 @@ type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceTyp
     member _.tcValF = tcVal
 
     /// Symbols for values and members, shared by stamp
-    member _.MemberSymbolCache = memberSymbols
+    member _.MemberSymbolCache = memberSymbols.Value
 
     /// Symbols for non-generic entities, shared by stamp
-    member _.EntitySymbolCache = entitySymbols
+    member _.EntitySymbolCache = entitySymbols.Value
 
 [<AutoOpen>]
 module Impl =
@@ -774,8 +774,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         | Some ccu -> ccuEq ccu cenv.g.fslibCcu
 
     let mutable attributes: IList<FSharpAttribute> | null = null
-    let mutable tryFullNameComputed = false
-    let mutable tryFullName: string option = None
+    let mutable tryFullName: Ref<string option> | null = null
 
     new(cenv: SymbolEnv, tcref: TyconRef) =
         match tcref.Typars with
@@ -873,22 +872,23 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
         | Some nm -> nm
 
     member _.TryFullName =
-        if tryFullNameComputed then tryFullName else
-        let result =
-            if isUnresolved() then None
-    #if !NO_TYPEPROVIDERS
-            elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
-            #else
-            elif entity.IsTypeAbbrev then None
-    #endif
-            elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName
-            else
-                match entity.CompiledRepresentation with
-                | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName
-                | CompiledTypeRepr.ILAsmOpen _ -> None
-        tryFullName <- result
-        tryFullNameComputed <- true
-        result
+        match tryFullName with
+        | null ->
+            let result =
+                if isUnresolved() then None
+#if !NO_TYPEPROVIDERS
+                elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
+#else
+                elif entity.IsTypeAbbrev then None
+#endif
+                elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName
+                else
+                    match entity.CompiledRepresentation with
+                    | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName
+                    | CompiledTypeRepr.ILAsmOpen _ -> None
+            tryFullName <- ref result
+            result
+        | cached -> cached.Value
 
     member _.DeclarationLocation =
         checkIsResolved()
@@ -2102,8 +2102,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let mutable curriedParameterGroups: IList<IList<FSharpParameter>> | null = null
     let mutable attributes: IList<FSharpAttribute> | null = null
     let mutable genericParameters: IList<FSharpGenericParameter> | null = null
-    let mutable declaringEntityComputed = false
-    let mutable declaringEntity: FSharpEntity option = None
+    let mutable declaringEntity: Ref<FSharpEntity option> | null = null
     let mutable fullType: FSharpType | null = null
 
     new (cenv, vref) = FSharpMemberFunctionOrValue(cenv, V vref, Item.Value vref)
@@ -2167,20 +2166,21 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | None -> failwith "DeclarationLocation property not available"
 
     member _.DeclaringEntity: FSharpEntity option =
-        if declaringEntityComputed then declaringEntity else
-        checkIsResolved()
-        let result =
-            match d with
-            | E e -> FSharpEntity.Shared(cenv, e.DeclaringTyconRef) |> Some
-            | P p -> FSharpEntity.Shared(cenv, p.DeclaringTyconRef) |> Some
-            | M m | C m -> FSharpEntity.Shared(cenv, m.DeclaringTyconRef) |> Some
-            | V v ->
-            match v.TryDeclaringEntity with
-            | ParentNone -> None
-            | Parent p -> FSharpEntity.Shared(cenv, p) |> Some
-        declaringEntity <- result
-        declaringEntityComputed <- true
-        result
+        match declaringEntity with
+        | null ->
+            checkIsResolved()
+            let result =
+                match d with
+                | E e -> FSharpEntity.Shared(cenv, e.DeclaringTyconRef) |> Some
+                | P p -> FSharpEntity.Shared(cenv, p.DeclaringTyconRef) |> Some
+                | M m | C m -> FSharpEntity.Shared(cenv, m.DeclaringTyconRef) |> Some
+                | V v ->
+                match v.TryDeclaringEntity with
+                | ParentNone -> None
+                | Parent p -> FSharpEntity.Shared(cenv, p) |> Some
+            declaringEntity <- ref result
+            result
+        | cached -> cached.Value
 
     member _.ApparentEnclosingEntity: FSharpEntity option =
         let createEntity (ttype: TType) =
