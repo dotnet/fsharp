@@ -29,7 +29,10 @@ type internal FSharpInteractiveClassifier
         | LexicalKind.PreprocessorKeyword -> ValueSome PredefinedClassificationTypeNames.PreprocessorKeyword
         | LexicalKind.InactiveCode -> ValueSome PredefinedClassificationTypeNames.ExcludedCode
         | LexicalKind.Other -> ValueNone
-        |> ValueOption.map registry.GetClassificationType
+        |> ValueOption.bind (fun name ->
+            match registry.GetClassificationType name with
+            | null -> ValueNone
+            | classification -> ValueSome classification)
 
     // Both interactive content types are shared with every language the window package hosts, and
     // a buffer reaches us before its window has finished claiming it, so ownership is asked again
