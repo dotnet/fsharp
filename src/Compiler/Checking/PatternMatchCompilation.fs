@@ -1205,9 +1205,9 @@ let private CompilePatternBasic
     let joinBindings = ResizeArray<Binding>()
     let memo =
         match joinPromotion with
-        | JoinPromotion.Disabled -> ValueNone
+        | JoinPromotion.Disabled -> None
         | JoinPromotion.Enabled ->
-            ValueSome
+            Some
                 (struct (
                     Dictionary<MemoKey, MemoEntry>(),
                     Dictionary<int, Expr ref>(),
@@ -1273,7 +1273,7 @@ let private CompilePatternBasic
 
     let shareGuard i (vs: Val list) (whenExpr: Expr) =
         match memo with
-        | ValueSome(struct (_, guardMemo, _, _)) when not preserveMatchShape ->
+        | Some(struct (_, guardMemo, _, _)) when not preserveMatchShape ->
             match guardMemo.TryGetValue i with
             | false, _ ->
                 let cell = ref whenExpr
@@ -1286,8 +1286,8 @@ let private CompilePatternBasic
                     let guard = bindSharedFunction false whenExpr.Range vs (whenExpr, g.bool_ty)
                     cell.Value <- mkDebugPoint whenExpr.Range (callSharedFunction whenExpr.Range vs guard)
                 Expr.Link cell
-        | ValueNone
-        | ValueSome _ -> whenExpr
+        | None
+        | Some _ -> whenExpr
 
     // Reference identities make key collisions conservative: distinct nodes never fuse.
     let nodeId (ids: Dictionary<_, int>) node =
@@ -1399,9 +1399,9 @@ let private CompilePatternBasic
 
     and investigateMemoized refuted frontiers =
         match memo with
-        | ValueNone ->
+        | None ->
             InvestigateFrontiers refuted frontiers
-        | ValueSome(struct (frontierMemo, _, patternNodeIds, boundExprNodeIds)) ->
+        | Some(struct (frontierMemo, _, patternNodeIds, boundExprNodeIds)) ->
             let capturedVals = capturedValsOfFrontiers frontiers
             let key = memoKeyOf patternNodeIds boundExprNodeIds frontiers capturedVals
             match frontierMemo.TryGetValue key with
