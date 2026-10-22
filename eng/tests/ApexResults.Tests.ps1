@@ -1,11 +1,12 @@
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ('fsharp-apex-results-' + [Guid]::NewGuid())
-$apex = Join-Path $root 'eng\pipelines\apex-integration'
+$apex = Join-Path $root 'control'
 $git = (Get-Command git.exe -CommandType Application | Select-Object -First 1).Source
 $powershell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $previousLoggingDirectory = $env:LoggingDirectory
 $previousCase = $env:APEX_RESULTS_CASE
 New-Item -ItemType Directory -Path $apex -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $root 'eng') -Force | Out-Null
 try {
     (Get-Content "$PSScriptRoot\..\pipelines\apex-integration\run-apex.ps1" -Raw).Replace('C:\Test\Git\cmd', (Split-Path $git)) |
         Set-Content (Join-Path $apex 'run-apex.ps1')
@@ -31,7 +32,7 @@ exit 0
 '@
     Set-Content (Join-Path $root 'invoke.ps1') @'
 param([string]$Configuration)
-try { & "$PSScriptRoot\eng\pipelines\apex-integration\run-apex.ps1" -Configuration $Configuration }
+try { & "$PSScriptRoot\control\run-apex.ps1" -SourceRoot $PSScriptRoot -Configuration $Configuration }
 catch { Write-Output "PRIMARY: $($_.Exception.Message)"; exit 1 }
 '@
     & $git -C $root init -q
