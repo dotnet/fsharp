@@ -11,16 +11,10 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.TypedTree
 open TestFramework
 
-// A referenced project can hand its contents to a consumer already imported instead of pickling them.
-// Unpickling is what rewrites ILScopeRef.Local into the referenced assembly, so the handed-over form
-// has to do the same: `internal` is a compilation path rooted at Local, and a consumer whose own paths
-// are also Local would otherwise read the reference's internals as its own.
-//
-// Only the background compiler hands contents over, so these pin it rather than taking the suite default.
+// Only the background compiler hands contents over, so the compiler is pinned rather than taken from the suite default
 let private mkCheckerOn transparent share =
     FSharpChecker.Create(
-        // the default is three, and these graphs are larger: an evicted builder is rebuilt with a fresh
-        // provider, which would look like a refused handover
+        // the default of three evicts builders in these graphs, and a rebuilt builder offers afresh, which reads as a refusal
         projectCacheSize = 50,
         shareImportedAssemblies = share,
         enablePartialTypeChecking = false,
@@ -36,9 +30,8 @@ let private writeSourceAs (extension: string) (source: string) =
 
 let private writeSource source = writeSourceAs ".fs" source
 
-/// Options for one project of the given files, referencing the given already-built ones, output under
-/// the given assembly name where one is asked for - a project whose contents are offered is registered
-/// under that name, and a reference to it from elsewhere has to resolve to it
+/// Options for one project of the given files, referencing the given built ones, output under the given
+/// assembly name when one is given
 let private projectOptionsNamed (checker: FSharpChecker) assemblyName fileNames references extraOptions =
     let baseName =
         match assemblyName with
@@ -70,28 +63,32 @@ let private projectOptionsOfFiles checker fileNames references extraOptions =
 let private projectOptions (checker: FSharpChecker) source references extraOptions =
     projectOptionsOfFiles checker [| writeSource source |] references extraOptions
 
-/// FSharpAssembly holds the ccu it wraps but does not expose it. The contents rather than the thunk: each
-/// reader holds a thunk of its own around the one imported form, and the form is what is shared.
+let private assemblyNameOf (dll: string, _: FSharpProjectOptions) = Path.GetFileNameWithoutExtension dll
+
+let private errorsOf (diagnostics: FSharpDiagnostic[]) =
+    diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+let private checkProject (checker: FSharpChecker) (options: FSharpProjectOptions) =
+    checker.ParseAndCheckProject options |> Async.RunSynchronously
+
+let private errorsIn checker options = errorsOf (checkProject checker options).Diagnostics
+
+let private referencedAssembly (checkResults: FSharpCheckProjectResults) name =
+    checkResults.ProjectContext.GetReferencedAssemblies()
+    |> List.find (fun assembly -> assembly.SimpleName = name)
+
+/// The contents of the ccu behind an FSharpAssembly, which does not expose it
 let private ccuOf (assembly: FSharpAssembly) =
     assembly.GetType().GetFields(BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public)
     |> Array.pick (fun field ->
         match field.GetValue assembly with
+        // each reader wraps the one imported form in a thunk of its own
         | :? CcuThunk as ccu -> Some ccu.Contents
         | _ -> None)
 
 /// The ccu the given project ended up with for one of its references
-let private referencedCcu (checker: FSharpChecker) (options: FSharpProjectOptions) name =
-    let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
-
-    results.ProjectContext.GetReferencedAssemblies()
-    |> List.find (fun assembly -> assembly.SimpleName = name)
-    |> ccuOf
-
-let private errorsIn (checker: FSharpChecker) (options: FSharpProjectOptions) =
-    let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
-
-    results.Diagnostics
-    |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+let private referencedCcu checker options name =
+    referencedAssembly (checkProject checker options) name |> ccuOf
 
 let private librarySource =
     """
@@ -107,8 +104,9 @@ type internal SecretClass() =
 
 let private consumerOf body = "module Consumer\n" + body + "\n"
 
-/// Enough on its own where the shape of the internal does not matter
 let private useInternalValue = "let useValue = Library.secretValue"
+
+let private otherLayerOptions = [| "--langversion:9.0"; "--checknulls+" |]
 
 [<Theory>]
 [<InlineData "let useValue = Library.secretValue">]
@@ -136,42 +134,36 @@ let ``Handed-over contents keep the public surface usable`` () =
 let ``A consumer on another framework import layer takes the contents`` () =
     let checker = mkChecker true
     let library = projectOptions checker librarySource [] [||]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
-    // Reading nullable-reference metadata keys a different import layer, so this consumer's framework
-    // members - FSharp.Core's included - are not the ones the library was checked against. It takes the
-    // contents anyway: every non-local reference in them is bound to the ccu this consumer resolves that
-    // name to, which is what unpickling would have done for it.
     let _, sameLayer =
         projectOptions checker (consumerOf "let usePublic = Library.publicValue + 1") [ library ] [||]
 
+    // reading nullable-reference metadata keys another import layer
     let otherLayer body =
-        projectOptions checker (consumerOf body) [ library ] [| "--langversion:9.0"; "--checknulls+" |]
-        |> snd
+        projectOptions checker (consumerOf body) [ library ] otherLayerOptions |> snd
 
-    let firstOther = otherLayer "let useOnce = Library.publicValue + 1"
-    let secondOther = otherLayer "let useTwice = Library.publicValue + 2"
+    let firstOnOtherLayer = otherLayer "let useOnce = Library.publicValue + 1"
+    let secondOnOtherLayer = otherLayer "let useTwice = Library.publicValue + 2"
 
     Assert.Empty(errorsIn checker sameLayer)
-    Assert.Empty(errorsIn checker firstOther)
+    Assert.Empty(errorsIn checker firstOnOtherLayer)
 
-    // Both are on that other layer, so one bound copy serves them: were the contents not taken they would
-    // each have unpickled one of their own
-    Assert.Same(referencedCcu checker firstOther libraryName, referencedCcu checker secondOther libraryName)
+    Assert.Same(
+        referencedCcu checker firstOnOtherLayer libraryName,
+        referencedCcu checker secondOnOtherLayer libraryName
+    )
 
-    // And that copy cannot also serve the layer the library was checked on: they disagree about
-    // FSharp.Core, and each must see its own
-    Assert.NotSame(referencedCcu checker sameLayer libraryName, referencedCcu checker firstOther libraryName)
+    // the two layers disagree about FSharp.Core, so one copy cannot serve both
+    Assert.NotSame(referencedCcu checker sameLayer libraryName, referencedCcu checker firstOnOtherLayer libraryName)
 
-/// Binding the contents to the reader's own ccus must not make anything visible that a consumer of the
-/// compiled assembly would not see
 [<Fact>]
 let ``An internal is not visible to a consumer on another layer either`` () =
     let checker = mkChecker true
     let library = projectOptions checker librarySource [] [||]
 
     let _, otherLayer =
-        projectOptions checker (consumerOf useInternalValue) [ library ] [| "--langversion:9.0"; "--checknulls+" |]
+        projectOptions checker (consumerOf useInternalValue) [ library ] otherLayerOptions
 
     Assert.NotEmpty(errorsIn checker otherLayer)
 
@@ -199,10 +191,7 @@ let internal secretValue = 2
         |> snd
 
     let named = consumerNamed "NamedConsumer" [||]
-
-    let namedOnOtherLayer =
-        consumerNamed "NamedConsumerOnOtherLayer" [| "--langversion:9.0"; "--checknulls+" |]
-
+    let namedOnOtherLayer = consumerNamed "NamedConsumerOnOtherLayer" otherLayerOptions
     let unnamed = consumerNamed "UnnamedConsumer" [||]
 
     Assert.Empty(errorsIn checker named)
@@ -238,7 +227,7 @@ let makeLeafType () : Leaf.LeafType = { X = 1 }
             [ leaf ]
             [||]
 
-    // As a build passes project references on transitively
+    // a build passes project references on transitively
     let _, consumer =
         projectOptions
             checker
@@ -252,18 +241,15 @@ let useLeafDirectly : Leaf.LeafType = { X = 2 }
             [ middle; leaf ]
             [||]
 
-    // The leaf type reached through the middle project must be the one the consumer imports itself
     Assert.Empty(errorsIn checker consumer)
 
-/// Handing the contents over is what makes one imported form serve every consumer. Were the handover
-/// to stop happening these would still type-check, so this is what holds the feature in place.
 [<Theory>]
 [<InlineData true>]
 [<InlineData false>]
 let ``Consumers share one imported ccu only when contents are handed over`` share =
     let checker = mkChecker share
     let library = projectOptions checker librarySource [] [||]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
     let _, first =
         projectOptions checker (consumerOf "let first = Library.publicValue") [ library ] [||]
@@ -279,10 +265,6 @@ let ``Consumers share one imported ccu only when contents are handed over`` shar
     else
         Assert.NotSame(firstCcu, secondCcu)
 
-/// Importing IL metadata consults the settings in one place only - whether nullable-reference attributes
-/// are read into the TAST - so two projects agreeing on that import one framework layer whatever their
-/// language versions. Keying the layer on the version itself gave each of them a framework of its own,
-/// and with it a second copy of every framework entity.
 [<Fact>]
 let ``Projects on different language versions share one framework import`` () =
     let checker = mkChecker true
@@ -293,31 +275,22 @@ let ``Projects on different language versions share one framework import`` () =
 
     Assert.Same(ccuOfFSharpCore [| "--langversion:8.0" |], ccuOfFSharpCore [| "--langversion:9.0" |])
 
-/// The framework import layer is keyed on what importing depends on, so projects that disagree about
-/// nullable-reference metadata genuinely import different entities and must refuse each other. realsig is
-/// not part of that key: it changes what a project emits, not what it imports. But a project whose
-/// realsig differs from the one its layer was
-/// first built for is handed a TcGlobals of its own over those very entities, and comparing the TcGlobals
-/// rather than the layer refused it every handover - including from a project with the same setting,
-/// which made how much of a solution shared depend on which project reached the layer first.
 [<Fact>]
 let ``Consumers differing only in realsig share one imported ccu`` () =
     let checker = mkChecker true
     let library = projectOptions checker librarySource [] [| "--realsig+" |]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
-    let _, plain =
+    let _, withoutRealsig =
         projectOptions checker (consumerOf "let first = Library.publicValue") [ library ] [||]
 
-    let _, real =
+    let _, withRealsig =
         projectOptions checker (consumerOf "let second = Library.publicValue") [ library ] [| "--realsig+" |]
 
-    Assert.Empty(errorsIn checker plain)
-    Assert.Empty(errorsIn checker real)
-    Assert.Same(referencedCcu checker plain libraryName, referencedCcu checker real libraryName)
+    Assert.Empty(errorsIn checker withoutRealsig)
+    Assert.Empty(errorsIn checker withRealsig)
+    Assert.Same(referencedCcu checker withoutRealsig libraryName, referencedCcu checker withRealsig libraryName)
 
-/// The memo holds a pessimistic entry while a provider's own answer is being computed, so that a cycle
-/// refuses rather than loops. A diamond re-reaches a project without a cycle, and must not read that entry.
 [<Fact>]
 let ``A project reached twice through a diamond is still taken`` () =
     let checker = mkChecker true
@@ -328,17 +301,14 @@ let ``A project reached twice through a diamond is still taken`` () =
     let join =
         projectOptions checker "module Join\nlet join = Left.left + Right.right\n" [ left; right; leaf ] [||]
 
-    let joinName = Path.GetFileNameWithoutExtension(fst join)
+    let joinName = assemblyNameOf join
     let references = [ join; left; right; leaf ]
 
     let _, first = projectOptions checker "module First\nlet x = Join.join\n" references [||]
     let _, second = projectOptions checker "module Second\nlet y = Join.join\n" references [||]
 
-    // Asking Join reaches Leaf through both Left and Right; the second ask must see the settled answer
     Assert.Same(referencedCcu checker first joinName, referencedCcu checker second joinName)
 
-/// The offer used to require agreement about every assembly the offering project imports, so a
-/// private implementation dependency - one the consumers never resolve, at any layer - refused it.
 [<Fact>]
 let ``A dependency the consumer does not have does not refuse the offer`` () =
     let checker = mkChecker true
@@ -347,7 +317,7 @@ let ``A dependency the consumer does not have does not refuse the offer`` () =
     let privateDependency = "-r:" + typeof<FactAttribute>.Assembly.Location
 
     let library = projectOptions checker librarySource [] [| privateDependency |]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
     let _, first =
         projectOptions checker (consumerOf "let first = Library.publicValue") [ library ] [||]
@@ -358,40 +328,33 @@ let ``A dependency the consumer does not have does not refuse the offer`` () =
     Assert.Empty(errorsIn checker first)
     Assert.Same(referencedCcu checker first libraryName, referencedCcu checker second libraryName)
 
-/// The handed-over ccu is the offering project's own, not an entry in the shared cache, so consumers
-/// racing each other must still land on the one object.
 [<Fact>]
 let ``Consumers checked at once share one imported ccu`` () =
     let checker = mkChecker true
     let library = projectOptions checker librarySource [] [||]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
     let consumers =
         [ for i in 1..8 ->
             projectOptions checker (consumerOf $"let use%d{i} = Library.publicValue") [ library ] [||]
             |> snd ]
 
-    let results =
+    let checkResults =
         consumers
         |> List.map checker.ParseAndCheckProject
         |> Async.Parallel
         |> Async.RunSynchronously
 
-    for r in results do
-        Assert.Empty(r.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error))
+    for results in checkResults do
+        Assert.Empty(errorsOf results.Diagnostics)
 
     let ccus =
-        results
-        |> Array.map (fun r ->
-            r.ProjectContext.GetReferencedAssemblies()
-            |> List.find (fun a -> a.SimpleName = libraryName)
-            |> ccuOf)
+        checkResults
+        |> Array.map (fun results -> referencedAssembly results libraryName |> ccuOf)
 
     for ccu in ccus do
         Assert.Same(ccus[0], ccu)
 
-/// Wide enough for the two paths to disagree somewhere: accessibility, abbreviations, generics, members,
-/// fields, union cases, literals, inlining and documentation all travel differently between them.
 let private surfaceSource =
     """
 module Surface
@@ -454,15 +417,13 @@ module Auto =
     let inline addThem a b = a + b
 """
 
-/// Anything that throws is rendered rather than swallowed, so the two paths must also agree about that
+/// Renders what the getter throws instead of swallowing it, so the two paths must agree on that too
 let private safe (f: unit -> string) =
     try
         f ()
     with e ->
         "<" + e.GetType().Name + ">"
 
-/// The text itself, not just XmlDocSig: the signature file's doc reaches a value through a different
-/// field than its own, and only the text shows whether that one survived.
 let private describeXmlDoc (doc: FSharpXmlDoc) =
     match doc with
     | FSharpXmlDoc.FromXmlText text -> "doc=" + String.concat " " text.UnprocessedLines
@@ -512,45 +473,32 @@ let private describeSymbol (s: FSharpSymbol) =
         @ details
         @ attribsOfSymbol s)
 
-/// Everything a host can see of a referenced project, however this build of it arrived
-let private referencedSurface (checker: FSharpChecker) (options: FSharpProjectOptions) name =
-    let results = checker.ParseAndCheckProject options |> Async.RunSynchronously
-
-    let assembly =
-        results.ProjectContext.GetReferencedAssemblies()
-        |> List.find (fun a -> a.SimpleName = name)
+/// Everything a host can see of one referenced project
+let private referencedSurface checker options name =
+    let assembly = referencedAssembly (checkProject checker options) name
 
     allSymbolsInEntities true assembly.Contents.Entities
     |> List.map describeSymbol
     |> List.sort
     |> Array.ofList
 
-/// The handed-over tree is meant to be what unpickling produces. The other tests pin single properties
-/// of that; this one compares the whole surface a host sees, against a checker that cannot share and so
-/// unpickles the same project. A field the pruning forgets shows up here and nowhere else.
 [<Fact>]
 let ``A handed-over project presents the same surface as an unpickled one`` () =
     let surfaceOf share =
         let checker = mkChecker share
         let library = projectOptions checker surfaceSource [] [||]
-        let libraryName = Path.GetFileNameWithoutExtension(fst library)
 
         let _, consumer =
             projectOptions checker (consumerOf "let useIt = Surface.Answer") [ library ] [||]
 
         Assert.Empty(errorsIn checker consumer)
-        referencedSurface checker consumer libraryName
+        referencedSurface checker consumer (assemblyNameOf library)
 
     let unpickled = surfaceOf false
     let handedOver = surfaceOf true
 
     Assert.Equal<string[]>(unpickled, handedOver)
 
-
-/// A project with a signature file exports what the signature says, and signature conformance hands the
-/// signature's documentation to the implementation as a doc held apart from the value's own. Neither path
-/// carries that second doc to a consumer - the comparison below is what says so - but the implementation's
-/// own documentation does travel, and the guard keeps this from passing on two empty surfaces.
 [<Fact>]
 let ``A handed-over project with a signature file presents the same surface as an unpickled one`` () =
     let signatureSource =
@@ -582,30 +530,26 @@ let twice x = x * 2
                writeSourceAs ".fs" implementationSource |]
 
         let library = projectOptionsOfFiles checker files [] [||]
-        let libraryName = Path.GetFileNameWithoutExtension(fst library)
 
         let _, consumer =
             projectOptions checker (consumerOf "let useIt = Documented.answer") [ library ] [||]
 
         Assert.Empty(errorsIn checker consumer)
-        referencedSurface checker consumer libraryName
+        referencedSurface checker consumer (assemblyNameOf library)
 
     let unpickled = surfaceOf false
     let handedOver = surfaceOf true
 
     Assert.Equal<string[]>(unpickled, handedOver)
 
-    // Both paths losing the doc would satisfy the comparison above and pin nothing
+    // both paths losing the doc would satisfy the comparison above and pin nothing
     Assert.Contains(handedOver, fun (s: string) -> s.Contains "Doubles it, said in the implementation")
 
-/// Only the background compiler offers contents in imported form: TransparentCompiler builds the same
-/// assembly data with nothing to offer, so its consumers each unpickle a copy. Nothing else says so, and
-/// a later change that started offering there would be a silent one.
 [<Fact>]
 let ``The transparent compiler does not hand contents over`` () =
     let checker = mkCheckerOn true true
     let library = projectOptions checker librarySource [] [||]
-    let libraryName = Path.GetFileNameWithoutExtension(fst library)
+    let libraryName = assemblyNameOf library
 
     let _, first =
         projectOptions checker (consumerOf "let first = Library.publicValue") [ library ] [||]
@@ -617,8 +561,7 @@ let ``The transparent compiler does not hand contents over`` () =
     Assert.Empty(errorsIn checker second)
     Assert.NotSame(referencedCcu checker first libraryName, referencedCcu checker second libraryName)
 
-/// Compiles a real assembly, so that what a consumer imports from it comes from pickled bytes on disk
-/// rather than from another project of the graph.
+/// Compiles the source to an assembly on disk under the given name and returns its path
 let private compileDll (checker: FSharpChecker) name source references =
     let dll = Path.Combine(Path.GetDirectoryName(getTemporaryFileName ()), name + ".dll")
 
@@ -632,21 +575,15 @@ let private compileDll (checker: FSharpChecker) name source references =
            yield writeSource source |]
 
     let diagnostics, exn = checker.Compile(args) |> Async.RunSynchronously
-    Assert.Empty(diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error))
+    Assert.Empty(errorsOf diagnostics)
     Assert.True(exn.IsNone, string exn)
     dll
 
-/// An assembly read from disk carries its signature pickled, and unpickling it resolves the names it
-/// mentions against what the consumer has registered. One of those names can be a project whose contents
-/// were offered, whose ccu stands delayed until it is bound - and pointing at a delayed one is an error,
-/// not a wait. So a consumer that references both an offered project and an assembly built against it
-/// used to lose its builder outright: no error, no files, no signature, which is why Errors alone did
-/// not see it.
 [<Fact>]
 let ``A consumer of both an offered project and an assembly built against it still checks`` () =
     let checker = mkChecker true
 
-    let librarySource =
+    let sharedSource =
         """
 module Shared
 
@@ -655,9 +592,8 @@ type Carried = { Value: int }
 let make v = { Value = v }
 """
 
-    // Same source, once as a real assembly for Middle to be built against, and once as a project of the
-    // graph under that same assembly name, which is the one the consumer offers to take
-    let libraryDll = compileDll checker "Shared" librarySource []
+    // the same source as a real assembly for Middle to build against, and as a project under that assembly name
+    let sharedDll = compileDll checker "Shared" sharedSource []
 
     let middleDll =
         compileDll
@@ -666,26 +602,25 @@ let make v = { Value = v }
             """
 module Middle
 
-/// Mentions Shared.Carried in its own signature, so unpickling Middle has to resolve "Shared"
 let carry (v: int) : Shared.Carried = Shared.make v
 """
-            [ libraryDll ]
+            [ sharedDll ]
 
-    let library =
-        projectOptionsNamed checker (Some "Shared") [| writeSource librarySource |] [] [||]
+    let shared =
+        projectOptionsNamed checker (Some "Shared") [| writeSource sharedSource |] [] [||]
 
     let _, consumer =
         projectOptionsNamed
             checker
             None
             [| writeSource "module Consumer\nlet used = Middle.carry 1\n" |]
-            [ library ]
+            [ shared ]
             [| "-r:" + middleDll |]
 
-    let results = checker.ParseAndCheckProject consumer |> Async.RunSynchronously
+    let checkResults = checkProject checker consumer
 
-    Assert.Empty(results.Diagnostics |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error))
+    Assert.Empty(errorsOf checkResults.Diagnostics)
 
-    // The builder failing leaves no error behind, so the signature is what says it ran at all
-    Assert.NotEmpty(results.AssemblySignature.Entities)
-    Assert.NotEmpty(results.ProjectContext.GetReferencedAssemblies())
+    // the builder failing leaves no error behind, so the signature is what says it ran at all
+    Assert.NotEmpty(checkResults.AssemblySignature.Entities)
+    Assert.NotEmpty(checkResults.ProjectContext.GetReferencedAssemblies())
