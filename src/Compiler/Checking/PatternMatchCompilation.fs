@@ -1208,12 +1208,12 @@ let private CompilePatternBasic
         | JoinPromotion.Disabled -> ValueNone
         | JoinPromotion.Enabled ->
             ValueSome
-                (struct {|
-                    Frontiers = Dictionary<MemoKey, MemoEntry>()
-                    Guards = Dictionary<int, Expr ref>()
-                    Patterns = Dictionary<Pattern, int>(HashIdentity.Reference)
-                    Expressions = Dictionary<Expr, int>(HashIdentity.Reference)
-                |})
+                (struct (
+                    Dictionary<MemoKey, MemoEntry>(),
+                    Dictionary<int, Expr ref>(),
+                    Dictionary<Pattern, int>(HashIdentity.Reference),
+                    Dictionary<Expr, int>(HashIdentity.Reference)
+                ))
 
     // The full body includes clause targets, which may contain constructs that cannot move into a lambda.
     let isShareableBody allowMutable returnTy body =
@@ -1273,11 +1273,11 @@ let private CompilePatternBasic
 
     let shareGuard i (vs: Val list) (whenExpr: Expr) =
         match memo with
-        | ValueSome memo when not preserveMatchShape ->
-            match memo.Guards.TryGetValue i with
+        | ValueSome(struct (_, guardMemo, _, _)) when not preserveMatchShape ->
+            match guardMemo.TryGetValue i with
             | false, _ ->
                 let cell = ref whenExpr
-                memo.Guards.Add(i, cell)
+                guardMemo.Add(i, cell)
                 Expr.Link cell
             | true, cell ->
                 if obj.ReferenceEquals(cell.Value, whenExpr) && isShareableBody false g.bool_ty whenExpr then
@@ -1399,10 +1399,10 @@ let private CompilePatternBasic
         match memo with
         | ValueNone ->
             InvestigateFrontiers refuted frontiers
-        | ValueSome memo ->
+        | ValueSome(struct (frontierMemo, _, patternNodeIds, boundExprNodeIds)) ->
             let capturedVals = capturedValsOfFrontiers frontiers
-            let key = memoKeyOf memo.Patterns memo.Expressions frontiers capturedVals
-            match memo.Frontiers.TryGetValue key with
+            let key = memoKeyOf patternNodeIds boundExprNodeIds frontiers capturedVals
+            match frontierMemo.TryGetValue key with
             | true, state ->
                 state.Hits <- state.Hits + 1
                 if state.Hits > (if preserveMatchShape then joinPromotionThreshold else 1) && state.IsPromotable.Value then
@@ -1435,7 +1435,7 @@ let private CompilePatternBasic
                     let fn = bindSharedFunction (not preserveMatchShape) mMatch capturedVals (body, resultTy)
                     if preserveMatchShape then MemoJoin.Thunk fn
                     else MemoJoin.Target(addJoinTarget fn capturedVals)
-                memo.Frontiers[key] <- { Hits = 1; IsPromotable = isPromotable; Join = join }
+                frontierMemo[key] <- { Hits = 1; IsPromotable = isPromotable; Join = join }
                 subtree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
