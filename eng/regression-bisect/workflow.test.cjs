@@ -288,3 +288,28 @@ test("physical source acceptance is opt-in, isolated and distinct from the inves
     assert.ok(artifacts.with.path.includes("${{ runner.temp }}/regression-source-worker"));
     assert.ok(job.steps.every(s => s["continue-on-error"] !== true));
 });
+
+test("controlled delivery uses the existing one-unit CLI with six explicit reservations after physical acceptance", () => {
+    const job = YAML.parse(read(".github/workflows/regression-bisect-validation.yml")).jobs["source-worker"];
+    const steps = job.steps.filter(s => s.if?.includes("[trial-acceptance]"));
+    assert.equal(steps.length, 11);
+    assert.ok(steps.every(s => s.if === "contains(github.event.head_commit.message, '[trial-acceptance]')"));
+    const setup = steps[0].run;
+    for (const gate of ["accepted.status", "accepted.revision", "accepted.controllerAcceptance",
+        "accepted.projectMatrixAcceptance", "accepted.immutableProducerAcceptance"]) assert.ok(setup.includes(gate));
+    assert.ok(setup.includes("a23fa5514d49566559bdcc7479fbe00ceb01b577"));
+    assert.ok(!setup.includes("--advance"), "input preparation must not execute a worker");
+    const units = steps.filter(s => s.name.startsWith("Trial unit "));
+    assert.equal(units.length, 6);
+    for (const unit of units) {
+        assert.equal(unit.run.match(/trial\.cjs --advance/g)?.length, 2, unit.name);
+        assert.doesNotMatch(unit.run, /\b(?:for|while|until)\b/);
+    }
+    const commands = steps.map(s => s.run).join("\n");
+    assert.equal(commands.match(/trial\.cjs --prepare/g)?.length, 1);
+    assert.equal(commands.match(/trial\.cjs --advance/g)?.length, 20);
+    assert.ok(commands.includes("resultAck=true"));
+    assert.ok(commands.includes('test "$code" -eq 1'));
+    assert.equal(commands.match(/trial\.cjs --verify/g)?.length, 1);
+    assert.doesNotMatch(commands, /RB_LOCAL_TEST|NODE_OPTIONS|--restart|git bisect/);
+});

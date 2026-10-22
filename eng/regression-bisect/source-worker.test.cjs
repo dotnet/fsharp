@@ -11,6 +11,34 @@ const os = require("node:os");
 const { createFixture } = require("./fixtures/smoke.cjs");
 const { hash } = require("./toolchain-io.cjs");
 
+test("historical source runtime acquisition preserves released SDK bytes and fails closed", async t => {
+    const { reproductionToolchain } = require("./container-entry.cjs");
+    const runtime = { name: "Microsoft.NETCore.App", version: "10.0.9" };
+    const original = { sdkVersion: "10.0.402", archive: { sha256: "a".repeat(64) },
+        requested: { sdkVersion: "10.0.402", runtimeRequirements: [] }, runtimes: [] };
+    const frozen = fingerprintInput(original);
+    for (const mode of ["acquired", "available", "setup", "sdk", "archive"]) await t.test(mode, async () => {
+        let calls = 0;
+        const input = structuredClone(original);
+        if (mode === "available") input.runtimes.push(runtime);
+        const result = reproductionToolchain({ runtime }, input, { storageDirectory: "/scratch/storage" }, {
+            acquireToolchain: async options => {
+                calls++;
+                assert.equal(options.toolchain.sdkVersion, original.sdkVersion);
+                assert.deepEqual(options.toolchain.runtimeRequirements, [{ ...runtime, role: "sample" }]);
+                return mode === "setup" ? { status: "untestable", error: { message: "publisher archive unavailable" } } :
+                    { status: "acquired", identity: { ...original,
+                        ...(mode === "sdk" ? { sdkVersion: "other" } : {}),
+                        ...(mode === "archive" ? { archive: { sha256: "b".repeat(64) } } : {}) } };
+            },
+        });
+        if (["setup", "sdk", "archive"].includes(mode)) await assert.rejects(result, /runtime acquisition failed|SDK changed/);
+        else assert.equal((await result)?.status ?? null, mode === "available" ? null : "acquired");
+        assert.equal(calls, mode === "available" ? 0 : 1);
+        assert.equal(fingerprintInput(original), frozen);
+    });
+});
+
 test("task identity negative uses a verified compatible off-inventory copy rather than an incompatible SDK task", async t => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-task-negative-"));
     t.after(() => fs.rm(root, { recursive: true, force: true }));

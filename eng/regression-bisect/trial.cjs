@@ -131,7 +131,7 @@ async function validate(config, directory, supplied) {
 }
 
 function immutableApi(db) {
-    const { comments, statuses, runs, dispatches, nextId, now, ...fixed } = db;
+    const { comments, statuses, runs, dispatches, nextId, now, faults, ...fixed } = db;
     return fixed;
 }
 
@@ -145,6 +145,8 @@ async function load(directory, supplied, readOnly = false) {
         saved.directory === directory && saved.configSha256 === hash(await controller.bytes(path.join(directory, "reviewed.json"), 4 * 1024 * 1024)) &&
         equal(saved.helpers, await helpers()), "trial identity or helper drift");
     const db = await json(path.join(directory, "api.json"));
+    requireValue(equal(db.faults, {}) || equal(db.faults, { resultAck: true }),
+        "trial permits only the fixed result acknowledgement fault");
     requireValue(equal(immutableApi(db), saved.api), "fake API identity or immutable inputs changed");
     const service = await connect(path.join(directory, "api.json"), { readOnly });
     const approval = decode(Buffer.from(db.files[".github/regression-bisect/approved/123.json"], "base64"));
@@ -320,6 +322,51 @@ async function verify(t) {
         for (const evidence of observation.evidence.filter(e => e.required))
             requireValue((await store.verifyEvidence(evidence.url))?.sha256 === evidence.sha256, "required evidence missing or changed");
     }
+    const lines = async file => (await controller.bytes(path.join(t.directory, file), 64 * 1024 * 1024))
+        .toString("utf8").trim().split("\n").filter(Boolean).map(JSON.parse);
+    const processes = await lines("process.jsonl");
+    requireValue(new Set(processes.filter(p => p.role === "controller").map(p => p.pid)).size >= 6 &&
+        processes.every(p => Number.isSafeInteger(p.pid) && p.pid > 0 && Number.isFinite(Date.parse(p.time))),
+    "trial process trace must retain independently restarted controller invocations");
+    const commits = new Map();
+    const commentRoutes = new Set([b.checkpointCommentId, b.resultCommentId, discovery.commentId, discovery.freshnessCommentId]
+        .map(id => `issues/comments/${id}`));
+    let checkpoint, committed;
+    for (const entry of await lines("api.json.ledger")) {
+        if (entry.kind === "api" && entry.method !== "GET") {
+            requireValue(entry.method === "PATCH" && commentRoutes.has(entry.route) ||
+                entry.method === "POST" && (entry.route === `statuses/${t.config.deployment.anchorSha}` ||
+                    entry.route === "actions/workflows/regression-bisect-controller.yml/dispatches" &&
+                    entry.body.ref === "main" && entry.body.inputs.issue === 123),
+            "trial mutation ledger contains an unrelated destination");
+            if (entry.method === "PATCH" && entry.route === `issues/comments/${b.checkpointCommentId}`) {
+                const record = await state.authenticateDecodedRecord(transport, context, {
+                    ...(await transport.getComment(b.checkpointCommentId)), body: entry.body.body,
+                });
+                requireValue(record?.kind === "checkpoint", "trial trace checkpoint authentication failed");
+                checkpoint = { value: record.payload, sha256: hash(entry.body.body) };
+            }
+            if (entry.method === "POST" && entry.body.context === `regression-bisect/123/${b.checkpointCommentId}`) {
+                const freshness = await state.readFreshness({ request: async () => ({
+                    data: [{ ...entry.body, id: 1, creator: context.actor }], headers: { link: "" },
+                }) }, context);
+                requireValue(checkpoint && freshness.generation === checkpoint.value.generation &&
+                    freshness.bodyDigest === checkpoint.sha256, "trial trace freshness differs from signed checkpoint");
+                committed = checkpoint.value;
+                for (const record of committed.records.filter(r => r.status === "committed"))
+                    if (!commits.has(record.id)) commits.set(record.id, entry.pid);
+            }
+        }
+        if (entry.kind === "git" && entry.args.includes("bisect"))
+            requireValue(committed && ["stable", "main", "good"].every(name => {
+                const id = committed.state.endpointEvidence[name], observation = committed.observations[id];
+                return observation?.valid && committed.state.budget.authenticatedObservationDigests.includes(id) &&
+                    observation.data.outcome.outcome === (name === "good" ? "pass" : "product-failure") &&
+                    committed.records.some(r => r.observationDigest === id && r.status === "committed");
+            }), "bisect command occurred before authenticated endpoints were committed");
+    }
+    requireValue(equal([...commits.keys()], cp.records.map(r => r.id)) && new Set(commits.values()).size === 6,
+        "trial process trace must retain six independently committed observations");
     return { status: "verified", purpose, trialId: t.db.trialId, digest: result.payload.digest,
         commentId: b.resultCommentId, budget: cp.state.budget.consumed, physicalAcceptance: false };
 }

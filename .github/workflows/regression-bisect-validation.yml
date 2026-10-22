@@ -175,6 +175,167 @@ jobs:
           else
             node eng/regression-bisect/source-worker.smoke.cjs --run "$RUNNER_TEMP/regression-source-config.json" "$RUNNER_TEMP/regression-source-worker"
           fi
+      - name: Prepare reviewed controlled-history inputs
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs/promises"), path = require("node:path"), { randomBytes } = require("node:crypto");
+          const { routingFixture, connect, writeDatabase } = require("./eng/regression-bisect/fixtures/controller-service.cjs");
+          const { hash, requireValue } = require("./eng/regression-bisect/toolchain-io.cjs");
+          const { fingerprintInput } = require("./eng/regression-bisect/model.cjs");
+          const { seal } = require("./eng/regression-bisect/fixtures/contracts.cjs");
+          const state = require("./eng/regression-bisect/state.cjs");
+          const { createGithubApi } = require("./eng/regression-bisect/github.cjs");
+          const { readIssueSnapshot } = require("./eng/regression-bisect/intake.cjs");
+          (async () => {
+            const temporary = process.env.RUNNER_TEMP, revision = process.env.GITHUB_SHA;
+            const workerRoot = path.join(temporary, "regression-source-worker");
+            const workerFile = path.join(workerRoot, "source-worker.json"), workerBytes = await fs.readFile(workerFile);
+            const accepted = JSON.parse(workerBytes);
+            requireValue(accepted.status === "passed" && accepted.revision === revision &&
+              accepted.controllerAcceptance && accepted.projectMatrixAcceptance && accepted.immutableProducerAcceptance,
+              "current physical worker acceptance is required before preparing the trial");
+            const frozen = JSON.parse(await fs.readFile(path.join(workerRoot, "inputs", "source-graph.json")));
+            requireValue(frozen.source.good === "05e2f222e08785994d8909707054b411ea677fc4" &&
+              frozen.source.candidate === "a23fa5514d49566559bdcc7479fbe00ceb01b577" &&
+              frozen.source.main === "e648b05ced2bc8f071685a7dbfacbbc15964e2f9", "approved source graph changed");
+            const directory = path.join(temporary, "regression-trial-input");
+            await fs.mkdir(directory);
+            const now = new Date(), deadline = new Date(now.getTime() + 720 * 60000).toISOString(), cleanup = [];
+            const fixture = await routingFixture({ after: f => cleanup.push(f) }, { now: now.toISOString(), deadline });
+            const db = fixture.read(), context = fixture.context, key = randomBytes(32);
+            Object.assign(context, { workflowRevision: revision, policyRevision: revision, trustedWorkflowRevisions: [revision],
+              checkpointAnchorSha: revision, keys: { acceptance: key }, keyId: "acceptance" });
+            const containmentDirectory = path.join(temporary, "regression-source-containment");
+            const containerBytes = await fs.readFile(path.join(temporary, "regression-source-config.json"));
+            const config = { ...fixture.config, anchorSha: revision, keyId: context.keyId, keyHashes: { acceptance: hash(key) },
+              container: JSON.parse(containerBytes), containment: { configSha256: hash(containerBytes),
+                reportSha256: hash(await fs.readFile(path.join(containmentDirectory, "containment.json"))),
+                receiptSha256: Object.fromEntries(await Promise.all(
+                  ["inspect", "disk", "pids", "cpu", "memory", "malformed", "timeout"].map(async mode =>
+                    [mode, hash(await fs.readFile(path.join(containmentDirectory, mode, "receipt.json")))]))) } };
+            const manifest = JSON.parse(await fs.readFile(path.join(workerRoot, "inputs", "frozen-manifest.json")));
+            manifest.matrix[0].id = "SYNTHETIC-ONLY-history-and-PR-URLs-NOT-live-upstream";
+            const bootstrap = { ...fixture.approval.bootstrap, checkpointAnchorSha: revision,
+              allowanceId: `synthetic-trial-${process.env.GITHUB_RUN_ID}` };
+            db.issue.title = "SYNTHETIC ACCEPTANCE ONLY: controlled source boundary";
+            db.issue.body = "SYNTHETIC ACCEPTANCE ONLY. All history and PR URLs/associations in this trial are fixtures, not live upstream evidence.";
+            db.issues = [db.issue];
+            db.comments[0].body = state.serializeWorkflowRecord({ kind: "proposal", status: "Reserved checkpoint slot", payload: {
+              schemaVersion: 1, purpose: "checkpoint-slot", repository: context.repository, issueNumber: 123,
+              checkpointAnchorSha: revision, allowanceId: bootstrap.allowanceId, deadline,
+            } }, context);
+            db.comments[1].body = state.serializeWorkflowRecord({ kind: "proposal", status: "Reserved result slot", payload: {
+              schemaVersion: 1, purpose: "result-slot", repository: context.repository, issueNumber: 123, checkpointCommentId: 456,
+            } }, { ...context, commentId: 457 });
+            bootstrap.checkpointBootstrapDigest = fingerprintInput(db.comments[0].body);
+            bootstrap.resultBootstrapDigest = fingerprintInput(db.comments[1].body);
+            db.revision = db.anchorSha = revision; db.mirrorDirectory = frozen.source.directory; db.olderSha = frozen.source.good;
+            for (const run of Object.values(db.runs)) run.head_sha = revision;
+            db.runs["32345/1"] = { ...db.runs["12345/1"], id: 32345 };
+            const registration = { ...fixture.registration, checkpointAnchorSha: revision };
+            db.files[".github/regression-bisect/discovery.json"] = Buffer.from(JSON.stringify(registration)).toString("base64");
+            db.files[".github/regression-bisect/deployment.json"] = Buffer.from(JSON.stringify(config)).toString("base64");
+            db.files[config.workflowPath] = (await fs.readFile(path.join(process.cwd(), config.workflowPath))).toString("base64");
+            for (const source of manifest.sources)
+              db.files[source.path] = (await fs.readFile(path.join(workerRoot, "inputs", "sample", source.path))).toString("base64");
+            const candidate = frozen.source.candidate;
+            const members = require("node:child_process").execFileSync("/usr/bin/git",
+              ["-C", frozen.source.directory, "rev-list", "--max-count=100", frozen.source.good], { encoding: "utf8" })
+              .trim().split("\n").map(sha => ({ sha }));
+            db.associationPageSize = 1; db.associations = { [candidate]: [{ number: 699 }, { number: 700 }] };
+            db.pulls = { 699: { details: { number: 699, html_url: "https://github.com/dotnet/fsharp/pull/699",
+              base: { repo: { full_name: "dotnet/fsharp" } }, state: "open", merged: false, merged_at: null } },
+              700: { details: { number: 700, html_url: "https://github.com/dotnet/fsharp/pull/700",
+                state: "closed", merged: true, merged_at: now.toISOString(), updated_at: now.toISOString(),
+                merge_commit_sha: frozen.source.main, base: { ref: "main", sha: frozen.source.good, repo: { full_name: "dotnet/fsharp" } },
+                head: { sha: candidate, repo: { full_name: "dotnet/fsharp" } } }, commits: [...members, { sha: candidate }] } };
+            const apiFile = path.join(directory, "api.json");
+            writeDatabase(apiFile, db);
+            const service = await connect(apiFile);
+            const transport = createGithubApi({ repository: "dotnet/fsharp", issueNumber: 123,
+              checkpointCommentId: 456, resultCommentId: 457, anchorSha: revision, token: "offline" }, service.send);
+            const snapshot = await readIssueSnapshot({ transport, repository: "dotnet/fsharp", issueNumber: 123,
+              now: now.toISOString(), authenticateRecord: async comment => [456, 457, 458, 459].includes(comment.id),
+              readTrustedCheckpoints: async () => [] });
+            requireValue(snapshot.status === "complete" && snapshot.snapshot.investigations.active.length === 0, snapshot.reason);
+            manifest.discussionFingerprint = snapshot.snapshot.discussionFingerprint; seal(manifest);
+            db.files[".github/regression-bisect/approved/123.json"] =
+              Buffer.from(JSON.stringify({ schemaVersion: 1, manifest, bootstrap })).toString("base64");
+            db.files[".github/regression-bisect/registrations/123.json"] = Buffer.from(JSON.stringify(bootstrap)).toString("base64");
+            db.files[".github/regression-bisect/provision/123.json"] =
+              Buffer.from(JSON.stringify({ schemaVersion: 1, allowanceId: bootstrap.allowanceId, deadline })).toString("base64");
+            writeDatabase(apiFile, db);
+            const { compilerRuntime, ...source } = frozen.source;
+            const reviewed = { schemaVersion: 1, purpose: "SYNTHETIC ACCEPTANCE ONLY", helperRevision: revision, deployment: config,
+              api: { path: apiFile, sha256: hash(await fs.readFile(apiFile)) }, source, stable: frozen.stable,
+              files: [...frozen.files, { role: "worker-acceptance", path: workerFile, sha256: hash(workerBytes) }],
+              containmentDirectory, runs: { controller: "12345", routing: "22345", supervisor: "32345" } };
+            await fs.writeFile(path.join(directory, "reviewed.json"),
+              JSON.stringify({ ...reviewed, signature: require("./eng/regression-bisect/trial.cjs").sign(reviewed, key) }), { flag: "wx" });
+            await fs.appendFile(process.env.GITHUB_ENV, `RB_SIGNING_KEYS=${JSON.stringify({ acceptance: key.toString("base64") })}\n`);
+            for (const action of cleanup) await action();
+          })().catch(error => { console.error(error.stack); process.exitCode = 1; });
+          NODE
+      - name: Provision and bootstrap the durable trial
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --prepare "$RUNNER_TEMP/regression-trial-input/reviewed.json" "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 1 - latest released stable
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 2 - clean controlled main
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 3 - independently built good source
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 4 - actual Git-selected candidate
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 5 - fresh candidate confirmation
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Trial unit 6 - fresh relevant-parent confirmation
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Commit the confirmed boundary
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+      - name: Publish only to the fake API and lose its acknowledgement
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          node -e 'const f=process.env.RUNNER_TEMP+"/regression-trial/api.json",s=require("./eng/regression-bisect/fixtures/controller-service.cjs"),d=require(f);d.faults.resultAck=true;s.writeDatabase(f,d)'
+          set +e
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial" > "$RUNNER_TEMP/regression-trial/lost-ack.json"
+          code=$?
+          set -e
+          cat "$RUNNER_TEMP/regression-trial/lost-ack.json"
+          test "$code" -eq 1
+          node -e 'const r=require(process.env.RUNNER_TEMP+"/regression-trial/lost-ack.json");if(r.status!=="blocked"||!r.reason.includes("result acknowledgement lost"))throw Error("unexpected publication failure")'
+      - name: Adopt the persisted report in a new process and verify read-only
+        if: contains(github.event.head_commit.message, '[trial-acceptance]')
+        run: |
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --verify "$RUNNER_TEMP/regression-trial"
       - name: Retain source worker evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -184,4 +345,6 @@ jobs:
             ${{ runner.temp }}/regression-source-config.json
             ${{ runner.temp }}/regression-source-containment
             ${{ runner.temp }}/regression-source-worker
+            ${{ runner.temp }}/regression-trial-input
+            ${{ runner.temp }}/regression-trial
           if-no-files-found: error

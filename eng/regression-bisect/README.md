@@ -109,6 +109,28 @@ The artifact retains exact configuration, commands/exits, source/product/produce
 identities, archive bytes, denial/cleanup receipts and the fresh reader PID.
 This is worker acceptance, not a completed six-unit trial or production activation.
 
+`[worker-acceptance] [trial-acceptance]` additionally runs the existing one-unit
+trial CLI on that same ephemeral Linux host, after current physical acceptance.
+It preserves the approved three-commit source graph and assertion, reviews the
+complete fixture discussion, and signs the exact configuration before preparing
+one new trial. Six explicitly listed route/worker pairs reserve 660/720 minutes
+and five source builds; each CLI call is a new controller process. There is no
+whole-trial loop, candidate override, allowance reset or live issue write.
+The fixture matrix explicitly labels its history and PR URLs as synthetic.
+Its PR membership spans two pages and uses actual source commits.
+The final fake result write loses its acknowledgement; a new process must adopt
+that same authenticated result before read-only verification. Trial inputs,
+process/API/Git traces, journals, archives and evidence are retained with the
+source-worker artifact. Generated controller signing keys are not uploaded.
+These checks remain opt-in validation, not production registration or activation.
+
+Source reproduction now acquires a publisher-verified supplemental runtime when
+the built compiler's measured runtime is absent from the frozen reproduction
+SDK. The SDK version and actual archive hash must remain identical; no released
+SDK bytes or source declarations are patched. Acquisition failures stay setup
+failures, and the collector binds the actual supplemental installation and
+retained runtime archive to the reproduced product.
+
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
 The Windows supervisor receives an explicit OS environment and the built-in module path.
@@ -506,6 +528,12 @@ acceptance purpose and `physicalAcceptance: false`: a verified local evidence
 bundle does not itself sign off the separate product/containment or physical
 known-history gates. Exit 1 prints the blocking reason; no failure refunds charges
 or extends a deadline.
+Verification also authenticates the ordered checkpoint/freshness writes before
+every recorded bisect command and requires six distinct committing processes.
+A missing restart trace or a mutation outside the selected fixed slots,
+freshness anchor and controller dispatch blocks verification. The only mutable
+trial fault is `resultAck: true`, which simulates losing the fixed fake result
+write's response; worker, runtime and metadata fault injection remain forbidden.
 
 #### Frozen source design (no historical product execution)
 

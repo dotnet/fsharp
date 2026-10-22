@@ -376,6 +376,18 @@ test("SYNTHETIC prepare rejects a linked evidence parent before creating any des
     await fs.unlink(link);
 });
 
+test("trial permits only a lost result acknowledgement, never worker or metadata faults", async t => {
+    const r = await reviewed(t);
+    assert.equal((await invoke(["--prepare", r.file, r.evidence], r.env)).code, 0);
+    const file = path.join(r.evidence, "api.json"), db = JSON.parse(await fs.readFile(file));
+    for (const faults of [{ workerAck: true }, { newMetadata: true }, { resultAck: false }, { resultAck: true, runtime: true }]) {
+        writeDatabase(file, { ...db, faults });
+        const result = await invoke(["--advance", r.evidence], r.env);
+        assert.equal(result.code, 1, result.stdout);
+        assert.match(JSON.parse(result.stdout).reason, /only the fixed result acknowledgement fault/);
+    }
+});
+
 test("SYNTHETIC source freeze selects publisher runtime, never apphost, and preserves the reviewed graph", async t => {
     const f = await history(t), feed = "https://builds.dotnet.microsoft.com/dotnet";
     const archive = (product, version, rid = "linux-x64") => ({ name: `${product}-${rid}.tar.gz`, rid,
@@ -562,7 +574,10 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         assert.equal(result.code, 0, result.stdout);
         if ((await r.read()).dispatches.at(-1).inputs.mode === "publish") break;
     }
-    await r.stop("result-write");
+    await r.update(db => { db.faults.resultAck = true; });
+    const lostAck = await r.step();
+    assert.equal(lostAck.code, 1, lostAck.stdout);
+    assert.match(JSON.parse(lostAck.stdout).reason, /result acknowledgement lost/);
     const pending = (await r.cp()).cp;
     const persisted = (await r.read()).comments.find(c => c.id === 457).body;
     for (const e of Object.values(pending.observations).flatMap(o => o.evidence).filter(e => !e.required)) {
@@ -603,9 +618,23 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         ["discussion", /reviewed discussion fingerprint is stale/],
         ["spoofed workflow comment", /reviewed discussion fingerprint is stale/],
         ["discovery comment", /discovery record authentication/],
+        ["process trace", /process trace/], ["early bisect", /before authenticated endpoints/],
+        ["unrelated mutation", /mutation ledger/],
     ]) await t.test(target, async () => {
         const saved = path.join(r.evidence, "trial.json"), bytes = await fs.readFile(saved);
         let lost;
+        if (target === "process trace") {
+            lost = { file: path.join(r.evidence, "process.jsonl") };
+            lost.bytes = await fs.readFile(lost.file);
+            await fs.writeFile(lost.file, "");
+        }
+        if (["early bisect", "unrelated mutation"].includes(target)) {
+            lost = { file: `${r.api}.ledger` };
+            lost.bytes = await fs.readFile(lost.file);
+            const entry = target === "early bisect" ? { kind: "git", args: ["bisect", "reset"] } :
+                { kind: "api", method: "PATCH", route: "issues/124", body: { state: "closed" } };
+            await fs.writeFile(lost.file, JSON.stringify(entry) + "\n" + lost.bytes);
+        }
         if (["checkpoint", "result"].includes(target)) await r.update(db => {
             db.comments.find(c => c.id === (target === "checkpoint" ? 456 : 457)).body += "forged";
         });

@@ -391,6 +391,25 @@ test("reserved source identity and a separate sample toolchain never retarget hi
     assert.match(duplicate.error.message, /EEXIST/);
 });
 
+test("source reproduction acquires its measured compiler runtime without changing the frozen SDK", async t => {
+    const f = await controlled(t);
+    let selected;
+    const result = await testSourceRevision({
+        ...f.options, reproductionToolchain: f.toolchain,
+    }, {
+        ...f.deps,
+        prepareReproductionToolchain: async (product, original) => {
+            assert.equal(original, f.toolchain);
+            assert.equal(product.sourceSha, f.shas[0]);
+            assert.equal(product.runtime.version, "10.0.0");
+            selected = product.runtime;
+            return original;
+        },
+    });
+    assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+    assert.deepEqual(selected, { name: "Microsoft.NETCore.App", version: "10.0.0" });
+});
+
 test("compatible historical projects preserve the frozen sample runtime and independent SDK provenance", async t => {
     for (const acquisition of ["released", "other-source"]) await t.test(acquisition, async t => {
         const f = await controlled(t);

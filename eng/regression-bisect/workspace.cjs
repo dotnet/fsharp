@@ -460,9 +460,12 @@ async function testSourceRevision(options, dependencies = {}) {
     const built = await buildRevision(w, dependencies);
     if (built.status !== "built") return finish(w, built);
     try {
+        const original = options.reproductionToolchain ?? w.toolchain;
+        const toolchain = dependencies.prepareReproductionToolchain
+            ? await dependencies.prepareReproductionToolchain(w.product, original) : original;
         const reproduction = await runReproduction({
             manifest: options.manifest, sourceDirectory: w.sampleDirectory, workDirectory: path.join(w.root, "executions"),
-            product: w.product, toolchain: options.reproductionToolchain ?? w.toolchain, helper: w.helper,
+            product: w.product, toolchain, helper: w.helper,
             sampleRuntimes: options.sampleRuntimes,
         }, {
             execute: (exe, args, settings) => w.execute(exe, args, {

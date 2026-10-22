@@ -18,6 +18,18 @@ function evidenceHelperCommand(executable, args, helper) {
         args[2] === helper.runtimeVersion && args[3] === helper.dll && ["inspect", "binlog"].includes(args[4]);
 }
 
+async function reproductionToolchain(product, original, options, dependencies) {
+    if (original.runtimes.some(r => r.name === product.runtime.name && r.version === product.runtime.version)) return null;
+    const toolchain = { ...original.requested, runtimeRequirements: [
+        ...original.requested.runtimeRequirements, { ...product.runtime, role: "sample" },
+    ] };
+    const acquired = await (dependencies.acquireToolchain ?? acquireToolchain)({ ...options, toolchain }, dependencies);
+    requireValue(acquired.status === "acquired", `source reproduction runtime acquisition failed: ${acquired.error?.message}`);
+    requireValue(acquired.identity.sdkVersion === original.sdkVersion &&
+        acquired.identity.archive.sha256 === original.archive.sha256, "source reproduction SDK changed");
+    return acquired;
+}
+
 function connect(host, port, request) {
     return new Promise(resolve => {
         const socket = net.connect({ host, port });
@@ -317,7 +329,7 @@ async function physicalRunner(unit, launch, acceptance = null) {
     };
     const storage = "/scratch/storage";
     for (const name of [storage, "/scratch/work", "/scratch/evidence", "/scratch/executions"]) await fs.mkdir(name);
-    const acquired = await acquireToolchain({ policy, toolchain: unit.resolved, storageDirectory: storage, signal }, { run: withProxy });
+    let acquired = await acquireToolchain({ policy, toolchain: unit.resolved, storageDirectory: storage, signal }, { run: withProxy });
     if (acquired.status !== "acquired") return executionEvidence(unit, launch, acquired, {
         acquisition: acquired, commands, evidenceDirectory: "/scratch/evidence", scratchDirectory: "/scratch",
     });
@@ -387,7 +399,15 @@ async function physicalRunner(unit, launch, acceptance = null) {
         }
         result = await runExecutionUnit(unit, {
             policy, inventoryReleased, acquireToolchain: async () => acquired,
-            workerExecute: historical, workspaceDependencies: { execute: historical, toolchains: { run: withProxy } },
+            workerExecute: historical, workspaceDependencies: {
+                execute: historical, toolchains: { run: withProxy },
+                prepareReproductionToolchain: async (product, original) => {
+                    const supplemental = await reproductionToolchain(product, original,
+                        { policy, storageDirectory: storage, signal }, { run: withProxy });
+                    if (supplemental) acquired = supplemental;
+                    return acquired.identity;
+                },
+            },
             worker: { storageDirectory: storage, scratchDirectory: "/scratch/work", evidenceDirectory: "/scratch/evidence",
                 workDirectory: "/scratch/executions", sourceDirectory: "/input/samples", mirrorDirectory: "/input/source.bundle",
                 gitExecutable: "/usr/bin/git", reproductionToolchain: toolchain, helper },
@@ -541,4 +561,4 @@ if (require.main === module) main().catch(error => {
     console.error([error.message, error.cause?.code, error.cause?.message].filter(Boolean).join(": "));
     process.exitCode = 1;
 });
-module.exports = { evidenceHelperCommand };
+module.exports = { evidenceHelperCommand, reproductionToolchain };
