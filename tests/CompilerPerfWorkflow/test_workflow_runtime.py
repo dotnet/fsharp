@@ -763,8 +763,9 @@ class RuntimeTests(unittest.TestCase):
                 self.assertFalse((controller.root / "approval.json").exists())
 
     def test_finalizer_preserves_unconfirmed_service_worker_and_lock_ownership(self):
-        for pending in ("service", "worker", "lock"):
-            with self.subTest(pending=pending), self.discovery(canonical=True) as (repo, controller, api, transport):
+        for operation, pending in [(op, pending) for op in ("finalize", "handoff")
+                                   for pending in ("service", "worker", "lock")]:
+            with self.subTest(operation=operation, pending=pending), self.discovery(canonical=True) as (repo, controller, api, transport):
                 controller.save("runtime-stop", {"reason": "Owned cleanup incomplete",
                                                  "requested_at": controller.now().isoformat()})
                 controller.save("runtime-service", {"state": "cleanup_failed" if pending == "service" else "stopped"})
@@ -783,8 +784,15 @@ class RuntimeTests(unittest.TestCase):
                     identity = owner.read_bytes() if pending == "lock" else None
                     restarted = w.Controller(controller.root, repo.root, transport, api, now=controller.now)
                     adapter = runtime.Runtime(restarted, controller.root.parent / "visible")
-                    with self.assertRaisesRegex(ValueError, "cleanup|reconciliation|lock owner"):
-                        adapter.finalize(sink=mock.Mock(side_effect=AssertionError("No upload before owned exit")))
+                    with mock.patch.object(restarted, "stage_evidence") as stage, \
+                            mock.patch.object(adapter, "export") as export:
+                        with self.assertRaisesRegex(ValueError, "cleanup|reconciliation|lock owner"):
+                            if operation == "finalize":
+                                adapter.finalize(sink=mock.Mock(side_effect=AssertionError("No upload before owned exit")))
+                            else:
+                                adapter.handoff(destination=controller.root.parent / "publisher")
+                        stage.assert_not_called()
+                        export.assert_not_called()
                     self.assertEqual(transport.read(), (before, head))
                     self.assertEqual(controller.load("session"), session)
                     self.assertFalse((controller.root / "clocks.json").exists()
@@ -793,6 +801,7 @@ class RuntimeTests(unittest.TestCase):
                         self.assertEqual(owner.read_bytes(), identity)
                 self.assertEqual(api.effects, [])
                 self.assertFalse((controller.root / "output").exists())
+                self.assertFalse((controller.root.parent / "publisher").exists())
 
     def test_prearm_startup_failure_survives_handoff_and_finalization_without_null_clock(self):
         for failure in ("prepare", "harness", "arm"):
