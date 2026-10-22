@@ -199,7 +199,7 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
     await initializeCheckpoint(stateTransport, context, {
         allowanceId: "maintainer-approved-investigation-1", deadline: "2026-10-01T00:00:00Z",
     });
-    assert.equal(managed.body, body);
+    assert.equal(await authenticateWorkflowRecord(stateTransport, context, { ...managed, body }), true);
     runReads = 0;
     const f = fixture({
         comments: [comment(1), managed, copied],
