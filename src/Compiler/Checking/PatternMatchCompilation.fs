@@ -1390,7 +1390,9 @@ let private CompilePatternBasic
         | Some whenExpr ->
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) (shareGuard i vs2 whenExpr)
-            let failureTree = investigateMemoized (RefutedWhenClause :: refuted) rest
+            let refuted = RefutedWhenClause :: refuted
+            let failureTree =
+                if memo.IsNone then InvestigateFrontiers refuted rest else investigateMemoized refuted rest
             mkBoolSwitch m whenExprWithBindings successTree failureTree
 
         | None -> successTree
@@ -1592,7 +1594,7 @@ let private CompilePatternBasic
 
                  let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation)
 
-                 let tree = investigateMemoized refuted frontiers
+                 let tree = if memo.IsNone then InvestigateFrontiers refuted frontiers else investigateMemoized refuted frontiers
 
                  // Bind the resVar for the union case, if we have one
                  let tree =
@@ -1631,7 +1633,7 @@ let private CompilePatternBasic
             | [] ->
                 None
             | _ ->
-                Some(investigateMemoized refuted fallthroughPathFrontiers)
+                Some(if memo.IsNone then InvestigateFrontiers refuted fallthroughPathFrontiers else investigateMemoized refuted fallthroughPathFrontiers)
 
     // Build a new frontier that represents the result of a successful investigation
     and GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation frontier =
