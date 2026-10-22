@@ -204,6 +204,7 @@ jobs:
             const now = new Date(), deadline = new Date(now.getTime() + 720 * 60000).toISOString(), cleanup = [];
             const fixture = await routingFixture({ after: f => cleanup.push(f) }, { now: now.toISOString(), deadline });
             const db = fixture.read(), context = fixture.context, key = randomBytes(32);
+            console.log(`::add-mask::${key.toString("base64")}`);
             Object.assign(context, { workflowRevision: revision, policyRevision: revision, trustedWorkflowRevisions: [revision],
               checkpointAnchorSha: revision, keys: { acceptance: key }, keyId: "acceptance" });
             const containmentDirectory = path.join(temporary, "regression-source-containment");

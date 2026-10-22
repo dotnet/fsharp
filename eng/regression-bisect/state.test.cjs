@@ -829,10 +829,24 @@ test("repeated identity/evidence tables compact below 48 KiB without dropping ob
     assert.throws(() => serializeWorkflowRecord({ kind: "checkpoint", status: "blocked", payload: cp }, h.context), /size|48/);
 });
 
+test("six-unit short source and archive identities roundtrip within the unchanged comment bound", async () => {
+    const h = harness();
+    const payload = { units: Array.from({ length: 6 }, (_, unit) => ({
+        identities: Array.from({ length: 70 }, (_, index) => ({
+            name: `unit-${unit}-artifact-${index}`, sourceSha: f.sha(`source-${unit}`),
+            sha256: f.digest("same publisher SDK bytes"), runtime: f.digest("same compiler runtime bytes"),
+        })),
+    })) };
+    h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "SYNTHETIC codec-size fixture", payload }, h.context);
+    assert.ok(Buffer.byteLength(h.comment.body) < 48 * 1024);
+    const decoded = await require("./state.cjs").authenticateDecodedRecord(h.transport, h.context, h.comment);
+    assert.deepEqual(decoded.payload, payload);
+});
+
 test("serialized checkpoint fixture replays reservation, observation, cancellation and resume", async () => {
     const h = harness();
-    await h.start();
     h.comment.body = readFileSync(join(__dirname, "fixtures", "checkpoint.txt"), "utf8").trimEnd();
+    await require("./state.cjs").writeFreshness(h.transport, h.context, 0, f.digest(h.comment.body));
     const initial = await loadCheckpoint(h.transport, h.context);
     assert.equal(initial.checkpoint.generation, 0);
     const first = await reserve(h);

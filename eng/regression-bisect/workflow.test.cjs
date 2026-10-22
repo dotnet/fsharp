@@ -298,6 +298,9 @@ test("controlled delivery uses the existing one-unit CLI with six explicit reser
     for (const gate of ["accepted.status", "accepted.revision", "accepted.controllerAcceptance",
         "accepted.projectMatrixAcceptance", "accepted.immutableProducerAcceptance"]) assert.ok(setup.includes(gate));
     assert.ok(setup.includes("a23fa5514d49566559bdcc7479fbe00ceb01b577"));
+    const mask = setup.indexOf('console.log(`::add-mask::${key.toString("base64")}`)');
+    assert.ok(mask >= 0 && mask < setup.indexOf("fs.appendFile(process.env.GITHUB_ENV"),
+        "generated signing keys must be masked before Actions logs later step environments");
     assert.ok(!setup.includes("--advance"), "input preparation must not execute a worker");
     const units = steps.filter(s => s.name.startsWith("Trial unit "));
     assert.equal(units.length, 6);

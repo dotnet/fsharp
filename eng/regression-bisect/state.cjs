@@ -1,4 +1,5 @@
 const { createHash, createHmac, timingSafeEqual } = require("node:crypto");
+const { retainMetadata, metadataBytes } = require("./toolchain-io.cjs");
 const {
     isEligibleIssue, validateManifest, validatePolicy, validateState, validateObservation,
     fingerprintInput: fingerprint, fingerprintEpoch, validateConfirmationEvidence,
@@ -39,6 +40,12 @@ function pack(value, stringThreshold = 128) {
 }
 
 function unpack(packed) {
+    if (packed?.encoding === "gzip") {
+        fields(packed, "sha256 encoding bytesBase64", "compressed identity table");
+        const bytes = metadataBytes(packed);
+        requireState(bytes.length <= 2 * 1024 * 1024, "expanded identity table exceeds limit");
+        packed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    }
     fields(packed, "root table", "identity table");
     requireState(Array.isArray(packed.table), "invalid identity table");
     let visits = 0;
@@ -81,6 +88,7 @@ function serializeWorkflowRecord({ kind, status, payload }, context) {
         typeof status === "string" && status.length <= 256 && !/[\r\n`]/.test(status), "invalid record status");
     const key = context.keys[context.keyId];
     requireState(Buffer.isBuffer(key) && key.length >= 32, "authentication key must contain at least 32 bytes");
+    const packed = pack(payload, 40);
     const envelope = {
         schemaVersion: 1, kind, status,
         binding: {
@@ -89,7 +97,7 @@ function serializeWorkflowRecord({ kind, status, payload }, context) {
             workflowRevision: context.workflowRevision, runId: context.owner.runId,
             runAttempt: context.owner.attempt, keyId: context.keyId,
         },
-        payload: pack(payload, kind === "result" ? 40 : 128),
+        payload: kind === "result" ? retainMetadata(Buffer.from(JSON.stringify(packed))) : packed,
     };
     envelope.signature = createHmac("sha256", key).update(fingerprint(envelope)).digest("hex");
     const body = render(envelope);

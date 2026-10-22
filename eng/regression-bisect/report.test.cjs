@@ -128,6 +128,34 @@ test("controlled durable artifacts publish with streaming archive verification a
         signedBytes: Buffer.byteLength(resultComment(h, result).body), evidence: [small, blob] }));
 });
 
+test("result payload compression preserves rendered evidence and reads legacy signed identity tables", async () => {
+    const h = await fixture(), ready = await h.prepare(), comment = resultComment(h, ready);
+    const envelope = JSON.parse(comment.body.match(/```json\n([^\n]+)\n```$/)[1]);
+    assert.equal(envelope.payload.encoding, "gzip");
+    const decoded = await state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: comment.id }, comment);
+    assert.deepEqual(decoded.payload.report, ready.report);
+    envelope.payload = JSON.parse(require("./toolchain-io.cjs").metadataBytes(envelope.payload));
+    delete envelope.signature;
+    envelope.signature = require("node:crypto").createHmac("sha256", h.context.keys[h.context.keyId])
+        .update(model.fingerprintInput(envelope)).digest("hex");
+    const legacy = { ...comment, body: `${ready.body}\n\nRegression investigation result\n\n\`\`\`json\n${JSON.stringify(envelope)}\n\`\`\`` };
+    const old = await state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: comment.id }, legacy);
+    assert.deepEqual(old.payload, decoded.payload);
+    assert.ok(Buffer.byteLength(comment.body) < 48 * 1024);
+    for (const mode of ["hash", "expanded limit", "nested"]) {
+        const record = JSON.parse(comment.body.match(/```json\n([^\n]+)\n```$/)[1]);
+        if (mode === "hash") record.payload.sha256 = "0".repeat(64);
+        else record.payload = require("./toolchain-io.cjs").retainMetadata(Buffer.from(mode === "nested" ?
+            JSON.stringify(record.payload) : " ".repeat(2 * 1024 * 1024 + 1)));
+        delete record.signature;
+        record.signature = require("node:crypto").createHmac("sha256", h.context.keys[h.context.keyId])
+            .update(model.fingerprintInput(record)).digest("hex");
+        await assert.rejects(state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: comment.id },
+            { ...comment, body: `${ready.body}\n\nRegression investigation result\n\n\`\`\`json\n${JSON.stringify(record)}\n\`\`\`` }),
+        /metadata digest|expanded identity table|identity table schema/);
+    }
+});
+
 test("fresh complete intake produces a bounded deterministic pending intent, never a report write", async () => {
     const h = await fixture();
     const result = await h.prepare();
@@ -479,12 +507,21 @@ test("publication refuses a concurrent authenticated checkpoint generation chang
     assert.equal((await h.prepare()).status, "blocked");
 });
 
-for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequal"], [2, "oversized"], [2, "envelope"]]) test(`six affordable observations and ${matrixCount} matrix cells with distinct receipts: ${products}`, async t => {
+for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequal"], [2, "distinct-runtimes"], [2, "envelope"], [2, "overflow"]]) test(`six affordable observations and ${matrixCount} matrix cells with distinct receipts: ${products}`, async t => {
+    let evidenceStore, evidence = [];
+    if (products === "overflow") {
+        const directory = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "report-overflow-")));
+        t.after(() => fs.rm(directory, { recursive: true, force: true }));
+        evidenceStore = createFileEvidenceStore({ directory, repository: "dotnet/fsharp", runId: "12345", attempt: 1 });
+        evidence = await Promise.all(Array.from({ length: 16 }, (_, index) =>
+            evidenceStore.writeEvidence(Buffer.from("durable evidence"), { workId: `overflow-${index}`,
+                launchId: f.digest(`launch-${index}`), unitDigest: f.digest("unit"), imageDigest: f.digest("image") })));
+    }
     const h = await fixture({ matrixCount, producerName: "\u03bb".repeat(80),
         evidence: products === "envelope" ? [12, 13, 14, 15].map(id => ({
             url: `https://api.github.com/repos/dotnet/fsharp/actions/artifacts/${id}/zip`,
             sha256: f.digest("durable evidence"), required: false,
-        })) : [],
+        })) : evidence, evidenceStore,
     });
     for (let i = 1; i < 6; i++) {
         const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
@@ -499,13 +536,13 @@ for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequa
             cell.buildToolchain.evidenceDigest = f.digest(`receipt-${i}-${cell.id}`);
             cell.buildToolchain.archive.receivedAt = `2026-09-19T17:30:0${i}.000Z`;
             cell.buildToolchain.archive.retained.path += `-${i}`;
-            if (products === "oversized" || products === "unequal" && i === 5) {
+            if (products === "distinct-runtimes" || products === "unequal" && i === 5) {
                 cell.buildToolchain.requestedCompilerRuntime = `11.0.${i}`;
                 cell.buildToolchain.compilerRuntime.version = `11.0.${i}`;
             }
         }
         await state.commitObservation(h.transport, h.context, {
-            generation: pending.generation, attemptId: pending.id, observation, evidence: [],
+            generation: pending.generation, attemptId: pending.id, observation, evidence,
         });
     }
     const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
@@ -513,10 +550,10 @@ for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequa
     h.checkpoint(cp);
     const generation = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.generation;
     const result = await h.prepare({ generation });
-    if (products === "oversized" || products === "envelope") {
+    if (products === "overflow") {
         assert.equal(result.status, "blocked", result.reason);
         assert.match(result.reason, /observations and saved interval retained in authenticated checkpoint 456/);
-        assert.match(result.reason, /48 KiB/);
+        assert.match(result.reason, /48 KiB|rendered report exceeds/);
         const retained = await state.loadCheckpoint(h.transport, h.context);
         assert.equal(retained.checkpoint.publicationStatus, "blocked");
         assert.equal(Object.keys(retained.checkpoint.observations).length, 6);
@@ -524,7 +561,7 @@ for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequa
         for (let i = 1; i < 6; i++) {
             const o = Object.values(retained.checkpoint.observations).find(o => o.data.buildInstanceId === `search-${i}`);
             assert.ok(o.data.cells.every(c => c.buildToolchain.compilerRuntime.version ===
-                (products === "oversized" ? `11.0.${i}` : "11.0.0")));
+                "11.0.0"));
         }
         t.diagnostic(`${products}: ${result.reason}`);
         return;

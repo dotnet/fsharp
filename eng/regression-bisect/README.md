@@ -130,6 +130,16 @@ SDK. The SDK version and actual archive hash must remain identical; no released
 SDK bytes or source declarations are patched. Acquisition failures stay setup
 failures, and the collector binds the actual supplemental installation and
 retained runtime archive to the reproduced product.
+Checkpoint packing interns repeated source/assembly/archive identities as well
+as long paths, using the same lossless format as result records. The fixed
+48 KiB comment limit and fail-closed overflow behavior are unchanged; legacy
+packed records remain readable. Generated fixture signing keys are masked before
+Actions exports them to later controller steps.
+Signed result payloads reuse the bounded, hash-checked gzip encoding used for
+publisher metadata; their full deterministic Markdown remains visible. Decoded
+identity tables are capped at 2 MiB, and old uncompressed signed results still
+authenticate. This keeps required evidence URLs and all observations inside the
+unchanged fixed result slot without dropping report content.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.
@@ -588,6 +598,20 @@ attempts each for candidate and good. The existing 24-build/40-unit/two-attempt,
 two-repetition, 90-minute-build and 300-second-repro limits are unchanged.
 Any failed physical experiment remains charged; the fixture cannot be silently
 replaced to manufacture a green trial.
+
+The first native controlled trial, at `e66b5ac5a514b26baab77fc276e3f32f88c0f629`
+in [owned-fork run 39806658165](https://github.com/T-Gro/fsharp/actions/runs/39806658165),
+retains all six reservations and **660 charged minutes**. Its sixth clean parent
+passed twice, but checkpoint serialization exceeded 48 KiB before that observation
+could be committed. It is not a completed or published trial. The original
+9,130,707,644-byte artifact has SHA-256
+`384f5877b91abbc465a95f6022234fd3dc165496c78e96c8840936ac1a2293cb`.
+Read-only authentication of its original checkpoint and retained parent
+reproduced the overflow; the repaired encoding fits the same six-observation
+checkpoint and full report without raising limits. A separately reviewed replay
+uses the unchanged source graph/assertion and six-unit plan because the repair
+changes immutable helper hashes. The original allowance, pending claim and
+evidence are retained, never reset or refunded.
 
 `trial.test.cjs` uses explicitly named **SYNTHETIC** product outcomes with real
 CLI processes, Git selection, durable routing and signed reporting. It covers
