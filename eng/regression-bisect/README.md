@@ -615,6 +615,32 @@ uses the unchanged source graph/assertion and six-unit plan because the repair
 changes immutable helper hashes. The original allowance, pending claim and
 evidence are retained, never reset or refunded.
 
+**Completed native controlled delivery:** [owned-fork run 39849127493,
+attempt 2](https://github.com/T-Gro/fsharp/actions/runs/39849127493), at
+`4f7518df5e1bee8ae5272cfc6ed69d81872bfc19`, completed the current containment,
+47-case product/immutable-producer gate and the full endpoint-first trial.
+Unmodified stable SDK `10.0.402` and clean controlled main failed the frozen
+assertion twice; independently built good source passed twice. Actual Git then
+selected `a23fa5514d49566559bdcc7479fbe00ceb01b577`; fresh candidate and parent
+builds independently confirmed the fixture boundary. All six observations
+committed in distinct controller processes, with zero bisect commands before the
+authenticated endpoint commits: **five source builds, six units, 660/720 minutes**.
+The 22 explicit advances include the bounded lost-ack recovery, not extra workers.
+Recovery adopted the single persisted fake result at comment `457`; read-only
+verification confirmed it, with
+digest `563fe75dcdc70154eec748ee2a8ba6f95251eb43197eba3deaab565f1ff5d31e`.
+Its PR/issue URLs and unique PR association are fixtures, not upstream evidence.
+The artifact is `regression-source-worker-4f7518df5e1bee8ae5272cfc6ed69d81872bfc19`;
+its authenticated artifact-API SHA-256 is
+`d3312289bf2bdc72402aac7daa3abe6112c4494680cd1c00263c848ca4025fcd`.
+It retains reviewed inputs, exact commands, process/Git/API traces, required
+archives, producer bytes and cleanup receipts. Native patch representations use
+different Git index abbreviations from the original Windows freeze; independent
+Git replay verified identical patches outside those index lines and unchanged
+full source SHAs. Both preceding 660-minute trials remain charged and retained:
+the second confirmed all six observations but stopped before final publication
+adoption. Neither is relabelled as this completed trial. Production stays disabled.
+
 `trial.test.cjs` uses explicitly named **SYNTHETIC** product outcomes with real
 CLI processes, Git selection, durable routing and signed reporting. It covers
 endpoint stops, skipped/ambiguous/toolchain/revert/merge/backport histories,
