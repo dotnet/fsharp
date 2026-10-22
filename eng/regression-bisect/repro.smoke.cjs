@@ -5,6 +5,21 @@ const { createFixture } = require("./fixtures/smoke.cjs");
 const { requireValue, isolatedEnvironment } = require("./toolchain-io.cjs");
 const { execute } = require("./repro-process.cjs");
 
+async function prepareMatrix({ unit, product, primary, buildFile, storageDirectory, helper, inventoryReleased, signal }, dependencies = {}) {
+    const acquired = await (dependencies.acquireToolchain ?? require("./toolchains.cjs").acquireToolchain)({
+        policy: require("../../.github/policies/regression-bisect.json"),
+        toolchain: { ...unit.resolved, runtimeRequirements: [] }, storageDirectory, signal,
+    }, dependencies);
+    requireValue(acquired.status === "acquired" && acquired.identity.sdkVersion === unit.resolved.sdkVersion &&
+        acquired.identity.archive.sha256 === primary.archive.sha256, "matrix released SDK differs from the approved acquisition");
+    const build = JSON.parse(await fs.readFile(buildFile, "utf8"));
+    requireValue(build.status === "acquired", "matrix requires this source unit's acquired build SDK");
+    return { helper,
+        released: { product: await inventoryReleased(acquired.identity, unit.buildInstanceId + "-released"),
+            toolchain: acquired.identity, tfm: "net10.0" },
+        source: { product, toolchain: build.identity, tfm: "net10.0" } };
+}
+
 async function freezeProducer(root, config, results, dependencies) {
     const sourceDirectory = path.join(root, "producer");
     const manifest = await createFixture(sourceDirectory, { kind: "project", tfm: config.released.tfm, scenario: "producer" });
@@ -122,7 +137,12 @@ async function runMatrix(config, outputDirectory, phase, dependencies = {}) {
         requireValue(hash(bytes) === record.sha256, "immutable producer changed across consumers");
         retained.push({ path: record.path, sha256: record.sha256, bytesBase64: bytes.toString("base64") });
     }
-    const report = { status: "passed", producer, retained, results };
+    const toolchains = Object.fromEntries(products.map(name => {
+        const { sdkVersion, hostPath, compilerRuntime, runtimes, archive } = config[name].toolchain;
+        return [name, { sdkVersion, hostPath, compilerRuntime, runtimes,
+            archive: { url: archive.url, sha256: archive.sha256, sha512: archive.actualSha512 } }];
+    }));
+    const report = { status: "passed", producer, retained, results, toolchains };
     await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(report, null, 2));
     return report;
 }
@@ -135,4 +155,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
-module.exports = { runMatrix };
+module.exports = { runMatrix, prepareMatrix };

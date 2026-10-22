@@ -164,8 +164,10 @@ async function acceptController({ root, config, configBytes, containmentDirector
 
 async function readRetained(file) {
     const { context, storeConfig, reservations, launches, apiFile } = JSON.parse(await fs.readFile(file, "utf8"));
-    context.keys = { smoke: Buffer.from(process.env.RB_SMOKE_KEY, "hex") };
-    const store = createFileEvidenceStore(storeConfig, { readOnly: true });
+    try { await fs.lstat(launches); throw new Error("launch scratch must be deleted before authentication"); }
+    catch (error) { if (error.code !== "ENOENT") throw error; }
+    context.keys = { [context.keyId]: Buffer.from(process.env.RB_SMOKE_KEY, "hex") };
+    const store = createFileEvidenceStore(storeConfig);
     const collect = createObservationCollector({ evidenceDirectory: launches, store });
     const observations = [];
     let matrix;

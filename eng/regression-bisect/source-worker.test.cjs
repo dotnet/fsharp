@@ -10,6 +10,32 @@ const path = require("node:path");
 const os = require("node:os");
 const { createFixture } = require("./fixtures/smoke.cjs");
 
+test("matrix acquisition separates released runtime from source build SDK without retargeting the worker", async t => {
+    const { prepareMatrix } = require("./repro.smoke.cjs");
+    assert.equal(typeof prepareMatrix, "function");
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-matrix-tools-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const build = { sdkVersion: "10.0.301", compilerRuntime: { version: "10.0.9" } };
+    const buildFile = path.join(root, "acquisition.json");
+    await fs.writeFile(buildFile, JSON.stringify({ status: "acquired", identity: build }));
+    const unit = { resolved: { sdkVersion: "10.0.402", runtimeRequirements: [{ version: "10.0.9" }] }, buildInstanceId: "source" };
+    const primary = { archive: { sha256: "a".repeat(64) } };
+    const released = { ...primary, sdkVersion: "10.0.402", compilerRuntime: { version: "10.0.13" } };
+    const product = { kind: "source" };
+    const config = await prepareMatrix({ unit, product, primary, buildFile, storageDirectory: root, helper: {},
+        inventoryReleased: async identity => ({ kind: "released", root: identity.sdkVersion }) }, {
+        acquireToolchain: async ({ toolchain }) => {
+            assert.deepEqual(toolchain.runtimeRequirements, []);
+            assert.equal(toolchain.sdkVersion, "10.0.402");
+            return { status: "acquired", identity: released };
+        },
+    });
+    assert.equal(config.released.toolchain, released);
+    assert.deepEqual(config.source.toolchain, build);
+    assert.equal(config.source.product, product);
+    assert.deepEqual(unit.resolved.runtimeRequirements, [{ version: "10.0.9" }]);
+});
+
 test("producer preparation uses the same historical execution lane as consumers", async t => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-producer-lane-"));
     t.after(() => fs.rm(root, { recursive: true, force: true }));

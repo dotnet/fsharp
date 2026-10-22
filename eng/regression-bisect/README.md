@@ -78,6 +78,10 @@ confirm the separate six-unit investigation.
 Released SDKs can ship a bundled FSI Core whose bytes differ from the Core
 package's framework assets. The collector binds both to the acquired SDK,
 without treating the bundled assembly as a package asset.
+The project matrix uses a separate exact released-SDK installation without the
+source FSI's supplemental runtime, and the source unit's own acquired build SDK
+for local consumers. Each compiler child therefore has one declared runtime;
+the original controller FSI assertions retain their frozen reproduction SDK.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.

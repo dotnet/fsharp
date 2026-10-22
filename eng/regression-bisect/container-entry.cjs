@@ -193,10 +193,13 @@ async function canary(job) {
     const protectedWrites = [];
     for (const file of ["/trusted/eng/regression-bisect/container-entry.cjs", "/input/input.json",
         ...(uid === 1000 && job.expectedUid !== undefined ? ["/scratch/control/result.json", "/scratch/storage/probe"] : [])]) {
+        const before = file.startsWith("/trusted/") || file.startsWith("/input/") ? hash(await fs.readFile(file)) : null;
         try { await fs.appendFile(file, "HARMLESS_WRITE_CANARY"); }
         catch (error) {
             requireValue(["EROFS", "EACCES"].includes(error.code), error.message);
-            protectedWrites.push({ file, code: error.code });
+            const after = before === null ? null : hash(await fs.readFile(file));
+            requireValue(before === after, "protected input hash changed after denied write");
+            protectedWrites.push({ file, code: error.code, before, after });
             continue;
         }
         throw new Error(`protected input writable: ${file}`);
@@ -383,23 +386,39 @@ async function physicalRunner(unit, launch, acceptance = null) {
         }, { signal });
         if (acceptance) {
             requireValue(unit.request.kind === "source" && result.status === "tested", "acceptance requires tested source products");
-            const released = await inventoryReleased(toolchain, unit.buildInstanceId + "-released");
-            const { runMatrix } = require("./repro.smoke.cjs");
-            const config = { helper,
-                released: { product: released, toolchain, tfm: "net10.0" },
-                source: { product: result.product, toolchain, tfm: "net10.0" } };
+            const protectedFiles = [toolchain.hostPath, helper.dll, result.product.files.find(f => f.role === "compiler").path];
+            const before = await Promise.all(protectedFiles.map(file => fileIdentity(file, "/scratch")));
+            const denied = await historical(process.execPath, ["-e", `
+const fs = require("node:fs");
+console.log(JSON.stringify(process.argv.slice(1).map(file => {
+    try { fs.appendFileSync(file, "HARMLESS_WRITE_CANARY"); }
+    catch (error) {
+        if (!["EACCES", "EROFS"].includes(error.code)) throw error;
+        return {file, code:error.code};
+    }
+    throw new Error("protected product writable: " + file);
+})));`, ...protectedFiles], { cwd: "/scratch/lane", env: { PATH: process.env.PATH, HOME: "/scratch/lane" },
+                timeoutMs: 30000, maxBytes: 65536 });
+            requireValue(denied.complete && denied.exitCode === 0, `protected product write probe failed: ${denied.stderr}`);
+            const after = await Promise.all(protectedFiles.map(file => fileIdentity(file, "/scratch")));
+            requireValue(JSON.stringify(before) === JSON.stringify(after), "protected product hashes changed after denied writes");
+            boundary.products = { denials: JSON.parse(denied.stdout), before, after };
+            const { runMatrix, prepareMatrix } = require("./repro.smoke.cjs");
             try {
                 const matrixSignal = AbortSignal.any([signal, AbortSignal.timeout(60 * 60000)]);
+                const config = await prepareMatrix({ unit, product: result.product, primary: toolchain,
+                    buildFile: path.join("/scratch/evidence", unit.buildInstanceId, "acquisition.json"),
+                    storageDirectory: storage, helper, inventoryReleased, signal: matrixSignal }, { run: withProxy });
                 result.acceptance = await runMatrix(config, "/scratch/matrix", undefined, {
                     execute: (exe, args, settings) => historical(exe, args, { ...settings, signal: matrixSignal }),
                 });
-                result.acceptance.boundary = boundary;
             } catch (error) {
                 let results = [];
                 try { results = JSON.parse(await fs.readFile("/scratch/matrix/smoke-results.json", "utf8")); }
                 catch (readError) { if (readError.code !== "ENOENT") throw readError; }
                 result.acceptance = { status: "incomplete", error: error.message, results };
             }
+            result.acceptance.boundary = boundary;
         }
     } catch (error) {
         result = { status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable",

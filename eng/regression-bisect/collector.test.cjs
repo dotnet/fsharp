@@ -360,6 +360,7 @@ test("factory consumes physical exports for every matrix and setup shape (zero r
                 const checkpoint = await commitCollectedObservation(data.input, {
                     collectObservation: data.collector, transport: data.h.transport,
                 });
+
                 assert.equal(checkpoint.pending, null);
                 assert.equal(Object.keys(checkpoint.observations).length, 1);
                 assert.deepEqual(checkpoint.state.budget.consumed, {
@@ -368,6 +369,24 @@ test("factory consumes physical exports for every matrix and setup shape (zero r
                 t.diagnostic(JSON.stringify({ realLaunches: 0, outcome: collected.observation.outcome,
                     transferred: data.files.map(({ path, size, sha256 }) => ({ path, size, sha256 })) }));
             });
+});
+
+test("acceptance reader authenticates durable collections in a new process after launch deletion", async t => {
+    const data = await retainedFixture(t);
+    await data.collector(data.input);
+    const apiFile = path.join(data.root, "api.json"), readerFile = path.join(data.root, "reader.json");
+    await fs.writeFile(apiFile, "{}");
+    await fs.writeFile(`${apiFile}.ledger`, JSON.stringify({ kind: "api", method: "GET" }));
+    await fs.writeFile(readerFile, JSON.stringify({ context: { ...data.context, keys: undefined },
+        storeConfig: data.storeConfig, reservations: [data.reservation], launches: data.evidenceDirectory, apiFile }));
+    await fs.rm(data.evidenceDirectory, { recursive: true });
+    const before = await fs.readdir(data.storeConfig.directory);
+    const result = spawnSync(process.execPath, [path.join(__dirname, "controller.smoke.cjs"), "--read", readerFile], {
+        env: { ...process.env, RB_SMOKE_KEY: data.context.keys.fixture.toString("hex") }, encoding: "utf8", timeout: 30000,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).launchScratchDeleted, true);
+    assert.deepEqual(await fs.readdir(data.storeConfig.directory), before);
 });
 
 test("source evidence forms an observation after all worker scratch is destroyed (zero real launches)", async t => {
