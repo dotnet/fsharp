@@ -176,6 +176,40 @@ let ``An internal is not visible to a consumer on another layer either`` () =
     Assert.NotEmpty(errorsIn checker otherLayer)
 
 [<Fact>]
+let ``An internal of a handed-over project is visible to the consumers its InternalsVisibleTo names`` () =
+    let checker = mkChecker true
+
+    let library =
+        projectOptions
+            checker
+            """
+module Library
+
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo "NamedConsumer">]
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo "NamedConsumerOnOtherLayer">]
+do ()
+
+let internal secretValue = 2
+"""
+            []
+            [||]
+
+    let consumerNamed name extraOptions =
+        projectOptionsNamed checker (Some name) [| writeSource (consumerOf useInternalValue) |] [ library ] extraOptions
+        |> snd
+
+    let named = consumerNamed "NamedConsumer" [||]
+
+    let namedOnOtherLayer =
+        consumerNamed "NamedConsumerOnOtherLayer" [| "--langversion:9.0"; "--checknulls+" |]
+
+    let unnamed = consumerNamed "UnnamedConsumer" [||]
+
+    Assert.Empty(errorsIn checker named)
+    Assert.Empty(errorsIn checker namedOnOtherLayer)
+    Assert.NotEmpty(errorsIn checker unnamed)
+
+[<Fact>]
 let ``Type identity survives a chain of handed-over project references`` () =
     let checker = mkChecker true
 
