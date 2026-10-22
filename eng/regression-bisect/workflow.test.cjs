@@ -310,7 +310,7 @@ test("controlled delivery uses the existing one-unit CLI with six explicit reser
     }
     const commands = steps.map(s => s.run).join("\n");
     assert.equal(commands.match(/trial\.cjs --prepare/g)?.length, 1);
-    assert.equal(commands.match(/trial\.cjs --advance/g)?.length, 20);
+    assert.equal(commands.match(/trial\.cjs --advance/g)?.length, 22);
     assert.ok(commands.includes("resultAck=true"));
     assert.ok(commands.includes('test "$code" -eq 1'));
     assert.equal(commands.match(/trial\.cjs --verify/g)?.length, 1);

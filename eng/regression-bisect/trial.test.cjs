@@ -584,10 +584,10 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         await fs.unlink(path.join(r.evidence, "state", "dotnet-fsharp-123", "store",
             `${new URL(e.url).searchParams.get("name")}.bin`));
     }
-    for (let i = 0; i < 4; i++) {
+    for (const expected of ["duplicate", "routed", "published"]) {
         result = await r.step();
         assert.equal(result.code, 0, result.stdout);
-        if (JSON.parse(result.stdout).status === "published") break;
+        assert.equal(JSON.parse(result.stdout).status, expected, result.stdout);
     }
     assert.equal(JSON.parse(result.stdout).status, "published", result.stdout);
     assert.equal((await r.read()).comments.find(c => c.id === 457).body, persisted);

@@ -119,7 +119,9 @@ whole-trial loop, candidate override, allowance reset or live issue write.
 The fixture matrix explicitly labels its history and PR URLs as synthetic.
 Its PR membership spans two pages and uses actual source commits.
 The final fake result write loses its acknowledgement; a new process must adopt
-that same authenticated result before read-only verification. Trial inputs,
+that same authenticated result before read-only verification. Recovery explicitly
+acknowledges the stale delivery, routes its current generation, then adopts the
+persisted result; these three bounded calls reserve no additional worker. Trial inputs,
 process/API/Git traces, journals, archives and evidence are retained with the
 source-worker artifact. Generated controller signing keys are not uploaded.
 These checks remain opt-in validation, not production registration or activation.

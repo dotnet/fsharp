@@ -336,6 +336,8 @@ jobs:
         if: contains(github.event.head_commit.message, '[trial-acceptance]')
         run: |
           env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
+          env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --advance "$RUNNER_TEMP/regression-trial"
           env -u GITHUB_ACTIONS node eng/regression-bisect/trial.cjs --verify "$RUNNER_TEMP/regression-trial"
       - name: Retain source worker evidence
         if: always()
