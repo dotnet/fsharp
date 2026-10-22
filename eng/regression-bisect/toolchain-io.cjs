@@ -2,9 +2,28 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { execFile } = require("node:child_process");
+const { gzipSync, gunzipSync } = require("node:zlib");
 
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
+const metadataLimit = 16 * 1024 * 1024;
+
+function retainMetadata(bytes) {
+    requireValue(Buffer.isBuffer(bytes) && bytes.length <= metadataLimit, "publisher metadata exceeds byte limit");
+    return { sha256: hash(bytes), encoding: "gzip", bytesBase64: gzipSync(bytes).toString("base64") };
+}
+
+function metadataBytes(record) {
+    requireValue(record && typeof record.bytesBase64 === "string" &&
+        record.bytesBase64.length <= Math.ceil((metadataLimit + 65536) / 3) * 4 &&
+        (record.encoding === undefined || record.encoding === "gzip"), "invalid retained publisher metadata");
+    const encoded = Buffer.from(record.bytesBase64, "base64");
+    requireValue(encoded.toString("base64") === record.bytesBase64, "invalid retained metadata encoding");
+    const bytes = record.encoding === "gzip" ? gunzipSync(encoded, { maxOutputLength: metadataLimit }) : encoded;
+    requireValue(bytes.length <= metadataLimit && hash(bytes) === record.sha256, "retained publisher metadata digest or size mismatch");
+    return bytes;
+}
+
 const inside = (root, file) => {
     const relative = path.relative(root, file);
     return relative !== "" && !relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative);
@@ -332,4 +351,4 @@ async function capture(request, deps) {
     };
 }
 
-module.exports = { hash, requireValue, boundedWait, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, copyOwnedFile, capture };
+module.exports = { hash, requireValue, retainMetadata, metadataBytes, boundedWait, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, copyOwnedFile, capture };

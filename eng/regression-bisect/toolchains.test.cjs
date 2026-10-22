@@ -7,7 +7,27 @@ const { createHash } = require("node:crypto");
 const { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity } = require("./toolchains.cjs");
 const { policy, admission, observation, seal, digest, archiveReceipt } = require("./fixtures/contracts.cjs");
 const { admitBisection, fingerprintInput } = require("./model.cjs");
-const { capture, publicUrl, createHttp, isolatedEnvironment, copyOwnedFile } = require("./toolchain-io.cjs");
+const { capture, publicUrl, createHttp, isolatedEnvironment, copyOwnedFile, metadataBytes } = require("./toolchain-io.cjs");
+
+test("publisher metadata is retained losslessly within bounded compressed evidence", () => {
+    const { retainMetadata, metadataBytes } = require("./toolchain-io.cjs");
+    assert.equal(typeof retainMetadata, "function");
+    const bytes = Buffer.from(JSON.stringify({ releases: Array.from({ length: 4096 }, () => ({
+        version: "10.0.402", url: "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/archive.tar.gz",
+    })) }));
+    const record = retainMetadata(bytes);
+    assert.ok(record.bytesBase64.length < bytes.length / 5);
+    assert.equal(record.sha256, digest(bytes));
+    assert.deepEqual(metadataBytes(record), bytes);
+    assert.deepEqual(metadataBytes({ sha256: digest(bytes), bytesBase64: bytes.toString("base64") }), bytes);
+    for (const change of [{ encoding: "unknown" }, { sha256: digest("swapped") }, { bytesBase64: "not base64" }])
+        assert.throws(() => metadataBytes({ ...record, ...change }));
+    const { gzipSync } = require("node:zlib");
+    const oversized = Buffer.alloc(16 * 1024 * 1024 + 1);
+    assert.throws(() => retainMetadata(oversized), /metadata.*limit/);
+    assert.throws(() => metadataBytes({ encoding: "gzip", sha256: digest(oversized),
+        bytesBase64: gzipSync(oversized).toString("base64") }));
+});
 
 test("owned source copies preserve bytes without restoring foreign file metadata", async t => {
     const root = await fs.mkdtemp(path.join(__dirname, ".owned-copy-"));
@@ -81,7 +101,7 @@ for (const [name, channels, expected] of [
         assert.equal(result.toolchain.sdkVersion, expected);
         assert.equal(result.toolchain.archive.sha512, hash512(archiveBytes));
         for (const record of result.toolchain.metadata) {
-            assert.equal(digest(Buffer.from(record.bytesBase64, "base64")), record.sha256);
+            assert.equal(digest(metadataBytes(record)), record.sha256);
         }
         assert.equal(result.toolchain.frozenAt, "2026-09-19T00:00:00.000Z");
     });

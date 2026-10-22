@@ -1,7 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { validatePolicy, fingerprintInput } = require("./model.cjs");
-const { hash, requireValue, inside, publicUrl, createHttp, validateHttpResponse, validateDownloadProvenance, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
+const { hash, requireValue, retainMetadata, inside, publicUrl, createHttp, validateHttpResponse, validateDownloadProvenance, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 
 const indexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
@@ -54,7 +54,7 @@ async function document(url, options, deps, records, attempts) {
     validateResponse(url, response, options.policy);
     if (response.status !== 200) throw Object.assign(new Error(`metadata HTTP ${response.status}: ${url}`), { code: "network-failure" });
     const bytes = Buffer.from(response.bytes);
-    records.push({ url, redirectUrl: response.url, sha256: hash(bytes), bytesBase64: bytes.toString("base64") });
+    records.push({ url, redirectUrl: response.url, ...retainMetadata(bytes) });
     return JSON.parse(bytes.toString("utf8"));
 }
 async function releases(options, deps, records, attempts, channel) {
@@ -233,7 +233,7 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
         const checksum = Buffer.from(response.bytes).toString("utf8").trim().split(/\s+/)[0];
         if (!/^[a-f0-9]{128}$/i.test(checksum)) throw Object.assign(new Error(`malformed historical checksum: ${attempt.url}`),
             { code: "checksum-provenance" });
-        metadata.push({ url: attempt.url, redirectUrl: response.url, sha256: hash(response.bytes), bytesBase64: Buffer.from(response.bytes).toString("base64") });
+        metadata.push({ url: attempt.url, redirectUrl: response.url, ...retainMetadata(Buffer.from(response.bytes)) });
         return { archive: { name, url, sha512: checksum.toLowerCase(), rid: toolchain.platform.rid,
             architecture: toolchain.platform.architecture, provenance: { kind: "publisher-checksum" } }, metadata };
     }

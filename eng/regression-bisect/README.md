@@ -84,6 +84,11 @@ The project matrix uses a separate exact released-SDK installation without the
 source FSI's supplemental runtime, and the source unit's own acquired build SDK
 for local consumers. Each compiler child therefore has one declared runtime;
 the original controller FSI assertions retain their frozen reproduction SDK.
+Publisher metadata retains every original response losslessly with gzip and its
+original SHA-256. `metadataBytes` authenticates and decodes both these records
+and legacy uncompressed records, with a 16 MiB decoded limit. The matrix
+supplement is retained once in `result.json`, not duplicated in `source.json`.
+The existing per-file, launch-transfer and durable-envelope limits are unchanged.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.

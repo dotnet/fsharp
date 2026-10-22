@@ -389,6 +389,19 @@ test("acceptance reader authenticates durable collections in a new process after
     assert.deepEqual(await fs.readdir(data.storeConfig.directory), before);
 });
 
+test("acceptance exports retain indispensable matrix bytes once instead of duplicating the supplement", async t => {
+    const data = await retainedFixture(t);
+    const acceptance = { status: "passed", indispensableLog: "fixture assertion bytes".repeat(65536) };
+    const exported = await executionEvidence(data.unit, data.launch, { ...data.result, acceptance }, {
+        acquisition: { status: "acquired", identity: data.acquisition },
+        evidenceDirectory: path.join(data.sample.root, "evidence"), scratchDirectory: data.sample.root,
+    });
+    const value = name => JSON.parse(exported.files.find(file => file.path === name).bytes);
+    assert.deepEqual(value("result.json").result.acceptance, acceptance);
+    assert.ok(!Object.hasOwn(value("source.json"), "acceptance"));
+    assert.equal(value("source.json").actualSourceSha, data.result.actualSourceSha);
+});
+
 test("source evidence forms an observation after all worker scratch is destroyed (zero real launches)", async t => {
     const data = await fixture(t);
     await fs.rm(data.sample.root, { recursive: true });

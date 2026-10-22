@@ -1,7 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
-const { createHttp, hash, requireValue, validateHttpResponse } = require("../toolchain-io.cjs");
+const { createHttp, hash, requireValue, metadataBytes, validateHttpResponse } = require("../toolchain-io.cjs");
 const { resolveLatestStableSdk, readRevisionToolchain, selectArchive } = require("../toolchains.cjs");
 const { inspectRevisionLayout } = require("../workspace.cjs");
 const { createFixture } = require("./smoke.cjs");
@@ -81,8 +81,8 @@ async function freeze(directory, executable, injected = {}) {
     const latest = await resolveLatestStableSdk({ policy, platform, signal }, injected);
     requireValue(latest.status === "resolved", latest.error?.message);
     for (const [i, record] of latest.toolchain.metadata.entries())
-        await save(`metadata-${i}`, `metadata-${i}.json`, Buffer.from(record.bytesBase64, "base64").toString("utf8"));
-    const channel = latest.toolchain.metadata.map(m => JSON.parse(Buffer.from(m.bytesBase64, "base64")))
+        await save(`metadata-${i}`, `metadata-${i}.json`, metadataBytes(record).toString("utf8"));
+    const channel = latest.toolchain.metadata.map(m => JSON.parse(metadataBytes(m)))
         .find(m => m["channel-version"] === "10.0");
     const sourceRelease = channel.releases.find(r => [r.sdk, ...(r.sdks ?? [])].some(s => s?.version === declared.toolchain.sdkVersion));
     const sdk = [sourceRelease?.sdk, ...(sourceRelease?.sdks ?? [])].find(s => s?.version === declared.toolchain.sdkVersion);

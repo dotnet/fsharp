@@ -7,6 +7,7 @@ const contracts = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
 const { sign, adapter, helpers } = require("./trial.cjs");
 const { freeze, base, sourcePath, samplePath, sample, sentinel } = require("./fixtures/trial-source.cjs");
+const { metadataBytes } = require("./toolchain-io.cjs");
 
 const invoke = (args, env = {}, started, synthetic = false) => invokeCli(args, env, started, {
     entry: "trial.cjs", kind: "trial-exit", storageFaults: false,
@@ -255,7 +256,7 @@ async function reviewed(t) {
     }
     for (const [i, m] of toolchain.metadata.entries()) {
         const file = path.join(f.directory, `metadata-${i}.json`);
-        await fs.writeFile(file, Buffer.from(m.bytesBase64, "base64"));
+        await fs.writeFile(file, metadataBytes(m));
         files.push({ role: `metadata-${i}`, path: file, sha256: m.sha256 });
     }
     f.update(db => {

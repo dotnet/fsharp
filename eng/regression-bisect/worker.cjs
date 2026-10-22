@@ -152,7 +152,7 @@ async function executionEvidence(unit, launch, result, { acquisition = null, com
     const values = {
         "result.json": { schemaVersion: 1, ...launch, result }, "unit.json": unit,
         "request.json": source ? result.requested ?? unit.request : unit.request,
-        "source.json": source ? result : null, "declarations.json": declarations,
+        "source.json": source ? { ...result, acceptance: undefined } : null, "declarations.json": declarations,
         "acquisition.json": acquisition, "build-acquisition.json": buildAcquisition,
         "product.json": product, ...rawProduct,
         "reproduction.json": reproduction, "identities.json": identities,
