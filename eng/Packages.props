@@ -94,8 +94,8 @@
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-    <!-- Pinned to the version the Roslyn IDE packages already resolve here transitively. -->
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="18.9.918" />
+    <!-- Match the minimum required by Shell.Design, Package.LanguageService.15.0, and the Roslyn IDE packages. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.VsInteractiveWindow" Version="4.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />

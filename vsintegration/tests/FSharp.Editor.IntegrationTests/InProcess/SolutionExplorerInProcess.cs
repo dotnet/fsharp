@@ -212,16 +212,14 @@ internal partial class SolutionExplorerInProcess
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         var buildManager = await GetRequiredGlobalServiceAsync<SVsSolutionBuildManager, IVsSolutionBuildManager2>(cancellationToken);
-        using var semaphore = new SemaphoreSlim(1);
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var solutionEvents = new UpdateSolutionEvents(buildManager);
 
-        await semaphore.WaitAsync();
-
-        void HandleUpdateSolutionDone(bool succeeded, bool modified, bool canceled) => semaphore.Release();
+        void HandleUpdateSolutionDone(bool succeeded, bool modified, bool canceled) => completion.TrySetResult(succeeded);
         solutionEvents.OnUpdateSolutionDone += HandleUpdateSolutionDone;
         try
         {
-            await semaphore.WaitAsync();
+            await completion.Task.WithCancellation(cancellationToken);
         }
         finally
         {

@@ -101,7 +101,7 @@
          via Microsoft.CodeAnalysis.EditorFeatures / .LanguageServices.ExternalAccess 5.11.0). Full NU1109
          rationale lives there, next to the 18.9.x pins. -->
     <VisualStudioEditorPackagesVersion>18.12.46</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
+    <MicrosoftVisualStudioExtensibilityTestingVersion>5.6.0-2.26151.2</MicrosoftVisualStudioExtensibilityTestingVersion>
 
     <!-- Apex VS integration-test packages, consumed by-name via $(...) in
          vsintegration/tests/FSharp.Editor.Apex.IntegrationTests, so they stay properties here. -->

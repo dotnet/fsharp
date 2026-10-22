@@ -64,7 +64,10 @@ module internal EditorSubmission =
         else
             let sourcePath =
                 match documentFactory.TryGetTextDocument view.TextBuffer with
-                | true, document -> document.FilePath
+                | true, document ->
+                    match document with
+                    | null -> ""
+                    | document -> document.FilePath
                 | _ -> ""
 
             let snapshot = view.TextSnapshot
