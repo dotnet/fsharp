@@ -219,9 +219,7 @@ let main _ =
     if Test.run (Test.A, 0, 0) <> 1 || Test.run (Test.H, -8, 0) <> -8 then failwith "inline body"
     0"""
         |> withReferences [library]
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
+        |> runWithSettings true true
 
     [<Theory>]
     [<InlineData("guard")>]
@@ -375,9 +373,7 @@ let main _ =
         let attributes = if origin = "reflected top module" then "[<ReflectedDefinition>]" else ""
         contextSource attributes code id "-1"
         |> withAdditionalSourceFile (SourceFromPath (fixture "VerifyQuotation.fs"))
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
+        |> runWithSettings true true
         |> withStdOutContains "calls=288"
 
     [<Fact>]
@@ -385,9 +381,7 @@ let main _ =
         let clauses = [for i in 0..40 -> $"    | Some value, {i} when value < 0 -> {i}"] |> String.concat "\n"
         template "IncompleteTarget.fs" ["{{CLAUSES}}", clauses]
         |> withOptions ["--nowarn:25"]
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
+        |> runWithSettings true true
 
 #if NETCOREAPP
     [<Collection(nameof NotThreadSafeResourceCollection)>]

@@ -1279,25 +1279,15 @@ let private CompilePatternBasic
                 Expr.Link cell
 
     // Reference identities make key collisions conservative: distinct nodes never fuse.
-    let patternNodeId =
-        let ids = System.Collections.Generic.Dictionary<Pattern, int>(HashIdentity.Reference)
-        fun (pat: Pattern) ->
-            match ids.TryGetValue pat with
-            | true, v -> v
-            | _ ->
-                let v = ids.Count
-                ids[pat] <- v
-                v
-
-    let boundExprNodeId =
-        let ids = System.Collections.Generic.Dictionary<Expr, int>(HashIdentity.Reference)
-        fun (e: Expr) ->
-            match ids.TryGetValue e with
-            | true, v -> v
-            | _ ->
-                let v = ids.Count
-                ids[e] <- v
-                v
+    let patternNodeIds = Dictionary<Pattern, int>(HashIdentity.Reference)
+    let boundExprNodeIds = Dictionary<Expr, int>(HashIdentity.Reference)
+    let nodeId (ids: Dictionary<_, int>) node =
+        match ids.TryGetValue node with
+        | true, v -> v
+        | _ ->
+            let v = ids.Count
+            ids[node] <- v
+            v
 
     let rec boundExprKey (e: Expr) =
         match stripDebugPoints e with
@@ -1306,14 +1296,14 @@ let private CompilePatternBasic
         | Expr.Op(TOp.ValFieldGet(RecdFieldRef(tcref, nm)), _, [ arg ], _) -> BoundExprKey.RecdField(tcref.Stamp, nm, boundExprKey arg)
         | Expr.Op(TOp.UnionCaseFieldGet(UnionCaseRef(tcref, nm), j), _, [ arg ], _) -> BoundExprKey.UnionField(tcref.Stamp, nm, j, boundExprKey arg)
         | Expr.Op(TOp.Coerce, _, [ arg ], _) -> BoundExprKey.Coerce(boundExprKey arg)
-        | _ -> BoundExprKey.Opaque(boundExprNodeId e)
+        | _ -> BoundExprKey.Opaque(nodeId boundExprNodeIds e)
 
     let memoKeyOf frontiers capturedVals =
         { Frontiers =
             frontiers
             |> List.map (fun (Frontier(i, actives, valMap)) ->
                 { Clause = i
-                  Actives = actives |> List.map (fun (Active(path, _, pat)) -> pathKey path, patternNodeId pat)
+                  Actives = actives |> List.map (fun (Active(path, _, pat)) -> pathKey path, nodeId patternNodeIds pat)
                   Bound = [ for KeyValue(stamp, e) in valMap.Contents -> stamp, boundExprKey e ] })
           Captured = capturedVals |> List.map (fun (v: Val) -> v.Stamp) }
 
