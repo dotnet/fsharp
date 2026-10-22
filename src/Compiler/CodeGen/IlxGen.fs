@@ -3306,7 +3306,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
                     let eenv = RemoveTemplateReplacement eenv
-                    GenStructStateMachine cenv cgbuf eenv res sequel
+                    let (LoweredStateMachine(prefixBindings = prefixBindings)) = res
+                    GenStructStateMachineAfterPrefix cenv cgbuf eenv prefixBindings res sequel
                     true
                 | LoweredStateMachineResult.UseAlternative(msg, altExpr) ->
                     // When prepping to generate a state machine, we can remove any trace of the template struct
@@ -6611,9 +6612,29 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
         let mdef = mdef.With(customAttrs = mkILCustomAttrs ilAttribs)
         [ (useMethodImpl, methodImplGenerator, methTyparsOfOverridingMethod), mdef ]
 
+and GenStructStateMachineAfterPrefix cenv cgbuf eenv prefixBindings res sequel =
+    match prefixBindings with
+    | [] -> GenStructStateMachine cenv cgbuf eenv res sequel
+    | bind :: rest ->
+        let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
+        let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
+        GenDebugPointForBind cenv cgbuf bind
+        GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
+
+        let eenv =
+            if isReturnsResumableCodeTy cenv.g bind.Var.TauType then
+                { eenv with
+                    resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
+                }
+            else
+                eenv
+
+        GenStructStateMachineAfterPrefix cenv cgbuf eenv rest res (EndLocalScope(sequel, endMark))
+
 and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel =
 
-    let (LoweredStateMachine(templateStructTy,
+    let (LoweredStateMachine(_,
+                             templateStructTy,
                              dataTy,
                              stateVars,
                              thisVars,

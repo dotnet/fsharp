@@ -8,6 +8,7 @@ open FSharp.Compiler.TcGlobals
 
 type LoweredStateMachine =
     | LoweredStateMachine of
+        prefixBindings: Binding list *
         templateStructTy: TType *
         dataTy: TType *
         stateVars: ValRef list *
