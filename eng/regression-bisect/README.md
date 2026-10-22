@@ -89,6 +89,9 @@ original SHA-256. `metadataBytes` authenticates and decodes both these records
 and legacy uncompressed records, with a 16 MiB decoded limit. The matrix
 supplement is retained once in `result.json`, not duplicated in `source.json`.
 The existing per-file, launch-transfer and durable-envelope limits are unchanged.
+The task-identity negative uses an off-inventory same-byte copy of the tested
+tasks and Core, so an older SDK's incompatible task API cannot mask the actual
+identity check. It must compile successfully before identity rejection.
 
 Windows CI checks out the reviewed source history for the controlled trial.
 Process-tree tests include Windows supervisor startup before they check descendant termination.

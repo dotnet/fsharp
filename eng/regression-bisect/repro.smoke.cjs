@@ -5,6 +5,14 @@ const { createFixture } = require("./fixtures/smoke.cjs");
 const { requireValue, isolatedEnvironment } = require("./toolchain-io.cjs");
 const { execute } = require("./repro-process.cjs");
 
+async function measuredReproduction(options, dependencies) {
+    const started = Date.now(), startedAt = new Date().toISOString();
+    const result = await runReproduction(options, dependencies);
+    const measurement = { startedAt, completedAt: new Date().toISOString(), durationMs: Date.now() - started };
+    requireValue(measurement.durationMs <= 300000, "acceptance reproduction exceeded its five-minute budget");
+    return { ...result, measurement };
+}
+
 async function prepareMatrix({ unit, product, primary, buildFile, storageDirectory, helper, inventoryReleased, signal }, dependencies = {}) {
     const acquired = await (dependencies.acquireToolchain ?? require("./toolchains.cjs").acquireToolchain)({
         policy: require("../../.github/policies/regression-bisect.json"),
@@ -23,7 +31,7 @@ async function prepareMatrix({ unit, product, primary, buildFile, storageDirecto
 async function freezeProducer(root, config, results, dependencies) {
     const sourceDirectory = path.join(root, "producer");
     const manifest = await createFixture(sourceDirectory, { kind: "project", tfm: config.released.tfm, scenario: "producer" });
-    const result = await runReproduction({
+    const result = await measuredReproduction({
         manifest, sourceDirectory, workDirectory: path.join(root, "executions"),
         product: config.released.product, toolchain: config.released.toolchain, helper: config.helper,
         sampleRuntimes: config.released.sampleRuntimes,
@@ -92,8 +100,12 @@ async function runMatrix(config, outputDirectory, phase, dependencies = {}) {
                 kind, scenario, configuration, tfm: input.tfm,
                 coreVersion: config.released.product.corePackageVersion,
                 ...(scenario === "producer-consumer" ? { producer } : {}),
+                ...(scenario === "fallback-tasks" ? {
+                    taskAssembly: input.product.files.find(f => f.role === "tasks"),
+                    taskCore: input.product.files.find(f => f.role === "core"),
+                } : {}),
             });
-            const result = await runReproduction({
+            const result = await measuredReproduction({
                 manifest, sourceDirectory, workDirectory: path.join(root, "executions"),
                 product: input.product, toolchain: input.toolchain, helper: config.helper,
                 sampleRuntimes: input.sampleRuntimes,
@@ -122,7 +134,7 @@ async function runMatrix(config, outputDirectory, phase, dependencies = {}) {
                     "collectible context must unload both with and without observation");
             }
         }
-        const wrongHost = await runReproduction({
+        const wrongHost = await measuredReproduction({
             manifest: await createFixture(path.join(root, `${name}-wrong-host`), { kind: "fsi", tfm: input.tfm }),
             sourceDirectory: path.join(root, `${name}-wrong-host`), workDirectory: path.join(root, "executions"),
             product: input.product, toolchain: { ...input.toolchain, hostPath: path.join(root, "wrong-host") }, helper: config.helper,

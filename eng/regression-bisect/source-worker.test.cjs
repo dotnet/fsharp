@@ -9,6 +9,28 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
 const { createFixture } = require("./fixtures/smoke.cjs");
+const { hash } = require("./toolchain-io.cjs");
+
+test("task identity negative uses a verified compatible off-inventory copy rather than an incompatible SDK task", async t => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "rb-task-negative-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const files = [];
+    for (const name of ["FSharp.Build.dll", "FSharp.Core.dll"]) {
+        const file = path.join(root, name), bytes = Buffer.from(`synthetic same-byte ${name}; no product execution`);
+        await fs.writeFile(file, bytes);
+        files.push({ path: file, sha256: hash(bytes) });
+    }
+    const directory = path.join(root, "sample");
+    const manifest = await createFixture(directory, { kind: "project", tfm: "net10.0", scenario: "fallback-tasks",
+        taskAssembly: files[0], taskCore: files[1] });
+    for (const record of files) {
+        const relative = `wrong/${path.basename(record.path)}`;
+        assert.equal(manifest.sources.find(f => f.path === relative)?.sha256, record.sha256);
+        assert.equal(hash(await fs.readFile(path.join(directory, relative))), record.sha256);
+    }
+    assert.match(await fs.readFile(path.join(directory, "Repro.fsproj"), "utf8"),
+        /<FSharpBuildAssemblyFile>\$\(MSBuildProjectDirectory\)\/wrong\/FSharp.Build.dll/);
+});
 
 test("matrix acquisition separates released runtime from source build SDK without retargeting the worker", async t => {
     const { prepareMatrix } = require("./repro.smoke.cjs");

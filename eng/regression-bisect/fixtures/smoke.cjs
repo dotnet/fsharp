@@ -1,11 +1,17 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { hash } = require("../toolchain-io.cjs");
+const { hash, requireValue } = require("../toolchain-io.cjs");
 const { fingerprintInput } = require("../model.cjs");
 
-async function createFixture(directory, { kind, tfm, configuration = "Release", scenario = "pass", producer, coreVersion }) {
+async function createFixture(directory, { kind, tfm, configuration = "Release", scenario = "pass", producer, coreVersion, taskAssembly, taskCore }) {
     await fs.mkdir(directory, { recursive: true });
     const contents = new Map();
+    if (scenario === "fallback-tasks") for (const [name, record] of [["FSharp.Build.dll", taskAssembly], ["FSharp.Core.dll", taskCore]]) {
+        requireValue(record && path.isAbsolute(record.path), "verified compatible task and Core required for task identity negative");
+        const bytes = await fs.readFile(record.path);
+        requireValue(hash(bytes) === record.sha256, "task negative input bytes changed");
+        contents.set(`wrong/${name}`, bytes);
+    }
     const failing = scenario === "runtime-failure";
     const referenced = scenario.startsWith("reference-");
     const nullable = {
@@ -85,7 +91,7 @@ let main _ =
     ${scenario === "late-nullable-explicit" ? "<DefineConstants>$(DefineConstants);NULLABLE</DefineConstants>" : ""}
     ${scenario.startsWith("core-") ? "<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>" : ""}
     ${scenario === "fallback-compiler" ? `<DotnetFscCompilerPath>${sdkFSharp}/fsc.dll</DotnetFscCompilerPath><Fsc_DotNET_DotnetFscCompilerPath>${sdkFSharp}/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>` : ""}
-    ${scenario === "fallback-tasks" ? `<FSharpBuildAssemblyFile>${sdkFSharp}/FSharp.Build.dll</FSharpBuildAssemblyFile>` : ""}
+    ${scenario === "fallback-tasks" ? "<FSharpBuildAssemblyFile>$(MSBuildProjectDirectory)/wrong/FSharp.Build.dll</FSharpBuildAssemblyFile>" : ""}
     ${scenario === "fallback-targets" ? `<FSharpTargetsPath>${sdkFSharp}/Microsoft.FSharp.Targets</FSharpTargetsPath><FSharpTargetsShim>${sdkFSharp}/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim><FSharpOverridesTargetsShim>${sdkFSharp}/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>` : ""}
     ${scenario === "fallback-core" ? "<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>" : ""}
     ${scenario === "producer" ? "<AssemblyName>FrozenProducer</AssemblyName><PackageId>FrozenProducer</PackageId><Version>1.0.0</Version><DefineConstants>$(DefineConstants);OLD_PRODUCER</DefineConstants><GeneratePackageOnBuild>true</GeneratePackageOnBuild><SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>" : ""}

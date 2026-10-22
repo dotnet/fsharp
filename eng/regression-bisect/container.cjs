@@ -223,12 +223,20 @@ async function runContainer(config, options, deps = {}) {
     let staging, answer, failure, cleaning = false, files = [], blobs = [], probe;
     const invoke = deps.command ?? command;
     const docker = async (args, settings = {}, allowMissing = false) => {
-        const result = await invoke(config.dockerExecutable,
-            ["--host", "unix:///var/run/docker.sock", "--config", path.join(staging, "docker"), ...args],
-            { env: { PATH: "/usr/bin:/bin", HOME: staging },
-                ...(cleaning ? { timeoutMs: 5000 } : { signal: options.signal }), ...settings });
-        receipt.commands.push({ args, exitCode: result.exitCode, stdoutSha256: hash(result.stdout),
-            stderrSha256: hash(result.stderr ?? Buffer.alloc(0)) });
+        const entry = { args, startedAt: new Date().toISOString(), exitCode: null };
+        receipt.commands.push(entry);
+        let result;
+        try {
+            result = await invoke(config.dockerExecutable,
+                ["--host", "unix:///var/run/docker.sock", "--config", path.join(staging, "docker"), ...args],
+                { env: { PATH: "/usr/bin:/bin", HOME: staging },
+                    ...(cleaning ? { timeoutMs: 5000 } : { signal: options.signal }), ...settings });
+            Object.assign(entry, { exitCode: result.exitCode, stdoutSha256: hash(result.stdout),
+                stderrSha256: hash(result.stderr ?? Buffer.alloc(0)) });
+        } catch (error) {
+            entry.error = { code: error.code ?? error.name, message: error.message };
+            throw error;
+        } finally { entry.completedAt = new Date().toISOString(); }
         const error = (result.stderr?.toString("utf8") ?? "").trim();
         const missing = /^(?:(?:Error response from daemon|Error): )?No such (object|container|network): (.+)$/i.exec(error);
         if (allowMissing && result.exitCode !== 0 && args[1] === "inspect" &&

@@ -246,6 +246,8 @@ test("transport retains broker counters before removing its owned containers", a
         operation: "canary", input: { mode: "inspect" }, evidenceDirectory: f.root,
     }, f.deps);
     assert.equal(result.status, "collected", result.reason);
+    assert.ok(result.receipt.commands.every(command => Number.isFinite(Date.parse(command.startedAt)) &&
+        Date.parse(command.completedAt) >= Date.parse(command.startedAt) && Number.isInteger(command.exitCode)));
     assert.deepEqual(result.receipt.egress,
         { requests: 23, active: 0, pending: 0, peakActive: 4, peakPending: 2,
             idleReclaimed: 1, totalBytes: 1024, stopped: false, denied: { "queue-capacity": 1 } });
@@ -261,6 +263,10 @@ test("transport reports missing broker counters without skipping owned cleanup",
     }, f.deps);
     assert.equal(result.status, "blocked");
     assert.match(result.reason, /broker counters unavailable/);
+    const failed = result.receipt.commands.find(command => command.args.at(-1) === "egress");
+    assert.equal(failed.exitCode, null);
+    assert.match(failed.error.message, /broker counters unavailable/);
+    assert.ok(Date.parse(failed.completedAt) >= Date.parse(failed.startedAt));
     assert.equal(result.receipt.cleanup.length, 4);
     assert.ok(result.receipt.cleanup.every(resource => resource.removed));
 });

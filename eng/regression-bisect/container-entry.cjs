@@ -299,7 +299,8 @@ async function physicalRunner(unit, launch, acceptance = null) {
             await historicalAccess(settings.cwd + "/entry");
             for (const directory of directories) await historicalDirectory(directory);
         }
-        const entry = { executable, args, cwd: settings.cwd, lane: historical ? "historical" : "trusted" };
+        const entry = { executable, args, cwd: settings.cwd, lane: historical ? "historical" : "trusted",
+            startedAt: new Date().toISOString() };
         commands.push(entry);
         try {
             entry.result = await execute(historical ? "/usr/bin/setpriv" : executable,
@@ -307,6 +308,7 @@ async function physicalRunner(unit, launch, acceptance = null) {
                 { ...settings, signal: AbortSignal.any([signal, ...(settings.signal ? [settings.signal] : [])]), env });
             return entry.result;
         } finally {
+            entry.completedAt = new Date().toISOString();
             if (historical) {
                 await terminateHistoricalProcesses();
                 for (const directory of directories) await historicalDirectory(directory, 0);

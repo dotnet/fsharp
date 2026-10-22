@@ -151,10 +151,15 @@ async function acceptController({ root, config, configBytes, containmentDirector
     await fs.writeFile(path.join(root, "reader.json"), JSON.stringify({ context: { ...context, keys: undefined }, storeConfig,
         reservations: checkpoint.records, launches, apiFile }));
     await fs.rm(launches, { recursive: true });
-    const reader = await execute(process.execPath, [__filename, "--read", path.join(root, "reader.json")], {
+    const readerCommand = [process.execPath, __filename, "--read", path.join(root, "reader.json")];
+    const readerStartedAt = new Date().toISOString();
+    const reader = await execute(readerCommand[0], readerCommand.slice(1), {
         cwd: path.resolve(__dirname, "..", ".."), env: { PATH: "/usr/bin:/bin", RB_SMOKE_KEY: key.toString("hex") },
         timeoutMs: 300000, maxBytes: 16384,
     });
+    await fs.writeFile(path.join(root, "reader-exit.json"), JSON.stringify({
+        command: readerCommand, startedAt: readerStartedAt, completedAt: new Date().toISOString(), ...reader,
+    }, null, 2), { flag: "wx" });
     requireValue(reader.complete && reader.exitCode === 0, `durable new-process authentication failed: ${reader.stderr}`);
     const freshReader = JSON.parse(reader.stdout);
     requireValue(freshReader.matrix?.status === "passed", `contained project matrix incomplete: ${freshReader.matrix?.error}`);
@@ -186,7 +191,7 @@ async function readRetained(file) {
     requireValue(!ledger.some(e => e.kind === "git" && e.args.includes("bisect")), "acceptance must not start a trial bisect");
     console.log(JSON.stringify({ observations, matrix: matrix && { status: matrix.status, error: matrix.error,
         cases: matrix.results.length, producer: matrix.producer?.identity, retained: matrix.retained?.map(({ bytesBase64, ...f }) => f) },
-        apiSha256: hash(await fs.readFile(apiFile)), launchScratchDeleted: true }));
+        apiSha256: hash(await fs.readFile(apiFile)), launchScratchDeleted: true, readerPid: process.pid }));
 }
 
 if (require.main === module) {

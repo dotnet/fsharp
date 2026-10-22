@@ -385,7 +385,10 @@ test("acceptance reader authenticates durable collections in a new process after
         env: { ...process.env, RB_SMOKE_KEY: data.context.keys.fixture.toString("hex") }, encoding: "utf8", timeout: 30000,
     });
     assert.equal(result.status, 0, result.stderr);
-    assert.equal(JSON.parse(result.stdout).launchScratchDeleted, true);
+    const read = JSON.parse(result.stdout);
+    assert.equal(read.launchScratchDeleted, true);
+    assert.equal(read.readerPid, result.pid);
+    assert.notEqual(read.readerPid, process.pid);
     assert.deepEqual(await fs.readdir(data.storeConfig.directory), before);
 });
 
