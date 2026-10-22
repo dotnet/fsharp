@@ -13,6 +13,11 @@ const { execute } = require("./repro-process.cjs");
 const { hash, fileIdentity, copyOwnedFile, requireValue } = require("./toolchain-io.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
+function evidenceHelperCommand(executable, args, helper) {
+    return executable === helper.executable && args[0] === "exec" && args[1] === "--fx-version" &&
+        args[2] === helper.runtimeVersion && args[3] === helper.dll && ["inspect", "binlog"].includes(args[4]);
+}
+
 function connect(host, port, request) {
     return new Promise(resolve => {
         const socket = net.connect({ host, port });
@@ -364,7 +369,8 @@ async function physicalRunner(unit, launch, acceptance = null) {
             }
             return { kind: "released", root, buildInstanceId, files, runtime: identity.compilerRuntime, corePackageVersion: pkg.version };
         };
-        const historical = (executable, args, settings) => withProxy(executable, args, settings, !args.includes(helper.dll));
+        const historical = (executable, args, settings) =>
+            withProxy(executable, args, settings, !evidenceHelperCommand(executable, args, helper));
         let boundary;
         if (acceptance) {
             const probeJob = { ...acceptance, input: acceptance.probe };
@@ -533,3 +539,4 @@ if (require.main === module) main().catch(error => {
     console.error([error.message, error.cause?.code, error.cause?.message].filter(Boolean).join(": "));
     process.exitCode = 1;
 });
+module.exports = { evidenceHelperCommand };

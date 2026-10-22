@@ -16,6 +16,22 @@ const config = () => ({
     limits: { cpus: 2, memoryMiB: 4096, pids: 128, scratchMiB: 2048, timeoutMs: 60000 },
 });
 
+test("only the exact evidence-helper invocation selects the protected lane", () => {
+    const { evidenceHelperCommand } = require("./container-entry.cjs");
+    assert.equal(typeof evidenceHelperCommand, "function");
+    const helper = { executable: "/sdk/dotnet", runtimeVersion: "10.0.13", dll: "/scratch/helper/Evidence.dll" };
+    for (const operation of ["inspect", "binlog"]) {
+        const args = ["exec", "--fx-version", helper.runtimeVersion, helper.dll, operation, "/scratch/data"];
+        assert.equal(evidenceHelperCommand(helper.executable, args, helper), true);
+        for (const [exe, changed] of [
+            ["/usr/local/bin/node", args],
+            [helper.executable, ["-e", "probe", helper.dll]],
+            [helper.executable, ["exec", "--fx-version", "10.0.9", ...args.slice(3)]],
+            [helper.executable, [...args.slice(0, 4), "unknown", "/scratch/data"]],
+        ]) assert.equal(evidenceHelperCommand(exe, changed, helper), false);
+    }
+});
+
 test("container configuration pins the image and only permits reductions of finite limits", async t => {
     assert.equal(validateContainerConfig(config()), true);
     for (const [name, change] of Object.entries({

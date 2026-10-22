@@ -70,6 +70,8 @@ consumer. Its matrix includes Linux multi-TFM, exact diagnostics, runtime-only
 failures and wrong host/compiler/tasks/targets/Core cases. The frozen producer is
 consumed as its exact NuGet package; its DLL and package bytes are retained.
 Protected-supervisor and historical-UID probes precede product execution.
+Only the exact SDK-hosted evidence-helper command uses the protected lane;
+a helper pathname passed as sample data does not select that lane.
 After collection, launch scratch is deleted and a new process authenticates the
 durable evidence. Replay with `source-worker.smoke.cjs --controller` followed by
 the absolute reviewed config, new evidence directory, and containment directory.
