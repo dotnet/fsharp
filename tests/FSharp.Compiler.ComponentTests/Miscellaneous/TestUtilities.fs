@@ -1,6 +1,8 @@
 module FSharp.Compiler.ComponentTests.Miscellaneous.TestUtilities
 
 open System
+open System.Diagnostics
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Xunit
@@ -36,8 +38,7 @@ let ``TestConsole captures output`` () : Task =
                 return console.OutText, console.ErrorText
             }
 
-        let expected =
-            [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
+        let expected = [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
 
         let! results = Seq.init 10 capture |> Async.Parallel
 
@@ -66,6 +67,75 @@ let ``TestConsole preserves nested bulk output`` useError =
 
     writer.Write("after")
     Assert.Equal("beforestringarray!" + Environment.NewLine + "after", text outer)
+
+#if NETCOREAPP
+[<FactForNETCOREAPP>]
+let ``Finite process timeout bounds inherited output drain after parent exit`` () =
+    let directory = TestFramework.createTemporaryDirectory ()
+    let config = TestFramework.initialConfig
+    let childScript = Path.Combine(directory.FullName, "child.fsx")
+    let parentScript = Path.Combine(directory.FullName, "parent.fsx")
+    let pidFile = Path.Combine(directory.FullName, "child.pid")
+
+    File.WriteAllText(
+        childScript,
+        $"""
+use child = System.Diagnostics.Process.GetCurrentProcess()
+printf "inherited stdout"
+eprintf "inherited stderr"
+System.Console.Out.Flush()
+System.Console.Error.Flush()
+System.IO.File.WriteAllLines(@"{pidFile}", [| string child.Id; string (child.StartTime.ToUniversalTime().Ticks) |])
+System.Threading.Thread.Sleep(60000)
+    """
+    )
+
+    File.WriteAllText(
+        parentScript,
+        $"""
+let start = System.Diagnostics.ProcessStartInfo(@"{config.DotNetExe}", UseShellExecute = false)
+for argument in [ @"{config.FSI}"; "--nologo"; "--exec"; @"{childScript}" ] do
+    start.ArgumentList.Add argument
+use child = System.Diagnostics.Process.Start start
+if not (System.Threading.SpinWait.SpinUntil((fun () -> System.IO.File.Exists(@"{pidFile}")), 15000)) then
+    failwith "Inherited-output child did not start"
+exit 17
+    """
+    )
+
+    try
+        let stopwatch = Stopwatch.StartNew()
+
+        let error =
+            Assert.Throws<TimeoutException>(fun () ->
+                FSharp.Test.Compiler.runFsiProcessWithTimeout 15000 [ "--nologo"; "--exec"; parentScript ]
+                |> ignore)
+
+        Assert.True(stopwatch.ElapsedMilliseconds < 35000L, $"Inherited output drain took {stopwatch.Elapsed}")
+        Assert.Contains("Process timed out after 15000ms", error.Message)
+        Assert.Contains("Exit code 17", error.Message)
+        Assert.Contains("output-drained=False", error.Message)
+        Assert.Contains("inherited stdout", error.Message)
+        Assert.Contains("inherited stderr", error.Message)
+        printfn "%s\nelapsed-ms=%d" error.Message stopwatch.ElapsedMilliseconds
+    finally
+        if File.Exists pidFile then
+            let identity = File.ReadAllLines pidFile
+
+            try
+                use child = Process.GetProcessById(int identity.[0])
+
+                if
+                    child.StartTime.ToUniversalTime().Ticks = int64 identity.[1]
+                    && not child.HasExited
+                then
+                    child.Kill(entireProcessTree = true)
+                    Assert.True(child.WaitForExit(5000), "Inherited-output child did not exit")
+            with :? ArgumentException ->
+                ()
+
+        directory.Delete(true)
+#endif
 
 /// Roundtrip-serialize a CompilationHelper through xUnit3's XunitSerializationInfo
 /// and verify all fields survive the trip.

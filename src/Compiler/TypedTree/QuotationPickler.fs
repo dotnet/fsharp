@@ -495,16 +495,52 @@ let p_CombOp x st =
         p_string y st
         p_bool z st
 
-let rec p_expr x st =
-    match x with
-    | CombExpr(c, ts, args) -> p_byte 0 st; p_tup3 p_CombOp p_types (p_list p_expr) (c, ts, args) st
-    | VarExpr v -> p_byte 1 st; p_int v st
-    | LambdaExpr(v, e) -> p_byte 2 st; p_tup2 p_varDecl p_expr (v, e) st
-    | HoleExpr(ty, idx) -> p_byte 3 st; p_type ty st; p_int idx st
-    | QuoteExpr(tm) -> p_byte 4 st; p_expr tm st
-    | AttrExpr(e, attrs) -> p_byte 5 st; p_tup2 p_expr (p_list p_expr) (e, attrs) st
-    | ThisVarExpr(ty) -> p_byte 6 st; p_type ty st
-    | QuoteRawExpr(tm) -> p_byte 7 st; p_expr tm st
+[<Struct>]
+type private ExprPickleStep =
+    | PickleExpr of expr: ExprData
+    | PickleExprList of list: ExprData list
+
+let p_expr x st =
+    let stack = System.Collections.Generic.Stack<ExprPickleStep>()
+    stack.Push(PickleExpr x)
+    while stack.Count > 0 do
+        match stack.Pop() with
+        | PickleExprList [] -> p_byte 0 st
+        | PickleExprList (h :: t) ->
+            p_byte 1 st
+            stack.Push(PickleExprList t)
+            stack.Push(PickleExpr h)
+        | PickleExpr expr ->
+            match expr with
+            | CombExpr(c, ts, args) ->
+                p_byte 0 st
+                p_CombOp c st
+                p_types ts st
+                stack.Push(PickleExprList args)
+            | VarExpr v ->
+                p_byte 1 st
+                p_int v st
+            | LambdaExpr(v, e) ->
+                p_byte 2 st
+                p_varDecl v st
+                stack.Push(PickleExpr e)
+            | HoleExpr(ty, idx) ->
+                p_byte 3 st
+                p_type ty st
+                p_int idx st
+            | QuoteExpr tm ->
+                p_byte 4 st
+                stack.Push(PickleExpr tm)
+            | AttrExpr(e, attrs) ->
+                p_byte 5 st
+                stack.Push(PickleExprList attrs)
+                stack.Push(PickleExpr e)
+            | ThisVarExpr ty ->
+                p_byte 6 st
+                p_type ty st
+            | QuoteRawExpr tm ->
+                p_byte 7 st
+                stack.Push(PickleExpr tm)
 
 type ModuleDefnData =
     { Module: NamedTypeData

@@ -2053,21 +2053,21 @@ let MergePropertyDefs m ilPropertyDefs =
 
 [<AbstractClass; Sealed>]
 type CodegenFileScope private () =
-    [<DefaultValue; System.ThreadStatic>]
-    static val mutable private currentFileIdx: int
+    static let currentFileIdx = System.Threading.AsyncLocal<int>()
 
     static member OrderKey(localIdx: int) : struct (int * int) =
-        System.Diagnostics.Debug.Assert(CodegenFileScope.currentFileIdx > 0, "OrderKey called outside CodegenFileScope.With")
-        struct (CodegenFileScope.currentFileIdx, localIdx)
+        let fileIdx = currentFileIdx.Value
+        System.Diagnostics.Debug.Assert(fileIdx > 0, "OrderKey called outside CodegenFileScope.With")
+        struct (fileIdx, localIdx)
 
     static member With(fileIdx: int, action: unit -> 'T) : 'T =
-        let prev = CodegenFileScope.currentFileIdx
+        let prev = currentFileIdx.Value
 
         try
-            CodegenFileScope.currentFileIdx <- fileIdx
+            currentFileIdx.Value <- fileIdx
             action ()
         finally
-            CodegenFileScope.currentFileIdx <- prev
+            currentFileIdx.Value <- prev
 
 //--------------------------------------------------------------------------
 // Buffers for compiling modules. The entire assembly gets compiled via an AssemblyBuilder

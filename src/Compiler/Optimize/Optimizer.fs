@@ -243,6 +243,8 @@ let SizeOfValueInfo valueInfo =
         | TupleValue vinfos
         | RecdValue (_, vinfos)
         | UnionCaseValue (_, vinfos) when vinfos.Length = 0 -> acc + 1
+        | UnionCaseValue (_, vinfos) when vinfos.Length > 1 ->
+            max (loop (acc + 1) vinfos[0]) (loop (acc + 1) vinfos[vinfos.Length - 1])
         | TupleValue vinfos
         | RecdValue (_, vinfos)
         | UnionCaseValue (_, vinfos) -> loop (acc + 1) vinfos[0]

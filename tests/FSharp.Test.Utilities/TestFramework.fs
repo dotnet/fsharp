@@ -60,9 +60,8 @@ let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: b
 [<RequireQualifiedAccess>]
 module Commands =
 
-    // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
-    // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir =
+    // -1 preserves the unbounded wait used by existing callers.
+    let executeProcessWithTimeout (timeout: int) pathToExe arguments workingDir =
         let commandLine = ResizeArray()
 
         commandLine.Add $"cd {workingDir}"
@@ -89,12 +88,45 @@ module Commands =
 
         if not (p.Start()) then failwith "new process did not start"
 
-        let readOutput = backgroundTask { return! p.StandardOutput.ReadToEndAsync() }
-        let readErrors = backgroundTask { return! p.StandardError.ReadToEndAsync() }
+        let stopwatch = Stopwatch.StartNew()
+        let output = Text.StringBuilder()
+        let errors = Text.StringBuilder()
+        let read (reader: StreamReader) (text: Text.StringBuilder) =
+            backgroundTask {
+                let buffer = Array.zeroCreate<char> 4096
+                let mutable reading = true
+                while reading do
+                    let! count = reader.ReadAsync(buffer, 0, buffer.Length)
+                    if count = 0 then
+                        reading <- false
+                    else
+                        lock text (fun () -> text.Append(buffer, 0, count) |> ignore)
+            }
 
-        p.WaitForExit()
+        let readers = [| read p.StandardOutput output :> Threading.Tasks.Task; read p.StandardError errors :> Threading.Tasks.Task |]
+        let remaining () =
+            if timeout = Threading.Timeout.Infinite then timeout
+            else max 0 (timeout - int (min (int64 Int32.MaxValue) stopwatch.ElapsedMilliseconds))
+        let snapshot (text: Text.StringBuilder) = lock text (fun () -> text.ToString())
 
-        p.ExitCode, readOutput.Result, readErrors.Result
+        if not (p.WaitForExit(remaining ())) || not (Threading.Tasks.Task.WaitAll(readers, remaining ())) then
+            try
+                if not p.HasExited then
+#if NETCOREAPP
+                    p.Kill(entireProcessTree = true)
+#else
+                    p.Kill()
+#endif
+            with :? InvalidOperationException when p.HasExited -> ()
+            let exited = p.WaitForExit(5000)
+            let drained = Threading.Tasks.Task.WaitAll(readers, 5000)
+            let exit = if exited then string p.ExitCode else "still running after termination"
+            raise (TimeoutException($"Process timed out after {timeout}ms: {pathToExe} {arguments}\nExit code {exit}; output-drained={drained}\n{snapshot output}\n{snapshot errors}"))
+
+        p.ExitCode, snapshot output, snapshot errors
+
+    let executeProcess pathToExe arguments workingDir =
+        executeProcessWithTimeout System.Threading.Timeout.Infinite pathToExe arguments workingDir
 
     let getfullpath workDir (path:string) =
         let rooted =

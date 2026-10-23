@@ -1951,52 +1951,173 @@ module Patterns =
 
     type Bindable<'T> = BindingEnv -> 'T
 
+    [<NoEquality; NoComparison>]
+    type UnpickledExprNode =
+        | UCombNode of (BindingEnv -> Expr list -> Expr) * UnpickledExprNode list
+        | ULeafNode of (BindingEnv -> Expr)
+        | ULambdaNode of (BindingEnv -> Var) * UnpickledExprNode
+        | UQuoteNode of UnpickledExprNode * bool
+        | UAttrNode of UnpickledExprNode * UnpickledExprNode list
+
+    [<NoEquality; NoComparison>]
+    type UnpickleExprStep =
+        | ReadExprStep
+        | ReadCombArgsStep of (BindingEnv -> Expr list -> Expr) * UnpickledExprNode list
+        | CollectCombArgStep of (BindingEnv -> Expr list -> Expr) * UnpickledExprNode list
+        | FinishLambdaStep of (BindingEnv -> Var)
+        | FinishQuoteStep of bool
+        | StartAttrListStep
+        | ReadAttrListStep of UnpickledExprNode * UnpickledExprNode list
+        | CollectAttrStep of UnpickledExprNode * UnpickledExprNode list
+
+    [<NoEquality; NoComparison>]
+    type EvalUnpickledStep =
+        | EvalNodeStep of UnpickledExprNode * BindingEnv
+        | BuildCombStep of (BindingEnv -> Expr list -> Expr) * BindingEnv * int
+        | BuildLambdaStep of Var
+        | BuildQuoteStep of bool
+        | BuildAttrStep of int
+
+    let evalUnpickledExpr (root: UnpickledExprNode) (initialEnv: BindingEnv) : Expr =
+        let steps = System.Collections.Generic.Stack<EvalUnpickledStep>()
+        let values = System.Collections.Generic.Stack<Expr>()
+        steps.Push(EvalNodeStep(root, initialEnv))
+
+        while steps.Count > 0 do
+            match steps.Pop() with
+            | EvalNodeStep(node, env) ->
+                match node with
+                | ULeafNode f -> values.Push(f env)
+                | UCombNode(buildComb, args) ->
+                    steps.Push(BuildCombStep(buildComb, env, args.Length))
+
+                    for arg in List.rev args do
+                        steps.Push(EvalNodeStep(arg, env))
+                | ULambdaNode(a, body) ->
+                    let v = a env
+                    steps.Push(BuildLambdaStep v)
+                    steps.Push(EvalNodeStep(body, addVar env v))
+                | UQuoteNode(tm, isTyped) ->
+                    steps.Push(BuildQuoteStep isTyped)
+                    steps.Push(EvalNodeStep(tm, env))
+                | UAttrNode(e, attrs) ->
+                    steps.Push(BuildAttrStep attrs.Length)
+
+                    for attr in List.rev attrs do
+                        steps.Push(EvalNodeStep(attr, env))
+
+                    steps.Push(EvalNodeStep(e, env))
+            | BuildCombStep(buildComb, env, count) ->
+                let mutable args = []
+
+                for _ = 1 to count do
+                    args <- values.Pop() :: args
+
+                values.Push(buildComb env args)
+            | BuildLambdaStep v ->
+                let body = values.Pop()
+                values.Push(E(LambdaTerm(v, body)))
+            | BuildQuoteStep isTyped ->
+                let tm = values.Pop()
+                values.Push(mkQuote (tm, isTyped))
+            | BuildAttrStep count ->
+                let mutable attrs = []
+
+                for _ = 1 to count do
+                    attrs <- values.Pop() :: attrs
+
+                let e = values.Pop()
+                values.Push(EA(e.Tree, e.CustomAttributes @ attrs))
+
+        values.Pop()
+
     let rec u_Expr st =
-        let tag = u_byte_as_int st
+        let steps = System.Collections.Generic.Stack<UnpickleExprStep>()
+        let nodes = System.Collections.Generic.Stack<UnpickledExprNode>()
+        steps.Push(ReadExprStep)
 
-        match tag with
-        | 0 ->
-            let a = u_constSpec st
-            let b = u_dtypes st
-            let args = u_list u_Expr st
+        while steps.Count > 0 do
+            match steps.Pop() with
+            | ReadExprStep ->
+                let tag = u_byte_as_int st
 
-            (fun (env: BindingEnv) ->
-                let args = List.map (fun e -> e env) args
+                match tag with
+                | 0 ->
+                    let a = u_constSpec st
+                    let b = u_dtypes st
 
-                let a =
-                    match a with
-                    | Unique v -> v
-                    | Ambiguous f ->
-                        let argTys = List.map typeOf args
-                        f argTys
+                    let buildComb (env: BindingEnv) (args: Expr list) =
+                        let a =
+                            match a with
+                            | Unique v -> v
+                            | Ambiguous f ->
+                                let argTys = List.map typeOf args
+                                f argTys
 
-                let tyargs = b env.typeInst
-                E(CombTerm(a tyargs (ValueSome args.Length), args)))
-        | 1 ->
-            let x = u_VarRef st
-            (x >> VarTerm >> E)
-        | 2 ->
-            let a = u_VarDecl st
-            let b = u_Expr st
-            (fun env -> let v = a env in E(LambdaTerm(v, b (addVar env v))))
-        | 3 ->
-            let a = u_dtype st
-            let idx = u_int st
-            (fun env -> E(HoleTerm(a env.typeInst, idx)))
-        | 4 ->
-            let a = u_Expr st
-            (fun env -> mkQuote (a env, true))
-        | 5 ->
-            let a = u_Expr st
-            let attrs = u_list u_Expr st
-            (fun env -> let e = (a env) in EA(e.Tree, (e.CustomAttributes @ List.map (fun attrf -> attrf env) attrs)))
-        | 6 ->
-            let a = u_dtype st
-            (fun env -> mkVar (Var.Global("this", a env.typeInst)))
-        | 7 ->
-            let a = u_Expr st
-            (fun env -> mkQuote (a env, false))
-        | _ -> failwith "u_Expr"
+                        let tyargs = b env.typeInst
+                        E(CombTerm(a tyargs (ValueSome args.Length), args))
+
+                    steps.Push(ReadCombArgsStep(buildComb, []))
+                | 1 ->
+                    let x = u_VarRef st
+                    nodes.Push(ULeafNode(x >> VarTerm >> E))
+                | 2 ->
+                    let a = u_VarDecl st
+                    steps.Push(FinishLambdaStep a)
+                    steps.Push(ReadExprStep)
+                | 3 ->
+                    let a = u_dtype st
+                    let idx = u_int st
+                    nodes.Push(ULeafNode(fun env -> E(HoleTerm(a env.typeInst, idx))))
+                | 4 ->
+                    steps.Push(FinishQuoteStep true)
+                    steps.Push(ReadExprStep)
+                | 5 ->
+                    steps.Push(StartAttrListStep)
+                    steps.Push(ReadExprStep)
+                | 6 ->
+                    let a = u_dtype st
+                    nodes.Push(ULeafNode(fun env -> mkVar (Var.Global("this", a env.typeInst))))
+                | 7 ->
+                    steps.Push(FinishQuoteStep false)
+                    steps.Push(ReadExprStep)
+                | _ -> failwith "u_Expr"
+            | ReadCombArgsStep(buildComb, acc) ->
+                let listTag = u_byte_as_int st
+
+                match listTag with
+                | 0 -> nodes.Push(UCombNode(buildComb, List.rev acc))
+                | 1 ->
+                    steps.Push(CollectCombArgStep(buildComb, acc))
+                    steps.Push(ReadExprStep)
+                | n -> failwith ("u_list: found number " + string n)
+            | CollectCombArgStep(buildComb, acc) ->
+                let arg = nodes.Pop()
+                steps.Push(ReadCombArgsStep(buildComb, arg :: acc))
+            | FinishLambdaStep a ->
+                let body = nodes.Pop()
+                nodes.Push(ULambdaNode(a, body))
+            | FinishQuoteStep isTyped ->
+                let tm = nodes.Pop()
+                nodes.Push(UQuoteNode(tm, isTyped))
+            | StartAttrListStep ->
+                let e = nodes.Pop()
+                steps.Push(ReadAttrListStep(e, []))
+            | ReadAttrListStep(e, acc) ->
+                let listTag = u_byte_as_int st
+
+                match listTag with
+                | 0 -> nodes.Push(UAttrNode(e, List.rev acc))
+                | 1 ->
+                    steps.Push(CollectAttrStep(e, acc))
+                    steps.Push(ReadExprStep)
+                | n -> failwith ("u_list: found number " + string n)
+            | CollectAttrStep(e, acc) ->
+                let attr = nodes.Pop()
+                steps.Push(ReadAttrListStep(e, attr :: acc))
+
+        let root = nodes.Pop()
+        evalUnpickledExpr root
 
     and u_VarDecl st =
         let s, b, mut = u_tup3 u_string u_dtype u_bool st
@@ -2253,22 +2374,53 @@ module Patterns =
     // Microsoft.FSharp.Quotations.Typed
     //--------------------------------------------------------------------------
 
+    [<NoEquality; NoComparison>]
+    type FillHolesStep =
+        | FillExprStep of Expr
+        | FinishFillLambdaStep of Var * Expr list
+        | FinishFillCombStep of ExprConstInfo * int * Expr list
+
     /// Fill the holes in an Expr
-    let rec fillHolesInRawExpr (l: Expr array) (E t as e) =
-        match t with
-        | VarTerm _ -> e
-        | LambdaTerm(v, b) -> EA(LambdaTerm(v, fillHolesInRawExpr l b), e.CustomAttributes)
-        | CombTerm(op, args) -> EA(CombTerm(op, args |> List.map (fillHolesInRawExpr l)), e.CustomAttributes)
-        | HoleTerm(ty, idx) ->
-            if idx < 0 || idx >= l.Length then
-                failwith "hole index out of range"
+    let fillHolesInRawExpr (l: Expr array) (root: Expr) =
+        let steps = System.Collections.Generic.Stack<FillHolesStep>()
+        let values = System.Collections.Generic.Stack<Expr>()
+        steps.Push(FillExprStep root)
 
-            let h = l.[idx]
+        while steps.Count > 0 do
+            match steps.Pop() with
+            | FillExprStep(E t as e) ->
+                match t with
+                | VarTerm _ -> values.Push e
+                | LambdaTerm(v, b) ->
+                    steps.Push(FinishFillLambdaStep(v, e.CustomAttributes))
+                    steps.Push(FillExprStep b)
+                | CombTerm(op, args) ->
+                    steps.Push(FinishFillCombStep(op, args.Length, e.CustomAttributes))
 
-            match typeOf h with
-            | expected when expected <> ty ->
-                invalidArg "receivedType" (String.Format(SR.GetString(SR.QtmmRaw), expected, ty))
-            | _ -> h
+                    for arg in List.rev args do
+                        steps.Push(FillExprStep arg)
+                | HoleTerm(ty, idx) ->
+                    if idx < 0 || idx >= l.Length then
+                        failwith "hole index out of range"
+
+                    let h = l.[idx]
+
+                    match typeOf h with
+                    | expected when expected <> ty ->
+                        invalidArg "receivedType" (String.Format(SR.GetString(SR.QtmmRaw), expected, ty))
+                    | _ -> values.Push h
+            | FinishFillLambdaStep(v, attrs) ->
+                let b = values.Pop()
+                values.Push(EA(LambdaTerm(v, b), attrs))
+            | FinishFillCombStep(op, count, attrs) ->
+                let mutable args = []
+
+                for _ = 1 to count do
+                    args <- values.Pop() :: args
+
+                values.Push(EA(CombTerm(op, args), attrs))
+
+        values.Pop()
 
     let rec freeInExprAcc bvs acc (E t) =
         match t with

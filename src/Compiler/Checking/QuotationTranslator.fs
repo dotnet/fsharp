@@ -282,10 +282,7 @@ and ConvWitnessInfo cenv env m traitInfo =
         cenv.exprSplices.Add((liftExpr, m))
         mkHole(ConvType cenv env m holeTy, idx)
 
-and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : ExprData =
-
-    let g = cenv.g
-
+and private NormalizeQuotedExpr g (expr: Expr) =
     let expr = DetectAndOptimizeForEachExpression g OptimizeIntRangesOnly expr
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
@@ -293,7 +290,14 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
     let expr = NormalizeAndAdjustPossibleSubsumptionExprs g expr
 
     // Remove TExpr_ref nodes
-    let expr = stripExpr expr
+    stripExpr expr
+
+and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : ExprData =
+    ConvNormalizedExprCore cenv env (NormalizeQuotedExpr cenv.g expr)
+
+and private ConvNormalizedExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : ExprData =
+
+    let g = cenv.g
 
     // Recognize F# object model calls
     // Recognize applications of module functions.
@@ -510,10 +514,44 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
     | Expr.Op (op, tyargs, args, m) ->
         match op, tyargs, args with
         | TOp.UnionCase ucref, _, _ ->
-            let tcR, s = ConvUnionCaseRef cenv ucref m
-            let tyargsR = ConvTypes cenv env m tyargs
-            let argsR = ConvExprs cenv env args
-            mkUnion(tcR, s, tyargsR, argsR)
+            match expr with
+            | LinearOpExpr (TOp.UnionCase ucref, tyargs, argsFront, argLast, m) ->
+                let tcR, s = ConvUnionCaseRef cenv ucref m
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsFrontR = ConvExprs cenv env argsFront
+                let frames = ResizeArray()
+                let mutable current = argLast
+                let mutable outerRange = current.Range
+                let mutable normalized = NormalizeQuotedExpr g current
+                let mutable loop = true
+                while loop do
+                    match normalized with
+                    | LinearOpExpr (TOp.UnionCase nextUcref, nextTyargs, nextArgsFront, nextArgLast, nextM) ->
+                        let nextTcR, nextS = ConvUnionCaseRef cenv nextUcref nextM
+                        let nextTyargsR = ConvTypes cenv env nextM nextTyargs
+                        let nextArgsFrontR = ConvExprs cenv env nextArgsFront
+                        frames.Add(struct (outerRange, nextTcR, nextS, nextTyargsR, nextArgsFrontR))
+                        current <- nextArgLast
+                        outerRange <- current.Range
+                        normalized <- NormalizeQuotedExpr g current
+                    | _ ->
+                        loop <- false
+                let mutable acc =
+                    EmitDebugInfoIfNecessary cenv env outerRange (ConvNormalizedExprCore cenv env normalized)
+                for i = frames.Count - 1 downto 0 do
+                    let struct (frameRange, nextTcR, nextS, nextTyargsR, nextArgsFrontR) = frames[i]
+                    acc <-
+                        EmitDebugInfoIfNecessary
+                            cenv
+                            env
+                            frameRange
+                            (mkUnion(nextTcR, nextS, nextTyargsR, nextArgsFrontR @ [ acc ]))
+                mkUnion(tcR, s, tyargsR, argsFrontR @ [ acc ])
+            | _ ->
+                let tcR, s = ConvUnionCaseRef cenv ucref m
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsR = ConvExprs cenv env args
+                mkUnion(tcR, s, tyargsR, argsR)
 
         | TOp.Tuple tupInfo, tyargs, _ ->
             let tyR = ConvType cenv env m (mkAnyTupledTy g tupInfo tyargs)
