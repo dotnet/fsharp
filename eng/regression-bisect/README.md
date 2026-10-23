@@ -541,7 +541,13 @@ bundle does not itself sign off the separate product/containment or physical
 known-history gates. Exit 1 prints the blocking reason; no failure refunds charges
 or extends a deadline.
 Verification also authenticates the ordered checkpoint/freshness writes before
-every recorded bisect command and requires six distinct committing processes.
+every bisect or selection command and requires six distinct committing processes.
+Every Git command needs a matching, successful result from the same process.
+The pinned-endpoint bisect start, boundary reads and `BISECT_HEAD` selection must
+precede the authenticated search reservation; successful replay of the candidate's
+bad decision and boundary reads must precede the first confirmation reservation.
+Missing, incomplete, failed or reordered Git traces block even when the final
+signed checkpoint and report are otherwise complete.
 A missing restart trace or a mutation outside the selected fixed slots,
 freshness anchor and controller dispatch blocks verification. The only mutable
 trial fault is `resultAck: true`, which simulates losing the fixed fake result
@@ -640,6 +646,11 @@ Git replay verified identical patches outside those index lines and unchanged
 full source SHAs. Both preceding 660-minute trials remain charged and retained:
 the second confirmed all six observations but stopped before final publication
 adoption. Neither is relabelled as this completed trial. Production stays disabled.
+The subsequent verifier-only trace repair was checked read-only against this
+retained native ledger: all 201 Git commands have successful matching results,
+and both selection sequences precede their authenticated reservations. Native
+product, containment and restart receipts are reused at the revision above,
+not claimed as new execution; no worker allowance was reset or added.
 
 `trial.test.cjs` uses explicitly named **SYNTHETIC** product outcomes with real
 CLI processes, Git selection, durable routing and signed reporting. It covers

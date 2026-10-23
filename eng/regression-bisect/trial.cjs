@@ -266,6 +266,58 @@ async function advance(t, supplied) {
     });
 }
 
+function verifyGitTrace(entries, authenticatedCommits, source, records) {
+    const selections = new Map(), admitted = new Set();
+    const start = ["bisect", "start", "--no-checkout", source.main, source.good];
+    const boundaries = [["rev-parse", "refs/bisect/bad"],
+        ["for-each-ref", "--format=%(objectname)", "refs/bisect/good-*"]];
+    let committed, pending;
+    for (const [index, entry] of entries.entries()) {
+        if (authenticatedCommits.has(index)) {
+            committed = authenticatedCommits.get(index);
+            for (const [record, expected] of [
+                [records[3], [start, ...boundaries, ["rev-parse", "BISECT_HEAD"]]],
+                [records[4], [start, ["bisect", "bad", source.candidate], ...boundaries]],
+            ]) if (!admitted.has(record.id) && committed.records.some(r => r.id === record.id)) {
+                requireValue(equal(committed.records.find(r => r.id === record.id).request, record.request) &&
+                    equal(selections.get(entry.pid) ?? [], expected),
+                "Git trace missing successful ordered selection before authenticated reservation");
+                admitted.add(record.id);
+            }
+        }
+        if (!["git", "git-result"].includes(entry.kind)) continue;
+        requireValue(Array.isArray(entry.args) && entry.args.length > 0 &&
+            entry.args.every(a => typeof a === "string"), "invalid Git trace arguments");
+        const selection = entry.args.some(a => a === "bisect" || a.startsWith("--bisect") ||
+            a === "BISECT_HEAD" || a.startsWith("refs/bisect/"));
+        if (entry.kind === "git" && selection)
+            requireValue(committed && ["stable", "main", "good"].every(name => {
+                const id = committed.state.endpointEvidence[name], observation = committed.observations[id];
+                return observation?.valid && committed.state.budget.authenticatedObservationDigests.includes(id) &&
+                    observation.data.outcome.outcome === (name === "good" ? "pass" : "product-failure") &&
+                    committed.records.some(r => r.observationDigest === id && r.status === "committed");
+            }), "bisect command occurred before authenticated endpoints were committed");
+        requireValue(Number.isSafeInteger(entry.pid) && entry.pid > 0, "invalid Git trace process");
+        if (entry.kind === "git") {
+            requireValue(!pending, "Git trace command has no matching result");
+            pending = entry;
+        } else {
+            requireValue(pending && pending.pid === entry.pid && equal(pending.args, entry.args) &&
+                entry.exitCode === 0 && Number.isFinite(entry.durationMs) && entry.durationMs >= 0,
+            "Git trace result missing, mismatched or unsuccessful");
+            if (selection) {
+                let offset = 0;
+                while (entry.args[offset] === "-c") offset += 2;
+                const commands = selections.get(entry.pid) ?? [];
+                commands.push(entry.args.slice(offset));
+                selections.set(entry.pid, commands);
+            }
+            pending = null;
+        }
+    }
+    requireValue(!pending && admitted.size === 2, "Git trace incomplete: successful search and boundary selection required");
+}
+
 async function verify(t) {
     const b = t.approval.bootstrap, m = t.approval.manifest;
     const transport = createGithubApi({ repository: "dotnet/fsharp", issueNumber: 123,
@@ -331,8 +383,9 @@ async function verify(t) {
     const commits = new Map();
     const commentRoutes = new Set([b.checkpointCommentId, b.resultCommentId, discovery.commentId, discovery.freshnessCommentId]
         .map(id => `issues/comments/${id}`));
-    let checkpoint, committed;
-    for (const entry of await lines("api.json.ledger")) {
+    const ledger = await lines("api.json.ledger"), authenticatedCommits = new Map();
+    let checkpoint;
+    for (const [index, entry] of ledger.entries()) {
         if (entry.kind === "api" && entry.method !== "GET") {
             requireValue(entry.method === "PATCH" && commentRoutes.has(entry.route) ||
                 entry.method === "POST" && (entry.route === `statuses/${t.config.deployment.anchorSha}` ||
@@ -352,19 +405,13 @@ async function verify(t) {
                 }) }, context);
                 requireValue(checkpoint && freshness.generation === checkpoint.value.generation &&
                     freshness.bodyDigest === checkpoint.sha256, "trial trace freshness differs from signed checkpoint");
-                committed = checkpoint.value;
-                for (const record of committed.records.filter(r => r.status === "committed"))
+                authenticatedCommits.set(index, checkpoint.value);
+                for (const record of checkpoint.value.records.filter(r => r.status === "committed"))
                     if (!commits.has(record.id)) commits.set(record.id, entry.pid);
             }
         }
-        if (entry.kind === "git" && entry.args.includes("bisect"))
-            requireValue(committed && ["stable", "main", "good"].every(name => {
-                const id = committed.state.endpointEvidence[name], observation = committed.observations[id];
-                return observation?.valid && committed.state.budget.authenticatedObservationDigests.includes(id) &&
-                    observation.data.outcome.outcome === (name === "good" ? "pass" : "product-failure") &&
-                    committed.records.some(r => r.observationDigest === id && r.status === "committed");
-            }), "bisect command occurred before authenticated endpoints were committed");
     }
+    verifyGitTrace(ledger, authenticatedCommits, t.config.source, cp.records);
     requireValue(equal([...commits.keys()], cp.records.map(r => r.id)) && new Set(commits.values()).size === 6,
         "trial process trace must retain six independently committed observations");
     return { status: "verified", purpose, trialId: t.db.trialId, digest: result.payload.digest,
@@ -386,4 +433,4 @@ if (require.main === module) main().then(result => {
     if (["blocked", "requeue"].includes(result.status)) process.exitCode = 1;
 }).catch(error => { console.log(JSON.stringify({ status: "blocked", reason: error.message })); process.exitCode = 1; });
 
-module.exports = { main, adapter, helpers, sign };
+module.exports = { main, adapter, helpers, sign, verifyGitTrace };

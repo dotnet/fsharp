@@ -611,6 +611,31 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         budget: complete.state.budget.consumed, physicalAcceptance: false });
     assert.deepEqual(await snapshot(), frozen, "verify cannot write a ledger, touch evidence or create ownership files");
     const originalApi = await fs.readFile(r.api);
+    const gitTraceChanges = {
+        "missing Git trace": entries => entries.filter(e => !["git", "git-result"].includes(e.kind)),
+        "missing bisect trace": entries => entries.filter(e => !e.args?.includes("bisect")),
+        "missing Git commands": entries => entries.filter(e => e.kind !== "git"),
+        "missing Git results": entries => entries.filter(e => e.kind !== "git-result"),
+        "missing selection": entries => entries.filter(e => !e.args?.includes("BISECT_HEAD")),
+        "missing selection result": entries => entries.filter(e => !(e.kind === "git-result" && e.args.includes("BISECT_HEAD"))),
+        "missing boundary replay": entries => entries.filter(e => !(e.args?.includes("bisect") && e.args.includes("bad"))),
+        "wrong starting boundary": entries => entries.map(e => e.args?.includes("bisect") && e.args.includes("start")
+            ? { ...e, args: [...e.args.slice(0, -1), r.config.source.candidate] } : e),
+        "failed selection": entries => entries.map(e => e.kind === "git-result" && e.args.includes("BISECT_HEAD")
+            ? { ...e, exitCode: 1 } : e),
+        "mismatched Git result": entries => entries.map(e => e.kind === "git-result" && e.args.includes("BISECT_HEAD")
+            ? { ...e, args: ["rev-parse", "HEAD"] } : e),
+        "foreign Git result": entries => entries.map(e => e.kind === "git-result" && e.args.includes("BISECT_HEAD")
+            ? { ...e, pid: e.pid + 1 } : e),
+        "reversed Git trace": entries => {
+            const git = entries.filter(e => ["git", "git-result"].includes(e.kind)).reverse();
+            return entries.map(e => ["git", "git-result"].includes(e.kind) ? git.shift() : e);
+        },
+        "late selection": entries => [...entries.filter(e => !e.args?.includes("BISECT_HEAD")),
+            ...entries.filter(e => e.args?.includes("BISECT_HEAD"))],
+        "duplicate Git result": entries => [...entries, entries.find(e => e.kind === "git-result")],
+        "unfinished Git command": entries => [...entries, entries.find(e => e.kind === "git")],
+    };
     for (const [target, reason] of [
         ["checkpoint", /checkpoint authentication/], ["result", /authenticated persisted publication/],
         ["run", /workflow run provenance authentication/], ["required-evidence", /required evidence/],
@@ -619,7 +644,9 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         ["spoofed workflow comment", /reviewed discussion fingerprint is stale/],
         ["discovery comment", /discovery record authentication/],
         ["process trace", /process trace/], ["early bisect", /before authenticated endpoints/],
+        ["early selection", /before authenticated endpoints/],
         ["unrelated mutation", /mutation ledger/],
+        ...Object.keys(gitTraceChanges).map(name => [name, /Git trace/]),
     ]) await t.test(target, async () => {
         const saved = path.join(r.evidence, "trial.json"), bytes = await fs.readFile(saved);
         let lost;
@@ -628,12 +655,19 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
             lost.bytes = await fs.readFile(lost.file);
             await fs.writeFile(lost.file, "");
         }
-        if (["early bisect", "unrelated mutation"].includes(target)) {
+        if (["early bisect", "early selection", "unrelated mutation"].includes(target)) {
             lost = { file: `${r.api}.ledger` };
             lost.bytes = await fs.readFile(lost.file);
             const entry = target === "early bisect" ? { kind: "git", args: ["bisect", "reset"] } :
+                target === "early selection" ? { kind: "git", args: ["rev-parse", "BISECT_HEAD"] } :
                 { kind: "api", method: "PATCH", route: "issues/124", body: { state: "closed" } };
             await fs.writeFile(lost.file, JSON.stringify(entry) + "\n" + lost.bytes);
+        }
+        if (gitTraceChanges[target]) {
+            lost = { file: `${r.api}.ledger` };
+            lost.bytes = await fs.readFile(lost.file);
+            const entries = lost.bytes.toString("utf8").trim().split("\n").map(JSON.parse);
+            await fs.writeFile(lost.file, gitTraceChanges[target](entries).map(e => JSON.stringify(e)).join("\n") + "\n");
         }
         if (["checkpoint", "result"].includes(target)) await r.update(db => {
             db.comments.find(c => c.id === (target === "checkpoint" ? 456 : 457)).body += "forged";
@@ -678,7 +712,8 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
     if (artifacts) {
         const target = path.join(artifacts, path.basename(r.f.directory) + "-SYNTHETIC-trial");
         await fs.cp(r.evidence, target, { recursive: true });
-        await fs.writeFile(path.join(target, "verify-receipt.json"), JSON.stringify({ ...verified, snapshot: frozen }));
+        await fs.writeFile(path.join(target, "verify-receipt.json"), JSON.stringify({ ...verified,
+            command: [process.execPath, path.join(__dirname, "trial.cjs"), "--verify", r.evidence], snapshot: frozen }));
     }
 });
 

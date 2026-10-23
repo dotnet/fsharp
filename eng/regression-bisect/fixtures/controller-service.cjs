@@ -507,10 +507,12 @@ async function connect(file, { readOnly = false, synthetic } = {}) {
                 if (unit.request.kind === "source") {
                     const args = ["show", `${unit.request.target.sourceSha}:source.txt`];
                     record({ kind: "git", args });
+                    const started = Date.now();
                     const executable = JSON.parse(Buffer.from(db.files[".github/regression-bisect/deployment.json"], "base64")).gitExecutable;
                     SYNTHETIC = execFileSync(executable, args, { cwd: db.mirrorDirectory, encoding: "utf8", timeout: 30000,
                         env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1",
                             GIT_CONFIG_GLOBAL: path.join(db.mirrorDirectory, "no-config") } }).trim();
+                    record({ kind: "git-result", args, exitCode: 0, durationMs: Date.now() - started });
                     if (["synthetic inert source", "synthetic inert source\nnewer inert source"].includes(SYNTHETIC))
                         SYNTHETIC = "untestable";
                 }
