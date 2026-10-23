@@ -532,11 +532,6 @@
         <target state="translated">インデックス付きプロパティのゲッターとセッターの型は同じである必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">パターン一致のすべての分岐は、最初の分岐の型に暗黙的に変換できる値を返す必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの分岐は、型の長さ {2} のタプルを返します\n    {3}    \n</target>
@@ -842,6 +837,11 @@
         <target state="translated">値 '{0}' が ' InlineIfLambda ' とマークされましたが、ラムダ値があると判断されませんでした。この警告は、情報提供のみを目的としています。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">すべてのコンパイル ファイルの推定されたインターフェイスを関連する署名ファイルに印刷します</target>
@@ -888,8 +888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersionOutOfSupport">
-        <source>Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</source>
-        <target state="new">Language version '{0}' is out of support. The last .NET SDK supporting it is available at https://dotnet.microsoft.com/en-us/download/dotnet/{1}</target>
+        <source>Language version '{0}' is out of support. The last compatible SDK feature band is .NET SDK 10.0.1xx. Download it at https://dotnet.microsoft.com/en-us/download/dotnet/{1}.</source>
+        <target state="new">Language version '{0}' is out of support. The last compatible SDK feature band is .NET SDK 10.0.1xx. Download it at https://dotnet.microsoft.com/en-us/download/dotnet/{1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">

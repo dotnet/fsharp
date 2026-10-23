@@ -52,14 +52,15 @@ function Get-ValidatedPr {
 }
 
 Write-Host "Requested snapshot: PR #$prNumber reviewed=$headSha"
-$checkoutSha = Invoke-Git rev-parse HEAD
-Write-Host "Initial checkout: $checkoutSha"
-if ($checkoutSha -ne $headSha) {
-    throw 'Expected the reviewed PR checkout at the captured head SHA.'
-}
-
 $repository = 'https://github.com/dotnet/fsharp.git'
 $pr = Get-ValidatedPr
+Invoke-Git fetch --no-tags --depth=1 $repository $headSha | Out-Null
+$checkoutSha = Invoke-Git rev-parse FETCH_HEAD
+Write-Host "Fetched reviewed commit: $checkoutSha"
+if ($checkoutSha -ne $headSha) {
+    throw 'The fetched commit does not match the reviewed PR SHA.'
+}
+
 $currentHead = Get-PrHeadSha
 $testedSha = $headSha
 $mode = 'commit'
