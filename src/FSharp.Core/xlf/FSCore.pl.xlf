@@ -412,6 +412,11 @@
         <target state="translated">Wartością kroku w zakresie nie może być zero.</target>
         <note />
       </trans-unit>
+      <trans-unit id="structTupleNoProperties">
+        <source>Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</source>
+        <target state="new">Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
         <target state="translated">Właściwość System.Threading.SynchronizationContext.Current w wątku wywołującym ma wartość zerową.</target>
