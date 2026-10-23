@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Microsoft.VisualStudio.Extensibility.Testing;
@@ -117,6 +118,7 @@ internal partial class ShellInProcess
 
     private static string BreakpointSummary(EnvDTE.Debugger dbg)
     {
+        ThreadHelper.ThrowIfNotOnUIThread();
         var items = new List<string>();
         foreach (EnvDTE.Breakpoint bp in dbg.Breakpoints)
         {
