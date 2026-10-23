@@ -1103,7 +1103,7 @@ let private CompilePatternBasic
     let localActions = ResizeArray<Val list * Expr ref * Expr>()
     clauses |> List.iter (fun clause ->
         let (TTarget(vs, body, flags)) = clause.Target
-        if not preserveMatchShape && joinPromotion = JoinPromotion.Enabled then
+        if not preserveMatchShape && joinPromotion.IsEnabled then
             let cell = ref body
             localActions.Add(vs, cell, body)
             matchBuilder.AddTarget(TTarget(vs, Expr.Link cell, flags)) |> ignore
