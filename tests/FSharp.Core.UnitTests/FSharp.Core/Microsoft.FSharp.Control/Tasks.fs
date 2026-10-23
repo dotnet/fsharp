@@ -888,7 +888,7 @@ type Basics() =
                     require disposedInner "did not dispose inner after task completion"
                     require (not disposed) "disposed way early"
                     do! Task.Delay(50)
-                    printfn "resumed after delay"
+                    printn "resumed after delay"
                     require (not disposed) "disposed kinda early"
             }
         t.Wait()
@@ -949,9 +949,9 @@ type Basics() =
                 for x in wrapList do
                     printfn "x = %A, index = %d" x index
                     do! Task.Yield()
-                    printfn "back from yield"
+                    printn "back from yield"
                     do! Task.Yield()
-                    printfn "back from yield"
+                    printn "back from yield"
                     match index with
                     | 0 -> require (x = "a") "wrong first value"
                     | 1 -> require (x = "b") "wrong second value"

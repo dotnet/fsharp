@@ -597,7 +597,7 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
         // Attribute types from the same recursive group resolve only once the group is established.
@@ -1268,20 +1268,17 @@ module MutRecBindingChecking =
                 let prelimRecValues = [ for x in defnAs do match x with Phase2AMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
 
                 let tyconOpt =
-                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-                        tyconOpt
-                        |> Option.map (fun tycon ->
-                            tryAddExtensionAttributeIfNotAlreadyPresentForType
-                                g
-                                (fun tryFindExtensionAttribute ->
-                                    tycon.MembersOfFSharpTyconSorted
-                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
-                                )
-                                envForTycon.eModuleOrNamespaceTypeAccumulator
-                                tycon
-                        )
-                    else
-                        tyconOpt
+                    tyconOpt
+                    |> Option.map (fun tycon ->
+                        tryAddExtensionAttributeIfNotAlreadyPresentForType
+                            g
+                            (fun tryFindExtensionAttribute ->
+                                tycon.MembersOfFSharpTyconSorted
+                                |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                            )
+                            envForTycon.eModuleOrNamespaceTypeAccumulator
+                            tycon
+                    )
                 let defnAs = MutRecShape.Tycon(TyconBindingsPhase2A(tyconOpt, declKind, prelimRecValues, tcref, copyOfTyconTypars, thisTy, defnAs))
                 defnAs, (tpenv, recBindIdx, uncheckedBindsRev))
 
@@ -1503,22 +1500,17 @@ module MutRecBindingChecking =
                             Phase2BMember rbind.RecBindingInfo.Index, innerState)
 
                 let tyconOpt =
-                    if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
-                        tyconOpt
-                    else
-                        // We need to redo this check, which already happened in TcMutRecBindings_Phase2A_CreateRecursiveValuesAndCheckArgumentPatterns
-                        // Because the environment is being reset in the case of recursive modules.
-                        tyconOpt
-                        |> Option.map (fun tycon ->
-                            tryAddExtensionAttributeIfNotAlreadyPresentForType
-                                g
-                                (fun tryFindExtensionAttribute ->
-                                    tycon.MembersOfFSharpTyconSorted
-                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
-                                )
-                                envForTycon.eModuleOrNamespaceTypeAccumulator
-                                tycon
-                        )
+                    tyconOpt
+                    |> Option.map (fun tycon ->
+                        tryAddExtensionAttributeIfNotAlreadyPresentForType
+                            g
+                            (fun tryFindExtensionAttribute ->
+                                tycon.MembersOfFSharpTyconSorted
+                                |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                            )
+                            envForTycon.eModuleOrNamespaceTypeAccumulator
+                            tycon
+                    )
 
                 let defnBs = MutRecShape.Tycon (TyconBindingsPhase2B(tyconOpt, tcref, defnBs))
                 let outerState = (tpenv, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable, envNonRec)
@@ -2442,7 +2434,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations =
 
-    let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
+    let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(attributes = Attributes synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
         CheckNamespaceModuleOrTypeName g id
@@ -2456,7 +2448,7 @@ module TcExceptionDeclarations =
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewExn cpath id vis repr attrs xmlDoc
 
-    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(caseName = SynUnionCase(caseType = args); longId = reprIdOpt; range = m)) =
         let g = cenv.g
         let args =
             match args with
@@ -2958,7 +2950,7 @@ module EstablishTypeDefinitionCores =
 
         // 'Check' the attributes. We return the results to avoid having to re-check them in all other phases.
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
+        let attrs, getFinalAttrs, hasDeferredAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let entityFlags = computeEntityWellKnownFlags g attrs
         let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
         let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
@@ -3084,6 +3076,9 @@ module EstablishTypeDefinitionCores =
 
         // OK, now fill in the (partially computed) type representation
         tycon.entity_tycon_repr <- repr
+        tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
+        if hasDeferredAttrs && tycon.IsUnionTycon then
+            cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Add tycon.Stamp
         attrs, getFinalAttrs
 
 #if !NO_TYPEPROVIDERS
@@ -3395,9 +3390,6 @@ module EstablishTypeDefinitionCores =
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false
 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
-
-                if firstPass then
-                    tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
 
                 let implementedTys, inheritedTys =
                     match synTyconRepr with
@@ -4527,6 +4519,8 @@ module EstablishTypeDefinitionCores =
                             let (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=TyparDecls synTypars), _, _, _, _, _)) = typeDefCore
                             let fixupFinalAttrs () =
                                 tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                                if cenv.css.UnionsWithDeferredAttributes.Contains tycon.Stamp then
+                                    cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Remove tycon.Stamp
                                 fixupTyparAttrs cenv envForDecls synTypars tycon.Typars
                                 for fixup in fixups do fixup()
                             info, Some tycon, fixupFinalAttrs
@@ -5037,52 +5031,33 @@ module TcDeclarations =
         let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs isMutRec
 
         let withBindings =
-            if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-                // If any of the types has a member with the System.Runtime.CompilerServices.ExtensionAttribute,
-                // or a recursive module has a binding with the System.Runtime.CompilerServices.ExtensionAttribute,
-                // that type/recursive module should also received the ExtensionAttribute if it is not yet present.
-                // Example:
-                // open System.Runtime.CompilerServices
-                //
-                // type Int32Extensions =
-                //      [<Extension>]
-                //      static member PlusOne (a:int) : int = a + 1
-                //
-                // or
-                //
-                // module rec Foo
-                //
-                // [<System.Runtime.CompilerServices.Extension>]
-                // let PlusOne (a:int) = a + 1
-                withBindings
-                |> List.map (function
-                    | MutRecShape.Tycon (Some tycon, bindings) ->
-                        let tycon =
-                            tryAddExtensionAttributeIfNotAlreadyPresentForType
-                                g
-                                (fun tryFindExtensionAttribute ->
-                                    tycon.MembersOfFSharpTyconSorted
-                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
-                                )
-                                envFinal.eModuleOrNamespaceTypeAccumulator
-                                tycon
+            withBindings
+            |> List.map (function
+                | MutRecShape.Tycon (Some tycon, bindings) ->
+                    let tycon =
+                        tryAddExtensionAttributeIfNotAlreadyPresentForType
+                            g
+                            (fun tryFindExtensionAttribute ->
+                                tycon.MembersOfFSharpTyconSorted
+                                |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                            )
+                            envFinal.eModuleOrNamespaceTypeAccumulator
+                            tycon
 
-                        MutRecShape.Tycon (Some tycon, bindings)
-                    | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
-                        let entity =
-                            tryAddExtensionAttributeIfNotAlreadyPresentForModule
-                                g
-                                (fun tryFindExtensionAttribute ->
-                                    moduleOrNamespaceType.Value.AllValsAndMembers
-                                    |> Seq.filter(fun v -> v.IsModuleBinding)
-                                    |> Seq.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
-                                )
-                                entity
+                    MutRecShape.Tycon (Some tycon, bindings)
+                | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
+                    let entity =
+                        tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                            g
+                            (fun tryFindExtensionAttribute ->
+                                moduleOrNamespaceType.Value.AllValsAndMembers
+                                |> Seq.filter(fun v -> v.IsModuleBinding)
+                                |> Seq.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
+                            )
+                            entity
 
-                        MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes)
-                    | shape -> shape)
-                else
-                    withBindings
+                    MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes)
+                | shape -> shape)
 
         // Generate the hash/compare/equality bindings for all tycons.
         //
@@ -5196,25 +5171,20 @@ module TcDeclarations =
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon tcref (declKind = ExtrinsicExtensionBinding)
 
                 let vals, env = TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members
-                if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
-                    vals, env
-                else
-                    // Check if any of the vals has the `[<Extension>]` attribute
-                    // If this is the case, add it to the type in the env.
-                    let extensionAttributeOnVals =
-                        vals
-                        |> List.tryPick (fun v -> tryFindExtensionAttribute g v.Attribs)
+                let extensionAttributeOnVals =
+                    vals
+                    |> List.tryPick (fun v -> tryFindExtensionAttribute g v.Attribs)
 
-                    let typeEntity =
-                        envForTycon.eModuleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(tcref.LogicalName)
+                let typeEntity =
+                    envForTycon.eModuleOrNamespaceTypeAccumulator.Value.AllEntitiesByLogicalMangledName.TryFind(tcref.LogicalName)
 
-                    match extensionAttributeOnVals, typeEntity with
-                    | Some extensionAttribute, Some typeEntity ->
-                        if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
-                            typeEntity.entity_attribs <- typeEntity.EntityAttribs.Add(extensionAttribute, WellKnownEntityAttributes.ExtensionAttribute)
-                    | _ -> ()
+                match extensionAttributeOnVals, typeEntity with
+                | Some extensionAttribute, Some typeEntity ->
+                    if Option.isNone (tryFindExtensionAttribute g typeEntity.Attribs) then
+                        typeEntity.entity_attribs <- typeEntity.EntityAttribs.Add(extensionAttribute, WellKnownEntityAttributes.ExtensionAttribute)
+                | _ -> ()
 
-                    vals, env
+                vals, env
 
             )
             // Do this for each 'val' declaration in a module
@@ -5528,7 +5498,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _, xmlDoc, vis, m)) = exnRepr
+                      let (SynExceptionDefnRepr(attributes = synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) = exnRepr
                       let synTy = Some(SynType.LongIdent(SynLongIdent([id], [], [])))
                       let compInfo = SynComponentInfo(synAttrs, None, [], synTy, xmlDoc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m, { LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic; WithKeyword = withKeyword; EqualsRange = None })) ]
@@ -5688,7 +5658,7 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) ->
                   let members = desugarGetSetMembers members
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _repr, xmlDoc, vis, m)) = repr
+                  let (SynExceptionDefnRepr(attributes = synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) = repr
                   let synTy = Some(SynType.LongIdent(SynLongIdent([id], [], [])))
                   let compInfo = SynComponentInfo(synAttrs, None, [], synTy, xmlDoc, false, vis, id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
@@ -5848,28 +5818,18 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
 
               let moduleEntity =
-                if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
-                    // If any of the let bindings inside the module has the System.Runtime.CompilerServices.ExtensionAttribute,
-                    // that module should also received the ExtensionAttribute if it is not yet present.
-                    // Example:
-                    // module Foo
-                    //
-                    //[<System.Runtime.CompilerServices.Extension>]
-                    //let PlusOne (a:int) = a + 1
-                    tryAddExtensionAttributeIfNotAlreadyPresentForModule
-                        g
-                        (fun tryFindExtensionAttribute ->
-                            match moduleContents with
-                            | ModuleOrNamespaceContents.TMDefs(defs) ->
-                                defs
-                                |> Seq.tryPick (function
-                                    | ModuleOrNamespaceContents.TMDefLet (Binding.TBind(var = v),_) ->
-                                        tryFindExtensionAttribute v.Attribs
-                                    | _ -> None)
-                            | _ -> None
-                        )
-                        moduleEntity
-                else
+                tryAddExtensionAttributeIfNotAlreadyPresentForModule
+                    g
+                    (fun tryFindExtensionAttribute ->
+                        match moduleContents with
+                        | ModuleOrNamespaceContents.TMDefs(defs) ->
+                            defs
+                            |> Seq.tryPick (function
+                                | ModuleOrNamespaceContents.TMDefLet (Binding.TBind(var = v),_) ->
+                                    tryFindExtensionAttribute v.Attribs
+                                | _ -> None)
+                        | _ -> None
+                    )
                     moduleEntity
 
               let moduleDef = TMDefRec(false, [], [], [ModuleOrNamespaceBinding.Module(moduleEntity, moduleContents)], m)
@@ -6092,8 +6052,11 @@ let emptyTcEnv g =
       eCtorInfo = None
       eCallerMemberName = None
       eLambdaArgInfos = []
+      eIsIndexerSetter = false
       eIsControlFlow = false
+      eInNameOf = false
       eInObjectExpr = false
+      eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
       eUseBoundValStamps = Set.empty }
 
@@ -6423,11 +6386,25 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
 
     let sigFileType = moduleTyAcc.Value
 
+    do
+        for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+            try
+                check()
+            with RecoverableException exn -> errorRecovery exn m
+
     if not (checkForErrors()) then
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
         with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
+
+    // Run any additional checks registered to be run at the end of inference
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+        for check in cenv.css.GetPostInferenceChecksFinal() do
+            try
+                check()
+            with RecoverableException exn ->
+                errorRecovery exn m)
 
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
 

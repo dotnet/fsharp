@@ -552,7 +552,7 @@ type AsyncModule() =
                 // shows full stack trace from test thread down
                 // Equivalent code under RunSynchronously would be capturing a partial trace from the threadpool thread here,
                 //  followed by rethrowing it as a nested exception at the wait site (via AsyncResult.Commit())
-                printfn $"STACKTRACE ===\n{e.StackTrace}\n===")
+                printn $"STACKTRACE ===\n{e.StackTrace}\n===")
         Assert.Equal(callerThreadId, exceptionOriginThreadId)
 
     [<Fact>]
@@ -600,7 +600,7 @@ type AsyncModule() =
             // Wait for more than one job to start
             while started < 2 do
                 do! Task.Yield()
-            printfn $"started jobs: {started}"
+            printn $"started jobs: {started}"
             failOnlyOne.Release() |> ignore
             do! test
             Assert.Equal(cancelled, started - 1)
@@ -705,8 +705,8 @@ type AsyncModule() =
                 try 
                     Async.StartWithContinuations( 
                         Async.Sleep(1000), 
-                        (fun _ -> printfn "ok"; incr okCount), 
-                        (fun _ -> printfn "error"; incr errCount), 
+                        (fun _ -> printn "ok"; incr okCount), 
+                        (fun _ -> printn "error"; incr errCount), 
                         (fun _ -> printfn "cancel"; failwith "BOOM!"), 
                         cancellationToken = cts.Token 
                     ) 
@@ -715,7 +715,7 @@ type AsyncModule() =
             System.Threading.Thread.Sleep 50 
             try cts.Cancel() with _ -> () 
             System.Threading.Thread.Sleep 1500 
-            printfn "====" 
+            printn "====" 
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)

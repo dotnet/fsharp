@@ -22,12 +22,25 @@
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
 
+  <!-- The JSON-RPC server needs StreamJsonRpc, which the .NET Framework fsi does not carry and a
+       source-only build cannot provide, so the mode belongs to the .NET build alone. -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net472' and '$(DotNetBuildSourceOnly)' != 'true'">
+    <FsiJsonRpcServer>true</FsiJsonRpcServer>
+    <DefineConstants>$(DefineConstants);FSI_JSONRPC_SERVER</DefineConstants>
+  </PropertyGroup>
+
   <!--  The fsi application does not provide a referencable public interface  -->
   <PropertyGroup>
     <NoOptimizationData>true</NoOptimizationData>
     <NoInterfaceData>true</NoInterfaceData>
     <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(FsiJsonRpcServer)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)interactiveProtocol.fs" />
+    <Compile Include="$(MSBuildThisFileDirectory)fsiserver.fs" />
+    <PackageReference Include="StreamJsonRpc" />
+  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedText Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyResolver.txt">

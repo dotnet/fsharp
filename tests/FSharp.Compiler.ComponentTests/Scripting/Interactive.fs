@@ -37,6 +37,15 @@ module ``Interactive tests`` =
             (Warning 2304, Line 1, Col 3, Line 1, Col 13, "Functions with [<EntryPoint>] are not invoked in FSI. 'myFunc' was not invoked. Execute 'myFunc <args>' in order to invoke 'myFunc' with the appropriate string array of command line arguments.")
         ]
 
+    [<Fact>]
+    let ``RunScript preserves quit directives inside multiline strings`` () =
+        let _, output, _ =
+            global.FSharp.Test.CompilerAssert.RunScriptWithOptionsAndReturnResult
+                [||]
+                "let text = \"\"\"\n#quit\n\"\"\"\nprintf \"%s\" text"
+
+        Assert.Contains("#quit", output)
+
     [<Theory>]
     [<InlineData(true, true)>]
     [<InlineData(false, false)>]
@@ -358,6 +367,40 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
                 | Result.Error ex -> raise ex
 
             Assert.Equal(1, flags.Length)
+
+    module PortablePdb =
+
+        let private getPrivateField (instance: obj) fieldName ownerName =
+            let flags = System.Reflection.BindingFlags.Instance ||| System.Reflection.BindingFlags.NonPublic
+            let field = instance.GetType().GetField(fieldName, flags)
+            Assert.True(not (isNull field), $"Could not find private field '{fieldName}' on {ownerName}")
+            field.GetValue(instance)
+
+        let private assertPdbArtifact debugOption expectPdb =
+            let args: string array = [| "--multiemit+"; debugOption |]
+            use session = new FSharpScript(additionalArgs = args)
+
+            let dynamicCompiler = getPrivateField session.Fsi "fsiDynamicCompiler" "FsiEvaluationSession"
+            let symbolsPath = getPrivateField dynamicCompiler "scriptingSymbolsPath" "FsiDynamicCompiler" :?> string
+            let _, errors = session.Eval("let submittedValue = 1")
+
+            Assert.Empty(errors)
+            Assert.True(System.IO.Directory.Exists(symbolsPath), $"FSI symbol directory does not exist: {symbolsPath}")
+
+            let pdbFiles = System.IO.Directory.GetFiles(symbolsPath, "*.pdb")
+
+            if expectPdb then
+                Assert.NotEmpty(pdbFiles)
+            else
+                Assert.Empty(pdbFiles)
+
+        [<Fact>]
+        let ``multi-emit PDB artifact is absent with --debug-`` () =
+            assertPdbArtifact "--debug-" false
+
+        [<Fact>]
+        let ``multi-emit PDB artifact is present with --debug+`` () =
+            assertPdbArtifact "--debug+" true
 
     // https://github.com/dotnet/fsharp/issues/14454
     [<FSharp.Test.FactForNETCOREAPP>]

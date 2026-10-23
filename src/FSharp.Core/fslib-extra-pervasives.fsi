@@ -358,7 +358,7 @@ module ExtraTopLevelOperators =
     /// <code lang="fsharp">
     /// let f (Lazy v) = v + v
     ///
-    /// let v = lazy (printf "eval!"; 5+5)
+    /// let v = lazy (print "eval!"; 5+5)
     ///
     /// f v
     /// f v

@@ -124,9 +124,9 @@ match lines |> Array.tryFindIndex headerMatches with
 
     let anchorIdx, side = candidates.[Random().Next(candidates.Length)]
     printfn "Insert your new bullet %s this line in %s:" (side.ToUpperInvariant()) rel
-    printfn ""
+    printn ""
     printfn "  line %d: %s" (anchorIdx + 1) lines.[anchorIdx]
-    printfn ""
+    printn ""
 
     if side = "above" then
         printfn "Use that exact line as the edit anchor: old_str = the line; new_str = <your bullet>\\n<the line>."

@@ -35,9 +35,12 @@ SigFile
                              PreXmlDoc ((6,31), FSharp.Compiler.Xml.XmlDocCollector),
                              None, (6,31--6,43), { LeadingKeyword = None
                                                    MutableKeyword = None })],
-                       PreXmlDocEmpty, None, (6,10--6,43), { BarRange = None }),
-                    None, PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (5,0--6,43)), None, [], (5,0--6,43)), (5,0--6,43))],
+                       PreXmlDocEmpty, None, (6,10--6,43),
+                       { BarRange = None
+                         OfKeyword = Some (6,22--6,24) }), None,
+                    PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    (5,0--6,43), { ExceptionKeyword = (6,0--6,9) }), None, [],
+                 (5,0--6,43)), (5,0--6,43))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [],
           Some (Internal (2,7--2,15)), (2,0--6,43),
           { LeadingKeyword = Module (2,0--2,6) })],

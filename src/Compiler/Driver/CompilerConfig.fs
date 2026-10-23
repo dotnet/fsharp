@@ -1079,11 +1079,7 @@ type TcConfigBuilder =
         // #r "Assembly"
         | NonNull path, Null -> tcConfigB.AddReferencedAssemblyByPath(m, path)
 
-        | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
+        | _, NonNull dependencyManager -> tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
 
         | Null, Null when directive = Directive.Include -> errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))
 
@@ -1098,10 +1094,22 @@ type TcConfigBuilder =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
 
     static member SplitCommandLineResourceInfo(ri: string) =
-        let p = ri.IndexOf ','
+        let quoteEnd =
+            if ri.StartsWithOrdinal("\"") then
+                ri.IndexOf('"', 1)
+            else
+                -1
+
+        let p = ri.IndexOf(',', quoteEnd + 1)
+        let file = if p <> -1 then ri.Substring(0, p) else ri
+
+        let file =
+            if quoteEnd > 0 && quoteEnd = file.Length - 1 then
+                file.Substring(1, file.Length - 2)
+            else
+                file
 
         if p <> -1 then
-            let file = String.sub ri 0 p
             let rest = String.sub ri (p + 1) (String.length ri - p - 1)
             let p = rest.IndexOf ','
 
@@ -1118,7 +1126,7 @@ type TcConfigBuilder =
             else
                 file, rest, ILResourceAccess.Public
         else
-            ri, FileSystemUtils.fileNameOfPath ri, ILResourceAccess.Public
+            file, FileSystemUtils.fileNameOfPath file, ILResourceAccess.Public
 
 //----------------------------------------------------------------------------
 // TcConfig
