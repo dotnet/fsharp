@@ -311,6 +311,18 @@ type MeasuredU<[<Measure>] 'u> = MeasuredU of float<'u>
 type TaggedRecord<[<Measure>] 'u> = R<int>
 [<MeasureAnnotatedAbbreviation>]
 type TaggedStruct<[<Measure>] 'u> = S<int>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedFloat<[<Measure>] 'u> = float<'u>
+[<MeasureAnnotatedAbbreviation>]
+type NestedFloat<[<Measure>] 'u> = TaggedFloat<'u>
+[<MeasureAnnotatedAbbreviation>]
+type DeepFloat<[<Measure>] 'u> = NestedFloat<'u>
+type MeasuredAlias<[<Measure>] 'u> = DeepFloat<'u>
+type NestedR<[<Measure>] 'u> = { Value: MeasuredAlias<'u> }
+let idTagged (x: TaggedFloat<'u>) = x
+let nestedMeasured<[<Measure>] 'u> (f: TaggedFloat<'u> -> int) (x: TaggedFloat<'u>) = f (idTagged x)
+let deepMeasured<[<Measure>] 'u> (f: MeasuredAlias<'u> -> int) (x: MeasuredAlias<'u>) = f (id x)
+let nestedMeasuredField<[<Measure>] 'u> (f: MeasuredAlias<'u> -> int) (r: NestedR<'u>) = f r.Value
 let identityMeasure (x: float<'u>) = x
 let measured (f: float<'u> -> float<'u>) x = f (identityMeasure x)
 let measuredField (f: float<'u> -> float<'u>) (r: MeasuredR<'u>) = f r.Value
@@ -372,6 +384,11 @@ if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
    || measuredField id { Value = 3.0<kg> } <> 3.0<kg> || measuredField id { Value = 4.0 } <> 4.0
    || measuredUnionField id (MeasuredU 5.0<kg>) <> 5.0<kg> || measuredUnionField id (MeasuredU 6.0) <> 6.0
    || taggedRecord (fun _ -> 7) <> 7 || taggedStruct (fun _ -> 8) <> 8
+   || nestedMeasured<kg> (fun _ -> 1) Unchecked.defaultof<_> <> 1
+   || nestedMeasured<1> int 2.0 <> 2
+   || deepMeasured<kg> (fun _ -> 3) Unchecked.defaultof<_> <> 3 || deepMeasured<1> int 4.0 <> 4
+   || nestedMeasuredField<kg> (fun _ -> 5) { Value = Unchecked.defaultof<_> } <> 5
+   || nestedMeasuredField<1> int { Value = 6.0 } <> 6
    || partialOption 8 <> 15 || partialWrapped 9 <> 17
    || partial 4 <> 7 then
     failwith "higher-order arguments"

@@ -948,6 +948,17 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+let rec tryNonSpanLikeRepresentationHead g m ty =
+    // Only a substitution-independent negative proof may bypass dimensionless-measure normalization.
+    match stripTyparEqns ty with
+    | TType_app(tcref, _, _) when not (isSpanLikeTyconRef g m tcref) ->
+        match tcref.TypeAbbrev with
+        | Some bodyTy -> tryNonSpanLikeRepresentationHead g m bodyTy
+        | None when tcref.IsMeasureableReprTycon ->
+            tryNonSpanLikeRepresentationHead g m (reduceTyconRefMeasureableOrProvided g tcref [])
+        | None -> ValueSome ty
+    | _ -> ValueNone
+
 let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty =
     // stripTyEqns would instantiate entire abbreviation bodies, even when only the result head is needed.
     match stripTyparEqns ty with
@@ -974,11 +985,8 @@ let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty 
             let result = instantiatedResultHead g m tcref.Typars tinst args bodyTy
             instantiatedResultHead g m typars tyargs result.Args result.Type
         | None when tcref.IsMeasureableReprTycon ->
-            let reprTy = reduceTyconRefMeasureableOrProvided g tcref [] |> stripTyEqns g
-
-            match tryTcrefOfAppTy g reprTy with
-            | ValueSome reprTcref when not reprTcref.IsMeasureableReprTycon && not (isSpanLikeTyconRef g m reprTcref) ->
-                struct {| Type = reprTy; Args = args |}
+            match tryNonSpanLikeRepresentationHead g m ty with
+            | ValueSome headTy -> struct {| Type = headTy; Args = args |}
             | _ ->
                 let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
                 let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
