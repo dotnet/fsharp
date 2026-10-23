@@ -4406,8 +4406,8 @@ let SolveTypeAsError denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     SolveTypeEqualsTypeKeepAbbrevs csenv 0 m NoTrace ty ty2 |> ignore
 
-let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
-    tp.Constraints |> List.iter (fun tpc ->
+let private ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
+    tp.Constraints |> IterateD (fun tpc ->
         match tpc with
         | TyparConstraint.DefaultsTo(priority2, ty2, m) when priority2 = priority ->
             let ty1 = mkTyparTy tp
@@ -4419,8 +4419,26 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
                     (fun res ->
                         SolveTypeAsError denv css m ty1
                         ErrorD(ErrorFromApplyingDefault(css.g, denv, tp, ty2, res, m)))
-                |> RaiseOperationResult
-        | _ -> ())
+            else
+                CompleteD
+        | _ -> CompleteD)
+
+/// Apply the 'default' constraints of the type variables, highest priority first. A default's priority is its
+/// position from the end of its 'when' clause (see TcTyparConstraints), so FSharp.Core's operators try e.g.
+/// 'default ^T2: ^T3' before 'default ^T1: int'. Defaulting one type variable to another propagates the defaults
+/// to the other.
+let ApplyTyparDefaultsByPriority denv css (tps: Typar list) =
+    [ 10..-1..0 ] |> IterateD (fun priority -> tps |> IterateD (ApplyTyparDefaultAtPriority denv css priority))
+
+/// Choose a solution for a type parameter subject to its constraints and apply it by using a constraint.
+let SolveTyparWithChosenSolution css denv tp =
+    let g = css.g
+    let amap = css.amap
+    let max, m = ChooseTyparSolutionAndRange g amap tp
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    PostponeOnFailedMemberConstraintResolution csenv NoTrace
+        (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
+        (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
 
 let CreateCodegenState tcVal g amap =
     ConstraintSolverState.New(g, amap, InfoReader(g, amap), tcVal)
@@ -4438,6 +4456,70 @@ let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintIn
                 (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
         else
             SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+
+/// Overload resolution freshens the chosen method's type parameters, and a codegen solve leaves those the trait
+/// does not determine to whatever processes the code generated from the solution: inlining the method and solving
+/// its nested traits. Once that is done, any still unsolved, e.g. 'X of 'static member M<'X>(x: int) : int', are
+/// finished the way ApplyDefaults and SolveInternalUnknowns finish a file: their member constraints are solved,
+/// then ApplyTyparDefaultsByPriority and SolveTyparWithChosenSolution apply. A trait over generic types belongs to
+/// an inline template solved again at each call site, so its solution stays open.
+let FinishCodegenTraitSolution tcVal g amap m (traitInfo: TraitConstraintInfo) =
+    let openTypars minst =
+        (freeInTypes CollectTypars minst).FreeTypars
+        |> Zset.elements
+        |> List.filter (fun tp -> tp.Rigidity <> TyparRigidity.Rigid)
+
+    let isGround () =
+        (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes @ Option.toList traitInfo.CompiledReturnType))
+            .FreeTypars
+            .IsEmpty
+
+    // Nearly every solution has nothing open, so check that before creating a solver state.
+    match traitInfo.Solution with
+    | Some(FSMethSln(minst = minst))
+    | Some(ILMethSln(minst = minst)) when not (List.isEmpty (openTypars minst)) && isGround () ->
+        let css = CreateCodegenState tcVal g amap
+        let denv = DisplayEnv.Empty g
+        let unsolved () = openTypars minst
+
+        trackErrors {
+            // Unlike CanonicalizePartialInferenceProblem, which walks the constraints recorded in a solver state,
+            // canonicalize from the type parameters themselves: FreshenMethInfo copied their constraints onto them.
+            do!
+                IgnoreFailedMemberConstraintResolution
+                    (fun () ->
+                        let csenv =
+                            { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with
+                                ErrorOnFailedMemberConstraintResolution = true
+                            }
+
+                        RepeatWhileD 0 (fun ndeep ->
+                            unsolved ()
+                            |> AtLeastOneD (fun tp ->
+                                tp.Constraints
+                                |> AtLeastOneD (function
+                                    | TyparConstraint.MayResolveMember(traitInfo2, m2) when traitInfo2.Solution.IsNone ->
+                                        SolveMemberConstraint csenv true PermitWeakResolution.Yes ndeep m2 NoTrace traitInfo2
+                                    | _ -> ResultD false))))
+                    ErrorD
+
+            do! ApplyTyparDefaultsByPriority denv css (unsolved ())
+
+            do!
+                unsolved ()
+                |> IterateD (fun tp -> if tp.IsSolved then CompleteD else SolveTyparWithChosenSolution css denv tp)
+
+            // Nothing later resolves what solving postponed, so run those checks now, as the end of checking does.
+            do!
+                [ yield! css.GetPostInferenceChecksPreDefaults(); yield! css.GetPostInferenceChecksFinal() ]
+                |> IterateD (fun check ->
+                    try
+                        check ()
+                        CompleteD
+                    with RecoverableException err ->
+                        ErrorD err)
+        }
+    | _ -> CompleteD
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
@@ -4478,6 +4560,7 @@ let CodegenWitnessesForTyparInstWith tcVal g amap m typars tyargs f =
                         traitInfo.Solution <- TryGetSelectedTraitSolution g (instTrait actualInst traitInfo)
                     | _ -> ()
         let! _res = SolveTyparsEqualTypesAux csenv 0 m NoTrace tinst tyargs
+        do! traitInfos |> IterateD (FinishCodegenTraitSolution tcVal g amap m)
         return [ for traitInfo in traitInfos -> f traitInfo (GenWitnessExprLambda amap g m traitInfo) ]
     }
 
@@ -4489,6 +4572,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo =
     let traitInfo = GetTraitConstraintForCodegen g traitInfo
     trackErrors {
         let! _res = SolveMemberConstraintForCodegen tcVal g amap m traitInfo
+        do! FinishCodegenTraitSolution tcVal g amap m traitInfo
         return GenWitnessExprLambda amap g m traitInfo
     }
 
@@ -4496,14 +4580,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo =
 /// for an interior type variable.  This chooses a solution for a type parameter subject
 /// to its constraints and applies that solution by using a constraint.
 let ChooseTyparSolutionAndSolve css denv tp =
-    let g = css.g
-    let amap = css.amap
-    let max, m = ChooseTyparSolutionAndRange g amap tp
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv NoTrace
-        (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
-        (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
-    |> RaiseOperationResult
+    SolveTyparWithChosenSolution css denv tp |> RaiseOperationResult
 
 let CheckDeclaredTypars denv css m typars1 typars2 =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv

@@ -3479,7 +3479,11 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline.
     match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal g cenv.amap m traitInfoForResolution args with
 
-    | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
+    | OkResult (_, Some expr) ->
+        let res = OptimizeExpr cenv env expr
+        // Inlining the solution and solving its nested traits can determine its open type parameters, so finish after.
+        ConstraintSolver.FinishCodegenTraitSolution cenv.TcVal g cenv.amap m traitInfoForResolution |> RaiseOperationResult
+        res
 
     // Resolution fails when optimizing generic code, ignore the failure
     | _ ->
