@@ -3305,7 +3305,6 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
-                    let eenv = RemoveTemplateReplacement eenv
                     let (LoweredStateMachine(prefixBindings = prefixBindings)) = res
                     GenStructStateMachineAfterPrefix cenv cgbuf eenv prefixBindings res sequel
                     true
@@ -6607,7 +6606,7 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
 
 and GenStructStateMachineAfterPrefix cenv cgbuf eenv prefixBindings res sequel =
     match prefixBindings with
-    | [] -> GenStructStateMachine cenv cgbuf eenv res sequel
+    | [] -> GenStructStateMachine cenv cgbuf (RemoveTemplateReplacement eenv) res sequel
     | bind :: rest ->
         let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
         let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
