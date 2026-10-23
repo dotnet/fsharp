@@ -548,6 +548,9 @@ precede the authenticated search reservation; successful replay of the candidate
 bad decision and boundary reads must precede the first confirmation reservation.
 Missing, incomplete, failed or reordered Git traces block even when the final
 signed checkpoint and report are otherwise complete.
+Search and boundary admission require the authenticated pending reservation at
+its original generation and the pending execution claim at its execution
+generation. A later committed snapshot cannot replace either missing transition.
 A missing restart trace or a mutation outside the selected fixed slots,
 freshness anchor and controller dispatch blocks verification. The only mutable
 trial fault is `resultAck: true`, which simulates losing the fixed fake result
@@ -648,8 +651,10 @@ the second confirmed all six observations but stopped before final publication
 adoption. Neither is relabelled as this completed trial. Production stays disabled.
 The subsequent verifier-only trace repair was checked read-only against this
 retained native ledger: all 201 Git commands have successful matching results,
-and both selection sequences precede their authenticated reservations. Native
-product, containment and restart receipts are reused at the revision above,
+and both selection sequences precede their authenticated reservations.
+Reservation and execution-claim transitions are also required at their exact
+generations; removing either transition now blocks read-only verification.
+Native product, containment and restart receipts are reused at the revision above,
 not claimed as new execution; no worker allowance was reset or added.
 
 `trial.test.cjs` uses explicitly named **SYNTHETIC** product outcomes with real

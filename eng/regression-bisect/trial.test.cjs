@@ -611,7 +611,22 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         budget: complete.state.budget.consumed, physicalAcceptance: false });
     assert.deepEqual(await snapshot(), frozen, "verify cannot write a ledger, touch evidence or create ownership files");
     const originalApi = await fs.readFile(r.api);
+    const withoutCheckpoints = (entries, generations) => {
+        const descriptions = new Set(entries.filter(e => e.kind === "api" && e.method === "POST" &&
+            e.body.context === "regression-bisect/123/456" &&
+            generations.some(g => e.body.description.startsWith(`checkpoint:${g}:`))).map(e => e.body.description));
+        const digests = new Set([...descriptions].map(d => d.split(":")[2]));
+        return entries.filter(e => !(e.kind === "api" && (
+            e.method === "PATCH" && e.route === "issues/comments/456" && digests.has(contracts.digest(e.body.body)) ||
+            e.method === "POST" && e.body.context === "regression-bisect/123/456" && descriptions.has(e.body.description))));
+    };
     const gitTraceChanges = {
+        ...Object.fromEntries([3, 4].flatMap(index => ["generation", "executionGeneration"].map(field => [
+            `missing ${index === 3 ? "search" : "boundary"} ${field === "generation" ? "reservation" : "claim"} checkpoint`,
+            entries => withoutCheckpoints(entries, [complete.records[index][field]]),
+        ]))),
+        "missing reservation and claim checkpoints": entries => withoutCheckpoints(entries,
+            complete.records.slice(3, 5).flatMap(r => [r.generation, r.executionGeneration])),
         "missing Git trace": entries => entries.filter(e => !["git", "git-result"].includes(e.kind)),
         "missing bisect trace": entries => entries.filter(e => !e.args?.includes("bisect")),
         "missing Git commands": entries => entries.filter(e => e.kind !== "git"),

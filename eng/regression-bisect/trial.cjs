@@ -267,7 +267,7 @@ async function advance(t, supplied) {
 }
 
 function verifyGitTrace(entries, authenticatedCommits, source, records) {
-    const selections = new Map(), admitted = new Set();
+    const selections = new Map(), admitted = new Set(), claimed = new Set();
     const start = ["bisect", "start", "--no-checkout", source.main, source.good];
     const boundaries = [["rev-parse", "refs/bisect/bad"],
         ["for-each-ref", "--format=%(objectname)", "refs/bisect/good-*"]];
@@ -278,11 +278,23 @@ function verifyGitTrace(entries, authenticatedCommits, source, records) {
             for (const [record, expected] of [
                 [records[3], [start, ...boundaries, ["rev-parse", "BISECT_HEAD"]]],
                 [records[4], [start, ["bisect", "bad", source.candidate], ...boundaries]],
-            ]) if (!admitted.has(record.id) && committed.records.some(r => r.id === record.id)) {
-                requireValue(equal(committed.records.find(r => r.id === record.id).request, record.request) &&
-                    equal(selections.get(entry.pid) ?? [], expected),
-                "Git trace missing successful ordered selection before authenticated reservation");
-                admitted.add(record.id);
+            ]) {
+                if (!committed.records.some(r => r.id === record.id)) continue;
+                const { executionGeneration, collectionOwners, collectionGeneration, ...reserved } = {
+                    ...record, status: "reserved", observationDigest: null,
+                };
+                if (!admitted.has(record.id)) {
+                    requireValue(committed.generation === record.generation && equal(committed.pending, reserved) &&
+                        equal(selections.get(entry.pid) ?? [], expected),
+                    "Git trace missing successful ordered selection before authenticated reservation");
+                    admitted.add(record.id);
+                }
+                if (!claimed.has(record.id) && committed.generation >= executionGeneration) {
+                    requireValue(committed.generation === executionGeneration &&
+                        equal(committed.pending, { ...reserved, executionGeneration }),
+                    "Git trace missing authenticated pending execution claim");
+                    claimed.add(record.id);
+                }
             }
         }
         if (!["git", "git-result"].includes(entry.kind)) continue;
@@ -315,7 +327,8 @@ function verifyGitTrace(entries, authenticatedCommits, source, records) {
             pending = null;
         }
     }
-    requireValue(!pending && admitted.size === 2, "Git trace incomplete: successful search and boundary selection required");
+    requireValue(!pending && admitted.size === 2 && claimed.size === 2,
+        "Git trace incomplete: successful search and boundary selection with reservation and claim required");
 }
 
 async function verify(t) {
