@@ -15,6 +15,8 @@ let add (s: Span<int>) x = s.Length + x
 let read (s: ReadOnlySpan<int>) x = s.Length + x
 let small (s: Small) x = s.Value + x
 let tupled (s: Span<int>, x) y = s.Length + x + y
+let tupledGroups (s: Span<int>, x) (t: ReadOnlySpan<int>, y) = s.Length + x + t.Length + y
+let ordinaryTupled (a, b) (c, d, e) = a + b + c + d + e
 let later x (s: Span<int>) y = x + s.Length + y
 let returning (s: Span<int>, x: int) = s.Slice(x)
 let synchronous (span: Span<int>) = span[0] + span[1] + span[2]
@@ -28,6 +30,11 @@ let run () =
         failwith "byref-like types"
     if tupled (Span<int>([| 1; 2; 3 |]), 1) 2 <> 6 || later 1 s 2 <> 6 then
         failwith "argument groups"
+    if
+        tupledGroups (Provider.make (), 1) (ReadOnlySpan<int>([| 1; 2; 3 |]), 2) <> 9
+        || ordinaryTupled (1, 2) (3, 4, 5) <> 15
+    then
+        failwith "tuple argument bundles"
     let mutable instance = Small(3)
     if Operations().Add(s, 4) <> 7 || instance.Add 4 <> 7 then
         failwith "member application"

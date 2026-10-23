@@ -1134,7 +1134,7 @@ and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
 
     if
         cenv.reportErrors
-        && ctxt.Disallow
+        && ctxt = PermitByRefExpr.No
         && diagnosticsLogger.ErrorCount = errorCount
         && isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg)
     then
