@@ -1127,6 +1127,21 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     else
         { scope = 1; flags = LimitFlags.None }
 
+and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
+    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let errorCount = diagnosticsLogger.ErrorCount
+    let limit = CheckExpr cenv env arg ctxt
+
+    if
+        cenv.reportErrors
+        && ctxt.Disallow
+        && diagnosticsLogger.ErrorCount = errorCount
+        && isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg)
+    then
+        errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))
+
+    limit
+
 /// Check call arguments, including the return argument.
 and CheckCall cenv env m returnTy args ctxts ctxt =
     let limitArgs = CheckExprs cenv env args ctxts
@@ -1143,7 +1158,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
             | [] -> PermitByRefExpr.No, []
             | ctxt :: ctxts -> ctxt, ctxts
 
-        let receiverLimit = CheckExpr cenv env receiverArg receiverContext
+        let receiverLimit = CheckCallArgument cenv env receiverArg receiverContext
         let limitArgs =
             let limitArgs = CheckExprs cenv env args ctxts
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
@@ -2018,7 +2033,7 @@ and CheckExprs cenv env exprs ctxts : Limit =
     let ctxts = Array.ofList ctxts
     let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
     exprs
-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
+    |> List.mapi (fun i exp -> CheckCallArgument cenv env exp (argArity i))
     |> CombineLimits
 
 and CheckExprsNoByRefLike cenv env exprs : Limit =

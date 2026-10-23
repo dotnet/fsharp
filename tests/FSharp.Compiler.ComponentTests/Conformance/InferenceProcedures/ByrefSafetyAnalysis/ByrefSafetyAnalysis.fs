@@ -7,6 +7,241 @@ open FSharp.Test
 open FSharp.Test.Compiler
 
 module ByrefSafetyAnalysis =
+    let private captureDiagnostic line startCol endCol =
+        (Error 3235,
+         Line line,
+         Col startCol,
+         Line line,
+         Col endCol,
+         "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+
+    let private issue20803Provider optimize =
+        FsFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Provider.fsi")
+        |> withAdditionalSourceFiles [ SourceFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Provider.fs") ]
+        |> withName "Issue20803Provider"
+        |> withOptimization optimize
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - constructed span partial application`` optimize =
+        FSharp
+            """module Consumer
+open System
+let add (s: Span<int>) (x: int) = s.Length + x
+let bad = add (Span<int> [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 4 16 39 ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - inferred curried arity`` optimize =
+        let provider = issue20803Provider optimize
+
+        let inferred =
+            FSharp "module Arity\nlet f (s: System.Span<int>) = fun () -> s.Length"
+
+        for compilation, moduleName, names in [ provider, "Provider", [ "add"; "f" ]; inferred, "Arity", [ "f" ] ] do
+            let assembly =
+                compilation
+                |> withOptimization optimize
+                |> compile
+                |> shouldSucceed
+                |> withDiagnostics []
+                |> getAssembly
+
+            for name in names do
+                let methodInfo = assembly.GetType(moduleName).GetMethod(name)
+
+                let attribute =
+                    methodInfo.GetCustomAttributes(typeof<CompilationArgumentCountsAttribute>, false)
+                    |> Assert.Single
+                    :?> CompilationArgumentCountsAttribute
+
+                Assert.Equal<int>([| 1; 1 |], attribute.Counts)
+
+        FSharp
+            """module Consumer
+open System
+let f (s: Span<int>) = fun () -> s.Length
+let bad = f (Span<int> [| 1; 2; 3 |])
+"""
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 4 14 37 ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - imported measurable representation`` optimize =
+        let provider = issue20803Provider optimize
+        provider |> compile |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        FSharp "module Consumer\nlet add (s: System.Span<int>) x = s.Length + x\nlet bad = add (Provider.make ())"
+        |> withReferences [ provider ]
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 3 16 32 ]
+
+    [<Theory; InlineData(false, false); InlineData(false, true); InlineData(true, false); InlineData(true, true)>]
+    let ``Issue 20803 - signature and imported curried applications`` optimize separateAssembly =
+        let consumer =
+            "module Consumer\nlet p = Provider.add (System.Span<int>.Empty)\nlet q = Provider.f (System.Span<int>.Empty)"
+
+        let provider = issue20803Provider optimize
+
+        let compilation =
+            if separateAssembly then
+                FSharp consumer |> withReferences [ provider ]
+            else
+                provider
+                |> withAdditionalSourceFiles [ FsSourceWithFileName "Consumer.fs" consumer ]
+
+        compilation
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 2 23 45; captureDiagnostic 3 21 43 ]
+
+    [<Theory;
+      InlineData(false, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
+      InlineData(true, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
+      InlineData(false, "Span<int>", "Span<int>.Empty", 31);
+      InlineData(true, "Span<int>", "Span<int>.Empty", 31);
+      InlineData(false, "Span<int>", "make ()", 23);
+      InlineData(true, "Span<int>", "make ()", 23);
+      InlineData(false, "Small", "Small(3)", 24);
+      InlineData(true, "Small", "Small(3)", 24)>]
+    let ``Issue 20803 - computed byref-like arguments`` optimize ty argument endCol =
+        FSharp
+            $"""module Consumer
+open System
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike>]
+type Small(value: int) =
+    member _.Length = value
+let make () = Span<int>([| 1; 2; 3 |])
+let add (s: {ty}) x = s.Length + x
+let bad = add ({argument})
+"""
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 9 16 endCol ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - later curried groups`` optimize =
+        FSharp
+            """module Consumer
+open System
+let later x (s: Span<int>) y = x + s.Length + y
+let p = later 1 (Span<int>.Empty)
+"""
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 4 18 33 ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
+        FSharp
+            """module Consumer
+open System
+let add (s: Span<int>) x = s.Length + x
+let local () =
+    let s = Span<int>.Empty
+    add s
+let tupled (s: Span<int>, x) y = s.Length + x + y
+let bad = tupled (Span<int>.Empty, 1)
+let byref (x: inref<int>) y = x + y
+let address () =
+    let x = 1
+    byref &x
+"""
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics
+            [ (Error 418, Line 6, Col 9, Line 6, Col 10, "The byref typed value 's' cannot be used at this point")
+              (Error 412,
+               Line 8,
+               Col 19,
+               Line 8,
+               Col 37,
+               "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+              (Error 421,
+               Line 12,
+               Col 12,
+               Line 12,
+               Col 13,
+               "The address of the variable 'x' cannot be used at this point") ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - existing receiver and inner lambda diagnostics`` optimize =
+        FSharp
+            """module Consumer
+open System
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike>]
+type Small(value: int) =
+    member _.Add x = value + x
+let receiver () =
+    let mutable s = Small(3)
+    s.Add
+let inner (s: Span<int>) =
+    let g () = s.Length
+    g
+"""
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics
+            [ (Error 406,
+               Line 9,
+               Col 5,
+               Line 9,
+               Col 10,
+               "The byref-typed variable 'objectArg' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
+              (Error 406,
+               Line 11,
+               Col 16,
+               Line 11,
+               Col 24,
+               "The byref-typed variable 's' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.") ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - legal synchronous applications`` optimize =
+        FsFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs")
+        |> withReferences [ issue20803Provider optimize ]
+        |> withOptimization optimize
+        |> withNoWarn 20
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "Issue 20803 controls passed"
+
+    [<Fact>]
+    let ``Issue 20803 - FSI legal synchronous applications`` () =
+        let provider = __SOURCE_DIRECTORY__ ++ "Issue20803Provider.fs"
+        let consumer = __SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs"
+
+        Fsx
+            $"""#load @"{provider}"
+#load @"{consumer}"
+7"""
+        |> withNoWarn 20
+        |> eval
+        |> shouldSucceed
+        |> withEvalValueEquals 7
+
+    [<Fact>]
+    let ``Issue 20803 - FSI capture diagnostic`` () =
+        Fsx "let add (s: System.Span<int>) x = s.Length + x\nlet bad = add (System.Span<int>.Empty)"
+        |> withOptions [ "--typecheck-only" ]
+        |> eval
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 2 16 38 ]
+
     let withPrelude =
         withReferences [
             FsFromPath (__SOURCE_DIRECTORY__ ++ "Prelude.fs")
