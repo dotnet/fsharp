@@ -443,7 +443,7 @@ type cenv =
 
       realsig: bool
 
-      specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
+      specializedInlineVals: HashMultiMap<Stamp, TType list * Expr>
 
       forcedInlineVals: Dictionary<Stamp, bool>
 
@@ -462,12 +462,12 @@ type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
 
-      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of specialized types
+      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of instantiations
       /// currently being processed. An empty list means "block unconditionally" (used by normal
       /// inlining and non-concrete debug specialization). A non-empty list means "block only these
-      /// specific type specializations" (used by concrete debug specialization, allowing different
-      /// type instantiations of the same function to proceed).
-      dontInline: Map<Stamp, TType list>
+      /// specific instantiations" (used by concrete debug specialization, allowing different
+      /// instantiations of the same function to proceed).
+      dontInline: Map<Stamp, TType list list>
 
       /// Recursively bound vars. If an sub-expression that is a candidate for method splitting
       /// contains any of these variables then don't split it, for fear of mucking up tailcalls.
@@ -2749,6 +2749,29 @@ let FloatInlineIfLambdaCaptures g expr =
         rebind bind.Expr
     | _ -> expr
 
+let private traitConstraintsOfTyarg tyarg =
+    match tyarg with
+    // The witnesses selected for a call live in the constraint cells of its solved type arguments.
+    | TType_var(tp, _) ->
+        tp.Constraints
+        |> List.choose (function
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo
+            | _ -> None)
+    | _ -> []
+
+let private solvedTraitEquiv g aenv (traitInfo1: TraitConstraintInfo) (traitInfo2: TraitConstraintInfo) =
+    traitsAEquiv g aenv traitInfo1 traitInfo2
+    && traitSlnAEquiv g aenv traitInfo1.Solution traitInfo2.Solution
+
+let private tyargEquiv g aenv tyarg1 tyarg2 =
+    typeAEquiv g aenv tyarg1 tyarg2
+    && List.lengthsEqAndForall2 (solvedTraitEquiv g aenv) (traitConstraintsOfTyarg tyarg1) (traitConstraintsOfTyarg tyarg2)
+
+let private specializationKeyEquiv g tyargs1 tyargs2 =
+    // Under --checknulls the specialized body keeps or drops null guards by the nullness of the type arguments.
+    let aenv = TypeEquivEnv.EmptyWithNullChecks g
+    List.lengthsEqAndForall2 (tyargEquiv g aenv) tyargs1 tyargs2
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard(fun () ->
@@ -3946,10 +3969,9 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
              || (not alwaysInline
                  && vref.ShouldInline
                  && not (shouldForceInlineInDebug cenv env vref)) ->
-        let traits =
+        let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
-            GetTraitConstraintInfosOfTypars g tps
-        let hasNoTraits = traits.IsEmpty
+            GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
 
         // Direct-calling an SRTP callee is only safe when every tyarg is a bare typar: then the
         // callee's SRTP constraints land on the caller's own typars and IlxGen rewrites the
@@ -4023,16 +4045,16 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
 
-            // Proceed with specialization only if this (stamp, type) pair isn't already being
+            // Proceed with specialization only if this (stamp, instantiation) pair isn't already being
             // processed. For concrete type args, allow different type instantiations of the same
             // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
             // non-concrete type args, never specialize recursively.
             let canSpecialize =
                 match Map.tryFind origLambdaId env.dontInline with
-                | Some tys ->
+                | Some insts ->
                     allTyargsAreConcrete &&
-                    not tys.IsEmpty &&
-                    not (tys |> List.exists (typeEquiv g specLambdaTy))
+                    not insts.IsEmpty &&
+                    not (insts |> List.exists (specializationKeyEquiv g tyargs))
                 | None -> true
 
             if not canSpecialize then
@@ -4042,25 +4064,20 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             else
 
             let specialize () =
-                let existingTypes = defaultArg (Map.tryFind origLambdaId argEnv.dontInline) []
-                let types = if allTyargsAreConcrete then specLambdaTy :: existingTypes else []
+                let existingInsts = defaultArg (Map.tryFind origLambdaId argEnv.dontInline) []
+                let insts = if allTyargsAreConcrete then tyargs :: existingInsts else []
                 let env =
                     { argEnv with
-                        dontInline = Map.add origLambdaId types argEnv.dontInline }
+                        dontInline = Map.add origLambdaId insts argEnv.dontInline }
                 OptimizeExpr cenv env specLambda |> fst
 
-            // The type-only cache key does not include selected SRTP witnesses.
-            let canCacheSpecialization =
-                allTyargsAreConcrete &&
-                (hasNoTraits || not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions))
-
             let specLambdaR =
-                if canCacheSpecialization then
-                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                if allTyargsAreConcrete then
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (inst, _) -> specializationKeyEquiv g inst tyargs) with
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
                     let specLambdaR = specialize ()
-                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                    cenv.specializedInlineVals.Add(origLambdaId, (tyargs, specLambdaR))
                     specLambdaR
                 else
                     specialize ()
