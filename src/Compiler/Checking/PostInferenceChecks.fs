@@ -948,8 +948,73 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+let rec instantiatedResultHead g (typars: Typars) tyargs (args: Expr list) ty =
+    // stripTyEqns would instantiate entire abbreviation bodies, even when only the result head is needed.
+    match stripTyparEqns ty with
+    | TType_var(tp, _) ->
+        match typars, tyargs with
+        | formalTp :: restTypars, actualTy :: restTyargs ->
+            let formalTp =
+                if formalTp.IsSolved then
+                    match tryAnyParTy g (mkTyparTy formalTp) with
+                    | ValueSome normalizedTp -> normalizedTp
+                    | ValueNone -> formalTp
+                else
+                    formalTp
+
+            if typarEq tp formalTp then
+                instantiatedResultHead g [] [] args actualTy
+            else
+                instantiatedResultHead g restTypars restTyargs args ty
+        | _ -> struct {| Type = ty; Args = args |}
+    | TType_fun(_, returnTy, _) when not args.IsEmpty -> instantiatedResultHead g typars tyargs args.Tail returnTy
+    | TType_app(tcref, tinst, _) ->
+        match tcref.TypeAbbrev with
+        | Some bodyTy ->
+            let result = instantiatedResultHead g tcref.Typars tinst args bodyTy
+            instantiatedResultHead g typars tyargs result.Args result.Type
+        | None when tcref.IsMeasureableReprTycon ->
+            let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
+            let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
+
+            struct {| Type = actualTy
+                      Args = args |}
+        | None -> struct {| Type = ty; Args = args |}
+    | ty -> struct {| Type = ty; Args = args |}
+
+let isSpanLikeInstantiatedResult g m typars tyargs args ty =
+    let result = instantiatedResultHead g typars tyargs args ty
+
+    let resultTy =
+        if result.Args.IsEmpty then
+            result.Type
+        else
+            reduceIteratedFunTy g result.Type result.Args
+
+    isSpanLikeTy g m resultTy
+
 let rec isSpanLikeExpr g expr =
     match stripDebugPoints expr with
+    | Expr.App(_, functionTy, tyargs, args, m) ->
+        match stripTyparEqns functionTy with
+        | TType_forall(typars, bodyTy) -> isSpanLikeInstantiatedResult g m typars tyargs args bodyTy
+        | functionTy -> isSpanLikeInstantiatedResult g m [] [] args functionTy
+    | Expr.Op(TOp.ValFieldGet field, tyargs, _, m) ->
+        let fieldSpec = field.Tycon.AllFieldTable.FieldsByName[field.FieldName]
+        isSpanLikeInstantiatedResult g m field.Tycon.Typars tyargs [] fieldSpec.FormalType
+    | Expr.Op(TOp.UnionCaseFieldGet(caseRef, index), tyargs, _, m) ->
+        let caseSpec =
+            match caseRef.TyconRef.UnionTypeInfo with
+            | ValueSome info -> info.CasesTable.CasesByName[caseRef.CaseName]
+            | ValueNone -> error (InternalError("Expected a union type in argument result classification", m))
+
+        isSpanLikeInstantiatedResult
+            g
+            m
+            caseRef.TyconRef.Typars
+            tyargs
+            []
+            (caseSpec.FieldTable.FieldByIndex index).FormalType
     | Expr.Lambda _
     | Expr.TyLambda _
     | Expr.Op((TOp.Tuple _ | TOp.AnonRecd _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false

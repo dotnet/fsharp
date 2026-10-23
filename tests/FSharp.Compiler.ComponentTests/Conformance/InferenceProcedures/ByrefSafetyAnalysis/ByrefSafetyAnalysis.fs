@@ -110,6 +110,10 @@ let bad = f (Span<int> [| 1; 2; 3 |])
       InlineData(true, "Span<int>", "Span<int>.Empty", 16, 31);
       InlineData(false, "Span<int>", "make ()", 16, 23);
       InlineData(true, "Span<int>", "make ()", 16, 23);
+      InlineData(false, "Span<int>", "genericSpan<1> ()", 16, 33);
+      InlineData(true, "Span<int>", "genericSpan<1> ()", 16, 33);
+      InlineData(false, "Span<int>", "recursiveSpan<1> ()", 16, 35);
+      InlineData(true, "Span<int>", "recursiveSpan<1> ()", 16, 35);
       InlineData(false, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
       InlineData(true, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
       InlineData(false, "Span<int>", "ignore 1; Span<int>.Empty", 16, 41);
@@ -125,10 +129,16 @@ open System.Runtime.CompilerServices
 type Small(value: int) =
     member _.Length = value
 let make () = Span<int>([| 1; 2; 3 |])
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
+let genericSpan<[<Measure>] 'u> () : TaggedSpan<'u> = Unchecked.defaultof<_>
+let rec recursiveSpan<[<Measure>] 'u> () : TaggedSpan<'u> =
+    if false then otherSpan () else Unchecked.defaultof<_>
+and otherSpan () = recursiveSpan ()
 let add (s: {ty}) x = s.Length + x
 let bad = add ({argument})
 """
-        |> verifyRejectedApplication optimize [ captureDiagnostic 9 startCol endCol ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 15 startCol endCol ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - later curried groups`` optimize =
@@ -165,6 +175,20 @@ let good = add (Small 3) 4
 let bad = add (Small 3)
 """
         |> verifyRejectedApplication optimize [ captureDiagnostic 7 16 23 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - byref-like field partial application`` optimize =
+        FSharp
+            """module Consumer
+open System
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Holder = { Item: Span<int> }
+let add (s: Span<int>) x = s.Length + x
+let good (h: Holder) = add h.Item 1
+let bad (h: Holder) = add h.Item
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 8 27 33 ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
@@ -268,6 +292,10 @@ let inner (s: Span<int>) =
 type R<'T> = { Value: 'T }
 [<Struct>]
 type S<'T> = { Value: 'T }
+type Alias<'T> = 'T
+type FunctionAlias<'T> = 'T -> 'T
+type ListAlias<'T> = 'T list
+type U<'T> = U of 'T
 let invoke (f: (int -> int) -> int) = f (fun (x: int) -> x)
 let array (f: int[] -> int) = f [| 1; 2; 3 |]
 let bytes (f: byte[] -> byte) = f "abc"B
@@ -283,6 +311,18 @@ let wrappedLambda (f: (int -> int) -> int) = f (let n = 1 in fun x -> x + n)
 let wrappedArray (f: int[] -> int) = f (let n = 1 in [| n |])
 let sequentialArray (f: int[] -> int) = f (ignore 1; [| 2 |])
 let recursiveLambda (f: (int -> int) -> int) = f (let rec loop x = if x = 0 then 0 else loop (x - 1) in fun x -> loop x)
+let identity (f: int -> int) = f (id 1)
+let mapped (f: int list -> int) xs = f (List.map id xs)
+let field (f: int -> int) (r: R<int>) = f r.Value
+let structField (f: int -> int) (r: S<int>) = f r.Value
+let genericField (f: 'T -> 'T) (r: R<'T>) = f r.Value
+let nested (f: int -> int) = f (id id 1)
+let functionField (f: int -> int) (r: R<int -> int>) = f (r.Value 1)
+let wrappedApplication (f: int -> int) = f (let n = 1 in id n)
+let aliasField (f: int -> int) (r: R<Alias<int>>) = f r.Value
+let aliasFunction (f: int -> int) (r: R<FunctionAlias<int>>) = f (r.Value 1)
+let aliasList (f: int list -> int) (r: R<ListAlias<int>>) = f r.Value
+let unionField (f: int -> int) (u: U<int>) = f (let (U value) = u in value)
 let add (r: R<int>) x = r.Value + x
 let partial = add { Value = 3 }
 let addAnon (r: {| Value: int |}) x = r.Value + x
@@ -300,6 +340,13 @@ if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
    || option Option.get <> 1 || list List.sum <> 6 || valueOption ValueOption.get <> 2
    || wrappedLambda (fun f -> f 4) <> 5 || wrappedArray Array.sum <> 1
    || sequentialArray Array.sum <> 2 || recursiveLambda (fun f -> f 3) <> 0
+   || identity id <> 1 || mapped List.sum [1; 2; 3] <> 6
+   || field id { Value = 3 } <> 3 || structField id { Value = 4 } <> 4
+   || genericField id { Value = "value" } <> "value"
+   || nested id <> 1 || functionField id { Value = id } <> 1 || wrappedApplication id <> 1
+   || aliasField id { Value = 2 } <> 2 || aliasFunction id { Value = id } <> 1
+   || aliasList List.sum { Value = [1; 2; 3] } <> 6
+   || unionField id (U 5) <> 5
    || partialOption 8 <> 15 || partialWrapped 9 <> 17
    || partial 4 <> 7 then
     failwith "higher-order arguments"
