@@ -329,6 +329,7 @@ let private buildCSharpScratchPdb () =
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>{TestFramework.productTfm}</TargetFramework>
+    <NETCoreAppMaximumVersion Condition="'$(TargetFramework)' == 'net12.0'">12.0</NETCoreAppMaximumVersion>
     <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <DebugSymbols>true</DebugSymbols>
