@@ -257,11 +257,19 @@ let bytes (f: byte[] -> byte) = f "abc"B
 let uint16s (f: uint16[] -> uint16) = f [| 1us; 2us; 3us |]
 let record (f: R<int> -> int) = f { Value = 1 }
 let structRecord (f: S<int> -> int) = f { Value = 2 }
+let anonRecord (f: {| Value: int |} -> int) = f {| Value = 3 |}
+let structAnonRecord (f: struct {| Value: int |} -> int) = f struct {| Value = 4 |}
 let add (r: R<int>) x = r.Value + x
 let partial = add { Value = 3 }
+let addAnon (r: {| Value: int |}) x = r.Value + x
+let partialAnon = addAnon {| Value = 5 |}
+let addStructAnon (r: struct {| Value: int |}) x = r.Value + x
+let partialStructAnon = addStructAnon struct {| Value = 6 |}
 if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
    || bytes Array.head <> 97uy || uint16s Array.sum <> 6us
    || record (fun r -> r.Value) <> 1 || structRecord (fun r -> r.Value) <> 2
+   || anonRecord (fun r -> r.Value) <> 3 || structAnonRecord (fun r -> r.Value) <> 4
+   || partialAnon 7 <> 12 || partialStructAnon 8 <> 14
    || partial 4 <> 7 then
     failwith "higher-order arguments"
 """

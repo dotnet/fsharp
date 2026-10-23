@@ -1141,7 +1141,7 @@ and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
             match stripDebugPoints arg with
             | Expr.Lambda _
             | Expr.TyLambda _
-            | Expr.Op((TOp.Tuple _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false
+            | Expr.Op((TOp.Tuple _ | TOp.AnonRecd _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false
             | Expr.Op(TOp.Recd(_, tcref), _, _, _) -> isSpanLikeTyconRef cenv.g arg.Range tcref
             | _ -> isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg)
 
