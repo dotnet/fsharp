@@ -1136,9 +1136,12 @@ and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
         cenv.reportErrors
         && ctxt = PermitByRefExpr.No
         && diagnosticsLogger.ErrorCount = errorCount
-        && isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg)
     then
-        errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))
+        match stripDebugPoints arg with
+        | Expr.Op(TOp.Tuple _, _, _, _) -> ()
+        | _ ->
+            if isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg) then
+                errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))
 
     limit
 

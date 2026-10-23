@@ -17,6 +17,8 @@ let small (s: Small) x = s.Value + x
 let tupled (s: Span<int>, x) y = s.Length + x + y
 let tupledGroups (s: Span<int>, x) (t: ReadOnlySpan<int>, y) = s.Length + x + t.Length + y
 let ordinaryTupled (a, b) (c, d, e) = a + b + c + d + e
+let invoke (f: int * int -> int) x y = f (x, y)
+let invokeStruct (f: struct (int * int) -> int) x y = f (struct (x, y))
 let later x (s: Span<int>) y = x + s.Length + y
 let returning (s: Span<int>, x: int) = s.Slice(x)
 let synchronous (span: Span<int>) = span[0] + span[1] + span[2]
@@ -35,6 +37,11 @@ let run () =
         || ordinaryTupled (1, 2) (3, 4, 5) <> 15
     then
         failwith "tuple argument bundles"
+    if
+        invoke (fun (x, y) -> x + y) 1 2 <> 3
+        || invokeStruct (fun struct (x, y) -> x + y) 3 4 <> 7
+    then
+        failwith "higher-order tuple arguments"
     let mutable instance = Small(3)
     if Operations().Add(s, 4) <> 7 || instance.Add 4 <> 7 then
         failwith "member application"
