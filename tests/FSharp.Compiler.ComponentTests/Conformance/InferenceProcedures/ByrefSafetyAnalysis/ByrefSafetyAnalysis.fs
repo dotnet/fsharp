@@ -137,6 +137,19 @@ let p = later 1 (Span<int>.Empty)
         |> verifyRejectedApplication optimize [ captureDiagnostic 4 18 33 ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - byref-like record partial application`` optimize =
+        FSharp
+            """module Consumer
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Small = { Value: int }
+let add (r: Small) x = r.Value + x
+let good = add { Value = 3 } 4
+let bad = add { Value = 3 }
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 7 15 28 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
         FSharp
             """module Consumer
@@ -235,12 +248,21 @@ let inner (s: Span<int>) =
     let ``Issue 20803 - ordinary higher-order arguments`` optimize =
         FSharp
             """module Consumer
+type R<'T> = { Value: 'T }
+[<Struct>]
+type S<'T> = { Value: 'T }
 let invoke (f: (int -> int) -> int) = f (fun (x: int) -> x)
 let array (f: int[] -> int) = f [| 1; 2; 3 |]
 let bytes (f: byte[] -> byte) = f "abc"B
 let uint16s (f: uint16[] -> uint16) = f [| 1us; 2us; 3us |]
+let record (f: R<int> -> int) = f { Value = 1 }
+let structRecord (f: S<int> -> int) = f { Value = 2 }
+let add (r: R<int>) x = r.Value + x
+let partial = add { Value = 3 }
 if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
-   || bytes Array.head <> 97uy || uint16s Array.sum <> 6us then
+   || bytes Array.head <> 97uy || uint16s Array.sum <> 6us
+   || record (fun r -> r.Value) <> 1 || structRecord (fun r -> r.Value) <> 2
+   || partial 4 <> 7 then
     failwith "higher-order arguments"
 """
         |> withOptimization optimize
