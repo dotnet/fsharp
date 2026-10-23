@@ -66,7 +66,7 @@ type T(x: int) =
              (Warning 3552, Line 3, Col 8, Line 3, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Constructor with arguments is not allowed.")
              (Warning 3553, Line 4, Col 5, Line 4, Col 19, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Additional constructor is not allowed.")
          ]
-         
+
     [<Fact>]
     let ``When Sealed and AbstractClass on a generic type with constructor`` () =
         Fsx """
@@ -156,7 +156,7 @@ type T() =
          |> withDiagnostics [
              (Warning 3554, Line 4, Col 5, Line 4, Col 25, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type with static members`` () =
         Fsx """
@@ -168,7 +168,7 @@ type T() =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass with static and non static let bindings`` () =
         Fsx """
@@ -183,7 +183,7 @@ type C() =
          |> withDiagnostics [
              (Warning 3555, Line 4, Col 5, Line 4, Col 14, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance let bindings are not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass with static and non static recursive let bindings`` () =
         Fsx """
@@ -210,7 +210,7 @@ type C() =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass with recursive static let bindings`` () =
         Fsx """
@@ -222,7 +222,7 @@ type C() =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type implementing interface`` () =
         Fsx """
@@ -240,7 +240,7 @@ type C() =
          |> withDiagnostics [
             (Warning 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type implicit constructor implementing interface`` () =
         Fsx """
@@ -258,7 +258,7 @@ type C =
          |> withDiagnostics [
             (Warning 3556, Line 8, Col 9, Line 8, Col 29, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Implementing interfaces is not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type implicit constructor declaring abstract members`` () =
         Fsx """
@@ -274,7 +274,7 @@ type T =
              (Warning 3557, Line 4, Col 14, Line 4, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
              (Warning 3557, Line 5, Col 14, Line 5, Col 15, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Abstract member declarations are not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type declaring abstract members`` () =
         Fsx """
@@ -313,7 +313,7 @@ type ConsoleRetriever =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     #if !NETCOREAPP
     [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
     #else
@@ -336,7 +336,7 @@ type ConsoleRetriever =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     #if !NETCOREAPP
     [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
     #else
@@ -359,7 +359,7 @@ type ConsoleRetriever() =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type with implicit constructor declaring static explicit field`` () =
         Fsx """
@@ -377,7 +377,7 @@ type T =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on a type declaring static explicit field`` () =
         Fsx """
@@ -395,7 +395,7 @@ type T() =
          |> withLangVersion80
          |> compile
          |> shouldSucceed
-         
+
     [<Fact>]
     let ``When Sealed and AbstractClass on a type with non static explicit fields and implicit constructor`` () =
         Fsx """
@@ -411,7 +411,7 @@ type B =
              (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
-         
+
     [<Fact>]
     let ``When Sealed and AbstractClass on a type with non static explicit fields and constructor`` () =
         Fsx """
@@ -429,7 +429,7 @@ type B() =
              (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
-    
+
     [<Fact>]
     let ``Sealed and AbstractClass on a types with instance member properties`` () =
         Fsx """ 
@@ -447,7 +447,7 @@ type T =
              (Warning 3554, Line 5, Col 5, Line 5, Col 41, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
              (Warning 3554, Line 6, Col 5, Line 6, Col 55, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Instance members are not allowed.")
          ]
-         
+
     [<Fact>]
     let ``Sealed and AbstractClass on types with non static members`` () =
         Fsx """ 

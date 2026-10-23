@@ -1,6 +1,6 @@
 open Prelude
 
-module TestReadOnlyAddressOfStaticField = 
+module TestReadOnlyAddressOfStaticField =
     type C() =
         static let x = 1
         static member F() = &x

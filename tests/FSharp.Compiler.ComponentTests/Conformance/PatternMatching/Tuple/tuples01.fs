@@ -1,11 +1,11 @@
-// #Conformance #PatternMatching #Tuples 
+// #Conformance #PatternMatching #Tuples
 
 
 // Match nested tuples
 
 let monsterTuple = ("0", "1", ("2", "2.1", "2.2"), "3", ("4", ("4.1", "4.1.1"), "4.2"))
 
-let result = 
+let result =
     match monsterTuple with
     | (_, _, (_, _, _), _, (_, (_, _), _)) -> true
 
@@ -16,4 +16,4 @@ let result =
 // MatchNotFoundException
 if result <> true then exit 1
 
-exit 0    
+exit 0

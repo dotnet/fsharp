@@ -16,7 +16,7 @@ if sortedWords <> ["apple"; "blueberry"; "cherry"] then printfn "sortedWords fai
 // OrderBy - Simple 2
 let sortedWords2 =
     query {
-        for w in words do 
+        for w in words do
         sortBy (w.Length)
     } |> Seq.toList
 if sortedWords2 <> ["apple"; "cherry"; "blueberry"] then printfn "sortedWords2 failed"; exit 1

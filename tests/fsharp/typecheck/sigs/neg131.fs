@@ -11,5 +11,5 @@ module TestOverloadsWithSrtpThatDontResolve1 =
 
     // 'x' doesn't contain any type information so the overload doesn't resolve.
 
-    let inline f x = 
-        OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
+    let inline f x =
+        OverloadsWithSrtp.SomeMethod (x, (fun a -> 1))

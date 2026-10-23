@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // There should be no method-name duplication
 
 // we need to ensure there are no collisions between (for example)
@@ -16,30 +16,30 @@ type GlobalType() = class end
 
 
 type ``IB<GlobalType>`` =
-    interface 
+    interface
         abstract X : unit -> int
     end
 
 type IB<'a> =
-    interface 
+    interface
         abstract X : unit -> int
     end
 
-type C() = 
+type C() =
     interface ``IB<GlobalType>`` with
         member x.X() = 1
     interface IB<GlobalType> with
         member x.X() = 2
-    
+
 module M =
-   
+
     let c = C()
     let x1 = (c :> ``IB<GlobalType>``).X()
     let x2 = (c :> IB<GlobalType>).X()
 
     if x1 <> 1 then
         failwithf "expected 1, but got %i" x1
-    
+
     if x2 <> 2 then
         failwithf "expected 2, but got %i" x2
 

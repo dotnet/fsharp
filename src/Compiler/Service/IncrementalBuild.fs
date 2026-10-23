@@ -99,7 +99,7 @@ type internal FSharpFile = {
         Source: FSharpSource
         Flags: bool * bool
     }
- 
+
 // This module is only here to contain the SyntaxTree type as to avoid ambiguity with the module FSharp.Compiler.Syntax.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
@@ -219,6 +219,8 @@ type TcInfoExtras =
       /// Result of checking most recent file, if any
       latestImplFile: CheckedImplFile option
 
+      latestOwnSigForFile: ModuleOrNamespaceType option
+
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
 
@@ -230,7 +232,7 @@ type TcInfoExtras =
         x.tcSymbolUses
 
 type private SingleFileDiagnostics = PhasedDiagnostic array
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * ModuleOrNamespaceType option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
 type BoundModel private (
@@ -258,13 +260,13 @@ type BoundModel private (
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
-                    
+
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile, ownSigForFile), tcState =
                 CheckOneInput (
                         (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                         tcConfig, tcImports,
@@ -295,7 +297,7 @@ type BoundModel private (
                         | _ ->
                             None
                 }
-            return tcInfo, sink, implFile, fileName, newErrors
+            return tcInfo, sink, implFile, Some ownSigForFile, fileName, newErrors
         }
 
     let skippedImplementationTypeCheck =
@@ -303,7 +305,7 @@ type BoundModel private (
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
             SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
-            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
+            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile, _), tcState) ->
                     {
                         tcState = tcState
                         tcEnvAtEndOfFile = tcState.TcEnvFromImpls
@@ -318,13 +320,13 @@ type BoundModel private (
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         async {
-            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
+            let! tcInfo , _, _, _, _, _ = typeCheck.GetOrComputeValue()
             return tcInfo
         } |> GraphNode
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         async {
-            let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, ownSigForFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -345,12 +347,12 @@ type BoundModel private (
                     |> Seq.iter (fun (m, item, _kind) ->
                         if not m.IsSynthetic then
                             builder.Write(m, item))
-                    
+
                     let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)
-                    
+
                     let sckBuilder = SemanticClassificationKeyStoreBuilder()
                     sckBuilder.WriteAll semanticClassification
-                    
+
                     let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
                     res
                 else
@@ -359,6 +361,7 @@ type BoundModel private (
                 {
                     // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                     latestImplFile = if keepAssemblyContents then implFile else None
+                    latestOwnSigForFile = ownSigForFile
                     tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
                     tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
                     tcOpenDeclarations = sink.GetOpenDeclarations()
@@ -367,12 +370,12 @@ type BoundModel private (
                 }
         } |> GraphNode
 
-    let defaultTypeCheck = async { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
+    let defaultTypeCheck = async { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, None, "default typecheck - no syntaxTree", [||] }
     let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
     let tcInfoExtras = getTcInfoExtras typeCheckNode
     let diagnostics  =
         async {
-            let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
+            let! _, _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
             return diags
         } |> GraphNode
 
@@ -391,11 +394,18 @@ type BoundModel private (
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
-                // start computing extras, so that typeCheckNode can be GC'd quickly 
+                // start computing extras, so that typeCheckNode can be GC'd quickly
                 startComputingFullTypeCheck |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
+
+    /// Diagnostics for this file, without forcing the type check of an implementation file that was skipped
+    /// because it has a signature file. Such a file has no diagnostics yet, so it reports none.
+    member _.GetDiagnosticsIfTypeChecked() =
+        match tcStateOpt, skippedImplementationTypeCheck with
+        | None, Some _ when not typeCheckNode.HasValue -> async { return [||] }
+        | _ -> diagnostics.GetOrComputeValue()
 
     member val TcInfo = tcInfo
 
@@ -408,16 +418,16 @@ type BoundModel private (
     member _.TcImports = tcImports
 
     member this.TryPeekTcInfo() = this.TcInfo.TryPeekValue() |> ValueOption.toOption
-    
-    member this.TryPeekTcInfoWithExtras() = 
+
+    member this.TryPeekTcInfoWithExtras() =
         (this.TcInfo.TryPeekValue(), this.TcInfoExtras.TryPeekValue())
         ||> ValueOption.map2 (fun a b -> a, b)
         |> ValueOption.toOption
-    
+
     member this.GetOrComputeTcInfo = this.TcInfo.GetOrComputeValue
-    
+
     member this.GetOrComputeTcInfoExtras = this.TcInfoExtras.GetOrComputeValue
-    
+
     member this.GetOrComputeTcInfoWithExtras() = async {
         let! tcInfo = this.TcInfo.GetOrComputeValue()
         let! tcInfoExtras = this.TcInfoExtras.GetOrComputeValue()
@@ -487,18 +497,18 @@ type BoundModel private (
         )
 
 /// Global service state
-type FrameworkImportsCacheKey = 
-    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal * checkNulls: bool
+type FrameworkImportsCacheKey =
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * importReuseKey: ImportReuseKey
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
-        member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
+        member this.GetLabel() =
+            this |> function FrameworkImportsCacheKey(assemblyName=a;importReuseKey=c) -> if c.CheckNullness then a + "CheckNulls" else a
 
         member this.GetVersion() = this
-        
+
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
 
@@ -532,8 +542,7 @@ type FrameworkImportsCache(size) =
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion,
-                    tcConfig.checkNullness)
+                    tcConfig.importReuseKey)
 
         let node =
             lock gate (fun () ->
@@ -558,12 +567,13 @@ type FrameworkImportsCache(size) =
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
 
-        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different 
-        // for each cached project.  So here we create a new tcGlobals, with the existing framework values
-        // and updated realsig and langversion
+        // If the tcGlobals was loaded from a different project, langVersion, realsig and pathMap may be
+        // different for each cached project.  So here we create a new tcGlobals, with the existing framework
+        // values and the updated realsig, langversion and pathMap
         let tcGlobals =
             if tcGlobals.langVersion <> tcConfig.langVersion
-                || tcGlobals.realsig <> tcConfig.realsig then
+                || tcGlobals.realsig <> tcConfig.realsig
+                || tcGlobals.pathMap <> tcConfig.pathMap then
                     TcGlobals(
                         tcGlobals.compilingFSharpCore,
                         tcGlobals.ilg,
@@ -575,7 +585,7 @@ type FrameworkImportsCache(size) =
                         tcGlobals.tryFindSysTypeCcuHelper,
                         tcGlobals.emitDebugInfoInQuotations,
                         tcGlobals.noDebugAttributes,
-                        tcGlobals.pathMap,
+                        tcConfig.pathMap,
                         tcConfig.langVersion,
                         tcConfig.realsig,
                         tcConfig.compilationMode
@@ -682,15 +692,15 @@ module IncrementalBuilderHelpers =
 
     // Link all the assemblies together and produce the input typecheck accumulator
     let CombineImportedAssembliesTask (
-        assemblyName, 
-        tcConfig: TcConfig, 
-        tcConfigP, 
-        tcGlobals, 
-        frameworkTcImports, 
-        nonFrameworkResolutions, 
-        unresolvedReferences, 
-        dependencyProvider, 
-        loadClosureOpt: LoadClosure option, 
+        assemblyName,
+        tcConfig: TcConfig,
+        tcConfigP,
+        tcGlobals,
+        frameworkTcImports,
+        nonFrameworkResolutions,
+        unresolvedReferences,
+        dependencyProvider,
+        loadClosureOpt: LoadClosure option,
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -804,7 +814,7 @@ module IncrementalBuilderHelpers =
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
-                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile
+                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile, ()
         ]
 
         // Get the state at the end of the type-checking of the last file
@@ -878,10 +888,12 @@ module IncrementalBuilderHelpers =
 
         let finalBoundModel = Array.last computedBoundModels
 
-        // Collect diagnostics. This will type check in parallel any implementation files skipped so far.
+        // Collect the diagnostics that are available without type checking the implementation files that were skipped
+        // because they have a signature file. The assembly data only needs the signatures, so a project that is only
+        // referenced by another project does not pay for checking these files. FullyCheckFinalizedBoundModelTask checks them.
         let! partialDiagnostics =
             computedBoundModels
-            |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
+            |> Seq.map (fun m -> m.GetDiagnosticsIfTypeChecked())
             |> MultipleDiagnosticsLoggers.Parallel
         let diagnostics = [
             diagnosticsLogger.GetDiagnostics()
@@ -891,6 +903,30 @@ module IncrementalBuilderHelpers =
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
+
+    /// Type check in parallel any implementation files skipped so far, and collect the diagnostics of all files.
+    let FullyCheckFinalizedBoundModelTask (finalizedBoundModel: BoundModel) (boundModels: GraphNode<BoundModel> seq) =
+      async {
+        let diagnosticsLogger = CompilationDiagnosticLogger("FullyCheckFinalizedBoundModelTask", finalizedBoundModel.TcConfig.diagnosticsOptions)
+        use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+
+        let! computedBoundModels = boundModels |> Seq.map (fun g -> g.GetOrComputeValue()) |> MultipleDiagnosticsLoggers.Sequential
+        let! tcInfo = finalizedBoundModel.GetOrComputeTcInfo()
+
+        let! fileDiagnostics =
+            computedBoundModels
+            |> Seq.map (fun m -> m.Diagnostics.GetOrComputeValue())
+            |> MultipleDiagnosticsLoggers.Parallel
+
+        // The first entry holds the diagnostics of finalizing the type check, the rest are per file.
+        let finalizeDiagnostics = List.head tcInfo.tcDiagnosticsRev
+        let diagnostics = [
+            Array.append finalizeDiagnostics (diagnosticsLogger.GetDiagnostics())
+            yield! fileDiagnostics |> Seq.rev
+        ]
+
+        return! finalizedBoundModel.Finish(diagnostics, tcInfo.topAttribs)
+      }
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderInitialState =
@@ -990,6 +1026,8 @@ type IncrementalBuilderState =
         slots: Slot list
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
+        /// Like finalizedBoundModel, but with the implementation files that were skipped type checked, to report their diagnostics.
+        fullyCheckedFinalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
     member this.stampedFileNames = this.slots |> List.map (fun s -> s.Stamp)
     member this.logicalStampedFileNames = this.slots |> List.map (fun s -> s.LogicalStamp)
@@ -1010,19 +1048,28 @@ module IncrementalBuilderStateHelpers =
     let createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: GraphNode<BoundModel> seq) =
         GraphNode(async {
             use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|Activity.Tags.project, initialState.outfile|]
-            let! result = 
-                FinalizeTypeCheckTask 
-                    initialState.tcConfig 
+            let! result =
+                FinalizeTypeCheckTask
+                    initialState.tcConfig
                     initialState.tcGlobals
                     initialState.enablePartialTypeChecking
-                    initialState.assemblyName 
-                    initialState.outfile 
+                    initialState.assemblyName
+                    initialState.outfile
                     boundModels
             return result, DateTime.UtcNow
         })
 
+    let createFullyCheckedFinalizeBoundModelGraphNode
+        (finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>)
+        (boundModels: GraphNode<BoundModel> seq) =
+        GraphNode(async {
+            let! (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp = finalizedBoundModel.GetOrComputeValue()
+            let! fullyCheckedBoundModel = FullyCheckFinalizedBoundModelTask boundModel boundModels
+            return (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, fullyCheckedBoundModel), timestamp
+        })
+
     let computeStampedFileNames (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) =
-        let slots = 
+        let slots =
             if initialState.useChangeNotifications then
                 state.slots
             else
@@ -1054,9 +1101,11 @@ module IncrementalBuilderStateHelpers =
         if slots |> List.exists (fun s -> s.Notified) then
             let slots, _ = slots |> List.mapFold mapping (Good, GraphNode.FromResult initialState.initialBoundModel)
             let boundModels = slots |> Seq.map (fun s -> s.BoundModel)
+            let finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
             { state with
                 slots = slots
-                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels }
+                finalizedBoundModel = finalizedBoundModel
+                fullyCheckedFinalizedBoundModel = createFullyCheckedFinalizeBoundModelGraphNode finalizedBoundModel boundModels }
         else
             state
 
@@ -1116,7 +1165,7 @@ type IncrementalBuilderState with
                     SyntaxTree(initialState.tcConfig, initialState.fileParsed, initialState.lexResourceManager, sourceFile, hasSignature)
             ]
 
-        let boundModels = 
+        let boundModels =
             syntaxTrees
             |> Seq.scan createBoundModelGraphNode initialBoundModel
 
@@ -1133,11 +1182,13 @@ type IncrementalBuilderState with
                     }
             ]
 
+        let finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
         let state =
             {
                 slots = slots
                 stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
-                finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
+                finalizedBoundModel = finalizedBoundModel
+                fullyCheckedFinalizedBoundModel = createFullyCheckedFinalizeBoundModelGraphNode finalizedBoundModel boundModels
             }
         let state = computeStampedReferencedAssemblies initialState state false cache
         let state = computeStampedFileNames initialState state cache
@@ -1205,23 +1256,22 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let semaphore = new SemaphoreSlim(1,1)
 
-    let mutable currentState = state 
+    let mutable currentState = state
 
-    let setCurrentState state cache (ct: CancellationToken) =
+    let updateCurrentState (update: IncrementalBuilderState -> IncrementalBuilderState) cache =
         async {
+            let! ct = Async.CancellationToken
             do! semaphore.WaitAsync(ct) |> Async.AwaitTask
             try
                 ct.ThrowIfCancellationRequested()
-                currentState <- computeStampedFileNames initialState state cache
+                // Read the state only under the lock: concurrent updates starting from the same stale snapshot
+                // would each build a fresh chain of bound models and lose each other's notifications.
+                currentState <- computeStampedFileNames initialState (update currentState) cache
             finally
                 semaphore.Release() |> ignore
         }
 
-    let checkFileTimeStamps (cache: TimeStampCache) =
-        async {
-            let! ct = Async.CancellationToken
-            do! setCurrentState currentState cache ct
-        }
+    let checkFileTimeStamps (cache: TimeStampCache) = updateCurrentState id cache
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1239,10 +1289,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
-    member _.IsReferencesInvalidated = 
+    member _.IsReferencesInvalidated =
         // fast path
         if initialState.isImportsInvalidated then true
-        else 
+        else
             computeStampedReferencedAssemblies initialState currentState true (TimeStampCache(defaultTimeStamp)) |> ignore
             initialState.isImportsInvalidated
 
@@ -1308,7 +1358,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         do! checkFileTimeStamps cache
         let! result = evalUpToTargetSlot currentState (slotOfFile - 1)
         match result with
-        | Some (boundModel, timestamp) -> 
+        | Some (boundModel, timestamp) ->
             let! _ = boundModel.GetOrComputeTcInfoExtras()
             let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(slotOfFile)
             return PartialCheckResults(boundModel, timestamp, projectTimeStamp)
@@ -1337,11 +1387,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     member builder.GetCheckResultsAfterLastFileInProject () =
         builder.GetCheckResultsBeforeSlotInProject(builder.GetSlotsCount())
 
-    member builder.GetCheckResultsAndImplementationsForProject() =
+    member private builder.GetFinalizedCheckResultsAndImplementationsForProject(getFinalizedBoundModel: IncrementalBuilderState -> GraphNode<_>) =
       async {
         let cache = TimeStampCache(defaultTimeStamp)
         do! checkFileTimeStamps cache
-        let! result = currentState.finalizedBoundModel.GetOrComputeValue()
+        let! result = (getFinalizedBoundModel currentState).GetOrComputeValue()
         match result with
         | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
             let cache = TimeStampCache defaultTimeStamp
@@ -1349,9 +1399,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             return PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
       }
 
+    member builder.GetCheckResultsAndImplementationsForProject() =
+        builder.GetFinalizedCheckResultsAndImplementationsForProject(fun state -> state.finalizedBoundModel)
+
     member builder.GetFullCheckResultsAndImplementationsForProject() =
         async {
-            let! result = builder.GetCheckResultsAndImplementationsForProject()
+            let! result = builder.GetFinalizedCheckResultsAndImplementationsForProject(fun state -> state.fullyCheckedFinalizedBoundModel)
             let results, _, _, _ = result
             let! _ = results.GetOrComputeTcInfoWithExtras() // Make sure we forcefully evaluate the info
             return result
@@ -1399,13 +1452,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.NotifyFileChanged(fileName, timeStamp) =
         async {
-            let slotOfFile = builder.GetSlotOfFileName fileName        
+            let slotOfFile = builder.GetSlotOfFileName fileName
             let cache = TimeStampCache defaultTimeStamp
-            let! ct = Async.CancellationToken
-            do! setCurrentState
-                    { currentState with 
-                        slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
-                    cache ct
+            do! updateCurrentState
+                    (fun state -> { state with slots = state.slots |> List.updateAt slotOfFile (state.slots[slotOfFile].Notify timeStamp) })
+                    cache
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
@@ -1432,9 +1483,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             enablePartialTypeChecking,
             dependencyProvider,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications
+            useChangeNotifications,
+            getReferenceStamp: (string -> DateTime) voption
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1518,6 +1571,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     |> Some
 
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                tcConfigB.shareImportedAssemblies <- shareImportedAssemblies
                 tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
                 tcConfigB, sourceFilesNew
@@ -1571,9 +1625,14 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
+                let stampReferencedAssembly =
+                    match getReferenceStamp with
+                    | ValueSome getReferenceStamp -> fun fileName (_: TimeStampCache) -> getReferenceStamp fileName
+                    | ValueNone -> fun fileName (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName
+
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
-                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
+                    yield (Choice1Of2 fileName, stampReferencedAssembly fileName)
 
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
@@ -1620,7 +1679,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let defaultTimeStamp = DateTime.UtcNow
 
-            let! initialBoundModel, initialErrors = 
+            let! initialBoundModel, initialErrors =
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,

@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(8,8-8,9)" id="FS0385">A type with attribute 'CustomComparison' must have an explicit implementation of at least one of 'System\.IComparable' or 'System\.Collections\.IStructuralComparable'$</Expects>
 
-module M13 = 
+module M13 =
   //[<ReferenceEquality(false)>]
   [<CustomComparison>]
   [<StructuralEquality>]

@@ -24,11 +24,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| "--preferreduilang:es-ES"; tmpFile; "arg1" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| "--preferreduilang:es-ES"; tmpFile; "arg1" |]
                     ""
-            
+
             // Should succeed (exit 0)
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -46,11 +46,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile; "--preferreduilang:es-ES"; "arg1" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile; "--preferreduilang:es-ES"; "arg1" |]
                     ""
-            
+
             // Should succeed (exit 0)
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -68,11 +68,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile; "/preferreduilang:de-DE"; "arg1" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile; "/preferreduilang:de-DE"; "arg1" |]
                     ""
-            
+
             // Should succeed (exit 0)
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -91,11 +91,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| "--preferreduilang:fr-FR"; tmpFile |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| "--preferreduilang:fr-FR"; tmpFile |]
                     ""
-            
+
             // Should succeed (exit 0)
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -114,11 +114,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile; "--preferreduilang:ja-JP" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile; "--preferreduilang:ja-JP" |]
                     ""
-            
+
             // Should succeed (exit 0)
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -136,11 +136,11 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile; "--preferreduilang:invalid-culture-xyz"; "arg1" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile; "--preferreduilang:invalid-culture-xyz"; "arg1" |]
                     ""
-            
+
             // Should succeed - invalid culture is ignored, but switch is still consumed
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally

@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors
 // Verify compiler error when adding an explicit constructor to a type which
 // already has an implicit constructor.
 

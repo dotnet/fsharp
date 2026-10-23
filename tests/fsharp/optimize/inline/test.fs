@@ -20,7 +20,7 @@ let testVector3GenericInline2 (v1: Vector3Generic<obj>) =
 
 // This was the failing case for the first bug reported in https://github.com/Microsoft/visualfsharp/issues/532
 //
-let testAccessingSomethingInlinableThatUsesAPrivateInlinedConstructFromAThirdModule = 
+let testAccessingSomethingInlinableThatUsesAPrivateInlinedConstructFromAThirdModule =
     let boom1 = ThisNamespaceHasToBeTheSame.Factory.NewRecord ()
     let boom2 = ThisNamespaceHasToBeTheSame.Factory.NewUnionA ()
     let boom3 = ThisNamespaceHasToBeTheSame.Factory.NewUnionB ()
@@ -28,7 +28,7 @@ let testAccessingSomethingInlinableThatUsesAPrivateInlinedConstructFromAThirdMod
 
 // This is the failing case for the second bug reported in https://github.com/Microsoft/visualfsharp/issues/532
 //
-//let testAccessingSomethingInlinableThatUsesAInternalConstructFromAnInternalsVisibleToAssembly = 
+//let testAccessingSomethingInlinableThatUsesAInternalConstructFromAnInternalsVisibleToAssembly =
 //    Bar().BarMethod()
 
 let testVector3StructRecord v1 v2 =

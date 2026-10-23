@@ -1,9 +1,9 @@
-// #Conformance #TypesAndModules #Unions 
-// RegressionTest for bug 6308 
+// #Conformance #TypesAndModules #Unions
+// RegressionTest for bug 6308
 //<Expects status="error" id="FS0023" span="(19,14-19,17)">The member 'Tag' cannot be defined because the name 'Tag' clashes with the generated property 'Tag' in this type or module</Expects>
 
 [<DefaultAugmentation(false)>]
-type BigUnion2 = 
+type BigUnion2 =
     | Case0
     | Case11 of bool
     | Case22 of bool

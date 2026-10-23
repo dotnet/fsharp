@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression for FSB 6162, Attribute constructors don't always accept arrays as arguments
 
 open System

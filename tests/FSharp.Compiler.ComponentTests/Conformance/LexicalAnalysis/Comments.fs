@@ -20,7 +20,7 @@ module Comments =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/Comments)
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/Comments", Includes=[|"E_star02.fs"|])>]
     let ``Comments - E_star02_fs - --test:ErrorRanges`` compilation =
         compilation

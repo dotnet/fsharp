@@ -1,10 +1,10 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Match pattern with 'named pattern'
 type Foo() =
     static member StaticProperty = 42
-    
+
 let testNamedPattern x =
     match x with
     | x as someNewIdentifier when x = 42
@@ -18,5 +18,5 @@ let testNamedPattern x =
 if testNamedPattern 42 <> true then exit 1
 if testNamedPattern 0 <> true then exit 1
 if testNamedPattern (-1) <> false then exit 1
-    
+
 exit 0

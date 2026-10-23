@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 // Regression test for FSharp1.0:4227 - protected access checks are not correctly implemented
 
 

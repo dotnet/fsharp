@@ -7,7 +7,7 @@ open System.IO
 
 module TryCatch =
 
-    let setupCompilation compilation = 
+    let setupCompilation compilation =
         compilation
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
         |> withNoWarn 75 //The command-line option '--generate-filter-blocks' has been deprecated

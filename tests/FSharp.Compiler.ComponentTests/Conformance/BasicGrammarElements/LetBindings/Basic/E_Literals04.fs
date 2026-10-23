@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings 
+// #Regression #Conformance #DeclarationElements #LetBindings
 //<Expects status="error" span="(10,18)" id="FS0267">This is not a valid constant expression or custom attribute value$</Expects>
 //<Expects status="error" span="(10,13)" id="FS0837">This is not a valid constant expression$</Expects>
 //<Expects status="error" span="(16,13)" id="FS0267">This is not a valid constant expression or custom attribute value$</Expects>

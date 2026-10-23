@@ -19,7 +19,7 @@ let tryParseSpan (span:string) =
 let isStringEmpty s = String.IsNullOrWhiteSpace(s)
 let isStringNotEmpty s = not (isStringEmpty s)
 let stringToLower s = if isStringNotEmpty s then s.ToLower() else s
-let areStringsEqual s1 s2 = String.Compare(s1, s2, StringComparison.OrdinalIgnoreCase) = 0 
+let areStringsEqual s1 s2 = String.Compare(s1, s2, StringComparison.OrdinalIgnoreCase) = 0
 let areSpansEqual s1 s2 =
     let span1 = tryParseSpan s1
     let span2 = tryParseSpan s2
@@ -39,7 +39,7 @@ let stripFromFileExpectations source =
             // So we just save it away, remove it from the xml, then read the xml and put it back
             // Save away the contents of the element and strip it out of expect pattern
             let content = (matched.Groups.[2]).ToString()
-            let nocontentxpect = 
+            let nocontentxpect =
                 if isStringEmpty content then expect
                 else expect.Replace(content, "")
 
@@ -94,7 +94,7 @@ let readErrorMessagesFromOutput output =
         let getMatchForName (name:string) = matched.Groups.[name].ToString()
 
         if matched.Success then Some {
-            source = (getMatchForName "tagSourceFileName") 
+            source = (getMatchForName "tagSourceFileName")
             status = stringToLower  (getMatchForName "tagStatus")
             id = stringToLower (getMatchForName "tagErrorNo")
             span = (getMatchForName "tagSpan")

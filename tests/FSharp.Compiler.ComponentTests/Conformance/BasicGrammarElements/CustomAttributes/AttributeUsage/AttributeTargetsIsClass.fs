@@ -45,6 +45,6 @@ type ClassUnionId = Id
 type ClassUnionId2 = Id
 
 [<CustomClass>]
-type UnionCase = 
+type UnionCase =
     | UnionCase of int
     | UnionCase2 of string

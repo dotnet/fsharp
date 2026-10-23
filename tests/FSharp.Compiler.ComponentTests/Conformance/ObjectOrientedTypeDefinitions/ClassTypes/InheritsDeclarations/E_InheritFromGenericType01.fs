@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance
 // Regression test for FSHARP1.0:3782
 // Make sure we do not ICE when trying to
 // inherit from a type variable.

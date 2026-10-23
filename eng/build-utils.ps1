@@ -232,7 +232,7 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 #
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
-function Make-BootstrapBuild() {
+function Make-BootstrapBuild([bool]$msbuildMultiThreaded = $true) {
     Write-Host "Building bootstrap '$bootstrapTfm' compiler with '$fsharpNetCoreProductTfm' .NET Core product TFM"
 
     $dir = Join-Path $ArtifactsDir "Bootstrap"
@@ -241,11 +241,16 @@ function Make-BootstrapBuild() {
 
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
+    # Ensure apphosts spawned by this publish see the repo-local runtime even if the caller forgot DOTNET_ROOT.
+    $env:DOTNET_ROOT = $dotnetPath
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
 
     # prepare compiler
     $projectpath = "$RepoRoot" + "proto.proj"
     $args = "publish `"$projectpath`" -c $bootstrapConfiguration"
+    if ($msbuildMultiThreaded) {
+        $args += " -mt"
+    }
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "bootstrap.binlog"
         $args += " /bl:`"$logFilePath`""

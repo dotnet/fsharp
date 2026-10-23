@@ -12,7 +12,7 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open System.Text.RegularExpressions 
+open System.Text.RegularExpressions
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open Microsoft.VisualStudio.FSharp
@@ -29,20 +29,20 @@ type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSp
 
 type internal SourceFileKind = FS | FSI | FSX
 
-type internal ISingleFileTestRunner = 
+type internal ISingleFileTestRunner =
     abstract CreateSingleFileProject :
-        content : string * 
-        ?references : string list * 
-        ?defines : string list * 
+        content : string *
+        ?references : string list *
+        ?defines : string list *
         ?fileKind : SourceFileKind *
-        ?disabledWarnings : string list * 
+        ?disabledWarnings : string list *
         ?fileName : string -> (OpenSolution * OpenProject * OpenFile)
     abstract CreateSingleFileProject :
-        content : string list * 
-        ?references : string list * 
-        ?defines : string list * 
+        content : string list *
+        ?references : string list *
+        ?defines : string list *
         ?fileKind : SourceFileKind *
-        ?disabledWarnings : string list* 
+        ?disabledWarnings : string list*
         ? fileName : string -> (OpenSolution * OpenProject * OpenFile)
 
 type internal Helper =
@@ -54,10 +54,10 @@ type internal Helper =
         let bestMscorlib = mscorlibs |> List.sort |> List.rev |> List.head
         bestMscorlib :: allExceptMscorlib
 
-    static member ExhaustivelyScrutinize (sftr : ISingleFileTestRunner, lines:string list) = 
-        let Impl kind = 
+    static member ExhaustivelyScrutinize (sftr : ISingleFileTestRunner, lines:string list) =
+        let Impl kind =
             let (_solution, _project, file) = sftr.CreateSingleFileProject(lines, fileKind = kind)
-            let Check line col = 
+            let Check line col =
                 //printfn "line=%d col=%d" line col
                 MoveCursorTo(file,line,col)
                 let tooltip = GetQuickInfoAtCursor file
@@ -71,39 +71,39 @@ type internal Helper =
                 ()
             let lines = lines |> List.toArray
             let lineCount = lines.Length
-            for line in 1..lineCount do 
+            for line in 1..lineCount do
                 let len = lines.[line-1].Length
-                for col in 1..len do 
+                for col in 1..len do
                     Check line col
         Impl SourceFileKind.FS
         Impl SourceFileKind.FSX
 
     static member AssertMemberDataTipContainsInOrder(sftr : ISingleFileTestRunner, code : string list,marker,completionName,rhsContainsOrder) =
         let (_solution, project, file) = sftr.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
-        TakeCoffeeBreak(file.VS) (* why needed? *)       
+        TakeCoffeeBreak(file.VS) (* why needed? *)
         MoveCursorToEndOfMarker(file,marker)
         let completions = AutoCompleteAtCursor file
         match completions |> Array.tryFind (fun (CompletionItem(name, _, _, _, _)) -> name = completionName) with
         | Some(CompletionItem(_, _, _, descrFunc, _)) ->
             let descr = descrFunc()
             AssertContainsInOrder(descr,rhsContainsOrder)
-        | None -> 
+        | None ->
             Console.WriteLine("Could not find completion name '{0}'", completionName)
             for error in (GetErrors(project)) do
                 printf "%s\n" (error.ToString())
-            Assert.Fail()   
+            Assert.Fail()
 
     (* Asserts ----------------------------------------------------------------------------- *)
     static member AssertEqualWithMessage(expected,actual,message) =
-        if expected<>actual then 
+        if expected<>actual then
             printf "%s" message
             Assert.Fail(message)
     static member AssertEqual(expected,actual) =
-        if expected<>actual then 
+        if expected<>actual then
             let message = sprintf "Expected %A but got %A." expected actual
             printf "%s" message
             Assert.Fail(message)
-    
+
     static member AssertContains(s:string,c) =
         if not (s.Contains(c)) then
             printf "Expected '%s' to contain '%s'." s c
@@ -111,14 +111,14 @@ type internal Helper =
     static member AssertArrayContainsPartialMatchOf(a:string array,c) =
         let found = ref false
         a |> Array.iter(fun s -> found := s.Contains(c) || !found)
-        if not(!found) then 
-            printfn "Expected: %A" a            
+        if not(!found) then
+            printfn "Expected: %A" a
             printfn "to contain '%s'." c
-            Assert.Fail()            
-    static member AssertNotContains(s:string,c) = 
+            Assert.Fail()
+    static member AssertNotContains(s:string,c) =
         if (s.Contains(c)) then
             printf "Expected '%s' to not contain '%s'." s c
-            Assert.Fail()   
+            Assert.Fail()
 
     static member AssertMatches (r : Regex) (s:string) =
         if not (r.IsMatch(s)) then
@@ -130,7 +130,7 @@ type internal Helper =
           match expects with
             | [] -> ()
             | expect :: expects ->
-                let index = s.IndexOf((expect:string),(fromIndex:int))           
+                let index = s.IndexOf((expect:string),(fromIndex:int))
                 if index = -1 then
                     let s= sprintf "Expected '%s' to contain '%s' after index %d." s expect fromIndex
                     Console.WriteLine(s)
@@ -153,62 +153,62 @@ type internal Helper =
             let r = regexStr.Substring(0,i)
             let regex = new Regex(r)
             AssertMatches regex s
-            i <- regexStr.IndexOf(c, i+1)       
+            i <- regexStr.IndexOf(c, i+1)
 
 type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, initialTypeCheckCount:int, initialEventNum:int, vs) =
     static member StartNew(vs) =
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
         new GlobalParseAndTypeCheckCounter(FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount, n, vs)
-    member private this.GetEvents() = 
+    member private this.GetEvents() =
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
         IncrementalBuilderEventTesting.GetMostRecentIncrementalBuildEvents(n-initialEventNum)
-    member private this.SawIBCreated() = 
+    member private this.SawIBCreated() =
         this.GetEvents() |> List.exists (function | IncrementalBuilderEventTesting.IBECreated -> true | _ -> false)
-    member private this.GetParsedFilesSet() = 
+    member private this.GetParsedFilesSet() =
         this.GetEvents() |> List.choose (function | IncrementalBuilderEventTesting.IBEParsed(file) -> Some(file) | _ -> None) |> set
-    member private this.GetTypeCheckedFilesSet() = 
+    member private this.GetTypeCheckedFilesSet() =
         this.GetEvents() |> List.choose (function | IncrementalBuilderEventTesting.IBETypechecked(file) -> Some(file) | _ -> None) |> set
     member this.AssertExactly(expectedParses, expectedTypeChecks) =
-        let actualParses = this.GetParsedFilesSet().Count 
+        let actualParses = this.GetParsedFilesSet().Count
         let actualTypeChecks = this.GetTypeCheckedFilesSet().Count
         if (actualParses,actualTypeChecks) <> (expectedParses, expectedTypeChecks) then
             Assert.Fail(sprintf "Expected %d parses and %d typechecks, but got %d parses and %d typechecks." expectedParses expectedTypeChecks actualParses actualTypeChecks)
     member this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : list<OpenFile>, expectedTypeCheckedFiles : list<OpenFile>) =
-        this.AssertExactly(expectedParses, 
-                           expectedTypeChecks, 
-                           expectedParsedFiles |> List.map GetNameOfOpenFile, 
+        this.AssertExactly(expectedParses,
+                           expectedTypeChecks,
+                           expectedParsedFiles |> List.map GetNameOfOpenFile,
                            expectedTypeCheckedFiles |> List.map GetNameOfOpenFile,
                            false)
     member this.AssertExactly((aap: string option,expectedParsedFiles:list<OpenFile>), (aat: string option,expectedTypeCheckedFiles:list<OpenFile>)) =
         this.AssertExactly((aap,expectedParsedFiles), (aat,expectedTypeCheckedFiles), false)
     member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>, expectCreate : bool) =
-        let p = 
-            match aap with 
+        let p =
+            match aap with
             | Some(aap) -> aap :: (expectedParsedFiles |> List.map GetNameOfOpenFile)
             | _ -> (expectedParsedFiles |> List.map GetNameOfOpenFile)
-        let t = 
+        let t =
             match aat with
             | Some(aat) -> aat :: (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
             | _ -> (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
         this.AssertExactly(p.Length, t.Length, p, t, expectCreate)
     member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : string list, expectedTypeCheckedFiles : string list, expectCreate : bool) =
-        let note,ok = 
+        let note,ok =
             if expectCreate then
                 if this.SawIBCreated() then ("The incremental builder was created, as expected",true) else ("The incremental builder was NOT deleted and recreated, even though we expected it to be",false)
             else
                 if this.SawIBCreated() then ("The incremental builder was UNEXPECTEDLY deleted",false) else ("",true)
         let actualParsedFiles = this.GetParsedFilesSet()
         let actualTypeCheckedFiles = this.GetTypeCheckedFilesSet()
-        let actualParses = actualParsedFiles.Count 
+        let actualParses = actualParsedFiles.Count
         let actualTypeChecks = actualTypeCheckedFiles.Count
         let expectedParsedFiles = expectedParsedFiles |> set
         let expectedTypeCheckedFiles = expectedTypeCheckedFiles |> set
         if (actualParses, actualTypeChecks, actualParsedFiles, actualTypeCheckedFiles) <> (expectedParses, expectedTypeChecks, expectedParsedFiles, expectedTypeCheckedFiles) then
             let detail = sprintf "ExpectedParse: %A\nActualParse:   %A\n\nExpectedTypeCheck: %A\nActualTypeCheck:   %A\n\n%s"
                                     expectedParsedFiles actualParsedFiles expectedTypeCheckedFiles actualTypeCheckedFiles note
-            let msg = 
+            let msg =
                 if (actualParses, actualTypeChecks) <> (expectedParses, expectedTypeChecks) then
                     sprintf "Expected %d parses and %d typechecks, but got %d parses and %d typechecks.\n\n%s" expectedParses expectedTypeChecks actualParses actualTypeChecks detail
                 else
@@ -219,7 +219,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 
 /// REVIEW: Should be able to get data tip when hovering over a class member method name ie  "member private art.attemptUpgradeToMSBuild hierarchy"
 
-(* Not Unittested Yet ----------------------------------------------------------------------------------------------------------------- *)        
+(* Not Unittested Yet ----------------------------------------------------------------------------------------------------------------- *)
 /// FEATURE: Pressing ctrl-j or ctrl-space will bring up the Intellisense completion list at the current cursor.
 /// FEATURE: String literals such as "My dog has fleas" will be colored in in String color.
 /// FEATURE: Source code files with extensions .fs and .ml are recognized by the language service.
@@ -227,24 +227,24 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// FEATURE: Double-clicking a word in a comment highlight just the word not the whole comment.
 /// FEATURE: During debugging user may hover over a tooltip and get debugging information about. For example, instance values.
 /// FEATURE: Character literals such as 'x' will be colored in in String color.
-(* ------------------------------------------------------------------------------------------------------------------------------------ *)        
+(* ------------------------------------------------------------------------------------------------------------------------------------ *)
 
 /// FEATURE(nyi): As the user types part of an identifier, for example Console.Wr, he'll get an Intellisense list of members that match.
 /// FEATURE(nyi): The user can press ctrl-i to start an incremental search within the current document.
 /// FEATURE(nyi): Pressing ctrl-} will move cursor to the matching brace. This will work for all brace types.
 /// FEATURE(nyi): If a source file has a #r or #R reference then changes to the referenced assembly will be recognized by the language service.
 /// FEATURE(nyi): If a source file used to have a #r or #R reference and then the user removes it, that assembly will no longer be in scope.
-    
+
 /// FEATURE(nyi): There is a navigation bar at the top of the text editor window that shows the user all the top-level and second-level constructs in the file.
 /// FEATURE(nyi): Types in the code will be colored with a special BoundType color
 /// FEATURE(nyi): Preprocessor-like keywords aside from #light\#if\#else\#endif will be colored with PreprocessorKeyword color.
 /// FEATURE(nyi): Intellisense for argument names.
-    
+
 /// PS-FEATURE(nyi): The user may choose to enable mixed-mode debugging by selecting Project Settings\Debug\Enable unmanaged code debugging
 
 /// These are the driver tests. They're parameterized on
 /// various functions that abstract actions over vs.
-type LanguageServiceBaseTests() =  
+type LanguageServiceBaseTests() =
 
     let mutable defaultSolution : OpenSolution = Unchecked.defaultof<_>
     let cache = System.Collections.Generic.Dictionary()
@@ -256,13 +256,13 @@ type LanguageServiceBaseTests() =
     let mutable ops = BuiltMSBuildTestFlavour()
     let testStopwatch = new Stopwatch()
 
-    // Timings ----------------------------------------------------------------------------- 
+    // Timings -----------------------------------------------------------------------------
     let stopWatch = new Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-      
+
 
     let Init() =
-        let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) = 
+        let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) =
             let fullname = sprintf "%A" a
             if fullname.Contains(text1) && fullname.Contains(text2) then
                 // Can't throw an exception here because its in an event handler.
@@ -274,7 +274,7 @@ type LanguageServiceBaseTests() =
             // We're worried about loading these when running against .NET 4.0:
             // Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
             // Microsoft.Build.Utilities.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
-            AssertNotAssemblyNameContains(args.LoadedAssembly,"Microsoft.Build", "Version=3.5.0.0") 
+            AssertNotAssemblyNameContains(args.LoadedAssembly,"Microsoft.Build", "Version=3.5.0.0")
             ()
         AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
 
@@ -282,7 +282,7 @@ type LanguageServiceBaseTests() =
 
         defaultVS <- ops.CreateVisualStudio()
         currentVS <- defaultVS
-        
+
         defaultSolution <- GlobalFunctions.CreateSolution(defaultVS)
         cache.Clear()
 
@@ -291,7 +291,7 @@ type LanguageServiceBaseTests() =
 
         if box currentVS <> box defaultVS then
             failwith "LanguageServiceBaseTests.Setup was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
-        
+
         // reset state of default VS instance that can be shared among the tests
         ShiftKeyUp(currentVS)
         ops.CleanInvisibleProject(currentVS)
@@ -303,40 +303,40 @@ type LanguageServiceBaseTests() =
 
     member internal _.VsOpts
         with set op = ops <- op
-    
+
     member internal this.TestRunner : ISingleFileTestRunner = SingleFileTestRunner(this) :> _
 
     member internal _.VS = currentVS
 
     member internal this.CreateSingleFileProject
         (
-            content : string, 
-            ?references : string list, 
-            ?defines : string list, 
-            ?fileKind : SourceFileKind, 
+            content : string,
+            ?references : string list,
+            ?defines : string list,
+            ?fileKind : SourceFileKind,
             ?disabledWarnings : string list,
             ?fileName : string,
             ?otherFlags: string
-        ) = 
+        ) =
         let content = content.Split( [|"\r\n"|], StringSplitOptions.None) |> List.ofArray
         this.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName, ?otherFlags = otherFlags)
 
     member internal _.CreateSingleFileProject
         (
-            content : string list, 
-            ?references : string list, 
-            ?defines : string list, 
-            ?fileKind : SourceFileKind, 
+            content : string list,
+            ?references : string list,
+            ?defines : string list,
+            ?fileKind : SourceFileKind,
             ?disabledWarnings : string list,
             ?fileName : string,
             ?otherFlags: string
-        ) = 
+        ) =
         assert (box currentVS = box defaultVS)
-        let mkKeyComponent l = 
+        let mkKeyComponent l =
             defaultArg l []
             |> Seq.sort
             |> String.concat "|"
-        let ext = 
+        let ext =
             match fileKind with
             | Some SourceFileKind.FS -> ".fs"
             | Some SourceFileKind.FSI -> ".fsi"
@@ -344,7 +344,7 @@ type LanguageServiceBaseTests() =
             | None -> ".fs"
         let fileName = (defaultArg fileName "File1") + ext
 
-        let key = 
+        let key =
             let refs = mkKeyComponent references
             let defines = mkKeyComponent defines
             let warnings = mkKeyComponent disabledWarnings
@@ -355,7 +355,7 @@ type LanguageServiceBaseTests() =
             ReplaceFileInMemory file []
             SaveFileToDisk file
             TakeCoffeeBreak(currentVS)
-            
+
             ReplaceFileInMemory file content
             SaveFileToDisk file
             TakeCoffeeBreak(currentVS)
@@ -367,15 +367,15 @@ type LanguageServiceBaseTests() =
             for dw in (defaultArg disabledWarnings []) do
                 GlobalFunctions.AddDisabledWarning(proj, dw)
 
-            if defines.IsSome then 
+            if defines.IsSome then
                 GlobalFunctions.SetProjectDefines(proj, defines.Value)
 
-            for r in (defaultArg references []) do 
+            for r in (defaultArg references []) do
                 GlobalFunctions.AddAssemblyReference(proj, r)
 
-            match otherFlags with 
+            match otherFlags with
             | None -> ()
-            | Some flags -> GlobalFunctions.SetOtherFlags(proj, flags) 
+            | Some flags -> GlobalFunctions.SetOtherFlags(proj, flags)
 
             let content = String.concat Environment.NewLine content
             let _ = AddFileFromTextBlob(proj, fileName, content)
@@ -386,13 +386,13 @@ type LanguageServiceBaseTests() =
             TakeCoffeeBreak(currentVS)
 
             defaultSolution, proj, file
-    
-    member internal _.CreateSolution() = 
+
+    member internal _.CreateSolution() =
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
         GlobalFunctions.CreateSolution(currentVS)
 
-    member internal _.CloseSolution(sln : OpenSolution) = 
+    member internal _.CloseSolution(sln : OpenSolution) =
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
         if (box sln.VS <> box currentVS) then
@@ -400,7 +400,7 @@ type LanguageServiceBaseTests() =
 
         GlobalFunctions.CloseSolution(sln)
 
-    member internal _.AddAssemblyReference(proj, ref) = 
+    member internal _.AddAssemblyReference(proj, ref) =
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
 
@@ -410,22 +410,22 @@ type LanguageServiceBaseTests() =
         member _.Dispose() =
             if box currentVS <> box defaultVS then
                 failwith "LanguageServiceBaseTests.Shutdown was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
-        
+
             GlobalFunctions.Cleanup(defaultVS)
             cache.Clear()
 
-    member this.UsingNewVS() = 
+    member this.UsingNewVS() =
         if box currentVS <> box defaultVS then
             failwith "LanguageServiceBaseTests.UsingNewVS was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         currentVS <- ops.CreateVisualStudio()
-        { new System.IDisposable with 
-            member _.Dispose() = 
+        { new System.IDisposable with
+            member _.Dispose() =
                 if box currentVS = box defaultVS then
                     failwith "At this moment 'current' instance of VS cannot be the same as the 'default' one. This may denote that tests contains errors."
                 GlobalFunctions.Cleanup(currentVS)
                 currentVS <- defaultVS }
 
-        
+
     member this.TearDown() =
 
 
@@ -437,7 +437,7 @@ type LanguageServiceBaseTests() =
             System.Windows.MessageBox.Show(msg) |> ignore
 #endif
         // help find leaks per-test
-//        System.GC.Collect()  
+//        System.GC.Collect()
 //        System.GC.WaitForPendingFinalizers()
         ()
 
@@ -445,22 +445,22 @@ and internal SingleFileTestRunner(owner : LanguageServiceBaseTests) =
     interface ISingleFileTestRunner with
         member sftr.CreateSingleFileProject
             (
-                content : string, 
-                ?references : string list, 
-                ?defines : string list, 
-                ?fileKind : SourceFileKind, 
+                content : string,
+                ?references : string list,
+                ?defines : string list,
+                ?fileKind : SourceFileKind,
                 ?disabledWarnings : string list,
                 ?fileName : string
-            ) = 
+            ) =
             owner.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName)
 
         member sftr.CreateSingleFileProject
             (
-                content : string list, 
-                ?references : string list, 
-                ?defines : string list, 
-                ?fileKind : SourceFileKind, 
+                content : string list,
+                ?references : string list,
+                ?defines : string list,
+                ?fileKind : SourceFileKind,
                 ?disabledWarnings : string list,
                 ?fileName : string
-            ) = 
+            ) =
             owner.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName)

@@ -10,7 +10,8 @@ ImplFile
                     (IsInst (FromParseError (4,4--4,4), (4,2--4,4)), None,
                      Const (Unit, (4,8--4,10)), (4,2--4,10), Yes,
                      { ArrowRange = Some (4,5--4,7)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,10),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,10),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,9--3,13) }), (3,0--4,10));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],

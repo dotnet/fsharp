@@ -365,15 +365,15 @@ and output_bcc os bcc =
          | ILArgConvention.Default -> " "
          | ILArgConvention.VarArg -> "vararg ")
 
-and output_callconv os (Callconv(hasthis, cc)) =
+and output_callconv os (callconv: ILCallingConv) =
     output_string
         os
-        (match hasthis with
+        (match callconv.ThisConv with
          | ILThisConvention.Instance -> "instance "
          | ILThisConvention.InstanceExplicit -> "explicit "
          | ILThisConvention.Static -> "")
 
-    output_bcc os cc
+    output_bcc os callconv.BasicConv
 
 and goutput_dlocref env os (dref: ILType) =
     match dref with
@@ -776,6 +776,7 @@ let splitTypeLayout =
     | ILTypeDefLayout.Auto -> "auto", (fun _os () -> ())
     | ILTypeDefLayout.Sequential info -> "sequential", (fun os () -> output_type_layout_info os info)
     | ILTypeDefLayout.Explicit info -> "explicit", (fun os () -> output_type_layout_info os info)
+    | ILTypeDefLayout.Extended -> "extended", (fun _os () -> ())
 
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) =
     for f in fdefs.AsList() do

@@ -27,7 +27,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
-    let mapCpsProjectToSite (project: Project, cpsCommandLineOptions: IDictionary<ProjectId, string[] * string[]>) =
+    let mapCpsProjectToSite (project: Project, cpsCommandLineOptions: IDictionary<ProjectId, struct (string[] * string[])>) =
         let sourcePaths, referencePaths, options =
             match cpsCommandLineOptions.TryGetValue(project.Id) with
             | true, (sourcePaths, options) -> sourcePaths, [||], options
@@ -46,7 +46,7 @@ module private FSharpProjectOptionsHelpers =
 
             member site.CompilationBinOutputPath =
                 site.CompilationOptions
-                |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                |> Array.tryPickV (fun s -> if s.StartsWith("-o:") then ValueSome s.[3..] else ValueNone)
 
             member _.ProjectFileName = project.FilePath
             member _.AdviseProjectSiteChanges(_, _) = ()
@@ -101,14 +101,26 @@ module private FSharpProjectOptionsHelpers =
         else
             hasProjectVersionChanged
 
+type private SingleFileCacheEntry =
+    {
+        Project: Project
+        FileStamp: VersionStamp
+        ParsingOptions: FSharpParsingOptions
+        ProjectOptions: FSharpProjectOptions
+        Subscription: ConnectionPointSubscription
+    }
+
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
     | TryGetOptionsByDocument of
         Document *
-        AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> *
+        AsyncReplyChannel<struct (FSharpParsingOptions * FSharpProjectOptions) voption> *
         CancellationToken *
         userOpName: string
-    | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) voption> * CancellationToken
+    | TryGetOptionsByProject of
+        Project *
+        AsyncReplyChannel<struct (FSharpParsingOptions * FSharpProjectOptions) voption> *
+        CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
 
@@ -117,15 +129,15 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Store command line options
-    let commandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
+    let commandLineOptions =
+        ConcurrentDictionary<ProjectId, struct (string[] * string[])>()
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache =
-        ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
+        ConcurrentDictionary<ProjectId, struct (Project * FSharpParsingOptions * FSharpProjectOptions)>()
 
-    let singleFileCache =
-        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, SingleFileCacheEntry>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
@@ -200,7 +212,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
+            let textViewAndCaret () : (IVsTextView * Position) voption = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
@@ -210,7 +222,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     let caret = textViewAndCaret ()
 
                     match caret with
-                    | None ->
+                    | ValueNone ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -219,7 +231,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             userOpName = userOpName
                         )
 
-                    | Some(_, caret) ->
+                    | ValueSome(_, caret) ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
                             sourceText.ToFSharpSourceText(),
@@ -234,14 +246,12 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let otherOptions =
                     if project.IsFSharpMetadata then
-                        project.ProjectReferences
-                        |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                        |> Array.ofSeq
-                        |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                        )
+                        [|
+                            for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                                yield "-r:" + x.FilePath
+                            for x in project.ProjectReferences do
+                                yield "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
+                        |]
                     else
                         [||]
 
@@ -279,36 +289,56 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let onKillFocus (_) = updateProjectOptions ()
                 let onSetFocus (_) = updateProjectOptions ()
 
-                let addToCacheAndSubscribe value =
-                    match value with
-                    | projectId, fileStamp, parsingOptions, projectOptions, _ ->
-                        let subscription =
-                            match textViewAndCaret () with
-                            | Some(textView, _) ->
-                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                            | None -> None
+                let addToCacheAndSubscribe (entry: SingleFileCacheEntry) =
+                    let subscription =
+                        match textViewAndCaret () with
+                        | ValueSome(textView, _) ->
+                            subscribeToTextViewEvents (
+                                textView,
+                                (ValueSome onChangeCaretHandler),
+                                (ValueSome onKillFocus),
+                                (ValueSome onSetFocus)
+                            )
+                        | ValueNone -> ValueNone
 
-                        (projectId, fileStamp, parsingOptions, projectOptions, subscription)
+                    { entry with
+                        Subscription = subscription
+                    }
 
                 singleFileCache.AddOrUpdate(
                     document.Id, // The key to the cache
                     (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
                     (fun _ _ value -> value), // Function to update the value if the key exists
-                    (document.Project, fileStamp, parsingOptions, projectOptions, None) // The value to add or update
+                    {
+                        Project = document.Project
+                        FileStamp = fileStamp
+                        ParsingOptions = parsingOptions
+                        ProjectOptions = projectOptions
+                        Subscription = ValueNone
+                    } // The value to add or update
                 )
                 |> ignore
 
-                return ValueSome(parsingOptions, projectOptions)
+                return ValueSome struct (parsingOptions, projectOptions)
 
-            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions, _) ->
+            | true,
+              {
+                  Project = oldProject
+                  FileStamp = oldFileStamp
+                  ParsingOptions = parsingOptions
+                  ProjectOptions = projectOptions
+              } ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     match singleFileCache.TryRemove(document.Id) with
-                    | true, (_, _, _, _, Some subscription) -> subscription.Dispose()
+                    | true,
+                      {
+                          Subscription = ValueSome subscription
+                      } -> subscription.Dispose()
                     | _ -> ()
 
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
                 else
-                    return ValueSome(parsingOptions, projectOptions)
+                    return ValueSome struct (parsingOptions, projectOptions)
         }
 
     let tryGetProjectSite (project: Project) =
@@ -342,7 +372,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
                             match! tryComputeOptions referencedProject with
                             | ValueNone -> canBail <- true
-                            | ValueSome(_, projectOptions) ->
+                            | ValueSome struct (_, projectOptions) ->
                                 referencedProjects.Add(
                                     FSharpReferencedProject.FSharpReference(referencedProject.OutputFilePath, projectOptions)
                                 )
@@ -362,8 +392,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             [|
                                 // Clear any references from CompilationOptions.
                                 // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                                // A path map belongs to the build output: applied here it rewrites the file name of
+                                // every range imported from a referenced project, and navigation finds no document.
                                 for x in projectSite.CompilationOptions do
-                                    if not (x.Contains("-r:")) then
+                                    if not (x.Contains("-r:") || x.StartsWith("--pathmap:", StringComparison.Ordinal)) then
                                         x
 
                                 for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
@@ -413,7 +445,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 let options =
                                     projectsToClearCache
                                     |> Seq.map (fun pair ->
-                                        let _, _, projectOptions = pair.Value
+                                        let struct (_, _, projectOptions) = pair.Value
                                         projectOptions)
 
                                 checker.ClearCache(options, userOpName = "tryComputeOptions")
@@ -427,16 +459,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                            cache.[projectId] <- (project, parsingOptions, projectOptions)
+                            cache.[projectId] <- struct (project, parsingOptions, projectOptions)
 
-                            return ValueSome(parsingOptions, projectOptions)
+                            return ValueSome struct (parsingOptions, projectOptions)
 
-            | true, (oldProject, parsingOptions, projectOptions) ->
+            | true, struct (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
-                    return ValueSome(parsingOptions, projectOptions)
+                    return ValueSome struct (parsingOptions, projectOptions)
         }
 
     let loop (agent: MailboxProcessor<FSharpProjectOptionsMessage>) =
@@ -508,7 +540,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
                     match cache.TryRemove(projectId) with
-                    | true, (_, _, projectOptions) ->
+                    | true, struct (_, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(projectId) |> ignore
                         checker.ClearCache([ projectOptions ])
                     | _ -> ()
@@ -516,10 +548,14 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, _, projectOptions, subscription) ->
+                    | true,
+                      {
+                          ProjectOptions = projectOptions
+                          Subscription = subscription
+                      } ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
-                        subscription |> Option.iter (fun handler -> handler.Dispose())
+                        subscription |> ValueOption.iter (fun handler -> handler.Dispose())
                     | _ -> ()
         }
 
@@ -539,7 +575,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
     member _.SetCommandLineOptions(projectId, sourcePaths, options) =
-        commandLineOptions.[projectId] <- (sourcePaths, options)
+        commandLineOptions.[projectId] <- struct (sourcePaths, options)
 
     member _.SetLegacyProjectSite(projectId, projectSite) =
         legacyProjectSites.[projectId] <- projectSite

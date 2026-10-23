@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Constants  
+// #Regression #Conformance #PatternMatching #Constants
 // Pattern Matching - Simple Constants
 // Type: BigInt
 

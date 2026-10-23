@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ObjectConstructors 
+// #Regression #Conformance #DataExpressions #ObjectConstructors
 // Regression test for FSharp1.0:4593 - Internal compiler error on typechecking object expressions with duplicate overrides
 
 //<Expects id="FS0359" status="error" span="(16,11-19,12)">More than one override implements 'Next: StrongToWeakEntry<'a> array -> int when 'a: not struct'</Expects>
@@ -9,7 +9,7 @@
 type BaseHashtable<'Entry, 'Key>(initialCapacity) =
     abstract member Next : entries : 'Entry array -> int
 
-[<Struct>]    
+[<Struct>]
 type StrongToWeakEntry<'Value when 'Value : not struct> =
     val mutable public next : int
 

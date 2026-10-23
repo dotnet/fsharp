@@ -7,7 +7,6 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -308,14 +307,19 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
         | SynExpr.TryWith(innerTry, withList, mTryToWith, _spTry, _spWith, trivia) ->
-            if not (g.langVersion.SupportsFeature(LanguageFeature.TryWithInSeqExpression)) then
-                error (Error(FSComp.SR.tcTryIllegalInSequenceExpression (), mTryToWith))
-
             let env = { env with eIsControlFlow = true }
 
             let tryExpr, tpenv =
                 let inner, tpenv = tcSequenceExprBody env genOuterTy tpenv innerTry
                 mkSeqDelayedExpr mTryToWith inner, tpenv
+
+            // The handler runs outside any IL exception frame, so 'reraise()' in a clause rethrows this value instead.
+            let caughtVal, _ = mkCompGenLocal mTryToWith "caughtException" g.exn_ty
+
+            let envTry =
+                { env with
+                    eCaughtExceptionVal = ValueSome caughtVal
+                }
 
             // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv =
@@ -328,7 +332,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                             TcTrueMatchClause.No
 
                     let patR, condR, vspecs, envinner, tpenv =
-                        TcMatchPattern cenv g.exn_ty env tpenv pat cond isTrueMatchClause
+                        TcMatchPattern cenv g.exn_ty envTry tpenv pat cond isTrueMatchClause
 
                     let envinner =
                         match sp with
@@ -354,8 +358,19 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let v2, handlerExpr =
                 CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
 
-            let filterLambda = mkLambda filterExpr.Range v1 (filterExpr, genOuterTy)
-            let handlerLambda = mkLambda handlerExpr.Range v2 (handlerExpr, genOuterTy)
+            // The 'when' guards are compiled into both lambdas, so bind the value in whichever one rethrows it,
+            // and in neither when nothing does - a handler without 'reraise()' then compiles exactly as before.
+            let bindCaughtExn (v: Val) bodyExpr =
+                if (freeInExpr CollectLocals bodyExpr).FreeLocals.Contains caughtVal then
+                    mkInvisibleLet withRange caughtVal (exprForVal withRange v) bodyExpr
+                else
+                    bodyExpr
+
+            let filterLambda =
+                mkLambda filterExpr.Range v1 (bindCaughtExn v1 filterExpr, genOuterTy)
+
+            let handlerLambda =
+                mkLambda handlerExpr.Range v2 (bindCaughtExn v2 handlerExpr, genOuterTy)
 
             let combinatorExpr =
                 mkSeqTryWith cenv env mTryToWith genOuterTy tryExpr filterLambda handlerLambda
@@ -416,45 +431,46 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             resExpr, tpenv
 
     and tcSequenceExprBodyAsSequenceOrStatement env genOuterTy tpenv comp =
-        match tryTcSequenceExprBody env genOuterTy tpenv comp with
-        | Some(expr, tpenv) -> Choice1Of2 expr, tpenv
-        | None ->
+        cenv.stackGuard.Guard(fun () ->
+            match tryTcSequenceExprBody env genOuterTy tpenv comp with
+            | Some(expr, tpenv) -> Choice1Of2 expr, tpenv
+            | None ->
 
-            let env =
-                { env with
-                    eContextInfo = ContextInfo.SequenceExpression genOuterTy
-                }
+                let env =
+                    { env with
+                        eContextInfo = ContextInfo.SequenceExpression genOuterTy
+                    }
 
-            if enableImplicitYield then
-                // The body is speculatively type-checked once to classify it as a statement or a yielded
-                // element. Reporting is buffered so the kept interpretation reports exactly once (else
-                // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
-                // probe result and its buffered reporting is committed; a yielded element drops it and
-                // TcExprFlex re-checks with the element's target type.
-                let hasTypeUnit, _ty, expr, tpenv =
-                    RunWithBufferedReporting
-                        cenv.tcSink
-                        "SeqImplicitYieldProbe"
-                        (fun () -> TryTcStmt cenv env tpenv comp)
-                        (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
+                if enableImplicitYield then
+                    // The body is speculatively type-checked once to classify it as a statement or a yielded
+                    // element. Reporting is buffered so the kept interpretation reports exactly once (else
+                    // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
+                    // probe result and its buffered reporting is committed; a yielded element drops it and
+                    // TcExprFlex re-checks with the element's target type.
+                    let hasTypeUnit, _ty, expr, tpenv =
+                        RunWithBufferedReporting
+                            cenv.tcSink
+                            "SeqImplicitYieldProbe"
+                            (fun () -> TryTcStmt cenv env tpenv comp)
+                            (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
 
-                if hasTypeUnit then
-                    Choice2Of2 expr, tpenv
+                    if hasTypeUnit then
+                        Choice2Of2 expr, tpenv
+                    else
+                        let genResultTy = NewInferenceType g
+                        let mExpr = expr.Range
+                        UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
+                        let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
+                        let exprTy = tyOfExpr cenv.g expr
+                        AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
+
+                        let resExpr =
+                            mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr (expr, genResultTy, mExpr, exprTy))
+
+                        Choice1Of2 resExpr, tpenv
                 else
-                    let genResultTy = NewInferenceType g
-                    let mExpr = expr.Range
-                    UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
-                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
-                    let exprTy = tyOfExpr cenv.g expr
-                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
-
-                    let resExpr =
-                        mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr (expr, genResultTy, mExpr, exprTy))
-
-                    Choice1Of2 resExpr, tpenv
-            else
-                let stmt, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
-                Choice2Of2 stmt, tpenv
+                    let stmt, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
+                    Choice2Of2 stmt, tpenv)
 
     let coreExpr, tpenv = tcSequenceExprBody env overallTy.Commit tpenv comp
     let delayedExpr = mkSeqDelayedExpr coreExpr.Range coreExpr

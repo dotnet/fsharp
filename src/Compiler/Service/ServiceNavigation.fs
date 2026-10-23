@@ -224,7 +224,7 @@ module NavigationImpl =
 
         // Process a class declaration or F# type declaration
         let rec processExnDefnRepr baseName nested synExnRepr =
-            let (SynExceptionDefnRepr(_, ucase, _, _, access, m)) = synExnRepr
+            let (SynExceptionDefnRepr(caseName = ucase; accessibility = access; range = m)) = synExnRepr
             let (SynUnionCase(ident = SynIdent(id, _); caseType = fldspec)) = ucase
             let mBody = fldspecRange fldspec
 
@@ -240,7 +240,8 @@ module NavigationImpl =
 
         and processTycon baseName synTypeDefn =
             let (SynTypeDefn(typeInfo = typeInfo; typeRepr = repr; members = membDefns; range = m)) = synTypeDefn
-            let (SynComponentInfo(longId = lid; accessibility = access)) = typeInfo
+            let lid = typeInfo.LongIdent
+            let (SynComponentInfo(accessibility = access)) = typeInfo
 
             let topMembers = processMembers membDefns NavigationEntityKind.Class |> snd
 
@@ -384,7 +385,9 @@ module NavigationImpl =
                         let mBody = rangeOfLid lid
                         createDecl (baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, mBody, [], NavigationEntityKind.Namespace, false, None)
 
-                    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); decls = decls; range = m) ->
+                    | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls; range = m) ->
+                        let lid = compInfo.LongIdent
+                        let (SynComponentInfo(accessibility = access)) = compInfo
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedDeclarations decls
 
@@ -497,7 +500,9 @@ module NavigationImpl =
             item, addItemName id.idText
 
         let rec processExnRepr baseName nested inp =
-            let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _); caseType = fldspec), _, _, access, m)) = inp
+            let (SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _); caseType = fldspec); accessibility = access; range = m)) =
+                inp
+
             let mBody = fldspecRange fldspec
 
             [
@@ -510,8 +515,9 @@ module NavigationImpl =
             processExnRepr baseName nested repr
 
         and processTycon baseName inp =
-            let (SynTypeDefnSig(typeInfo = SynComponentInfo(longId = lid; accessibility = access); typeRepr = repr; members = membDefns; range = m)) =
-                inp
+            let (SynTypeDefnSig(typeInfo = typeInfo; typeRepr = repr; members = membDefns; range = m)) = inp
+            let lid = typeInfo.LongIdent
+            let (SynComponentInfo(accessibility = access)) = typeInfo
 
             let topMembers = processSigMembers membDefns
 
@@ -611,7 +617,9 @@ module NavigationImpl =
                         let mBody = rangeOfLid lid
                         createDecl (baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, mBody, [], NavigationEntityKind.Module, false, None)
 
-                    | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); moduleDecls = decls; range = m) ->
+                    | SynModuleSigDecl.NestedModule(moduleInfo = compInfo; moduleDecls = decls; range = m) ->
+                        let lid = compInfo.LongIdent
+                        let (SynComponentInfo(accessibility = access)) = compInfo
                         // Find let bindings (for the right dropdown)
                         let nested = processNestedSigDeclarations decls
 
@@ -805,12 +813,12 @@ module NavigateTo =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
 
         let addExceptionRepr exnRepr isSig container =
-            let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _)), _, _, _, _)) = exnRepr
+            let (SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _)))) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
             NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
 
-        let addComponentInfo containerType kind info isSig container =
-            let (SynComponentInfo(longId = lid)) = info
+        let addComponentInfo containerType kind (info: SynComponentInfo) isSig container =
+            let lid = info.LongIdent
             addLongIdent kind lid isSig container
 
             NavigableContainer.Container(containerType, pathOfLid lid, container)

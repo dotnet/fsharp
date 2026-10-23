@@ -8,8 +8,8 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
-
-[<RunTestCasesInSequence>]
+// A single temp file (name in module state) undergoes diverse manipulations across various tests
+[<TestClass(DisableParallelization = true)>]
 module DeterministicTests =
 
     let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]
@@ -50,9 +50,9 @@ let test() =
 
     let commonOptionsBasicMvid = lazy(getMvid basicCodeSnippet commonOptions)
 
-    let calculateRefAssMvids referenceCodeSnippet codeAfterChangeIsDone = 
+    let calculateRefAssMvids referenceCodeSnippet codeAfterChangeIsDone =
 
-        let mvid1 = 
+        let mvid1 =
             if referenceCodeSnippet = basicCodeSnippet then
                 commonOptionsBasicMvid.Value
             else
@@ -63,7 +63,7 @@ let test() =
 
 
     [<Fact>]
-    let ``Simple assembly should be deterministic``() =  
+    let ``Simple assembly should be deterministic``() =
         File.WriteAllText(inputPath, basicCodeSnippet)
 
         let getMvid() =
@@ -75,7 +75,7 @@ let test() =
         Assert.Equal(getMvid(), getMvid())
 
     [<Fact>]
-    let ``Simple assembly with different platform should not be deterministic``() = 
+    let ``Simple assembly with different platform should not be deterministic``() =
         let mvid1 = getMvid basicCodeSnippet ["--deterministic"]
         let mvid2 = getMvid basicCodeSnippet ["--deterministic";"--platform:Itanium"]
         // No two platforms should produce the same MVID
@@ -100,27 +100,27 @@ let test() =
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.NotEqual(mvid1, mvid2)
 
-    [<Fact>] 
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function name is different with the same function name length`` () =
         let privCode1 = basicCodeSnippet.Replace("privTest()","privTest1()")
         let privCode2 = basicCodeSnippet.Replace("privTest()","privTest2()")
         let mvid1, mvid2 = calculateRefAssMvids privCode1 privCode2
         Assert.Equal(mvid1, mvid2)
-    
-    
-    [<Fact>] 
+
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function name is different with the different function name length`` () =
         let src2 = basicCodeSnippet.Replace("privTest()","privTest11()")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.Equal(mvid1, mvid2)
-    
-    [<Fact>] 
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function body is different`` () =
         let src2 = basicCodeSnippet.Replace("""Console.WriteLine("Private Hello World!")""","""Console.Write("Private Hello World!")""")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.Equal(mvid1, mvid2)
-        
-    [<Fact>] 
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function return type is different`` () =
 
         let src2 =
@@ -137,8 +137,8 @@ let test() =
             """
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.Equal(mvid1, mvid2)
-     
-    [<Fact>] 
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function parameter count is different`` () =
         let src =
             """
@@ -152,7 +152,7 @@ let test() =
     privTest1 () |> ignore
     Console.WriteLine()
             """
-       
+
         let src2 =
             """
 module ReferenceAssembly
@@ -169,7 +169,7 @@ let test() =
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.Equal(mvid1, mvid2)
 
-    [<Fact>] 
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function parameter count is different and private function is unused`` () =
         let src =
             """
@@ -196,8 +196,8 @@ let test() =
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.Equal(mvid1, mvid2)
-     
-    [<Fact>] 
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when only private function parameter types are different`` () =
         let src =
             """
@@ -224,11 +224,11 @@ let test() =
     privTest1 "" |> ignore
     Console.WriteLine()
             """
-       
+
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.Equal(mvid1, mvid2)
-        
-    [<Fact>] 
+
+    [<Fact>]
     let ``Reference assemblies should be deterministic when private function is missing in one of them`` () =
         let src =
             """
@@ -256,7 +256,7 @@ let test() =
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.Equal(mvid1, mvid2)
 
-    [<Fact>] 
+    [<Fact>]
     let ``Reference assemblies should be deterministic when inner function is removed`` () =
         let src =
             """
@@ -271,7 +271,7 @@ let test() =
     let stringVal = innerFunc 15
     Console.WriteLine(stringVal)
             """
-     
+
         let src2 =
             """
 module ReferenceAssembly
@@ -281,11 +281,11 @@ open System
 let test() =
     Console.WriteLine()
             """
-       
+
         let mvid1, mvid2 = calculateRefAssMvids src src2
         Assert.Equal(mvid1, mvid2)
 
-    [<Fact>] 
+    [<Fact>]
     let ``Reference assemblies should be same when contents of quoted expression change`` () =
         let src =
             """
@@ -315,7 +315,7 @@ let inline myFunc x y = x + y"""
     [<Fact>]
     let ``Reference assemblies must not change when a must-inline function does not change`` () =
         let codeBefore = """module ReferenceAssembly
-let inline myFunc x y = x - y"""       
+let inline myFunc x y = x - y"""
         let mvid1, mvid2 = calculateRefAssMvids codeBefore codeBefore
         Assert.Equal(mvid1,mvid2)
 
@@ -323,7 +323,7 @@ let inline myFunc x y = x - y"""
     [<InlineData(ivtSnippet, false)>] // If IVT provided -> MVID must reflect internal binding
     [<InlineData("", true )>] // No IVT => internal binding can be ignored for mvid purposes
     let ``Reference assemblies MVID when having internal binding``(additionalSnippet:string, shouldBeStable:bool) =
-        let codeAfter = 
+        let codeAfter =
             basicCodeSnippet
                 .Replace("private","internal")
                 .Replace("//PLACEHOLDER", additionalSnippet)

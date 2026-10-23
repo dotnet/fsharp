@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 //Regression for FSHARP1.0:6030
 //Quoting a class member ? results in error about 'trait members' but quoting it as op_Dynamic is ok
 //<Expects status="error" id="FS0458" span="(19,17-19,18)">Quotations cannot contain expressions that make member constraint calls, or uses of operators that implicitly resolve to a member constraint call</Expects>

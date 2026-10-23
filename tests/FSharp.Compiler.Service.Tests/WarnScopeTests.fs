@@ -15,9 +15,9 @@ module N.M
 #nowarn "40"
 let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
 """
-    
+
     let createOptions() = createProjectOptions [fileSource1] []
-    
+
 [<Fact>]
 let ``Test NoWarn HashDirective`` () =
     let options = ProjectForNoWarnHashDirective.createOptions()
@@ -34,7 +34,7 @@ module N.M
 #nowarn 0xy
 ()
 """
-    
+
 [<Fact>]
 let ``RegressionTestForMissingParseError(TransparentCompiler)`` () =
     let options = createProjectOptions [sourceForParseError] []
@@ -122,7 +122,7 @@ let ParseAndCheckProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
     checkDiagnostics onOffTest.errors[langVersion] (Array.toList wholeProjectResults.Diagnostics)
-    
+
 [<InlineData("9.0")>]
 [<InlineData("10.0")>]
 [<Theory>]

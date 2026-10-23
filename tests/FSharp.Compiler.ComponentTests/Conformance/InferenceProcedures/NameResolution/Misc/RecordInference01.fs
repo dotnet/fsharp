@@ -1,4 +1,4 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 // Verify the compiler can correctly infer record types
 // in the face of (partial) ambiguity.
 

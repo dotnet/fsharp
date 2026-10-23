@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #Records 
+// #Conformance #PatternMatching #Records
 
 
 // Verify ability to have nested patterns in record types
@@ -12,7 +12,7 @@ let isYoung thing =
     | _ -> false
 
 let isMatch thing (thingName : string option) (thingAge : int option) =
-    // We can't extract the option value in a match and use it in the same statement, 
+    // We can't extract the option value in a match and use it in the same statement,
     // so we first break open the optional values.
     let name = match thingName with Some(name) -> name | None -> ""
     let age = match thingAge with Some(age) -> age | None -> 0
@@ -31,7 +31,7 @@ let rock   = {Name = "Gold"; Age = 500000; Type = Mineral}
 if isYoung animal  <> true  then exit 1
 if isYoung rock    <> false then exit 1
 
-if isMatch animal (Some("Steve")) (Some(2)) <> true then exit 1   
+if isMatch animal (Some("Steve")) (Some(2)) <> true then exit 1
 if isMatch animal (Some("Steve")) None <> true then exit 1
 
 if isMatch animal (Some("NotSteve")) None <> false then exit 1

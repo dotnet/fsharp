@@ -6,4 +6,4 @@ module M
 
 // Should compile just fine
 let inline f x (y:_ nativeptr) = (^a : (static member TryParse : string * ^a nativeptr -> bool)(x,y))
- 
+

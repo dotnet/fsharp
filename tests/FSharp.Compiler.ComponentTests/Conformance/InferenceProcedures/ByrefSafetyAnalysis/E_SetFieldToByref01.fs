@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypeInference #ByRef 
+// #Regression #Conformance #TypeInference #ByRef
 
 
-// Verify error when setting object field to a byref value. 
+// Verify error when setting object field to a byref value.
 // (This is disallowed by the CLR.)
 
 

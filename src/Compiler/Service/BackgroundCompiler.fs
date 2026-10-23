@@ -6,6 +6,7 @@ open FSharp.Compiler.BuildGraph
 open System
 open System.Diagnostics
 open System.IO
+open System.Runtime.CompilerServices
 open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -175,6 +176,8 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
+    abstract member SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
+
 type internal ParseCacheLockToken() =
     interface LockToken
 
@@ -245,6 +248,7 @@ type internal BackgroundCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        shareImportedAssemblies,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications
@@ -255,14 +259,20 @@ type internal BackgroundCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache
-    /// Information about the derived script closure.
-    let scriptClosureCache =
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>(
-            projectCacheSize,
-            areSame = FSharpProjectOptions.AreSameForChecking,
-            areSimilar = FSharpProjectOptions.UseSameProject
-        )
+    [<VolatileField>]
+    let mutable referenceStampProvider: (string -> DateTime) option = None
+
+    // Option record copies share this reference set, so it owns the closure until those options are released.
+    let scriptClosures =
+        ConditionalWeakTable<FSharpUnresolvedReferencesSet, FSharpProjectOptions * LoadClosure>()
+
+    let tryGetScriptClosure (options: FSharpProjectOptions) =
+        match options.UnresolvedReferences with
+        | Some references ->
+            match scriptClosures.TryGetValue references with
+            | true, (originalOptions, closure) when FSharpProjectOptions.AreSameForChecking(originalOptions, options) -> Some closure
+            | _ -> None
+        | None -> None
 
     let frameworkTcImportsCache =
         FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
@@ -354,7 +364,7 @@ type internal BackgroundCompiler
             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
             let projectReferences = getProjectReferences options userOpName
 
-            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            let loadClosure = tryGetScriptClosure options
 
             let dependencyProvider =
                 if options.UseScriptResolutionRules then
@@ -382,9 +392,11 @@ type internal BackgroundCompiler
                     enablePartialTypeChecking,
                     dependencyProvider,
                     parallelReferenceResolution,
+                    shareImportedAssemblies,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    referenceStampProvider |> ValueOption.ofOption
                 )
 
             match builderOpt with
@@ -414,9 +426,18 @@ type internal BackgroundCompiler
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileCache =
-        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, _>(
+        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, FSharpParseFileResults>(
             parseFileCacheSize,
             areSimilar = AreSimilarForParsing,
+            areSame = AreSameForParsing
+        )
+
+    /// Parses that have not finished yet. They are kept apart from parseFileCache because it holds its older entries weakly,
+    /// and a node is not kept alive by the result its caller retains.
+    let parseFileInFlight =
+        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, GraphNode<FSharpParseFileResults>>(
+            parseFileCacheSize,
+            areSimilar = AreSameForParsing,
             areSame = AreSameForParsing
         )
 
@@ -451,17 +472,14 @@ type internal BackgroundCompiler
         )
 
     let tryGetBuilderNode options =
-        incrementalBuildersCache.TryGet(AnyCallerThread, options)
-
-    let tryGetBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        tryGetBuilderNode options |> Option.map (fun x -> x.GetOrComputeValue())
+        lock gate (fun () -> incrementalBuildersCache.TryGet(AnyCallerThread, options))
 
     let tryGetSimilarBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options)
+        lock gate (fun () -> incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options))
         |> Option.map (fun x -> x.GetOrComputeValue())
 
     let tryGetAnyBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        incrementalBuildersCache.TryGetAny(AnyCallerThread, options)
+        lock gate (fun () -> incrementalBuildersCache.TryGetAny(AnyCallerThread, options))
         |> Option.map (fun x -> x.GetOrComputeValue())
 
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
@@ -473,10 +491,18 @@ type internal BackgroundCompiler
                 incrementalBuildersCache.Set(AnyCallerThread, options, getBuilderNode)
                 getBuilderNode)
 
-    let createAndGetBuilder (options, userOpName) =
+    /// Replaces the builder node the caller has observed (if any), unless a concurrent request already did so,
+    /// in which case that node is reused instead of creating a second builder for the same project.
+    let createAndGetBuilder (options, userOpName, observedNode: GraphNode<_> option) =
         async {
             let! ct = Async.CancellationToken
-            let getBuilderNode = createBuilderNode (options, userOpName, ct)
+
+            let getBuilderNode =
+                lock gate (fun () ->
+                    match tryGetBuilderNode options with
+                    | Some node when not (observedNode |> Option.contains node) -> node
+                    | _ -> createBuilderNode (options, userOpName, ct))
+
             return! getBuilderNode.GetOrComputeValue()
         }
 
@@ -484,9 +510,9 @@ type internal BackgroundCompiler
         async {
             use! _holder = Cancellable.UseToken()
 
-            match tryGetBuilder options with
-            | Some getBuilder ->
-                match! getBuilder with
+            match tryGetBuilderNode options with
+            | Some node ->
+                match! node.GetOrComputeValue() with
                 | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated ->
                     return builderOpt, creationDiags
                 | _ ->
@@ -500,8 +526,8 @@ type internal BackgroundCompiler
                             let key = (sourceFile, 0L, options)
                             checkFileInProjectCache.RemoveAnySimilar(ltok, key)))
 
-                    return! createAndGetBuilder (options, userOpName)
-            | _ -> return! createAndGetBuilder (options, userOpName)
+                    return! createAndGetBuilder (options, userOpName, Some node)
+            | None -> return! createAndGetBuilder (options, userOpName, None)
         }
 
     let getSimilarOrCreateBuilder (options, userOpName) =
@@ -558,6 +584,32 @@ type internal BackgroundCompiler
                 checkFileInProjectCache.Set(ltok, key, res)
                 res)
 
+    /// Ensures there is one parse per file, source and options while it runs; a finished parse lives in parseFileCache.
+    let getParseFileNode (key, parse: Async<FSharpParseFileResults>) =
+        parseCacheLock.AcquireLock(fun ltok ->
+            match parseFileCache.TryGet(ltok, key) with
+            | Some res -> GraphNode.FromResult res
+            | None ->
+                match parseFileInFlight.TryGet(ltok, key) with
+                | Some node -> node
+                | None ->
+                    Interlocked.Increment(&actualParseFileCount) |> ignore
+
+                    let node =
+                        GraphNode(
+                            async {
+                                try
+                                    let! res = parse
+                                    parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, key, res))
+                                    return res
+                                finally
+                                    parseCacheLock.AcquireLock(fun ltok -> parseFileInFlight.RemoveAnySimilar(ltok, key))
+                            }
+                        )
+
+                    parseFileInFlight.Set(ltok, key, node)
+                    node)
+
     member _.ParseFile
         (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
         =
@@ -571,13 +623,8 @@ type internal BackgroundCompiler
                         Activity.Tags.cache, cache.ToString()
                     |]
 
-            if cache then
-                let hash = sourceText.GetHashCode() |> int64
-
-                match parseCacheLock.AcquireLock(fun ltok -> parseFileCache.TryGet(ltok, (fileName, hash, options))) with
-                | Some res -> return res
-                | None ->
-                    Interlocked.Increment(&actualParseFileCount) |> ignore
+            let parse suggestNamesForErrors =
+                async {
                     let! ct = Async.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
@@ -592,27 +639,15 @@ type internal BackgroundCompiler
                             ct
                         )
 
-                    let res =
-                        FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                    return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                }
 
-                    parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
-                    return res
+            if cache then
+                let key = (fileName, sourceText.GetHashCode() |> int64, options)
+                let node = getParseFileNode (key, parse suggestNamesForErrors)
+                return! node.GetOrComputeValue()
             else
-                let! ct = Async.CancellationToken
-
-                let parseDiagnostics, parseTree, anyErrors =
-                    ParseAndCheckFile.parseFile (
-                        sourceText,
-                        fileName,
-                        options,
-                        userOpName,
-                        false,
-                        flatErrors,
-                        captureIdentifiersWhenParsing,
-                        ct
-                    )
-
-                return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
+                return! parse false
         }
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
@@ -700,7 +735,7 @@ type internal BackgroundCompiler
             // Get additional script #load closure information if applicable.
             // For scripts, this will have been recorded by GetProjectOptionsFromScript.
             let tcConfig = tcPrior.TcConfig
-            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            let loadClosure = tryGetScriptClosure options
 
             let! checkAnswer =
                 FSharpCheckFileResults.CheckOneFile(
@@ -971,6 +1006,7 @@ type internal BackgroundCompiler
                 let tcSymbolUses = tcInfoExtras.tcSymbolUses
                 let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
+                let latestOwnSigForFile = tcInfoExtras.latestOwnSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let latestImplementationFile = tcInfoExtras.latestImplFile
@@ -1016,7 +1052,7 @@ type internal BackgroundCompiler
                         dependencyFiles = builder.AllDependenciesDeprecated
                     )
 
-                let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+                let loadClosure = tryGetScriptClosure options
 
                 let typedResults =
                     FSharpCheckFileResults.Make(
@@ -1033,6 +1069,7 @@ type internal BackgroundCompiler
                         tcDiagnostics,
                         keepAssemblyContents,
                         Option.get latestCcuSigForFile,
+                        Option.get latestOwnSigForFile,
                         tcState.Ccu,
                         tcProj.TcImports,
                         tcEnvAtEnd.AccessRights,
@@ -1331,6 +1368,9 @@ type internal BackgroundCompiler
                         yield "-r:" + fst r
                 |]
 
+            let unresolvedReferences =
+                FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences)
+
             let options =
                 {
                     ProjectFileName = fileName + ".fsproj" // Make a name that is unique in this directory.
@@ -1341,12 +1381,12 @@ type internal BackgroundCompiler
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true
                     LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some(FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    UnresolvedReferences = Some unresolvedReferences
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     Stamp = optionsStamp
                 }
 
-            scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
+            scriptClosures.Add(unresolvedReferences, (options, loadClosure))
 
             let diags =
                 let flatErrors = options.OtherOptions |> Array.contains "--flaterrors"
@@ -1425,8 +1465,7 @@ type internal BackgroundCompiler
                 parseFileCache.Clear(ltok))
 
             incrementalBuildersCache.Clear(AnyCallerThread)
-            frameworkTcImportsCache.Clear()
-            scriptClosureCache.Clear AnyCallerThread)
+            frameworkTcImportsCache.Clear())
 
     member _.DownsizeCaches() =
         use _ = Activity.startNoTags "BackgroundCompiler.DownsizeCaches"
@@ -1437,10 +1476,12 @@ type internal BackgroundCompiler
                 parseFileCache.Resize(ltok, newKeepStrongly = 1))
 
             incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1)
-            frameworkTcImportsCache.Downsize()
-            scriptClosureCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1))
+            frameworkTcImportsCache.Downsize())
 
     member _.FrameworkImportsCache = frameworkTcImportsCache
+
+    member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) =
+        referenceStampProvider <- Some getReferenceStamp
 
     static member ActualParseFileCount = actualParseFileCount
 
@@ -1496,6 +1537,9 @@ type internal BackgroundCompiler
             this.FindReferencesInFile(fileName, projectSnapshot.ToOptions(), symbol, true, userOpName)
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
+
+        member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) : unit =
+            self.SetReferenceStampProvider getReferenceStamp
 
         member _.GetAssemblyData(options: FSharpProjectOptions, _fileName: string, userOpName: string) : Async<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)

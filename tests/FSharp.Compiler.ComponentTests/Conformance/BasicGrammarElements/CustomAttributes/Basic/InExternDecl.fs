@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression test for FSHARP1.0:4192
 // We should not give any warning when attribute is used on extern declaration
 

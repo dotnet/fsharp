@@ -1,5 +1,5 @@
 exception MyCustomExc of int
-    with 
+    with
         member private this.Message = "This must remain secret!"
     end
 
@@ -8,7 +8,7 @@ let f() =
         raise (MyCustomExc(42))
     with
         |  e  -> e.Message
-    
+
 
 let result = f()
 printfn "%s" result

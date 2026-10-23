@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [MultiTest],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([MultiTest], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,14)),
                   Simple
@@ -16,18 +17,21 @@ ImplFile
                         [SynUnionCase
                            ([], SynIdent (Case1, None), Fields [],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,6--5,11), { BarRange = Some (5,4--5,5) });
+                            None, (5,6--5,11), { BarRange = Some (5,4--5,5)
+                                                 OfKeyword = None });
                          SynUnionCase
                            ([], SynIdent (Case2, None), Fields [],
                             PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (6,6--6,11), { BarRange = Some (6,4--6,5) })],
+                            None, (6,6--6,11), { BarRange = Some (6,4--6,5)
+                                                 OfKeyword = None })],
                         (5,4--6,11)), (5,4--6,11)), [], None, (4,5--6,11),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,15--4,16)
                     WithKeyword = None })], (4,0--6,11));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [NestedModule],
+                ([], None, [],
+                 Some (LongIdent (SynLongIdent ([NestedModule], [], []))),
                  PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (7,4--7,23)), false, [], false, (7,4--7,35),
               { ModuleKeyword = Some (7,4--7,10)
@@ -35,7 +39,8 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [NestedType],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([NestedType], [], [None]))),
                      PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (8,9--8,19)),
                   Simple
@@ -59,9 +64,12 @@ ImplFile
                              PreXmlDoc ((9,27), FSharp.Compiler.Xml.XmlDocCollector),
                              None, (9,27--9,33), { LeadingKeyword = None
                                                    MutableKeyword = None })],
-                       PreXmlDocEmpty, None, (9,14--9,33), { BarRange = None }),
-                    None, PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (9,4--9,33)), None, [], (9,4--9,33)), (9,4--9,33));
+                       PreXmlDocEmpty, None, (9,14--9,33),
+                       { BarRange = None
+                         OfKeyword = Some (9,24--9,26) }), None,
+                    PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    (9,4--9,33), { ExceptionKeyword = (9,4--9,13) }), None, [],
+                 (9,4--9,33)), (9,4--9,33));
            Open
              (ModuleOrNamespace
                 (SynLongIdent

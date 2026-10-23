@@ -21,7 +21,7 @@ type HashIdentityModule() =
         Assert.AreEqual(valueDict.Count,0)
         valueDict.Add(3,"C")
         Assert.AreEqual(1, valueDict.Count)
-        Assert.True(valueDict.ContainsValue("C"))    
+        Assert.True(valueDict.ContainsValue("C"))
 
         // reference type
         let refDict = new Dictionary<string,int>(HashIdentity.Structural)
@@ -33,10 +33,10 @@ type HashIdentityModule() =
         // empty type
         let eptDict = new Dictionary<int,int>(HashIdentity.Structural)
         Assert.AreEqual(0, eptDict.Count)
-        Assert.False(eptDict.ContainsKey(3))    
+        Assert.False(eptDict.ContainsKey(3))
 
         ()
- 
+
     [<Fact>]
     member this.Reference() =
 
@@ -54,19 +54,19 @@ type HashIdentityModule() =
         // empty table
         let eptDict = new Dictionary<string,int>(HashIdentity.Reference)
         Assert.AreEqual(0,eptDict.Count)
-        Assert.False(eptDict.ContainsKey("3"))    
- 
+        Assert.False(eptDict.ContainsKey("3"))
+
         ()
-        
+
     [<Fact>]
     member this.FromFunctions() =
-        
+
         // value type
         let valueDict = new Dictionary<int,string>(HashIdentity.FromFunctions (fun x -> 1) (fun x y -> x > y))
         Assert.AreEqual(0,valueDict.Count)
         valueDict.Add(3,"C")
         Assert.AreEqual(1,valueDict.Count)
-        Assert.True(valueDict.ContainsValue("C"))    
+        Assert.True(valueDict.ContainsValue("C"))
 
         // reference type
         let refDict = new Dictionary<string,int>(HashIdentity.FromFunctions (fun x -> 1) (fun x y -> x > y))
@@ -75,9 +75,9 @@ type HashIdentityModule() =
         Assert.AreEqual(1,refDict.Count)
         Assert.True(refDict.ContainsValue(3))
 
-        // empty type     
+        // empty type
         let eptDict = new Dictionary<int,int>(HashIdentity.FromFunctions (fun x -> 1) (fun x y -> x > y))
         Assert.AreEqual(0,eptDict.Count)
         Assert.False(eptDict.ContainsKey(3))
-        
+
         ()

@@ -8,7 +8,7 @@ open StructuredResultsAsserts
 
 [<Fact>]
 let ``Constant defined in C# can be used as printf format``() =
-    let csLib = 
+    let csLib =
         CSharp """
 public static class Library
 {

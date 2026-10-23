@@ -9,7 +9,7 @@ module VolatileFieldSanityChecks = begin
   [<VolatileField>]
   let x2 = 1
 
-  type C() = 
+  type C() =
     [<VolatileField>]
     static let sx2 = 1   // expect an error - not mutable
 
@@ -28,4 +28,3 @@ module VolatileFieldSanityChecks = begin
     member x.P = 1
 
 end
-           

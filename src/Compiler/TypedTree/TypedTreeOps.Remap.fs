@@ -77,6 +77,8 @@ module internal TypeRemapping =
 
     [<NoEquality; NoComparison; Sealed>]
     type TyconRefMap<'T>(imap: StampMap<'T>) =
+        member _.Contents = imap
+
         member _.Item
             with get (tcref: TyconRef) = imap[tcref.Stamp]
 
@@ -86,6 +88,15 @@ module internal TypeRemapping =
         member _.Remove(tcref: TyconRef) = TyconRefMap(imap.Remove tcref.Stamp)
         member _.IsEmpty = imap.IsEmpty
         member _.TryGetValue(tcref: TyconRef) = imap.TryGetValue tcref.Stamp
+
+        member _.Map(remapStamp, mapping) =
+            let remapped =
+                Map.fold (fun acc stamp value -> Map.add (remapStamp stamp) (mapping value) acc) Map.empty imap
+
+            if remapped.Count <> imap.Count then
+                invalidOp "Non-injective type constructor stamp remapping"
+
+            TyconRefMap remapped
 
         static member Empty: TyconRefMap<'T> = TyconRefMap Map.empty
 
@@ -296,7 +307,7 @@ module internal TypeRemapping =
             | TyparConstraint.IsReferenceType _
             | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
-    and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)) =
+    and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell, traitCtxt)) =
         let slnCell =
             match slnCell.Value with
             | None -> None
@@ -331,6 +342,19 @@ module internal TypeRemapping =
         let argTysR = remapTypesAux tyenv argTys
         let retTyR = Option.map (remapTypeAux tyenv) retTy
 
+        let traitCtxt =
+            if tyenv.tyconRefRemap.IsEmpty && tyenv.valRemap.IsEmpty then
+                traitCtxt
+            else
+                traitCtxt
+                |> Option.map (fun ctxt ->
+                    let remapStamp stamp =
+                        match tyenv.tyconRefRemap.Contents.TryFind stamp with
+                        | Some tcref -> tcref.Stamp
+                        | None -> stamp
+
+                    ctxt.Remap(remapTypeAux tyenv, remapValRef tyenv, remapStamp))
+
         // Note: we reallocate a new solution cell on every traversal of a trait constraint
         // This feels incorrect for trait constraints that are quantified: it seems we should have
         // formal binders for trait constraints when they are quantified, just as
@@ -341,7 +365,7 @@ module internal TypeRemapping =
         // in the same way as types
         let newSlnCell = ref slnCell
 
-        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell)
+        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell, traitCtxt)
 
     and bindTypars tps tyargs tpinst =
         match tps with
@@ -1301,12 +1325,12 @@ module internal TypeDecomposition =
         | _ -> None)
 
     [<return: Struct>]
-    let (|AppTy|_|) g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, tinst, _) -> ValueSome(tcref, tinst)
-        | _ -> ValueNone)
+    let (|AppTy|_|) g ty = tryAppTy g ty
+
+    let (|NonGenericSysType|_|) g (struct (path, name)) ty =
+        match stripTyEqns g ty with
+        | TType_app(tcref, [], _) -> tyconRefEq g tcref (g.FindSysTyconRef path name)
+        | _ -> false
 
     [<return: Struct>]
     let (|RefTupleTy|_|) g ty =
@@ -1485,8 +1509,8 @@ module internal TypeEquivalence =
                 typeEquivEnvEmpty
 
     let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
-        let (TTrait(tys1, nm, mf1, argTys, retTy, _, _)) = traitInfo1
-        let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _, _)) = traitInfo2
+        let (TTrait(tys1, nm, mf1, argTys, retTy, _, _, _)) = traitInfo1
+        let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _, _, _)) = traitInfo2
 
         mf1.IsInstance = mf2.IsInstance
         && nm = nm2
@@ -1508,6 +1532,33 @@ module internal TypeEquivalence =
         match retTy, retTy2 with
         | None, None -> true
         | Some ty1, Some ty2 -> typeAEquivAux erasureFlag g aenv ty1 ty2
+        | _ -> false
+
+    and traitSlnAEquivAux erasureFlag g aenv sln1 sln2 =
+        match sln1, sln2 with
+        | None, None -> true
+        | Some(FSMethSln(ty1, vref1, minst1, staticTy1)), Some(FSMethSln(ty2, vref2, minst2, staticTy2)) ->
+            typeAEquivAux erasureFlag g aenv ty1 ty2
+            && valRefEq g vref1 vref2
+            && typesAEquivAux erasureFlag g aenv minst1 minst2
+            && returnTypesAEquivAux erasureFlag g aenv staticTy1 staticTy2
+        | Some(FSRecdFieldSln(tinst1, RecdFieldRef(tcref1, name1), isSet1)),
+          Some(FSRecdFieldSln(tinst2, RecdFieldRef(tcref2, name2), isSet2)) ->
+            typesAEquivAux erasureFlag g aenv tinst1 tinst2
+            && tyconRefEq g tcref1 tcref2
+            && name1 = name2
+            && isSet1 = isSet2
+        | Some(FSAnonRecdFieldSln(anonInfo1, tinst1, index1)), Some(FSAnonRecdFieldSln(anonInfo2, tinst2, index2)) ->
+            anonInfoEquiv anonInfo1 anonInfo2
+            && typesAEquivAux erasureFlag g aenv tinst1 tinst2
+            && index1 = index2
+        | Some(ILMethSln(ty1, extOpt1, mref1, minst1, staticTy1)), Some(ILMethSln(ty2, extOpt2, mref2, minst2, staticTy2)) ->
+            typeAEquivAux erasureFlag g aenv ty1 ty2
+            && extOpt1 = extOpt2
+            && mref1 = mref2
+            && typesAEquivAux erasureFlag g aenv minst1 minst2
+            && returnTypesAEquivAux erasureFlag g aenv staticTy1 staticTy2
+        | Some BuiltInSln, Some BuiltInSln -> true
         | _ -> false
 
     and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
@@ -1653,6 +1704,9 @@ module internal TypeEquivalence =
     let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
 
     let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
+
+    let traitSlnAEquiv g aenv sln1 sln2 =
+        traitSlnAEquivAux EraseNone g aenv sln1 sln2
 
     let traitKeysAEquiv g aenv t1 t2 =
         traitKeysAEquivAux EraseNone g aenv t1 t2

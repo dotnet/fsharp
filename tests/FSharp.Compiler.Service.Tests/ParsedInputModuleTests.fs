@@ -197,8 +197,8 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["N"], ``module``)
@@ -219,8 +219,8 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.tryPick (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["N"], ``module``)
@@ -241,8 +241,8 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -263,8 +263,8 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.tryPickLast (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -287,7 +287,7 @@ module N =
         (mkPos 6 28, parseTree)
         ||> ParsedInput.exists (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = _compInfo)) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
                 true
             | _ -> false)
@@ -313,7 +313,7 @@ module N =
         (mkPos 7 30, parseTree)
         ||> ParsedInput.exists (fun _path node ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = _compInfo)) ->
                 start <- node.Range.StartLine, node.Range.StartColumn
                 true
             | _ -> false)
@@ -338,8 +338,8 @@ module N =
         |> ParsedInput.tryNode (mkPos 6 28)
         |> Option.bind (fun (node, _path) ->
             match node with
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
-                Some(longIdent |> List.map (fun ident -> ident.idText))
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some(compInfo.LongIdent |> List.map (fun ident -> ident.idText))
             | _ -> None)
 
     Assert.Equal(Some ["P"], ``module``)
@@ -380,9 +380,10 @@ module Q =
         ([], parseTree)
         ||> ParsedInput.fold (fun acc _path node ->
             match node with
-            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                 (longIdent |> List.map (fun ident -> ident.idText)) :: acc
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                (compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc
             | _ -> acc)
 
     Assert.Equal<string list list>(
@@ -409,9 +410,10 @@ module Q =
         ([], parseTree)
         ||> ParsedInput.foldWhile (fun acc _path node ->
             match node with
-            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+            | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                 Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+            | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                Some((compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc)
             | _ -> Some acc)
 
     Assert.Equal<string list list>(
@@ -440,9 +442,10 @@ module Q =
             if posGt node.Range.Start (mkPos 7 0) then None
             else
                 match node with
-                | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent))
-                | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longIdent))) ->
+                | SyntaxNode.SynModuleOrNamespace(SynModuleOrNamespace(longId = longIdent)) ->
                     Some((longIdent |> List.map (fun ident -> ident.idText)) :: acc)
+                | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = compInfo)) ->
+                    Some((compInfo.LongIdent |> List.map (fun ident -> ident.idText)) :: acc)
                 | _ -> Some acc)
 
     Assert.Equal<string list list>(

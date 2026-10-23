@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 // Regression for 6346, used to stackoverflow with this many fields (still do with 300+)
 
 type BigRecord = {

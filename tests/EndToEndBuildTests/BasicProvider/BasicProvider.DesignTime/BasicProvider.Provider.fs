@@ -15,7 +15,7 @@ type BasicErasingProvider (config : TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<BasicProvider.Helpers.SomeRuntimeHelper>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert (typeof<BasicProvider.Helpers.SomeRuntimeHelper>.Assembly.GetName().Name = asm.GetName().Name)
 
     let createTypes () =
         let myType = ProvidedTypeDefinition(asm, ns, "MyType", Some typeof<obj>)
@@ -61,7 +61,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<BasicProvider.Helpers.SomeRuntimeHelper>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert (typeof<BasicProvider.Helpers.SomeRuntimeHelper>.Assembly.GetName().Name = asm.GetName().Name)
 
     let createType typeName (count:int) =
         let asm = ProvidedAssembly()
@@ -73,7 +73,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
         let ctor2 = ProvidedConstructor([ProvidedParameter("InnerState", typeof<string>)], invokeCode = fun args -> <@@ (%%(args.[1]):string) :> obj @@>)
         myType.AddMember(ctor2)
 
-        for i in 1 .. count do 
+        for i in 1 .. count do
             let prop = ProvidedProperty("Property" + string i, typeof<int>, getterCode = fun args -> <@@ i @@>)
             myType.AddMember(prop)
 
@@ -83,7 +83,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
 
         myType
 
-    let myParamType = 
+    let myParamType =
         let t = ProvidedTypeDefinition(asm, ns, "GenerativeProvider", Some typeof<obj>, isErased=false)
         t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args.[0]))
         t

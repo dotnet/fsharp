@@ -1,6 +1,6 @@
 namespace pos09
 
-type A() = 
+type A() =
     member this.Set(v : obj) = ()
     member this.Set_1(name : string, v : obj) = ()
     static member Set2(v : obj) = ()

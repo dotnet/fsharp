@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 
 // Verify warning when using a reserved identifier

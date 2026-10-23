@@ -84,8 +84,8 @@ let main _ =
         |> compileRunSucceeds realsig
 
     /// Generic class with type-private static accessed from TLR-lifted inner-rec
-    /// inside an instance member. Adversarial wave 2 (opus 4.8 attempt 20) — confirmed
-    /// `MethodAccessException` before the SelectTLRVals private-ref guard.
+    /// inside an instance member. Guards against `MethodAccessException`
+    /// when SelectTLRVals encounters a private reference.
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Type-private static of generic class accessed from TLR-lifted inner-rec`` (realsig: bool) =
         """module Sample
@@ -102,7 +102,7 @@ let main _ = if Holder<int>().Run() = 42 then 0 else 1
 
     /// Same shape as above but the private member reads a mutable backing field,
     /// proving the failure is a CLR access check at the call site rather than
-    /// constant folding. Adversarial wave 2 (opus 4.8 attempt 24).
+    /// constant folding.
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Type-private static (mutable backing) of generic class accessed from TLR-lifted inner-rec`` (realsig: bool) =
         """module Sample

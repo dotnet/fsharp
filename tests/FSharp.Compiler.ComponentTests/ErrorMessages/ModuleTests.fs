@@ -23,7 +23,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
                                  "The 'Private' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
-                                 
+
     [<Fact>]
     let ``Internal Module Abbreviation``() =
         FSharp "module internal L1 = List"
@@ -46,7 +46,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Right Attribute Module Abbreviation``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
@@ -54,7 +54,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Right Attribute Module Abbreviation with version 5_0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
@@ -65,7 +65,7 @@ module Modules =
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
             Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
         ]
-                                 
+
     [<Fact>]
     let ``Attribute Module Abbreviation``() =
         FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] internal L1 = List"""
@@ -73,7 +73,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Attributes applied successfully``() =
         Fsx """
@@ -167,7 +167,7 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
          """
         |> compileExeAndRun
         |> shouldSucceed
-    
+
     [<Fact>]
     let ``Offside rule works for attributes inside module declarations``() =
         Fsx """

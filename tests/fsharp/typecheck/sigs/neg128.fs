@@ -1,13 +1,13 @@
 module Neg128
 
-module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputSelector = 
+module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputSelector =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint, _output : int32) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint, _output : int64) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint, _output : bigint) = x

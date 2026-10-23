@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 
 
 open System
@@ -7,7 +7,7 @@ open System
 
 
 type TestType() =
-    [<Obsolete>] 
+    [<Obsolete>]
     member s.ObsoleteMethod =
         10
 

@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Test some of the semantics of value capture
@@ -13,7 +13,7 @@ let test1() =
     | 0 when (i <- 1; false) -> 0
     | 1 -> 1
     | _ -> -i
-    
+
 if test1() <> -1 then exit 1
 
 exit 0

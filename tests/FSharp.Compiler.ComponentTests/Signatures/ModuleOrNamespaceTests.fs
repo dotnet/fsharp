@@ -155,7 +155,7 @@ do ()
 """
     |> printSignatures
     |> assertEqualIgnoreLineEnding "namespace System"
-        
+
 [<Fact>]
 let ``Empty module`` () =
     FSharp

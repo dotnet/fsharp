@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants 
+// #Regression #Conformance #LexicalAnalysis #Constants
 
 
 // Verify numeric literals work as expected

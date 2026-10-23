@@ -1,4 +1,4 @@
-// #Diagnostics 
+// #Diagnostics
 module M
 
 type T(d : decimal) =

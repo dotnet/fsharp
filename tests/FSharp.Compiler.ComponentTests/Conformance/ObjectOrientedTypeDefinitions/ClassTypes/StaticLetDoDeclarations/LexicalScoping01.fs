@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Classes #LetBindings 
+// #Conformance #ObjectOrientedTypes #Classes #LetBindings
 // Scoping:
 // identifier introduced by let is local
 //<Expects status="success"></Expects>

@@ -3,8 +3,8 @@
 //<Expects status="error" span="(15,13-15,17)" id="FS3098">'join' must come after a 'for' selection clause and be followed by the rest of the query\. Syntax: \.\.\. join var in collection on \(outerKey = innerKey\)\. Note that parentheses are required after 'on' \.\.\.$</Expects>
 //<Expects status="error" span="(21,9-21,13)" id="FS3098">'join' must come after a 'for' selection clause and be followed by the rest of the query\. Syntax: \.\.\. join var in collection on \(outerKey = innerKey\)\. Note that parentheses are required after 'on' \.\.\.$</Expects>
 let q5 = // no errors
-    query { 
-        for d in [1..10] do 
+    query {
+        for d in [1..10] do
             where (d > 3)
             select d
     }

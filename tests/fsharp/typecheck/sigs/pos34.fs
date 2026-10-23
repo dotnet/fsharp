@@ -23,7 +23,7 @@ type Bind =
     static member        (>>=) (source: Lazy<'T>   , f: 'T -> Lazy<'U>    ) = lazy (f source.Value).Value                                   : Lazy<'U>
     static member        (>>=) (source: Task<'T>   , f: 'T -> Task<'U>    ) = source.ContinueWith(fun (x: Task<_>) -> f x.Result).Unwrap () : Task<'U>
     static member        (>>=) (source             , f: 'T -> _           ) = Option.bind   f source                                        : option<'U>
-    static member        (>>=) (source             , f: 'T -> _           ) = async.Bind (source, f)  
+    static member        (>>=) (source             , f: 'T -> _           ) = async.Bind (source, f)
     static member        (>>=) (source : Id<_>     , f: 'T -> _           ) = f source.getValue                                 : Id<'U>
 
     static member inline Invoke (source: '``Monad<'T>``) (binder: 'T -> '``Monad<'U>``) : '``Monad<'U>`` =
@@ -74,7 +74,7 @@ let inline bind f (source: TypeT<'mt>) : TypeT<'mu> =
                     | A -> result <| (A : Node<'mu,'u>) : 'miu
                     | B (h:'t, t: TypeT<'mt>) ->
                         let res = concat (f h: TypeT<'mu>) (loop f t)
-                        unwrap res  : 'miu) 
+                        unwrap res  : 'miu)
     loop f source : TypeT<'mu>
 
 

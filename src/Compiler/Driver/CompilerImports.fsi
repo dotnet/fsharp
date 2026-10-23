@@ -45,6 +45,8 @@ val IsOptimizationDataResource: ILResource -> bool
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data stream B)
 val IsOptimizationDataResourceB: ILResource -> bool
 
+val GetNameOfILModule: ILModuleDef -> string
+
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 
@@ -97,6 +99,12 @@ type AssemblyResolution =
 type ResolvedExtensionReference =
     | ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
+
+/// Shares one copy of an assembly's Entity graph between the projects resolving that assembly, and
+/// everything it can reach, to the same files. Entries are weak: nothing is retained on a project's behalf.
+module internal SharedImportedCcus =
+
+    val clear: unit -> unit
 
 /// Represents a resolved imported binary
 [<RequireQualifiedAccess>]

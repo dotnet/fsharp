@@ -120,7 +120,7 @@ type X () =
   .locals (int32[] V_0,
            int32 V_1)
 """
-           
+
                       """
 .method public strict virtual instance bool 
         Invoke(int32 x) cil managed
@@ -155,7 +155,7 @@ IL_0002:  initobj    [runtime]System.DateTime
 IL_0008:  ldloc.0
 IL_0009:  ret
         """
-        
+
                      """
 .locals (valuetype [runtime]System.Nullable`1<int64> V_0,
          valuetype [runtime]System.Nullable`1<int64> V_1,

@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #Attributes #Import 
+// #Conformance #DeclarationElements #Attributes #Import
 // Ignore "Uses of this construct may result in the generation of unverifiable .NET IL code..."
 #nowarn "9"
 

@@ -112,7 +112,7 @@ type CompletionTests() =
         Assert.Equal(1, matchingCompletions.Length)
         Assert.Equal("``base``", matchingCompletions.[0].NameInCode)
 
-        // ``|A|_|`` is a strange name like the name of an active pattern but is still present. 
+        // ``|A|_|`` is a strange name like the name of an active pattern but is still present.
         // In this case the inserted is (|A|_|)
         let matchingCompletions = completions |> Array.filter (fun d -> d.NameInList = "|A|_|")
         Assert.Equal(1, matchingCompletions.Length)

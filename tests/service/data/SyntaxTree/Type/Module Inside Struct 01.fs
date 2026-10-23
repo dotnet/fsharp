@@ -3,6 +3,6 @@ module Module
 
 type MyStruct =
     struct
-        module InvalidModule = 
+        module InvalidModule =
             let helper = 10
     end

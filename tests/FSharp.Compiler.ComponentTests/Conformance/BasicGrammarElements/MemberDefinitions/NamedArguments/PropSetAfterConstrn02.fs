@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 
 
 open System
@@ -15,7 +15,7 @@ module NonGenericStruct =
     let x1 : S = S()
     if x1.x <> 0 then failwith "Failed: 1"
     if x1.y <> 0 then failwith "Failed: 2"
-    
+
     let x2 : S = S(X=1, Y=2)
     if x2.x <> 1 then failwith "Failed: 3"
     if x2.y <> 2 then failwith "Failed: 4"

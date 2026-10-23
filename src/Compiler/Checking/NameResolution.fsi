@@ -4,6 +4,7 @@ module internal FSharp.Compiler.NameResolution
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
@@ -29,8 +30,6 @@ type NameResolver =
     member amap: ImportMap
 
     member g: TcGlobals
-
-    member languageSupportsNameOf: bool
 
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
@@ -174,8 +173,9 @@ type ExtensionMember =
 
     /// ILExtMem(declaringTyconRef, ilMetadata, pri)
     ///
-    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
-    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
+    /// IL-style extension members, backed by methods with an [<Extension>] attribute. Methods extending
+    /// the same type via one 'open' are grouped: an 'open' of a class like Enumerable adds dozens of them.
+    | ILExtMem of TyconRef * MethInfo list * ExtensionMethodPriority
 
     /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
     /// later through 'open' get priority in overload resolution.
@@ -232,6 +232,9 @@ type NameResolutionEnv =
 
         /// Other extension members unindexed by type
         eUnindexedExtensionMembers: ExtensionMember list
+
+        /// Static operator methods from 'open type' declarations, available for SRTP resolution
+        eOpenedTypeOperators: NameMultiMap<MethInfo>
 
         /// Typars (always available by unqualified names). Further typars can be
         /// in the tpenv, a structure folded through each top-level definition.
@@ -685,6 +688,18 @@ val internal ExtensionPropInfosOfTypeInScope:
     ty: TType ->
         PropInfo list
 
+/// Get the intrinsic methods of a type (both declared and inherited), without the extension methods in
+/// scope. Callers that filter extension members out again should use this and skip the extension scan.
+val internal IntrinsicMethInfosOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: TypeHierarchy.AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        MethInfo list
+
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope:
     collectionSettings: ResultCollectionSettings ->
@@ -737,13 +752,18 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 /// each and ensure that the constraints on the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
+val FreshenTypars: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> Typars -> TType list
 
 /// Given a method, which may be generic, make new inference type variables for
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenMethInfo: range -> MethInfo -> TType list
+val FreshenMethInfo: g: TcGlobals -> traitCtxt: ITraitContext option -> range -> MethInfo -> TType list
+
+/// Select extension method infos that are relevant to solving a trait constraint.
+val SelectExtensionMethInfosForTrait:
+    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader ->
+        (TType * MethInfo) list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
@@ -754,6 +774,7 @@ val FreshenMethInfo: range -> MethInfo -> TType list
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
     g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     fctps: Typars ->
@@ -768,7 +789,12 @@ val FreshenAndFixupTypars:
 ///   1. the new type parameters
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
-val FreshenTypeInst: g: TcGlobals -> m: range -> tpsorig: Typar list -> Typar list * TyparInstantiation * TTypes
+val FreshenTypeInst:
+    g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
+    m: range ->
+    tpsorig: Typar list ->
+        Typar list * TyparInstantiation * TTypes
 
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
@@ -897,7 +923,14 @@ val internal getRecordTyconsInScope:
 
 /// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:
-    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
+    NameResolver ->
+    NameResolutionEnv ->
+    range ->
+    AccessorDomain ->
+    string list ->
+    allowUnseen: UnseenItems ->
+    fieldsOnly: bool ->
+        Item list
 
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
@@ -945,7 +978,7 @@ val ResolvePartialLongIdent:
     m: range ->
     ad: AccessorDomain ->
     plid: string list ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         Item list
 
 [<RequireQualifiedAccess>]
@@ -962,7 +995,7 @@ val ResolveCompletionsInType:
     AccessorDomain ->
     bool ->
     TType ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         Item list
 
 val GetVisibleNamespacesAndModulesAtPoint:
@@ -971,10 +1004,12 @@ val GetVisibleNamespacesAndModulesAtPoint:
     FullyQualifiedFlag ->
     range ->
     AccessorDomain ->
-    allowObsolete: bool ->
+    allowUnseen: UnseenItems ->
         ModuleOrNamespaceRef list
 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
+
+val ItemIsUnseen: AccessorDomain -> TcGlobals -> ImportMap -> range -> allowUnseen: UnseenItems -> Item -> bool
 
 val TrySelectExtensionMethInfoOfILExtMem:
     range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option

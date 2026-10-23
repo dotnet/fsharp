@@ -16,6 +16,7 @@ module SignatureEnforcedAttributes =
         |> FS
         |> withAdditionalSourceFile (fs implSrc)
         |> asLibrary
+        |> withLangVersion10 // FS3888 is a warning pre-11 and an error at 11.0 (ErrorOnMissingSignatureAttribute); pin to the warning behavior
         |> ignoreWarnings
         |> compile
 
@@ -265,6 +266,7 @@ let inline f (x: int) = x + 1
         |> FS
         |> withAdditionalSourceFile (fs implSrc)
         |> asLibrary
+        |> withLangVersion10 // #nowarn suppresses FS3888 only while it is a warning (pre-11); at 11.0 it is an error
         |> compile
         |> shouldSucceed
 
@@ -480,3 +482,22 @@ module Inner =
         |> shouldSucceed
         |> withWarningCode 3888
         |> withDiagnosticMessageMatches "RequireQualifiedAccess"
+
+    [<Fact>]
+    let ``OptimizeClosureIfNotInlined in sig but not impl raises`` () =
+        let sigSrc = """
+module M
+val inline run: [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> x: int -> int
+"""
+        let implSrc = """
+module M
+let inline run ([<InlineIfLambda>] f: int -> int -> int) (x: int) = f x x
+"""
+        fsFromString (fsi sigSrc)
+        |> FS
+        |> withAdditionalSourceFile (fs implSrc)
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3917

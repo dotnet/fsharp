@@ -8,33 +8,33 @@
 module M =
    let private privateValue = 1
    let internal internalValue = 1
-   
-   type private PrivateUnionType = 
+
+   type private PrivateUnionType =
        |          DefaultTagOfPrivateType of int
        //| private  PrivateTagOfPrivateType of int
        //| internal InternalTagOfPrivateType of int
 
-   type UnionTypeWithPrivateRepresentation = 
+   type UnionTypeWithPrivateRepresentation =
        private | DefaultTagOfUnionTypeWithPrivateRepresentation of int
 
-   type private PrivateRecordType = 
+   type private PrivateRecordType =
        { DefaultFieldOfPrivateType : int }
 
-   type RecordTypeWithPrivateRepresentation = 
+   type RecordTypeWithPrivateRepresentation =
        private { DefaultFieldOfRecordTypeWithPrivateRepresentation : int }
 
-   type internal InternalUnionType = 
+   type internal InternalUnionType =
        |          DefaultTagOfInternalType of int
        //| private  PrivateTagOfInternalType of int
        //| internal InternalTagOfInternalType of int
 
-   type internal InternalRecordType = 
+   type internal InternalRecordType =
        { DefaultFieldOfInternalType : int }
 
-   type PublicRecordType = 
-       {          DefaultFieldOfPublicType : int; 
-         //private  PrivateFieldOfPublicType : int; 
-         //internal InternalFieldOfPublicType : int; 
+   type PublicRecordType =
+       {          DefaultFieldOfPublicType : int;
+         //private  PrivateFieldOfPublicType : int;
+         //internal InternalFieldOfPublicType : int;
                   PublicFieldOfPublicType: int }
 
    let errorPublicValueLaterInferredToInvolvePrivateUnionType = ref []  // escape via type inference
@@ -42,11 +42,11 @@ module M =
 
    let internal errorInternalValueLaterInferredToInvolvePrivateUnionType = ref []  // escape via type inference
    let internal noErrorInternalValueLaterInferredToInvolveInternalUnionType = ref [] // escape via type inference
-   
+
    let private noErrorPrivateValueLaterInferredToInvolvePrivateUnionType = ref []  // escape via type inference
    let private noErrorPrivateValueLaterInferredToInvolveInternalUnionType = ref [] // escape via type inference
-   
-   type Type() = 
+
+   type Type() =
        member        private x.PrivateProperty = 3
        static member private PrivateStaticProperty = 3
        member        private x.PrivateMethod() = 3
@@ -60,13 +60,13 @@ module M =
        // Check we can access private things from this type
        member        x.NoError1 = x.PrivateProperty
        member        x.NoError2 = Type.PrivateStaticProperty
-       static member NoError3 = Type.PrivateStaticProperty 
-       static member NoError4 = Type.PrivateStaticMethod() 
+       static member NoError3 = Type.PrivateStaticProperty
+       static member NoError4 = Type.PrivateStaticMethod()
 
        member        x.NoError1a = x.InternalProperty
        member        x.NoError2a = Type.InternalStaticProperty
-       static member   NoError3a = Type.InternalStaticProperty 
-       static member   NoError4a = Type.InternalStaticMethod() 
+       static member   NoError3a = Type.InternalStaticProperty
+       static member   NoError4a = Type.InternalStaticMethod()
 
        member          x.Error1 = { DefaultFieldOfPrivateType=3 } // returning a private type from a public method
        member          x.Error2 = DefaultTagOfPrivateType(3) // returning a private type from a public method
@@ -89,15 +89,15 @@ module M =
        static member Method34() = noErrorPrivateValueLaterInferredToInvolvePrivateUnionType := [DefaultTagOfPrivateType(3)]
        static member Method35() = noErrorPrivateValueLaterInferredToInvolveInternalUnionType := [DefaultTagOfInternalType(3)]
 
-   type Type with 
+   type Type with
 
         // Check we can access private things from an in-file augmentation
         member        x.NoError51 = x.PrivateProperty
         member        x.NoError52 = Type.PrivateStaticProperty
-        static member NoError53 = Type.PrivateStaticProperty 
-        static member NoError54 = Type.PrivateStaticMethod() 
+        static member NoError53 = Type.PrivateStaticProperty
+        static member NoError54 = Type.PrivateStaticMethod()
 
-           
+
 module N =
    let error1 = M.privateValue
    let error2a = M.DefaultTagOfPrivateType(3)
@@ -113,7 +113,7 @@ module N =
    let error7a1 { M.DefaultFieldOfRecordTypeWithPrivateRepresentation = x } = x
    let error7a2 { M.DefaultFieldOfPrivateType = x } = x
    let error8 x = x.M.DefaultFieldOfPrivateType
-   let error8a x = x.M.DefaultFieldOfRecordTypeWithPrivateRepresentation 
+   let error8a x = x.M.DefaultFieldOfRecordTypeWithPrivateRepresentation
    //let error9 x = x.M.PrivateFieldOfPublicType
 
    let internal noError41 = M.internalValue
@@ -142,7 +142,7 @@ module N =
    //let private noError79 x = x.M.InternalFieldOfPublicType
    let noError10 (x:M.PublicRecordType) = ()
 
-   let noError21 = M.internalValue  
+   let noError21 = M.internalValue
    let error22   = M.DefaultTagOfInternalType(3) // returning internal type as public value
    let noError23 = M.Type().InternalProperty
    let noError24 = M.Type.InternalStaticProperty
@@ -152,7 +152,7 @@ module N =
    let error28 x = x.M.DefaultFieldOfInternalType      // accepting internal type as argument to public function
    //let error29 x = x.M.InternalFieldOfPublicType // returning internal type as argument to public function
 
-type X() = 
+type X() =
     member private x.P = 1
     member private x.M() = 1
     static member private SP = 1
@@ -162,7 +162,7 @@ type X() =
     static member internal SIP = 1
     static member internal SIM() = 1
 
-type X2 = 
+type X2 =
     new() = { f = 1; f2 = 1 }
     private new (dummy:int) = { f = 1; f2 = 1 }
     val private f : int
@@ -178,7 +178,7 @@ type X2 =
     static member internal SIM() = 1
 
 
-let xx = X() 
+let xx = X()
 let xx2 = X2()
 xx.P   // This now gives access error
 xx.M()   // This now gives access error
@@ -201,4 +201,4 @@ X2.SIP   // no access error
 X2.SIM()   // no access error
 
 
-let xx3 = X2(2) // should give an access error 
+let xx3 = X2(2) // should give an access error

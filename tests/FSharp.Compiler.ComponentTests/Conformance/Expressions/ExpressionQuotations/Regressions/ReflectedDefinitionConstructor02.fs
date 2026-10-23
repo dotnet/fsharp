@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:6159
 // Couldn't quote constructor
 

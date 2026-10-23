@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors
 // Regression test for FSHARP1.0:4212
 // Attribute is placed on both the explicit and the implicit constructors
 

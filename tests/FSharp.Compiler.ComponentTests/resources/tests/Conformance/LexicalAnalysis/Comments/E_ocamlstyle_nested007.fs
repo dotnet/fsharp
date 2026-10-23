@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 // Regression test for FSHARP1.0:1561
 // Since OCaml-style comments are now gone, this is going to be a negative test

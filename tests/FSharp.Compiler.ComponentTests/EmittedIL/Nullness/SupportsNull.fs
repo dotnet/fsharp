@@ -34,11 +34,11 @@ let iAcceptNullExplicitAnnotation(arg: 'T when 'T:null) =
         0
 
 
-let fullyInferredTestCase arg1 arg2 = 
+let fullyInferredTestCase arg1 arg2 =
     System.Console.Write(iAcceptNullPartiallyInferredFromUnderscore arg1)
     let maybeNull = iCanProduceNullSometimes arg2
     maybeNull
 
-let structShouldBeAllowedHere arg = 
+let structShouldBeAllowedHere arg =
     let boxed : obj | null = box arg
     iAcceptNullPartiallyInferredFromUnderscore boxed

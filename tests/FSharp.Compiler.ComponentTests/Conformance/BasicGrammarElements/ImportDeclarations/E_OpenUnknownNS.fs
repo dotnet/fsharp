@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Import 
+// #Regression #Conformance #DeclarationElements #Import
 
 
 // Verify error when opening an unknown module or namespace

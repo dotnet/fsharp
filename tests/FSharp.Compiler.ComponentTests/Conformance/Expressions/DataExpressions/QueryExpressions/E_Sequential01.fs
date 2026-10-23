@@ -9,14 +9,14 @@ let q1 ds =
         for c in ds do
         printfn "%A" c
         select c
-    } 
+    }
 
 let q1' ds =
     query {
         for c in ds do
         printfn "%A" c
         yield c
-    } 
+    }
 
 let q2 ds =
     query {

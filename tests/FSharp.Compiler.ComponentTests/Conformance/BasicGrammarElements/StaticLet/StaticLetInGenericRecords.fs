@@ -1,6 +1,6 @@
 module Test
 
-type MyRecord<'T> = 
+type MyRecord<'T> =
     {
         X: 'T
         Y: int
@@ -12,7 +12,7 @@ type MyRecord<'T> =
         { X = Unchecked.defaultof<'T> ; Y = 15}
     static let mutable perTyparInstMutableCounter = 0
 
-    static member IncBySize() = 
+    static member IncBySize() =
         perTyparInstMutableCounter <- perTyparInstMutableCounter + sizeOfT
 
     static member GetCounter() = perTyparInstMutableCounter

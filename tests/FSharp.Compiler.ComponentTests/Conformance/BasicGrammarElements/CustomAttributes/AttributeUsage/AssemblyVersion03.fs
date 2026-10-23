@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 open System.Text.RegularExpressions
 
 [<assembly:System.Reflection.AssemblyVersion("1.2.*")>]

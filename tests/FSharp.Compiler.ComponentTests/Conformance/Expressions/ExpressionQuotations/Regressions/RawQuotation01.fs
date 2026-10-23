@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 
 
 // Sanity check raw quotations
@@ -12,5 +12,5 @@ if rawQuote.Type  <> typeof<int> then exit 1
 if typedQuote.Raw <> rawQuote    then exit 1
 
 exit 0
-        
-        
+
+

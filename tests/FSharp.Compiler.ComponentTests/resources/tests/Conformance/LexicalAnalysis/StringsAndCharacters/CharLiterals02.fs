@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // Character escape sequences

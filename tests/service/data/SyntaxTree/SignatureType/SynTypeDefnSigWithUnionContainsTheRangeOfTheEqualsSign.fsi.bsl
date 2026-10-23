@@ -8,7 +8,8 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [Shape],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Shape], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,10)),
                   Simple
@@ -25,7 +26,8 @@ SigFile
                                   None, (5,12--5,15), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,2--5,15), { BarRange = Some (5,0--5,1) });
+                            None, (5,2--5,15), { BarRange = Some (5,0--5,1)
+                                                 OfKeyword = Some (5,9--5,11) });
                          SynUnionCase
                            ([], SynIdent (Rectangle, None),
                             Fields
@@ -44,7 +46,8 @@ SigFile
                                   None, (6,21--6,24), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (6,2--6,24), { BarRange = Some (6,0--6,1) })],
+                            None, (6,2--6,24), { BarRange = Some (6,0--6,1)
+                                                 OfKeyword = Some (6,12--6,14) })],
                         (5,0--6,24)), (5,0--6,24)), [], (4,5--6,24),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,11--4,12)

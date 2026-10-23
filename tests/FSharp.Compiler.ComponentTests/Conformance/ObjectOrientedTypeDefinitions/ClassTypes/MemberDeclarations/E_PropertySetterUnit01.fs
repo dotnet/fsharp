@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #MemberDefinitions 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #MemberDefinitions
 // Verify that it is ok to omitting the argument for the setter (no error)
 // (Note: in 1.9.6.2, the compiler was throwing an ICE). This is regression test for FSHARP1.0:3751
 // See also bug #5456

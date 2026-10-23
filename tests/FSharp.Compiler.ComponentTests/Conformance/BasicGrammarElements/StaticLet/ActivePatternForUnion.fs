@@ -1,6 +1,6 @@
 module Test
 
-type AB = 
+type AB =
     | A
     | B of int
 

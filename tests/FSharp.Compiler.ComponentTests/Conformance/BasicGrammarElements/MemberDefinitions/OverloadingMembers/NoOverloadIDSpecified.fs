@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #Overloading 
+// #Conformance #DeclarationElements #MemberDefinitions #Overloading
 // As of Beta2, we don't need OverloadIDs anymore!
 //<Expects status="success"></Expects>
 type Foo() =

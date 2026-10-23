@@ -3,7 +3,7 @@
 // Prefix only operators: !OP, ?OP, ~OP
 // Try to use !OP as an infix-op is an error
 // ?OP ~OP
-// Note: as of 11/1, the usage of ~ is restricted to very specific cases. 
+// Note: as of 11/1, the usage of ~ is restricted to very specific cases.
 //<Expects status="error" span="(14,6-14,9)" id="FS1208">Invalid operator definition\. Prefix operator definitions must use a valid prefix operator name\.$</Expects>
 //<Expects status="error" span="(15,6-15,10)" id="FS1208">Invalid operator definition\. Prefix operator definitions must use a valid prefix operator name\.$</Expects>
 //<Expects status="error" span="(17,25-17,26)" id="FS1208">Invalid prefix operator$</Expects>

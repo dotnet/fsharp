@@ -33,10 +33,10 @@ module Check =
 
 
 type FSharpQuotationsTests() =
-    
+
     [<Fact>]
     member x.MethodInfoNRE() =
-        let f() = 
+        let f() =
             E.Call(null, []) |> ignore
         CheckThrowsArgumentNullException f
 
@@ -45,7 +45,7 @@ type FSharpQuotationsTests() =
         let f() =
             E.FieldGet(null) |> ignore
         CheckThrowsArgumentNullException f
-    
+
     [<Fact>]
     member x.ConstructorNRE() =
         let f() =
@@ -57,15 +57,15 @@ type FSharpQuotationsTests() =
         let f() =
             E.PropertyGet(null,[]) |> ignore
         CheckThrowsArgumentNullException f
-        
+
     [<Fact>]
     member x.UnionCaseInfoNRE() =
         let f() =
             E.NewUnionCase(Unchecked.defaultof<Microsoft.FSharp.Reflection.UnionCaseInfo>,[]) |> ignore
         CheckThrowsArgumentNullException f
-    
+
     [<Fact>]
-    member x.ReShapeTypechecking_Let() = 
+    member x.ReShapeTypechecking_Let() =
         let q0 = <@ let a = 1 in a @>
         match q0 with
         |   ExprShape.ShapeCombination(shape, [value;lambda]) ->
@@ -80,7 +80,7 @@ type FSharpQuotationsTests() =
         |   _ -> Assert.Fail()
 
     [<Fact>]
-    member x.ReShapeStaticIndexedProperties() = 
+    member x.ReShapeStaticIndexedProperties() =
         let q0 = <@ StaticIndexedPropertyTest.IdxProp 5 @>
         match q0 with
         |   ExprShape.ShapeCombination(shape, args) ->
@@ -93,6 +93,115 @@ type FSharpQuotationsTests() =
     [<Fact>]
     member x.GetConstructorFiltersOutStaticConstructor() =
         ignore <@ System.Exception() @>
+
+    [<Fact>]
+    member x.``Issue 20800 - struct tuple quotation printing`` () =
+        Assert.Equal(
+            """NewStructTuple (Value (1), Value ("a"))""",
+            (<@ struct (1, "a") @>).ToString()
+        )
+
+    [<Fact>]
+    member x.``Issue 20800 - reference tuple quotation printing`` () =
+        Assert.Equal(
+            """NewTuple (Value (1), Value ("a"))""",
+            (<@ (1, "a") @>).ToString()
+        )
+
+    static member private TupleLambdas<'T>() =
+        [
+            (<@ fun (x: 'T) -> struct (x, 1) @> :> Expr),
+            typeof<'T -> struct ('T * int)>, typeof<struct ('T * int)>, "NewStructTuple"
+            (<@ fun (x: 'T) -> (x, 1) @> :> Expr),
+            typeof<'T -> ('T * int)>, typeof<'T * int>, "NewTuple"
+        ]
+
+    [<Fact>]
+    member x.``Issue 20800 - tuple rendering preserves types patterns and shapes`` () =
+        let assertPrinted expected (expr: Expr) =
+            Assert.Equal(expected, expr.ToString())
+            Assert.Equal(expected, expr.ToString(false))
+            Assert.Equal(expected, expr.ToString(true))
+            Assert.Equal(expected, sprintf "%A" expr)
+
+        let assertTuple (expectedType: Type) expectedArgs expected (expr: Expr) =
+            match expr with
+            | ExprShape.ShapeCombination(shape, args) ->
+                Assert.Equal<Expr list>(expectedArgs, args)
+                let rebuilt = ExprShape.RebuildShapeCombination(shape, args)
+                for tuple in [expr; rebuilt] do
+                    Assert.Equal(expectedType, tuple.Type)
+                    Assert.Equal(expectedType.IsValueType, tuple.Type.IsValueType)
+                    match tuple with
+                    | NewTuple args -> Assert.Equal<Expr list>(expectedArgs, args)
+                    | _ -> Assert.Fail("Expected NewTuple to match both tuple kinds")
+                    match tuple with
+                    | NewStructTuple args ->
+                        Assert.True(expectedType.IsValueType)
+                        Assert.Equal<Expr list>(expectedArgs, args)
+                    | _ -> Assert.False(expectedType.IsValueType)
+                    assertPrinted expected tuple
+            | _ -> Assert.Fail("Expected a tuple combination")
+
+        let pairArgs = [ <@@ 1 @@>; <@@ "a" @@> ]
+        for expectedType, label, expressions in [
+            typeof<int * string>, "NewTuple",
+            [ (<@ (1, "a") @> :> Expr); <@@ (1, "a") @@>; Expr.NewTuple pairArgs ]
+            typeof<struct (int * string)>, "NewStructTuple",
+            [ (<@ struct (1, "a") @> :> Expr); <@@ struct (1, "a") @@>
+              Expr.NewStructTuple pairArgs
+              Expr.NewStructTuple(typeof<struct (int * string)>.Assembly, pairArgs) ]
+        ] do
+            for expr in expressions do
+                assertTuple expectedType pairArgs ($"""{label} (Value (1), Value ("a"))""") expr
+
+        for expr, expectedType, args, expected in [
+            (<@ struct ((1, "a"), 2) @> :> Expr), typeof<struct ((int * string) * int)>,
+            [ <@@ (1, "a") @@>; <@@ 2 @@> ],
+            """NewStructTuple (NewTuple (Value (1), Value ("a")), Value (2))"""
+            (<@ (struct (1, "a"), 2) @> :> Expr), typeof<struct (int * string) * int>,
+            [ <@@ struct (1, "a") @@>; <@@ 2 @@> ],
+            """NewTuple (NewStructTuple (Value (1), Value ("a")), Value (2))"""
+            (<@ struct (1, "a", true) @> :> Expr), typeof<struct (int * string * bool)>,
+            [ yield! pairArgs; <@@ true @@> ],
+            """NewStructTuple (Value (1), Value ("a"), Value (true))"""
+            (<@ (1, "a", true) @> :> Expr), typeof<int * string * bool>,
+            [ yield! pairArgs; <@@ true @@> ],
+            """NewTuple (Value (1), Value ("a"), Value (true))"""
+        ] do
+            assertTuple expectedType args expected expr
+
+        for expr, functionType, tupleType, label in [
+            yield! FSharpQuotationsTests.TupleLambdas<int>()
+            yield! FSharpQuotationsTests.TupleLambdas<string>()
+        ] do
+            Assert.Equal(functionType, expr.Type)
+            assertPrinted $"Lambda (x, {label} (x, Value (1)))" expr
+            match expr with
+            | Lambda(v, body) ->
+                assertTuple tupleType [ Expr.Var v; <@@ 1 @@> ] $"{label} (x, Value (1))" body
+            | _ -> Assert.Fail("Expected a generic tuple lambda")
+
+        let firstSix = "Value (1), Value (2), Value (3), Value (4), Value (5), Value (6)"
+        for arity, tail, referenceType, structType, referenceLiteral, structLiteral in [
+            7, "Value (7)", typeof<int * int * int * int * int * int * int>,
+            typeof<struct (int * int * int * int * int * int * int)>,
+            (<@ (1,2,3,4,5,6,7) @> :> Expr), (<@ struct (1,2,3,4,5,6,7) @> :> Expr)
+            8, "Value (7), Value (8)", typeof<int * int * int * int * int * int * int * int>,
+            typeof<struct (int * int * int * int * int * int * int * int)>,
+            (<@ (1,2,3,4,5,6,7,8) @> :> Expr), (<@ struct (1,2,3,4,5,6,7,8) @> :> Expr)
+            9, "Value (7), Value (8), Value (9)", typeof<int * int * int * int * int * int * int * int * int>,
+            typeof<struct (int * int * int * int * int * int * int * int * int)>,
+            (<@ (1,2,3,4,5,6,7,8,9) @> :> Expr), (<@ struct (1,2,3,4,5,6,7,8,9) @> :> Expr)
+        ] do
+            let args = [ for i in 1..arity -> Expr.Value i ]
+            for expectedType, label, indent, literal, constructed in [
+                referenceType, "NewTuple", "          ", referenceLiteral, Expr.NewTuple args
+                structType, "NewStructTuple", "                ", structLiteral, Expr.NewStructTuple args
+            ] do
+                let expected = $"{label} ({firstSix},\n{indent}{tail})"
+                for expr in [literal; constructed] do
+                    assertTuple expectedType args expected expr
 
     [<Fact>]
     member x.``NewStructTuple literal should be recognized by NewStructTuple active pattern`` () =
@@ -283,20 +392,20 @@ module TestConditionalConstraints =
     let ``Anonymous record with non-alphabetical field order produces clean LINQ expression - issues 11131 and 15648`` () =
         // Non-alphabetical order - B before A
         let q = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         Assert.DoesNotContain(".Invoke(", exprStr)
 
     [<Fact>]
     let ``Nested anonymous record produces clean LINQ expression`` () =
         // Nested anonymous record with non-alphabetical field order
         let q = <@ fun (x: int) -> {| Outer = {| B = x; A = x + 1 |} |} @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         Assert.DoesNotContain(".Invoke(", exprStr)
 
     [<Fact>]
@@ -305,13 +414,13 @@ module TestConditionalConstraints =
         let qAlpha = <@ fun (x: int) -> {| A = x + 1; B = x |} @>
         // Non-alphabetical order
         let qNonAlpha = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
-        
+
         let linqAlpha = LeafExpressionConverter.QuotationToExpression qAlpha
         let linqNonAlpha = LeafExpressionConverter.QuotationToExpression qNonAlpha
-        
+
         let exprAlpha = linqAlpha.ToString()
         let exprNonAlpha = linqNonAlpha.ToString()
-        
+
         // Neither should contain Invoke
         Assert.DoesNotContain(".Invoke(", exprAlpha)
         Assert.DoesNotContain(".Invoke(", exprNonAlpha)
@@ -326,10 +435,10 @@ module TestConditionalConstraints =
     let ``Array indexing produces ArrayIndex expression not GetArray - issue 16918`` () =
         // Array access like x.u.[0] should NOT produce GetArray call
         let q = <@ fun (x: ArrayTestDoc) -> x.u.[0] @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)
         // Should produce x.u[0] style array index expression
@@ -339,10 +448,10 @@ module TestConditionalConstraints =
     let ``Nested array member access produces clean LINQ expression - issue 16918`` () =
         // x.u[0].c should generate proper expression tree without GetArray
         let q = <@ fun (x: ArrayTestDoc) -> x.u.[0].c @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)
         // Should contain array index
@@ -354,9 +463,9 @@ module TestConditionalConstraints =
     let ``Array indexing with variable index produces clean expression`` () =
         // Array access with variable index
         let q = <@ fun (x: int[]) (i: int) -> x.[i] @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)

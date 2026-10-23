@@ -5,11 +5,11 @@
 module Monad
 
 open System
-open Microsoft.FSharp.Reflection 
+open Microsoft.FSharp.Reflection
 
 type ITypeCons<'tag,'a> = interface end
 
-type IMonad<'tag, 'a when 'tag :> ICMonad<'tag> and 'tag: (new: unit -> 'tag)> = 
+type IMonad<'tag, 'a when 'tag :> ICMonad<'tag> and 'tag: (new: unit -> 'tag)> =
     inherit ITypeCons<'tag,'a>
 
 and ICMonad<'tag when 'tag :> ICMonad<'tag> and 'tag: (new: unit -> 'tag)> =
@@ -63,7 +63,7 @@ type
     abstract mappend: 'a -> 'a -> 'a
     abstract mconcat: seq<'a> -> 'a
     default me.mconcat xs =
-        xs |> Seq.cast |> Seq.fold me.mappend me.mempty 
+        xs |> Seq.cast |> Seq.fold me.mappend me.mempty
 
 [<AbstractClass>]
 type CMonadReader<'r,'m when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>() =
@@ -98,7 +98,7 @@ type CMonadWriter<'w,'m when 'm :> ICMonad<'m> and 'w :> System.Collections.IEnu
 [<AbstractClass>]
 type CMonadState<'s,'m when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>() =
     inherit MonadBase<'m>()
-    
+
     abstract get: IMonad<'m,'s>
     abstract put: 's -> IMonad<'m, unit>
 
@@ -116,13 +116,13 @@ type Result<'a> = Error of Exception | Success of 'a
     with
         override me.ToString() =
             match me with
-            | Error e -> 
+            | Error e ->
                 let et = e.GetType()
                 if FSharpType.IsExceptionRepresentation(et) then
                     sprintf "%A" e
                 else
                     sprintf "%s %A" et.Name e.Message
-            | Success x -> 
+            | Success x ->
                 sprintf "Success %A" x
 
 type ErrorT<'m when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>() =
@@ -152,7 +152,7 @@ type ErrorT<'m when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>() =
                     let binder = M {
                         let! a = unwrap m
                         match a with
-                        | Error e -> 
+                        | Error e ->
                             return Error e
                         | Success x ->
                             return! unwrap (f x)
@@ -211,4 +211,4 @@ type ErrorT<'m when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>() =
 and ErrorT<'m,'a when 'm :> ICMonad<'m> and 'm: (new: unit -> 'm)>(value: IMonad<'m, Result<'a>>) =
     member me.Value: IMonad<'m, Result<'a>> = value
     interface IMonad<ErrorT<'m>,'a>
-  
+

@@ -12,13 +12,13 @@ open FSharp.Benchmarks.Common.Categories
 
 [<AutoOpen>]
 module private CascadeProjectHelpers =
-        
-    let createProject files projectFilename =       
+
+    let createProject files projectFilename =
         {
             ProjectFileName = projectFilename
             ProjectId = None
             SourceFiles = files
-            OtherOptions =  [|"--optimize+" |] 
+            OtherOptions =  [|"--optimize+" |]
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
@@ -36,7 +36,7 @@ let myFunc0 () = returnValue
 type MyType0 = MyType0 of string
 type MyOtherType0 = MyOtherType0 of int"""
 
-    let baselineFsi = 
+    let baselineFsi =
         """
 module Benchmark0
 
@@ -64,7 +64,7 @@ let processFunc{number} (x) (func:MyFunctionType{number}) =
 //$COMMENTAREA$"""
 
 /// Code created using FSharpCheckFileResults.GenerateSignature()
-    let generateFsi number = 
+    let generateFsi number =
         $"""
 module Benchmark{number}
 
@@ -83,8 +83,8 @@ val processFunc{number}: x: MyType{number} -> func: MyFunctionType{number} -> As
 [<Orderer(SummaryOrderPolicy.FastestToSlowest)>]
 [<RankColumn(NumeralSystem.Roman)>]
 [<BenchmarkCategory(ShortCategory)>]
-type FileCascadeBenchmarks() = 
-    let mutable project : FSharpProjectOptions option = None   
+type FileCascadeBenchmarks() =
+    let mutable project : FSharpProjectOptions option = None
     let filesToCreate = 128
     member val FinalFileContents = SourceText.ofString "" with get,set
 
@@ -95,46 +95,46 @@ type FileCascadeBenchmarks() =
 
     member val Checker = Unchecked.defaultof<FSharpChecker> with get, set
     member this.GetProject() = project.Value
-        
+
     [<GlobalSetup>]
     member this.Setup() =
         printfn $"Running Setup(). Partial = {this.PartialCheck}, FSIGen = {this.GenerateFSI}"
         this.Checker <- FSharpChecker.Create(
-                projectCacheSize = 5, 
+                projectCacheSize = 5,
                 enablePartialTypeChecking = this.PartialCheck)
 
 
-        let projectFolder = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(),"CascadeBenchmarkProject"))                    
+        let projectFolder = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(),"CascadeBenchmarkProject"))
         if(projectFolder.Exists) then
             do projectFolder.Delete(recursive=true)
         do Directory.CreateDirectory(projectFolder.FullName) |> ignore
 
         let inProjectFolder fileName = Path.Combine(projectFolder.FullName,fileName)
-        
+
         if this.GenerateFSI then
             File.WriteAllText(inProjectFolder "Benchmark0.fsi",baselineFsi)
         File.WriteAllText(inProjectFolder "Benchmark0.fs",baselineModule)
 
-        for i = 1 to filesToCreate do            
+        for i = 1 to filesToCreate do
             if this.GenerateFSI then
                 File.WriteAllText(inProjectFolder $"Benchmark%i{i}.fsi", generateFsi i)
             File.WriteAllText(inProjectFolder $"Benchmark%i{i}.fs", generateSourceCode i)
 
         let dllFileName = inProjectFolder "CascadingBenchMark.dll"
-        let allSourceCodeFiles = 
-            [| for i in 0 .. filesToCreate do                
+        let allSourceCodeFiles =
+            [| for i in 0 .. filesToCreate do
                 if this.GenerateFSI then
                     yield (inProjectFolder $"Benchmark%i{i}.fsi")
                 yield (inProjectFolder $"Benchmark%i{i}.fs")
             |]
         let x = createProject allSourceCodeFiles dllFileName
         project <- Some x
-        this.FinalFileContents <- generateSourceCode filesToCreate |> SourceText.ofString                
+        this.FinalFileContents <- generateSourceCode filesToCreate |> SourceText.ofString
 
         ()
 
 
-    member x.ChangeFile(fileIndex:int, action) = 
+    member x.ChangeFile(fileIndex:int, action) =
         let project = x.GetProject()
         let fileIndexAdapted = if x.GenerateFSI then fileIndex * 2 else fileIndex
         let fileName = project.SourceFiles.[fileIndexAdapted]
@@ -152,7 +152,7 @@ type FileCascadeBenchmarks() =
         printfn $"ParseError = {pr.ParseHadErrors}; Check = {match cr with | FSharpCheckFileAnswer.Succeeded _ -> '+' | _ -> '-' }"
         for e in pr.Diagnostics do
             printfn "Error:= %s" (e.ToString())
-               
+
     [<Benchmark>]
     member x.ParseAndCheckLastFileProjectAsIs() =
         x.ParseAndCheckLastFileInTheProject()
@@ -161,17 +161,17 @@ type FileCascadeBenchmarks() =
     member x.ParseProjectWithFullCacheClear() =
         x.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         x.Checker.ClearCache([x.GetProject()])
-        x.Checker.InvalidateConfiguration(x.GetProject())     
+        x.Checker.InvalidateConfiguration(x.GetProject())
         x.ParseAndCheckLastFileInTheProject()
 
     [<Benchmark>]
     member x.ParseProjectWithChangingFirstFile() =
-        x.ChangeFile(fileIndex=0, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
+        x.ChangeFile(fileIndex=0, action= fun () -> x.ParseAndCheckLastFileInTheProject())
 
     [<Benchmark>]
     member x.ParseProjectWithChangingMiddleFile() =
-        x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.ParseAndCheckLastFileInTheProject())        
+        x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.ParseAndCheckLastFileInTheProject())
 
     [<Benchmark>]
     member x.ParseProjectWithChangingPenultimateFile() =
-        x.ChangeFile(fileIndex=(filesToCreate-2), action= fun () -> x.ParseAndCheckLastFileInTheProject()) 
+        x.ChangeFile(fileIndex=(filesToCreate-2), action= fun () -> x.ParseAndCheckLastFileInTheProject())

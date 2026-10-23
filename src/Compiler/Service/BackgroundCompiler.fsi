@@ -131,6 +131,8 @@ type internal IBackgroundCompiler =
 
     abstract NotifyProjectCleaned: options: FSharpProjectOptions * userOpName: string -> Async<unit>
 
+    abstract SetReferenceStampProvider: getReferenceStamp: (string -> System.DateTime) -> unit
+
     abstract ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
@@ -232,6 +234,7 @@ type internal BackgroundCompiler =
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
         parallelReferenceResolution: ParallelReferenceResolution *
+        shareImportedAssemblies: bool *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool ->
@@ -240,3 +243,5 @@ type internal BackgroundCompiler =
     static member ActualCheckFileCount: int
 
     static member ActualParseFileCount: int
+
+    member SetReferenceStampProvider: getReferenceStamp: (string -> System.DateTime) -> unit

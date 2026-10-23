@@ -9,14 +9,14 @@ open FSharp.Test
 
 module ``String Tests`` =
 
-    type CalcSum(x : int, y: int) = 
+    type CalcSum(x : int, y: int) =
         let mutable x = x
         let mutable y = y
-    
+
         member _.Sum () = x + y
-   
+
         interface IFormattable with
-            member x.ToString (format: string, _ : IFormatProvider) = 
+            member x.ToString (format: string, _ : IFormatProvider) =
                 match format with
                 | null | ""
                 | "g" | "G" -> String.Format("X + Y = {0}", x.Sum())
@@ -75,7 +75,7 @@ module ``String Tests`` =
     type Foo4 =
         | A = 1s
         | B = 2s
-        
+
     [<Fact>]
     let ``String of int16 based enum``() =
         let a = Foo4.A

@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #Attributes 
+// #Conformance #TypeInference #Attributes
 // Verify the access works on unions without RQA
 
 module A =

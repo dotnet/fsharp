@@ -1,6 +1,6 @@
 ﻿module Neg31
 
-module ValAttributesDifferent = 
+module ValAttributesDifferent =
    // expect no warning, and attribute to be in compiled code
    [<System.ObsoleteAttribute("Text identical in both")>]
    let x1 = 1
@@ -19,7 +19,7 @@ module ValAttributesDifferent =
 
 
 
-module TyconAttributesDifferent = 
+module TyconAttributesDifferent =
    // expect no warning, and attribute to be in compiled code
    [<System.ObsoleteAttribute("Text identical in both")>]
    type C1 = A | B
@@ -37,55 +37,55 @@ module TyconAttributesDifferent =
    type C4 = A | B
 
 
-module ModuleAttributesDifferent = 
+module ModuleAttributesDifferent =
    // expect no warning, and attribute to be in compiled code
    [<System.ObsoleteAttribute("Text identical in both")>]
-   module M1 = 
+   module M1 =
        let x = 1
 
    // expect warning, and attribute from signature to be included
    [<System.ObsoleteAttribute("Text differs in implementation")>]
-   module M2 = 
+   module M2 =
        let x = 1
 
    // expect no warning, and attribute to be in compiled code
    [<System.ObsoleteAttribute("Attribute is in implementation but not signature")>]
-   module M3 = 
+   module M3 =
        let x = 1
 
    // expect no warning, and attribute to be in compiled code
    //[<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
-   module M4 = 
+   module M4 =
        let x = 1
 
 
-module UnionCaseAttributesDifferent = 
+module UnionCaseAttributesDifferent =
    // expect no warning, and attribute to be in compiled code
-   type U1 =    
+   type U1 =
        | [<System.ObsoleteAttribute("Text identical in both")>]
          A of int
        | B of string
 
    // expect warning, and attribute from signature to be included
-   type U2 =    
+   type U2 =
        | [<System.ObsoleteAttribute("Text differs in implementation")>]
          A of int
        | B of string
 
    // expect no warning, and attribute to be in compiled code
-   type U3 =    
+   type U3 =
        | [<System.ObsoleteAttribute("Attribute is in implementation but not signature")>]
          A of int
        | B of string
 
    // expect no warning, and attribute to be in compiled code
-   type U4 =    
+   type U4 =
        | //[<System.ObsoleteAttribute("Attribute is in signature but not implementation")>]
          A of int
        | B of string
 
-module ParamAttributesDifferent = 
-   
+module ParamAttributesDifferent =
+
    // identical in signature and implementation
    let x1 ([<System.CLSCompliantAttribute(true)>] p : int) = p
 
@@ -98,8 +98,8 @@ module ParamAttributesDifferent =
    // in signature but not implementation
    let x4 ((* [<System.CLSCompliantAttribute(true)>] *) p : int) = p
 
-module TypeParamAttributesDifferent = 
-   
+module TypeParamAttributesDifferent =
+
    // identical in signature and implementation
    let x1<[<System.CLSCompliantAttribute(true)>] 'T>(x:'T) = x
 
@@ -113,4 +113,3 @@ module TypeParamAttributesDifferent =
    let x4<(* [<System.CLSCompliantAttribute(true)>] *) 'T>(x:'T) = x
 
 
-          

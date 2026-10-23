@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 
 // Test errors related to enums of invalid primitive/built-in types
 
@@ -18,7 +18,7 @@
 type EnumOfString =
     | A = "foo"
     | B = "bar"
-    
+
 type EnumOfBigInt =
     | A = 0I              // err
     | B = 1I
@@ -48,7 +48,7 @@ type EnumOfDecimal =
 type EnumOfIEEE32 =
     | A = 0x000000000lf
     | B = 0x0000000FFlf
-    
+
 type EnumOfIEEE64 =
     | A = 0x0000000000000000LF
     | B = 0x0000000000000001LF

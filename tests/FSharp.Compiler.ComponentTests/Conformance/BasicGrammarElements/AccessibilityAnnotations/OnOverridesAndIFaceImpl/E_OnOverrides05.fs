@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility #Overloading 
+// #Regression #Conformance #DeclarationElements #Accessibility #Overloading
 // Regression test for FSHARP1.0:4485
 // Visibility desc on overrides (inheritance chain)
 

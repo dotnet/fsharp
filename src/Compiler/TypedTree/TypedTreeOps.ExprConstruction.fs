@@ -580,6 +580,9 @@ module internal TypedTreeCollections =
         member m.Add(v, x) =
             TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
 
+        member _.Remap(remapStamp, mapping) =
+            TyconRefMultiMap(contents.Map(remapStamp, List.map mapping))
+
         static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
 
         static member OfList vs =
@@ -596,8 +599,8 @@ module internal TypeTesters =
     /// Try to create a EntityRef suitable for accessing the given Entity from another assembly
     let tryRescopeEntity viewedCcu (entity: Entity) : EntityRef voption =
         match entity.PublicPath with
-        | Some pubpath -> ValueSome(ERefNonLocal(rescopePubPath viewedCcu pubpath))
-        | None -> ValueNone
+        | ValueSome pubpath -> ValueSome(ERefNonLocal(rescopePubPath viewedCcu pubpath))
+        | ValueNone -> ValueNone
 
     /// Try to create a ValRef suitable for accessing the given Val from another assembly
     let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValRef voption =
@@ -833,18 +836,12 @@ module internal TypeTesters =
         | _ -> false)
 
     let isUnitTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.unit_tcr_canon tcref)
 
     let isObjTyAnyNullness g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Object_tcref tcref)
 
     let isObjNullTy g ty =
         ty
@@ -866,18 +863,12 @@ module internal TypeTesters =
            | _ -> false)
 
     let isValueTypeTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Value_tcref tcref)
 
     let isVoidTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Void_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Void_tcref tcref)
 
     let isILAppTy g ty =
         ty
@@ -1055,9 +1046,7 @@ module internal TypeTesters =
         | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
         | _ -> false
 
-    let isStructTyconRef (tcref: TyconRef) =
-        let tycon = tcref.Deref
-        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+    let isStructTyconRef (tcref: TyconRef) = tcref.IsStructOrEnumTycon
 
     let isStructTy g ty =
         match tryTcrefOfAppTy g ty with
@@ -1269,12 +1258,12 @@ module internal TypeTesters =
                 | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
             | TType_measure _ -> [ ty ]
 
-    let underlyingTypeOfEnumTy (g: TcGlobals) ty =
+    let tryUnderlyingTypeOfEnumTy (g: TcGlobals) ty =
         assert (isEnumTy g ty)
 
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
-        | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
+        | ProvidedTypeMetadata info -> ValueSome(info.UnderlyingTypeOfEnum())
 #endif
         | ILTypeMetadata(TILObjectReprData(_, _, tdef)) ->
 
@@ -1282,25 +1271,30 @@ module internal TypeTesters =
             let ilTy = getTyOfILEnumInfo info
 
             match ilTy.TypeSpec.Name with
-            | "System.Byte" -> g.byte_ty
-            | "System.SByte" -> g.sbyte_ty
-            | "System.Int16" -> g.int16_ty
-            | "System.Int32" -> g.int32_ty
-            | "System.Int64" -> g.int64_ty
-            | "System.UInt16" -> g.uint16_ty
-            | "System.UInt32" -> g.uint32_ty
-            | "System.UInt64" -> g.uint64_ty
-            | "System.Single" -> g.float32_ty
-            | "System.Double" -> g.float_ty
-            | "System.Char" -> g.char_ty
-            | "System.Boolean" -> g.bool_ty
-            | _ -> g.int32_ty
+            | "System.Byte" -> ValueSome g.byte_ty
+            | "System.SByte" -> ValueSome g.sbyte_ty
+            | "System.Int16" -> ValueSome g.int16_ty
+            | "System.Int32" -> ValueSome g.int32_ty
+            | "System.Int64" -> ValueSome g.int64_ty
+            | "System.UInt16" -> ValueSome g.uint16_ty
+            | "System.UInt32" -> ValueSome g.uint32_ty
+            | "System.UInt64" -> ValueSome g.uint64_ty
+            | "System.Single" -> ValueSome g.float32_ty
+            | "System.Double" -> ValueSome g.float_ty
+            | "System.Char" -> ValueSome g.char_ty
+            | "System.Boolean" -> ValueSome g.bool_ty
+            | _ -> ValueSome g.int32_ty
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            let tycon = (tcrefOfAppTy g ty).Deref
+            match (tcrefOfAppTy g ty).Deref.GetFieldByName "value__" with
+            | Some rf -> ValueSome rf.FormalType
+            | None -> ValueNone
 
-            match tycon.GetFieldByName "value__" with
-            | Some rf -> rf.FormalType
-            | None -> error (InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
+    let underlyingTypeOfEnumTy (g: TcGlobals) ty =
+        match tryUnderlyingTypeOfEnumTy g ty with
+        | ValueSome underlyingTy -> underlyingTy
+        | ValueNone ->
+            let tycon = (tcrefOfAppTy g ty).Deref
+            error (InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
 
     let normalizeEnumTy g ty =
         (if isEnumTy g ty then underlyingTypeOfEnumTy g ty else ty)

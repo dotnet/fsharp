@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles #Namespaces 
+// #Conformance #SignatureFiles #Namespaces
 // Verify no warning if every file has a module or namespace
 
 //<Expects status="notin">namespace</Expects>

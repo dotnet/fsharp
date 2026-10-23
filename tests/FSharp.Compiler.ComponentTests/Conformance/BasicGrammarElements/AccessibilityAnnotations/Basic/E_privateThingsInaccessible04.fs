@@ -1,14 +1,14 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 
 // Private modules
-// Private type or module is private to its immediately enclosing module. This means the module PrivateModule in the repro 
-// is indeed accessible to the rest of the implicit enclosing module. 
+// Private type or module is private to its immediately enclosing module. This means the module PrivateModule in the repro
+// is indeed accessible to the rest of the implicit enclosing module.
 
 
 
 
 
-module M = 
+module M =
     let private y = 42
     let private g y = y * y
 
@@ -19,7 +19,7 @@ module M =
     module public PublicModule =
         let x = 1
         let f x = x * x + y
-        
+
 module Module2 =
     open M
     let test4 = PrivateModule.x           // Error

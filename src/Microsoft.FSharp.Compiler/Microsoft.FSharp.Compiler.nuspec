@@ -28,8 +28,13 @@
         <!-- assemblies -->
         <file src="fsc\$configuration$\$fSharpNetCoreProductTargetFramework$\fsc.dll"                      target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="fsi\$configuration$\$fSharpNetCoreProductTargetFramework$\fsi.dll"                      target="lib\$fSharpNetCoreProductTargetFramework$" />
-        <file src="FSharp.Core\$configuration$\netstandard2.0\FSharp.Core.dll"                             target="lib\$fSharpNetCoreProductTargetFramework$" />
-        <file src="FSharp.Core\$configuration$\netstandard2.0\FSharp.Core.xml"                             target="lib\$fSharpNetCoreProductTargetFramework$" />
+        <!-- StreamJsonRpc and its dependency closure, which fsi's JSON-RPC server mode loads at run time.
+             The SDK lays out exactly what this lib folder holds, so a missing file here is a missing
+             file in every installed SDK. Filled in by the project file; empty in a source-only build. -->
+        $fsiJsonRpcServerFiles$
+        <!-- FSI needs the .NET-only FSharp.Core APIs for IAsyncDisposable support (dotnet/fsharp#14454). -->
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\FSharp.Core.dll"      target="lib\$fSharpNetCoreProductTargetFramework$" />
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\FSharp.Core.xml"      target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Compiler.Service\$configuration$\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Build\$configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
@@ -48,7 +53,7 @@
         <file src="$mibcRoot$\**\*.mibc"            target="contentFiles\mibc" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$configuration$\netstandard2.0\**\FSharp.Core.resources.dll"
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\**\FSharp.Core.resources.dll"
                                                                                                              target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Compiler.Service\$configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"
                                                                                                              target="lib\$fSharpNetCoreProductTargetFramework$" />

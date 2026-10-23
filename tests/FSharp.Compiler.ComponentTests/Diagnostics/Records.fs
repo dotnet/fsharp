@@ -93,7 +93,7 @@ let t3 (x: RecTy) (a: AnotherNestedRecTy) = { x with D.C.c = { a with A = 3; B =
         (Warning 3560, Line 9, Col 27, Line 9, Col 66, "This copy-and-update record expression changes all fields of record type 'Test.NestedRecTy'. Consider using the record construction syntax instead.")
         (Warning 3560, Line 15, Col 62, Line 15, Col 85, "This copy-and-update record expression changes all fields of record type 'Test.AnotherNestedRecTy'. Consider using the record construction syntax instead.")
     ]
-    
+
 [<Fact>]
 let ``Error when implementing interface with auto property in record type``() =
     FSharp """
@@ -112,7 +112,7 @@ type FooImpl =
     |> compile
     |> shouldFail
     |> withSingleDiagnostic (Error 912, Line 9, Col 5, Line 9, Col 36, "This declaration element is not permitted in an augmentation")
-    
+
 [<Fact>]
 let ``Error when declaring an abstract member in record type`` () =
     Fsx """
@@ -120,6 +120,6 @@ type R =
   { a : int; b : string }
   abstract M : unit -> unit
    """
-    |> typecheck 
+    |> typecheck
     |> shouldFail
     |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")

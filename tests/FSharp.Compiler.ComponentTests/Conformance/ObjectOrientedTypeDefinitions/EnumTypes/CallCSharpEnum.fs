@@ -1,8 +1,8 @@
-// #Conformance #ObjectOrientedTypes #Enums #ReqNOMT 
+// #Conformance #ObjectOrientedTypes #Enums #ReqNOMT
 
 // Consume a C# Enum from F#
 namespace NF
-    module M = 
+    module M =
       let e = NC.SimpleEnum.A
       (int e + int NC.SimpleEnum.B + int NC.SimpleEnum.C) |> exit
 

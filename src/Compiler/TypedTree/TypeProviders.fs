@@ -12,7 +12,7 @@ open System.IO
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
-open Internal.Utilities.FSharpEnvironment  
+open Internal.Utilities.FSharpEnvironment
 open FSharp.Core.CompilerServices
 open FSharp.Quotations
 open FSharp.Compiler.AbstractIL.IL
@@ -24,7 +24,7 @@ open FSharp.Compiler.Text.Range
 type TypeProviderDesignation = TypeProviderDesignation of string
 
 module NullableArray =
-    let map f (arr: ('a[] | null)) : ('b[] | null) = 
+    let map f (arr: ('a[] | null)) : ('b[] | null) =
         match arr with
         | null -> null
         | notNull -> notNull |> Array.map f
@@ -35,7 +35,7 @@ exception ProvidedTypeResolutionNoRange of exn
 
 let toolingCompatiblePaths() = Internal.Utilities.FSharpEnvironment.toolingCompatiblePaths ()
 
-/// Represents some of the configuration parameters passed to type provider components 
+/// Represents some of the configuration parameters passed to type provider components
 type ResolutionEnvironment =
     { ResolutionFolder: string
       OutputFile: string option
@@ -57,11 +57,11 @@ let GetTypeProviderImplementationTypes (
         let attrName = typeof<TypeProviderAssemblyAttribute>.Name
         let exnTypeName = !! e.GetType().FullName
         let exnMsg = e.Message
-        match designTimeAssemblyPathOpt with 
-        | None -> 
+        match designTimeAssemblyPathOpt with
+        | None ->
             let msg = FSComp.SR.etProviderHasWrongDesignerAssemblyNoPath(RichText.mkClass attrName, RichText.mkText designTimeAssemblyNameString, RichText.mkText exnTypeName, RichText.mkText exnMsg)
             raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
-        | Some designTimeAssemblyPath -> 
+        | Some designTimeAssemblyPath ->
             let msg = FSComp.SR.etProviderHasWrongDesignerAssembly(RichText.mkClass attrName, RichText.mkText designTimeAssemblyNameString, RichText.mkText designTimeAssemblyPath, RichText.mkText exnTypeName, RichText.mkText exnMsg)
             raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
 
@@ -70,12 +70,12 @@ let GetTypeProviderImplementationTypes (
     match designTimeAssemblyOpt with
     | Some loadedDesignTimeAssembly ->
         try
-            let exportedTypes = loadedDesignTimeAssembly.GetExportedTypes() 
-            let filtered = 
+            let exportedTypes = loadedDesignTimeAssembly.GetExportedTypes()
+            let filtered =
                 [
-                    for t in exportedTypes do 
+                    for t in exportedTypes do
                         let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
-                        if ca.Length > 0 then 
+                        if ca.Length > 0 then
                             yield t
                 ]
             filtered
@@ -83,12 +83,12 @@ let GetTypeProviderImplementationTypes (
             let folder = !! Path.GetDirectoryName(loadedDesignTimeAssembly.Location)
             let exnTypeName = !! e.GetType().FullName
             let exnMsg = e.Message
-            match e with 
-            | :? FileLoadException -> 
+            match e with
+            | :? FileLoadException ->
                 let msg = FSComp.SR.etProviderHasDesignerAssemblyDependency(RichText.mkText designTimeAssemblyNameString, RichText.mkText folder, RichText.mkText exnTypeName, RichText.mkText exnMsg)
                 raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
-                
-            | _ -> 
+
+            | _ ->
                 let msg = FSComp.SR.etProviderHasDesignerAssemblyException(RichText.mkText designTimeAssemblyNameString, RichText.mkText folder, RichText.mkText exnTypeName, RichText.mkText exnMsg)
                 raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
     | None -> []
@@ -102,20 +102,20 @@ let StripException (e: exn) =
 /// Create an instance of a type provider from the implementation type for the type provider in the
 /// design-time assembly by using reflection-invoke on a constructor for the type provider.
 let CreateTypeProvider (
-        typeProviderImplementationType: Type, 
-        runtimeAssemblyPath, 
-        resolutionEnvironment: ResolutionEnvironment, 
-        isInvalidationSupported: bool, 
-        isInteractive: bool, 
-        systemRuntimeContainsType, 
-        systemRuntimeAssemblyVersion, 
+        typeProviderImplementationType: Type,
+        runtimeAssemblyPath,
+        resolutionEnvironment: ResolutionEnvironment,
+        isInvalidationSupported: bool,
+        isInteractive: bool,
+        systemRuntimeContainsType,
+        systemRuntimeAssemblyVersion,
         m
     ) =
 
-    // Protect a .NET reflection call as we load the type provider component into the host process, 
+    // Protect a .NET reflection call as we load the type provider component into the host process,
     // reporting errors.
     let protect f =
-        try 
+        try
             f ()
         with err ->
             let e = StripException (StripException err)
@@ -130,16 +130,16 @@ let CreateTypeProvider (
         let e =
             TypeProviderConfig(systemRuntimeContainsType,
                 ReferencedAssemblies=getReferencedAssemblies(),
-                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
-                RuntimeAssembly=runtimeAssemblyPath, 
-                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
-                IsInvalidationSupported=isInvalidationSupported, 
-                IsHostedExecution= isInteractive, 
+                ResolutionFolder=resolutionEnvironment.ResolutionFolder,
+                RuntimeAssembly=runtimeAssemblyPath,
+                TemporaryFolder=resolutionEnvironment.TemporaryFolder,
+                IsInvalidationSupported=isInvalidationSupported,
+                IsHostedExecution= isInteractive,
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
 
         protect (fun () -> !!(Activator.CreateInstance(typeProviderImplementationType, [| box e|])) :?> ITypeProvider )
 
-    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
+    elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then
         protect (fun () -> !!(Activator.CreateInstance typeProviderImplementationType) :?> ITypeProvider )
 
     else
@@ -147,21 +147,21 @@ let CreateTypeProvider (
         raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), !! typeProviderImplementationType.FullName, m))
 
 let GetTypeProvidersOfAssembly (
-        runtimeAssemblyFilename: string, 
-        ilScopeRefOfRuntimeAssembly: ILScopeRef, 
-        designTimeName: string, 
-        resolutionEnvironment: ResolutionEnvironment, 
-        isInvalidationSupported: bool, 
-        isInteractive: bool, 
-        systemRuntimeContainsType: string -> bool, 
-        systemRuntimeAssemblyVersion: Version, 
+        runtimeAssemblyFilename: string,
+        ilScopeRefOfRuntimeAssembly: ILScopeRef,
+        designTimeName: string,
+        resolutionEnvironment: ResolutionEnvironment,
+        isInvalidationSupported: bool,
+        isInteractive: bool,
+        systemRuntimeContainsType: string -> bool,
+        systemRuntimeAssemblyVersion: Version,
         compilerToolPaths: string list,
         m:range
     ) =
 
-    let providerSpecs = 
+    let providerSpecs =
         try
-            let designTimeAssemblyName = 
+            let designTimeAssemblyName =
                 try
                     if designTimeName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
                         Some (AssemblyName (!!Path.GetFileNameWithoutExtension(designTimeName)))
@@ -175,7 +175,7 @@ let GetTypeProvidersOfAssembly (
                 match designTimeAssemblyName, resolutionEnvironment.OutputFile with
                 // Check if the attribute is pointing to the file being compiled, in which case ignore it
                 // This checks seems like legacy but is included for compat.
-                | Some designTimeAssemblyName, Some path 
+                | Some designTimeAssemblyName, Some path
                     when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                     ()
 
@@ -185,11 +185,11 @@ let GetTypeProvidersOfAssembly (
                         let resolver =
                             CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                 isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
-                        match box resolver with 
+                        match box resolver with
                         | null -> ()
                         | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
 
-                | None, _ -> 
+                | None, _ ->
                     ()
             ]
 
@@ -207,7 +207,7 @@ let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 let TryTypeMember<'T,'U>(st: Tainted<'T>, fullName, memberName, m, recover, f: 'T -> 'U) : Tainted<'U> =
     try
         st.PApply (f, m)
-    with :? TypeProviderError as tpe -> 
+    with :? TypeProviderError as tpe ->
         tpe.Iter (fun e -> errorR(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName, e.ContextualErrorRichMessage), m)))
         st.PApplyNoFailure(fun _ -> recover)
 
@@ -219,18 +219,18 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
         tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName, e.ContextualErrorRichMessage), m)))
         [||]
 
-/// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
+/// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null,
 let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U,
                                                                         f: 'T -> 'U | null) : Tainted<'U> =
-    match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
-    | Tainted.Null -> 
+    match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with
+    | Tainted.Null ->
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
     | Tainted.NonNull r ->
         r
 
 /// Try to access a property or method on a provided member, catching and reporting errors
-let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
+let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) =
     try
         mi.PApply (f, m)
     with :? TypeProviderError as tpe ->
@@ -243,9 +243,9 @@ let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: range) =
 
 /// Validate a provided namespace name
 let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string | null) =
-    match nsp with 
+    match nsp with
     | Null -> ()
-    | NonNull nsp -> 
+    | NonNull nsp ->
         if String.IsNullOrWhiteSpace nsp then
             // Empty namespace is not allowed
             errorR(Error(FSComp.SR.etEmptyNamespaceOfTypeNotAllowed(RichText.ofQualifiedTypeName name, RichText.mkText (typeProvider.PUntaint((fun tp -> tp.GetType().Name), m))), m))
@@ -253,7 +253,7 @@ let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: st
             for s in nsp.Split('.') do
                 match s.IndexOfAny(PrettyNaming.IllegalCharactersInTypeAndNamespaceNames) with
                 | -1 -> ()
-                | n -> errorR(Error(FSComp.SR.etIllegalCharactersInNamespaceName(RichText.mkText (string s[n]), RichText.mkNamespace s), m))  
+                | n -> errorR(Error(FSComp.SR.etIllegalCharactersInNamespaceName(RichText.mkText (string s[n]), RichText.mkNamespace s), m))
 
 let bindingFlags =
     BindingFlags.DeclaredOnly |||
@@ -267,11 +267,11 @@ let bindingFlags =
 // example RuntimeType overrides the equality relation to be reference equality for the Equals(object)
 // override, but the other subtypes of System.Type do not, making the relation non-reflective.
 //
-// Further, avoiding reliance on canonicalization (UnderlyingSystemType) or System.Type object identity means that 
+// Further, avoiding reliance on canonicalization (UnderlyingSystemType) or System.Type object identity means that
 // providers can implement wrap-and-filter "views" over existing System.Type clusters without needing
 // to preserve object identity when presenting the types to the F# compiler.
 
-type ProvidedTypeComparer() = 
+type ProvidedTypeComparer() =
     let key (ty: ProvidedType) =
         match ty.Assembly with
         | Null -> ("", ty.FullName)
@@ -283,7 +283,7 @@ type ProvidedTypeComparer() =
         member _.GetHashCode(ty: ProvidedType) = hash (key ty)
         member _.Equals(ty1: ProvidedType, ty2: ProvidedType) = nullSafeEquality ty1 ty2 (fun ty1 ty2 -> key ty1 = key ty2)
 
-/// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
+/// The context used to interpret information in the closure of System.Type, System.MethodInfo and other
 /// info objects coming from the type provider.
 ///
 /// This is the "Type --> Tycon" remapping context of the type. This is only present for generated provided types, and contains
@@ -291,7 +291,7 @@ type ProvidedTypeComparer() =
 ///
 /// Laziness is used "to prevent needless computation for every type during remapping". However it
 /// appears that the laziness likely serves no purpose and could be safely removed.
-type ProvidedTypeContext = 
+type ProvidedTypeContext =
     | NoEntries
     // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
     | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * InterruptibleLazy<ConcurrentDictionary<ProvidedType, obj>>
@@ -300,32 +300,32 @@ type ProvidedTypeContext =
 
     static member Create(d1, d2) = Entries(d1, notlazy d2)
 
-    member ctxt.GetDictionaries()  = 
+    member ctxt.GetDictionaries()  =
         match ctxt with
-        | NoEntries -> 
+        | NoEntries ->
             ConcurrentDictionary<ProvidedType, ILTypeRef>(ProvidedTypeComparer.Instance), ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
         | Entries (lookupILTR, lookupILTCR) ->
             lookupILTR, lookupILTCR.Force()
 
-    member ctxt.TryGetILTypeRef st = 
-        match ctxt with 
-        | NoEntries -> None 
-        | Entries(d, _) -> 
+    member ctxt.TryGetILTypeRef st =
+        match ctxt with
+        | NoEntries -> None
+        | Entries(d, _) ->
             match d.TryGetValue st with
             | true, res -> Some res
             | _ -> None
 
-    member ctxt.TryGetTyconRef st = 
-        match ctxt with 
-        | NoEntries -> None 
-        | Entries(_, d) -> 
+    member ctxt.TryGetTyconRef st =
+        match ctxt with
+        | NoEntries -> None
+        | Entries(_, d) ->
             let d = d.Force()
             match d.TryGetValue st with
             | true, res -> Some res
             | _ -> None
 
-    member ctxt.RemapTyconRefs (f: obj->obj) = 
-        match ctxt with 
+    member ctxt.RemapTyconRefs (f: obj->obj) =
+        match ctxt with
         | NoEntries -> NoEntries
         | Entries(d1, d2) ->
             Entries(d1, InterruptibleLazy(fun _ ->
@@ -338,28 +338,28 @@ type ProvidedTypeContext =
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     inherit ProvidedMemberInfo(x, ctxt)
 
-    let isMeasure = 
+    let isMeasure =
         lazy
-            x.CustomAttributes 
+            x.CustomAttributes
             |> Seq.exists (fun a -> (!! a.Constructor.DeclaringType).FullName = typeof<MeasureAttribute>.FullName)
 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
-    interface IProvidedCustomAttributeProvider with 
+    interface IProvidedCustomAttributeProvider with
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
         member _.GetDefinitionLocationAttribute provider = provide().GetDefinitionLocationAttribute provider
         member _.GetXmlDocAttributes provider = provide().GetXmlDocAttributes provider
-        
-    // The type provider spec distinguishes between 
+
+    // The type provider spec distinguishes between
     //   - calls that can be made on provided types (i.e. types given by ReturnType, ParameterType, and generic argument types)
     //   - calls that can be made on provided type definitions (types returned by ResolveTypeName, GetTypes etc.)
     // Ideally we would enforce this decision structurally by having both ProvidedType and ProvidedTypeDefinition.
     // Alternatively we could use assertions to enforce this.
 
     // Suppress relocation of generated types
-    member _.IsSuppressRelocate = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.SuppressRelocate)) <> enum 0  
+    member _.IsSuppressRelocate = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.SuppressRelocate)) <> enum 0
 
-    member _.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0  
+    member _.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0
 
     member _.IsGenericType = x.IsGenericType
 
@@ -409,7 +409,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
 
-    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: objnull[]) = 
+    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: objnull[]) =
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
     member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
@@ -445,9 +445,9 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     member _.RawSystemType = x
 
     /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
-    member _.GetEnumUnderlyingType() = 
-        x.GetEnumUnderlyingType() 
-        |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"    
+    member _.GetEnumUnderlyingType() =
+        x.GetEnumUnderlyingType()
+        |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
 
     member _.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
 
@@ -463,19 +463,19 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Var(name, x))
 
-    static member Create ctxt x : ProvidedType | null = 
-        match x with 
-        | Null -> null 
+    static member Create ctxt x : ProvidedType | null =
+        match x with
+        | Null -> null
         | NonNull t -> ProvidedType (t, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedType (x, ctxt)
 
-    static member CreateWithNullCheck ctxt name (x:Type | null) = 
+    static member CreateWithNullCheck ctxt name (x:Type | null) =
         match x with
-        | null -> nullArg name 
+        | null -> nullArg name
         | t -> ProvidedType (t, ctxt)
 
-    static member CreateArray ctxt (xs: Type[] | null) = 
+    static member CreateArray ctxt (xs: Type[] | null) =
         xs |> NullableArray.map (ProvidedType.CreateNonNull ctxt)
 
     static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
@@ -496,11 +496,11 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     static member ApplyContext (pt: ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
 
-    static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
+    static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 type IProvidedCustomAttributeProvider =
-    abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> ((string | null) * int * int) option 
+    abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> ((string | null) * int * int) option
 
     abstract GetXmlDocAttributes : provider: ITypeProvider -> string[]
 
@@ -508,7 +508,7 @@ type IProvidedCustomAttributeProvider =
 
     abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
 
-type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAttributeData>) = 
+type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAttributeData>) =
 
     [<return: Struct>]
     let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then ValueSome x.TypedValue else ValueNone
@@ -519,47 +519,47 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
     let findAttribByName tyFullName (a: CustomAttributeData) = ((!!a.Constructor.DeclaringType).FullName = tyFullName)
 
     let findAttrib (ty: Type) a = findAttribByName ty.FullName a
-    interface IProvidedCustomAttributeProvider with 
-        member _.GetAttributeConstructorArgs (provider, attribName) = 
-            attributes provider 
-            |> Seq.tryFind (findAttribByName  attribName)  
-            |> Option.map (fun a -> 
-                let ctorArgs = 
-                    a.ConstructorArguments 
-                    |> Seq.toList 
+    interface IProvidedCustomAttributeProvider with
+        member _.GetAttributeConstructorArgs (provider, attribName) =
+            attributes provider
+            |> Seq.tryFind (findAttribByName  attribName)
+            |> Option.map (fun a ->
+                let ctorArgs =
+                    a.ConstructorArguments
+                    |> Seq.toList
                     |> List.map (function Arg obj -> Some obj | _ -> None)
-                let namedArgs = 
-                    a.NamedArguments 
-                    |> Seq.toList 
+                let namedArgs =
+                    a.NamedArguments
+                    |> Seq.toList
                     |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg obj -> Some obj | _ -> None)
                 ctorArgs, namedArgs)
 
-        member _.GetHasTypeProviderEditorHideMethodsAttribute provider = 
-            attributes provider 
-            |> Seq.exists (findAttrib typeof<TypeProviderEditorHideMethodsAttribute>) 
+        member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
+            attributes provider
+            |> Seq.exists (findAttrib typeof<TypeProviderEditorHideMethodsAttribute>)
 
-        member _.GetDefinitionLocationAttribute provider = 
-            attributes provider 
-            |> Seq.tryFind (findAttrib  typeof<TypeProviderDefinitionLocationAttribute>)  
-            |> Option.map (fun a -> 
+        member _.GetDefinitionLocationAttribute provider =
+            attributes provider
+            |> Seq.tryFind (findAttrib  typeof<TypeProviderDefinitionLocationAttribute>)
+            |> Option.map (fun a ->
                 let filePath : string | null = a.NamedArguments |> Seq.tryPick (function Member "FilePath" (Arg (:? string as v)) -> Some v | _ -> None) |> Option.toObj
                 let line = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Line" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 let column = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Column" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 (filePath, line, column))
 
-        member _.GetXmlDocAttributes provider = 
-            attributes provider 
-            |> Seq.choose (fun a -> 
-                if findAttrib  typeof<TypeProviderXmlDocAttribute> a then 
-                    match a.ConstructorArguments |> Seq.toList with 
+        member _.GetXmlDocAttributes provider =
+            attributes provider
+            |> Seq.choose (fun a ->
+                if findAttrib  typeof<TypeProviderXmlDocAttribute> a then
+                    match a.ConstructorArguments |> Seq.toList with
                     | [ Arg(:? string as s) ] -> Some s
                     | _ -> None
-                else 
-                    None) 
+                else
+                    None)
             |> Seq.toArray
 
-[<AbstractClass>] 
-type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
+[<AbstractClass>]
+type ProvidedMemberInfo (x: MemberInfo, ctxt) =
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
@@ -567,7 +567,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
     /// DeclaringType can be null if MemberInfo belongs to Module, not to Type
     member _.DeclaringType = ProvidedType.Create ctxt x.DeclaringType
 
-    interface IProvidedCustomAttributeProvider with 
+    interface IProvidedCustomAttributeProvider with
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
             provide().GetHasTypeProviderEditorHideMethodsAttribute provider
 
@@ -580,8 +580,8 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
         member _.GetAttributeConstructorArgs (provider, attribName) =
             provide().GetAttributeConstructorArgs (provider, attribName)
 
-[<Sealed>] 
-type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
+[<Sealed>]
+type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = let nm = x.Name in match box nm with null -> "" | _ -> !!nm
@@ -598,18 +598,18 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     /// ParameterInfo.ParameterType cannot be null
     member _.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType
-    
-    static member Create ctxt (x: ParameterInfo | null) : ProvidedParameterInfo | null = 
-        match x with 
-        | Null -> null 
+
+    static member Create ctxt (x: ParameterInfo | null) : ProvidedParameterInfo | null =
+        match x with
+        | Null -> null
         | NonNull x -> ProvidedParameterInfo (x, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ParameterInfo[] | null) : ProvidedParameterInfo[] | null = 
+    static member CreateArray ctxt (xs: ParameterInfo[] | null) : ProvidedParameterInfo[] | null =
         xs |> NullableArray.map (ProvidedParameterInfo.CreateNonNull ctxt)
-    
-    interface IProvidedCustomAttributeProvider with 
+
+    interface IProvidedCustomAttributeProvider with
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
             provide().GetHasTypeProviderEditorHideMethodsAttribute provider
 
@@ -628,8 +628,8 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-[<Sealed>] 
-type ProvidedAssembly (x: Assembly) = 
+[<Sealed>]
+type ProvidedAssembly (x: Assembly) =
 
     member _.GetName() = x.GetName()
 
@@ -645,8 +645,8 @@ type ProvidedAssembly (x: Assembly) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-[<AbstractClass>] 
-type ProvidedMethodBase (x: MethodBase, ctxt) = 
+[<AbstractClass>]
+type ProvidedMethodBase (x: MethodBase, ctxt) =
     inherit ProvidedMemberInfo(x, ctxt)
 
     member _.Context = ctxt
@@ -673,84 +673,84 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
 
     member _.IsConstructor  = x.IsConstructor
 
-    member _.GetParameters() = x.GetParameters() |> ProvidedParameterInfo.CreateArray ctxt 
+    member _.GetParameters() = x.GetParameters() |> ProvidedParameterInfo.CreateArray ctxt
 
     member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
 
     member _.Handle = x
 
-    static member TaintedGetHashCode (x: Tainted<ProvidedMethodBase>) =            
-        Tainted.GetHashCodeTainted 
-            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
-                                                    (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+    static member TaintedGetHashCode (x: Tainted<ProvidedMethodBase>) =
+        Tainted.GetHashCodeTainted
+            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName,
+                                                    (nonNull<ProvidedType> st.DeclaringType).FullName)))
 
-    static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) = 
+    static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo[] | null = 
-        let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public 
+    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo[] | null =
+        let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public
 
-        let staticParams = 
-            match provider with 
-            | :? ITypeProvider2 as itp2 -> 
-                itp2.GetStaticParametersForMethod x  
-            | _ -> 
+        let staticParams =
+            match provider with
+            | :? ITypeProvider2 as itp2 ->
+                itp2.GetStaticParametersForMethod x
+            | _ ->
                 // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively
                 // implement an appropriate method called GetStaticParametersForMethod
                 let meth =
                     provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null,
-                        [| typeof<MethodBase> |], null)  
+                        [| typeof<MethodBase> |], null)
                 if isNull meth then [| |] else
-                let paramsAsObj = 
-                    try (!!meth).Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                let paramsAsObj =
+                    try (!!meth).Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null)
                     with err -> raise (StripException (StripException err))
-                !!paramsAsObj :?> ParameterInfo[] 
+                !!paramsAsObj :?> ParameterInfo[]
 
         staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
-    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) = 
+    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) =
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
 
-        let mb = 
-            match provider with 
-            | :? ITypeProvider2 as itp2 -> 
-                itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
-            | _ -> 
+        let mb =
+            match provider with
+            | :? ITypeProvider2 as itp2 ->
+                itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)
+            | _ ->
 
                 // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
                 let meth =
                     provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null,
-                        [| typeof<MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+                        [| typeof<MethodBase>; typeof<string>; typeof<obj[]> |], null)
 
-                match meth with 
+                match meth with
                 | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
-                | meth -> 
+                | meth ->
 
-                let mbAsObj = 
-                    try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                let mbAsObj =
+                    try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null)
                     with err -> raise (StripException (StripException err))
 
-                match mbAsObj with 
+                match mbAsObj with
                 | :? MethodBase as mb -> mb
                 | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
-        match mb with 
+        match mb with
         | :? MethodInfo as mi -> (mi |> ProvidedMethodInfo.CreateNonNull ctxt : ProvidedMethodInfo) :> ProvidedMethodBase
         | :? ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.CreateNonNull ctxt : ProvidedConstructorInfo) :> ProvidedMethodBase
         | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
 
 
-[<Sealed>] 
-type ProvidedFieldInfo (x: FieldInfo, ctxt) = 
+[<Sealed>]
+type ProvidedFieldInfo (x: FieldInfo, ctxt) =
     inherit ProvidedMemberInfo(x, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedFieldInfo (x, ctxt)
 
-    static member Create ctxt x : ProvidedFieldInfo | null = 
-        match x with 
-        | Null -> null 
+    static member Create ctxt x : ProvidedFieldInfo | null =
+        match x with
+        | Null -> null
         | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: FieldInfo[] | null) : ProvidedFieldInfo[] | null = 
+    static member CreateArray ctxt (xs: FieldInfo[] | null) : ProvidedFieldInfo[] | null =
         xs |> NullableArray.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
     member _.IsInitOnly = x.IsInitOnly
@@ -765,7 +765,7 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     /// FieldInfo.FieldType cannot be null
 
-    member _.FieldType = x.FieldType |> ProvidedType.CreateWithNullCheck ctxt "FieldType" 
+    member _.FieldType = x.FieldType |> ProvidedType.CreateWithNullCheck ctxt "FieldType"
 
     member _.Handle = x
 
@@ -783,25 +783,25 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-    static member TaintedEquals (pt1: Tainted<ProvidedFieldInfo>, pt2: Tainted<ProvidedFieldInfo>) = 
+    static member TaintedEquals (pt1: Tainted<ProvidedFieldInfo>, pt2: Tainted<ProvidedFieldInfo>) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-[<Sealed>] 
-type ProvidedMethodInfo (x: MethodInfo, ctxt) = 
+[<Sealed>]
+type ProvidedMethodInfo (x: MethodInfo, ctxt) =
     inherit ProvidedMethodBase(x, ctxt)
 
     member _.ReturnType = x.ReturnType |> ProvidedType.CreateWithNullCheck ctxt "ReturnType"
 
-    static member CreateNonNull ctxt (x: MethodInfo) : ProvidedMethodInfo = 
+    static member CreateNonNull ctxt (x: MethodInfo) : ProvidedMethodInfo =
         ProvidedMethodInfo (x, ctxt)
 
-    static member Create ctxt (x: MethodInfo | null) : ProvidedMethodInfo | null = 
-        match x with 
+    static member Create ctxt (x: MethodInfo | null) : ProvidedMethodInfo | null =
+        match x with
         | Null -> null
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
 
-    static member CreateArray ctxt (xs: MethodInfo[] | null) : ProvidedMethodInfo[] | null = 
+    static member CreateArray ctxt (xs: MethodInfo[] | null) : ProvidedMethodInfo[] | null =
         xs |> NullableArray.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
     member _.Handle = x
@@ -812,8 +812,8 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-[<Sealed>] 
-type ProvidedPropertyInfo (x: PropertyInfo, ctxt) = 
+[<Sealed>]
+type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
     inherit ProvidedMemberInfo(x, ctxt)
 
     member _.GetGetMethod() = x.GetGetMethod() |> ProvidedMethodInfo.Create ctxt
@@ -832,11 +832,11 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
     static member CreateNonNull ctxt x = ProvidedPropertyInfo (x, ctxt)
 
     static member Create ctxt x : ProvidedPropertyInfo | null =
-        match x with 
-        | Null -> null 
+        match x with
+        | Null -> null
         | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: PropertyInfo[] | null) : ProvidedPropertyInfo[] | null = 
+    static member CreateArray ctxt (xs: PropertyInfo[] | null) : ProvidedPropertyInfo[] | null =
         xs |> NullableArray.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
     member _.Handle = x
@@ -845,16 +845,16 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-    static member TaintedGetHashCode (x: Tainted<ProvidedPropertyInfo>) = 
+    static member TaintedGetHashCode (x: Tainted<ProvidedPropertyInfo>) =
         Tainted.GetHashCodeTainted
-            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
-                                                    (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName,
+                                                    (nonNull<ProvidedType> st.DeclaringType).FullName)))
 
-    static member TaintedEquals (pt1: Tainted<ProvidedPropertyInfo>, pt2: Tainted<ProvidedPropertyInfo>) = 
+    static member TaintedEquals (pt1: Tainted<ProvidedPropertyInfo>, pt2: Tainted<ProvidedPropertyInfo>) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-[<Sealed>] 
-type ProvidedEventInfo (x: EventInfo, ctxt) = 
+[<Sealed>]
+type ProvidedEventInfo (x: EventInfo, ctxt) =
     inherit ProvidedMemberInfo(x, ctxt)
 
     member _.GetAddMethod() = x.GetAddMethod() |> ProvidedMethodInfo.Create  ctxt
@@ -863,43 +863,43 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
 
     /// EventInfo.EventHandlerType cannot be null
     member _.EventHandlerType = x.EventHandlerType |> ProvidedType.CreateWithNullCheck ctxt "EventHandlerType"
-    
+
     static member CreateNonNull ctxt x = ProvidedEventInfo (x, ctxt)
-    
-    static member Create ctxt x : ProvidedEventInfo | null = 
-        match x with 
-        | Null -> null 
+
+    static member Create ctxt x : ProvidedEventInfo | null =
+        match x with
+        | Null -> null
         | NonNull x -> ProvidedEventInfo (x, ctxt)
-    
-    static member CreateArray ctxt (xs: EventInfo[] | null) : ProvidedEventInfo[] | null = 
+
+    static member CreateArray ctxt (xs: EventInfo[] | null) : ProvidedEventInfo[] | null =
         xs |> NullableArray.map (ProvidedEventInfo.CreateNonNull ctxt)
-    
+
     member _.Handle = x
 
     override _.Equals y = assert false; match y with :? ProvidedEventInfo as y -> x.Equals y.Handle | _ -> false
 
     override _.GetHashCode() = assert false; x.GetHashCode()
 
-    static member TaintedGetHashCode (x: Tainted<ProvidedEventInfo>) = 
-        Tainted.GetHashCodeTainted 
-            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName, 
-                                                    (nonNull<ProvidedType> st.DeclaringType).FullName))) 
+    static member TaintedGetHashCode (x: Tainted<ProvidedEventInfo>) =
+        Tainted.GetHashCodeTainted
+            (x.PApplyNoFailure(fun st -> (st.Name, (nonNull<ProvidedAssembly> (nonNull<ProvidedType> st.DeclaringType).Assembly).FullName,
+                                                    (nonNull<ProvidedType> st.DeclaringType).FullName)))
 
-    static member TaintedEquals (pt1: Tainted<ProvidedEventInfo>, pt2: Tainted<ProvidedEventInfo>) = 
+    static member TaintedEquals (pt1: Tainted<ProvidedEventInfo>, pt2: Tainted<ProvidedEventInfo>) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-[<Sealed>] 
-type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) = 
+[<Sealed>]
+type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
     inherit ProvidedMethodBase(x, ctxt)
 
     static member CreateNonNull ctxt x = ProvidedConstructorInfo (x, ctxt)
 
-    static member Create ctxt (x: ConstructorInfo | null) : ProvidedConstructorInfo | null = 
-        match x with 
-        | Null -> null 
+    static member Create ctxt (x: ConstructorInfo | null) : ProvidedConstructorInfo | null =
+        match x with
+        | Null -> null
         | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ConstructorInfo[] | null) : ProvidedConstructorInfo[] | null = 
+    static member CreateArray ctxt (xs: ConstructorInfo[] | null) : ProvidedConstructorInfo[] | null =
         xs |> NullableArray.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
     member _.Handle = x
@@ -951,7 +951,7 @@ type ProvidedExpr (x: Expr, ctxt) =
         | Patterns.NewDelegate(ty, vs, expr) ->
             Some (ProvidedNewDelegateExpr(ProvidedType.CreateNonNull ctxt ty, ProvidedVar.CreateArray ctxt (List.toArray vs), ProvidedExpr.CreateNonNull ctxt expr))
         | Patterns.Call(objOpt, meth, args) ->
-            Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.CreateNonNull ctxt obj)), 
+            Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.CreateNonNull ctxt obj)),
                     ProvidedMethodInfo.CreateNonNull ctxt meth, [| for a in args -> ProvidedExpr.CreateNonNull ctxt a |]))
         | Patterns.DefaultValue ty ->
             Some (ProvidedDefaultExpr (ProvidedType.CreateNonNull ctxt ty))
@@ -986,16 +986,16 @@ type ProvidedExpr (x: Expr, ctxt) =
         | Patterns.Var v ->
             Some (ProvidedVarExpr (ProvidedVar.CreateNonNull ctxt v))
         | _ -> None
-    static member Create ctxt t : ProvidedExpr | null = 
-        match box t with 
-        | Null -> null 
+    static member Create ctxt t : ProvidedExpr | null =
+        match box t with
+        | Null -> null
         | _ -> ProvidedExpr (t, ctxt)
 
-    static member CreateNonNull ctxt t : ProvidedExpr = 
+    static member CreateNonNull ctxt t : ProvidedExpr =
         ProvidedExpr (t, ctxt)
 
-    static member CreateArray ctxt xs : ProvidedExpr[] = 
-        match box xs with 
+    static member CreateArray ctxt xs : ProvidedExpr[] =
+        match box xs with
         | Null -> [| |]
         | _ -> xs |> Array.map (ProvidedExpr.CreateNonNull ctxt)
 
@@ -1011,11 +1011,11 @@ type ProvidedVar (x: Var, ctxt) =
     member _.Handle = x
     member _.Context = ctxt
 
-    static member CreateNonNull ctxt t = 
+    static member CreateNonNull ctxt t =
         ProvidedVar (t, ctxt)
 
-    static member CreateArray ctxt xs : ProvidedVar[] = 
-        match box xs with 
+    static member CreateArray ctxt xs : ProvidedVar[] =
+        match box xs with
         | Null -> [| |]
         | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
 
@@ -1024,14 +1024,14 @@ type ProvidedVar (x: Var, ctxt) =
     override _.GetHashCode() = x.GetHashCode()
 
 /// Get the provided invoker expression for a particular use of a method.
-let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
+let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) =
     provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
-    let name : string | null = 
-        try st.PUntaint(proj, m) 
-        with :? TypeProviderError as tpe -> 
+    let name : string | null =
+        try st.PUntaint(proj, m)
+        with :? TypeProviderError as tpe ->
             let newError = tpe.MapText((fun msg -> FSComp.SR.etProvidedTypeWithNameException(RichText.mkMember propertyString, msg)), st.TypeProviderDesignation, m)
             raise newError
     if String.IsNullOrEmpty name then
@@ -1039,12 +1039,12 @@ let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, prop
     !!name
 
 /// Verify that this type provider has supported attributes
-let ValidateAttributesOfProvidedType (m, st: Tainted<ProvidedType>) =         
+let ValidateAttributesOfProvidedType (m, st: Tainted<ProvidedType>) =
     let fullName = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.FullName), "FullName")
-    if TryTypeMember(st, fullName, "IsGenericType", m, false, fun st->st.IsGenericType) |> unmarshal then  
-        errorR(Error(FSComp.SR.etMustNotBeGeneric (RichText.ofQualifiedTypeName fullName), m))  
-    if TryTypeMember(st, fullName, "IsArray", m, false, fun st->st.IsArray) |> unmarshal then 
-        errorR(Error(FSComp.SR.etMustNotBeAnArray (RichText.ofQualifiedTypeName fullName), m))  
+    if TryTypeMember(st, fullName, "IsGenericType", m, false, fun st->st.IsGenericType) |> unmarshal then
+        errorR(Error(FSComp.SR.etMustNotBeGeneric (RichText.ofQualifiedTypeName fullName), m))
+    if TryTypeMember(st, fullName, "IsArray", m, false, fun st->st.IsArray) |> unmarshal then
+        errorR(Error(FSComp.SR.etMustNotBeAnArray (RichText.ofQualifiedTypeName fullName), m))
     TryTypeMemberNonNull<ProvidedType, ProvidedType[]>(st, fullName, "GetInterfaces", m, [||], fun st -> st.GetInterfaces()) |> ignore
 
 /// Verify that a provided type has the expected name
@@ -1062,19 +1062,19 @@ let ValidateExpectedName m expectedPath expectedName (st: Tainted<ProvidedType>)
         | Tainted.Null -> accu
         | Tainted.NonNull dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name") :: accu)
 
-    let path = 
-        [|  match namespaceName with 
+    let path =
+        [|  match namespaceName with
             | Null -> ()
             | NonNull namespaceName -> yield! namespaceName.Split([|'.'|])
             yield! declaringTypes st [] |]
-    
+
     if path <> expectedPath then
         let expectedPath = String.Join(".", expectedPath)
         let path = String.Join(".", path)
         errorR(Error(FSComp.SR.etProvidedTypeHasUnexpectedPath(RichText.mkNamespace expectedPath, RichText.mkNamespace path), m))
 
 /// Eagerly validate a range of conditions on a provided type, after static instantiation (if any) has occurred
-let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) = 
+let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) =
     // Do all the calling into st up front with recovery
     let fullName, namespaceName, usedMembers =
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -1082,7 +1082,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
         let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
         ValidateExpectedName m expectedPath expectedName st
         // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
-        let usedMembers: Tainted<ProvidedMemberInfo>[] = 
+        let usedMembers: Tainted<ProvidedMemberInfo>[] =
             // These are the members the compiler will actually use
             [| for x in TryTypeMemberArray(st, fullName, "GetMethods", m, fun st -> st.GetMethods()) -> x.Coerce m
                for x in TryTypeMemberArray(st, fullName, "GetEvents", m, fun st -> st.GetEvents()) -> x.Coerce m
@@ -1091,7 +1091,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
                // These will be validated on-demand
                //for x in TryTypeMemberArray(st, fullName, "GetNestedTypes", m, fun st -> st.GetNestedTypes bindingFlags) -> x.Coerce()
                for x in TryTypeMemberArray(st, fullName, "GetConstructors", m, fun st -> st.GetConstructors()) -> x.Coerce m |]
-        fullName, namespaceName, usedMembers       
+        fullName, namespaceName, usedMembers
 
     // We scrutinize namespaces for invalid characters on open, but this provides better diagnostics
     ValidateNamespaceName(fullName, st.TypeProvider, m, namespaceName)
@@ -1101,35 +1101,35 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
     // Those members must have this type.
     // This needs to be a *shallow* exploration. Otherwise, as in Freebase sample the entire database could be explored.
     for mi in usedMembers do
-        match mi with 
-        | Tainted.Null -> errorR(Error(FSComp.SR.etNullMember (RichText.ofQualifiedTypeName fullName), m))  
-        | Tainted.NonNull _ -> 
+        match mi with
+        | Tainted.Null -> errorR(Error(FSComp.SR.etNullMember (RichText.ofQualifiedTypeName fullName), m))
+        | Tainted.NonNull _ ->
             let memberName = TryMemberMember(mi, fullName, "Name", "Name", m, "invalid provided type member name", fun mi -> mi.Name) |> unmarshal
-            if String.IsNullOrEmpty memberName then 
-                errorR(Error(FSComp.SR.etNullOrEmptyMemberName (RichText.ofQualifiedTypeName fullName), m))  
-            else 
+            if String.IsNullOrEmpty memberName then
+                errorR(Error(FSComp.SR.etNullOrEmptyMemberName (RichText.ofQualifiedTypeName fullName), m))
+            else
                 let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, (ProvidedType.CreateNoContext(typeof<obj>) |> withNull), fun mi -> mi.DeclaringType)
-                match miDeclaringType with 
+                match miDeclaringType with
                     // Generated nested types may have null DeclaringType
                 | Tainted.Null when mi.OfType<ProvidedType>().IsSome -> ()
-                | Tainted.Null -> 
-                    errorR(Error(FSComp.SR.etNullMemberDeclaringType(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName), m))   
-                | Tainted.NonNull miDeclaringType  ->     
-                    let miDeclaringTypeFullName = 
+                | Tainted.Null ->
+                    errorR(Error(FSComp.SR.etNullMemberDeclaringType(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName), m))
+                | Tainted.NonNull miDeclaringType  ->
+                    let miDeclaringTypeFullName =
                         TryMemberMember (miDeclaringType, fullName, memberName, "FullName", m,
                             "invalid declaring type full name",
                             fun miDeclaringType -> !!miDeclaringType.FullName)
                         |> unmarshal
 
-                    if not (ProvidedType.TaintedEquals (st, miDeclaringType)) then 
-                        errorR(Error(FSComp.SR.etNullMemberDeclaringTypeDifferentFromProvidedType(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName, RichText.ofQualifiedTypeName miDeclaringTypeFullName), m))   
+                    if not (ProvidedType.TaintedEquals (st, miDeclaringType)) then
+                        errorR(Error(FSComp.SR.etNullMemberDeclaringTypeDifferentFromProvidedType(RichText.ofQualifiedTypeName fullName, RichText.mkMember memberName, RichText.ofQualifiedTypeName miDeclaringTypeFullName), m))
 
                 match mi.OfType<ProvidedMethodInfo>() with
                 | Some mi ->
                     let isPublic = TryMemberMember(mi, fullName, memberName, "IsPublic", m, true, fun mi->mi.IsPublic) |> unmarshal
                     let isGenericMethod = TryMemberMember(mi, fullName, memberName, "IsGenericMethod", m, true, fun mi->mi.IsGenericMethod) |> unmarshal
                     if not isPublic || isGenericMethod then
-                        errorR(Error(FSComp.SR.etMethodHasRequirements(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
+                        errorR(Error(FSComp.SR.etMethodHasRequirements(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
                 | None ->
                 match mi.OfType<ProvidedType>() with
                 | Some subType -> ValidateAttributesOfProvidedType(m, subType)
@@ -1139,36 +1139,36 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
                     // Property must have a getter or setter
                     // TODO: Property must be public etc.
                     let expectRead =
-                            match TryMemberMember(pi, fullName, memberName, "GetGetMethod", m, null, fun pi -> pi.GetGetMethod()) with 
-                            | Tainted.Null -> false 
+                            match TryMemberMember(pi, fullName, memberName, "GetGetMethod", m, null, fun pi -> pi.GetGetMethod()) with
+                            | Tainted.Null -> false
                             | _ -> true
-                    let expectWrite = 
-                        match TryMemberMember(pi, fullName, memberName, "GetSetMethod", m, null, fun pi-> pi.GetSetMethod()) with 
-                        | Tainted.Null -> false 
+                    let expectWrite =
+                        match TryMemberMember(pi, fullName, memberName, "GetSetMethod", m, null, fun pi-> pi.GetSetMethod()) with
+                        | Tainted.Null -> false
                         | _ -> true
                     let canRead = TryMemberMember(pi, fullName, memberName, "CanRead", m, expectRead, fun pi-> pi.CanRead) |> unmarshal
                     let canWrite = TryMemberMember(pi, fullName, memberName, "CanWrite", m, expectWrite, fun pi-> pi.CanWrite) |> unmarshal
                     match expectRead, canRead with
                     | false, false | true, true-> ()
-                    | false, true -> errorR(Error(FSComp.SR.etPropertyCanReadButHasNoGetter(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
-                    | true, false -> errorR(Error(FSComp.SR.etPropertyHasGetterButNoCanRead(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
+                    | false, true -> errorR(Error(FSComp.SR.etPropertyCanReadButHasNoGetter(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
+                    | true, false -> errorR(Error(FSComp.SR.etPropertyHasGetterButNoCanRead(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
                     match expectWrite, canWrite with
                     | false, false | true, true-> ()
-                    | false, true -> errorR(Error(FSComp.SR.etPropertyCanWriteButHasNoSetter(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
-                    | true, false -> errorR(Error(FSComp.SR.etPropertyHasSetterButNoCanWrite(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
-                    if not canRead && not canWrite then 
-                        errorR(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
+                    | false, true -> errorR(Error(FSComp.SR.etPropertyCanWriteButHasNoSetter(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
+                    | true, false -> errorR(Error(FSComp.SR.etPropertyHasSetterButNoCanWrite(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
+                    if not canRead && not canWrite then
+                        errorR(Error(FSComp.SR.etPropertyNeedsCanWriteOrCanRead(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
 
                 | None ->
-                match mi.OfType<ProvidedEventInfo>() with 
+                match mi.OfType<ProvidedEventInfo>() with
                 | Some ei ->
                     // Event must have adder and remover
                     // TODO: Event must be public etc.
                     let adder = TryMemberMember(ei, fullName, memberName, "GetAddMethod", m, null, fun ei-> ei.GetAddMethod())
                     let remover = TryMemberMember(ei, fullName, memberName, "GetRemoveMethod", m, null, fun ei-> ei.GetRemoveMethod())
                     match adder, remover with
-                    | Tainted.Null, _ -> errorR(Error(FSComp.SR.etEventNoAdd(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
-                    | _, Tainted.Null -> errorR(Error(FSComp.SR.etEventNoRemove(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
+                    | Tainted.Null, _ -> errorR(Error(FSComp.SR.etEventNoAdd(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
+                    | _, Tainted.Null -> errorR(Error(FSComp.SR.etEventNoRemove(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
                     | _, _ -> ()
                 | None ->
                 match mi.OfType<ProvidedConstructorInfo>() with
@@ -1177,9 +1177,9 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
                 match mi.OfType<ProvidedFieldInfo>() with
                 | Some _ -> () // TODO: Fields must be public, literals must have a value etc.
                 | None ->
-                    errorR(Error(FSComp.SR.etUnsupportedMemberKind(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))   
+                    errorR(Error(FSComp.SR.etUnsupportedMemberKind(RichText.mkMember memberName, RichText.ofQualifiedTypeName fullName), m))
 
-let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) = 
+let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) =
 
     // Validate the Name, Namespace and FullName properties
     let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -1192,76 +1192,76 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
     // This excludes, for example, types with '.' in them which would not be resolvable during name resolution.
     match expectedName.IndexOfAny(PrettyNaming.IllegalCharactersInTypeAndNamespaceNames) with
     | -1 -> ()
-    | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(RichText.mkText (string expectedName[n]), RichText.ofQualifiedTypeName expectedName), m))  
+    | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(RichText.mkText (string expectedName[n]), RichText.ofQualifiedTypeName expectedName), m))
 
-    let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
-    if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
+    let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m)
+    if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then
         ValidateProvidedTypeAfterStaticInstantiation(m, st, expectedPath, expectedName)
 
 
-/// Resolve a (non-nested) provided type given a full namespace name and a type name. 
+/// Resolve a (non-nested) provided type given a full namespace name and a type name.
 /// May throw an exception which will be turned into an error message by one of the 'Try' function below.
 /// If resolution is successful the type is then validated.
 let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<(ProvidedType | null)> =
     let displayName = String.Join(".", moduleOrNamespace)
 
     // Try to find the type in the given provided namespace
-    let rec tryNamespace (providedNamespace: Tainted<IProvidedNamespace>) = 
+    let rec tryNamespace (providedNamespace: Tainted<IProvidedNamespace>) =
 
         // Get the provided namespace name
         let providedNamespaceName = providedNamespace.PUntaint((fun providedNamespace -> providedNamespace.NamespaceName), range=m)
 
         // Check if the provided namespace name is an exact match of the required namespace name
         if displayName = providedNamespaceName then
-            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.Create ProvidedTypeContext.Empty (providedNamespace.ResolveTypeName typeName)), range=m) 
+            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.Create ProvidedTypeContext.Empty (providedNamespace.ResolveTypeName typeName)), range=m)
             match resolvedType with
             | Tainted.Null -> None
-            | Tainted.NonNull result -> 
+            | Tainted.NonNull result ->
                 ValidateProvidedTypeDefinition(m, result, moduleOrNamespace, typeName)
                 Some result
         else
             // Note: This eagerly explores all provided namespaces even if there is no match of even a prefix in the
-            // namespace names. 
+            // namespace names.
             let providedNamespaces = providedNamespace.PApplyArray((fun providedNamespace -> providedNamespace.GetNestedNamespaces()), "GetNestedNamespaces", range=m)
             tryNamespaces providedNamespaces
 
-    and tryNamespaces (providedNamespaces: Tainted<IProvidedNamespace>[]) = 
+    and tryNamespaces (providedNamespaces: Tainted<IProvidedNamespace>[]) =
         providedNamespaces |> Array.tryPick tryNamespace
 
     let providedNamespaces = resolver.PApplyArray((fun resolver -> resolver.GetNamespaces()), "GetNamespaces", range=m)
-    match tryNamespaces providedNamespaces with 
+    match tryNamespaces providedNamespaces with
     | None -> resolver.PApply((fun _ -> null), m)
     | Some res -> res
-                
+
 /// Try to resolve a type against the given host with the given resolution environment.
 let TryResolveProvidedType(resolver: Tainted<ITypeProvider>, m, moduleOrNamespace, typeName) =
-    try 
+    try
         match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
         | Tainted.Null -> None
         | Tainted.NonNull ty -> Some ty
-    with RecoverableException e -> 
+    with RecoverableException e ->
         errorRecovery e m
         None
 
-let ILPathToProvidedType  (st: Tainted<ProvidedType>, m) = 
-    let nameContrib (st: Tainted<ProvidedType>) = 
+let ILPathToProvidedType  (st: Tainted<ProvidedType>, m) =
+    let nameContrib (st: Tainted<ProvidedType>) =
         let typeName = st.PUntaint((fun st -> st.Name), m)
-        match st.PApply((fun st -> st.DeclaringType), m) with 
-        | Tainted.Null -> 
-            match st.PUntaint((fun st -> st.Namespace), m) with 
+        match st.PApply((fun st -> st.DeclaringType), m) with
+        | Tainted.Null ->
+            match st.PUntaint((fun st -> st.Namespace), m) with
             | Null -> typeName
             | NonNull ns -> ns + "." + typeName
         | _ -> typeName
 
-    let rec encContrib (st: Tainted<ProvidedType>) = 
-        match st.PApply((fun st ->st.DeclaringType), m) with 
+    let rec encContrib (st: Tainted<ProvidedType>) =
+        match st.PApply((fun st ->st.DeclaringType), m) with
         | Tainted.Null -> []
         | Tainted.NonNull enc -> encContrib enc @ [ nameContrib enc ]
 
     encContrib st, nameContrib st
 
 let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tainted<ProvidedParameterInfo[]>, m) =
-    let defaultArgValues = 
+    let defaultArgValues =
         staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
     let defaultArgValues = defaultArgValues.PUntaint(id, m)
@@ -1269,91 +1269,91 @@ let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tai
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
 let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: objnull[], m: range) =
-    if staticArgs.Length = 0 then 
+    if staticArgs.Length = 0 then
         Some methBeforeArgs
     else
-        let mangledName = 
+        let mangledName =
             let nm = methBeforeArgs.PUntaint((fun x -> x.Name), m)
-            let staticParams = 
-                methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver |> nonNull), range=m)                    
+            let staticParams =
+                methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver |> nonNull), range=m)
             let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
             mangledName
-        match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)), range=m) with 
+        match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)), range=m) with
         | Tainted.Null -> None
-        | Tainted.NonNull methWithArguments -> 
+        | Tainted.NonNull methWithArguments ->
             let actualName = methWithArguments.PUntaint((fun x -> x.Name), m)
-            if actualName <> mangledName then 
+            if actualName <> mangledName then
                 error(Error(FSComp.SR.etProvidedAppliedMethodHadWrongName(RichText.mkText methWithArguments.TypeProviderDesignation, RichText.mkMember mangledName, RichText.mkMember actualName), m))
             Some methWithArguments
 
 
 /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
 let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: objnull[], m: range) =
-    if staticArgs.Length = 0 then 
+    if staticArgs.Length = 0 then
         Some (typeBeforeArguments, (fun () -> ()))
-    else 
-        
-        let fullTypePathAfterArguments = 
+    else
+
+        let fullTypePathAfterArguments =
             // If there is a generated type name, then use that
-            match optGeneratedTypePath with 
+            match optGeneratedTypePath with
             | Some path -> path
-            | None -> 
+            | None ->
                 // Otherwise, use the full path of the erased type, including mangled arguments
                 let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
                 let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
-                let staticParams = typeBeforeArguments.PApplyWithProvider((fun (st, resolver) -> st.GetStaticParameters resolver |> nonNull), range=m) 
+                let staticParams = typeBeforeArguments.PApplyWithProvider((fun (st, resolver) -> st.GetStaticParameters resolver |> nonNull), range=m)
                 let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
                 enc @ [ mangledName ]
 
-        match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgs)), range=m) with 
+        match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgs)), range=m) with
         | Tainted.Null -> None
-        | Tainted.NonNull typeWithArguments -> 
+        | Tainted.NonNull typeWithArguments ->
             let actualName = typeWithArguments.PUntaint((fun x -> x.Name), m)
-            let checkTypeName() = 
+            let checkTypeName() =
                 let expectedTypeNameAfterArguments = fullTypePathAfterArguments[fullTypePathAfterArguments.Length-1]
-                if actualName <> expectedTypeNameAfterArguments then 
+                if actualName <> expectedTypeNameAfterArguments then
                     error(Error(FSComp.SR.etProvidedAppliedTypeHadWrongName(RichText.mkText typeWithArguments.TypeProviderDesignation, RichText.ofQualifiedTypeName expectedTypeNameAfterArguments, RichText.ofQualifiedTypeName actualName), m))
             Some (typeWithArguments, checkTypeName)
 
 /// Given a mangled name reference to a non-nested provided type, resolve it.
 /// If necessary, demangle its static arguments before applying them.
 let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, range: range) =
-    
+
     // Demangle the static parameters
-    let typeName, argNamesAndValues = 
-        try 
-            PrettyNaming.DemangleProvidedTypeName typeLogicalName 
-        with PrettyNaming.InvalidMangledStaticArg piece -> 
-            error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText (RichText.mkText piece), range0)) 
+    let typeName, argNamesAndValues =
+        try
+            PrettyNaming.DemangleProvidedTypeName typeLogicalName
+        with PrettyNaming.InvalidMangledStaticArg piece ->
+            error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText (RichText.mkText piece), range0))
 
     let argSpecsTable = dict argNamesAndValues
-    let typeBeforeArguments = ResolveProvidedType(resolver, range0, moduleOrNamespace, typeName) 
+    let typeBeforeArguments = ResolveProvidedType(resolver, range0, moduleOrNamespace, typeName)
 
-    match typeBeforeArguments with 
+    match typeBeforeArguments with
     | Tainted.Null -> None
-    | Tainted.NonNull typeBeforeArguments -> 
-        // Take the static arguments (as strings, taken from the text in the reference we're relinking), 
+    | Tainted.NonNull typeBeforeArguments ->
+        // Take the static arguments (as strings, taken from the text in the reference we're relinking),
         // and convert them to objects of the appropriate type, based on the expected kind.
         let staticParameters =
             typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) ->
                 typeBeforeArguments.GetStaticParameters resolver),range=range0)
 
         let staticParameters = staticParameters.PApplyArray(id, "", range)
-        
-        let staticArgs = 
-            staticParameters |> Array.map (fun sp -> 
+
+        let staticArgs =
+            staticParameters |> Array.map (fun sp ->
                 let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), range)
                 let spName = sp.PUntaint ((fun sp -> sp.Name), range)
                 match argSpecsTable.TryGetValue spName with
                 | true, arg ->
                     /// Find the name of the representation type for the static parameter
-                    let spReprTypeName = 
-                        sp.PUntaint((fun sp -> 
+                    let spReprTypeName =
+                        sp.PUntaint((fun sp ->
                             let pt = sp.ParameterType
                             let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
                             !!uet.FullName), range)
 
-                    match spReprTypeName with 
+                    match spReprTypeName with
                     | "System.SByte" -> box (sbyte arg)
                     | "System.Int16" -> box (int16 arg)
                     | "System.Int32" -> box (int32 arg)
@@ -1371,39 +1371,39 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
                     | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(RichText.mkText s, RichText.ofQualifiedTypeName typeLogicalName), range0))
 
                 | _ ->
-                    if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
+                    if sp.PUntaint ((fun sp -> sp.IsOptional), range) then
                         match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (RichText.mkParameter spName, RichText.ofQualifiedTypeName typeBeforeArgumentsName, RichText.ofQualifiedTypeName typeBeforeArgumentsName, RichText.mkParameter spName), range0))
                         | v -> v
                     else
                         error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument (RichText.mkParameter spName), range0)))
-                
 
-        match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 
-        | Some (typeWithArguments, checkTypeName) -> 
-            checkTypeName() 
+
+        match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with
+        | Some (typeWithArguments, checkTypeName) ->
+            checkTypeName()
             Some typeWithArguments
         | None -> None
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-let GetPartsOfNamespaceRecover(namespaceName: string | null) = 
-    match namespaceName with 
-    | Null -> [] 
-    | NonNull namespaceName -> 
+let GetPartsOfNamespaceRecover(namespaceName: string | null) =
+    match namespaceName with
+    | Null -> []
+    | NonNull namespaceName ->
         if namespaceName.Length = 0 then ["<NonExistentNamespace>"]
         else splitNamespace namespaceName
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
 let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName: string | null) =
-    match namespaceName with 
-    | Null -> [] 
-    | NonNull namespaceName -> 
+    match namespaceName with
+    | Null -> []
+    | NonNull namespaceName ->
         if namespaceName.Length = 0 then
-            errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(RichText.mkText (DisplayNameOfTypeProvider(resolver.TypeProvider, m))), m))  
+            errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(RichText.mkText (DisplayNameOfTypeProvider(resolver.TypeProvider, m))), m))
         GetPartsOfNamespaceRecover namespaceName
 
-/// Get the parts of the name that encloses the .NET type including nested types. 
-let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, range) = 
+/// Get the parts of the name that encloses the .NET type including nested types.
+let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, range) =
     // Can't use st.Fullname because it may be like IEnumerable<Something>
     // We want [System;Collections;Generic]
     let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), range))
@@ -1423,8 +1423,8 @@ let GetOriginalILAssemblyRefOfProvidedAssembly (assembly: Tainted<ProvidedAssemb
 
 /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
 /// any type relocations or static linking for generated types.
-let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) = 
-    
+let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) =
+
     let aref = GetOriginalILAssemblyRefOfProvidedAssembly (st.PApply((fun st -> nonNull<ProvidedAssembly> st.Assembly), range), range) // NULLNESS TODO: why is explicit instantiation needed here
     let scoperef = ILScopeRef.Assembly aref
     let enc, nm = ILPathToProvidedType (st, range)
@@ -1433,8 +1433,8 @@ let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) =
 
 /// Get the ILTypeRef for the provided type (including for nested types). Take into account
 /// any type relocations or static linking for generated types.
-let GetILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) = 
-    match st.PUntaint((fun st -> st.TryGetILTypeRef()), range) with 
+let GetILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) =
+    match st.PUntaint((fun st -> st.TryGetILTypeRef()), range) with
     | Some ilTypeRef -> ilTypeRef
     | None -> GetOriginalILTypeRefOfProvidedType (st, range)
 
@@ -1442,10 +1442,10 @@ type ProviderGeneratedType = ProviderGeneratedType of ilOrigTyRef: ILTypeRef * i
 
 /// The table of information recording remappings from type names in the provided assembly to type
 /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
-type ProvidedAssemblyStaticLinkingMap = 
+type ProvidedAssemblyStaticLinkingMap =
     // graph-based checking can embed generated types from one provider assembly in parallel
     { ILTypeMap: ConcurrentDictionary<ILTypeRef, ILTypeRef> }
-    static member CreateNew() = 
+    static member CreateNew() =
         { ILTypeMap = ConcurrentDictionary() }
 
 /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.

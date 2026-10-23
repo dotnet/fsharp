@@ -2,12 +2,12 @@
 module Module
 
 type ClassWithDo() =
-    do 
+    do
         printfn "init"
-    
+
     type InternalType = int
-    
-    module InternalModule = 
+
+    module InternalModule =
         let x = 1
-    
+
     open System.Collections

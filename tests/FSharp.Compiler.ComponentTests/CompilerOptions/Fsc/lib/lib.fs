@@ -37,7 +37,7 @@ exit 0
 
     [<Theory>]
     [<InlineData("--I:Folder", "--I")>]          // error01.fs
-    [<InlineData("--I Folder", "--I")>]          // error02.fs  
+    [<InlineData("--I Folder", "--I")>]          // error02.fs
     [<InlineData("-lib:Folder1", "-lib")>]       // error03.fs
     [<InlineData("--LIB:Folder1", "--LIB")>]     // error05.fs (case-sensitive)
     [<InlineData("-i:Folder1", "-i")>]           // error06.fs (case-sensitive)

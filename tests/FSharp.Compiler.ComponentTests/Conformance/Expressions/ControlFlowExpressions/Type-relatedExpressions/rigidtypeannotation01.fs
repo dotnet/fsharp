@@ -1,6 +1,6 @@
-// #Conformance #TypeRelatedExpressions #TypeAnnotations 
+// #Conformance #TypeRelatedExpressions #TypeAnnotations
 
 
 let p = (1 : int)
 
-let f x = (x : string) 
+let f x = (x : string)

@@ -39,7 +39,6 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -842,7 +841,8 @@ let main3
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
                 outfile,
                 importMap,
                 false,
@@ -858,13 +858,13 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
-    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-        match optimizedImpls with
-        | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
-            ReportTime tcConfig "TailCall Checks"
+    let (CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations) =
+        optimizedImpls
 
-            for f in checkedImplFileAfterOptimizations do
-                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
+    ReportTime tcConfig "TailCall Checks"
+
+    for f in checkedImplFileAfterOptimizations do
+        TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), f.ImplFile.Contents)
 
     let refAssemblySignatureHash =
         match tcConfig.emitMetadataAssembly with
@@ -887,7 +887,6 @@ let main3
                     let sha256 = System.Security.Cryptography.SHA256.Create()
                     sha256.ComputeHash s)
                 |> List.sumBy (hash >> int64)
-                |> hash
 
             try
                 Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
@@ -961,9 +960,15 @@ let main4
     ReportTime tcConfig "TAST -> IL"
     use _ = UseBuildPhase BuildPhase.IlxGen
 
-    // Create the Abstract IL generator
+    // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

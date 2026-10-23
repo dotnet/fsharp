@@ -1,4 +1,4 @@
-﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments 
+﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments
 
 namespace ConsumeFromCS
 
@@ -25,7 +25,7 @@ type Class() =
     // Check a value type - only default ctor possible.
     static member Method15 ([<Optional;DefaultParameterValue(new DateTime())>]i:DateTime) = i
 
-    // Check nullables. 
+    // Check nullables.
     static member MethodNullable1 ([<Optional;DefaultParameterValue(Nullable<int>())>]i:Nullable<int>) = i
     static member MethodNullable2 ([<Optional;DefaultParameterValue(Nullable<bool>())>]i:Nullable<bool>) = i
     static member MethodNullable3 ([<Optional;DefaultParameterValue(Nullable<DateTime>())>]i:Nullable<DateTime>) = i
@@ -34,7 +34,7 @@ type Class() =
     static member Mix1(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int) = c
     // can omit optional in the middle of the arg list; this works in C# too.
     static member Mix2(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int, d: int) = c
-    static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string, 
+    static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string,
                        [<Optional;DefaultParameterValue(-12)>]c:int, [<Optional;DefaultParameterValue(-123)>]d: int) = (b,c,d)
 
     // compiler should be able to figure out default to pass to Optional parameters without DefaultParameterValue.

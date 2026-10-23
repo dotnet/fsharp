@@ -9,28 +9,28 @@ type TypeCompatTest() =
     static member Process(x: float) = "float"
     static member Process(x: bool) = "bool"
     static member Process(x: byte) = "byte"
-    
+
     static member Generic<'T>(x: 'T) = sprintf "generic-%s" (typeof<'T>.Name)
-    
+
     static member WithInterface(x: IComparable) = "IComparable"
     static member WithInterface(x: IEnumerable<int>) = "IEnumerable<int>"
-    
+
     static member WithObject(x: obj) = "obj"
-    
+
     static member WithTuple(x: int * int) = "tuple2"
     static member WithTuple(x: int * int * int) = "tuple3"
-    
+
     static member WithArray(x: int[]) = "array1d"
     static member WithArray(x: int[,]) = "array2d"
-    
+
     static member Multi(x: int, y: int) = "int-int"
     static member Multi(x: string, y: string) = "string-string"
     static member Multi(x: int, y: string) = "int-string"
     static member Multi(x: string, y: int) = "string-int"
-    
+
     static member WithNullable(x: Nullable<int>) = "nullable-int"
     static member WithNullable(x: Nullable<float>) = "nullable-float"
-    
+
     static member NumericConversions(x: int64) = "int64"
     static member NumericConversions(x: nativeint) = "nativeint"
 
@@ -70,7 +70,7 @@ type ParamArrayTypeTest() =
     static member Process([<ParamArray>] args: int[]) = sprintf "ints-%d" args.Length
     static member Process([<ParamArray>] args: string[]) = sprintf "strings-%d" args.Length
     static member Process([<ParamArray>] args: obj[]) = sprintf "objs-%d" args.Length
-    
+
     static member Mixed(prefix: string, [<ParamArray>] values: int[]) = sprintf "%s-%d" prefix values.Length
     static member Mixed(prefix: string, [<ParamArray>] values: string[]) = sprintf "%s-strs-%d" prefix values.Length
 

@@ -76,8 +76,8 @@ let cacheStress () =
     if all then "all-int" else "MISMATCH"
 
 let cacheAlternating () =
-    sprintf "%s,%s,%s,%s,%s,%s" 
-        (BasicOverload.Pick 1) (BasicOverload.Pick "a") 
+    sprintf "%s,%s,%s,%s,%s,%s"
+        (BasicOverload.Pick 1) (BasicOverload.Pick "a")
         (BasicOverload.Pick 2) (BasicOverload.Pick "b")
         (BasicOverload.Pick 3) (BasicOverload.Pick "c")
 
@@ -89,64 +89,64 @@ let main _ =
         "float",                  BasicOverload.Pick(3.14)
         "bool",                   BasicOverload.Pick(true)
         "generic<FSharpList`1>",  BasicOverload.Pick([1;2;3])
-        
+
         "int,int",                MultiArg.Pick(1, 2)
         "string,string",          MultiArg.Pick("a", "b")
         "int,string",             MultiArg.Pick(1, "b")
         "string,int",             MultiArg.Pick("a", 2)
         "generic<Boolean>,same",  MultiArg.Pick(true, false)
-        
+
         "int[0]",                 ParamArrayOverload.Pick([||] : int[])
         "int[3]",                 ParamArrayOverload.Pick(1, 2, 3)
         "string[3]",              ParamArrayOverload.Pick("a", "b", "c")
         "single-int",             ParamArrayOverload.Pick(42)
         "single-string",          ParamArrayOverload.Pick("single")
-        
+
         "Animal",                 HierarchyOverload.Accept(Animal())
         "Dog",                    HierarchyOverload.Accept(Dog())
         "Cat",                    HierarchyOverload.Accept(Cat())
         "seq<Dog>",               HierarchyOverload.Accept([Dog(); Dog()])
-        
+
         "String.ExtPick(int)",    "hello".ExtPick(42)
         "String.ExtPick(string)", "hello".ExtPick("world")
         "Int32.ExtPick(int)",     (5).ExtPick(10)
         "Int32.ExtPick(string)",  (5).ExtPick("ten")
-        
+
         "int,none",               OptionalOverload.Pick(1)
         "int,2",                  OptionalOverload.Pick(1, 2)
         "string,none",            OptionalOverload.Pick("a")
         "string,b",               OptionalOverload.Pick("a", "b")
-        
+
         "all-int",                cacheStress()
         "int,string,int,string,int,string", cacheAlternating()
-        
+
         "generic<Int32>",         pickRigid 42
         "generic<String>",        pickRigid "hello"
         "generic<Boolean>",       pickRigid true
-        
+
         "tuple",                  TupleOverload.Pick((1, "a"))
         "separate",               TupleOverload.Pick(1, "a")
-        
+
         "first:int,second:string",  NamedArgOverload.Pick(1, "a")
         "first:string,second:int",  NamedArgOverload.Pick("a", 1)
         "first:int,second:string",  NamedArgOverload.Pick(first = 1, second = "b")
-        
+
         "obj",                    ConstrainedCheck.Pick(42)
         "obj",                    ConstrainedCheck.Pick("hi")
-        
+
         "int",                    TDCOverload.Pick(42)
         "int64",                  TDCOverload.Pick(42L)
         "float",                  TDCOverload.Pick(3.14)
-        
+
         "success:42",             (let mutable v = 0 in if OutArgOverload.TryGet("k", &v) then sprintf "success:%d" v else "failed")
         "success:found",          (let mutable v = "" in if OutArgOverload.TryGet("k", &v) then sprintf "success:%s" v else "failed")
     ]
-    
+
     let mutable failures = 0
     for (expected, actual) in results do
         if actual = expected then printfn "PASS: %s" actual
         else printfn "FAIL: got %s (expected %s)" actual expected; failures <- failures + 1
-    
+
     if failures = 0 then printfn "All %d tests passed!" results.Length
     else printfn "%d of %d tests failed!" failures results.Length
     failures

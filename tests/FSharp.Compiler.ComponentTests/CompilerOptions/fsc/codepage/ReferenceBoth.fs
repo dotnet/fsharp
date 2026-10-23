@@ -1,4 +1,4 @@
-﻿// #NoMT #CompilerOptions 
+﻿// #NoMT #CompilerOptions
 // This test is designed to test the --codepage options.
 // - The same source file (libCodepage.fs) is compile twice, with different --codepage options
 // - The library file is designed so that it gets compiled to slightly different assemblies

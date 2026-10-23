@@ -1,4 +1,4 @@
-namespace Neg40a 
+namespace Neg40a
   type X = A | B
   namespace Neg40b
 

@@ -37,6 +37,7 @@ module Misc =
     let ``CodeGenRenamings01_fs`` compilation =
         compilation
         |> getCompilation
+        |> withFSharpCoreShippedNet
         |> asExe
         |> verifyCompilation
 

@@ -365,7 +365,7 @@ type SyntheticProject =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 Stamp = None }
-       
+
         OptionsCache.GetOrAdd(key, factory).Value
 
 
@@ -869,9 +869,7 @@ module Helpers =
                 failwith $"No symbol found in {fileName} at {lineNumber}:{colAtEndOfNames}\nFile contents:\n\n{source}\n")
         }
 
-    let internal singleFileChecker source =
-
-        let fileName = "test.fs"
+    let internal singleFileCheckerWithName (fileName: string) source =
 
         let getSource _ fileName =
             FSharpFileSnapshot(
@@ -887,29 +885,33 @@ module Helpers =
             captureIdentifiersWhenParsing = true,
             useTransparentCompiler = true)
 
-        let options =
-            let baseOptions, _ =
+        async {
+            let! baseOptions, _ =
                 checker.GetProjectOptionsFromScript(
                     fileName,
                     SourceText.ofString "",
                     assumeDotNetFramework = false
                 )
-                |> Async.RunSynchronously
 
-            { baseOptions with
-                ProjectFileName = "project"
-                ProjectId = None
-                SourceFiles = [|fileName|]
-                IsIncompleteTypeCheckEnvironment = false
-                UseScriptResolutionRules = false
-                LoadTime = DateTime()
-                UnresolvedReferences = None
-                OriginalLoadReferences = []
-                Stamp = None }
+            let options =
+                { baseOptions with
+                    ProjectFileName = "project"
+                    ProjectId = None
+                    SourceFiles = [|fileName|]
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = false
+                    LoadTime = DateTime()
+                    UnresolvedReferences = None
+                    OriginalLoadReferences = []
+                    Stamp = None }
 
-        let snapshot = FSharpProjectSnapshot.FromOptions(options, getSource) |> Async.RunSynchronously
+            let! snapshot = FSharpProjectSnapshot.FromOptions(options, getSource)
 
-        fileName, snapshot, checker
+            return fileName, snapshot, checker
+        }
+
+    let internal singleFileChecker source =
+        singleFileCheckerWithName "test.fs" source
 
 open Helpers
 
@@ -1126,6 +1128,18 @@ type ProjectWorkflowBuilder
 
             { project with SourceFiles = project.SourceFiles |> List.insertAt index newFile })
 
+    /// Add a file below given file in the project.
+    [<CustomOperation "addFileBelow">]
+    member this.AddFileBelow(workflow: Async<WorkflowContext>, addBelowId: string, newFile) =
+        workflow
+        |> mapProject (fun project ->
+            let index =
+                project.SourceFiles
+                |> List.tryFindIndex (fun f -> f.Id = addBelowId)
+                |> Option.defaultWith (fun () -> failwith $"File {addBelowId} not found")
+
+            { project with SourceFiles = project.SourceFiles |> List.insertAt (index + 1) newFile })
+
     /// Remove a file from the project. The file is not deleted from disk.
     [<CustomOperation "removeFile">]
     member this.RemoveFile(workflow: Async<WorkflowContext>, fileId: string) =
@@ -1143,7 +1157,7 @@ type ProjectWorkflowBuilder
                 use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
                 checkFile fileId ctx.Project checker
 
-            let oldSignature = ctx.Signatures[fileId]
+            let oldSignature = ctx.Signatures |> Map.tryFind fileId |> Option.defaultValue ""
             let newSignature = getSignature results
 
             processResults results (oldSignature, newSignature)

@@ -61,7 +61,8 @@ module ILChecker =
                 "\[System\.Runtime\]|\[System\.Console\]|\[System\.Runtime\.Extensions\]|\[mscorlib\]|\[System\.Memory\]|\[System\.Collections\]", "[runtime]"
                 "(\.assembly extern (System\.Runtime|System\.Console|System\.Runtime\.Extensions|mscorlib|System\.Memory)){1}([^\}]*)\}", ".assembly extern runtime { }"
                 "(\.assembly extern (System\.Collections)){1}([^\}]*)\}\\s+", ""
-                "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}", ".assembly extern FSharp.Core { }" ]
+                "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}", ".assembly extern FSharp.Core { }"
+                "(\.assembly extern (System\.Linq)){1}([^\}]*)\}", ".assembly extern System.Linq { }" ]
 
         let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
 
@@ -80,7 +81,7 @@ module ILChecker =
         let stripManagedResources (text: string) =
             let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
             result
-        
+
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 

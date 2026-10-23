@@ -1,9 +1,9 @@
-// #NoMT #FSI 
+// #NoMT #FSI
 
 
 // Verify INTERACTIVE is defined for all fsi sessions
 
-let test1 = 
+let test1 =
     #if INTERACTIVE
     1
     #else
@@ -11,7 +11,7 @@ let test1 =
     #endif
 
 // COMPILED should NOT be defined
-let test2 = 
+let test2 =
     #if COMPILED
     0
     #else

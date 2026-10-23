@@ -2,7 +2,7 @@
 
 type T = ErasedWithConstructor.Provided.MyType
 
-type Class1() = 
+type Class1() =
     member this.X1 = T().DoNothing()
     member this.X2 = T().DoNothingGeneric()
     member this.X3 = T().DoNothingOneArg()
@@ -47,5 +47,5 @@ type Class1() =
 
 type T2 = GeneratedWithConstructor.Provided.GenerativeProvider<3>
 
-type Class2() = 
+type Class2() =
     member this.X1 = T2()

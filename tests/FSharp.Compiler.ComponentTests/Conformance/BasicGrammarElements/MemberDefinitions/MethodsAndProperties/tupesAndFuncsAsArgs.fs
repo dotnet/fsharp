@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 type Foo() =
     static member ExecuteFunction (func : (int * string) -> bool) (args : (int * string)) =
             func args
-    
+
     // Type inferred tuples
     member this.AddTupes (a : (int*int*int)) (b : (int*int*int*int)) c =
         let a1, a2, a3 = a

@@ -8,7 +8,7 @@ open Xunit
 let ``When processing a node throws an exception, an exception is raised with the original exception included`` () =
     let graph = [1, [|2|]; 2, [||]] |> readOnlyDict
     let work (_processor : int -> ProcessedNode<int, string>) (_node : NodeInfo<int>) : string = failwith "Work exception"
-    
+
     let exn =
         Assert.Throws<GraphProcessingException>(
             fun () ->

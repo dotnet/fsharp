@@ -363,8 +363,8 @@ let outermostNestedModule = // Some ["N"].
     (posInsideOfInnermostNestedModule, mkTree nestedModules)
     ||> ParsedInput.tryPick (fun _path node ->
         match node with
-        | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longId))) ->
-            Some [for ident in longId -> ident.idText]
+        | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = moduleInfo)) ->
+            Some [for ident in moduleInfo.LongIdent -> ident.idText]
         | _ -> None)
 
 (**
@@ -378,8 +378,8 @@ let innermostNestedModule = // Some ["P"].
     (posInsideOfInnermostNestedModule, mkTree nestedModules)
     ||> ParsedInput.tryPickLast (fun _path node ->
         match node with
-        | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longId))) ->
-            Some [for ident in longId -> ident.idText]
+        | SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = moduleInfo)) ->
+            Some [for ident in moduleInfo.LongIdent -> ident.idText]
         | _ -> None)
 
 (**
@@ -391,8 +391,8 @@ let nextToInnermostNestedModule = // Some ["O"].
     ||> ParsedInput.tryPickLast (fun path node ->
         match node, path with
         | SyntaxNode.SynModule(SynModuleDecl.NestedModule _),
-          SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = longId))) :: _ ->
-            Some [for ident in longId -> ident.idText]
+          SyntaxNode.SynModule(SynModuleDecl.NestedModule(moduleInfo = moduleInfo)) :: _ ->
+            Some [for ident in moduleInfo.LongIdent -> ident.idText]
         | _ -> None)
 
 (**

@@ -7,7 +7,7 @@ module TestDelegateMethod2 =
 
     let d = D(fun xb -> &xb)
 
-    let test() = 
+    let test() =
         let addr = &d.Invoke(&x)
         check2 "mepojcwem18a2" 1 x
         addr <- addr + 1

@@ -23,13 +23,13 @@ List.hd [1] |> ignore
             (2, 6, 2, 8)
             "The value, constructor, namespace or type 'hd' is not defined."
 
-        
-        
+
+
     [<Fact>]
     let ``List tl should not exist``() =
         // Regression test for FSharp1.0:5641
         // Title: List.hd/tl --> List.head/tail
-        
+
         CompilerAssert.TypeCheckSingleError
             """
 List.tl [1] |> ignore

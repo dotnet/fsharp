@@ -1,3 +1,3 @@
 [<AllowNullLiteral>]
-type D() = 
+type D() =
     member x.P = 1

@@ -1,4 +1,4 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 
 
 // Verify e1.[e2] is just syntactic sugar for calling the 'item' property.

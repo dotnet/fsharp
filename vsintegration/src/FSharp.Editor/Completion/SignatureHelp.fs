@@ -380,21 +380,21 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                     (*
                        Calculate the argument index for fun and profit! It's a doozy...
-                   
+
                        Firstly, we need to use the caret position unlike before.
-                   
+
                        If the caret position is exactly in range of an existing argument, pick its index.
-                   
+
                        The rest answers the question of, "what is the NEXT index to show?", because
                        when you're not cycling through parameters with the caret, you're typing,
                        and you want to know what the next argument should be.
-                   
+
                        A possibility is you've deleted a parameter and want to enter a new one that
                        corresponds to the argument you're "at". We need to find the correct next index.
                        This could also correspond to an existing argument application. Buuuuuut that's okay.
                        If you want the "used to be 3rd arg, but is now 2nd arg" to remain, when you cycle
                        past the "now 2nd arg", it will calculate the 3rd arg as the next argument.
-                   
+
                        If none of that applies, then we apply the magic of arithmetic
                        to find the next index if we're not at the max defined args for the application.
                        Otherwise, we're outa here!

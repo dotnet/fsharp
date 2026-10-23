@@ -28,7 +28,7 @@ module ExecTests =
 
     let test1() =
         let mutable exec_test_1 = 1
-        (fun () -> exec_test_1 <- exec_test_1 + 1), (fun () -> exec_test_1 <- exec_test_1 + 2), (fun () -> exec_test_1) 
+        (fun () -> exec_test_1 <- exec_test_1 + 1), (fun () -> exec_test_1 <- exec_test_1 + 2), (fun () -> exec_test_1)
 
     let incr, incr2, get = test1()
 
@@ -48,8 +48,8 @@ module ExecTests =
 
     let result () = (v1,v2,v3,v4,v5) = exp
 
-    let check() = 
-        if result() then true 
+    let check() =
+        if result() then true
         else
             eprintfn "FAIL: (v1,v2,v3,v4,v5) = %A, expected %A" (v1,v2,v3,v4,v5) exp
             false
@@ -98,7 +98,7 @@ module IntTests =
     let test1d() =
 
         let mutable ix1d = 1
-        let f () = 
+        let f () =
             printfn "don't inline me"
             printfn "don't inline me"
             printfn "don't inline me"
@@ -118,7 +118,7 @@ module IntTests =
 
     let test1f() =
         let mutable ix1f_NOT_IF_OPT = 1
-        let f () = 
+        let f () =
             printfn "don't inline me"
             printfn "don't inline me"
             printfn "don't inline me"
@@ -129,21 +129,21 @@ module IntTests =
 
     (*
     [<Struct>]
-    type S = 
+    type S =
        val mutable x : int
        member this_NO.M() = [ (fun () -> this_NO.x <- this_NO.x + 1) ]
 *)
 
     let test2() =
         let mutable ix2 = 1
-        [ (fun () -> 
+        [ (fun () ->
                  let xaddr = &ix2
                  xaddr )]
 
 
     let test3() =
         let mutable ix3 = 1
-        [ (fun () -> 
+        [ (fun () ->
                  let xaddr = &ix3
                  xaddr <- 2 )]
 
@@ -183,14 +183,14 @@ module StringTests =
 
     let test2() =
         let mutable sx2 = "1"
-        [ (fun () -> 
+        [ (fun () ->
                  let xaddr = &sx2
                  xaddr )]
 
 
     let test3() =
         let mutable sx3 = "1"
-        [ (fun () -> 
+        [ (fun () ->
                  let xaddr = &sx3
                  xaddr <- "2" )]
 
@@ -204,7 +204,7 @@ module NestedLambdas =
 
 
     let test2() =
-        [ (fun () -> 
+        [ (fun () ->
              let mutable nlx2 = 1
              [(fun () -> nlx2 <- nlx2 + 1)]) ]
 
@@ -232,10 +232,10 @@ module SeqExpr =
     let test2() =
         seq { for x in [1..10] do
                   let mutable nlx1 = 1
-                  let f() =  
-                      nlx1 <- nlx1 + 1; 
+                  let f() =
+                      nlx1 <- nlx1 + 1;
                       nlx1
-                  let g() = nlx1 
+                  let g() = nlx1
                   yield f
                   yield g }
 
@@ -251,7 +251,7 @@ module AsyncExpr =
                 nlx1 <- 3
                 do! Async.Sleep 10
                 printfn "nlx1 = %d" nlx1
-                nlx1 <- nlx1 + 1 
+                nlx1 <- nlx1 + 1
                 printfn "nlx1 = %d" nlx1
                 do! Async.Sleep 10
                 printfn "nlx1 = %d" nlx1
@@ -262,45 +262,45 @@ module AsyncExpr =
 
 
 module TryWith =
-    let foo o s = 
+    let foo o s =
          let mutable x_NO = 1
-         try 
+         try
             o s x_NO
          with exn ->
             x_NO <- 5
 
-    let foo2 o s = 
+    let foo2 o s =
          let mutable x_NO = 1
-         try 
+         try
             o s x_NO
             x_NO <- 5
          with exn ->
             ()
 
-    let bar o s = 
+    let bar o s =
          let mutable x = 1
          try
             o ()
-         with exn -> 
+         with exn ->
             s := (fun () -> x <- x + 1)
 
 module TryFinally =
-    let foo o s = 
+    let foo o s =
          let mutable x_NO = 1
-         try 
+         try
             o s x_NO
          finally
             x_NO <- 5
 
-    let foo2 o s = 
+    let foo2 o s =
          let mutable x_NO = 1
-         try 
+         try
             o s x_NO
             x_NO <- 5
          finally
             s ()
 
-    let bar o s = 
+    let bar o s =
          let mutable x = 1
          try
             o ()
@@ -309,23 +309,23 @@ module TryFinally =
 
 
 module ForLoop =
-    let foo o s = 
+    let foo o s =
          let mutable x_NO = 1
          for i in o do
             x_NO <- x_NO + 1
 
-    let bar o s = 
+    let bar o s =
          let mutable x = 1
          for i in o do
             s := (fun () -> x <- x + 1)
 
 module WhileLoop =
-    let foo o s = 
+    let foo o s =
          let mutable x_NO = 1
-         while (s x_NO) do 
+         while (s x_NO) do
             x_NO <- x_NO + 1
 
-    let bar o s = 
+    let bar o s =
          let mutable x = 1
          while o x do
             s := (fun () -> x <- x + 1)

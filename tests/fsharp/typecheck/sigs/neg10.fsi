@@ -9,6 +9,6 @@ namespace N
 type x = A | B
 
 
-type I = 
+type I =
    interface
    end

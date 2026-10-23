@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #LetBindings #TypeTests 
+// #Conformance #DeclarationElements #LetBindings #TypeTests
 
 
 // Tests for sizeof<'a> type function
 
 // This is a little complicated, but trust me it works out.
-type T<'a>() = 
+type T<'a>() =
     static member P<'b>() = sizeof<'b>
     member x.M = T.P<'a>()
 

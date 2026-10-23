@@ -1,19 +1,19 @@
 module rec Test
 
-type Chicken = 
+type Chicken =
     {Eggs : Egg list}
     static do printfn "Chicken init"
-    static let firstEggEver = 
+    static let firstEggEver =
         printfn "creating firstEggEver"
         {Mother = {Eggs = []}}
 
     static member FirstEgg = firstEggEver
 
-type Egg = 
+type Egg =
     {Mother : Chicken}
     static do printfn "Egg init"
 
-type Omelette = 
+type Omelette =
     {Egg : Egg}
     static do printfn "Omelette init"
 

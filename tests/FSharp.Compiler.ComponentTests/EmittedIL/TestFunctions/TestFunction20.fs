@@ -1,13 +1,13 @@
-// #NoMono #NoMT #CodeGen #EmittedIL   
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
-type D(x:int,y:int) = 
+type D(x:int,y:int) =
     let z = x + y
     let f a = x + a
     let w = f z + z
     member this.X = x
     member this.Y = y
-    
+
 let TestFunction20(inp) =
     let d1 = D(inp,inp)
     let d2 = D(inp,inp)

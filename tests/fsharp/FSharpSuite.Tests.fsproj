@@ -39,6 +39,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\ByrefTailcalls.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
+    <Compile Include="Compiler\Conformance\ExtensionConstraints\ReturnTypeOverloadExecutionTests.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
@@ -95,6 +96,13 @@
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
+  </ItemGroup>
+
+  <!-- xUnit3 configuration for this test project (MTP mode) -->
+  <ItemGroup>
+    <Content Include="testconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

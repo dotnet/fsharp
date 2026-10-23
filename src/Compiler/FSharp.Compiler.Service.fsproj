@@ -56,7 +56,7 @@
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>The F# Compiler Services package for F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
-    <PackageReleaseNotes>/blob/release/10.0.4xx/docs/release-notes/.FSharp.Compiler.Service/$(FSharpLibrariesChangelogVersion).md</PackageReleaseNotes>
+    <PackageReleaseNotes>/blob/main/docs/release-notes/.FSharp.Compiler.Service/$(FSharpLibrariesChangelogVersion).md</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
   </PropertyGroup>
@@ -377,6 +377,8 @@
     <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
+    <Compile Include="TypedTree\RuntimeAsync.fsi" />
+    <Compile Include="TypedTree\RuntimeAsync.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -403,6 +405,8 @@
     <Compile Include="Checking\RelatedSymbolUse.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
     <Compile Include="Checking\NameResolution.fs" />
+    <Compile Include="Checking\TraitConstraintScope.fsi" />
+    <Compile Include="Checking\TraitConstraintScope.fs" />
     <Compile Include="Checking\SignatureConformance.fsi" />
     <Compile Include="Checking\SignatureConformance.fs" />
     <Compile Include="Checking\MethodOverrides.fsi" />
@@ -449,6 +453,10 @@
     <Compile Include="Checking\SignatureHash.fsi" />
     <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\DelegateForwarding.fs" />
+    <Compile Include="Optimize\RuntimeAsyncAnalysis.fsi" />
+    <Compile Include="Optimize\RuntimeAsyncAnalysis.fs" />
+    <Compile Include="Optimize\RuntimeAsyncExceptionRewrite.fsi" />
+    <Compile Include="Optimize\RuntimeAsyncExceptionRewrite.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -459,10 +467,14 @@
     <Compile Include="Optimize\LowerCalls.fs" />
     <Compile Include="Optimize\LowerSequences.fsi" />
     <Compile Include="Optimize\LowerSequences.fs" />
+    <Compile Include="Optimize\LowerAsyncSeq.fsi" />
+    <Compile Include="Optimize\LowerAsyncSeq.fs" />
     <Compile Include="Optimize\LowerComputedCollections.fsi" />
     <Compile Include="Optimize\LowerComputedCollections.fs" />
     <Compile Include="Optimize\LowerStateMachines.fsi" />
     <Compile Include="Optimize\LowerStateMachines.fs" />
+    <Compile Include="Optimize\LowerRuntimeAsync.fsi" />
+    <Compile Include="Optimize\LowerRuntimeAsync.fs" />
     <Compile Include="Optimize\LowerLocalMutables.fsi" />
     <Compile Include="Optimize\LowerLocalMutables.fs" />
     <Compile Include="CodeGen\IlxGenSupport.fsi" />
@@ -534,6 +546,7 @@
     <Compile Include="Driver\XmlDocFileWriter.fs" />
     <Compile Include="Driver\BinaryResourceFormats.fsi" />
     <Compile Include="Driver\BinaryResourceFormats.fs" />
+    <Compile Include="Driver\ILLinkSubstitutions.fs" />
     <Compile Include="Driver\StaticLinking.fsi" />
     <Compile Include="Driver\StaticLinking.fs" />
     <Compile Include="Driver\CreateILModule.fsi" />
@@ -567,8 +580,6 @@
     <Compile Include="Service\ServiceCompilerDiagnostics.fsi" />
     <Compile Include="Service\ServiceCompilerDiagnostics.fs" />
     <Compile Include="Service\ServiceConstants.fs" />
-    <Compile Include="Service\ServiceDeclarationLists.fsi" />
-    <Compile Include="Service\ServiceDeclarationLists.fs" />
     <Compile Include="Service\ServiceLexing.fsi" />
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />
@@ -585,6 +596,8 @@
     <Compile Include="Service\FSharpParseFileResults.fs" />
     <Compile Include="Service\ServiceParsedInputOps.fsi" />
     <Compile Include="Service\ServiceParsedInputOps.fs" />
+    <Compile Include="Service\ServiceDeclarationLists.fsi" />
+    <Compile Include="Service\ServiceDeclarationLists.fs" />
     <Compile Include="Service\ServiceAssemblyContent.fsi" />
     <Compile Include="Service\ServiceAssemblyContent.fs" />
     <Compile Include="Service\ServiceXmlDocParser.fsi" />
@@ -658,17 +671,17 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Reflection.Emit" />
+    <PackageReference Include="System.Reflection.Metadata" />
+    <PackageReference Include="System.Buffers" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
   </ItemGroup>
 
   <ItemGroup>

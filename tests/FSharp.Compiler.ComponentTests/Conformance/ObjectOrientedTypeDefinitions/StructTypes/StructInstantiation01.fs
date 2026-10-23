@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 
 
 // Bug 1337: "new" is still required for the default struct constructor

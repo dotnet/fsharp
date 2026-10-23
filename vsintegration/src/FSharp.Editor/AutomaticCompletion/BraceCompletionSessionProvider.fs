@@ -369,7 +369,7 @@ module DoubleQuote =
     [<Literal>]
     let CloseCharacter = '"'
 
-(* This is for [| |] and {| |} , since the implementation deals with chars only. 
+(* This is for [| |] and {| |} , since the implementation deals with chars only.
    We have to test if there is a { or [ before the cursor position and insert the closing '|'. *)
 module VerticalBar =
 
@@ -379,7 +379,7 @@ module VerticalBar =
     [<Literal>]
     let CloseCharacter = '|'
 
-(* This is for attributes [< >] , since the implementation deals with chars only. 
+(* This is for attributes [< >] , since the implementation deals with chars only.
    We have to test if there is a [ before the cursor position and insert the closing '>'. *)
 module AngleBrackets =
 
@@ -432,7 +432,7 @@ type VerticalBarCompletionSession() =
 
         member _.AllowOverType(_session, _cancellationToken) = true
 
-        (* This is for [| |] and {| |} , since the implementation deals with chars only. 
+        (* This is for [| |] and {| |} , since the implementation deals with chars only.
            We have to test if there is a { or [ before the cursor position and insert the closing '|'. *)
         member _.CheckOpeningPoint(session, _cancellationToken) =
             tryInsertAdditionalBracePair session CurlyBrackets.OpenCharacter CurlyBrackets.CloseCharacter
@@ -448,7 +448,7 @@ type AngleBracketCompletionSession() =
 
         member _.AllowOverType(_session, _cancellationToken) = true
 
-        (* This is for attributes [< >] , since the implementation deals with chars only. 
+        (* This is for attributes [< >] , since the implementation deals with chars only.
            We have to test if there is a [ before the cursor position and insert the closing '>'. *)
         member _.CheckOpeningPoint(session, _cancellationToken) =
             tryInsertAdditionalBracePair session SquareBrackets.OpenCharacter SquareBrackets.CloseCharacter
@@ -464,7 +464,7 @@ type AsteriskCompletionSession() =
 
         member _.AllowOverType(_session, _cancellationToken) = true
 
-        (* This is for attributes [< >] , since the implementation deals with chars only. 
+        (* This is for attributes [< >] , since the implementation deals with chars only.
            We have to test if there is a [ before the cursor position and insert the closing '>'. *)
         member _.CheckOpeningPoint(session, _cancellationToken) =
             tryInsertAdditionalBracePair session Parenthesis.OpenCharacter Parenthesis.CloseCharacter

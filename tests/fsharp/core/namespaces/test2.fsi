@@ -3,9 +3,9 @@ module rec Test2
 
 open Test2.M
 
-module N = 
+module N =
     val x : C
 
-module M = 
+module M =
     type C
 

@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify type extensions extend the full hierarchy of a type

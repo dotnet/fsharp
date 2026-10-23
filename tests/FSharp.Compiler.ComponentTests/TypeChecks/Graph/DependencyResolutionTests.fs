@@ -13,7 +13,7 @@ let ``Supported scenario`` (scenario: Scenario) =
     let files =
         scenario.Files
         |> List.map (fun f ->
-            {Idx = f.Index; FileName = f.FileName; ParsedInput = parseSourceCode(f.FileName, f.Content)}) 
+            {Idx = f.Index; FileName = f.FileName; ParsedInput = parseSourceCode(f.FileName, f.Content)})
         |> List.toArray
     let filePairs = FilePairMap(files)
     let graph, _trie = DependencyResolution.mkGraph filePairs files

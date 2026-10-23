@@ -9,9 +9,10 @@ namespace FSharp.Compiler.EditorServices
 
 open System
 open System.Collections.Generic
-open Internal.Utilities.Library 
+open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
@@ -19,7 +20,7 @@ module Utils =
     let replaceLastIdentToDisplayName (idents: string array) (displayName: string) =
         match idents |> Array.tryFindIndexBack (fun i -> displayName.StartsWith(i, StringComparison.Ordinal)) with
         | Some x when x = idents.Length - 1 -> idents |> Array.replace (idents.Length - 1) displayName
-        | Some x -> 
+        | Some x ->
             let newIdents = Array.zeroCreate (x + 1)
             Array.Copy(idents, newIdents, x)
             newIdents[x] <- displayName
@@ -35,7 +36,7 @@ type LookupType =
     | Precise
 
 [<NoComparison; NoEquality>]
-type AssemblySymbol = 
+type AssemblySymbol =
     { FullName: string
       CleanedIdents: ShortIdents
       Namespace: ShortIdents option
@@ -46,35 +47,35 @@ type AssemblySymbol =
       Kind: LookupType -> EntityKind
       UnresolvedSymbol: UnresolvedSymbol }
 
-    override x.ToString() = sprintf "%A" x  
+    override x.ToString() = sprintf "%A" x
 
 type AssemblyPath = string
 type AssemblyContentType = Public | Full
 
-type Parent = 
+type Parent =
     { Namespace: ShortIdents option
       ThisRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
       TopRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
       AutoOpen: ShortIdents option
-      WithModuleSuffix: ShortIdents option 
+      WithModuleSuffix: ShortIdents option
       IsModule: bool }
 
-    static member Empty = 
+    static member Empty =
         { Namespace = None
           ThisRequiresQualifiedAccess = fun _ -> None
           TopRequiresQualifiedAccess = fun _ -> None
           AutoOpen = None
-          WithModuleSuffix = None 
+          WithModuleSuffix = None
           IsModule = true }
 
     static member RewriteParentIdents (parentIdents: ShortIdents option) (idents: ShortIdents) =
         match parentIdents with
-        | Some p when p.Length <= idents.Length -> 
+        | Some p when p.Length <= idents.Length ->
             for i in 0..p.Length - 1 do
                 idents[i] <- p[i]
         | _ -> ()
         idents
-    
+
     member x.FixParentModuleSuffix (idents: ShortIdents) =
         Parent.RewriteParentIdents x.WithModuleSuffix idents
 
@@ -83,10 +84,10 @@ type Parent =
         // e.g. System.Collections.Generic.Dictionary`2 -> System.Collections.Generic.Dictionary
         // and System.Data.Listeners`1.Func -> System.Data.Listeners.Func
         let removeGenericParamsCount (idents: ShortIdents) =
-            idents 
+            idents
             |> Array.map (fun ident ->
                 if ident.Length > 0 && Char.IsDigit ident[ident.Length - 1] then
-                    let lastBacktickIndex = ident.LastIndexOf '`' 
+                    let lastBacktickIndex = ident.LastIndexOf '`'
                     if lastBacktickIndex <> -1 then
                         ident.Substring(0, lastBacktickIndex)
                     else ident
@@ -100,17 +101,17 @@ type Parent =
             else idents
 
         entity.TryGetFullName()
-        |> Option.bind (fun fullName -> 
+        |> Option.bind (fun fullName ->
             entity.TryGetFullDisplayName()
             |> Option.map (fun fullDisplayName ->
                 fullName,
                 fullDisplayName.Split '.'
-                |> removeGenericParamsCount 
+                |> removeGenericParamsCount
                 |> removeModuleSuffix))
 
 type AssemblyContentCacheEntry =
-    { FileWriteTime: DateTime 
-      ContentType: AssemblyContentType 
+    { FileWriteTime: DateTime
+      ContentType: AssemblyContentType
       Symbols: AssemblySymbol list }
 
 [<NoComparison; NoEquality>]
@@ -121,22 +122,22 @@ type IAssemblyContentCache =
 module AssemblyContent =
 
     let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) ns =
-        let getNamespace (idents: ShortIdents) = 
+        let getNamespace (idents: ShortIdents) =
             if idents.Length > 1 then Some idents[..idents.Length - 2] else None
 
-        // 1. get namespace/module to open from topRequireQualifiedAccessParent 
+        // 1. get namespace/module to open from topRequireQualifiedAccessParent
         // 2. if the topRequireQualifiedAccessParent is None, use the namespace, as we don't know whether an ident is namespace/module or not
-        let ns = 
-            topRequireQualifiedAccessParent 
+        let ns =
+            topRequireQualifiedAccessParent
             |> Option.bind getNamespace
             |> Option.orElse ns
             |> Option.defaultWith (fun _ -> Array.empty)
             |> Array.map PrettyNaming.NormalizeIdentifierBackticks
-            
-        let displayName = 
+
+        let displayName =
             let nameIdents = if cleanedIdents.Length > ns.Length then cleanedIdents |> Array.skip ns.Length else cleanedIdents
             nameIdents |> Array.map PrettyNaming.NormalizeIdentifierBackticks |> String.concat "."
-                
+
         { FullName = fullName
           DisplayName = displayName
           Namespace = ns }
@@ -154,40 +155,53 @@ module AssemblyContent =
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Symbol = entity
               Kind = fun lookupType ->
-                match entity, lookupType with                
+                match entity, lookupType with
                 | FSharpSymbolPatterns.FSharpModule, _ ->
-                    EntityKind.Module 
+                    EntityKind.Module
                         { IsAutoOpen = entity.HasAttribute<AutoOpenAttribute>()
                           HasModuleSuffix = FSharpSymbolPatterns.hasModuleSuffixAttribute entity }
                 | _, LookupType.Fuzzy ->
                     EntityKind.Type
                 | _, LookupType.Precise ->
                     match entity with
-                    | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute 
+                    | FSharpSymbolPatterns.Attribute -> EntityKind.Attribute
                     | _ -> EntityKind.Type
               UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName ns
             })
 
-    let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
+    let createFunctionOrValue ns (parent: Parent) =
         let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+        let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
         let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+        fun fullName idents (symbol: FSharpSymbol) isActivePattern ->
+            let cleanedIdents = parent.FixParentModuleSuffix idents
+            { FullName = fullName
+              CleanedIdents = cleanedIdents
+              Namespace = ns
+              NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
+              TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
+              AutoOpenParent = autoOpenParent
+              Symbol = symbol
+              Kind = fun _ -> EntityKind.FunctionOrValue isActivePattern
+              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
+
+    let isPublic (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpActivePatternCase ->
+            match symbol.Item with
+            | Item.ActivePatternCase case -> case.ActivePatternVal.Accessibility.IsPublic
+            | _ -> symbol.Accessibility.IsPublic
+        | _ -> symbol.Accessibility.IsPublic
+
+    let traverseMemberFunctionAndValues (createSymbol: string -> ShortIdents -> FSharpSymbol -> bool -> AssemblySymbol) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
-            let processIdents fullName idents = 
-                let cleanedIdents = parent.FixParentModuleSuffix idents
-                { FullName = fullName
-                  CleanedIdents = cleanedIdents
-                  Namespace = ns
-                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
-                  TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
-                  AutoOpenParent = autoOpenParent
-                  Symbol = func
-                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
+            let processIdents fullName idents =
+                createSymbol fullName idents func func.IsActivePattern
 
-            [ yield! func.TryGetFullDisplayName() 
-                     |> Option.map (fun fullDisplayName -> 
+            [ yield! func.TryGetFullDisplayName()
+                     |> Option.map (fun fullDisplayName ->
                         let idents = (fullDisplayName.Split '.')
                         let lastIdent = idents[idents.Length - 1]
                         let idents =
@@ -197,24 +211,24 @@ module AssemblyContent =
                             | _ -> idents
                         processIdents func.FullName idents)
                      |> Option.toList
-              (* for 
+              (* for
                  [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
                  module M =
                      let (++) x y = ()
                  open M
                  let _ = 1 ++ 2
-                
+
                  we should return additional RawEntity { FullName = MModule.op_PlusPlus; CleanedIdents = [|"M"; "op_PlusPlus"|] ... }
               *)
-              yield! func.TryGetFullCompiledOperatorNameIdents() 
+              yield! func.TryGetFullCompiledOperatorNameIdents()
                      |> Option.map (fun fullCompiledIdents ->
                           processIdents (fullCompiledIdents |> String.concat ".") fullCompiledIdents)
                      |> Option.toList ])
 
-    let rec traverseEntity contentType (parent: Parent) (entity: FSharpEntity) = 
+    let rec traverseEntity contentType (parent: Parent) (entity: FSharpEntity) =
 
-        seq { 
-#if !NO_TYPEPROVIDERS 
+        seq {
+#if !NO_TYPEPROVIDERS
               if not entity.IsProvided then
 #endif
                 match contentType, entity.Accessibility.IsPublic with
@@ -233,32 +247,46 @@ module AssemblyContent =
                     let currentParent =
                         { ThisRequiresQualifiedAccess = thisRequiresQualifierAccess >> Option.orElse (parent.ThisRequiresQualifiedAccess false)
                           TopRequiresQualifiedAccess = fun forMV -> (parent.TopRequiresQualifiedAccess false) |> Option.orElse (thisRequiresQualifierAccess forMV)
-                          
+
                           AutoOpen =
                             let isAutoOpen = entity.IsFSharpModule && entity.HasAttribute<AutoOpenAttribute>()
                             match isAutoOpen, parent.AutoOpen with
                             // if parent is also AutoOpen, then keep the parent
-                            | true, Some parent -> Some parent 
+                            | true, Some parent -> Some parent
                             // if parent is not AutoOpen, but current entity is, peek the latter as a new AutoOpen module
                             | true, None -> parent.FormatEntityFullName entity |> Option.map snd
                             // if current entity is not AutoOpen, we discard whatever parent was
-                            | false, _ -> None 
+                            | false, _ -> None
 
-                          WithModuleSuffix = 
-                            if entity.IsFSharpModule && (FSharpSymbolPatterns.hasModuleSuffixAttribute entity || entity.CompiledName <> entity.DisplayName) then 
-                                currentEntity |> Option.map (fun e -> e.CleanedIdents) 
+                          WithModuleSuffix =
+                            if entity.IsFSharpModule && (FSharpSymbolPatterns.hasModuleSuffixAttribute entity || entity.CompiledName <> entity.DisplayName) then
+                                currentEntity |> Option.map (fun e -> e.CleanedIdents)
                             else parent.WithModuleSuffix
 
                           Namespace = ns
                           IsModule = entity.IsFSharpModule }
 
+                    let createValue = createFunctionOrValue ns currentParent
                     match entity.TryGetMembersFunctionsAndValues() with
                     | xs when xs.Count > 0 ->
-                        yield! traverseMemberFunctionAndValues ns currentParent xs
+                        yield! traverseMemberFunctionAndValues createValue xs
+                    | _ -> ()
+
+                    match currentEntity with
+                    | Some moduleSymbol when entity.IsFSharpModule ->
+                        for case in entity.ActivePatternCases do
+                            if contentType = Full || isPublic case then
+                                let idents = Array.append moduleSymbol.CleanedIdents [| case.Name |]
+                                let symbol = createValue case.FullName idents case true
+                                let struct (_, openableNs, restIdents) =
+                                    Entity.getOpenableNamespace symbol.TopRequireQualifiedAccessParent symbol.AutoOpenParent symbol.CleanedIdents
+                                yield { symbol with
+                                            UnresolvedSymbol =
+                                                UnresolvedSymbol None (Array.append openableNs restIdents) case.FullName (Some openableNs) }
                     | _ -> ()
 
                     for e in (try entity.NestedEntities :> _ seq with _ -> Seq.empty) do
-                        yield! traverseEntity contentType currentParent e 
+                        yield! traverseEntity contentType currentParent e
                 | _ -> () }
 
 
@@ -266,53 +294,53 @@ module AssemblyContent =
 
         // We ignore all diagnostics during this operation
         //
-        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures
         // concurrently with other threads.  On an initial review this is not a problem since type provider computations
-        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely
         // on-demand.  However a more compete review may be warranted.
 
-        use _ignoreAllDiagnostics = new DiagnosticsScope(false)  
+        use _ignoreAllDiagnostics = new DiagnosticsScope(false)
 
         signature.TryGetEntities()
         |> Seq.collect (traverseEntity contentType Parent.Empty)
         |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
         |> Seq.toList
 
-    let getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
+    let getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) =
         assemblies |> List.collect (fun asm -> GetAssemblySignatureContent contentType asm.Contents)
 
     let GetAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
 
         // We ignore all diagnostics during this operation
         //
-        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures
         // concurrently with other threads.  On an initial review this is not a problem since type provider computations
-        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely
         // on-demand.  However a more compete review may be warranted.
         use _ignoreAllDiagnostics = new DiagnosticsScope(false)
 
-#if !NO_TYPEPROVIDERS 
+#if !NO_TYPEPROVIDERS
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with
 #else
         match assemblies, fileName with
 #endif
         | [], _ -> []
         | assemblies, Some fileName ->
-            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName) 
+            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName)
             withCache <| fun cache ->
-                match contentType, cache.TryGet fileName with 
+                match contentType, cache.TryGet fileName with
                 | _, Some entry
                 | Public, Some entry when entry.FileWriteTime = fileWriteTime -> entry.Symbols
                 | _ ->
                     let symbols = getAssemblySignaturesContent contentType assemblies
                     cache.Set fileName { FileWriteTime = fileWriteTime; ContentType = contentType; Symbols = symbols }
                     symbols
-        | assemblies, None -> 
+        | assemblies, None ->
             getAssemblySignaturesContent contentType assemblies
-        |> List.filter (fun entity -> 
+        |> List.filter (fun entity ->
             match contentType with
             | Full -> true
-            | Public -> entity.Symbol.Accessibility.IsPublic)
+            | Public -> isPublic entity.Symbol)
 
 type EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()

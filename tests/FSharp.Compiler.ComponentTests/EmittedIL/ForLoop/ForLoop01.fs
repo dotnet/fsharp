@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL
 // Regression test for TFS#712639
 // Incorrect span or overlapping debugging spans
 // The test will start failing once the bug is actually fixed

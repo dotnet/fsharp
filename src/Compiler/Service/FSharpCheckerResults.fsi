@@ -3,12 +3,14 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.ComponentModel
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -240,10 +242,13 @@ type public FSharpParsingOptions =
 type public FSharpCodeCompletionOptions =
     { SuggestPatternNames: bool
       SuggestObsoleteSymbols: bool
+      SuggestEditorBrowsableSymbols: EditorBrowsableState
       SuggestGeneratedOverrides: bool
       SuggestOverrideBodies: bool }
 
     static member Default: FSharpCodeCompletionOptions
+
+    member internal AllowUnseen: UnseenItems
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -255,6 +260,9 @@ type public FSharpCheckFileResults =
 
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature: FSharpAssemblySignature
+
+    /// Get a view of the contents of the file just checked, inferred even when a signature file hides them
+    member FileSignature: FSharpAssemblySignature
 
     /// Get the resolution of the ProjectOptions
     member ProjectContext: FSharpProjectContext
@@ -459,7 +467,7 @@ type public FSharpCheckFileResults =
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
 
-    member internal CalculateSignatureHash: unit -> int option
+    member internal CalculateSignatureHash: unit -> int64 option
 
     /// Internal constructor
     static member internal MakeEmpty:
@@ -480,6 +488,7 @@ type public FSharpCheckFileResults =
         tcErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         ccuSigForFile: ModuleOrNamespaceType *
+        ownSigForFile: ModuleOrNamespaceType *
         thisCcu: CcuThunk *
         tcImports: TcImports *
         tcAccessRights: AccessorDomain *

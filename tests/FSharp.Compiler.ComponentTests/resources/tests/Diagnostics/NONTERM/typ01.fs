@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:2467
 //<Expects id="FS3565" span="(9,115-9,117)" status="error">Expecting type</Expects>
 

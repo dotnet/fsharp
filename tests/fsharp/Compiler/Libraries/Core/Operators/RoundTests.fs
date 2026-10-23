@@ -30,7 +30,7 @@ module ``Round Tests`` =
         Assert.areEqual (round 1.2m) 1.0m
         Assert.areEqual (round 1.3m) 1.0m
         Assert.areEqual (round 1.4m) 1.0m
-        
+
         // Round down
         Assert.areEqual (round 1.6) 2.0
         Assert.areEqual (round 1.7) 2.0
@@ -44,16 +44,16 @@ module ``Round Tests`` =
         Assert.areEqual (round 1.7m) 2.0m
         Assert.areEqual (round 1.8m) 2.0m
         Assert.areEqual (round 1.9m) 2.0m
-        
+
         // Midpoint rounding. If between two numbers, round to the 'even' one.
-        Assert.areEqual (round 1.5 ) 2.0 
+        Assert.areEqual (round 1.5 ) 2.0
         Assert.areEqual (round 1.5f) 2.0f
         Assert.areEqual (round 1.5m) 2.0m
-        Assert.areEqual (round 2.5 ) 2.0 
+        Assert.areEqual (round 2.5 ) 2.0
         Assert.areEqual (round 2.5f) 2.0f
         Assert.areEqual (round 2.5m) 2.0m
-        
+
         // If not midpoint, round to nearest as usual
-        Assert.areEqual (round 2.500001 ) 3.0 
+        Assert.areEqual (round 2.500001 ) 3.0
         Assert.areEqual (round 2.500001f) 3.0f
         Assert.areEqual (round 2.500001m) 3.0m

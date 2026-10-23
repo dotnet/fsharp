@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #InterfacesAndImplementations 
+// #Regression #Conformance #DeclarationElements #InterfacesAndImplementations
 
 
 // FSB 1147, implementing interfaces with generic members gives internal error - undefined type variable
@@ -8,7 +8,7 @@ type IFoo = interface
 end
 
 type Derived() = class
-    interface IFoo with 
+    interface IFoo with
         member x.Ignore<'b> (y:'b) = ()
     end
 end

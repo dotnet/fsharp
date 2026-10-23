@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces 
+// #Regression #Conformance #SignatureFiles #Namespaces
 // Test 'anonymous implementation files', which is a code file
 // without a leading module or namespace declaration. The filename
 // will be used first letter caps-else lower case, extension dropped.

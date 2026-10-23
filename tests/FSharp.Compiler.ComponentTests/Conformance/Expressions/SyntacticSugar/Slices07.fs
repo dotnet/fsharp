@@ -1,22 +1,22 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 // Verify 1D slices.
 
 type Foo<'a>() =
     let mutable m_lastLB : 'a option = None
-    let mutable m_lastUB : 'a option = None    
-    let mutable m_lastValue : 'a option = None    
-    
-    member this.GetSlice(lb, ub) = 
+    let mutable m_lastUB : 'a option = None
+    let mutable m_lastValue : 'a option = None
+
+    member this.GetSlice(lb, ub) =
         m_lastLB <- lb
         m_lastUB <- ub
         ()
 
-    member this.SetSlice(lb, ub, value) = 
+    member this.SetSlice(lb, ub, value) =
         m_lastLB <- lb
         m_lastUB <- ub
         m_lastValue <- Some value
         ()
-                
+
     member this.LastLB = m_lastLB
     member this.LastUB = m_lastUB
     member this.LastValue = m_lastValue

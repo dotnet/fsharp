@@ -1,8 +1,8 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(13,17-13,19)" id="FS0001">The type 'R' does not support the 'equality' constraint because it has the 'NoEquality' attribute$</Expects>
 //<Expects status="error" span="(14,12-14,14)" id="FS0001">The type 'R' does not support the 'equality' constraint because it has the 'NoEquality' attribute$</Expects>
 
-module M08 = 
+module M08 =
   [<ReferenceEquality>]
   (* [<StructuralComparison(true)>] *)
   [<NoEquality>]

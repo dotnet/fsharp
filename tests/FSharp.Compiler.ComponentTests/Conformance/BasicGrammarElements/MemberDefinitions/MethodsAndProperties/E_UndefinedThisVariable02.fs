@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // FSB 1007, internal error tripped by property member without this
 
 

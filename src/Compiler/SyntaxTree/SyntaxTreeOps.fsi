@@ -275,6 +275,15 @@ module SynInfo =
 
     val emptySynArgInfo: SynArgInfo
 
+    /// Rotate any `[<return: X>]` attributes from a binding's prefix attribute list into the
+    /// arity-info return position (`SynValInfo.retInfo`), so that the attributes reach the
+    /// return-value metadata slot rather than `Val.Attribs`.
+    ///
+    /// This is a lowering step, applied while normalizing a binding for checking rather than in
+    /// the parser, so `SynBinding.attributes` keeps reporting the attributes where they were
+    /// written.
+    val RotateReturnAttributes: attrs: SynAttribute list -> valSynData: SynValData -> SynAttribute list * SynValData
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.

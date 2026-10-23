@@ -1,6 +1,6 @@
 namespace Lib
 
-module File1 = 
+module File1 =
     val mutable discState : System.DateTime
 
 
@@ -9,8 +9,8 @@ module File2 =
     type DiscState =
         new : int -> DiscState
         member Rep : int
- 
+
     val mutable discState : DiscState
 
 
- 
+

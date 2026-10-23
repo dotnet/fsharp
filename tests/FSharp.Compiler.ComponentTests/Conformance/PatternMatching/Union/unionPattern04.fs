@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Unions 
+// #Regression #Conformance #PatternMatching #Unions
 
 
 // Regression test for FSHARP1.0:3914 - Invalid value when returning a pattern match-bound parameter in the enclosure of a lambda (does that make sense?)

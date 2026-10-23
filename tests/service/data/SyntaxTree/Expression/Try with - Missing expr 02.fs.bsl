@@ -12,7 +12,8 @@ ImplFile
                      ArbitraryAfterError
                        ("typedSequentialExprBlockR1", (4,9--4,9)), (4,5--4,9),
                      Yes, { ArrowRange = Some (4,7--4,9)
-                            BarRange = None })], (3,0--4,9), Yes (3,0--3,3),
+                            BarRange = None
+                            WhenKeyword = None })], (3,0--4,9), Yes (3,0--3,3),
                  Yes (4,0--4,4), { TryKeyword = (3,0--3,3)
                                    TryToWithRange = (3,0--4,4)
                                    WithKeyword = (4,0--4,4)

@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression test for FSHARP1.0:5534
 // Make sure isMutable is set correctly for quoted mutables
 open Microsoft.FSharp.Quotations

@@ -777,7 +777,9 @@ module CancellableTasks =
                     }
 
             // try not to yield if on bg thread already
-            let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+            let tcs =
+                new TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
+
             let barrier = VolatileBarrier()
 
             let reg =
@@ -947,7 +949,7 @@ module CancellableTasks =
         ///         cancellableTask {
         ///             let! cancellationToken = CancellableTask.getCancellationToken()
         ///             do! Task.Delay(i * 1000, cancellationToken)
-        ///             printfn $"{i}"
+        ///             printn $"{i}"
         ///         }
         ///     computation tokenSource.Token |> ignore
         /// Thread.Sleep(6000)
@@ -1098,6 +1100,10 @@ module CancellableTasks =
                 return! Task.WhenAll (tasks)
             }
 
+        /// Runs the given tasks concurrently, but caps concurrent work to maxDegreeOfParallelism.
+        let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
+            fun ct -> Task.parallelLimit maxDegreeOfParallelism ct tasks
+
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
@@ -1106,14 +1112,7 @@ module CancellableTasks =
             }
 
         let inline sequential (tasks: CancellableTask<'a> seq) =
-            cancellableTask {
-                let! ct = getCancellationToken ()
-                let results = ResizeArray()
-                for task in tasks do
-                    let! result = start ct task
-                    results.Add(result)
-                return results
-            }
+            fun ct -> Task.sequential ct tasks
 
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 

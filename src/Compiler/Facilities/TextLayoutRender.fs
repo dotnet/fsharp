@@ -148,12 +148,17 @@ module LayoutRender =
             member _.Start() = NoState
 
             member _.AddText z text =
-                collector text
+                if not (String.IsNullOrEmpty text.Text) then
+                    collector text
+
                 z
 
             member _.AddBreak rstrs n =
                 collector TaggedText.lineBreak
-                collector (TaggedText.tagSpace (spaces n))
+
+                if n > 0 then
+                    collector (TaggedText.tagSpace (spaces n))
+
                 rstrs
 
             member _.AddTag z (_, _, _) = z

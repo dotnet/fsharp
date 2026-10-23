@@ -2,7 +2,6 @@
 module FSharpChecker.TransparentCompiler
 
 open System.Collections.Concurrent
-open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
@@ -18,17 +17,13 @@ open FSharp.Test
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 open System.IO
-open Microsoft.CodeAnalysis
 open System
 open System.Threading.Tasks
 open System.Threading
-open TypeChecks
 
-open OpenTelemetry
-open OpenTelemetry.Resources
-open OpenTelemetry.Trace
 
 let fileName fileId = $"File%s{fileId}.fs"
+let fileNames fileIds = fileIds |> List.map fileName
 
 let internal recordAllEvents groupBy =
     let mutable cache : AsyncMemoize<_,_,_> option = None
@@ -60,6 +55,13 @@ let internal recordEvents groupBy =
         Assert.Equal<JobEvent>(expected, actual)
 
     observe, check
+
+/// Names of the files that were actually type checked, i.e. not served from the cache.
+let internal typeCheckedFiles getEvents =
+    getEvents ()
+    |> List.filter (fun (_, e) -> e = Started)
+    |> List.map fst
+    |> List.sort
 
 #nowarn "57"
 
@@ -232,6 +234,163 @@ let ``Removing a file`` () =
         removeFile "Second"
         checkFile "Last" expectErrors
     }
+
+// When the project has no explicit output file, the assembly name is derived from the last file in it (see `TcConfigBuilder.DecideNames`).
+// Adding a file at the end therefore changes the assembly name
+//    -> which misses the `BootstrapInfoStatic` cache
+//    -> which produces a new `BootstrapInfo.Id`
+//    -> which is part of every `TcIntermediate` cache key.
+// So the whole project has to be rechecked."
+[<Fact>] //TODO
+let ``Adding a file at the end of the project checks everything when the assembly name is implicit`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "3" ["1"],
+        sourceFile "Program" ["2"; "3"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileBelow "Program" (sourceFile "New" ["1"])
+        checkFile "New" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the end of a project with an explicit assembly name only checks the new file`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" ["1"],
+            sourceFile "Program" ["2"]
+          ) with OtherOptions = [ "--out:FileOrderTest.dll" ] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileBelow "Program" (sourceFile "New" ["Program"])
+        checkFile "New" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>([fileName "New"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the beginning of the project checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "Program" ["1"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileAbove "1" (sourceFile "New" [])
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the middle of the project checks only the new file and files below it`` ()  =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "Program" []
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileAbove "Program" (sourceFile "New" [])
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Swapping two files only checks them and files below them`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "3" ["1"],
+        sourceFile "Program" []
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "3" 1 Up
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving the first file to the end checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" [],
+            sourceFile "3" ["2"],
+            sourceFile "Program" ["3"]
+          ) with OtherOptions = ["--out:FileOrderTest.dll"] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "1" 3 Down
+        checkFile "1" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving the last file to the beginning checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" ["1"],
+            sourceFile "3" ["2"],
+            sourceFile "Program" []
+          ) with OtherOptions = ["--out:FileOrderTest.dll"] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "Program" 3 Up
+        checkFile "3" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving a file below its dependents breaks them`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "Program" ["2"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        // "2" and "3" now reference a module that is defined below them.
+        moveFile "1" 1 Down
+        checkFile "2" expectErrors
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["2"], typeCheckedFiles getEvents)
 
 [<Fact>]
 let ``Changes in a referenced project`` () =
@@ -594,46 +753,48 @@ let fuzzingTest seed (project: SyntheticProject) = task {
 [<InlineData(SignatureFiles.Yes)>]
 [<InlineData(SignatureFiles.No)>]
 [<InlineData(SignatureFiles.Some)>]
-let Fuzzing signatureFiles =
+let Fuzzing signatureFiles : Task =
+    task {
 
-    let seed = System.Random().Next()
-    let rng = System.Random(int seed)
+        let seed = System.Random().Next()
+        let rng = System.Random(int seed)
 
-    let fileCount = 30
-    let maxDepsPerFile = 3
+        let fileCount = 30
+        let maxDepsPerFile = 3
 
-    let fileName i = sprintf $"F%03d{i}"
+        let fileName i = $"F%03d{i}"
 
-    //let extraCode = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Utilities" ++ "EditDistance.fs" |> File.ReadAllLines |> Seq.skip 5 |> String.concat "\n"
-    let extraCode = ""
+        //let extraCode = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Utilities" ++ "EditDistance.fs" |> File.ReadAllLines |> Seq.skip 5 |> String.concat "\n"
+        let extraCode = ""
 
-    let files =
-        [| for i in 1 .. fileCount do
-            let name = fileName i
-            let deps = [
-                for _ in 1 .. maxDepsPerFile do
-                    if i > 1 then
-                      fileName <| rng.Next(1, i) ]
-            let signature =
-                match signatureFiles with
-                | SignatureFiles.Yes -> AutoGenerated
-                | SignatureFiles.Some when rng.NextDouble() < 0.5 -> AutoGenerated
-                | _ -> No
+        let files =
+            [| for i in 1 .. fileCount do
+                let name = fileName i
+                let deps = [
+                    for _ in 1 .. maxDepsPerFile do
+                        if i > 1 then
+                          fileName <| rng.Next(1, i) ]
+                let signature =
+                    match signatureFiles with
+                    | SignatureFiles.Yes -> AutoGenerated
+                    | SignatureFiles.Some when rng.NextDouble() < 0.5 -> AutoGenerated
+                    | _ -> No
 
-            { sourceFile name deps
-                with
-                    SignatureFile = signature
-                    ExtraSource = extraCode }
-        |]
+                { sourceFile name deps
+                    with
+                        SignatureFile = signature
+                        ExtraSource = extraCode }
+            |]
 
-    let initialProject = SyntheticProject.Create(files)
+        let initialProject = SyntheticProject.Create(files)
 
-    let builder = ProjectWorkflowBuilder(initialProject, useTransparentCompiler = true, autoStart = false)
-    let checker = builder.Checker
+        let builder = ProjectWorkflowBuilder(initialProject, useTransparentCompiler = true, autoStart = false)
+        let checker = builder.Checker
 
-    let initialProject = initialProject |> absorbAutoGeneratedSignatures checker |> Async.RunSynchronously
+        let! initialProject = initialProject |> absorbAutoGeneratedSignatures checker
 
-    fuzzingTest seed initialProject
+        do! fuzzingTest seed initialProject
+    }
 
 
 let reposDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".."
@@ -715,6 +876,56 @@ let ``What happens if bootstrapInfoStatic needs to be recomputed`` _ =
     }
 
 
+[<Fact>]
+let ``Referenced project does not type check implementation files that have a signature file`` () =
+    let library = SyntheticProject.Create("library", sourceFile "Library" [] |> addSignatureFile)
+
+    let project =
+        { makeTestProject() with DependsOn = [library] }
+        |> updateFile "First" (addDependency "Library")
+
+    // Generate the signature file with another checker, so the checker under test only type checks for the workflow.
+    let project = project |> absorbAutoGeneratedSignatures (FSharpChecker.Create()) |> Async.RunSynchronously
+
+    // A private checker because we subscribe to FileChecked.
+    let checker = FSharpChecker.Create(enablePartialTypeChecking = true, useTransparentCompiler = true)
+    let checkedFiles = ConcurrentQueue<string>()
+    checker.FileChecked.Add(fun (fileName, _) -> checkedFiles.Enqueue fileName)
+
+    ProjectWorkflowBuilder(project, checker = checker, useTransparentCompiler = true) {
+        checkFile "Last" expectOk
+    } |> ignore
+
+    // Checking a file that depends on the library only needs the signature of the library.
+    let library = project.DependsOn.Head
+    let libraryFile = library.Find "Library"
+    Assert.Contains(getSignatureFilePath library libraryFile, checkedFiles)
+    Assert.DoesNotContain(getFilePath library libraryFile, checkedFiles)
+
+[<Fact>]
+let ``Parsing a file does not type check the referenced projects`` () =
+    let library = SyntheticProject.Create("library", sourceFile "Library" [])
+
+    let project =
+        { SyntheticProject.Create(sourceFile "First" []) with DependsOn = [library] }
+        |> updateFile "First" (addDependency "Library")
+
+    // A private checker because we subscribe to FileChecked.
+    let checker = FSharpChecker.Create(useTransparentCompiler = true)
+    let checkedFiles = ConcurrentQueue<string>()
+    checker.FileChecked.Add(fun (fileName, _) -> checkedFiles.Enqueue fileName)
+
+    async {
+        do! saveProject project false checker
+        let options = project.GetProjectOptions checker
+        let! snapshot = FSharpProjectSnapshot.FromOptions(options, DocumentSource.FileSystem)
+        let! parseResults = checker.ParseFile(getFilePath project (project.Find "First"), snapshot)
+        Assert.False parseResults.ParseHadErrors
+    }
+    |> Async.RunSynchronously
+
+    Assert.Empty checkedFiles
+
 module ParsedInputHashing =
 
     let source = """
@@ -728,8 +939,10 @@ module Stuff =
 """
 
     let getParseResult source =
-        let fileName, snapshot, checker = singleFileChecker source
-        checker.ParseFile(fileName, snapshot) |> Async.RunSynchronously
+        async {
+            let! fileName, snapshot, checker = singleFileChecker source
+            return! checker.ParseFile(fileName, snapshot)
+        }
 
     //[<Fact>]
     let ``Hash stays the same when whitespace changes`` () =
@@ -1050,6 +1263,95 @@ module TestsMutatingFileSystem =
             finally
                 FileSystemAutoOpens.FileSystem <- currentFileSystem
         }
+
+/// Writes a.fsx, which loads b.fsx, to disk and returns both paths.
+let private createScriptThatLoadsFile () =
+    let directory = TestFramework.createTemporaryDirectory ()
+    let a = Path.Combine(directory.FullName, "a.fsx")
+    let b = Path.Combine(directory.FullName, "b.fsx")
+    File.WriteAllText(a, "#load \"b.fsx\"")
+    File.WriteAllText(b, "let onDisk = 1")
+    a, b
+
+let private getLoadedFile (checker: FSharpChecker) (documentSource: DocumentSource option) (script: string) (loadedFile: string) =
+    async {
+        let! snapshot, _ =
+            checker.GetProjectSnapshotFromScript(script, SourceTextNew.ofString (File.ReadAllText script), ?documentSource = documentSource)
+        return snapshot.SourceFiles |> List.find (fun file -> file.FileName = loadedFile)
+    }
+
+let private getText (file: ProjectSnapshot.FSharpFileSnapshot) =
+    task {
+        let! source = file.GetSource()
+        return source.GetSubTextString(0, source.Length)
+    }
+
+/// An ISourceText that is not an ISourceTextNew and does not override ToString.
+let private plainSourceText (text: string) =
+    let inner = SourceText.ofString text
+    { new ISourceText with
+        member _.Item with get index = inner[index]
+        member _.GetLineString(lineIndex) = inner.GetLineString(lineIndex)
+        member _.GetLineCount() = inner.GetLineCount()
+        member _.GetLastCharacterPosition() = inner.GetLastCharacterPosition()
+        member _.GetSubTextString(start, length) = inner.GetSubTextString(start, length)
+        member _.SubTextEquals(target, startIndex) = inner.SubTextEquals(target, startIndex)
+        member _.Length = inner.Length
+        member _.ContentEquals(sourceText) = inner.ContentEquals(sourceText)
+        member _.CopyTo(sourceIndex, destination, destinationIndex, count) = inner.CopyTo(sourceIndex, destination, destinationIndex, count)
+        member _.GetSubTextFromRange(range) = inner.GetSubTextFromRange(range) }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``GetProjectSnapshotFromScript uses the document source of the checker`` useTransparentCompiler =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let getSource fileName = async { return if fileName = b then Some(SourceText.ofString "let inEditor = 1") else None }
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler, documentSource = DocumentSource.Custom getSource)
+
+        let! loadedFile = getLoadedFile checker None a b
+        let! text = getText loadedFile
+        Assert.Equal("let inEditor = 1", text)
+    }
+
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``A custom document source gives a file the same version until its text changes`` useTransparentCompiler usePlainSourceText =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let mutable textOfB = "let inEditor = 1"
+        let toSourceText = if usePlainSourceText then plainSourceText else SourceText.ofString
+        let getSource fileName = async { return if fileName = b then Some(toSourceText textOfB) else None }
+        let documentSource = Some(DocumentSource.Custom getSource)
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+
+        let! first = getLoadedFile checker documentSource a b
+        let! second = getLoadedFile checker documentSource a b
+        Assert.Equal(first.Version, second.Version)
+
+        textOfB <- "let inEditor = 2"
+        let! third = getLoadedFile checker documentSource a b
+        Assert.NotEqual<string>(first.Version, third.Version)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``A custom document source that returns None reads the file from disk`` useTransparentCompiler =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let getSource (_: string) = async { return None }
+        let documentSource = Some(DocumentSource.Custom getSource)
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+
+        let! loadedFile = getLoadedFile checker documentSource a b
+        let! text = getText loadedFile
+        Assert.Equal("let onDisk = 1", text)
+    }
 
 [<Fact>]
 let ``Parsing without cache and without project snapshot`` () =

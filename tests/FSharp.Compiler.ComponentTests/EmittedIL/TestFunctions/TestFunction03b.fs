@@ -1,15 +1,15 @@
-// #NoMono #NoMT #CodeGen #EmittedIL   
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
 let TestFunction1() =
     printfn "Hello";
     printfn "World";
     3+4
-    
+
 let TestFunction3b() =
-    try 
+    try
        let x = TestFunction1()
        failwith "hello"
-    with Failure _ -> 
-       printfn "World"  
+    with Failure _ ->
+       printfn "World"
 

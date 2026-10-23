@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #Attributes #ReqNOMT 
+// #Regression #Conformance #TypeInference #Attributes #ReqNOMT
 // The Expects here is an artifact to make our automation happy.
 // It actually refers to E_Module02.fs
 //<Expects id="FS0039" span="(10,22-10,24)" status="error">The type 'C2' is not defined</Expects>
@@ -19,7 +19,7 @@ namespace XX.YY
                   end
       type G2<'a> = class
                     end
- 
+
 namespace XX
       type T1 = decimal []
       type C1() = class

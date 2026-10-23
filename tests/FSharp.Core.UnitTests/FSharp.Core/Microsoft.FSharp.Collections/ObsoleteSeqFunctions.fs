@@ -22,7 +22,7 @@ type ObsoleteSeqFunctions() =
            CheckThrowsArgumentException (fun () -> Seq.nth i (seq { 10 .. 20 }) |> ignore)
 
          // integer Seq
-        let resultInt = Seq.nth 3 (seq { 10..20 }) 
+        let resultInt = Seq.nth 3 (seq { 10..20 })
         Assert.AreEqual(13, resultInt)
 
         // string Seq
@@ -33,7 +33,7 @@ type ObsoleteSeqFunctions() =
         CheckThrowsArgumentException(fun () -> Seq.nth 0 (Seq.empty : seq<decimal>) |> ignore)
 
         // null Seq
-        let nullSeq:seq<'a> = null 
+        let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.nth 3 nullSeq |> ignore)
 
         ()

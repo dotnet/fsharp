@@ -1,9 +1,9 @@
-// #Regression #Conformance #DeclarationElements #LetBindings 
+// #Regression #Conformance #DeclarationElements #LetBindings
 
 
 // FSB 1124, Implement constant literals
 
-// Test the ability to define literals, which we can validate by using attributes 
+// Test the ability to define literals, which we can validate by using attributes
 // since only const literals are allowable on attribute constructors.
 
 type EnumType =
@@ -12,8 +12,8 @@ type EnumType =
 
 type CustomAttrib(a:int, b:string, c:float, d:EnumType) =
     inherit System.Attribute()
-    
-[<Literal>]    
+
+[<Literal>]
 let lit01 = 42
 
 [<Literal>]
@@ -50,7 +50,7 @@ let lit11 = lit10
 [<CustomAttrib(lit01, lit02, lit03, lit04)>]
 type SomeClass() =
     override this.ToString() = "SomeClass"
-  
+
 [<System.ObsoleteAttribute("fail" + "me")>]
 let foo1 x = ()
 
@@ -78,7 +78,7 @@ type EnumInt64 = E = 1L
 [<Literal>]
 let valueOfEnumInt64 : EnumInt64 = LanguagePrimitives.EnumOfValue 1L
 
-(* why doesn't this work? 
+(* why doesn't this work?
 match "ab" with
 | ("a" + "b") -> ()
 | _ -> failwith "Bad pattern match"

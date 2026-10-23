@@ -33,7 +33,7 @@ type InterfaceTargetAttribute() =
 [<CustomClass>]
 [<InterfaceTarget>]
 [<CustomStruct>]
-type UnionCase = 
+type UnionCase =
     | UnionCase of int
     | UnionCase2 of string
 
@@ -41,7 +41,7 @@ type UnionCase =
 [<InterfaceTarget>]
 [<CustomStruct>]
 [<Struct>]
-type UnionCase2 = 
+type UnionCase2 =
     | UnionCase of a: int * b: int
     | UnionCase2 of c: string * d: string
 

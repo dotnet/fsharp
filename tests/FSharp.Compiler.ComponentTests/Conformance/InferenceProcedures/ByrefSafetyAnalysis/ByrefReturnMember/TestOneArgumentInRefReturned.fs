@@ -2,10 +2,10 @@ open Prelude
 
 module TestOneArgumentInRefReturned =
 
-    type C() = 
+    type C() =
         static member M (x:inref<int>) = &x
 
-    let test() = 
+    let test() =
         let mutable r1 = 1
         let addr = &C.M (&r1)
         let x = addr + 1

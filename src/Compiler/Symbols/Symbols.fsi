@@ -66,6 +66,8 @@ type FSharpDisplayContext =
 
     member WithShortTypeNames: bool -> FSharpDisplayContext
 
+    member WithNullnessAnnotations: bool -> FSharpDisplayContext
+
     /// Causes type signatures to be formatted with prefix-style generic parameters,
     /// for example `list<int>`.
     member WithPrefixGenericParameters: unit -> FSharpDisplayContext

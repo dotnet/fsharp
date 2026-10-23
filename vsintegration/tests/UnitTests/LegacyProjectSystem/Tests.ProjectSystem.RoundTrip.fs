@@ -12,14 +12,14 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-type RoundTrip() = 
+type RoundTrip() =
     inherit TheTests()
-    
+
     /////////////////////////////////
     // project helpers
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
-    
+
     member this.``FsprojRoundtrip.PositiveTest``(origItems : MSBuildItems, expectedItems : MSBuildItems) =
         // test that opening with origItems and saving yields expectedItems
         this.MakeProjectAndDoWithProjectFile([], [], origItems.ToString(), (fun project fileName ->
@@ -87,7 +87,7 @@ type RoundTrip() =
     [<Fact>]
     member public this.``FsprojRoundTrip.EmptyFoldersArePreservedWhenRestIsLegalButNotIdempotent``() =
         let origItems = [CompileItem @"bar.fs"
-                         FolderItem @"A\Empty1\"        
+                         FolderItem @"A\Empty1\"
                          FolderItem @"A\B\"              // will get removed
                          CompileItem @"A\B\C\foo.fs"
                          FolderItem @"A\B\Empty2\"
@@ -147,4 +147,4 @@ type RoundTrip() =
                                   FolderItem @"A\"           // <Folder> must be before anything below it
                                   CompileItem @"bar.fs"]
         this.``Fsproj.NegativeTest`` items
-        
+

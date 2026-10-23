@@ -16,9 +16,9 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-type MultiTargeting() = 
+type MultiTargeting() =
     inherit TheTests()
-    
+
     // Multitargeting tests.
     // For these test cases, we basically test adding a reference and checking the icon state.
     // It's worth pointing out that while we need a valid assembly, the version of the assembly
@@ -63,14 +63,14 @@ type MultiTargeting() =
             let ref = l.[0]
             Assert.Equal(true, ref.CanShowDefaultIcon())
         )
-        
+
     [<Fact>]
     member public this.``Multitargeting.DetermineRuntimeAndSKU`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
             let refLibPath = this.prepTest(projFile)
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
-            
+
             let validate (fn : System.Runtime.Versioning.FrameworkName) eR eS =
                 let (runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
                 Assert.Equal(eR, runtime)
@@ -78,7 +78,7 @@ type MultiTargeting() =
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))) "v4.0" ".NETFramework,Version=v4.0"
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(2, 0))) "v2.0.50727" null
         )
-        
+
     [<Fact>]
     member public this.``Multitargeting.AppConfigNoStartupNode`` () =
         let root = XElement.Parse("<Configuration></Configuration>")
@@ -103,7 +103,7 @@ type MultiTargeting() =
     [<Fact>]
     member public this.``Multitargeting.AppConfigVersionExistsRemoveSku`` () =
         let root = XElement.Parse("<Configuration><startup><supportedRuntime version=\"version\" sku=\"oldsku\" /></startup></Configuration>")
-        let dirty = LangConfigFile.PatchUpXml(root, "version", null) 
+        let dirty = LangConfigFile.PatchUpXml(root, "version", null)
         Assert.True(dirty)
         Assert.True(root.ToString().Contains("<supportedRuntime version=\"version\" />"))
 
@@ -146,10 +146,10 @@ type MultiTargeting() =
     member public this.``Multitargeting.AddAppConfigIfRetargetTo40Full`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             let sp, ccn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()
-            
+
             // add mock service for SLocalRegistry so that CreateInstance on it will return a text buffer
             sp.AddService (typeof<SLocalRegistry>, box(VsMocks.vsLocalRegistry (fun () -> VsMocks.Vs.MakeTextLines())), false)
-            
+
             let refLibPath = this.prepTest(projFile)
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             let fn = new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))

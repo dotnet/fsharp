@@ -1,4 +1,4 @@
-// #Regression #FSharpQA #Diagnostics  
+// #Regression #FSharpQA #Diagnostics
 // Regression for 4858
 //<Expects status="error" id="FS0251" span="(12,11-12,15)">Invalid member signature encountered because of an earlier error</Expects>
 //<Expects status="error" id="FS0767" span="(12,11-12,15)">The member 'Text' does not correspond to any abstract or virtual method available to override or implement</Expects>
@@ -6,7 +6,7 @@
 
 type T() = class end
 
-let form = 
+let form =
     { new T()
       with
           Text="Hej"

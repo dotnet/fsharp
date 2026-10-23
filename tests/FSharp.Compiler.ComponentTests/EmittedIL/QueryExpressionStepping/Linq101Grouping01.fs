@@ -10,7 +10,7 @@ let digits = [ "zero"; "one"; "two"; "three"; "four"; "five"; "six"; "seven"; "e
 let numbers = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
 
 let numberGroups =
-    query {       
+    query {
         for n in numbers do
         groupValBy n (n % 5) into g
         select (g.Key, g.ToArray())

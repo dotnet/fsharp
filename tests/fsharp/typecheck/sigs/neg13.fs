@@ -1,7 +1,7 @@
 module Neg13
 // check that a decent error is given when a setter is too polymorphic
 type Gaussian1D =
-   class 
+   class
       member x.Feet with set(v) = failwith ""
    end
 
@@ -44,21 +44,21 @@ type Ry = A | B
 
 
 [<StructuralEquality; NoComparison>]
-type Ru = 
-    | A 
+type Ru =
+    | A
     | B
-    with 
+    with
         override x.Equals(y) = false
     end
 
 
 [<StructuralEquality; NoComparison>]
-type Rv = 
-    | A 
+type Rv =
+    | A
     | B
-    with 
+    with
         override x.Equals(y) = false
-        interface System.IComparable with 
+        interface System.IComparable with
             member x.CompareTo(y) = 0
         end
     end

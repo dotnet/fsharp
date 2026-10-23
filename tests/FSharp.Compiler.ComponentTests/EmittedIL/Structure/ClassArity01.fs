@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 
 
 // Verify the generation of class function arity
@@ -59,7 +59,7 @@ module Tester =
         |> getType "Test.AClassType"
         |> getMethod "Params1b"
         |> should takeParams [ typeof<int>; typeof<int> ]
-        
+
         System.Reflection.Assembly.GetExecutingAssembly()
         |> getType "Test.AClassType"
         |> getMethod "Params1c"
@@ -77,5 +77,5 @@ module Tester =
 
 
     with
-    | e -> printfn "Unhandled Exception: %s" e.Message 
+    | e -> printfn "Unhandled Exception: %s" e.Message
            raise (Exception($"Oops: {e}"))

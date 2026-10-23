@@ -5,7 +5,7 @@
 open System
 open System.Threading.Tasks
 
-type C() = 
+type C() =
     static member M1([<ParamArray>] arg: System.Action []) = ()
     static member M2([<ParamArray>] arg: System.Func<int> []) = ()
     member x.M3([<ParamArray>] arg: System.Action []) = ()

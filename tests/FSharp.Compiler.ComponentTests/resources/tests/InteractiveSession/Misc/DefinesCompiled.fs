@@ -1,9 +1,9 @@
-// #NoMT #FSI 
+// #NoMT #FSI
 
 
 // Verify COMPILED is defined for all compiled .fs files
 
-let test1 = 
+let test1 =
     #if COMPILED
     1
     #else
@@ -11,7 +11,7 @@ let test1 =
     #endif
 
 // INTERACTIVE should NOT be defined
-let test2 = 
+let test2 =
     #if INTERACTIVE
     0
     #else

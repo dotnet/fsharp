@@ -1,4 +1,4 @@
-// #Conformance #Constants 
+// #Conformance #Constants
 // Constant expressions
 // This is the example quoted from the specs
 // Verification:
@@ -8,5 +8,5 @@
 
 let v = 3y           // sbyte
 let check(x:sbyte) = true
- 
+
 exit (if check(v) then 0 else 1)

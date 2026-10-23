@@ -3,5 +3,5 @@ module Module
 
 type MyClass() =
     do printfn "Initializing"
-    module M = 
+    module M =
         let helper = 42

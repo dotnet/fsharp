@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records #ReqNOMT 
+// #Regression #Conformance #TypesAndModules #Records #ReqNOMT
 // Regression test for FSHARP1.0:5223
 // Overloading of ToString()
 

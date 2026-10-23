@@ -7,6 +7,6 @@ type internal ResourceDisplayNameAttribute(resName) =
 
 type internal ResourceDescriptionAttribute(resName) =
     inherit System.ComponentModel.DescriptionAttribute(SRProperties.GetString(resName))
-        
+
 type internal ResourceCategoryAttribute(resName) =
     inherit System.ComponentModel.CategoryAttribute(SRProperties.GetString(resName))

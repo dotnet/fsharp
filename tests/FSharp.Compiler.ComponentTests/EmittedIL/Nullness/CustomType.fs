@@ -3,7 +3,7 @@ module rec MyTestModule
 type MaybeString = string | null
 type MaybeMyCustomType = (MyCustomType | null)
 
-type MyCustomType (x: MaybeString, y: string) = 
+type MyCustomType (x: MaybeString, y: string) =
 
     static let mutable uglyGlobalMutableString : string = ""
     static let mutable uglyGlobalMutableNullableString : MaybeString = null

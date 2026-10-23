@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #ByRef 
+// #Conformance #TypeInference #ByRef
 open System
 
 let testFunction() =

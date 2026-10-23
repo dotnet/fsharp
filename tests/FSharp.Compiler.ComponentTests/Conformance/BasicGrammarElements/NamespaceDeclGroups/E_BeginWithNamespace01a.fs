@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Namespaces 
+// #Regression #Conformance #TypesAndModules #Namespaces
 // Regression test for FSHARP1.0:5354
 // Namespace fragment warning should not underlines the entire file in blue
 //<Expects status="error" span="(6,1,7,1)" id="FS0222">Files in libraries or multiple-file applications must begin with a namespace or module declaration, e\.g\. 'namespace SomeNamespace\.SubNamespace' or 'module SomeNamespace\.SomeModule'\. Only the last source file of an application may omit such a declaration\.$</Expects>

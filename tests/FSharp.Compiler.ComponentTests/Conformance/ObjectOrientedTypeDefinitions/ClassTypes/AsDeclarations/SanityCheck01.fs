@@ -1,7 +1,7 @@
-// #Conformance #ObjectOrientedTypes #Classes 
+// #Conformance #ObjectOrientedTypes #Classes
 
 
-// Verify the use of 'as' in classes with implicit constructors to 
+// Verify the use of 'as' in classes with implicit constructors to
 // access the 'this' pointer
 
 type Point(x : float, y : float) as otherThisPtr =

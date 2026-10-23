@@ -15,7 +15,7 @@ module ComputedCollections =
         |> verifyILBaseline
 
     [<Theory; FileInlineData("Int32RangeArrays.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
-    let Int32RangeArrays_fs compilation = 
+    let Int32RangeArrays_fs compilation =
         compilation
         |> getCompilation
         |> verifyCompilation
@@ -82,6 +82,12 @@ module ComputedCollections =
 
     [<Theory; FileInlineData("ForXInSeq_ToList.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
     let ``ForXInSeq_ToList_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("StructSeqCollectToList.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
+    let ``StructSeqCollectToList_fs`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation

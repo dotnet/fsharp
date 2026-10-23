@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 
 
 // FSB 1552, Internal error: badly formed Item_ctor_group.
@@ -6,7 +6,7 @@
 //<Expects id="FS0039" span="(22,26-22,31)" status="error">The value or constructor 'White' is not defined</Expects>
 //<Expects id="FS0039" span="(23,26-23,31)" status="error">The value or constructor 'Empty' is not defined</Expects>
 
-// Unlike discriminated unions, Enums need to be fully qualified. 
+// Unlike discriminated unions, Enums need to be fully qualified.
 
 open System
 
@@ -18,8 +18,8 @@ type Stone =
     | OffBoard  = 0b1000
 
 let blackStoneList = [
-                        [Black]; 
-                        [White]; 
+                        [Black];
+                        [White];
                         [Empty]
                      ]
 

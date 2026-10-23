@@ -1,6 +1,6 @@
 module Module
 
-try 
+try
 
 module Nested =
     ()

@@ -432,6 +432,9 @@ type MethInfo =
     /// Indicates if this is an IL method.
     member IsILMethod: bool
 
+    /// Indicates if the method has the AllowOverloadOnReturnType attribute.
+    member HasAllowOverloadOnReturnType: bool
+
     /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
     member IsUnionCaseTester: bool
 
@@ -551,6 +554,9 @@ type MethInfo =
 
     /// Apply a type instantiation to a method info, i.e. apply the instantiation to the enclosing type.
     member Instantiate: amap: ImportMap * m: range * inst: TyparInstantiation -> MethInfo
+
+    /// Remap enclosing types and F# value identities, preserving the underlying method metadata.
+    member Remap: remapType: (TType -> TType) * remapValRef: (ValRef -> ValRef) -> MethInfo
 
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.

@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Records 
+// #Conformance #TypesAndModules #Records
 
 
 
@@ -10,11 +10,11 @@ type RecordType = { X : int }
 let test1 = (box { X = 1} :?> RecordType)
 
 // Will fail, the dynamic type cast will throw
-let testPassed = 
+let testPassed =
     try
         let _ = (box null :?> RecordType)
         false
-    with 
+    with
     :? System.NullReferenceException
         -> true
 

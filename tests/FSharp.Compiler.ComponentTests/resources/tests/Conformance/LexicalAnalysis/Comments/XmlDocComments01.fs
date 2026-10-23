@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // Verify no syntax errors or problems when using XML doc comments
@@ -18,7 +18,7 @@ type DU = A | B
 type R = { F : DU }
 
 /// Class
-type C = 
+type C =
     class
     end
 

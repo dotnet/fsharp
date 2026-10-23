@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.Detuple
 
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
@@ -173,6 +174,9 @@ module GlobalUsageAnalysis =
 
     type accessor = TupleGet of int * TType list
 
+    let valStampEquality =
+        HashIdentity.FromFunctions (fun (v: Val) -> int v.Stamp) (fun (v1: Val) v2 -> v1.Stamp = v2.Stamp)
+
     /// Expr information.
     /// For each v,
     ///  (a) log it's usage site context = accessors // APP type-inst args
@@ -181,7 +185,7 @@ module GlobalUsageAnalysis =
     type Results =
         {
             ///  v -> context / APP inst args
-            Uses: Zmap<Val, (accessor list * TType list * Expr list) list>
+            Uses: Dictionary<Val, (accessor list * TType list * Expr list) list>
 
             /// v -> binding repr
             Defns: Zmap<Val, Expr>
@@ -197,8 +201,9 @@ module GlobalUsageAnalysis =
             IterationIsAtTopLevel: bool
         }
 
-    let z0 =
-        { Uses = Zmap.empty valOrder
+    /// New instance per file: Uses is mutable and implementation files are optimized in parallel.
+    let mkInitialResults () =
+        { Uses = Dictionary<Val, _>(valStampEquality)
           Defns = Zmap.empty valOrder
           RecursiveBindings = Zmap.empty valOrder
           DecisionTreeBindings = Zset.empty valOrder
@@ -208,11 +213,8 @@ module GlobalUsageAnalysis =
     /// Log the use of a value with a particular tuple shape at a callsite
     /// Note: this routine is called very frequently
     let logUse (f: Val) tup z =
-        { z with
-            Uses =
-                match Zmap.tryFind f z.Uses with
-                | Some sites -> Zmap.add f (tup :: sites) z.Uses
-                | None -> Zmap.add f [ tup ] z.Uses }
+        z.Uses.BagAdd(f, tup)
+        z
 
     /// Log the definition of a binding
     let logBinding z (isInDTree, v) =
@@ -342,7 +344,7 @@ module GlobalUsageAnalysis =
 
     let GetUsageInfoOfImplFile g expr =
         let folder = UsageFolders g
-        let z = FoldImplFile folder z0 expr
+        let z = FoldImplFile folder (mkInitialResults ()) expr
         z
 
 let internalError str = raise (Failure(str))
@@ -610,9 +612,9 @@ let decideFormalSuggestedCP g z tys vss =
             TupleTS tss
 
     let trimTsByVal z ts v =
-        match Zmap.tryFind v z.Uses with
-        | None -> UnknownTS (* formal has no usage info, it is unused *)
-        | Some sites ->
+        match z.Uses.TryGetValue v with
+        | false, _ -> UnknownTS (* formal has no usage info, it is unused *)
+        | true, sites ->
             let trim ts (accessors, _inst, _args) = trimTsByAccess accessors ts
             List.fold trim ts sites
 
@@ -703,9 +705,10 @@ let determineTransforms (scope: PerFileNamingScope) g (z: Results) =
                     decideTransform scope g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
     let vtransforms =
-        Zmap.toList z.Uses
-        |> List.sortBy (fst >> valSourceOrderKey)
-        |> List.choose (fun (f, sites) -> selectTransform f sites)
+        z.Uses
+        |> Seq.sortBy (fun (KeyValue(f, _)) -> struct (valSourceOrderKey f, f.Stamp))
+        |> Seq.choose (fun (KeyValue(f, sites)) -> selectTransform f sites)
+        |> List.ofSeq
     let vtransforms = Zmap.ofList valOrder vtransforms
     vtransforms
 

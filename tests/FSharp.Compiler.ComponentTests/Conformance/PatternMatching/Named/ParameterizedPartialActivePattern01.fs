@@ -1,21 +1,21 @@
-// #Regression #Conformance #PatternMatching #ActivePatterns 
-// Verify parameterized partial active patterns which return unit don't force you to 
+// #Regression #Conformance #PatternMatching #ActivePatterns
+// Verify parameterized partial active patterns which return unit don't force you to
 // bind the result.
 // FSB 3502
 
 
 let (|DivisibleByTwo|_|) x =
-    if x % 2 = 0 
+    if x % 2 = 0
     then Some()
     else None
 
 let (|DivisibleByX|_|) x y =
-    if y % x = 0 
+    if y % x = 0
     then Some()
     else None
 
 // Without this fix, you'd have to bind the result of 'DivisibleByX' so you'd write DivisibleByX 3 (), which is lame.
-let divisibleBy x =     
+let divisibleBy x =
     match x with
     | DivisibleByTwo & DivisibleByX 3 & DivisibleByX 4 -> [2; 3; 4]
     | DivisibleByTwo &                  DivisibleByX 4 -> [2;    4]

@@ -1,12 +1,12 @@
 // Expected: No warning - module not nested
 module Module
 
-type A = 
+type A =
     | CaseA of int
     | CaseB of string
-    
-module B = 
+
+module B =
     let x = 42
-    
-type C = 
+
+type C =
     { Field: int }

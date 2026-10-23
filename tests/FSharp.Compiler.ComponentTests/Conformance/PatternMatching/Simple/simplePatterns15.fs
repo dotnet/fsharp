@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 open System
@@ -9,7 +9,7 @@ let abbreviate (ex:#obj) =
     | :? ArgumentException          -> "ae"
     | :? Exception                  -> "e"
     | _                             -> ""
-    
+
 if abbreviate (new NotImplementedException "") <> "nyi" then exit 1
 if abbreviate (new ArgumentException "") <> "ae" then exit 1
 if abbreviate (new Exception "") <> "e" then exit 1

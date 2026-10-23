@@ -1,13 +1,13 @@
 module Neg41Module
 
-id (fun x -> x) id 
+id (fun x -> x) id
  ()
 let x = 1
 
 open System
 open System.Reflection
 
-type MyType() = 
+type MyType() =
     inherit Type()
     override this.GUID : Guid= failwith "Not implemented"
     override this.InvokeMember(name: string, invokeAttr: BindingFlags, binder: Binder, target: obj, args: obj [], modifiers: ParameterModifier [], culture: System.Globalization.CultureInfo, namedParameters: string []) : obj = failwith "Not implemented"
@@ -37,7 +37,7 @@ type MyType() =
     override this.IsPointerImpl() : bool= failwith "Not implemented"
     override this.IsPrimitiveImpl() : bool= failwith "Not implemented"
     override this.IsCOMObjectImpl() : bool= failwith "Not implemented"
-    override this.GetElementType() : Type= failwith "Not implemented" 
+    override this.GetElementType() : Type= failwith "Not implemented"
     override this.HasElementTypeImpl() : bool= failwith "Not implemented"
     override this.UnderlyingSystemType : Type = failwith "Not implemented"
     override this.Name : string = failwith "Not implemented"

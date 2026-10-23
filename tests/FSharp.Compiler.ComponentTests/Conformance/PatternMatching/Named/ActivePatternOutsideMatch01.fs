@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 // Verify active patterns can be used outside of a match statement
 
 // This is really needed to make sure the test runs fine on non-ENU boxes!

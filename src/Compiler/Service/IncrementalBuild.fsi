@@ -28,8 +28,7 @@ type internal FrameworkImportsCacheKey =
         assemblyName: string *
         targetFrameworkDirectories: string list *
         fsharpBinaries: string *
-        langVersion: decimal *
-        checkNulls: bool
+        importReuseKey: ImportReuseKey
 
     interface ICacheKey<string, FrameworkImportsCacheKey>
 
@@ -90,6 +89,9 @@ type internal TcInfoExtras =
 
         /// Result of checking most recent file, if any
         latestImplFile: CheckedImplFile option
+
+        /// Inferred signature of the most recent file, before any signature file is applied
+        latestOwnSigForFile: ModuleOrNamespaceType option
 
         /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
         itemKeyStore: ItemKeyStore option
@@ -291,9 +293,11 @@ type internal IncrementalBuilder =
         enablePartialTypeChecking: bool *
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
+        shareImportedAssemblies: bool *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool ->
+        useChangeNotifications: bool *
+        getReferenceStamp: (string -> DateTime) voption ->
             Async<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

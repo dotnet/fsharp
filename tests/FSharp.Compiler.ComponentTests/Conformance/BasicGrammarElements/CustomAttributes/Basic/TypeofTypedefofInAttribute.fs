@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 
 
 // FSB 3565, verify typeof<_> and typedefof<_> can be used in
@@ -7,18 +7,18 @@
 
 open System
 
-   
+
 type CustomAttribute(typeofResult : Type, typedefofResult : Type) =
     inherit System.Attribute()
     member this.TypeofResult    = typeofResult
     member this.TypedefofResult = typedefofResult
-    
+
 [<CustomAttribute(typeof<list<int>>, typedefof<list<int>>)>]
-type SomeClass() = 
+type SomeClass() =
     class
     end
 
-let runTest() = 
+let runTest() =
     let testObj = new SomeClass()
     let itsAttributes = testObj.GetType().GetCustomAttributes(false)
 

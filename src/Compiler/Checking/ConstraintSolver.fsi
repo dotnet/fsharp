@@ -16,6 +16,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
+val constraintResolutionPriority: TcGlobals -> ImportMap -> range -> formalTy: TType * actualTy: TType -> int
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -224,6 +229,8 @@ type ConstraintSolverState =
         /// The function used to freshen values we encounter during trait constraint solving
         TcVal: TcValF
 
+        StackGuard: StackGuard
+
         /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
         /// That is, there will be one entry in this table for each free type variable in
         /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
@@ -236,7 +243,14 @@ type ConstraintSolverState =
         /// Checks to run after all inference is complete.
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+        /// Union attributes awaiting a retry after the recursive group is established.
+        mutable UnionsWithDeferredAttributes: Set<Stamp>
+
+        /// Deferred union constraints not yet checked after their attributes resolved.
+        mutable DeferredUnionNullnessChecks: (TType * range) list
+
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+
     }
 
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
@@ -253,11 +267,21 @@ type ConstraintSolverState =
 val BakedInTraitConstraintNames: Set<string>
 
 [<Sealed; NoEquality; NoComparison>]
-type Trace
+type Trace =
+    static member New: unit -> Trace
+    member Undo: unit -> unit
 
 type OptionalTrace =
     | NoTrace
     | WithTrace of Trace
+
+    member Exec: (unit -> unit) -> (unit -> unit) -> unit
+    member AddFromReplay: Trace -> unit
+    member CollectThenUndoOrCommit: ('T -> bool) -> (Trace -> 'T) -> 'T
+
+val CollectThenUndo: (Trace -> 'T) -> 'T
+
+val FilterEachThenUndo: (Trace -> 'T -> OperationResult<'U>) -> 'T list -> ('T * exn list * Trace * 'U) list
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
@@ -354,7 +378,17 @@ val CodegenWitnessExprForTraitConstraint:
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<bool>
 
-/// Generate the arguments passed when using a generic construct that accepts traits witnesses
+/// Retain selected solutions from the actual type arguments before solving fresh constraints.
+val CodegenWitnessesForTyparInstWith:
+    TcValF ->
+    TcGlobals ->
+    ImportMap ->
+    range ->
+    Typars ->
+    TType list ->
+    (TraitConstraintInfo -> Choice<TraitConstraintInfo, Expr> -> 'T) ->
+        OperationResult<'T list>
+
 val CodegenWitnessesForTyparInst:
     TcValF ->
     TcGlobals ->
@@ -381,6 +415,17 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen.
+/// earlierSignatures carries the signatures of preceding same-assembly files so their extension
+/// members are visible to trait-witness generation using the same val identity code generation binds.
+val CreateImplFileTraitContext:
+    TcGlobals -> ModuleOrNamespaceContents list -> ModuleOrNamespaceType list -> CcuThunk list -> TraitContext
+
+/// Preserve the selected witness retained by the application's unstripped support types.
+val GetTraitConstraintForCodegen: g: TcGlobals -> traitInfo: TraitConstraintInfo -> TraitConstraintInfo
 
 val SolveTyparsEqualTypes:
     g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

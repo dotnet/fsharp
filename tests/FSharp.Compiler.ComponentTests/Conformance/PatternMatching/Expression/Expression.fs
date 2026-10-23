@@ -15,7 +15,7 @@ module Expression =
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail 
+        |> shouldFail
         |> withSingleDiagnostic (Warning 25, Line 7, Col 11, Line 7, Col 12, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).")
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
@@ -61,7 +61,7 @@ module Expression =
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail 
+        |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 14, Col 10, Line 14, Col 18, "Incomplete pattern matches on this expression. For example, the value '\"a\"' may indicate a case not covered by the pattern(s).")
             (Warning 25, Line 18, Col 10, Line 18, Col 18, "Incomplete pattern matches on this expression. For example, the value '0.0' may indicate a case not covered by the pattern(s).")
@@ -79,7 +79,7 @@ module Expression =
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail 
+        |> shouldFail
         |> withDiagnostics [
             (Warning 104, Line 14, Col 10, Line 14, Col 18, "Enums may take values outside known cases. For example, the value 'enum<T> (2)' may indicate a case not covered by the pattern(s).")
             (Warning 25, Line 18, Col 10, Line 18, Col 18, "Incomplete pattern matches on this expression. For example, the value 'T.Y' may indicate a case not covered by the pattern(s).")
@@ -97,7 +97,7 @@ module Expression =
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail 
+        |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 11, Col 9, Line 11, Col 10, "Incomplete pattern matches on this expression. For example, the value '1' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.")
         ]
@@ -131,7 +131,7 @@ module Expression =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Expression)
     [<Theory; FileInlineData("whenGuardss02.fs")>]
     let ``Expression - whenGuardss02_fs - --test:ErrorRanges`` compilation =

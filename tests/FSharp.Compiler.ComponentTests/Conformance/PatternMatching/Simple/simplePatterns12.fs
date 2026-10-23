@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 type Person = { Name : string; Age : int }
@@ -7,7 +7,7 @@ type Classification =
     | Child
     | Adult
     | Senior
-    
+
 let getClass person =
     match person with
     | { Name = _; Age = age} when age < 12 -> Child

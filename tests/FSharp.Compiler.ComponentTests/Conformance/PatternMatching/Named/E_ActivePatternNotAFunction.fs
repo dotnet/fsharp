@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #ActivePatterns 
+// #Regression #Conformance #PatternMatching #ActivePatterns
 // Regression test for FSHARP1.0:5590
 //<Expects status="error" span="(7,6-7,11)" id="FS1209">Active pattern '|A|B|' is not a function$</Expects>
 //<Expects status="error" span="(8,6-8,9)" id="FS1209">Active pattern '|C|' is not a function$</Expects>

@@ -11,7 +11,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Util
 
 module internal Hooks =
-    let fsiServiceCreatorCallback(package:Package) = 
+    let fsiServiceCreatorCallback(package:Package) =
         new ServiceCreatorCallback(fun container typ ->
             if typ = typeof<FsiLanguageService> then
                 let service = new FsiLanguageService()
@@ -22,12 +22,12 @@ module internal Hooks =
         )
 
     // This should be called from the Package ctor, to do unsited initialisation.
-    let fsiConsoleWindowPackageCtorUnsited (this:Package) =        
+    let fsiConsoleWindowPackageCtorUnsited (this:Package) =
 
         // This seems an alternative to the boiler plate proffering above. Gives delayed creation?
         let callback  = fsiServiceCreatorCallback(this)
         let container = this :> IServiceContainer
-        container.AddService(typeof<FsiLanguageService>, callback, true)       
+        container.AddService(typeof<FsiLanguageService>, callback, true)
         ()
 
     // Show the ToolWindow, e.g. as a result of the Menu button click.
@@ -40,12 +40,12 @@ module internal Hooks =
             if null = window || null = window.Frame then
                 raise (new NotSupportedException(VFSIstrings.SR.cannotCreateToolWindow()))
             let windowFrame = window.Frame :?> IVsWindowFrame
-            windowFrame.Show() |> throwOnFailure0            
+            windowFrame.Show() |> throwOnFailure0
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(e2.ToString()) |> ignore)
 
     let private queryFSIToolWindow tryOpen (this:Package) (f:FsiToolWindow -> 't) (defaultValue:'t) =
-        try            
+        try
             let window = this.FindToolWindow(typeof<FsiToolWindow>, 0, true)
             let windowFrame = window.Frame :?> IVsWindowFrame
             if tryOpen && windowFrame.IsVisible() <> VSConstants.S_OK then
@@ -75,15 +75,15 @@ module internal Hooks =
         queryFSIToolWindow false this (fun window -> window.GetDebuggerState()) FsiDebuggerState.AttachedNotToFSI
 
     // FxCop request this function not be public
-    let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
-        let command = sender :?> OleMenuCommand       
-        if command <> null then                        
-            let looksLikeFSharp,haveSelection = 
+    let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =
+        let command = sender :?> OleMenuCommand
+        if command <> null then
+            let looksLikeFSharp,haveSelection =
                 try // catch all exceptions from this block
                     let providerGlobal   = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
-                    let provider         = new ServiceProvider(providerGlobal) :> System.IServiceProvider                    
-                    let selectionMonitor = provider.GetService(typeof<IVsMonitorSelection>) :?> IVsMonitorSelection                    
-                    // 
+                    let provider         = new ServiceProvider(providerGlobal) :> System.IServiceProvider
+                    let selectionMonitor = provider.GetService(typeof<IVsMonitorSelection>) :?> IVsMonitorSelection
+                    //
                     // Gets the currently selected Document Frame and projects out the DocView as a CodeWindow.
                     // This has TextLines and a LanguageService guid.
                     // Is this the fsharp language service guid? (the source file one, not the FSI one).
@@ -92,8 +92,8 @@ module internal Hooks =
                     let docView    = docFrame.GetProperty(int __VSFPROPID.VSFPROPID_DocView) |> throwOnFailure1
                     let codeWindow = docView :?> IVsCodeWindow
                     // Does the CodeWindow have an F# language service?
-                    let looksLikeFSharp = 
-                        let textLines  = codeWindow.GetBuffer() |> throwOnFailure1                    
+                    let looksLikeFSharp =
+                        let textLines  = codeWindow.GetBuffer() |> throwOnFailure1
                         let langGuid   = textLines.GetLanguageServiceID() |> throwOnFailure1
                         langGuid = Guids.guidFsharpLanguageService
                     // Is there a selection? (only relevant if it looks like F#)
@@ -101,12 +101,12 @@ module internal Hooks =
                         looksLikeFSharp &&
                            (// do not proceed and get selection unless it's F#...
                             let textView   = codeWindow.GetPrimaryView() |> throwOnFailure1
-                            let res,text   = textView.GetSelectedText()                    
+                            let res,text   = textView.GetSelectedText()
                             res = VSConstants.S_OK && text <> "")
-                    looksLikeFSharp,haveFSharpSelection                         
+                    looksLikeFSharp,haveFSharpSelection
                 with
                     e -> false,false
-                    
+
             command.Supported  <- true
             command.Visible    <- looksLikeFSharp
             command.Enabled    <- true

@@ -1,4 +1,4 @@
-// #Regression #Misc 
+// #Regression #Misc
 // Verify warnings associated with top level expressions getting discarded
 
 //<Expects id="FS0020" status="warning" span="(9,1)">The result of this expression has type</Expects>

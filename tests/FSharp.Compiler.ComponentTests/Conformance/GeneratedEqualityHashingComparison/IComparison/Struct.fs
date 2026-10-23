@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 // Regression test for FSHARP1.0:5181
 
 // Struct

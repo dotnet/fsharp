@@ -1,9 +1,9 @@
 # 1 "fsyacclex.fsl"
- 
+
 (* (c) Microsoft Corporation 2005-2008.  *)
 
 module FsLexYacc.FsYacc.Lexer
-  
+
 open FsLexYacc.FsYacc.AST
 open FsLexYacc.FsYacc.Parser
 open System.Text
@@ -24,8 +24,8 @@ let clearBuf () = str_buf <- new System.Text.StringBuilder()
 
 
 # 26 "fsyacclex.fs"
-let trans : uint16[] array = 
-    [| 
+let trans : uint16[] array =
+    [|
     (* State 0 *)
      [| 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 2us; 6us; 6us; 3us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 7us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 4us; 6us; 6us; 6us; 6us; 1us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 6us; 5us; |];
     (* State 1 *)
@@ -288,343 +288,343 @@ let trans : uint16[] array =
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
     (* State 130 *)
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 130us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 130us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 129us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
-    |] 
+    |]
 let actions : uint16[] = [|65535us; 5us; 1us; 5us; 5us; 3us; 4us; 5us; 4us; 2us; 1us; 0us; 65535us; 5us; 1us; 2us; 5us; 3us; 4us; 5us; 3us; 2us; 0us; 65535us; 0us; 1us; 2us; 8us; 8us; 4us; 5us; 8us; 7us; 8us; 6us; 6us; 5us; 65535us; 65535us; 65535us; 3us; 2us; 65535us; 7us; 1us; 7us; 2us; 7us; 7us; 5us; 6us; 7us; 65535us; 65535us; 65535us; 4us; 3us; 3us; 2us; 1us; 0us; 65535us; 0us; 1us; 2us; 65535us; 22us; 17us; 11us; 12us; 13us; 14us; 15us; 16us; 22us; 17us; 18us; 22us; 21us; 22us; 23us; 19us; 20us; 20us; 17us; 16us; 15us; 17us; 17us; 17us; 10us; 0us; 1us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 9us; 65535us; 65535us; 65535us; 8us; 65535us; 65535us; 7us; 65535us; 65535us; 5us; 65535us; 65535us; 65535us; 4us; 65535us; 65535us; 65535us; 65535us; 6us; 65535us; 65535us; 65535us; 3us; 2us; 65535us; |]
 let _fslex_tables = FSharp.Text.Lexing.UnicodeTables.Create(trans,actions)
-let rec _fslex_dummy () = _fslex_dummy() 
+let rec _fslex_dummy () = _fslex_dummy()
 // Rule token
 and token  lexbuf =
   match _fslex_tables.Interpret(65,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 35 "fsyacclex.fsl"
-                         let p = lexbuf.StartPos in header p (new StringBuilder 100) lexbuf 
+                         let p = lexbuf.StartPos in header p (new StringBuilder 100) lexbuf
 # 301 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 36 "fsyacclex.fsl"
-                         PERCENT_PERCENT 
+                         PERCENT_PERCENT
 # 306 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 37 "fsyacclex.fsl"
-                                               typeDepth := 1; startPos := lexbuf.StartPos; clearBuf(); TOKEN (fs_type lexbuf) 
+                                               typeDepth := 1; startPos := lexbuf.StartPos; clearBuf(); TOKEN (fs_type lexbuf)
 # 311 "fsyacclex.fs"
           )
-  | 3 -> ( 
+  | 3 -> (
 # 38 "fsyacclex.fsl"
-                             TOKEN (None) 
+                             TOKEN (None)
 # 316 "fsyacclex.fs"
           )
-  | 4 -> ( 
+  | 4 -> (
 # 39 "fsyacclex.fsl"
-                            START 
+                            START
 # 321 "fsyacclex.fs"
           )
-  | 5 -> ( 
+  | 5 -> (
 # 40 "fsyacclex.fsl"
-                           PREC 
+                           PREC
 # 326 "fsyacclex.fs"
           )
-  | 6 -> ( 
+  | 6 -> (
 # 41 "fsyacclex.fsl"
-                                              typeDepth := 1; startPos := lexbuf.StartPos; clearBuf(); TYPE (match fs_type lexbuf with Some x -> x | None -> failwith "gettype") 
+                                              typeDepth := 1; startPos := lexbuf.StartPos; clearBuf(); TYPE (match fs_type lexbuf with Some x -> x | None -> failwith "gettype")
 # 331 "fsyacclex.fs"
           )
-  | 7 -> ( 
+  | 7 -> (
 # 42 "fsyacclex.fsl"
-                            LEFT 
+                            LEFT
 # 336 "fsyacclex.fs"
           )
-  | 8 -> ( 
+  | 8 -> (
 # 43 "fsyacclex.fsl"
-                             RIGHT 
+                             RIGHT
 # 341 "fsyacclex.fs"
           )
-  | 9 -> ( 
+  | 9 -> (
 # 44 "fsyacclex.fsl"
-                                NONASSOC 
+                                NONASSOC
 # 346 "fsyacclex.fs"
           )
-  | 10 -> ( 
+  | 10 -> (
 # 45 "fsyacclex.fsl"
-                            ERROR 
+                            ERROR
 # 351 "fsyacclex.fs"
           )
-  | 11 -> ( 
+  | 11 -> (
 # 46 "fsyacclex.fsl"
-                        LESS 
+                        LESS
 # 356 "fsyacclex.fs"
           )
-  | 12 -> ( 
+  | 12 -> (
 # 47 "fsyacclex.fsl"
-                        GREATER 
+                        GREATER
 # 361 "fsyacclex.fs"
           )
-  | 13 -> ( 
+  | 13 -> (
 # 48 "fsyacclex.fsl"
-                        SEMI 
+                        SEMI
 # 366 "fsyacclex.fs"
           )
-  | 14 -> ( 
+  | 14 -> (
 # 49 "fsyacclex.fsl"
-                        let p = lexbuf.StartPos in 
+                        let p = lexbuf.StartPos in
                         let buff = (new StringBuilder 100) in
                         // adjust the first line to get even indentation for all lines w.r.t. the left hand margin
                         buff.Append (String.replicate (lexbuf.StartPos.Column+1) " ")  |> ignore;
-                        code p buff lexbuf 
+                        code p buff lexbuf
 # 375 "fsyacclex.fs"
           )
-  | 15 -> ( 
+  | 15 -> (
 # 54 "fsyacclex.fsl"
-                                 token lexbuf 
+                                 token lexbuf
 # 380 "fsyacclex.fs"
           )
-  | 16 -> ( 
+  | 16 -> (
 # 55 "fsyacclex.fsl"
-                            newline lexbuf; token lexbuf 
+                            newline lexbuf; token lexbuf
 # 385 "fsyacclex.fs"
           )
-  | 17 -> ( 
+  | 17 -> (
 # 56 "fsyacclex.fsl"
-                                                 IDENT (lexeme lexbuf) 
+                                                 IDENT (lexeme lexbuf)
 # 390 "fsyacclex.fs"
           )
-  | 18 -> ( 
+  | 18 -> (
 # 57 "fsyacclex.fsl"
-                        BAR 
+                        BAR
 # 395 "fsyacclex.fs"
           )
-  | 19 -> ( 
+  | 19 -> (
 # 58 "fsyacclex.fsl"
-                         ignore(comment lexbuf); token lexbuf 
+                         ignore(comment lexbuf); token lexbuf
 # 400 "fsyacclex.fs"
           )
-  | 20 -> ( 
+  | 20 -> (
 # 59 "fsyacclex.fsl"
-                                       token lexbuf  
+                                       token lexbuf
 # 405 "fsyacclex.fs"
           )
-  | 21 -> ( 
+  | 21 -> (
 # 60 "fsyacclex.fsl"
-                        COLON 
+                        COLON
 # 410 "fsyacclex.fs"
           )
-  | 22 -> ( 
+  | 22 -> (
 # 61 "fsyacclex.fsl"
-                      unexpected_char lexbuf 
+                      unexpected_char lexbuf
 # 415 "fsyacclex.fs"
           )
-  | 23 -> ( 
+  | 23 -> (
 # 62 "fsyacclex.fsl"
-                        EOF  
+                        EOF
 # 420 "fsyacclex.fs"
           )
   | _ -> failwith "token"
 // Rule fs_type
 and fs_type  lexbuf =
   match _fslex_tables.Interpret(61,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 65 "fsyacclex.fsl"
                          incr typeDepth; appendBuf(lexeme lexbuf); fs_type lexbuf
 # 429 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 67 "fsyacclex.fsl"
-                     decr typeDepth; 
+                     decr typeDepth;
                      if !typeDepth = 0
-                     then Some(string str_buf) 
-                     else appendBuf(lexeme lexbuf); fs_type lexbuf 
+                     then Some(string str_buf)
+                     else appendBuf(lexeme lexbuf); fs_type lexbuf
 # 437 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 71 "fsyacclex.fsl"
-                       appendBuf(lexeme lexbuf); fs_type lexbuf 
+                       appendBuf(lexeme lexbuf); fs_type lexbuf
 # 442 "fsyacclex.fs"
           )
   | _ -> failwith "fs_type"
 // Rule header
 and header p buff lexbuf =
   match _fslex_tables.Interpret(42,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 74 "fsyacclex.fsl"
-                         HEADER (buff.ToString(), p) 
+                         HEADER (buff.ToString(), p)
 # 451 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 75 "fsyacclex.fsl"
-                            newline lexbuf; 
-                            ignore <| buff.Append System.Environment.NewLine; 
-                            header p buff lexbuf 
+                            newline lexbuf;
+                            ignore <| buff.Append System.Environment.NewLine;
+                            header p buff lexbuf
 # 458 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 79 "fsyacclex.fsl"
-                       ignore <| buff.Append (lexeme lexbuf); 
-                       header p buff lexbuf 
+                       ignore <| buff.Append (lexeme lexbuf);
+                       header p buff lexbuf
 # 464 "fsyacclex.fs"
           )
-  | 3 -> ( 
+  | 3 -> (
 # 82 "fsyacclex.fsl"
-                       ignore <| buff.Append (lexeme lexbuf); 
-                       header p buff lexbuf 
+                       ignore <| buff.Append (lexeme lexbuf);
+                       header p buff lexbuf
 # 470 "fsyacclex.fs"
           )
-  | 4 -> ( 
+  | 4 -> (
 # 85 "fsyacclex.fsl"
-                       ignore <| buff.Append (lexeme lexbuf); 
-                       header p buff lexbuf 
+                       ignore <| buff.Append (lexeme lexbuf);
+                       header p buff lexbuf
 # 476 "fsyacclex.fs"
           )
-  | 5 -> ( 
+  | 5 -> (
 # 88 "fsyacclex.fsl"
-                       ignore <| buff.Append (lexeme lexbuf); 
-                       ignore(codestring buff lexbuf); 
-                       header p buff lexbuf 
+                       ignore <| buff.Append (lexeme lexbuf);
+                       ignore(codestring buff lexbuf);
+                       header p buff lexbuf
 # 483 "fsyacclex.fs"
           )
-  | 6 -> ( 
+  | 6 -> (
 # 91 "fsyacclex.fsl"
-                        EOF 
+                        EOF
 # 488 "fsyacclex.fs"
           )
-  | 7 -> ( 
+  | 7 -> (
 # 92 "fsyacclex.fsl"
-                      ignore <| buff.Append(lexeme lexbuf).[0]; 
-                      header p buff lexbuf 
+                      ignore <| buff.Append(lexeme lexbuf).[0];
+                      header p buff lexbuf
 # 494 "fsyacclex.fs"
           )
   | _ -> failwith "header"
 // Rule code
 and code p buff lexbuf =
   match _fslex_tables.Interpret(23,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 95 "fsyacclex.fsl"
-                        CODE (buff.ToString(), p) 
+                        CODE (buff.ToString(), p)
 # 503 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 96 "fsyacclex.fsl"
-                        ignore <| buff.Append (lexeme lexbuf); 
-                        ignore(code p buff lexbuf); 
-                        ignore <| buff.Append "}"; 
-                        code p buff lexbuf 
+                        ignore <| buff.Append (lexeme lexbuf);
+                        ignore(code p buff lexbuf);
+                        ignore <| buff.Append "}";
+                        code p buff lexbuf
 # 511 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 100 "fsyacclex.fsl"
-                            newline lexbuf; 
-                            ignore <| buff.Append System.Environment.NewLine; 
-                            code p buff lexbuf 
+                            newline lexbuf;
+                            ignore <| buff.Append System.Environment.NewLine;
+                            code p buff lexbuf
 # 518 "fsyacclex.fs"
           )
-  | 3 -> ( 
+  | 3 -> (
 # 104 "fsyacclex.fsl"
-                       ignore <| buff.Append (lexeme lexbuf); 
-                       code p buff lexbuf 
+                       ignore <| buff.Append (lexeme lexbuf);
+                       code p buff lexbuf
 # 524 "fsyacclex.fs"
           )
-  | 4 -> ( 
+  | 4 -> (
 # 106 "fsyacclex.fsl"
-                         ignore <| buff.Append (lexeme lexbuf); 
-                         ignore(codestring buff lexbuf); 
-                         code p buff lexbuf 
+                         ignore <| buff.Append (lexeme lexbuf);
+                         ignore(codestring buff lexbuf);
+                         code p buff lexbuf
 # 531 "fsyacclex.fs"
           )
-  | 5 -> ( 
+  | 5 -> (
 # 110 "fsyacclex.fsl"
-                    ignore <| buff.Append (lexeme lexbuf); 
-                    code p buff lexbuf 
+                    ignore <| buff.Append (lexeme lexbuf);
+                    code p buff lexbuf
 # 537 "fsyacclex.fs"
           )
-  | 6 -> ( 
+  | 6 -> (
 # 113 "fsyacclex.fsl"
-                    ignore <| buff.Append (lexeme lexbuf); 
-                    code p buff lexbuf 
+                    ignore <| buff.Append (lexeme lexbuf);
+                    code p buff lexbuf
 # 543 "fsyacclex.fs"
           )
-  | 7 -> ( 
+  | 7 -> (
 # 115 "fsyacclex.fsl"
-                        EOF 
+                        EOF
 # 548 "fsyacclex.fs"
           )
-  | 8 -> ( 
+  | 8 -> (
 # 116 "fsyacclex.fsl"
-                      ignore <| buff.Append(lexeme lexbuf).[0]; 
-                      code p buff lexbuf 
+                      ignore <| buff.Append(lexeme lexbuf).[0];
+                      code p buff lexbuf
 # 554 "fsyacclex.fs"
           )
   | _ -> failwith "code"
 // Rule codestring
 and codestring buff lexbuf =
   match _fslex_tables.Interpret(12,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 122 "fsyacclex.fsl"
-                    ignore <| buff.Append (lexeme lexbuf); 
-                    codestring buff lexbuf 
+                    ignore <| buff.Append (lexeme lexbuf);
+                    codestring buff lexbuf
 # 564 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 124 "fsyacclex.fsl"
-                        ignore <| buff.Append (lexeme lexbuf); 
-                        buff.ToString() 
+                        ignore <| buff.Append (lexeme lexbuf);
+                        buff.ToString()
 # 570 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 126 "fsyacclex.fsl"
-                            newline lexbuf; 
-                            ignore <| buff.Append System.Environment.NewLine; 
-                            codestring buff lexbuf 
+                            newline lexbuf;
+                            ignore <| buff.Append System.Environment.NewLine;
+                            codestring buff lexbuf
 # 577 "fsyacclex.fs"
           )
-  | 3 -> ( 
+  | 3 -> (
 # 130 "fsyacclex.fsl"
-                    ignore <| buff.Append (lexeme lexbuf); 
-                    codestring buff lexbuf 
+                    ignore <| buff.Append (lexeme lexbuf);
+                    codestring buff lexbuf
 # 583 "fsyacclex.fs"
           )
-  | 4 -> ( 
+  | 4 -> (
 # 132 "fsyacclex.fsl"
-                        failwith "unterminated string in code" 
+                        failwith "unterminated string in code"
 # 588 "fsyacclex.fs"
           )
-  | 5 -> ( 
+  | 5 -> (
 # 133 "fsyacclex.fsl"
-                      ignore <| buff.Append(lexeme lexbuf).[0]; 
-                      codestring buff lexbuf 
+                      ignore <| buff.Append(lexeme lexbuf).[0];
+                      codestring buff lexbuf
 # 594 "fsyacclex.fs"
           )
   | _ -> failwith "codestring"
 // Rule comment
 and comment  lexbuf =
   match _fslex_tables.Interpret(0,lexbuf) with
-  | 0 -> ( 
+  | 0 -> (
 # 138 "fsyacclex.fsl"
-                         ignore(comment lexbuf); comment lexbuf 
+                         ignore(comment lexbuf); comment lexbuf
 # 603 "fsyacclex.fs"
           )
-  | 1 -> ( 
+  | 1 -> (
 # 139 "fsyacclex.fsl"
-                            newline lexbuf; comment lexbuf 
+                            newline lexbuf; comment lexbuf
 # 608 "fsyacclex.fs"
           )
-  | 2 -> ( 
+  | 2 -> (
 # 140 "fsyacclex.fsl"
-                         () 
+                         ()
 # 613 "fsyacclex.fs"
           )
-  | 3 -> ( 
+  | 3 -> (
 # 141 "fsyacclex.fsl"
-                        failwith "end of file in comment" 
+                        failwith "end of file in comment"
 # 618 "fsyacclex.fs"
           )
-  | 4 -> ( 
+  | 4 -> (
 # 142 "fsyacclex.fsl"
-                                                     comment lexbuf 
+                                                     comment lexbuf
 # 623 "fsyacclex.fs"
           )
-  | 5 -> ( 
+  | 5 -> (
 # 143 "fsyacclex.fsl"
-                       comment lexbuf 
+                       comment lexbuf
 # 628 "fsyacclex.fs"
           )
   | _ -> failwith "comment"

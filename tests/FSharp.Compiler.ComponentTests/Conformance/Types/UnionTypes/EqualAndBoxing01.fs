@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Unions 
+// #Regression #Conformance #TypesAndModules #Unions
 // Regression test for FSHARP1.0:5535
 // Union type
 type U = A | B of int

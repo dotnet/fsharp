@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,6)),
                   Simple
@@ -24,7 +25,8 @@ ImplFile
                                   None, (5,11--5,14), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (5,6--5,14), { BarRange = Some (5,4--5,5) })],
+                            None, (5,6--5,14), { BarRange = Some (5,4--5,5)
+                                                 OfKeyword = Some (5,8--5,10) })],
                         (5,4--5,14)), (5,4--5,14)), [], None, (4,5--5,14),
                   { LeadingKeyword = Type (4,0--4,4)
                     EqualsRange = Some (4,7--4,8)
@@ -32,7 +34,8 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([B], [], [None]))),
                      PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (6,5--6,6)),
                   Simple
@@ -44,7 +47,7 @@ ImplFile
                     WithKeyword = None })], (6,0--6,10));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [C],
+                ([], None, [], Some (LongIdent (SynLongIdent ([C], [], []))),
                  PreXmlDoc ((7,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (7,0--7,8)), false,
               [Let

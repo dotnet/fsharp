@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Exceptions 
+// #Regression #Conformance #TypesAndModules #Exceptions
 
 
 // Regression test for FSharp1.0:3583 - Remove AssertionFailureException

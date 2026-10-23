@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 // Regression test for FSharp1.0:3636 - PEVerify error when deriving from ValueType, Enum, Delegate, MulticastDelegate, and Array
 //<Expects id="FS0771" span="(20,16)" status="error">The types System\.ValueType, System\.Enum, System\.Delegate, System\.MulticastDelegate and System\.Array cannot be used as super types in an object expression or class</Expects>
 //<Expects id="FS0771" span="(21,16)" status="error">The types System\.ValueType, System\.Enum, System\.Delegate, System\.MulticastDelegate and System\.Array cannot be used as super types in an object expression or class</Expects>

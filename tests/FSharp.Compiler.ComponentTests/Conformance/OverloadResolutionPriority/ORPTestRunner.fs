@@ -16,20 +16,20 @@ let test (name: string) (expected: string) (actual: string) =
 
 let testBasicPriority () =
     test "Higher priority wins over lower" "priority-2" (BasicPriority.Invoke("test"))
-    
+
     test "Negative priority deprioritizes" "current" (NegativePriority.Legacy("test"))
-    
+
     test "Multiple negative priority levels" "new" (NegativePriority.Obsolete(42))
-    
+
     test "Priority overrides concreteness" "generic-high-priority" (PriorityVsConcreteness.Process(42))
-    
+
     test "Default priority is 0" "mixed-priority" (DefaultPriority.Mixed("test"))
 
 // Per-declaring-type Extension Tests
 
 let testExtensions () =
     test "Extension type B priority" "TypeB-priority2" (ExtensionTypeB.ExtMethod("hello", 42))
-    
+
     let x = 42
     test "Per-type extension priority" "ModuleB-int-priority2" (x.Transform())
 
@@ -37,9 +37,9 @@ let testExtensions () =
 
 let testSamePriorityTiebreakers () =
     test "Same priority - int wins by concreteness" "int" (SamePriorityTiebreaker.Process(42))
-    
+
     test "Same priority - string wins by concreteness" "string" (SamePriorityTiebreaker.Process("hello"))
-    
+
     test "Same priority - int[] wins by concreteness" "int-array" (SamePriorityArrayTypes.Handle([|1; 2; 3|]))
 
 // Inheritance Tests
@@ -47,7 +47,7 @@ let testSamePriorityTiebreakers () =
 let testInheritance () =
     let derived = DerivedClassWithNewMethods()
     test "Derived new method highest priority" "DerivedNew-int-priority2" (derived.Method(42))
-    
+
     let derivedBase = DerivedClass()
     test "Base priority respected in derived" "Derived-string" (derivedBase.Method("test"))
 
@@ -56,7 +56,7 @@ let testInheritance () =
 let testInstanceMethods () =
     let obj = InstanceOnlyClass()
     test "Instance method priority" "object-priority2" (obj.Call("hello"))
-    
+
     let target = TargetClass()
     test "Extension adds new overload" "Extension-int-priority2" (target.DoWork(42))
 
@@ -70,7 +70,7 @@ let testExplicitVsImplicit () =
 
 let testComplexGenerics () =
     test "Complex generics - fully generic wins" "fully-generic-priority2" (ComplexGenerics.Process(1, 2))
-    
+
     test "Complex generics - partial match" "fully-generic-priority2" (ComplexGenerics.Process("hello", 42))
 
 // F# Code USING the ORP attribute (defining overloads with ORP)
@@ -78,16 +78,16 @@ let testComplexGenerics () =
 type FSharpWithORP =
     [<System.Runtime.CompilerServices.OverloadResolutionPriority(2)>]
     static member Greet(o: obj) = "fsharp-obj-priority2"
-    
+
     [<System.Runtime.CompilerServices.OverloadResolutionPriority(0)>]
     static member Greet(s: string) = "fsharp-string-priority0"
-    
+
     static member Greet(i: int) = "fsharp-int-default"
 
 type FSharpGenericPriority =
     [<System.Runtime.CompilerServices.OverloadResolutionPriority(1)>]
     static member Process<'T>(x: 'T) = "fsharp-generic-priority1"
-    
+
     [<System.Runtime.CompilerServices.OverloadResolutionPriority(0)>]
     static member Process(x: int) = "fsharp-int-priority0"
 
@@ -96,15 +96,15 @@ module FSharpExtensions =
     type System.String with
         [<System.Runtime.CompilerServices.OverloadResolutionPriority(1)>]
         member this.FsExtend(x: obj) = "fsharp-ext-obj-priority1"
-        
+
         [<System.Runtime.CompilerServices.OverloadResolutionPriority(0)>]
         member this.FsExtend(x: int) = "fsharp-ext-int-priority0"
 
 let testFSharpUsingORP () =
     test "F# ORP - obj wins by priority" "fsharp-obj-priority2" (FSharpWithORP.Greet("hello"))
-    
+
     test "F# ORP - generic wins by priority" "fsharp-generic-priority1" (FSharpGenericPriority.Process(42))
-    
+
     test "F# extension ORP - obj wins by priority" "fsharp-ext-obj-priority1" ("test".FsExtend(42))
 
 // Virtual Base ORPA Inheritance Tests
@@ -129,43 +129,43 @@ let testVirtualBaseOrpa () =
 let main _ =
     printfn "Running OverloadResolutionPriority tests..."
     printfn ""
-    
+
     printfn "=== Basic Priority Tests ==="
     testBasicPriority ()
     printfn ""
-    
+
     printfn "=== Extension Tests ==="
     testExtensions ()
     printfn ""
-    
+
     printfn "=== Same Priority Tiebreaker Tests ==="
     testSamePriorityTiebreakers ()
     printfn ""
-    
+
     printfn "=== Inheritance Tests ==="
     testInheritance ()
     printfn ""
-    
+
     printfn "=== Instance Method Tests ==="
     testInstanceMethods ()
     printfn ""
-    
+
     printfn "=== Explicit vs Implicit Zero Tests ==="
     testExplicitVsImplicit ()
     printfn ""
-    
+
     printfn "=== Complex Generics Tests ==="
     testComplexGenerics ()
     printfn ""
-    
+
     printfn "=== F# Using ORP Attribute Tests ==="
     testFSharpUsingORP ()
     printfn ""
-    
+
     printfn "=== Virtual Base ORPA Tests ==="
     testVirtualBaseOrpa ()
     printfn ""
-    
+
     printfn "========================================"
     if failures = 0 then
         printfn "All tests passed!"

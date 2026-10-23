@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Operators 
+// #Regression #Conformance #BasicGrammarElements #Operators
 // Regression test for FSHARP1.0:2541
 // Prefix only operators: !OP, ?OP, ~OP
 // Try to use !OP as an infix-op is an error

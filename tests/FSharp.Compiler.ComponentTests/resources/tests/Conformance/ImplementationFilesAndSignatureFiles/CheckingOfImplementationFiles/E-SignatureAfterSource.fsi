@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 // Test the ability to declare anonymous signature files, that is FSI files without a

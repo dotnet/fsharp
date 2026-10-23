@@ -1,14 +1,14 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 // Verify nothing explodes when you have multiple extension methods with the same
 // signature in scope.
 
-module ExtensionMethodsTest1 = 
+module ExtensionMethodsTest1 =
 
-    type System.String with 
+    type System.String with
         member this.LengthPlusX = this.Length + 1
 
-module ExtensionMethodsTest2 = 
-    type System.String with 
+module ExtensionMethodsTest2 =
+    type System.String with
         member this.LengthPlusX = this.Length + 2
 
 

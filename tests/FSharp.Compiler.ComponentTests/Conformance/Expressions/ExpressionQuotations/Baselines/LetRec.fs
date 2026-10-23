@@ -1,9 +1,9 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open QuoteUtils
 
-let q = <@ let rec f x = if x = 0 then 0 else f (x-1) 
+let q = <@ let rec f x = if x = 0 then 0 else f (x-1)
            f 0 @>
 let q' = Expr.LetRecursive([(Var("f", typeof<int->int>), Expr.Lambda(Var("x", typeof<int>), Expr.Value(1)))], Expr.Value(0))
 let r1 = verify q (|LetRecursive|_|) "LetRecursive ([(f,Lambda (x,

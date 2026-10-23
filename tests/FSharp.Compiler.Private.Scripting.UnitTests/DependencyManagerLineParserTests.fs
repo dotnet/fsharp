@@ -111,7 +111,7 @@ type DependencyManagerLineParserTests() =
         let prs, _, _ =
             [ "MyPackage, Version=1.2.3.4"
               "Include=MyPackage, Version=1.2.3.4" ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         let pr = prs.Single()
         Assert.Equal("MyPackage", pr.Include)
 
@@ -119,21 +119,21 @@ type DependencyManagerLineParserTests() =
     member _.``Timeout none is -1``() =
         let _, _, timeout =
             [ "timeout=none" ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         Assert.Equal(timeout, Some -1)
 
     [<Fact>]
     member _.``Timeout 1000 is 1000``() =
         let _, _, timeout =
             [ "timeout=1000" ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         Assert.Equal(timeout, Some 1000)
 
     [<Fact>]
     member _.``Timeout 0 is 0``() =
         let _, _, timeout =
             [ "timeout=0" ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         Assert.Equal(timeout, Some 0)
 
     [<Fact>]
@@ -144,7 +144,7 @@ type DependencyManagerLineParserTests() =
               "timeout=10"
               "timeout=100"
              ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         Assert.Equal(timeout, Some 100)
 
     [<Fact>]
@@ -155,7 +155,7 @@ type DependencyManagerLineParserTests() =
               "timeout=100"
               "timeout=10"
              ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" 
+            |> FSharpDependencyManager.parsePackageReference ".fsx"
         Assert.Equal(timeout, Some 10)
 
     [<Fact>]
@@ -172,7 +172,7 @@ type DependencyManagerLineParserTests() =
     member _.``Timeout invalid timeout=``() =
         try
             [ "timeout=" ]
-            |> FSharpDependencyManager.parsePackageReference ".fsx" |> ignore 
+            |> FSharpDependencyManager.parsePackageReference ".fsx" |> ignore
             Assert.True(false, "ArgumentException expected")                    //Assert.Fail
         with
         | :? ArgumentException -> ()

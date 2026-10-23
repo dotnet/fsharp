@@ -25,9 +25,6 @@ let stringMethods =
         "EnumerateRunes";
 #endif
         "Equals"; "GetEnumerator"; "GetHashCode";
-#if NETCOREAPP
-        "GetPinnableReference";
-#endif
         "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
         "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
         "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";
@@ -36,7 +33,11 @@ let stringMethods =
         "ReplaceLineEndings";
 #endif
         "Split"; "StartsWith"; "Substring";
-        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant";
+#if NET11_0_OR_GREATER
+        "ToLowerOrdinal"; "ToUpperOrdinal";
+#endif
+        "ToString"; "ToUpper";
         "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
 #if NETCOREAPP
         "TryCopyTo"
@@ -163,7 +164,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
-        
+
         results |> shouldEqual expected
 
     | None -> failwith "No symbols returned"
@@ -594,6 +595,56 @@ let ``Implicit-yield seq body diagnostics are reported once`` (source: string) =
         |> Array.filter (fun (_, n) -> n > 1)
     Assert.Empty duplicated
 
+[<Theory>]
+[<InlineData("$\"%b{true} %b{false}\"", 10, 12, 19, 21)>]
+[<InlineData("$@\"%b{true} %b{false}\"", 11, 13, 20, 22)>]
+[<InlineData("$\"\"\"%b{true} %b{false}\"\"\"", 12, 14, 21, 23)>]
+let ``Issue 20757 - foreground fallback formats preserve locations and arity`` (expression: string, firstStart: int, firstEnd: int, secondStart: int, secondEnd: int) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, "let s = " + expression, [| "--langversion:preview" |])
+    results.Diagnostics |> shouldEqual [||]
+    results.GetFormatSpecifierLocationsAndArity()
+    |> Array.map (fun (range, arity) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, arity)
+    |> shouldEqual [| (1, firstStart, 1, firstEnd, 1); (1, secondStart, 1, secondEnd, 1) |]
+
+[<Theory>]
+[<InlineData("let now = System.DateTime(2026,10,13,1,2,3)\nlet s = $\"%02d{now.Hour}:%02d{now.Minute}:%02d{now.Second}\"")>]
+[<InlineData("let s = $\"%02d{1}%02d{2}%02d{3}\"")>]
+[<InlineData("let flag = true\nlet s = $\"%b{flag} %b{flag}\"")>]
+[<InlineData("let s = $\"%d{1}%02d{2}{true}%b{false}\"")>]
+[<InlineData("let inline padded (n: ^T) = $\"%02d{n}\"\nlet s = padded 1uy, padded 1L")>]
+[<InlineData("let padded n = $\"%02d{n}\"\nlet f: int -> string = padded\nlet s = f 1")>]
+[<InlineData("let s = $\"%t{fun () -> string 1}%02d{1}%t{fun () -> string 2}\"")>]
+[<InlineData("let s = $\"%A{fun () -> 1}%O{fun () -> 2}\"")>]
+let ``Issue 20757 - foreground checks fallback boundaries and generic integers`` (source: string) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+    results.Diagnostics |> shouldEqual [||]
+
+[<Theory>]
+[<InlineData("string")>]
+[<InlineData("obj")>]
+[<InlineData("System.IComparable")>]
+[<InlineData("System.ICloneable")>]
+let ``Issue 20757 - foreground string-rendering thunks enforce state and residue types`` (targetType: string) =
+    for thunk in ["fun (_: int) -> \"bad\""; "fun () -> 42"] do
+        let source = "let value: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\""
+        let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+        results.Diagnostics
+        |> Array.map (fun d -> d.ErrorNumber, d.Range.IsSynthetic)
+        |> shouldEqual [| (1, false) |]
+
+[<Theory>]
+[<InlineData("let s = $\"%02d{true}\"", 15, 19, -1, -1)>]
+[<InlineData("let s = $\"%b{1}\"", 13, 14, -1, -1)>]
+[<InlineData("let s = $\"%b{1}%02d{true}\"", 13, 14, 20, 24)>]
+let ``Issue 20757 - foreground wrong-type holes report real ranges once`` (source: string, firstStart: int, firstEnd: int, secondStart: int, secondEnd: int) =
+    let _, results = parseAndCheckScriptWithOptions(testFile, source, [| "--langversion:preview" |])
+    results.Diagnostics
+    |> Array.map (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Range.IsSynthetic)
+    |> shouldEqual [|
+        (1, 1, firstStart, 1, firstEnd, false)
+        if secondStart >= 0 then (1, 1, secondStart, 1, secondEnd, false)
+    |]
+
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
 let ``Printf specifiers for regular and verbatim interpolated strings`` () =
@@ -760,6 +811,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("CultureInvariant", Some (box 512))
 #if NETCOREAPP
                              ("NonBacktracking", Some 1024)
+#endif
+#if NET11_0_OR_GREATER
+                             ("AnyNewLine", Some 2048)
 #endif
                            ]
         |]
@@ -1209,18 +1263,18 @@ let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults)
     let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     [ for pos, line in positions do
         match parseResult.ValidateBreakpointLocation pos with
-        | Some r -> 
-            let text = 
+        | Some r ->
+            let text =
                 [ if r.StartLine = r.EndLine then
                       lines[r.StartLine-1][r.StartColumn..r.EndColumn-1]
                   else
                       lines[r.StartLine-1][r.StartColumn..]
-                      for l in r.StartLine..r.EndLine-2 do 
+                      for l in r.StartLine..r.EndLine-2 do
                             lines[l]
                       lines[r.EndLine-1][..r.EndColumn-1] ]
                 |> String.concat "$"
             ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
-        | None -> 
+        | None ->
             ()]
 
 [<Fact>]
@@ -1310,7 +1364,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1369,7 +1423,7 @@ let f () =
          ((6, 14), (6, 7, 6, 17, "List.unzip")); ((6, 15), (6, 7, 6, 17, "List.unzip"));
          ((6, 16), (6, 7, 6, 17, "List.unzip"))]
 
-    
+
 [<Fact>]
 let ``ValidateBreakpointLocation tests for pipe3`` () =
     let input =
@@ -1383,7 +1437,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1468,7 +1522,7 @@ let bodyWrapper () =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
@@ -1526,7 +1580,7 @@ let bodyWrapper (a, b, c) = a || b && c"""
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((2, 0), (2, 28, 2, 29, "a")); ((2, 1), (2, 28, 2, 29, "a"));
          ((2, 2), (2, 28, 2, 29, "a")); ((2, 3), (2, 28, 2, 29, "a"));
          ((2, 4), (2, 28, 2, 29, "a")); ((2, 5), (2, 28, 2, 29, "a"));
@@ -1568,7 +1622,7 @@ module M =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
             [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
              ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
              ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
@@ -1990,7 +2044,7 @@ let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
         | _ -> false
     )
     |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
-    
+
 [<Fact>]
 let ``Record fields are completed via type name usage`` () =
     let parseResults, checkResults =
@@ -2021,7 +2075,7 @@ let x =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Entry" ] 
+                QualifyingIdents = [ "Entry" ]
             },
             fun _ -> List.empty
         )
@@ -2057,7 +2111,7 @@ module Module2 =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1" ] 
+                QualifyingIdents = [ "Module1" ]
             },
             fun _ -> List.empty
         )
@@ -2094,7 +2148,7 @@ module Module2 =
                 EndColumn = 8
                 LastDotPos = Some 8
                 PartialIdent = ""
-                QualifyingIdents = [ "R1" ] 
+                QualifyingIdents = [ "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2126,7 +2180,7 @@ module Module2 =
                 EndColumn = 16
                 LastDotPos = Some 16
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1"; "R1" ] 
+                QualifyingIdents = [ "Module1"; "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2198,7 +2252,7 @@ let rUpdate =
 """
 
     assertHasItemWithNames ["Field1"; "Field2"] info
-    
+
 [<Fact>]
 let ``No record field completion after '=' with missing value in first binding (after =;)`` () =
     let info = Checker.getCompletionInfo """

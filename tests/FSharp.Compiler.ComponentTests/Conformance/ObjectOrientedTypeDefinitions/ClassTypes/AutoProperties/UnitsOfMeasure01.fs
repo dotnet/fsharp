@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #UnitsOfMeasure
 
 [<Measure>] type MyM
-type T() =  
+type T() =
     member val P = 0<MyM> with get,set
 
 let t = T()

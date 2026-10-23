@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #ObjectConstructors 
+// #Conformance #DeclarationElements #ObjectConstructors
 
 
 type Foo(arg1:string, arg2:int) =
     let m_value = arg2
     member this.Property = m_value
-    
+
 
 let test1 = new Foo("foo", 42)
 if test1.Property <> 42 then exit 1

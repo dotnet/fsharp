@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Regression test for FSHARP1.0:575 - Augmentations lead to unsoundnesses in the treatment of constraints.  Available instances should be lexically scoped

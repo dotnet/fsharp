@@ -8,12 +8,28 @@ open Microsoft.FSharp.Collections
 
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.list`1"/>.</summary>
 ///
-/// <namespacedoc><summary>Operations for collections such as lists, arrays, sets, maps and sequences. See also 
+/// <namespacedoc><summary>Operations for collections such as lists, arrays, sets, maps and sequences. See also
 ///    <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-collection-types">F# Collection Types</a> in the F# Language Guide.
 /// </summary></namespacedoc>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
-module List = 
+module List =
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val indexNotFound: unit -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val emptyListError: unit -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val differentLengthLists: arg1: string -> arg2: string -> diff: int -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden = true)>]
+    val listsDifferentLengths: unit -> 'T
 
     /// <summary>Returns a new list that contains all pairings of elements from two lists.</summary>
     ///
@@ -21,13 +37,13 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>The resulting list of pairs.</returns>
-    /// 
+    ///
     /// <example id="allPairs-1">
     /// <code lang="fsharp">
     /// let people = [ "Kirk"; "Spock"; "McCoy" ]
     /// let numbers = [ 1; 2 ]
     ///
-    /// people |> List.allPairs numbers 
+    /// people |> List.allPairs numbers
     /// </code>
     /// Evaluates to
     /// <code lang="fsharp">
@@ -46,11 +62,11 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>The resulting list.</returns>
-    /// 
+    ///
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// List.append [ 1..3 ] [ 4..7 ]
-    /// 
+    ///
     /// [ 4..7 ] |> List.append [ 1..3 ]
     /// </code>
     /// Evaluates to
@@ -70,10 +86,10 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
     ///
     /// <returns>The resulting average.</returns>
-    /// 
+    ///
     /// <example id="average-1">
     /// <code lang="fsharp">
-    /// [1.0 .. 9.0] |> List.average 
+    /// [1.0 .. 9.0] |> List.average
     /// </code>
     /// Evaluates to
     /// <code lang="fsharp">
@@ -97,14 +113,14 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The resulting average.</returns>
-    /// 
+    ///
     /// <example id="averageBy-1"> Calculate average age of persons by extracting their age from a record type.
     /// <code lang="fsharp">
     /// type People = { Name: string; Age: int }
     ///
     /// let getAgeAsFloat person = float person.Age
     ///
-    /// let people = 
+    /// let people =
     ///     [ { Name = "Kirk"; Age = 26 }
     ///       { Name = "Spock"; Age = 90 }
     ///       { Name = "McCoy"; Age = 37 } ]
@@ -119,14 +135,14 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("AverageBy")>]
-    val inline averageBy: projection:('T -> ^U) -> list:'T list  -> ^U    
-                               when ^U : (static member (+) : ^U * ^U -> ^U) 
-                               and  ^U : (static member DivideByInt : ^U*int -> ^U) 
+    val inline averageBy: projection:('T -> ^U) -> list:'T list  -> ^U
+                               when ^U : (static member (+) : ^U * ^U -> ^U)
+                               and  ^U : (static member DivideByInt : ^U*int -> ^U)
                                and  ^U : (static member Zero : ^U)
 
     /// <summary>Applies a function to each element in a list and then returns
     /// a list of values <c>v</c> where the applied function returned <c>Some(v)</c>.
-    /// 
+    ///
     /// Returns an empty list when the input list is empty or when the applied chooser function
     /// returns <c>None</c> for all elements.
     /// </summary>
@@ -135,11 +151,11 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The resulting list comprising the values <c>v</c> where the chooser function returned <c>Some(x)</c>.</returns>
-    /// 
+    ///
     /// <example id="choose-1">
     /// Using the identity function <c>id</c> (is defined like <c>fun x -> x</c>):
     /// <code lang="fsharp">
-    /// 
+    ///
     /// let input1 = [ Some 1; None; Some 3; None ]
     ///
     /// input1 |> List.choose id
@@ -149,7 +165,7 @@ module List =
     /// [ 1; 3 ]
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="choose-2">
     /// <code lang="fsharp">
     /// type Happiness =
@@ -163,7 +179,7 @@ module List =
     ///     | AlwaysHappy -> Some person.Name
     ///     | MostOfTheTimeGrumpy -> None
     ///
-    /// let candidatesForTheTrip = 
+    /// let candidatesForTheTrip =
     ///     [ { Name = "SpongeBob"
     ///         Happiness = AlwaysHappy }
     ///       { Name = "Patrick"
@@ -182,7 +198,7 @@ module List =
     ///
     /// <example id="choose-3">
     /// <code lang="fsharp">
-    /// let input3: int option list = [] 
+    /// let input3: int option list = []
     ///
     /// input3 |> List.choose id
     /// Evaluates to:
@@ -199,11 +215,11 @@ module List =
     /// empty list
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="choose-5">
     /// Using the identity function <c>id</c> (is defined like <c>fun x -> x</c>):
     /// <code lang="fsharp">
-    /// 
+    ///
     /// let input5 = [ Some 1; None; Some 3; None ]
     ///
     /// input5 |> List.choose id  // evaluates [1; 3]
@@ -217,7 +233,7 @@ module List =
 
     /// <summary>Divides the input list into lists (chunks) of size at most <c>chunkSize</c>.
     /// Returns a new list containing the generated lists (chunks) as its elements.
-    /// 
+    ///
     /// Returns an empty list when the input list is empty.</summary>
     ///
     /// <param name="chunkSize">The maximum size of each chunk.</param>
@@ -226,10 +242,10 @@ module List =
     /// <returns>The list divided into chunks.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
-    /// 
+    ///
     /// <example id="chunkBySize-1">
     /// <code lang="fsharp">
-    /// [ 1..10 ] |> List.chunkBySize 3     
+    /// [ 1..10 ] |> List.chunkBySize 3
     /// </code>
     /// Evaluates to
     /// <code lang="fsharp">
@@ -239,7 +255,7 @@ module List =
     ///   [ 10 ] ]
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="chunkBySize-2">
     /// <code lang="fsharp">
     /// [ 1..5 ] |> List.chunkBySize 10
@@ -260,7 +276,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The concatenation of the transformed sublists.</returns>
-    /// 
+    ///
     /// <example id="collect-1"> For each positive number in the array we are generating all the previous positive numbers
     /// <code lang="fsharp">
     /// [1..4] |> List.collect (fun x -> [1..x])
@@ -278,11 +294,11 @@ module List =
     /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
-    /// 
-    /// <returns>Returns the first non-zero result from the comparison function. If the first list has a 
-    /// larger element, the return value is always positive. If the second list has a larger 
-    /// element, the return value is always negative. When the elements are equal in the two 
-    /// lists, 1 is returned if the first list is longer, 0 is returned if they are equal in 
+    ///
+    /// <returns>Returns the first non-zero result from the comparison function. If the first list has a
+    /// larger element, the return value is always positive. If the second list has a larger
+    /// element, the return value is always negative. When the elements are equal in the two
+    /// lists, 1 is returned if the first list is longer, 0 is returned if they are equal in
     /// length, and -1 is returned when the second list is longer.</returns>
     ///
     /// <example id="compare-with-1">
@@ -359,7 +375,7 @@ module List =
     /// <param name="lists">The input sequence of lists.</param>
     ///
     /// <returns>The resulting concatenated list.</returns>
-    /// 
+    ///
     /// <example id="concat-1">
     /// <code lang="fsharp">
     /// let input = [ [1;2]
@@ -372,28 +388,28 @@ module List =
     /// <remarks>This is an O(n) operation, where n is the total number of elements across all lists.</remarks>
     [<CompiledName("Concat")>]
     val concat: lists:seq<'T list> -> 'T list
-    
+
     /// <summary>Tests if the list contains the specified element.</summary>
     ///
     /// <param name="value">The value to locate in the input list.</param>
     /// <param name="source">The input list.</param>
     ///
     /// <returns>True if the input list contains the specified element; false otherwise.</returns>
-    /// 
+    ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
     /// [1..9] |> List.contains 0
     /// </code>
     /// Evaluates to <c>false</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="contains-2">
     /// <code lang="fsharp">
     /// [1..9] |> List.contains 3
     /// </code>
     /// Evaluates to <c>true</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="contains-3">
     /// <code lang="fsharp">
     /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
@@ -402,7 +418,7 @@ module List =
     /// </code>
     /// Evaluates to <c>true</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="contains-4">
     /// <code lang="fsharp">
     /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
@@ -423,7 +439,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
+    ///
     /// <example id="distinct-1">
     /// <code lang="fsharp">
     /// let input = [6;1;2;3;1;4;5;5]
@@ -437,7 +453,7 @@ module List =
     [<CompiledName("Distinct")>]
     val distinct: list:'T list -> 'T list when 'T : equality
 
-    /// <summary>Returns a list that contains no duplicate entries according to the 
+    /// <summary>Returns a list that contains no duplicate entries according to the
     /// generic hash and equality comparisons on the keys returned by the given key-generating function.
     /// If an element occurs multiple times in the list then the later occurrences are discarded.</summary>
     ///
@@ -445,7 +461,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
+    ///
     /// <example id="distinctBy-1">
     /// <code lang="fsharp">
     /// let isEven x = 0 = x % 2
@@ -468,7 +484,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
+    ///
     /// <example id="countBy-1"> Counting the number of occurrences of chars
     /// <code lang="fsharp">
     /// let input = ['H'; 'a'; 'p'; 'p'; 'y']
@@ -490,14 +506,14 @@ module List =
     /// <returns>The list split into chunks.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
-    /// 
+    ///
     /// <example id="splitInto-1">
     /// <code lang="fsharp">
     /// [1..10] |> List.splitInto 2
     /// </code>
     /// Evaluates to <c>[[1; 2; 3; 4; 5]; [6; 7; 8; 9; 10]]</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="splitInto-2">
     /// <code lang="fsharp">
     /// [1..10] |> List.splitInto 4
@@ -526,22 +542,22 @@ module List =
     /// <returns>A list that contains the distinct elements of <c>list</c> that do not appear in <c>itemsToExclude</c>.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when itemsToExclude is null.</exception>
-    /// 
+    ///
     /// <example id="except-1">
     /// <code lang="fsharp">
-    /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
+    /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"]
     ///
     /// input |> List.except [3, "Kenobi"]
     /// </code>
     /// Evaluates to <c>[(1, "Kirk"); (2, "Spock")]</c>.
     /// </example>
-    /// 
+    ///
     /// <example id="except-2">
     /// <code lang="fsharp">
     /// [0..10] |> List.except [1..5]  // evaluates [0; 6; 7; 8; 9; 10]
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="except-3">
     /// <code lang="fsharp">
     /// [1..5] |> List.except [0..10]  // evaluates []
@@ -557,15 +573,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The only element of the list.</returns>
-    ///        
+    ///
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
-    /// 
+    ///
     /// <example id="exactlyOne-1">
     /// <code lang="fsharp">
     /// ["the chosen one"] |> List.exactlyOne // evaluates "the chosen one"
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="exactlyOne-2">
     /// <code lang="fsharp">
     /// let input : string list = []
@@ -574,7 +590,7 @@ module List =
     /// </code>
     /// Will throw the exception: <c>System.ArgumentException: The input sequence was empty</c>
     /// </example>
-    /// 
+    ///
     /// <example id="exactlyOne-3">
     /// <code lang="fsharp">
     /// [1..5] |> List.exactlyOne
@@ -591,7 +607,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The only element of the list or None.</returns>
-    /// 
+    ///
     /// <example id="tryExactlyOne-1">
     /// <code lang="fsharp">
     /// [1] |> List.tryExactlyOne               // evaluates Some 1
@@ -606,32 +622,32 @@ module List =
 
     /// <summary>Tests if any element of the list satisfies the given predicate.</summary>
     ///
-    /// <remarks>The predicate is applied to the elements of the input list. If any application 
-    /// returns true then the overall result is true and no further elements are tested. 
+    /// <remarks>The predicate is applied to the elements of the input list. If any application
+    /// returns true then the overall result is true and no further elements are tested.
     /// Otherwise, false is returned. This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>True if any element satisfies the predicate.</returns>
-    /// 
+    ///
     /// <example id="exists-1">
     /// <code lang="fsharp">
-    /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
-    /// 
+    /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"]
+    ///
     /// input |> List.exists (fun x -> x = (3, "Kenobi"))  // evaluates true
-    /// 
+    ///
     /// input |> List.exists (fun (n, name) -> n > 5)      // evaluates false
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate:('T -> bool) -> list:'T list -> bool
+    val inline exists: predicate:('T -> bool) -> list:'T list -> bool
 
     /// <summary>Tests if any pair of corresponding elements of the lists satisfies the given predicate.</summary>
     ///
-    /// <remarks>The predicate is applied to matching elements in the two collections up to the lesser of the 
-    /// two lengths of the collections. If any application returns true then the overall result is 
-    /// true and no further elements are tested. Otherwise, if one collections is longer 
-    /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised. 
+    /// <remarks>The predicate is applied to matching elements in the two collections up to the lesser of the
+    /// two lengths of the collections. If any application returns true then the overall result is
+    /// true and no further elements are tested. Otherwise, if one collections is longer
+    /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised.
     /// Otherwise, false is returned. This is an O(n) operation in the worst case, where n is the length of the lists.</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
@@ -641,20 +657,20 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the input lists differ in length.</exception>
     ///
     /// <returns>True if any pair of elements satisfy the predicate.</returns>
-    /// 
+    ///
     /// <example id="exists2-1"> Check if the sum of pairs (from 2 different lists) have at least one even number
     /// <code lang="fsharp">
     /// let anEvenSum a b  = 0 = (a + b) % 2
-    /// 
-    /// ([1..4], [2..5]) 
+    ///
+    /// ([1..4], [2..5])
     /// ||> List.exists2 anEvenSum     // evaluates false
-    /// 
+    ///
     /// ([1..4], [2;4;5;6])
     /// ||> List.exists2 anEvenSum   // evaluates true
     /// </code>
     /// </example>
     [<CompiledName("Exists2")>]
-    val exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
+    val inline exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
@@ -666,7 +682,7 @@ module List =
     /// all the elements of the list.</exception>
     ///
     /// <returns>The first element that satisfies the predicate.</returns>
-    /// 
+    ///
     /// <example id="find-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
@@ -674,7 +690,7 @@ module List =
     /// let isGreaterThan x y = y > x
     ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
-    /// 
+    ///
     /// input |> List.find (fun (x,_) -> isEven x)              // evaluates (2, "Kirk")
     /// input |> List.find (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
@@ -682,7 +698,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Find")>]
-    val find: predicate:('T -> bool) -> list:'T list -> 'T
+    val inline find: predicate:('T -> bool) -> list:'T list -> 'T
 
     /// <summary>Returns the last element for which the given function returns True.
     /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
@@ -694,7 +710,7 @@ module List =
     /// all the elements of the list.</exception>
     ///
     /// <returns>The last element that satisfies the predicate.</returns>
-    /// 
+    ///
     /// <example id="findBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
@@ -702,7 +718,7 @@ module List =
     /// let isGreaterThan x y = y > x
     ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
-    /// 
+    ///
     /// input |> List.findBack (fun (x,_) -> isEven x)              // evaluates (4, "Kenobi")
     /// input |> List.findBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
@@ -723,7 +739,7 @@ module List =
     /// elements of the list.</exception>
     ///
     /// <returns>The index of the first element that satisfies the predicate.</returns>
-    /// 
+    ///
     /// <example id="findIndex-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
@@ -731,7 +747,7 @@ module List =
     /// let isGreaterThan x y = y > x
     ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
-    /// 
+    ///
     /// input |> List.findIndex (fun (x,_) -> isEven x)              // evaluates 1
     /// input |> List.findIndex (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
@@ -739,7 +755,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("FindIndex")>]
-    val findIndex: predicate:('T -> bool) -> list:'T list -> int
+    val inline findIndex: predicate:('T -> bool) -> list:'T list -> int
 
     /// <summary>Returns the index of the last element in the list
     /// that satisfies the given predicate.
@@ -752,7 +768,7 @@ module List =
     /// elements of the list.</exception>
     ///
     /// <returns>The index of the last element that satisfies the predicate.</returns>
-    /// 
+    ///
     /// <example id="findIndexBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
@@ -760,7 +776,7 @@ module List =
     /// let isGreaterThan x y = y > x
     ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
-    /// 
+    ///
     /// input |> List.findIndexBack (fun (x,_) -> isEven x)              // evaluates 3
     /// input |> List.findIndexBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
@@ -777,7 +793,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>A list containing only the elements that satisfy the predicate.</returns>
-    /// 
+    ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
@@ -785,7 +801,7 @@ module List =
     /// let isEven x = 0 = x % 2
     ///
     /// let isComingFromStarTrek (x,_) = isEven x
-    /// 
+    ///
     /// input |> List.filter isComingFromStarTrek
     /// </code>
     /// Evaluates to <c>[(2, "Kirk"); (4, "Spock")]</c>
@@ -799,7 +815,7 @@ module List =
     /// through the computation. Take the second argument, and apply the function to it
     /// and the first element of the list. Then feed this result into the function along
     /// with the second element and so on. Return the final result.
-    /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
+    /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> then
     /// computes <c>f (... (f s i0) i1 ...) iN</c>.</summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
@@ -807,28 +823,28 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The final state value.</returns>
-    /// 
+    ///
     /// <example id="fold-1"> Making the sum of squares for the first 5 natural numbers
     /// <code lang="fsharp">
     /// (0, [1..5]) ||> List.fold (fun s v -> s + v * v)  // evaluates 55
     /// </code>
     /// </example>
-    /// 
+    ///
     /// <example id="fold-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
     ///
     /// type BagItem = { fruit: Fruit; quantity: int }
     ///
-    /// let takeMore (previous: BagItem list) fruit = 
-    ///     let toTakeThisTime = 
-    ///         match previous with 
-    ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
-    ///         | [] -> 1 
+    /// let takeMore (previous: BagItem list) fruit =
+    ///     let toTakeThisTime =
+    ///         match previous with
+    ///         | bagItem :: otherBagItems -> bagItem.quantity + 1
+    ///         | [] -> 1
     ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
     ///
     /// let inputs = [ Apple; Pear; Orange ]
-    /// 
+    ///
     /// ([], inputs) ||> List.fold takeMore
     /// </code>
     /// Evaluates to
@@ -841,7 +857,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Fold")>]
-    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
+    val inline fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 
     /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
     /// through the computation. The collections must have identical sizes.
@@ -873,10 +889,10 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Fold2")>]
-    val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
+    val inline fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
-    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
+    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then
     /// computes <c>f i0 (...(f iN s))</c>.</summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
@@ -884,14 +900,14 @@ module List =
     /// <param name="state">The initial state.</param>
     ///
     /// <returns>The state object after the folding function is applied to each element of the list.</returns>
-    /// 
+    ///
     /// <example id="foldBack-1"> Making the sum of squares for the first 5 natural numbers
     /// <code lang="fsharp">
     /// ([1..5], 0) ||> List.foldBack (fun v acc -> acc + v * v)  // evaluates 55
     /// </code>
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
-    /// 
+    ///
     /// <example id="foldBack-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
@@ -899,14 +915,14 @@ module List =
     /// type BagItem = { fruit: Fruit; quantity: int }
     ///
     /// let takeMore fruit (previous: BagItem list) =
-    ///     let toTakeThisTime = 
-    ///         match previous with 
-    ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
-    ///         | [] -> 1 
+    ///     let toTakeThisTime =
+    ///         match previous with
+    ///         | bagItem :: otherBagItems -> bagItem.quantity + 1
+    ///         | [] -> 1
     ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
     ///
     /// let input = [ Apple; Pear; Orange ]
-    /// 
+    ///
     /// (input, []) ||> List.foldBack takeMore
     /// </code>
     /// Evaluates to
@@ -971,8 +987,8 @@ module List =
 
     /// <summary>Tests if all elements of the collection satisfy the given predicate.</summary>
     ///
-    /// <remarks>The predicate is applied to the elements of the input list. If any application 
-    /// returns false then the overall result is false and no further elements are tested. 
+    /// <remarks>The predicate is applied to the elements of the input list. If any application
+    /// returns false then the overall result is false and no further elements are tested.
     /// Otherwise, true is returned. This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -989,14 +1005,14 @@ module List =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate:('T -> bool) -> list:'T list -> bool
+    val inline forall: predicate:('T -> bool) -> list:'T list -> bool
 
     /// <summary>Tests if all corresponding elements of the collection satisfy the given predicate pairwise.</summary>
     ///
-    /// <remarks>The predicate is applied to matching elements in the two collections up to the lesser of the 
-    /// two lengths of the collections. If any application returns false then the overall result is 
-    /// false and no further elements are tested. Otherwise, if one collection is longer 
-    /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised. 
+    /// <remarks>The predicate is applied to matching elements in the two collections up to the lesser of the
+    /// two lengths of the collections. If any application returns false then the overall result is
+    /// false and no further elements are tested. Otherwise, if one collection is longer
+    /// than the other then the <see cref="T:System.ArgumentException"/> exception is raised.
     /// Otherwise, true is returned. This is an O(n) operation in the worst case, where n is the length of the lists.</remarks>
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list1">The first input list.</param>
@@ -1036,10 +1052,10 @@ module List =
     /// Throws <c>ArgumentException</c>.
     /// </example>
     [<CompiledName("ForAll2")>]
-    val forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
+    val inline forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
-    /// <summary>Applies a key-generating function to each element of a list and yields a list of 
-    /// unique keys. Each unique key contains a list of all elements that match 
+    /// <summary>Applies a key-generating function to each element of a list and yields a list of
+    /// unique keys. Each unique key contains a list of all elements that match
     /// to this key.</summary>
     ///
     /// <param name="projection">A function that transforms an element of the list into a comparable key.</param>
@@ -1239,7 +1255,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Iterate2")>]
-    val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
+    val inline iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Applies the given function to each element of the collection. The integer passed to the
     /// function indicates the index of the element.</summary>
@@ -1251,7 +1267,7 @@ module List =
     /// <code lang="fsharp">
     /// let inputs = [ "a"; "b"; "c" ]
     ///
-    /// inputs |> List.iteri (fun i v -> printfn "{i}: {v}")
+    /// inputs |> List.iteri (fun i v -> printn $"{i}: {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code lang="fsharp">
@@ -1292,7 +1308,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("IterateIndexed2")>]
-    val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
+    val inline iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Returns the last element of the list.</summary>
     ///
@@ -1430,7 +1446,7 @@ module List =
     /// </code>
     /// Evaluates to <c>[ "all"; "the"; "time" ]</c>
     /// </example>
-    /// 
+    ///
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Map3")>]
@@ -1569,7 +1585,7 @@ module List =
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("Max")>]
-    val inline max: list:'T list -> 'T when 'T : comparison 
+    val inline max: list:'T list -> 'T when 'T : comparison
 
     /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
     ///
@@ -1600,7 +1616,7 @@ module List =
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("MaxBy")>]
-    val inline maxBy: projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
+    val inline maxBy: projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min.</summary>
     ///
@@ -1629,7 +1645,7 @@ module List =
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("Min")>]
-    val inline min: list:'T list -> 'T when 'T : comparison 
+    val inline min: list:'T list -> 'T when 'T : comparison
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min on the function result</summary>
     ///
@@ -1660,7 +1676,7 @@ module List =
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("MinBy")>]
-    val inline minBy   : projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
+    val inline minBy   : projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison
 
     /// <summary>Indexes into the list. The first element has index 0.</summary>
     ///
@@ -1681,7 +1697,7 @@ module List =
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The list of elements from the array.</returns>
-    /// 
+    ///
     /// <example id="oflist-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 5 |]
@@ -1700,12 +1716,12 @@ module List =
     /// <param name="source">The input sequence.</param>
     ///
     /// <returns>The list of elements from the sequence.</returns>
-    /// 
+    ///
     /// <example id="oflist-1">
     /// <code lang="fsharp">
     /// let inputs = seq { 1; 2; 5 }
     ///
-    /// inputs |> List.ofSeq    
+    /// inputs |> List.ofSeq
     /// </code>
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
@@ -1721,7 +1737,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
+    ///
     /// <example id="pairwise-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 2; 3; 4]
@@ -1735,7 +1751,7 @@ module List =
     [<CompiledName("Pairwise")>]
     val pairwise: list:'T list -> ('T * 'T) list
 
-    /// <summary>Splits the collection into two collections, containing the 
+    /// <summary>Splits the collection into two collections, containing the
     /// elements for which the given predicate returns True and False
     /// respectively. Element order is preserved in both of the created lists.</summary>
     ///
@@ -1744,7 +1760,7 @@ module List =
     ///
     /// <returns>A list containing the elements for which the predicate evaluated to true and a list
     /// containing the elements for which the predicate evaluated to false.</returns>
-    /// 
+    ///
     /// <example id="partition-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 2; 3; 4]
@@ -1816,7 +1832,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("Pick")>]
-    val pick: chooser:('T -> 'U option) -> list:'T list -> 'U
+    val inline pick: chooser:('T -> 'U option) -> list:'T list -> 'U
 
     /// <summary>Returns a list with all elements permuted according to the
     /// specified permutation.</summary>
@@ -1827,7 +1843,7 @@ module List =
     /// <returns>The permuted list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
-    /// 
+    ///
     /// <example id="permute-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 2; 3; 4]
@@ -1843,8 +1859,8 @@ module List =
 
     /// <summary>Apply a function to each element of the collection, threading an accumulator argument
     /// through the computation. Apply the function to the first two elements of the list.
-    /// Then feed this result into the function along with the third element and so on. 
-    /// Return the final result. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
+    /// Then feed this result into the function along with the third element and so on.
+    /// Return the final result. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes
     /// <c>f (... (f i0 i1) i2 ...) iN</c>.</summary>
     ///
     /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty. This is an O(n) operation, where n is the length of the list.</remarks>
@@ -1855,7 +1871,7 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The final reduced value.</returns>
-    /// 
+    ///
     /// <example id="reduce-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 3; 4; 2]
@@ -1865,10 +1881,10 @@ module List =
     /// Evaluates to <c>1342</c>, by computing <c>((1 * 10 + 3) * 10 + 4) * 10 + 2</c>
     /// </example>
     [<CompiledName("Reduce")>]
-    val reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
+    val inline reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
-    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
+    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes
     /// <c>f i0 (...(f iN-1 iN))</c>.</summary>
     ///
     /// <param name="reduction">A function that takes in the next-to-last element of the list and the
@@ -1878,7 +1894,7 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The final result of the reductions.</returns>
-    /// 
+    ///
     /// <example id="reduceback-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 3; 4; 2]
@@ -1898,7 +1914,7 @@ module List =
     /// <param name="initial">The value to replicate</param>
     ///
     /// <returns>The generated list.</returns>
-    /// 
+    ///
     /// <example id="replicate-1">
     /// <code lang="fsharp">
     /// List.replicate 3 "a"
@@ -1915,7 +1931,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The reversed list.</returns>
-    /// 
+    ///
     /// <example id="rev-1">
     /// <code lang="fsharp">
     /// let inputs = [ 0; 1; 2 ]
@@ -1939,7 +1955,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The list of states.</returns>
-    /// 
+    ///
     /// <example id="scan-1">Apply a list charges and collect the running balances as each is applied:
     /// <code lang="fsharp">
     /// type Charge =
@@ -1969,7 +1985,7 @@ module List =
     /// <param name="state">The initial state.</param>
     ///
     /// <returns>The list of states.</returns>
-    /// 
+    ///
     /// <example id="scanback-1">Apply a list charges from back to front, and collect the running balances as each is applied:
     /// <code lang="fsharp">
     /// type Charge =
@@ -1998,7 +2014,7 @@ module List =
     /// <param name="value">The input item.</param>
     ///
     /// <returns>The result list of one item.</returns>
-    /// 
+    ///
     /// <example id="singleton-1">
     /// <code lang="fsharp">
     /// List.singleton 7
@@ -2017,7 +2033,7 @@ module List =
     ///
     /// <returns>The list after removing the first N elements.</returns>
     ///
-    /// <exception cref="T:System.ArgumentException">Thrown when count exceeds the number of 
+    /// <exception cref="T:System.ArgumentException">Thrown when count exceeds the number of
     /// elements in the list.</exception>
     ///
     /// <example id="skip-1">
@@ -2071,16 +2087,16 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("SkipWhile")>]
-    val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
+    val inline skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
     /// <summary>Sorts the given list using the given comparison function.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="comparer">The function to compare the list elements.</param>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
-    /// 
+    ///
     /// <example id="sortwith-1">Sort a list of pairs using a comparison function that compares string lengths then index numbers:
     /// <code lang="fsharp">
     /// let compareEntries (n1: int, s1: string) (n2: int, s2: string) =
@@ -2095,16 +2111,16 @@ module List =
     /// Evaluates to <c>[(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")]</c>.
     /// </example>
     [<CompiledName("SortWith")>]
-    val sortWith: comparer:('T -> 'T -> int) -> list:'T list -> 'T list 
+    val sortWith: comparer:('T -> 'T -> int) -> list:'T list -> 'T list
 
     /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
-    /// 
+    ///
     /// <example id="sortby-1">
     /// <code lang="fsharp">
     /// let input = [ "a"; "bbb"; "cccc"; "dd" ]
@@ -2118,11 +2134,11 @@ module List =
 
     /// <summary>Sorts the given list using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
-    /// 
+    ///
     /// <example id="sort-1">
     /// <code lang="fsharp">
     /// let input = [8; 4; 3; 1; 6; 1]
@@ -2143,7 +2159,7 @@ module List =
     ///
     /// <exception cref="T:System.InvalidOperationException">Thrown when split index exceeds the number of elements
     /// in the list.</exception>
-    /// 
+    ///
     /// <example id="splitat-1">
     /// <code lang="fsharp">
     /// let input = [8; 4; 3; 1; 6; 1]
@@ -2159,12 +2175,12 @@ module List =
 
     /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
-    /// 
+    ///
     /// <example id="sortbydescending-1">
     /// <code lang="fsharp">
     /// let input = ["a"; "bbb"; "cccc"; "dd"]
@@ -2178,11 +2194,11 @@ module List =
 
     /// <summary>Sorts the given list in descending order using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
     ///
-    /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks>
+    /// <include file="xmldoc/sort.xml" path="/sort/listStable/*"/>
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sorted list.</returns>
-    /// 
+    ///
     /// <example id="sortdescending-1">
     /// <code lang="fsharp">
     /// let input = [8; 4; 3; 1; 6; 1]
@@ -2199,7 +2215,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The resulting sum.</returns>
-    /// 
+    ///
     /// <example id="sum-1">
     /// <code lang="fsharp">
     /// let input = [ 1; 5; 3; 2 ]
@@ -2211,8 +2227,8 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Sum")>]
-    val inline sum: list:^T list -> ^T 
-                        when ^T : (static member (+) : ^T * ^T -> ^T) 
+    val inline sum: list:^T list -> ^T
+                        when ^T : (static member (+) : ^T * ^T -> ^T)
                         and  ^T : (static member Zero : ^T)
 
     /// <summary>Returns the sum of the results generated by applying the function to each element of the list.</summary>
@@ -2221,7 +2237,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The resulting sum.</returns>
-    /// 
+    ///
     /// <example id="sumby-1">
     /// <code lang="fsharp">
     /// let input = [ "aa"; "bbb"; "cc" ]
@@ -2233,8 +2249,8 @@ module List =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("SumBy")>]
-    val inline sumBy: projection:('T -> ^U) -> list:'T list -> ^U 
-                          when ^U : (static member (+) : ^U * ^U -> ^U) 
+    val inline sumBy: projection:('T -> ^U) -> list:'T list -> ^U
+                          when ^U : (static member (+) : ^U * ^U -> ^U)
                           and  ^U : (static member Zero : ^U)
 
     /// <summary>Returns the list after removing the first element.</summary>
@@ -2302,7 +2318,7 @@ module List =
     [<CompiledName("Take")>]
     val take: count:int -> list:'T list -> 'T list
 
-    /// <summary>Returns a list that contains all elements of the original list while the 
+    /// <summary>Returns a list that contains all elements of the original list while the
     /// given predicate returns True, and then returns no further elements.</summary>
     ///
     /// <param name="predicate">A function that evaluates to false when no more items should be returned.</param>
@@ -2453,7 +2469,7 @@ module List =
     val truncate: count:int -> list:'T list -> 'T list
 
     /// <summary>Applies the given function to successive elements, returning <c>Some(x)</c> the first
-    /// result where function returns <c>Some(x)</c> for some x. If no such element 
+    /// result where function returns <c>Some(x)</c> for some x. If no such element
     /// exists then return <c>None</c>.</summary>
     ///
     /// <param name="chooser">The function to generate options from the elements.</param>
@@ -2482,7 +2498,7 @@ module List =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
     [<CompiledName("TryPick")>]
-    val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
+    val inline tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Return None if no such element exists.</summary>
@@ -2685,7 +2701,7 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>Three lists of split elements.</returns>
-    /// 
+    ///
     /// <example id="unzip3-1">
     /// <code lang="fsharp">
     /// let inputs = [(1, "one", "I"); (2, "two", "II")]
@@ -2698,7 +2714,7 @@ module List =
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("Unzip3")>]
     val unzip3: list:('T1 * 'T2 * 'T3) list -> ('T1 list * 'T2 list * 'T3 list)
-    
+
     /// <summary>Returns a new list containing only the elements of the list
     /// for which the given predicate returns "true"</summary>
     ///
@@ -2729,7 +2745,7 @@ module List =
     /// <returns>The result list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when windowSize is not positive.</exception>
-    /// 
+    ///
     /// <example id="windowed-1">
     /// <code lang="fsharp">
     /// let inputs = [1; 2; 3; 4; 5]
@@ -2786,7 +2802,7 @@ module List =
     /// <remarks>This is an O(n) operation, where n is the length of the lists.</remarks>
     [<CompiledName("Zip3")>]
     val zip3: list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> ('T1 * 'T2 * 'T3) list
-    
+
     /// <summary>Return a new list with the item at a given index removed.</summary>
     ///
     /// <param name="index">The index of the item to be removed.</param>
@@ -2860,7 +2876,7 @@ module List =
     /// <param name="index">The index where the item should be inserted.</param>
     /// <param name="value">The value to insert.</param>
     /// <param name="source">The input list.</param>
-    /// 
+    ///
     /// <returns>The result list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
@@ -2877,13 +2893,13 @@ module List =
     /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T list -> 'T list
-    
+
     /// <summary>Return a new list with new items inserted before the given index.</summary>
     ///
     /// <param name="index">The index where the items should be inserted.</param>
     /// <param name="values">The values to insert.</param>
     /// <param name="source">The input list.</param>
-    /// 
+    ///
     /// <returns>The result list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>

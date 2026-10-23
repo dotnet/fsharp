@@ -12,5 +12,5 @@ type T() =
 
 let x = T()
 x.PrivateProperty <- 1
- 
+
 exit 1

@@ -1,13 +1,13 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4758
 // Type Inference
 namespace N
-module ActualTests1 = 
+module ActualTests1 =
     type Var<'a> =
         static member Foo(x:Var<'a>,y:'a)      = failwith "" : Var<bool>
         static member Foo(x:Var<'a>,y:Var<'a>) = failwith "" : Var<bool>
 
-    module M = 
+    module M =
         // let,let-rec,static-member with explicit instantiation and fully typed arguments and return type on lhs and Var<'a>.call
         let               a1<'a> (x:Var<'a>,y:'a) : Var<bool> = Var<'a>.Foo( (x:Var<'a>), (y:'a) ) : Var<bool>
         let               a2 (x:Var<'a>,y:'a) : Var<bool> = Var<'a>.Foo( (x:Var<'a>), (y:'a) ) : Var<bool>

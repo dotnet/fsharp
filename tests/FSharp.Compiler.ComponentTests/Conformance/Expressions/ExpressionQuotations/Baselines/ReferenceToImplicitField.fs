@@ -1,5 +1,5 @@
 // #Conformance #Quotations #Regression
-// Bug 6423:Implicit field accesses in implicit method definitions are quoted incorrectly 
+// Bug 6423:Implicit field accesses in implicit method definitions are quoted incorrectly
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 type Foo() =
@@ -15,9 +15,9 @@ type Foo() =
 
 
 let foo = Foo()
-let success = 
+let success =
     match foo.Bar with
-    |   FieldGet(Some (Value (v,t)), _) -> 
+    |   FieldGet(Some (Value (v,t)), _) ->
                 printfn "%A" v
                 obj.ReferenceEquals(v, foo) && t = typeof<Foo>
     |   _ -> false

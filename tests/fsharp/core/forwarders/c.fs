@@ -2,7 +2,7 @@
 
 
 
-module UseForwardedTypes 
+module UseForwardedTypes
 
 let CreateC() = new C()
 let CreateD() = new D()

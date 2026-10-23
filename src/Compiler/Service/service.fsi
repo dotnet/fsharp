@@ -32,6 +32,7 @@ type public FSharpChecker =
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssemblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
+    /// <param name="shareImportedAssemblies">Default: true. Indicates whether the contents imported from a referenced assembly may be shared between projects that resolve that assembly, and everything it can reach, to the same files. Saves memory and import time in solutions where projects reference the same binaries, and costs nothing where they do not. Assemblies containing type providers, and assemblies produced by a project in the same solution, are never shared. Set to false to opt out.</param>
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
     /// <param name="useTransparentCompiler">Default: false. Indicates whether we use a new experimental background compiler. This does not yet support all features</param>
@@ -47,6 +48,7 @@ type public FSharpChecker =
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
         ?parallelReferenceResolution: bool *
+        ?shareImportedAssemblies: bool *
         ?captureIdentifiersWhenParsing: bool *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource:
             DocumentSource *
@@ -252,7 +254,7 @@ type public FSharpChecker =
     /// <param name="fileName">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
     /// <param name="source">The source for the file.</param>
     /// <param name="caret">The editor location for the cursor if available.</param>
-    /// <param name="documentSource">DocumentSource to load any additional files.</param>
+    /// <param name="documentSource">DocumentSource to load any additional files. Defaults to the document source of the checker.</param>
     /// <param name="previewEnabled">Is the preview compiler enabled.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
@@ -508,6 +510,10 @@ type public FSharpChecker =
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
+
+    /// Answers a referenced assembly's last-write time to the incremental builders created after this call, in place of a
+    /// file system read per request. The value must be what `File.GetLastWriteTimeUtc` returns, kept current by the host.
+    member internal SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState

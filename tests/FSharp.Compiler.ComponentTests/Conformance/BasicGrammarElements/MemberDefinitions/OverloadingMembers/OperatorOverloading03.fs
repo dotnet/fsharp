@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading
 // Regression for FSHARP1.0:5803
 // Compiler was tripping up on this before
 

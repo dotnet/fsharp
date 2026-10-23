@@ -34,7 +34,7 @@ type BasicTypes() =
 
     [<Benchmark>]
     member _.UInt16() = uint16s |> Array.distinct
-    
+
     [<Benchmark>]
     member _.Int32() = int32s |> Array.distinct
 

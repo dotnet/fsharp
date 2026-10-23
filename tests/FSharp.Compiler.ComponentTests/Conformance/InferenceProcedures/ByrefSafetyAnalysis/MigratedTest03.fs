@@ -1,4 +1,4 @@
-// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
+// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable
 module Core_byrefs
 
 open System
@@ -11,7 +11,7 @@ let test s b = if b then () else failwith s
 
 let out r (s:string) = r := !r @ [s]
 
-let check s actual expected = 
+let check s actual expected =
     if actual = expected then printfn "%s: OK" s
     else failwithf "%s: FAILED, expected %A, got %A" s expected actual
 

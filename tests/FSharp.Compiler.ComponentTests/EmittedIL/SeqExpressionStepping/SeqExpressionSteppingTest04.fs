@@ -1,7 +1,7 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Sequences   
+// #NoMono #NoMT #CodeGen #EmittedIL #Sequences
 module SeqExpressionSteppingTest4 // Regression test for FSHARP1.0:4058
-module SeqExpressionSteppingTest4 = 
-    let f3 () = 
+module SeqExpressionSteppingTest4 =
+    let f3 () =
         seq {
             let mutable x = 0
             x <- x + 1

@@ -40,10 +40,10 @@ namespace rec CheckRecursiveNameResolution1
 
     module Test =
 
-      module N = 
+      module N =
           val x : Test.M.C
 
-      module M = 
+      module M =
           type C
 
 
@@ -52,10 +52,10 @@ namespace rec CheckRecursiveNameResolution2
 
     module Test =
 
-      module N = 
+      module N =
           val x : M.C
 
-      module M = 
+      module M =
           type C
 
 
@@ -66,10 +66,10 @@ namespace rec CheckRecursiveNameResolution3
 
       open M
 
-      module N = 
+      module N =
           val x : C
 
-      module M = 
+      module M =
           type C
 
 // Check recursive name resolution
@@ -79,10 +79,10 @@ namespace rec CheckRecursiveNameResolution4
 
       open Test.M
 
-      module N = 
+      module N =
           val x : C
 
-      module M = 
+      module M =
           type C
 
 
@@ -93,10 +93,10 @@ namespace rec CheckRecursiveNameResolution5
 
       open Test.M
 
-      module N = 
+      module N =
           val x : C
 
-      module M = 
+      module M =
           type C
 
 // Check recursive name resolution
@@ -108,11 +108,11 @@ namespace rec global
       open Test.M
       open M
 
-      module N = 
+      module N =
           val x : Test.M.C
           val x2 : M.C
           val x3 : C
 
-      module M = 
+      module M =
           type C
 

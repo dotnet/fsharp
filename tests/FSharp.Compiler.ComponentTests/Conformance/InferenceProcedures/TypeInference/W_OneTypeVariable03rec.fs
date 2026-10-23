@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
@@ -10,19 +10,19 @@ type Three = | Three
 type Four = | Four
 
 // An unsealed type
-type C() = 
+type C() =
     member x.P = 1
-    
+
 type C1 =
     static member M<'a>(x:'a,y:'a) = One
 
 type C2 =
     static member M<'a,'b>(x:'a,y:'b) = Two
 
-type C3 =    
+type C3 =
     static member M<'a>(x:'a,y:int) = Three
 
-type C4 =    
+type C4 =
     static member M<'a>(x:'a,y:C) = Four
 
 type C12 =
@@ -61,7 +61,7 @@ module M3Rec =
     let rec gC1     (x:'a) (y:int) = C1.M<'a>(x,y) = One       // expect: less generic int (warning/error) int = 'a
     let rec gC3     (x:'a) (y:int) = C3.M<int>(x,y)  = Three   // expect: less generic int (warning/error) int = int
     let rec gD1     (x:'a) (y:int) = C1.M<_>(x,y) = One        // expect: less generic int (warning/error) int = 'a
-    
+
 //<Expects id="FS0064" span="(60,45-60,46)" status="warning">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type 'int'</Expects>
 //<Expects id="FS0064" span="(61,49-61,50)" status="warning">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type 'int'</Expects>
 //<Expects id="FS0064" span="(62,48-62,49)" status="warning">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'a has been constrained to be type 'int'</Expects>

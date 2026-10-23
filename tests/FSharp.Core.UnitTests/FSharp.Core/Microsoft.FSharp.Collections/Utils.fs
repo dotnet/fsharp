@@ -4,19 +4,19 @@ module FSharp.Core.UnitTests.Collections.Utils
 
 open Xunit
 
-let run f = 
+let run f =
     try
         Ok(f())
     with
     | exn -> Error(exn.Message)
 
-let runAndCheckErrorType f = 
+let runAndCheckErrorType f =
     try
         Ok(f())
     with
     | exn -> Error(exn.GetType().ToString())
 
-let runAndCheckIfAnyError f = 
+let runAndCheckIfAnyError f =
     try
         Ok(f())
     with

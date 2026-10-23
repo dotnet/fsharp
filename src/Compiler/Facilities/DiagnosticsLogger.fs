@@ -129,9 +129,6 @@ exception DiagnosticWithSuggestions of number: int * message: RichText * range: 
         | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg.Text
         | _ -> "impossible"
 
-/// A diagnostic that is raised when enabled manually, or by default with a language feature
-exception DiagnosticEnabledWithLanguageFeature of number: int * message: RichText * range: range * enabledByLangFeature: bool
-
 type ObsoleteDiagnosticInfo =
     | ObsoleteDiagnosticInfo of isError: bool * diagnosticId: string option * message: string option * urlFormat: string option
 
@@ -154,9 +151,6 @@ let Error ((n, text): int * RichText, m) = DiagnosticWithText(n, text, m)
 /// We will eventually rename this to remove this use of "Error"
 let ErrorWithSuggestions ((n, message), m, id, suggestions) =
     DiagnosticWithSuggestions(n, message, m, id, suggestions)
-
-let ErrorEnabledWithLanguageFeature ((n, message), m, enabledByLangFeature) =
-    DiagnosticEnabledWithLanguageFeature(n, message, m, enabledByLangFeature)
 
 let inline protectAssemblyExploration dflt ([<InlineIfLambda>] f) =
     try
@@ -409,9 +403,9 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     member _.Diagnostics = diagnostics |> Seq.toList
 
     member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
-        // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = diagnostics.ToArray()
-        errors |> Array.iter diagnosticsLogger.DiagnosticSink
+        // A sink can report back into this logger while replaying, so iterate a snapshot.
+        let snapshot = diagnostics.ToArray()
+        snapshot |> Array.iter diagnosticsLogger.DiagnosticSink
 
 let buildPhase = AsyncLocal<BuildPhase voption>()
 let diagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()
@@ -747,7 +741,7 @@ let rec Iterate2D f xs ys =
 
 /// Keep the warnings, propagate the error to the exception continuation.
 [<DebuggerHidden; DebuggerStepThrough>]
-let TryD f g =
+let inline TryD ([<InlineIfLambda>] f) g =
     match f () with
     | ErrorResult(warns, err) ->
         trackErrors {
@@ -869,13 +863,6 @@ let NormalizeErrorRichText (text: RichText) =
 
     RichText.ofParts (parts.ToArray())
 
-/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
-/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
-[<RequireQualifiedAccess>]
-type internal SuppressLanguageFeatureCheck =
-    | Yes
-    | No
-
 let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     let featureStr = LanguageVersion.GetFeatureString langFeature
     let currentVersionStr = langVersion.SpecifiedVersionString
@@ -902,11 +889,6 @@ let internal tryCheckLanguageFeatureAndRecover langVersion langFeature m =
 
 let internal checkLanguageFeatureAndRecover langVersion langFeature m =
     tryCheckLanguageFeatureAndRecover langVersion langFeature m |> ignore
-
-let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
-    let featureStr = LanguageVersion.GetFeatureString langFeature
-    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
-    error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 module StackGuardMetrics =
 
@@ -995,33 +977,43 @@ type StackGuard(name: string) =
 #endif
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard
+    member _.EnterGuard() = depth.Value <- depth.Value + 1
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.ExitGuard() = depth.Value <- depth.Value - 1
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.RunOnNewStack(f: unit -> 'T, memberName: string, path: string, line: int) : 'T =
+        let fileName = System.IO.Path.GetFileName(path)
+        let depthWhenJump = depth.Value
+
+        StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
+
+        async {
+            do! Async.SwitchToNewThread()
+            Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
+            return f ()
+        }
+        |> Async.RunSynchronouslyImmediate
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member inline this.Guard
         (
-            f,
+            [<InlineIfLambda>] f: unit -> 'T,
             [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
             [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-        ) =
+        ) : 'T =
 
-        depth.Value <- depth.Value + 1
+        this.EnterGuard()
 
         try
             if StackGuard.IsStackSufficient() then
                 f ()
             else
-                let fileName = System.IO.Path.GetFileName(path)
-                let depthWhenJump = depth.Value
-
-                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
-
-                async {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
-                    return f ()
-                }
-                |> Async.RunSynchronouslyImmediate
+                this.RunOnNewStack(f, memberName, path, line)
         finally
-            depth.Value <- depth.Value - 1
+            this.ExitGuard()
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =

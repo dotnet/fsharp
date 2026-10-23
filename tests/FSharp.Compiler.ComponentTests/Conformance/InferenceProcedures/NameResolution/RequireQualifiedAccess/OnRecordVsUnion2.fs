@@ -15,5 +15,5 @@ let newChoice = R { a = 1}
 let choice2 v =
     match v with
     | Module.R r -> r
-    
+
 let newChoice2 = Module.R { a = 1}

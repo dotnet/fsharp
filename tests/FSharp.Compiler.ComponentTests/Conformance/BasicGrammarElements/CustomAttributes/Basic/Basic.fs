@@ -438,6 +438,14 @@ if Convert.ToString(prop, Globalization.CultureInfo.InvariantCulture) <> "B" the
         """
         ]
 
+    // SOURCE=E_StructLayout_Extended.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout_Extended.fs"|])>]
+    let ``E_StructLayout_Extended_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3912, Line 7, Col 6, Line 7, Col 36, "LayoutKind value 1 (Extended) cannot be specified via StructLayoutAttribute. Use ExtendedLayoutAttribute instead.")
+
     [<Fact>]
     let ``StructLayoutAttribute doesn't have size=1 for multi-case struct DUs with no instance fields`` () =
         Fsx """

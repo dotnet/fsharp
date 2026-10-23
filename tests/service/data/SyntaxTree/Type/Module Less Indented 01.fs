@@ -1,8 +1,8 @@
 // Expected: No warning - module at valid position
 module Module
 
-type A = 
+type A =
     | CaseA of int
     | CaseB of string
-module ValidModule = 
+module ValidModule =
     let x = 1

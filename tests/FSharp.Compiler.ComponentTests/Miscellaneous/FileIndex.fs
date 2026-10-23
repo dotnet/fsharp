@@ -18,4 +18,3 @@ let NoRaceCondition() =
         if indices[0] <> indices[1] then
             Assert.Fail $"Found different indices: {indices[0]} and {indices[1]}"
         count <- count - 1
-            

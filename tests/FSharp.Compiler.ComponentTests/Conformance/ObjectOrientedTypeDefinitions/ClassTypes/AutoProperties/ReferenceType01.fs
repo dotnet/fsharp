@@ -1,5 +1,5 @@
 // #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties
-type T() =  
+type T() =
     member val P = "" with get,set
 
 let t = T()

@@ -39,8 +39,8 @@ module ILVerifierModule =
             exec config.DotNetExe peverifyFullArgs workingDirectory
 
         match exitCode with
-        | 0 -> {Outcome = NoExitCode; StdOut = outputText; StdErr = errorText } 
-        | _ -> {Outcome = ExitCode exitCode; StdOut = outputText; StdErr = errorText } 
+        | 0 -> {Outcome = NoExitCode; StdOut = outputText; StdErr = errorText }
+        | _ -> {Outcome = ExitCode exitCode; StdOut = outputText; StdErr = errorText }
 
     let private verifyPEFileAux (compilationResult: CompilationResult) args =
         let result =

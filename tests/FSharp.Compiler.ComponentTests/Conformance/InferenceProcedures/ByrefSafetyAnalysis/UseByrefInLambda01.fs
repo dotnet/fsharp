@@ -1,11 +1,11 @@
-// #Conformance #TypeInference #ByRef 
+// #Conformance #TypeInference #ByRef
 
 
 // Test that byref values can be used in inner lambdas if they
 // do not escape.
 
-let testFunc = 
-    fun () -> 
+let testFunc =
+    fun () ->
         let mutable x = 0
         let byrefVal = &x
         byrefVal

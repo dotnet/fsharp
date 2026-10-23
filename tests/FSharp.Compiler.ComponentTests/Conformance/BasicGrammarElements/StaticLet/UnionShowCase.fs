@@ -11,7 +11,7 @@ type U =
     static do printfn "init U 2"
     static let u2 = Case2 2
     static member val U2 = u2
-    
+
     static do printfn "init end"
 
 printfn "%A" U.U1

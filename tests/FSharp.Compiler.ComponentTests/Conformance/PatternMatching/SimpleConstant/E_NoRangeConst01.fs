@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Constants 
+// #Regression #Conformance #PatternMatching #Constants
 
 
 // Verify error when trying to use range constants

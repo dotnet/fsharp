@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression test for FSHARP1.0:5644
 
 open System
@@ -10,10 +10,10 @@ exception E of int
 
 let q = <@ try let x = 1 in raise (E 3) with | :? ArgumentException as e when e.InnerException <> null -> -1 | E x -> x @>
 let q' = Expr.TryWith(
-            Expr.Value(0), 
-            Var("f", typeof<string>), Expr.Value(1), 
+            Expr.Value(0),
+            Var("f", typeof<string>), Expr.Value(1),
             Var("c", typeof<Exception>), Expr.Call(typeof<System.Environment>.GetMethod("Exit"), [Expr.Value(1)]))
-            
+
 let r1 = verify q (|TryWith|_|) "TryWith (Let (x, Value (1),
               Call (None, Raise, [Coerce (NewObject (E, Value (3)), Exception)])),
          matchValue,

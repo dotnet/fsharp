@@ -875,6 +875,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
           TypeForwarders = forwarders
+          CSharpStyleExtensionMembersCache = ConcurrentDictionary(1, 0)
           XmlDocumentationInfo =
               match xmlDocInfoLoader, fileName with
               | Some xmlDocInfoLoader, Some fileName -> xmlDocInfoLoader.TryLoad(fileName)

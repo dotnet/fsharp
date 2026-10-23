@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // Verify that '*)' doesn't end a comment if within a string literal

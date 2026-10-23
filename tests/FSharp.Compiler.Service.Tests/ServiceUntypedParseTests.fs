@@ -22,15 +22,15 @@ let private assertCompletionContext (checker: CompletionContext option -> bool) 
               line <- reader.ReadLine()
            if source.EndsWith "\n" then
               yield "" |]
-        
-    let markerPos = 
-        lines 
+
+    let markerPos =
+        lines
         |> Array.mapi (fun i x -> i, x)
-        |> Array.tryPick (fun (lineIdx, line) -> 
-            match line.IndexOf Marker with 
-            | -1 -> None 
+        |> Array.tryPick (fun (lineIdx, line) ->
+            match line.IndexOf Marker with
+            | -1 -> None
             | idx -> Some (mkPos (Line.fromZ lineIdx) idx))
-        
+
     match markerPos with
     | None -> failwithf "Marker '%s' was not found in the source code" Marker
     | Some markerPos ->
@@ -46,7 +46,7 @@ module AttributeCompletion =
     let ``at [<|, applied to nothing``() =
         """
 [<(* marker *)
-"""  
+"""
         |> assertCompletionContext (fun x -> x = Some CompletionContext.AttributeApplication)
 
     [<Theory>]
@@ -215,7 +215,7 @@ module TypeMemberRanges =
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 
-    
+
     [<Fact>]
     let ``Member range 01 - Simple``() =
         let source = """
@@ -224,7 +224,7 @@ type T =
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 23) ]
 
-    
+
     [<Fact>]
     let ``Member range 02 - Static``() =
         let source = """
@@ -261,7 +261,7 @@ type T =
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 44) ]
 
-    
+
     [<Fact>]
     let ``Member range 06 - Read-write property``() =
         let source = """
@@ -290,7 +290,7 @@ type T =
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 43) ]
 
-    
+
     [<Fact>]
     let ``Member range 09 - Abstract slot``() =
         let source = """
@@ -646,7 +646,7 @@ let addStr x y = string x + string y
         | None ->
             failwith("No arguments found in source code")
 
-        
+
         let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPosition (mkPos 2 28)
         match res with
         | Some res ->
@@ -1117,7 +1117,7 @@ let square x = x *
             |> shouldEqual ("op_PipeRight", 1)
         | None ->
             failwith("No pipeline found")
-                
+
     [<Fact>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Double pipeline``() =
         let source = """

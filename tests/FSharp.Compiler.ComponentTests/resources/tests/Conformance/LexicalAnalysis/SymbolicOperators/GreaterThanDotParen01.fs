@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Operators 
+// #Regression #Conformance #LexicalAnalysis #Operators
 // Regression test for FSHARP1.0:4994
 // We could not define operator >.
 

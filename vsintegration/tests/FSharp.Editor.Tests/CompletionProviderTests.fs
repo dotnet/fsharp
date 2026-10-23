@@ -1116,6 +1116,13 @@ let x = A.``B C``
         VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
 
     [<Fact>]
+    let ``Completion after backticked binding name`` () =
+        let fileContents = "let ``what is this`` = System.DateTime.N"
+
+        VerifyCompletionList(fileContents, "System.DateTime.N", [ "Now" ], [])
+        VerifyCompletionListSpan(fileContents, "System.DateTime.N", "N")
+
+    [<Fact>]
     let ``Completion list span works with partial backtick identifier`` () =
         let fileContents =
             """
@@ -1927,11 +1934,11 @@ let _ =
         let fileContents =
             """
 type G<'a> () =
-    override _.
+    override _.g
 
     override x.ToString () = ""
 
-[<AbstractClass]
+[<AbstractClass>]
 type A () =
     abstract member A1: unit -> unit
     abstract member A1: string -> unit
@@ -1953,7 +1960,7 @@ type C () =
     override A1 s = ()
 """
 
-        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
+        VerifyCompletionListExactly(fileContents, "override _.g", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
 
         VerifyCompletionListExactly(
             fileContents,
@@ -2102,7 +2109,7 @@ match { A = 1; B = 2 } with
 | { f = () }
 """
 
-        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B" ], [ "C"; "D" ])
 
     [<Fact>]
     let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =

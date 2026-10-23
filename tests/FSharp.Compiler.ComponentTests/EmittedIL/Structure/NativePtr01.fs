@@ -1,4 +1,4 @@
-// #Regression #NoMT #CodeGen #Interop 
+// #Regression #NoMT #CodeGen #Interop
 // Regression test for FSHARP1.0:6150
 // nativeptr<T> should not turn into IntPtr when used in method signature or return value
 // it should be T*
@@ -12,15 +12,15 @@ module M =
  type T() = member x.F ( p : nativeptr<char> ) = ()
 
  type R() = member x.G ( ) : nativeptr<char>  = Unchecked.defaultof<nativeptr<char>>
- 
- let res1 = System.Reflection.Assembly.GetExecutingAssembly() 
-            |> getType "N.M+T" 
+
+ let res1 = System.Reflection.Assembly.GetExecutingAssembly()
+            |> getType "N.M+T"
             |> getMember "F"
 
- let res2 = System.Reflection.Assembly.GetExecutingAssembly() 
-            |> getType "N.M+R" 
+ let res2 = System.Reflection.Assembly.GetExecutingAssembly()
+            |> getType "N.M+R"
             |> getMember "G"
-           
+
  // Used to be (incorrectly) "Void F(IntPtr)"
  if res1.ToString() <> "Void F(Char*)" then raise (new Exception("exit 1"))
 

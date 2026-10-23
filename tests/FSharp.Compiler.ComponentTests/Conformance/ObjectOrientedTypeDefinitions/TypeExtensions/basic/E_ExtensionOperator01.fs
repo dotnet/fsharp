@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 // Regression for FSHARP1.0:3592
 // Can't use extension methods to define operators
 //<Expects status="warning" id="FS1215" span="(18,24-18,25)">Extension members cannot provide operator overloads\.  Consider defining the operator as part of the type definition instead\.</Expects>
@@ -21,7 +21,7 @@ module TestExtensions =
     type System.Exception with
         static member (+) (e1: Exception, e2: Exception) =
             new Exception(e1.Message + " " + e2.Message)
-            
+
 let e1 = Exception()
 let e2 = Exception()
 let r = e1 + e2

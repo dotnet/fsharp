@@ -249,14 +249,14 @@ module GenericComparison =
         compilation
         |> getCompilation
         |> verifyCompilation
-        
+
     // SOURCE=Equals11.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals11.dll"	# Equals11.fs -
     [<Theory; FileInlineData("Equals11.fsx")>]
     let ``Equals11_fsx`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation
-   
+
     // SOURCE=Equals12.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals12.dll"	# Equals12.fs -
     [<Theory; FileInlineData("Equals12.fsx")>]
     let ``Equals12_fsx`` compilation =
@@ -270,14 +270,14 @@ module GenericComparison =
         compilation
         |> getCompilation
         |> verifyCompilation
-        
+
     // SOURCE=Equals14.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals14.dll"	# Equals14.fs -
     [<Theory; FileInlineData("Equals14.fsx")>]
     let ``Equals14_fsx`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation
-   
+
     // SOURCE=Equals15.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals15.dll"	# Equals15.fs -
     [<Theory; FileInlineData("Equals15.fsx")>]
     let ``Equals15_fsx`` compilation =
@@ -291,14 +291,14 @@ module GenericComparison =
         compilation
         |> getCompilation
         |> verifyCompilation
-        
+
     // SOURCE=Equals17.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals17.dll"	# Equals17.fs -
     [<Theory; FileInlineData("Equals17.fsx")>]
     let ``Equals17_fsx`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation
-   
+
     // SOURCE=Equals18.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Equals18.dll"	# Equals18.fs -
     [<Theory; FileInlineData("Equals18.fsx")>]
     let ``Equals18_fsx`` compilation =

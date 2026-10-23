@@ -6,7 +6,7 @@ open System.Linq
 
 let CustomersTuples1 = [
         ("Jeff", 34)
-        ("Annie", 19) 
+        ("Annie", 19)
         ("Abed", 25)
         ("Troy", 25)
         ("Pierce", 62)
@@ -17,7 +17,7 @@ let CustomersTuples4 = CustomersTuples3.AsParallel()
 
 let queries (dataSource : seq<_>) =
     // For/Yield
-    let q1 = 
+    let q1 =
         query {
             for c in dataSource do
             yield c
@@ -119,8 +119,8 @@ let queries (dataSource : seq<_>) =
                     for (n1,a1) in dataSource do
                     where (a1 > 26)
                     select n1
-                }      
-            yield (n,q)      
+                }
+            yield (n,q)
         }
     if (q12 |> Seq.length) <> 6 then printfn "Failed on nested query"; exit 1
 
@@ -133,37 +133,37 @@ let queries (dataSource : seq<_>) =
                     for (n1,a1) in dataSource do
                     where (a1 > 26)
                     select n1
-                }      
-            yield! q    
+                }
+            yield! q
         }
     if (q13 |> Seq.length) <> 12 then printfn "Failed on yield!"; exit 1
 
     // distinct
-    let q14 = 
+    let q14 =
         query {
             for (n,a) in dataSource do
             let q =
                 query {
                     for d in [1;1;2;2;3;3;3] do
                     distinct
-                }    
+                }
             select (n,q)
         }
     let c,q = (q14 |> Seq.head)
     if (q |> Seq.length <> 3) then  printfn "Failed on distinct"; exit 1
 
     // groupBy
-    let q15 = 
+    let q15 =
         query {
             for c in dataSource do
             groupBy c
         }
-    
+
     if (q15 |> Seq.head).Key <> ("Jeff",34) then printfn "Failed on groupBy"; exit 1
     if q15 |> Seq.length <> 6 then exit 1
 
     // last
-    let q16 = 
+    let q16 =
         query {
             for c in dataSource do
             last
@@ -172,7 +172,7 @@ let queries (dataSource : seq<_>) =
     if q16 <> ("Britta",26) then printfn "Failed on last"; exit 1
 
     // lastOrDefault
-    let q17 = 
+    let q17 =
         query {
             for c in ([] : int list) do
             lastOrDefault
@@ -181,7 +181,7 @@ let queries (dataSource : seq<_>) =
     if q17 <> 0 then printfn "Failed on lastOrDefault"; exit 1
 
     // head
-    let q18 = 
+    let q18 =
         query {
             for c in dataSource do
             head
@@ -190,7 +190,7 @@ let queries (dataSource : seq<_>) =
     if q18 <> ("Jeff", 34) then printfn "Failed on head"; exit 1
 
     // headOrDefault
-    let q19 = 
+    let q19 =
         query {
             for c in ([] : int list) do
             headOrDefault
@@ -199,16 +199,16 @@ let queries (dataSource : seq<_>) =
     if q19 <> 0 then printfn "Failed on headOfDefault"; exit 1
 
     // exactlyOne
-    let q20 = 
+    let q20 =
         query {
             for c in [(dataSource |> Seq.head)] do
             exactlyOne
         }
 
     if q20 <> ("Jeff", 34) then printfn "Failed on exactlyOne";  exit 1
-    
+
     try
-        let q21 = 
+        let q21 =
             query {
                 for c in dataSource do
                 exactlyOne
@@ -216,10 +216,10 @@ let queries (dataSource : seq<_>) =
         printfn "Failed on exactlyOne"
         exit 1
     with
-        :? InvalidOperationException -> ()        
+        :? InvalidOperationException -> ()
 
     try
-        let q22 = 
+        let q22 =
             query {
                 for c in ([] : int list) do
                 exactlyOne
@@ -227,11 +227,11 @@ let queries (dataSource : seq<_>) =
         printfn "Failed on exactlyOne"
         exit 1
     with
-        :? InvalidOperationException -> ()        
+        :? InvalidOperationException -> ()
 
     // exactlyOneOrDefault
     try
-        let q23 = 
+        let q23 =
             query {
                 for c in dataSource do
                 exactlyOneOrDefault
@@ -239,10 +239,10 @@ let queries (dataSource : seq<_>) =
         printfn "Failed on exactlyOneOrDefault"
         exit 1
     with
-        :? InvalidOperationException -> ()        
+        :? InvalidOperationException -> ()
 
 
-    let q24 = 
+    let q24 =
         query {
             for c in ([] : int list) do
             exactlyOneOrDefault
@@ -250,7 +250,7 @@ let queries (dataSource : seq<_>) =
 
     if q24 <> 0 then printfn "Failed on exactlyOneOrDefault";  exit 1
 
-    let q25 = 
+    let q25 =
         query {
             for c in [(dataSource |> Seq.head)] do
             exactlyOneOrDefault
@@ -259,7 +259,7 @@ let queries (dataSource : seq<_>) =
     if q25 <> ("Jeff", 34) then printfn "Failed on exactlyOneOrDefault";   exit 1
 
     // count
-    let q26 = 
+    let q26 =
         query {
             for c in dataSource do
             count
@@ -268,7 +268,7 @@ let queries (dataSource : seq<_>) =
     if q26 <> 6 then printfn "Failed on count";   exit 1
 
     // nth
-    let q27 = 
+    let q27 =
         query {
             for c in dataSource do
             nth 3
@@ -277,7 +277,7 @@ let queries (dataSource : seq<_>) =
     if q27 <> ("Troy", 25) then printfn "Failed on nth";   exit 1
 
     // skip
-    let q28 = 
+    let q28 =
         query {
             for c in dataSource do
             skip 2
@@ -286,16 +286,16 @@ let queries (dataSource : seq<_>) =
     if q28 |> Seq.length <> 4 then printfn "Failed on skip";   exit 1
 
     // skipWhile
-    let q29 = 
+    let q29 =
         query {
             for (n,a) in dataSource do
             skipWhile (a > 26)
         }
-    
+
     if q29 |> Seq.length <> 5 then printfn "Failed on skipWhile";   exit 1
 
     // take
-    let q30 = 
+    let q30 =
         query {
             for c in dataSource do
             take 2
@@ -304,7 +304,7 @@ let queries (dataSource : seq<_>) =
     if q30 |> Seq.length <> 2 then printfn "Failed on take";   exit 1
 
     // takeWhile
-    let q31 = 
+    let q31 =
         query {
             for (n,a) in dataSource do
             takeWhile (a > 20)
@@ -313,7 +313,7 @@ let queries (dataSource : seq<_>) =
     if q31 |> Seq.length <> 1 then printfn "Failed on takeWhile";   exit 1
 
     // find
-    let q33 = 
+    let q33 =
         query {
             for (n,a) in dataSource do
             find (a < 26 && a > 20)
@@ -322,7 +322,7 @@ let queries (dataSource : seq<_>) =
     if q33 <> ("Abed", 25) then printfn "Failed on find";   exit 1
 
     // minBy
-    let q34 = 
+    let q34 =
         query {
             for (n,a) in dataSource do
             minBy a
@@ -331,7 +331,7 @@ let queries (dataSource : seq<_>) =
     if q34 <> 19 then printfn "Failed on minBy";   exit 1
 
     // maxBy
-    let q35 = 
+    let q35 =
         query {
             for (n,a) in dataSource do
             maxBy a
@@ -340,7 +340,7 @@ let queries (dataSource : seq<_>) =
     if q35 <> 62 then printfn "Failed on maxBy";   exit 1
 
     // groupValBy
-    let q35 = 
+    let q35 =
         query {
             for c in dataSource do
             let n,a = c

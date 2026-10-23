@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 
 
 //<Expects id="FS0010" status="error" span="(18,1)">Incomplete structured construct at or before this point in binding</Expects>

@@ -1,13 +1,13 @@
 ---
 name: expert-reviewer
-description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, concurrency, IDE performance, diagnostics, and code quality across 19 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks."
+description: "Multi-dimensional code review agent for F# compiler PRs. Evaluates type checking, IL emission, AST correctness, binary compatibility, concurrency, diagnostics, and code quality across 16 dimensions. Invoke when reviewing compiler changes, requesting expert feedback, or performing pre-merge quality checks. Invoke @ide-integration for vsintegration/, src/Compiler/Service/, and src/Compiler/Symbols/."
 ---
 
 # Expert Reviewer
 
-Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
+Evaluates F# compiler changes across 16 dimensions. Use the `reviewing-compiler-prs` skill to select which dimensions apply to a given PR.
 
-**Related tools:** `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues).
+**Related tools:** `hypothesis-driven-debugging` (investigating failures found during review), `ilverify-failure` (fixing IL verification issues), `vsintegration-ide-debugging` (fixing IDE debugging issues), `@ide-integration` (IDE host and compiler service).
 
 ## Overarching Principles
 
@@ -17,29 +17,26 @@ Evaluates F# compiler changes across 19 dimensions. Use the `reviewing-compiler-
 - **Determinism is a correctness property.** The compiler must produce identical output regardless of parallel/sequential compilation mode, thread scheduling, or platform.
 - **Feature gating protects users.** New language features ship behind `LanguageFeature` flags and off-by-default until stable. Breaking changes require an RFC. Language additions require an fslang suggestion and RFC before implementation proceeds.
 - **Diagnostics are user-facing.** Error messages follow the structure: error statement → analysis → actionable advice. Wording changes need the same care as API changes.
-- **IDE responsiveness is a feature.** Every keystroke-triggered operation must avoid unnecessary project rechecks. Evaluate the queue stress impact of every new FCS request type.
 - **Prefer general solutions over special cases.** Do not hardwire specific library optimizations into the compiler. Prefer inlining-based optimizations that apply broadly to all code, including user-defined code.
 - **Evidence-based performance.** Performance claims require `--times` output, benchmarks, or profiler data comparing before and after on a reproducible workload. Do not inline large functions without performance evidence.
-- **Guard the API surface.** Public API additions to FCS and FSharp.Core must be carefully controlled. Internal data structures must never leak. Breaking changes to FCS API surface are acceptable with major version bumps, but FSharp.Core must remain stable.
+- **Guard the API surface.** Public API additions to FSharp.Core must be carefully controlled. FSharp.Core must remain stable. The FCS half of this rule moved to @ide-integration.
 
 ## Anti-Patterns
 
 Push back against these recurring patterns:
 
 1. **Reformatting + logic in one PR** — Separate formatting into its own PR. Mixed diffs obscure logic changes and block review.
-2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. (Exception: top-level language service entry points should catch all to prevent IDE crashes — but log, don't silence.)
-3. **Internal type leakage** — Internal compiler data structures must not leak through the FCS (F# Compiler Service) public API. Leakage creates permanent API commitments from implementation details.
-4. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
-5. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
-6. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
-7. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
-8. **Stale type-checking results** — Avoid returning stale results; they cause timing-dependent IntelliSense glitches. Prefer fresh results with cancellation support.
-9. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
-10. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
-11. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
-12. **Large closures capturing unnecessary data** — Verify that long-lived closures don't capture more data than needed, causing memory leaks.
-13. **Returning `Unchecked.defaultof<_>` to swallow exceptions** — This hides the root cause. Investigate and fix exception propagation failures.
-14. **Band-aid ad-hoc patches** — Flag `if condition then specialCase else normalPath` that patches a consumer rather than fixing the source.
+2. **Catch-all exception handlers** — Do not add catch-all exception handlers. Handle `OperationCanceledException` specially; never swallow it. The language-service exception moved to @ide-integration.
+3. **Performance claims without data** — Require benchmarks, `--times` output, or profiler evidence for any performance claim.
+4. **Raw TType_* pattern matching** — Never match on `TType_*` without first calling `stripTyEqns` (which resolves type abbreviations and equations). Skipping it causes missed matches on aliased/abbreviated types. Use `AppTy` active pattern instead of `TType_app`.
+5. **Verbose inline logging** — Prefer structured/declarative tracing over inline logging calls that clutter the code.
+6. **Conditional serialization writes** — Writes gated on compiler flags (LangVersion, feature toggles, TFM) produce misaligned byte streams for cross-version metadata. The byte count must depend only on stream-encoded data.
+7. **Global mutable state** — Pass dependencies explicitly as parameters rather than using module-level mutable globals, to enable concurrent and snapshot-based processing.
+8. **Missing XML doc comments** — Every new top-level function, module, and type definition must have a `///` comment.
+9. **Shell script wrappers** — Prefer MSBuild targets over batch/shell scripts — scripts obscure build logic and break cross-platform.
+10. **Large closures capturing unnecessary data** — Verify that long-lived closures don't capture more data than needed, causing memory leaks.
+11. **Returning `Unchecked.defaultof<_>` to swallow exceptions** — This hides the root cause. Investigate and fix exception propagation failures.
+12. **Band-aid ad-hoc patches** — Flag `if condition then specialCase else normalPath` that patches a consumer rather than fixing the source.
 
 ## Review Dimensions
 
@@ -71,6 +68,8 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 - Minimize FCS's FSharp.Core dependency — the compiler should be hostable with different FSharp.Core versions.
 - XML doc comments are mandatory for all public APIs. New API additions require an RFC.
 - Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — eliminates closure allocation at call sites.
+
+For allocation, copy, sharing, or collection fast-path changes, apply **Representation-Preserving Optimizations** below. An unchanged signature and equal elements do not establish behavioral compatibility.
 
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
@@ -139,6 +138,7 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 - Prefer general approaches (e.g., improved inlining) that cover many cases at once over hand-implementing function-by-function optimizations.
 - Verify that expression restructuring optimizations don't regress code quality — compare IL before and after.
 - Require performance evidence for optimization changes.
+- For allocation elimination, caching, or replacement of general operations with fast paths, apply **Representation-Preserving Optimizations** below.
 
 **Severity:** Semantic-altering optimization → **critical**. Tail-call regression → **high**. Missing evidence → **medium**.
 
@@ -146,25 +146,7 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 
 ---
 
-### 7. FCS API Surface Control
-
-The FCS public API is a permanent commitment. Internal types must never leak.
-
-**CHECK:**
-- Keep internal implementation details out of the public FCS API.
-- The FCS Symbol API must be thread-safe for concurrent access.
-- When changing internal implementation to async, keep FCS API signatures unchanged.
-- Apply type safety with distinct types (not aliases) across the FCS API.
-- Document the purpose of new public API arguments in XML docs.
-- Update exception XML docs in `.fsi` files when behavior changes.
-
-**Severity:** Unintended public API break → **critical**. Internal type leakage → **high**. Missing XML docs → **medium**.
-
-**Hotspots:** `src/Compiler/Service/`, `src/FSharp.Core/`
-
----
-
-### 8. Type System Correctness
+### 7. Type System Correctness
 
 Type checking and inference must be sound. Subtle bugs in constraint solving, overload resolution, or scope handling produce incorrect programs.
 
@@ -179,7 +161,7 @@ Type checking and inference must be sound. Subtle bugs in constraint solving, ov
 
 ---
 
-### 9. Struct Type Awareness
+### 8. Struct Type Awareness
 
 Structs have value semantics that differ fundamentally from reference types. Incorrect handling causes subtle bugs.
 
@@ -195,24 +177,7 @@ Structs have value semantics that differ fundamentally from reference types. Inc
 
 ---
 
-### 10. IDE Responsiveness
-
-The compiler service must respond to editor keystrokes without unnecessary recomputation.
-
-**CHECK:**
-- Use fully async code in the language service; avoid unnecessary `Async.RunSynchronously`.
-- Verify changes do not trigger endless project rechecks.
-- Evaluate the queue stress impact of every new FCS request type — each request blocks the service queue while running, so expensive requests delay all other IDE features.
-- Caching must prevent duplicate work per project.
-- Test IDE changes on large solutions before merging.
-
-**Severity:** Endless recheck loop → **critical**. UI thread block → **high**. Missing trace verification → **medium**.
-
-**Hotspots:** `src/Compiler/Service/`, `src/FSharp.Compiler.LanguageServer/`, `vsintegration/`
-
----
-
-### 11. Overload Resolution Correctness
+### 9. Overload Resolution Correctness
 
 Overload resolution is one of the most complex and specification-sensitive areas of the compiler.
 
@@ -229,7 +194,7 @@ Overload resolution is one of the most complex and specification-sensitive areas
 
 ---
 
-### 12. Binary Compatibility & Metadata Safety
+### 10. Binary Compatibility & Metadata Safety
 
 The pickled metadata format is a cross-version contract. DLLs compiled with any F# version must be consumable by any other version.
 
@@ -249,12 +214,12 @@ The pickled metadata format is a cross-version contract. DLLs compiled with any 
 
 ---
 
-### 13. Concurrency & Cancellation Safety
+### 11. Concurrency & Cancellation Safety
 
 Async and concurrent code must handle cancellation, thread safety, and exception propagation correctly.
 
 **CHECK:**
-- Thread cancellation tokens through all async operations. All FCS requests must support cancellation.
+- Thread cancellation tokens through all async operations.
 - Ensure thread-safety for shared mutable state. Avoid global mutable state.
 - Every lock must have a comment explaining what it protects.
 - Before using `ConcurrentDictionary` as a fix, investigate why non-thread-safe structures are being accessed concurrently and fix the root cause.
@@ -263,27 +228,13 @@ Async and concurrent code must handle cancellation, thread safety, and exception
 
 **Severity:** Race condition or data corruption → **critical**. Swallowed cancellation → **high**. Missing async test → **medium**.
 
-**Hotspots:** `src/Compiler/Service/`, `src/Compiler/Facilities/`, `src/FSharp.Core/`, `vsintegration/`
+**Hotspots:** `src/Compiler/Facilities/`, `src/FSharp.Core/`
+
+FCS request cancellation and the `vsintegration/` hotspot moved to @ide-integration.
 
 ---
 
-### 14. Incremental Checking Correctness
-
-Incremental checking must invalidate stale results correctly. Stale data causes timing-dependent glitches.
-
-**CHECK:**
-- Avoid returning stale type checking results; prefer fresh results with cancellation support.
-- Verify that caching prevents redundant checks and that cache invalidation is correct.
-- Verify that project setup handles clean solutions or unrestored packages without silently dropping references.
-- Ensure error loggers are consistent across all checking phases to avoid missing errors.
-
-**Severity:** Stale results causing glitches → **critical**. Missed invalidation → **high**. Missing cache verification → **medium**.
-
-**Hotspots:** `src/Compiler/Service/`, `src/Compiler/Driver/`
-
----
-
-### 15. Syntax Tree & Parser Integrity
+### 12. Syntax Tree & Parser Integrity
 
 AST nodes must accurately represent source code. Parser changes are high-risk because they affect every downstream phase.
 
@@ -299,7 +250,7 @@ AST nodes must accurately represent source code. Parser changes are high-risk be
 
 ---
 
-### 16. Exception Handling Discipline
+### 13. Exception Handling Discipline
 
 Exception handling must be precise. Catch-all handlers and swallowed exceptions hide bugs.
 
@@ -308,8 +259,9 @@ Exception handling must be precise. Catch-all handlers and swallowed exceptions 
 - Never swallow exceptions silently; handle `OperationCanceledException` specially.
 - Do not suppress task completion by silently ignoring `TrySetException` failures.
 - Returning `Unchecked.defaultof<_>` to swallow exceptions is dangerous — investigate and fix the root cause.
-- At language service API boundaries (top-level entry points called by the IDE), catch all exceptions to prevent IDE crashes — but log them, don't silence them.
 - Inside the compiler, do not add catch-all exception handlers — they hide bugs.
+
+The language-service boundary bullet moved to @ide-integration.
 
 **Severity:** Swallowed cancellation → **critical**. Catch-all handler → **high**. Missing error → **medium**.
 
@@ -317,7 +269,7 @@ Exception handling must be precise. Catch-all handlers and swallowed exceptions 
 
 ---
 
-### 17. Diagnostic Quality
+### 14. Diagnostic Quality
 
 Error and warning messages are the compiler's user interface. They must be precise, consistent, and actionable.
 
@@ -332,7 +284,7 @@ Error and warning messages are the compiler's user interface. They must be preci
 
 ---
 
-### 18. Debug Experience Quality
+### 15. Debug Experience Quality
 
 Debug stepping, breakpoints, and locals display must work correctly. Debug experience regressions silently break developer workflows.
 
@@ -347,7 +299,7 @@ Debug stepping, breakpoints, and locals display must work correctly. Debug exper
 
 ---
 
-### 19. Feature Gating & Compatibility
+### 16. Feature Gating & Compatibility
 
 New features must be gated behind language version checks. Breaking changes require RFC process.
 
@@ -364,6 +316,23 @@ New features must be gated behind language version checks. Breaking changes requ
 ---
 
 ### Additional Dimensions (Evaluate When Applicable)
+
+#### Representation-Preserving Optimizations
+
+Apply to allocation/copy elimination, singleton sharing, caching, and specialized fast paths.
+
+**CHECK:**
+- Identify properties preserved by the old implementation and `.fsi` contract beyond values: runtime type, aliasing, comparer, evaluation order, and exception timing. Separate intended changes from regressions.
+- Exercise inputs whose static type hides their runtime representation (covariant arrays, interface-wrapped collections), pairing boundary and ordinary cases.
+- Compare merge-base and PR behavior using a downstream observer: runtime-type assertion, cast, mutation, comparer-sensitive lookup, or effect trace. Element equality alone is insufficient.
+- Trace affected callers and equivalent fast paths; cover shared contracts with compact parameterized tests. Require a concrete unintended behavioral difference before flagging.
+
+Example (#20388): replacing `Clone()` with an empty `'T[]` singleton changes this copy from `string[]` to `obj[]`, breaking a previously valid cast:
+
+```fsharp
+let source = box ([||] : string[]) :?> obj[]
+let recovered = box (Array.copy source) :?> string[]
+```
 
 #### Compiler Performance Measurement
 
@@ -431,7 +400,7 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ## Review Workflow
 
-Execute review in five waves, each building on the previous.
+Execute review in six waves, each building on the previous.
 
 ### Wave 0: Orientation & Dimension Dispatch
 
@@ -444,28 +413,26 @@ Execute review in five waves, each building on the previous.
 ### Wave 1: Structural Scan
 
 1. Verify every behavioral change has a corresponding test (Dimension 1).
-2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 19).
-3. Verify no unintended public API changes (Dimension 7).
-4. Check for binary compatibility concerns in pickle/import code (Dimension 12).
+2. Check feature gating — new features must have `LanguageFeature` guards (Dimension 16).
+3. If the diff touches `vsintegration/`, `src/Compiler/Service/`, or `src/Compiler/Symbols/`, invoke @ide-integration. Do not review those trees here.
+4. Check for binary compatibility concerns in pickle/import code (Dimension 10).
 5. If FSharp.Core is touched, apply FSharp.Core Stability checks (Dimension 2).
 
 ### Wave 2: Correctness Deep-Dive
 
-1. Trace type checking changes through constraint solving and inference (Dimension 8).
+1. Trace type checking changes through constraint solving and inference (Dimension 7).
 2. Verify IL emission correctness with both Debug and Release optimizations (Dimension 5).
-3. Validate AST node accuracy against source syntax (Dimension 15).
+3. Validate AST node accuracy against source syntax (Dimension 12).
 4. Check parallel determinism if checking/name-generation code is touched.
 5. Verify optimization correctness — no semantic-altering transforms (Dimension 6).
-6. Verify struct semantics if value types are involved (Dimension 9).
+6. Verify struct semantics if value types are involved (Dimension 8).
 
 ### Wave 3: Runtime & Integration
 
-1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 13).
-2. Check IDE impact — no unnecessary rechecks or keystroke-triggered rebuilds (Dimension 10).
-3. Verify overload resolution correctness if constraint solving changes (Dimension 11).
-4. Check incremental checking correctness — no stale results (Dimension 14).
-5. Review diagnostic message quality (Dimension 17).
-6. Verify debug experience — stepping, breakpoints, locals (Dimension 18).
+1. Verify concurrency safety — no races, proper cancellation, stack traces preserved (Dimension 11).
+2. Verify overload resolution correctness if constraint solving changes (Dimension 9).
+3. Review diagnostic message quality (Dimension 14).
+4. Verify debug experience — stepping, breakpoints, locals (Dimension 15).
 
 ### Wave 4: Quality & Polish
 
@@ -476,34 +443,36 @@ Execute review in five waves, each building on the previous.
 
 ### Wave 5: Deliver Review as Inline Comments
 
-**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as posted inline comments at the correct file and line.
+**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as inline comments anchored to the exact file and line. A prose review body is the failure this wave exists to prevent: the author wrote the diff, so narrating it back is noise. Every review body and every comment begins with the robot+detective disclosure `🤖🕵️`.
 
-1. **Deduplicate first.** Check existing reviews to avoid duplicate content:
+1. **Deduplicate first.**
    ```bash
    gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
    ```
    If reviews from automated accounts already exist, skip posting and apply the label only.
 
-2. **Post findings as a review with inline comments** at the best-fitting file and line. Use the GitHub API to create a single review with all comments:
+2. **Findings exist → one review, inline comments only.** Every finding — *including minor and "nice to have" ones* — is its own inline comment anchored to a file+line, so each becomes an independent, resolvable thread. Never collect findings into the body.
    ```bash
    gh api repos/{owner}/{repo}/pulls/{number}/reviews \
      --method POST \
      --field event=COMMENT \
-     --field body='' \
+     --field 'body=🤖🕵️ AI review — verify independently.' \
      --field 'comments=[
-      {"path":"src/Compiler/Checking/CheckDeclarations.fs","line":2750,"body":"**[Test Coverage]** This code path lacks a test. Add a test exercising this branch."},
-      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"**[IL Emission]** Call `stripTyEqns` before this match to handle type abbreviations."}
+      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"🤖🕵️ Type abbreviation slips past the match — wrong branch taken.\n```fsharp\ntype Alias = int\nlet f (x: Alias) = ()  // reaches this case, mishandled\n```"}
      ]'
    ```
-   Each comment needs:
-   - `path`: file path relative to repo root (from the diff)
-   - `line`: line number in the **new** version of the file (right side of diff)
-   - `body`: severity tag in `**[Dimension]**` format, the issue, and suggested fix
+   - Review **`body` = one short line**, the `🤖🕵️` disclosure. Never a summary, never a finding list.
+   - `path`: file path from the diff. `line`: line in the **new** file (right side of diff); use `start_line`+`line` for a range.
+   - Comment body: `🤖🕵️` + one fragment naming the **consequence** (what breaks), then a fenced **user-code** sample — the input/usage that triggers it, or the fix. Show how the problem looks in *user* code; do not restate the product diff.
+   - **Validated, not guessed.** If you have not run it and seen the result, drop the finding. "Would allocate" / "could box" / "may cancel" without a repro → drop.
+   - At most ~6–10 comments, ranked Behavioral > Quality > Nitpick.
 
-3. **If no significant issues found**, post an approving review:
+3. **No significant issues → approve.** Body is the disclosure plus, optionally, a collapsed list of what was covered — the ONE permitted multi-line body:
    ```bash
-   gh pr review {number} --repo {owner}/{repo} --approve --body "LGTM"
+   gh pr review {number} --repo {owner}/{repo} --approve \
+     --body $'🤖🕵️ LGTM ✅\n\n<details>\n<summary>Dimensions covered (expand)</summary>\n\n- IL emission\n- Binary compatibility\n- Concurrency\n</details>'
    ```
+   The `<details>` block is a bare list of the dimensions/subagents that ran — no prose, no per-dimension write-up.
 
 4. **Apply the label and request human review:**
    ```bash
@@ -511,12 +480,12 @@ Execute review in five waves, each building on the previous.
    ```
 
 **Delivery rules:**
-- The review body MUST begin with an AI disclosure note (the `🤖` line above). This is non-negotiable — readers must know this is AI-generated, not human-written.
-- At most 10 inline comments — prioritize Behavioral over Quality over Nitpick.
-- Every comment must reference a specific file and line from the diff.
+- Every review body and every inline comment begins with `🤖🕵️`. Non-negotiable — readers must know this is AI-generated.
+- The review **body** is only ever: the one-line `🤖🕵️` disclosure (findings present), or `🤖🕵️ LGTM ✅` + the optional collapsed dimensions list (no findings). Anything else in the body — a summary, a numbered list of notes, praise, "two tiny things" — is a bug.
+- Every finding is an inline comment anchored to a specific file+line from the diff. No exception for "minor" or "nice" notes: if it is worth saying, anchor it.
+- Each comment carries a concrete **user-code** sample and describes **validated** behavior, not a guess.
+- **Banned in any body or comment:** prose summary, restating what the PR does, `**[Dimension]**`/`file:LINE` as a text header in the body, hedge/filler ("consider", "might want to", "non-blocking nit", "for consistency"), and any finding lacking a file+line or a concrete code sample.
 - Never post duplicate content if reviews already exist on the PR.
-- If the PR is too large to review fully, note skipped areas in the review body.
-- **NEVER write a wall-of-text review body.** The body is either `LGTM` (approve) or empty (with inline findings). All analysis stays in your context — only actionable findings get posted as inline comments. A review body longer than 10 characters (other than `LGTM`) is a bug.
 
 ## Folder Hotspot Mapping
 

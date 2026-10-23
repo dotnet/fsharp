@@ -57,6 +57,7 @@ type internal WellKnownEntityAttributes =
     | EditorBrowsableAttribute = (1uL <<< 46)
     | CompiledNameAttribute = (1uL <<< 47)
     | DebuggerDisplayAttribute = (1uL <<< 48)
+    | ExtendedLayoutAttribute = (1uL <<< 49)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known assembly-level attributes.
@@ -118,6 +119,8 @@ type internal WellKnownValAttributes =
     | TailCallAttribute = (1uL <<< 40)
     | NotNullIfNotNullAttribute = (1uL <<< 41)
     | OverloadResolutionPriorityAttribute = (1uL <<< 42)
+    | OptimizeClosureIfNotInlinedAttribute = (1uL <<< 43)
+    | RequireNamedArgumentsAttribute = (1uL <<< 44)
     | NotComputed = (1uL <<< 63)
 
 module internal Flags =
@@ -154,6 +157,8 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     /// Get the current flags value.
     member x.Flags = x.flags
 
+    member x.NeedsCompute = LanguagePrimitives.EnumToValue x.flags &&& (1uL <<< 63) <> 0uL
+
     /// Add a single item and OR-in its flag.
     member x.Add(attrib: 'TItem, flag: 'TFlags) =
         let combined =
@@ -167,18 +172,3 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
             WellKnownAttribs<'TItem, 'TFlags>([], LanguagePrimitives.EnumOfValue 0uL)
         else
             WellKnownAttribs<'TItem, 'TFlags>(x.attribs, LanguagePrimitives.EnumOfValue(1uL <<< 63))
-
-    /// Caller must write back the returned wrapper if needsWriteBack is true.
-    member x.CheckFlag(flag: 'TFlags, compute: 'TItem list -> 'TFlags) : struct (bool * WellKnownAttribs<'TItem, 'TFlags> * bool) =
-        let f = LanguagePrimitives.EnumToValue x.flags
-
-        if f &&& (1uL <<< 63) <> 0uL then
-            let computed = compute x.attribs
-            let wa = WellKnownAttribs<'TItem, 'TFlags>(x.attribs, computed)
-
-            struct (LanguagePrimitives.EnumToValue computed &&& LanguagePrimitives.EnumToValue flag
-                    <> 0uL,
-                    wa,
-                    true)
-        else
-            struct (x.HasWellKnownAttribute(flag), x, false)

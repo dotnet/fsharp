@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Exceptions 
+// #Conformance #TypesAndModules #Exceptions
 // Make sure we properly detect bogus named field in constructors
 
 

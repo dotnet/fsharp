@@ -10,8 +10,8 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell.Interop 
-open Microsoft.VisualStudio.TextManager.Interop 
+open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
@@ -23,20 +23,20 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
- 
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+    let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore
+
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: MethodGroupItem[], nwpl: ParameterLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
-    inherit MethodListForAMethodTip_DEPRECATED() 
+    inherit MethodListForAMethodTip_DEPRECATED()
 
     // Compute the tuple end points
-    let tupleEnds = 
+    let tupleEnds =
         let oneColAfter ((l,c): Position01) = (l,c+1)
         let oneColBefore ((l,c): Position01) = (l,c-1)
         [| yield Position.toZ nwpl.LongIdStartLocation
@@ -72,19 +72,19 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
 
     override x.GetCount() = methods.Length
 
-    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> 
+    override x.GetDescription(methodIndex) = safe methodIndex "" (fun m ->
         let buf = Text.StringBuilder()
         XmlDocumentation.BuildMethodOverloadTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.Description, true)
         buf.ToString()
         )
-            
+
     override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText.Text)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
-            
+
     override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
         let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, p.Display.Text )
-           
+
         nameOut <- name
         displayOut <- display
         descriptionOut <- ""
@@ -113,16 +113,16 @@ type internal ObsoleteGlyph =
     | Record = 126
     | DiscriminatedUnion = 132
 
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
-type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: DeclarationListItem[], reason: BackgroundRequestReason) = 
-        
-    inherit Declarations_DEPRECATED()  
+type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: DeclarationListItem[], reason: BackgroundRequestReason) =
+
+    inherit Declarations_DEPRECATED()
 
     // Sort the declarations, NOTE: we used ORDINAL comparison here, this is "by design" from F# 2.0, partly because it puts lowercase last.
     let declarations = declarations |> Array.sortWith (fun d1 d2 -> compare d1.NameInList d2.NameInList)
@@ -133,25 +133,25 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
 
     // Given a prefix, narrow the items to the include the ones containing that prefix, and store in a lookaside table
     // attached to this declaration set.
-    let trimmedDeclarations filterText = 
-        if reason = BackgroundRequestReason.DisplayMemberList then declarations 
-        elif tab.ContainsKey filterText then tab.[filterText] 
-        else 
+    let trimmedDeclarations filterText =
+        if reason = BackgroundRequestReason.DisplayMemberList then declarations
+        elif tab.ContainsKey filterText then tab.[filterText]
+        else
             let matcher = AbstractPatternMatcher.Singleton
-            let decls = 
+            let decls =
                 // Find the first prefix giving a non-empty declaration set after filtering
-                seq { for i in filterText.Length-1 .. -1 .. 0 do 
+                seq { for i in filterText.Length-1 .. -1 .. 0 do
                             let filterTextPrefix = filterText.[0..i]
                             match tab.TryGetValue filterTextPrefix with
                             | true, decls -> yield decls
-                            | false, _ -> yield declarations |> Array.filter (fun s -> matcher.MatchSingleWordPattern(s.NameInList, filterTextPrefix)<>null) 
+                            | false, _ -> yield declarations |> Array.filter (fun s -> matcher.MatchSingleWordPattern(s.NameInList, filterTextPrefix)<>null)
                       yield declarations }
                 |> Seq.tryFind (fun arr -> arr.Length > 0)
                 |> (function None -> declarations | Some s -> s)
             tab.[filterText] <- decls
             decls
 
-    override decl.GetCount(filterText) = 
+    override decl.GetCount(filterText) =
         let decls = trimmedDeclarations filterText
         decls.Length
 
@@ -169,17 +169,17 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
             let item = decls.[index]
             if (item.Glyph = FSharpGlyph.Error) then
                 ""
-            else 
+            else
                 item.NameInList
         else String.Empty
-    
+
     override decl.GetNameInCode(filterText, index) =
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let item = decls.[index]
             if (item.Glyph = FSharpGlyph.Error) then
                 ""
-            else 
+            else
                 item.NameInCode
         else String.Empty
 
@@ -187,7 +187,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].Description) 
+            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].Description)
             buf.ToString()
         else ""
 
@@ -234,35 +234,35 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...
         not (Char.IsLetterOrDigit(commitCharacter) || commitCharacter = '_')
-        
+
     // A helper to aid in determining how much text is relevant to the items chosen in the completion list.
     override decl.Reason = reason
-        
+
     // Note, there is no real reason for this code to use byrefs, except that we're calling it from C#.
     override decl.GetBestMatch(filterText, textSoFar, index : int byref, uniqueMatch : bool byref, shouldSelectItem : bool byref) =
         let decls = trimmedDeclarations filterText
         let compareStrings(s,t,l,b : bool) = System.String.Compare(s,0,t,0,l,b)
-        let tryFindDeclIndex text length ignoreCase = 
-            decls 
+        let tryFindDeclIndex text length ignoreCase =
+            decls
             |> Array.tryFindIndex (fun d -> compareStrings(d.NameInList, text, length, ignoreCase) = 0)
-        // The best match is the first item that begins with the longest prefix of the 
-        // given word (value).  
-        let rec findMatchOfLength len ignoreCase = 
+        // The best match is the first item that begins with the longest prefix of the
+        // given word (value).
+        let rec findMatchOfLength len ignoreCase =
             if len = 0 then
                 let indexLastBestMatch = tryFindDeclIndex lastBestMatch lastBestMatch.Length ignoreCase
                 match indexLastBestMatch with
                 | Some index -> (index, false, false)
                 | None -> (0,false, false)
-            else 
+            else
                 let firstMatchingLenChars = tryFindDeclIndex textSoFar len ignoreCase
                 match firstMatchingLenChars with
-                | Some index -> 
+                | Some index ->
                     lastBestMatch <- decls.[index].NameInList
                     let select = len = textSoFar.Length
-                    if (index <> decls.Length- 1) && (compareStrings(decls.[index+1].NameInList , textSoFar, len, ignoreCase) = 0) 
+                    if (index <> decls.Length- 1) && (compareStrings(decls.[index+1].NameInList , textSoFar, len, ignoreCase) = 0)
                     then (index, false, select)
                     else (index, select, select)
-                | None -> 
+                | None ->
                     match ignoreCase with
                     | false -> findMatchOfLength len true
                     | true -> findMatchOfLength (len-1) false
@@ -288,15 +288,15 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         '\000'
 
 
-                   
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
-type internal FSharpIntellisenseInfo_DEPRECATED 
+type internal FSharpIntellisenseInfo_DEPRECATED
                     (// The recent result of parsing
                      untypedResults: FSharpParseFileResults,
                      // Line/column/snapshot of BackgroundRequest that initiated creation of this scope
@@ -312,21 +312,21 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                      // A service that will provide Xml Content
                      documentationBuilder : IDocumentationBuilder_DEPRECATED,
                      provideMethodList : bool
-                     ) = 
-        inherit IntellisenseInfo_DEPRECATED() 
+                     ) =
+        inherit IntellisenseInfo_DEPRECATED()
 
-        let methodList = 
-          if provideMethodList then 
+        let methodList =
+          if provideMethodList then
             try
                 // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
                 let noteworthyParamInfoLocations = untypedResults.FindParameterLocations(Position.fromZ brLine brCol)
 
                 // we need some typecheck info, even if stale, in order to look up e.g. method overload types/xmldocs
-                if typedResults.HasFullTypeCheckInfo then 
+                if typedResults.HasFullTypeCheckInfo then
 
                     // we need recent parse info to e.g. know how many commas and thus how many args there are
                     match noteworthyParamInfoLocations with
-                    | Some nwpl -> 
+                    | Some nwpl ->
                         // Note: this may alternatively workaround some parts of 90778 - the real fix for that is to have before-overload-resolution name-sink work correctly.
                         // However it also deals with stale typecheck info that may not have recorded name resolutions for a recently-typed long-id.
                         let names = nwpl.LongId
@@ -335,26 +335,26 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
                         let lidEnd = nwpl.LongIdEndLocation
                         let methods = typedResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
-                        
-                        // If the name is an operator ending with ">" then it is a mistake 
-                        // we can't tell whether "  >(" is a generic method call or an operator use 
+
+                        // If the name is an operator ending with ">" then it is a mistake
+                        // we can't tell whether "  >(" is a generic method call or an operator use
                         // (it depends on the previous line), so we filter it
                         //
-                        // Note: this test isn't particularly elegant - encoded operator name would be something like "( ...> )"                        
+                        // Note: this test isn't particularly elegant - encoded operator name would be something like "( ...> )"
                         if (methods.Methods.Length = 0 || methods.MethodName.EndsWith("> )")) then
                             None
-                        else                    
+                        else
                             // "methods" contains both real methods for this longId, as well as static-parameters in the case of type providers.
                             // They "conflict" for cases of TP(...) (calling a constructor, no static args provided) versus TP<...> (static args), since
                             // both point to the same longId.  However we can look at the character at the 'OpenParen' location and see if it is a '(' or a '<' and then
                             // filter the "methods" list accordingly.
                             let isThisAStaticArgumentsTip =
-                                let parenLine, parenCol = Position.toZ nwpl.OpenParenLocation 
+                                let parenLine, parenCol = Position.toZ nwpl.OpenParenLocation
                                 let textAtOpenParenLocation =
                                     if brSnapshot=null then
                                         // we are unit testing, use the view
                                         let _hr, buf = view.GetBuffer()
-                                        let _hr, s = buf.GetLineText(parenLine, parenCol, parenLine, parenCol+1)  
+                                        let _hr, s = buf.GetLineText(parenLine, parenCol, parenLine, parenCol+1)
                                         s
                                     else
                                         // we are in the product, use the ITextSnapshot
@@ -364,7 +364,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 else
                                     false  // note: textAtOpenParenLocation is not necessarily otherwise "(", for example in "sin 42.0" it is "4"
                             let filteredMethods =
-                                [| for m in methods.Methods do 
+                                [| for m in methods.Methods do
                                         if (isThisAStaticArgumentsTip && m.StaticParameters.Length > 0) ||
                                            (not isThisAStaticArgumentsTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
                                             yield m |]
@@ -372,12 +372,12 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 Some (FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip_DEPRECATED)
                             else
                                 None
-                    | _ -> 
+                    | _ ->
                         None
                 else
                     // GetMethodListForAMethodTip found no TypeCheckInfo in ParseResult.
                     None
-            with e-> 
+            with e->
                 Assert.Exception(e)
                 reraise()
           else None
@@ -388,46 +388,46 @@ type internal FSharpIntellisenseInfo_DEPRECATED
             // '<' can be treated both as operator and as part of identifier
             // in this case we'll do 2 passes:
             // 1. treatTokenAsIdentifier=false - we'll pick raw token under the cursor and try find it among resolved names, is attempt was successful - great we are done, otherwise
-            // 2. treatTokenAsIdentifier=true - even if raw token was recognized as operator we'll use different branch 
+            // 2. treatTokenAsIdentifier=true - even if raw token was recognized as operator we'll use different branch
             // that calls QuickParse.GetCompleteIdentifierIsland and then tries previous column...
             let rec getDataTip alwaysTreatTokenAsIdentifier =
                 let token = colorizer.Value.GetTokenInfoAt(VsTextLines.TextColorState (VsTextView.Buffer view),line,col)
 
                 try
                     let lineText = VsTextLines.LineText (VsTextView.Buffer view) line
-                    
+
                     // Try the actual column first...
                     let tokenTag, col, possibleIdentifier, makeSecondAttempt =
-                      if token.Type = TokenType.Operator && not alwaysTreatTokenAsIdentifier then                      
-                          let tag, startCol, endCol = OperatorToken.asIdentifier_DEPRECATED token                      
+                      if token.Type = TokenType.Operator && not alwaysTreatTokenAsIdentifier then
+                          let tag, startCol, endCol = OperatorToken.asIdentifier_DEPRECATED token
                           let op = lineText.Substring(startCol, endCol - startCol)
                           tag, startCol, Some(op, endCol, false), true
                       else
                           match (QuickParse.GetCompleteIdentifierIsland false lineText col) with
-                          | None when col > 0 -> 
+                          | None when col > 0 ->
                               // Try the previous column & get the token info for it
-                              let tokenTag = 
+                              let tokenTag =
                                   let token = colorizer.Value.GetTokenInfoAt(VsTextLines.TextColorState (VsTextView.Buffer view),line,col - 1)
-                                  token.Token 
+                                  token.Token
                               let possibleIdentifier = QuickParse.GetCompleteIdentifierIsland false lineText (col - 1)
                               tokenTag, col - 1, possibleIdentifier, false
                           | _ as poss -> token.Token, col, poss, false
 
                     let diagnosticTipSpan = TextSpan(iStartLine=line, iEndLine=line, iStartIndex=col, iEndIndex=col+1)
-                    match possibleIdentifier with 
+                    match possibleIdentifier with
                     | None -> "",diagnosticTipSpan
-                    | Some (s,colAtEndOfNames, isQuotedIdentifier) -> 
+                    | Some (s,colAtEndOfNames, isQuotedIdentifier) ->
 
-                        if typedResults.HasFullTypeCheckInfo then 
+                        if typedResults.HasFullTypeCheckInfo then
                             let qualId  = PrettyNaming.GetLongNameFromString s
-                                                
+
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
                             let dataTip = typedResults.GetToolTip(Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
 
                             match dataTip with
                             | ToolTipText.ToolTipText [] when makeSecondAttempt -> getDataTip true
-                            | _ -> 
+                            | _ ->
                                 let buf = Text.StringBuilder()
                                 XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)
 
@@ -438,17 +438,17 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 // This is the span of text over which the data tip is active. If the mouse moves away from it then the
                                 // data tip goes away
                                 let dataTipSpan = TextSpan(iStartLine=line, iEndLine=line, iStartIndex=max 0 (colAtEndOfNames-lastStringLength), iEndIndex=colAtEndOfNames)
-                                (buf.ToString(), dataTipSpan)                                
+                                (buf.ToString(), dataTipSpan)
                         else
                             "Bug: TypeCheckInfo option was None", diagnosticTipSpan
-                with e -> 
+                with e ->
                     Assert.Exception(e)
                     reraise()
 
             getDataTip false
-            
 
-        /// Determine whether to force the use a synchronous parse 
+
+        /// Determine whether to force the use a synchronous parse
         static member IsReasonRequiringSyncParse(reason) =
             match reason with
             | BackgroundRequestReason.MethodTip // param info...
@@ -468,14 +468,14 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                         let prevTokenInfo = colorizer.Value.GetTokenInfoAt(VsTextLines.TextColorState (VsTextView.Buffer view),line,prevCol)
                         // denotes if we got token that matches exact specified position or it was just last token before EOF
                         let exactMatch = col >= tokenInfo.StartIndex && col <= tokenInfo.EndIndex
-                        exactMatch && ((tokenInfo.Color = TokenColor.Comment && prevTokenInfo.Color = TokenColor.Comment) || 
+                        exactMatch && ((tokenInfo.Color = TokenColor.Comment && prevTokenInfo.Color = TokenColor.Comment) ||
                                        (tokenInfo.Color = TokenColor.String  && prevTokenInfo.Color = TokenColor.String))
                     if isInCommentOrString then
                         // We don't want to show info in comments & strings (in case of exact match)
                         // (but we want to show it if the thing before or after isn't comment/string)
-                        return null 
-                    
-                    elif typedResults.HasFullTypeCheckInfo then 
+                        return null
+
+                    elif typedResults.HasFullTypeCheckInfo then
                         let lineText = VsTextLines.LineText (VsTextView.Buffer view) line
                         let colorState = VsTextLines.TextColorState (VsTextView.Buffer view)
                         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
@@ -489,7 +489,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             //                 here  ^
                             return null
                         // An ugly check to suppress declaration lists at 'member' declarations
-                        elif QuickParse.TestMemberOrOverrideDeclaration tokens then  
+                        elif QuickParse.TestMemberOrOverrideDeclaration tokens then
                             return null
                         else
                             let untypedParseInfoOpt =
@@ -498,15 +498,15 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 else
                                     None
                             // TODO don't use QuickParse below, we have parse info available
-                            let pname = QuickParse.GetPartialLongNameEx(lineText, col-1) 
+                            let pname = QuickParse.GetPartialLongNameEx(lineText, col-1)
                             let _x = 1 // for breakpoint
 
-                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Line.fromZ line, lineText, pname, (fun() -> [])) 
-                            return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
+                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Line.fromZ line, lineText, pname, (fun() -> []))
+                            return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED)
                     else
                         // no TypeCheckInfo in ParseResult.
-                        return null 
-                with e-> 
+                        return null
+                with e->
                     Assert.Exception(e)
                     raise e
                     return null
@@ -524,9 +524,9 @@ type internal FSharpIntellisenseInfo_DEPRECATED
 
             let keyword =
                 let line = span.iStartLine
-                let lineText = VsTextLines.LineText (VsTextView.Buffer view) line                       
+                let lineText = VsTextLines.LineText (VsTextView.Buffer view) line
                 let tokenInformation, col =
-                    let col = 
+                    let col =
                         if span.iStartIndex = lineText.Length && span.iStartIndex > 0 then
                             // if we are at the end of the line, we always step back one character
                             span.iStartIndex - 1
@@ -546,25 +546,25 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                 |   Some token ->
                         match token.CharClass, token.ColorClass with
                         |   FSharpTokenCharKind.Keyword, _
-                        |   FSharpTokenCharKind.Operator, _ 
+                        |   FSharpTokenCharKind.Operator, _
                         |   _, FSharpTokenColorKind.PreprocessorKeyword ->
                                 lineText.Substring(token.LeftColumn, token.RightColumn - token.LeftColumn + 1) + "_FS" |> Some
-                                
+
                         |   (FSharpTokenCharKind.Comment|FSharpTokenCharKind.LineComment), _ -> Some "comment_FS"
-                                
-                        |   FSharpTokenCharKind.Identifier, _ ->            
+
+                        |   FSharpTokenCharKind.Identifier, _ ->
                                 try
                                     let lineText = VsTextLines.LineText (VsTextView.Buffer view) line
                                     let possibleIdentifier = QuickParse.GetCompleteIdentifierIsland false lineText col
                                     match possibleIdentifier with
                                     |   None -> None // no help keyword
                                     |   Some(s,colAtEndOfNames, _) ->
-                                            if typedResults.HasFullTypeCheckInfo then 
+                                            if typedResults.HasFullTypeCheckInfo then
                                                 let qualId = PrettyNaming.GetLongNameFromString s
                                                 match typedResults.GetF1Keyword(Line.fromZ line,colAtEndOfNames, lineText, qualId) with
                                                 | Some s -> Some s
-                                                | None -> None 
-                                            else None                           
+                                                | None -> None
+                                            else None
                                 with e ->
                                     Assert.Exception (e)
                                     reraise()
@@ -579,7 +579,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                     ()
             |   None -> ()
 
-          
+
         // for tests
         member this.GotoDefinition (textView, line, column) =
             GotoDefinition.GotoDefinition_DEPRECATED (colorizer.Value, typedResults, textView, line, column)

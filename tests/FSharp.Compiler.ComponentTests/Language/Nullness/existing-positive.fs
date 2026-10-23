@@ -20,15 +20,15 @@ module Extractions0d =
     let f<'T when 'T : null> (x: 'T, y: 'T) = ()
     let result = f (x, "")  //The type 'string' does not support 'null'.
 
-module Basics =     
+module Basics =
     let x1 : String = null // expect a warning when checknulls is on
     let x4 : String = ""
 
-module Basics2 = 
+module Basics2 =
     let f1 () = null
     let f8 () : String = null  // expect a warning when checknulls is on
 
-type C(s: String) = 
+type C(s: String) =
     member __.Value = s
 
 module InteropBasics =
@@ -43,9 +43,9 @@ module InteropBasics =
 System.Console.WriteLine("a")
 System.Console.WriteLine("a", (null: obj[])) // expect a warning when checknulls is on
 
-let f0 line = 
+let f0 line =
     let add (s:String) = ()
-    match line with 
+    match line with
     | null | "" -> () //The type 'string' does not support 'null'.
     | _ -> add line
 
@@ -56,14 +56,14 @@ module NullConstraintTests =
 
 module DefaultValueTests =
 
-    module StructExamples = 
+    module StructExamples =
 
         [<Struct>]
         type C2 =
             [<DefaultValue(false)>]
             val mutable Whoops : String // expect no warning or error under any configuration
 
-    module ClassExamples = 
+    module ClassExamples =
         type C2 =
             [<DefaultValue(false)>]
             val mutable Whoops : String // expect no warning or error under any configuration

@@ -1,3 +1,9 @@
+---
+title: Equality optimizations
+category: Compiler Internals
+categoryindex: 200
+index: 450
+---
 # Compiling Equality
 
 This spec covers how equality is compiled and executed by the F# compiler and library, based mainly on the types involved in the equality operation after all inlining, type specialization and other optimizations have been applied.

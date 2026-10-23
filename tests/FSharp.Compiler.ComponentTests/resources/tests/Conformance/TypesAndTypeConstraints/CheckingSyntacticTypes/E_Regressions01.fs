@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Same as Regressions01, but we keep the incorrect 'base'
 // FSB 1748, Internal Error: when calling a base member
 // Regression test for internal compiler error when calling a class's base member.

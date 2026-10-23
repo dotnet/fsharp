@@ -12,64 +12,64 @@ open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
-module ParamInfoStandardSettings = 
+module ParamInfoStandardSettings =
     let standard40AssemblyRefs  = [| "System"; "System.Core"; "System.Numerics" |]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-type UsingMSBuild()  = 
+type UsingMSBuild()  =
     inherit LanguageServiceBaseTests()
 
     let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED) =
             [ for i = 0 to methods.GetCount() - 1 do
                 yield [ for j = 0 to methods.GetParameterCount(i) - 1 do
-                            let (name,display,description) = methods.GetParameterInfo(i,j) 
+                            let (name,display,description) = methods.GetParameterInfo(i,j)
                             yield display ] ]
-      
+
     let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option) =
-        Assert.True(resultMethodGroup.IsNone, "Expected an empty method group")              
-        
-    let AssertMethodGroupDescriptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
+        Assert.True(resultMethodGroup.IsNone, "Expected an empty method group")
+
+    let AssertMethodGroupDescriptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) =
         for i = 0 to methods.GetCount() - 1 do
             let description = methods.GetDescription(i)
             if (description.Contains(expectNotToBeThere)) then
                 Console.WriteLine("Expected description {0} to not contain {1}", description, expectNotToBeThere)
                 AssertNotContains(description,expectNotToBeThere)
- 
+
     let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNamesSet:string list list) =
         Assert.True(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
-        Assert.Equal(expectedParamNamesSet.Length, resultMethodGroup.GetCount())           
-        Assert.True(resultMethodGroup 
+        Assert.Equal(expectedParamNamesSet.Length, resultMethodGroup.GetCount())
+        Assert.True(resultMethodGroup
                          |> GetParamDisplays
-                         |> Seq.forall (fun paramDisplays -> 
-                                expectedParamNamesSet |> List.exists (fun expectedParamNames -> 
-                                       expectedParamNames.Length = paramDisplays.Length && 
-                                       (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
+                         |> Seq.forall (fun paramDisplays ->
+                                expectedParamNamesSet |> List.exists (fun expectedParamNames ->
+                                       expectedParamNames.Length = paramDisplays.Length &&
+                                       (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay ->
                                            paramDisplay.Contains(expectedParamName)))))
-    
-    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNames:string list) = 
+
+    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNames:string list) =
         Assert.True(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
         Assert.True(resultMethodGroup
                           |> GetParamDisplays
                           |> Seq.exists (fun paramDisplays ->
                                 expectedParamNames.Length = paramDisplays.Length &&
-                                (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
+                                (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay ->
                                            paramDisplay.Contains(expectedParamName))))
 
-    member private this.GetMethodListForAMethodTip(fileContents : string, marker : string, ?addtlRefAssy : string list) = 
+    member private this.GetMethodListForAMethodTip(fileContents : string, marker : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         MoveCursorToStartOfMarker(file, marker)
 
         GetParameterInfoAtCursor(file)
 
-     //Verify all the overload method parameterInfo 
+     //Verify all the overload method parameterInfo
     member private this.VerifyParameterInfoAtStartOfMarker(fileContents : string, marker : string, expectedParamNamesSet:string list list, ?addtlRefAssy :string list) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertMethodGroup(methodstr,expectedParamNamesSet)
 
-   //Verify No parameterInfo at the marker     
+   //Verify No parameterInfo at the marker
     member private this.VerifyNoParameterInfoAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : string list) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertEmptyMethodGroup(methodstr)
@@ -80,12 +80,12 @@ type UsingMSBuild()  =
         AssertMethodGroupContain(methodstr,expectedParamNames)
 
     //Verify the parameterInfo of one of the list order
-    member private this.VerifyParameterInfoOverloadMethodIndex(fileContents : string, marker : string, index : int, expectedParams:string list, ?addtlRefAssy : string list) = 
+    member private this.VerifyParameterInfoOverloadMethodIndex(fileContents : string, marker : string, index : int, expectedParams:string list, ?addtlRefAssy : string list) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         Assert.True(methodstr.IsSome, "Expected a method group")
         let methodstr = methodstr.Value
 
-        let paramDisplays = 
+        let paramDisplays =
             [ for i = 0 to methodstr.GetParameterCount(index) - 1 do
                 let (name,display,description) = methodstr.GetParameterInfo(index,i)
                 yield display]
@@ -123,20 +123,20 @@ type UsingMSBuild()  =
             Assert.True(methodGroup.IsNone, "expected no method group")
         else
             AssertMethodGroup(methodGroup, methReq)
-    
+
     member private this.ExtractLineInfo (line:string) =
         let idx, lines, foundDollar = line.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries) |> List.ofArray |> List.foldBack (fun l (idx, lines, foundDollar) ->
             let i = l.IndexOf("$")
-            if i = -1 then (idx, l::lines, foundDollar) 
+            if i = -1 then (idx, l::lines, foundDollar)
             else (l.Substring(0, i), l.Replace("$", "")::lines, true) ) <| ("", [], false)
         if not foundDollar then
             failwith "bad unit test: did not find '$' in input to mark cursor location!"
         idx, lines
-        
+
     member public this.TestParameterInfoNegative (testLine, ?addtlRefAssy : string list) =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
 
-        let code = 
+        let code =
                       [
                         "open System"
                         "open System.Threading"
@@ -147,7 +147,7 @@ type UsingMSBuild()  =
         let info = GetParameterInfoAtCursor file
         Assert.True(info.IsNone, "expected no parameter info")
         gpatcc.AssertExactly(0,0)
-        
+
     member public this.TestParameterInfoLocation (testLine, expectedPos, ?addtlRefAssy : string list) =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
         let code =
@@ -164,12 +164,12 @@ type UsingMSBuild()  =
 
     // Tests the current behavior, we may want to specify it differently in the future
     // There are more comments below that explain particular tricky cases
-    
+
 
     [<Fact>]
     member public this.``Single.Locations.Simple``() =
         this.TestParameterInfoLocation("let a = System.Math.Sin($", 8)
-        
+
     //This test verifies that ParamInfo location on a provided type with namespace that exposes static parameter that takes >1 argument works normally.
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
     //This test verifies that no ParamInfo in a string for a provided type  that exposes static parameter that takes >1 argument works normally.
@@ -177,12 +177,12 @@ type UsingMSBuild()  =
     //This test verifies that no ParamInfo in a Comment for a provided type that exposes static parameter that takes >1 argument works normally.
     //The intent here to make sure the ParamInfo is not shown when inside a comment
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-    member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =        
+    member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =
         let code = [ "let f x = x   "
                      "let f1 y = y  "
                      "let z = f(    " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
@@ -201,10 +201,10 @@ type UsingMSBuild()  =
         AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetParameterLocations())
 
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-    member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
+    member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =
         let code = [ "type Foo() = class end" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
@@ -227,13 +227,13 @@ type UsingMSBuild()  =
 This does not currently work, because the 'fallback to name environment' does weird QuickParse-ing and mangled the long id "Bar.Foo".
 We really need to rewrite some code paths here to use the real parse tree rather than QuickParse-ing.
     [<Fact>]
-    member this.``ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333``() =        
+    member this.``ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333``() =
         let solution = CreateSolution(this.VS)
         let project = CreateProject(solution,"testproject")
         let code = [ "module Bar = type Foo() = class end" ]
         let file = AddFileFromText(project,"File1.fs", code)
         let file = OpenFile(project,"File1.fs")
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
@@ -254,18 +254,18 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
         let testLinesAndLocs = testLines |> List.mapi (fun i s ->
             let r = new System.Text.StringBuilder(s)
-            let locs = 
+            let locs =
                 [while r.ToString().IndexOf('^') <> -1 do
                     let c = r.ToString().IndexOf('^')
                     r.Remove(c,1) |> ignore
                     yield (i,c)]
             r.ToString(), locs)
         let testLines = testLinesAndLocs |> List.map fst
-        let expectedLocs = testLinesAndLocs |> List.map snd |> List.collect id |> List.toArray 
+        let expectedLocs = testLinesAndLocs |> List.map snd |> List.collect id |> List.toArray
         // note: service.fs adds a new line character to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        let expectedLocs = if defaultArg markAtEOF false then 
-                                Array.append expectedLocs [| (testLines.Length-1)+1, 0 |] 
-                           else 
+        let expectedLocs = if defaultArg markAtEOF false then
+                                Array.append expectedLocs [| (testLines.Length-1)+1, 0 |]
+                           else
                                 expectedLocs
         let cursorPrefix = cursorPrefix.Replace("^","")
 
@@ -275,7 +275,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file
         Assert.True(info.IsSome, "expected parameter info")
         let info = info.Value
-        AssertEqual(expectedLocs, info.GetParameterLocations()) 
+        AssertEqual(expectedLocs, info.GetParameterLocations())
 
     // These pin down known failing cases
     member public this.TestNoParameterInfo (testLine, ?additionalReferenceAssemblies) =
@@ -283,7 +283,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let cursorPrefix = cursorPrefix.Replace("^","")
         let testLinesAndLocs = testLines |> List.mapi (fun i s ->
             let r = new System.Text.StringBuilder(s)
-            let locs = 
+            let locs =
                 [while r.ToString().IndexOf('^') <> -1 do
                     let c = r.ToString().IndexOf('^')
                     r.Remove(c,1) |> ignore
@@ -331,9 +331,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
                     "^"+s, false
                 else
                     s, needMarkAtEnd
-            let allText = indent + startText + Environment.NewLine 
-                        + indent + p + Environment.NewLine 
-                        + testLine + Environment.NewLine 
+            let allText = indent + startText + Environment.NewLine
+                        + indent + p + Environment.NewLine
+                        + testLine + Environment.NewLine
                         + indent + s
             printfn "-----------------"
             printfn "%s" allText

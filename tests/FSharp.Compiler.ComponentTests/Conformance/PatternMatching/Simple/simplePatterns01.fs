@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 // Test guarded patterns
@@ -12,4 +12,4 @@ let success =
 
 if success then exit 0
 exit 1
-    
+

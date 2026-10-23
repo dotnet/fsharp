@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 // Verify the compiled structure of discriminated unions
 
 namespace Test
@@ -8,7 +8,7 @@ namespace Test
         | Hearts
         | Spades
         | Clubs
-        
+
     type Card =
         | ValueCard of int * Suit
         | Jack  of Suit
@@ -33,9 +33,9 @@ namespace Test
             let cardType =
                 System.Reflection.Assembly.GetExecutingAssembly()
                 |> getType "Test.Card"
-            
+
             // Expected properties
-            [ "Tag"; "IsJoker"; "IsKing"; "IsQueen"; "IsJack"; "IsValueCard" ]        
+            [ "Tag"; "IsJoker"; "IsKing"; "IsQueen"; "IsJack"; "IsValueCard" ]
             |> List.iter (fun propName -> cardType |> should containProp propName)
 
             [ "Joker" ]
@@ -49,27 +49,27 @@ namespace Test
             let verifyProperties propNames ty =
                 propNames   |> List.iter (fun propName -> ty |> should containProp propName)
                 ()
-                
+
             asm
             |> getType "Test.Card+Ace"
             |> verifyProperties [ "Item" ]
-          
+
             asm
             |> getType "Test.Card+King"
             |> verifyProperties [ "Item" ]
-          
+
             asm
             |> getType "Test.Card+Queen"
             |> verifyProperties [ "Item" ]
-          
+
             asm
             |> getType "Test.Card+Jack"
             |> verifyProperties [ "Item" ]
-            
+
             asm
             |> getType "Test.Card+ValueCard"
-            |> verifyProperties [ "Item1"; "Item2" ]        
-          
+            |> verifyProperties [ "Item1"; "Item2" ]
+
         with
-        | e -> printfn "Unhandled Exception: %s" e.Message 
+        | e -> printfn "Unhandled Exception: %s" e.Message
                raise (Exception($"Oops: {e}"))

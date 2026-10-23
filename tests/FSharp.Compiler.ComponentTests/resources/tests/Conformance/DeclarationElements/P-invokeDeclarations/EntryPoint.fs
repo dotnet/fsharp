@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #PInvoke 
+// #Conformance #DeclarationElements #PInvoke
 
 
 // Verify ability to map an F# function to a differently named Win32 method
 // via the 'EntryPoint' parameter.
 
-// Testcase 
+// Testcase
 
 open System.IO
 open System.Runtime.InteropServices
@@ -43,9 +43,9 @@ extern bool CopyFile_PassByRefSpace(char [] lpExistingFileName, char []lpNewFile
 let result4 = CopyFile_Arrays(tempFile1.ToCharArray(), tempFile2.ToCharArray(), false)
 printfn "ByRef Space %A" result4
 
-type SomeAttrib() = 
+type SomeAttrib() =
     inherit System.Attribute()
-    
+
 [<DllImport("kernel32.dll", EntryPoint="CopyFile")>]
 extern bool CopyFile_Attrib([<SomeAttrib>] char [] lpExistingFileName, char []lpNewFileName, [<SomeAttrib()>] bool & bFailIfExists);
 

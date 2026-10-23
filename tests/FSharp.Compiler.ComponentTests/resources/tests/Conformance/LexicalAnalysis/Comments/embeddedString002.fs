@@ -1,5 +1,5 @@
-// #Conformance #LexicalAnalysis 
-// string embedded in a comment: legitimate string containing the 
+// #Conformance #LexicalAnalysis
+// string embedded in a comment: legitimate string containing the
 // block-comment-end token
 //<Expects status="success"></Expects>
 

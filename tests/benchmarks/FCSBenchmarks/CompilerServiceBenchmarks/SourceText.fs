@@ -14,7 +14,7 @@ module internal SourceText =
 
         let sourceText =
             { new ISourceText with
-            
+
                 member __.Item with get index = sourceText.[index]
 
                 member __.GetLineString(lineIndex) =
@@ -49,7 +49,7 @@ module internal SourceText =
                     while not finished && i < target.Length do
                         if target.[i] <> sourceText.[startIndex + i] then
                             didEqual <- false
-                            finished <- true // bail out early                        
+                            finished <- true // bail out early
                         else
                             i <- i + 1
 
@@ -101,7 +101,7 @@ module internal SourceText =
             }
 
         sourceText
-    
+
     let toFSharpSourceText (sourceText : SourceText) =
         weakTable.GetValue(sourceText, ConditionalWeakTable<_,_>.CreateValueCallback(create))
 

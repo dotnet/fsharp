@@ -13,7 +13,7 @@ open FsLexYacc.FsLex.AST
 
 # 14 "fslexpars.fs"
 // This type is the type of tokens accepted by the parser
-type token = 
+type token =
   | EOF
   | BAR
   | DOT
@@ -39,7 +39,7 @@ type token =
   | STRING of (string)
   | IDENT of (string)
 // This type is used to give symbolic names to token indexes, useful for error messages
-type tokenId = 
+type tokenId =
     | TOKEN_EOF
     | TOKEN_BAR
     | TOKEN_DOT
@@ -67,7 +67,7 @@ type tokenId =
     | TOKEN_end_of_input
     | TOKEN_error
 // This type is used to give symbolic names to token indexes, useful for error messages
-type nonTerminalId = 
+type nonTerminalId =
     | NONTERM__startspec
     | NONTERM_spec
     | NONTERM_codeopt
@@ -83,162 +83,162 @@ type nonTerminalId =
     | NONTERM_charset
 
 // This function maps tokens to integer indexes
-let tagOfToken (t:token) = 
+let tagOfToken (t:token) =
   match t with
-  | EOF  -> 0 
-  | BAR  -> 1 
-  | DOT  -> 2 
-  | PLUS  -> 3 
-  | STAR  -> 4 
-  | QMARK  -> 5 
-  | EQUALS  -> 6 
-  | UNDERSCORE  -> 7 
-  | LBRACK  -> 8 
-  | RBRACK  -> 9 
-  | HAT  -> 10 
-  | DASH  -> 11 
-  | RULE  -> 12 
-  | PARSE  -> 13 
-  | LET  -> 14 
-  | AND  -> 15 
-  | LPAREN  -> 16 
-  | RPAREN  -> 17 
-  | COLON  -> 18 
-  | UNICODE_CATEGORY _ -> 19 
-  | CHAR _ -> 20 
-  | CODE _ -> 21 
-  | STRING _ -> 22 
-  | IDENT _ -> 23 
+  | EOF  -> 0
+  | BAR  -> 1
+  | DOT  -> 2
+  | PLUS  -> 3
+  | STAR  -> 4
+  | QMARK  -> 5
+  | EQUALS  -> 6
+  | UNDERSCORE  -> 7
+  | LBRACK  -> 8
+  | RBRACK  -> 9
+  | HAT  -> 10
+  | DASH  -> 11
+  | RULE  -> 12
+  | PARSE  -> 13
+  | LET  -> 14
+  | AND  -> 15
+  | LPAREN  -> 16
+  | RPAREN  -> 17
+  | COLON  -> 18
+  | UNICODE_CATEGORY _ -> 19
+  | CHAR _ -> 20
+  | CODE _ -> 21
+  | STRING _ -> 22
+  | IDENT _ -> 23
 
 // This function maps integer indexes to symbolic token ids
-let tokenTagToTokenId (tokenIdx:int) = 
+let tokenTagToTokenId (tokenIdx:int) =
   match tokenIdx with
-  | 0 -> TOKEN_EOF 
-  | 1 -> TOKEN_BAR 
-  | 2 -> TOKEN_DOT 
-  | 3 -> TOKEN_PLUS 
-  | 4 -> TOKEN_STAR 
-  | 5 -> TOKEN_QMARK 
-  | 6 -> TOKEN_EQUALS 
-  | 7 -> TOKEN_UNDERSCORE 
-  | 8 -> TOKEN_LBRACK 
-  | 9 -> TOKEN_RBRACK 
-  | 10 -> TOKEN_HAT 
-  | 11 -> TOKEN_DASH 
-  | 12 -> TOKEN_RULE 
-  | 13 -> TOKEN_PARSE 
-  | 14 -> TOKEN_LET 
-  | 15 -> TOKEN_AND 
-  | 16 -> TOKEN_LPAREN 
-  | 17 -> TOKEN_RPAREN 
-  | 18 -> TOKEN_COLON 
-  | 19 -> TOKEN_UNICODE_CATEGORY 
-  | 20 -> TOKEN_CHAR 
-  | 21 -> TOKEN_CODE 
-  | 22 -> TOKEN_STRING 
-  | 23 -> TOKEN_IDENT 
+  | 0 -> TOKEN_EOF
+  | 1 -> TOKEN_BAR
+  | 2 -> TOKEN_DOT
+  | 3 -> TOKEN_PLUS
+  | 4 -> TOKEN_STAR
+  | 5 -> TOKEN_QMARK
+  | 6 -> TOKEN_EQUALS
+  | 7 -> TOKEN_UNDERSCORE
+  | 8 -> TOKEN_LBRACK
+  | 9 -> TOKEN_RBRACK
+  | 10 -> TOKEN_HAT
+  | 11 -> TOKEN_DASH
+  | 12 -> TOKEN_RULE
+  | 13 -> TOKEN_PARSE
+  | 14 -> TOKEN_LET
+  | 15 -> TOKEN_AND
+  | 16 -> TOKEN_LPAREN
+  | 17 -> TOKEN_RPAREN
+  | 18 -> TOKEN_COLON
+  | 19 -> TOKEN_UNICODE_CATEGORY
+  | 20 -> TOKEN_CHAR
+  | 21 -> TOKEN_CODE
+  | 22 -> TOKEN_STRING
+  | 23 -> TOKEN_IDENT
   | 26 -> TOKEN_end_of_input
   | 24 -> TOKEN_error
   | _ -> failwith "tokenTagToTokenId: bad token"
 
 /// This function maps production indexes returned in syntax errors to strings representing the non terminal that would be produced by that production
-let prodIdxToNonTerminal (prodIdx:int) = 
+let prodIdxToNonTerminal (prodIdx:int) =
   match prodIdx with
-    | 0 -> NONTERM__startspec 
-    | 1 -> NONTERM_spec 
-    | 2 -> NONTERM_codeopt 
-    | 3 -> NONTERM_codeopt 
-    | 4 -> NONTERM_Macros 
-    | 5 -> NONTERM_Macros 
-    | 6 -> NONTERM_macro 
-    | 7 -> NONTERM_Rules 
-    | 8 -> NONTERM_Rules 
-    | 9 -> NONTERM_rule 
-    | 10 -> NONTERM_args 
-    | 11 -> NONTERM_args 
-    | 12 -> NONTERM_args 
-    | 13 -> NONTERM_optbar 
-    | 14 -> NONTERM_optbar 
-    | 15 -> NONTERM_clauses 
-    | 16 -> NONTERM_clauses 
-    | 17 -> NONTERM_clause 
-    | 18 -> NONTERM_regexp 
-    | 19 -> NONTERM_regexp 
-    | 20 -> NONTERM_regexp 
-    | 21 -> NONTERM_regexp 
-    | 22 -> NONTERM_regexp 
-    | 23 -> NONTERM_regexp 
-    | 24 -> NONTERM_regexp 
-    | 25 -> NONTERM_regexp 
-    | 26 -> NONTERM_regexp 
-    | 27 -> NONTERM_regexp 
-    | 28 -> NONTERM_regexp 
-    | 29 -> NONTERM_regexp 
-    | 30 -> NONTERM_regexp 
-    | 31 -> NONTERM_regexp 
-    | 32 -> NONTERM_charset 
-    | 33 -> NONTERM_charset 
-    | 34 -> NONTERM_charset 
+    | 0 -> NONTERM__startspec
+    | 1 -> NONTERM_spec
+    | 2 -> NONTERM_codeopt
+    | 3 -> NONTERM_codeopt
+    | 4 -> NONTERM_Macros
+    | 5 -> NONTERM_Macros
+    | 6 -> NONTERM_macro
+    | 7 -> NONTERM_Rules
+    | 8 -> NONTERM_Rules
+    | 9 -> NONTERM_rule
+    | 10 -> NONTERM_args
+    | 11 -> NONTERM_args
+    | 12 -> NONTERM_args
+    | 13 -> NONTERM_optbar
+    | 14 -> NONTERM_optbar
+    | 15 -> NONTERM_clauses
+    | 16 -> NONTERM_clauses
+    | 17 -> NONTERM_clause
+    | 18 -> NONTERM_regexp
+    | 19 -> NONTERM_regexp
+    | 20 -> NONTERM_regexp
+    | 21 -> NONTERM_regexp
+    | 22 -> NONTERM_regexp
+    | 23 -> NONTERM_regexp
+    | 24 -> NONTERM_regexp
+    | 25 -> NONTERM_regexp
+    | 26 -> NONTERM_regexp
+    | 27 -> NONTERM_regexp
+    | 28 -> NONTERM_regexp
+    | 29 -> NONTERM_regexp
+    | 30 -> NONTERM_regexp
+    | 31 -> NONTERM_regexp
+    | 32 -> NONTERM_charset
+    | 33 -> NONTERM_charset
+    | 34 -> NONTERM_charset
     | _ -> failwith "prodIdxToNonTerminal: bad production index"
 
-let _fsyacc_endOfInputTag = 26 
+let _fsyacc_endOfInputTag = 26
 let _fsyacc_tagOfErrorTerminal = 24
 
 // This function gets the name of a token as a string
-let token_to_string (t:token) = 
-  match t with 
-  | EOF  -> "EOF" 
-  | BAR  -> "BAR" 
-  | DOT  -> "DOT" 
-  | PLUS  -> "PLUS" 
-  | STAR  -> "STAR" 
-  | QMARK  -> "QMARK" 
-  | EQUALS  -> "EQUALS" 
-  | UNDERSCORE  -> "UNDERSCORE" 
-  | LBRACK  -> "LBRACK" 
-  | RBRACK  -> "RBRACK" 
-  | HAT  -> "HAT" 
-  | DASH  -> "DASH" 
-  | RULE  -> "RULE" 
-  | PARSE  -> "PARSE" 
-  | LET  -> "LET" 
-  | AND  -> "AND" 
-  | LPAREN  -> "LPAREN" 
-  | RPAREN  -> "RPAREN" 
-  | COLON  -> "COLON" 
-  | UNICODE_CATEGORY _ -> "UNICODE_CATEGORY" 
-  | CHAR _ -> "CHAR" 
-  | CODE _ -> "CODE" 
-  | STRING _ -> "STRING" 
-  | IDENT _ -> "IDENT" 
+let token_to_string (t:token) =
+  match t with
+  | EOF  -> "EOF"
+  | BAR  -> "BAR"
+  | DOT  -> "DOT"
+  | PLUS  -> "PLUS"
+  | STAR  -> "STAR"
+  | QMARK  -> "QMARK"
+  | EQUALS  -> "EQUALS"
+  | UNDERSCORE  -> "UNDERSCORE"
+  | LBRACK  -> "LBRACK"
+  | RBRACK  -> "RBRACK"
+  | HAT  -> "HAT"
+  | DASH  -> "DASH"
+  | RULE  -> "RULE"
+  | PARSE  -> "PARSE"
+  | LET  -> "LET"
+  | AND  -> "AND"
+  | LPAREN  -> "LPAREN"
+  | RPAREN  -> "RPAREN"
+  | COLON  -> "COLON"
+  | UNICODE_CATEGORY _ -> "UNICODE_CATEGORY"
+  | CHAR _ -> "CHAR"
+  | CODE _ -> "CODE"
+  | STRING _ -> "STRING"
+  | IDENT _ -> "IDENT"
 
 // This function gets the data carried by a token as an object
-let _fsyacc_dataOfToken (t:token) = 
-  match t with 
-  | EOF  -> (null : System.Object) 
-  | BAR  -> (null : System.Object) 
-  | DOT  -> (null : System.Object) 
-  | PLUS  -> (null : System.Object) 
-  | STAR  -> (null : System.Object) 
-  | QMARK  -> (null : System.Object) 
-  | EQUALS  -> (null : System.Object) 
-  | UNDERSCORE  -> (null : System.Object) 
-  | LBRACK  -> (null : System.Object) 
-  | RBRACK  -> (null : System.Object) 
-  | HAT  -> (null : System.Object) 
-  | DASH  -> (null : System.Object) 
-  | RULE  -> (null : System.Object) 
-  | PARSE  -> (null : System.Object) 
-  | LET  -> (null : System.Object) 
-  | AND  -> (null : System.Object) 
-  | LPAREN  -> (null : System.Object) 
-  | RPAREN  -> (null : System.Object) 
-  | COLON  -> (null : System.Object) 
-  | UNICODE_CATEGORY _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | CHAR _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | CODE _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | STRING _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | IDENT _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
+let _fsyacc_dataOfToken (t:token) =
+  match t with
+  | EOF  -> (null : System.Object)
+  | BAR  -> (null : System.Object)
+  | DOT  -> (null : System.Object)
+  | PLUS  -> (null : System.Object)
+  | STAR  -> (null : System.Object)
+  | QMARK  -> (null : System.Object)
+  | EQUALS  -> (null : System.Object)
+  | UNDERSCORE  -> (null : System.Object)
+  | LBRACK  -> (null : System.Object)
+  | RBRACK  -> (null : System.Object)
+  | HAT  -> (null : System.Object)
+  | DASH  -> (null : System.Object)
+  | RULE  -> (null : System.Object)
+  | PARSE  -> (null : System.Object)
+  | LET  -> (null : System.Object)
+  | AND  -> (null : System.Object)
+  | LPAREN  -> (null : System.Object)
+  | RPAREN  -> (null : System.Object)
+  | COLON  -> (null : System.Object)
+  | UNICODE_CATEGORY _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | CHAR _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | CODE _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | STRING _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | IDENT _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
 let _fsyacc_gotos = [| 0us; 65535us; 1us; 65535us; 0us; 1us; 2us; 65535us; 0us; 2us; 5us; 6us; 2us; 65535us; 2us; 3us; 8us; 9us; 2us; 65535us; 2us; 8us; 8us; 8us; 2us; 65535us; 4us; 5us; 15us; 16us; 2us; 65535us; 4us; 14us; 15us; 14us; 3us; 65535us; 17us; 18us; 27us; 28us; 29us; 30us; 1us; 65535us; 20us; 21us; 2us; 65535us; 21us; 22us; 33us; 34us; 2us; 65535us; 21us; 32us; 33us; 32us; 10us; 65535us; 12us; 13us; 13us; 43us; 21us; 35us; 33us; 35us; 35us; 43us; 43us; 43us; 44us; 43us; 45us; 43us; 49us; 44us; 50us; 45us; 5us; 65535us; 52us; 53us; 53us; 61us; 55us; 56us; 56us; 61us; 61us; 61us; |]
 let _fsyacc_sparseGotoTableRowOffsets = [|0us; 1us; 3us; 6us; 9us; 12us; 15us; 18us; 22us; 24us; 27us; 30us; 41us; |]
 let _fsyacc_stateToProdIdxsTableElements = [| 1us; 0us; 1us; 0us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 2us; 1us; 5us; 1us; 5us; 1us; 6us; 1us; 6us; 1us; 6us; 6us; 6us; 24us; 25us; 26us; 27us; 28us; 2us; 7us; 8us; 1us; 7us; 1us; 7us; 1us; 9us; 1us; 9us; 1us; 9us; 1us; 9us; 1us; 9us; 1us; 9us; 1us; 11us; 1us; 11us; 1us; 11us; 1us; 11us; 1us; 11us; 1us; 11us; 1us; 12us; 1us; 12us; 1us; 14us; 2us; 15us; 16us; 1us; 15us; 1us; 15us; 6us; 17us; 24us; 25us; 26us; 27us; 28us; 1us; 17us; 1us; 18us; 1us; 19us; 1us; 20us; 1us; 21us; 1us; 22us; 1us; 23us; 6us; 24us; 24us; 25us; 26us; 27us; 28us; 6us; 24us; 25us; 26us; 27us; 28us; 28us; 6us; 24us; 25us; 26us; 27us; 28us; 29us; 1us; 25us; 1us; 26us; 1us; 27us; 1us; 28us; 1us; 29us; 1us; 29us; 2us; 30us; 31us; 2us; 30us; 34us; 1us; 30us; 1us; 31us; 2us; 31us; 34us; 1us; 31us; 2us; 32us; 33us; 1us; 33us; 1us; 33us; 2us; 34us; 34us; |]
@@ -249,7 +249,7 @@ let _fsyacc_actionTableRowOffsets = [|0us; 2us; 3us; 5us; 7us; 9us; 11us; 12us; 
 let _fsyacc_reductionSymbolCounts = [|1us; 5us; 1us; 0us; 0us; 2us; 4us; 3us; 1us; 6us; 0us; 6us; 2us; 0us; 1us; 3us; 1us; 2us; 1us; 1us; 1us; 1us; 1us; 1us; 2us; 2us; 2us; 2us; 3us; 3us; 3us; 4us; 1us; 3us; 2us; |]
 let _fsyacc_productionToNonTerminalTable = [|0us; 1us; 2us; 2us; 3us; 3us; 4us; 5us; 5us; 6us; 7us; 7us; 7us; 8us; 8us; 9us; 9us; 10us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 11us; 12us; 12us; 12us; |]
 let _fsyacc_immediateActions = [|65535us; 49152us; 65535us; 65535us; 65535us; 65535us; 16385us; 16386us; 65535us; 16389us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 16391us; 65535us; 65535us; 65535us; 65535us; 65535us; 16393us; 65535us; 65535us; 65535us; 65535us; 65535us; 16395us; 65535us; 16396us; 16398us; 65535us; 65535us; 16399us; 65535us; 16401us; 16402us; 16403us; 16404us; 16405us; 16406us; 16407us; 65535us; 65535us; 65535us; 16409us; 16410us; 16411us; 65535us; 65535us; 16413us; 65535us; 65535us; 16414us; 65535us; 65535us; 16415us; 65535us; 65535us; 16417us; 65535us; |]
-let _fsyacc_reductions ()  =    [| 
+let _fsyacc_reductions ()  =    [|
 # 253 "fslexpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> AST.Spec in
@@ -269,7 +269,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 25 "fslexpars.fsy"
-                                                          
+
                          { TopCode=_1;Macros=_2;Rules=_4;BottomCode=_5 }
                    )
 # 25 "fslexpars.fsy"
@@ -281,7 +281,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 30 "fslexpars.fsy"
-                              _1 
+                              _1
                    )
 # 30 "fslexpars.fsy"
                  : 'gentype_codeopt));
@@ -291,7 +291,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 31 "fslexpars.fsy"
-                         "", (parseState.ResultRange |> fst) 
+                         "", (parseState.ResultRange |> fst)
                    )
 # 31 "fslexpars.fsy"
                  : 'gentype_codeopt));
@@ -301,7 +301,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 34 "fslexpars.fsy"
-                         [] 
+                         []
                    )
 # 34 "fslexpars.fsy"
                  : 'gentype_Macros));
@@ -313,7 +313,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 35 "fslexpars.fsy"
-                                     
+
                          _1 :: _2
                    )
 # 35 "fslexpars.fsy"
@@ -326,7 +326,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 40 "fslexpars.fsy"
-                                                
+
                          (_2, _4)
                    )
 # 40 "fslexpars.fsy"
@@ -339,7 +339,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 45 "fslexpars.fsy"
-                                       
+
                          _1 :: _3
                    )
 # 45 "fslexpars.fsy"
@@ -351,7 +351,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 48 "fslexpars.fsy"
-                              [_1] 
+                              [_1]
                    )
 # 48 "fslexpars.fsy"
                  : 'gentype_Rules));
@@ -365,7 +365,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 51 "fslexpars.fsy"
-                                                               
+
                          (_1,_2,_6)
                    )
 # 51 "fslexpars.fsy"
@@ -376,7 +376,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 56 "fslexpars.fsy"
-                          [] 
+                          []
                    )
 # 56 "fslexpars.fsy"
                  : 'gentype_args));
@@ -389,7 +389,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 57 "fslexpars.fsy"
-                                                              RuleArgument.Typed(_2, _4) :: _6 
+                                                              RuleArgument.Typed(_2, _4) :: _6
                    )
 # 57 "fslexpars.fsy"
                  : 'gentype_args));
@@ -401,7 +401,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 58 "fslexpars.fsy"
-                                    RuleArgument.Ident(_1) :: _2 
+                                    RuleArgument.Ident(_1) :: _2
                    )
 # 58 "fslexpars.fsy"
                  : 'gentype_args));
@@ -411,7 +411,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 61 "fslexpars.fsy"
-                         
+
                    )
 # 61 "fslexpars.fsy"
                  : 'gentype_optbar));
@@ -421,7 +421,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 62 "fslexpars.fsy"
-                             
+
                    )
 # 62 "fslexpars.fsy"
                  : 'gentype_optbar));
@@ -433,7 +433,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 65 "fslexpars.fsy"
-                                           _1 :: _3 
+                                           _1 :: _3
                    )
 # 65 "fslexpars.fsy"
                  : 'gentype_clauses));
@@ -444,7 +444,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 66 "fslexpars.fsy"
-                                [_1] 
+                                [_1]
                    )
 # 66 "fslexpars.fsy"
                  : 'gentype_clauses));
@@ -456,7 +456,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 69 "fslexpars.fsy"
-                                     _1, _2 
+                                     _1, _2
                    )
 # 69 "fslexpars.fsy"
                  : 'gentype_clause));
@@ -498,7 +498,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 75 "fslexpars.fsy"
-                                    Inp Any 
+                                    Inp Any
                    )
 # 75 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -520,7 +520,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 77 "fslexpars.fsy"
-                               Macro(_1) 
+                               Macro(_1)
                    )
 # 77 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -532,7 +532,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 78 "fslexpars.fsy"
-                                                         Seq[_1;_2] 
+                                                         Seq[_1;_2]
                    )
 # 78 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -543,7 +543,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 79 "fslexpars.fsy"
-                                                        Seq[_1;Star _1] 
+                                                        Seq[_1;Star _1]
                    )
 # 79 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -554,7 +554,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 80 "fslexpars.fsy"
-                                                        Star _1 
+                                                        Star _1
                    )
 # 80 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -588,7 +588,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 83 "fslexpars.fsy"
-                                               _2 
+                                               _2
                    )
 # 83 "fslexpars.fsy"
                  : 'gentype_regexp));
@@ -651,11 +651,11 @@ let _fsyacc_reductions ()  =    [|
                  : 'gentype_charset));
 |]
 # 653 "fslexpars.fs"
-let tables : FSharp.Text.Parsing.Tables<_> = 
+let tables : FSharp.Text.Parsing.Tables<_> =
   { reductions= _fsyacc_reductions ();
     endOfInputTag = _fsyacc_endOfInputTag;
     tagOfToken = tagOfToken;
-    dataOfToken = _fsyacc_dataOfToken; 
+    dataOfToken = _fsyacc_dataOfToken;
     actionTableElements = _fsyacc_actionTableElements;
     actionTableRowOffsets = _fsyacc_actionTableRowOffsets;
     stateToProdIdxsTableElements = _fsyacc_stateToProdIdxsTableElements;
@@ -665,8 +665,8 @@ let tables : FSharp.Text.Parsing.Tables<_> =
     gotos = _fsyacc_gotos;
     sparseGotoTableRowOffsets = _fsyacc_sparseGotoTableRowOffsets;
     tagOfErrorTerminal = _fsyacc_tagOfErrorTerminal;
-    parseError = (fun (ctxt:FSharp.Text.Parsing.ParseErrorContext<_>) -> 
-                              match parse_error_rich with 
+    parseError = (fun (ctxt:FSharp.Text.Parsing.ParseErrorContext<_>) ->
+                              match parse_error_rich with
                               | Some f -> f ctxt
                               | None -> parse_error ctxt.Message);
     numTerminals = 27;

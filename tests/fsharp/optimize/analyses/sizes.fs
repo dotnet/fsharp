@@ -2,15 +2,15 @@
 
 open System
 
-module BasicSizeTests = 
-    let constantUnit () = ()           // note, size 0 - seems reasonable 
-    let constantInteger () = 1         // note, size 0 - seems reasonable 
+module BasicSizeTests =
+    let constantUnit () = ()           // note, size 0 - seems reasonable
+    let constantInteger () = 1         // note, size 0 - seems reasonable
     let constantValue x = x            // note, size 1 - seems reasonable (this may be a field lookup to access an environment variable)
-    let fieldLookup1 x = x.contents   // note, size 2 - seems reasonable 
+    let fieldLookup1 x = x.contents   // note, size 2 - seems reasonable
     let libraryCall1 x = System.Console.WriteLine(x:string) // size 2, seems reasonable
     let libraryCall2 x = new System.Object() // size 1, seems reasonable
     let constantData1 () = Some 1      // note, size 2, seems reasonable, perhaps too low
-    let constantData2 () = None        // note, size 2, seems reasonable, perhaps too high 
+    let constantData2 () = None        // note, size 2, seems reasonable, perhaps too high
     let constantTuple1 () = (1,2)      // note, size 1, seems reasonable, perhaps too low
     let constantTuple2 () = (1,2,3,4)  // note, size 1, seems reasonable, perhaps too low
 

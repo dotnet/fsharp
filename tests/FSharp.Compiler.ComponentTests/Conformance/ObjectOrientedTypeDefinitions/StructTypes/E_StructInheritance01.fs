@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Verify error when trying to inherit from a struct type
 // Regression test for FSHARP1.0:2803
 //<Expects id="FS0945" status="error">Cannot inherit a sealed type</Expects>
@@ -12,7 +12,7 @@ type StructType = struct
     end
 
 
-type InheritFromStruct(x, y) = 
+type InheritFromStruct(x, y) =
     inherit StructType(x, y)
     override this.ToString() = ""
 

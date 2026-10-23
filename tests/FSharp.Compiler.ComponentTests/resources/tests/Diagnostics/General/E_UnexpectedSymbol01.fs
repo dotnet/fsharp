@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:2099
 // Regression test for FSHARP1.0:2670
 //<Expects id="FS0010" span="(18,50-18,52)" status="error">Unexpected symbol '<-' in binding. Expected '=' or other token.</Expects>
@@ -10,14 +10,14 @@ open Microsoft.FSharp.Control
 
 let mutable sem = 0
 
-let counter = 
-    MailboxProcessor.Start( fun inbox -> 
+let counter =
+    MailboxProcessor.Start( fun inbox ->
         let rec loop(n) =
             async { do printfn "n = %d, waiting..." n
                     let! msg = inbox.Receive()
                     if n+msg >= 500 then let sem <- 1
                     return! loop(n+msg) }
         loop(0))
-        
+
 for i = 0 to 500 do
     counter.Post(1)

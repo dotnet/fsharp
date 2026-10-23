@@ -39,7 +39,7 @@ Write-Host "Checking whether running on Windows: $IsWindows"
 Write-Host "Repository path: $repo_path"
 
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
-[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio -ci -bootstrap" } else { "" }
+[string[]] $additional_arguments = if ($IsWindows) { "-noVisualStudio", "-ci", "-bootstrap", "-mt", "1" } else { "--mt", "true" }
 
 # Set environment variable to disable UpdateXlf target (not needed for IL verification)
 $env:UpdateXlfOnBuild = "false"
@@ -76,11 +76,7 @@ if ($LASTEXITCODE -ne 0) {
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
-    if ($additional_arguments) {
-        & $script -c $configuration $additional_arguments
-    } else {
-        & $script -c $configuration
-    }
+    & $script -c $configuration @additional_arguments
     if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
         Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
         exit 1
@@ -165,7 +161,10 @@ foreach ($project in $projects.Keys) {
                 }
             }
 
-            $baseline_file = Join-Path $repo_path "tests/ILVerify" "ilverify_${project}_${configuration}_${tfm}.bsl"
+            # Map versioned netcoreapp TFMs (net10.0, net11.0, ...) to generic name so baselines
+            # don't need updating on every TFM bump — the ILVerify output is the same across versions.
+            $baseline_tfm = if ($tfm -match '^net\d+\.0$') { "netcoreapp" } else { $tfm }
+            $baseline_file = Join-Path $repo_path "tests/ILVerify" "ilverify_${project}_${configuration}_${baseline_tfm}.bsl"
 
             $baseline_actual_file = [System.IO.Path]::ChangeExtension($baseline_file, 'bsl.actual')
 

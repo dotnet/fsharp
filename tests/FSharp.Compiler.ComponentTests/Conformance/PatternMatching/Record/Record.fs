@@ -57,7 +57,7 @@ module Record =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Record)
     [<Theory; FileInlineData("recordPatterns02.fs")>]
     let ``Record - recordPatterns02_fs - --test:ErrorRanges`` compilation =
@@ -67,7 +67,7 @@ module Record =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Record)
     [<Theory; FileInlineData("structRecordPatterns01.fs")>]
     let ``Record - structRecordPatterns01_fs - --test:ErrorRanges`` compilation =
@@ -77,7 +77,7 @@ module Record =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Record)
     [<Theory; FileInlineData("structRecordPatterns02.fs")>]
     let ``Record - structRecordPatterns02_fs - --test:ErrorRanges`` compilation =
@@ -87,4 +87,3 @@ module Record =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-    

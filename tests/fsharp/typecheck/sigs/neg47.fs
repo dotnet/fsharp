@@ -9,25 +9,25 @@ type Allowed2 with
     [<DllImport("user32.dll")>]
     static member GetCaretBlinkTime() : int = failwith ""
 
-type System.Object with 
+type System.Object with
     [<DllImport("user32.dll")>]
-    static member Allowed3() = true 
+    static member Allowed3() = true
 
 type NotAllowed() =
     [<DllImport("user32.dll")>]
     let GetCaretBlinkTime() : int = failwith ""
-    do  
-        printf "%d" (GetCaretBlinkTime())   
+    do
+        printf "%d" (GetCaretBlinkTime())
 
 type NotAllowed2() =
     [<DllImport("user32.dll")>]
     member x.GetCaretBlinkTime() : int = failwith ""
 
 let NotAllowed3() =
-    { new obj() with 
+    { new obj() with
         [<DllImport("user32.dll")>]
         member x.Equals(y) = true }
 
-type System.Object with 
+type System.Object with
     [<DllImport("user32.dll")>]
-    member x.NotAllowed4() = true 
+    member x.NotAllowed4() = true

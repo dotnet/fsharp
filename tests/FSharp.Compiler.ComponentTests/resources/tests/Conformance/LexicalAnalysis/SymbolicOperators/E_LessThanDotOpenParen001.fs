@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Operators 
+// #Regression #Conformance #LexicalAnalysis #Operators
 // Regression test for FSHARP1.0:4805
 // We are not really after the actual error messages here (some of them have been omitted), rather we
 // want to verify we do not crash!
@@ -6,7 +6,7 @@
 //<Expects status="error" id="FS0670">This code is not sufficiently generic\. The type variable  \^T when  \^T : \(static member \( \+ \) :  \^T \*  \^T ->  \^a\) could not be generalized because it would escape its scope</Expects>
 
 type public TestType<'T,'S>() =
-    
+
     member public s.Value with get() = Unchecked.defaultof<'T>
     static member public (+++) (a : TestType<'T,'S>, b : TestType<'T,'S>) = a.Value
     static member public (+++) (a : TestType<'T,'S>, b : 'T) = b

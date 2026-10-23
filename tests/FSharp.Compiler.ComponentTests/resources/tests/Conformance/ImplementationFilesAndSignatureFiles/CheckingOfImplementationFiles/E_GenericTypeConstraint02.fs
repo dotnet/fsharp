@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 module Test
 
 type G<'a when 'a : struct> = X

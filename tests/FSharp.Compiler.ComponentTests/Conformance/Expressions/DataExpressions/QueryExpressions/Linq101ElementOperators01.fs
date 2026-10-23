@@ -18,7 +18,7 @@ if products12.ProductName <> "Queso Manchego La Pastora" then printfn "products1
 // First - Condition
 let strings = [ "zero"; "one"; "two"; "three"; "four"; "five"; "six"; "seven"; "eight"; "nine" ]
 
-let startsWithO =  
+let startsWithO =
     query {
         for s in strings do
         where (s.[0] = 'o')
@@ -38,7 +38,7 @@ if firstNumOrDefault <> 0 then printfn "firstNumOrDefault failed"; exit 1
 // ElementAt
 let numbers2 = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
 
-let fourthLowNum = 
+let fourthLowNum =
     query {
         for n in numbers2 do
         where (n > 5)

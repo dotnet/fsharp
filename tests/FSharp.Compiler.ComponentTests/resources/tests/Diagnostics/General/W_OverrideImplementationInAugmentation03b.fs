@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:1273
 // Give warning on use of interface and/or override implementations in augmentations
 //

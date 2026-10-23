@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Attributes   
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Attributes
 // Regression test for FSharp1.0:4740
 // Title: Expose currying information in F# compiled form
 
@@ -14,17 +14,17 @@ open System.Runtime.InteropServices
 
 
 let f1 x y = x + y
-let f2 x = x 
+let f2 x = x
 
 [<AbstractClass>]
-type C() = 
+type C() =
   member this.P = 1
-  member this.M1 x y = x + y 
+  member this.M1 x y = x + y
   [<PreserveSigAttribute>]
-  member this.M2 x = x 
+  member this.M2 x = x
 
   abstract A1 : int -> int -> int
-  abstract A2 : int -> int 
+  abstract A2 : int -> int
 
 
 type IInterface =
@@ -34,7 +34,7 @@ type IInterface =
     end
 
 
-type S = 
+type S =
   struct
     [<PreserveSigAttribute>]
     member this.M1 x = x

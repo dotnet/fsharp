@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Regression test for FSHARP1.0:3789
 // Unfixable warning 45
 //<Expects status="success"></Expects>

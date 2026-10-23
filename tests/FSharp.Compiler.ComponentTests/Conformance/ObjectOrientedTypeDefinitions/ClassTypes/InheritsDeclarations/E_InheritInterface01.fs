@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #Inheritance
 
 
 // Verify error when trying to inherit from interface type.
@@ -10,7 +10,7 @@
 
 type I =
     abstract VirtMethod : unit -> int
-    
+
 type A() =
     inherit I with
         override this.VirtMethod () = 1

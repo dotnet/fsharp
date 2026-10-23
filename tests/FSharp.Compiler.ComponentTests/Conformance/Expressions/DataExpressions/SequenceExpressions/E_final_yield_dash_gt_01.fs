@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #Sequences 
+// #Regression #Conformance #DataExpressions #Sequences
 // Regression test for FSHARP1.0:3135
 // See also FSHARP1.0:4207
 // Usage of "->" in a sequence expression is deprecated, unless

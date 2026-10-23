@@ -1,10 +1,10 @@
-// #Conformance #DeclarationElements #MemberDefinitions #Overloading 
+// #Conformance #DeclarationElements #MemberDefinitions #Overloading
 // This test used to be about the [<OverloadID>], which is now gone
 // Reuse the same overload IDs, but with different method sets
 type Foo() =
     member this.DoStuff1 (x:int)    = "doStuff1-1"
     member this.DoStuff1 (x:string) = "doStuff1-2"
-    
+
     member this.DoStuff2 (x:int)    = "doStuff2-1"
     member this.DoStuff2 (x:string) = "doStuff2-2"
 

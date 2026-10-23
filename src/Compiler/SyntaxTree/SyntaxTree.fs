@@ -1419,7 +1419,7 @@ type SynComponentInfo =
         attributes: SynAttributes *
         typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
-        longId: LongIdent *
+        synType: SynType option *
         xmlDoc: PreXmlDoc *
         preferPostfix: bool *
         accessibility: SynAccess option *
@@ -1428,6 +1428,11 @@ type SynComponentInfo =
     member this.Range =
         match this with
         | SynComponentInfo(range = m) -> m
+
+    member this.LongIdent =
+        match this with
+        | SynComponentInfo(synType = Some(SynType.LongIdent(SynLongIdent(lid, _, _)))) -> lid
+        | _ -> []
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynValSigAccess =
@@ -1512,7 +1517,8 @@ type SynExceptionDefnRepr =
         longId: LongIdent option *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynExceptionDefnReprTrivia
 
     member this.Range =
         match this with

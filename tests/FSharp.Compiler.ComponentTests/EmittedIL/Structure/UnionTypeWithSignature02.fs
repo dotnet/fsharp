@@ -1,4 +1,4 @@
-// #Regression #NoMT #CodeGen #Interop 
+// #Regression #NoMT #CodeGen #Interop
 // Regression test for FSHARP1.0:4040
 // "Signature files do not prevent compiler-generated public constructors from leaking out of discriminated unions"
 // Note that the corresponding .fsi file is NOT missing the "| C of int" part of the DU
@@ -7,22 +7,22 @@ module N
 type T = | C of int
 
 module M =
- 
+
  open CodeGenHelper
  open System
 
- // The public constructor called 'C' is now gone 
- let res1 = System.Reflection.Assembly.GetExecutingAssembly() 
-            |> getType "N.T" 
+ // The public constructor called 'C' is now gone
+ let res1 = System.Reflection.Assembly.GetExecutingAssembly()
+            |> getType "N.T"
             |> getMembers
             |> Array.tryFind (fun a -> a.Name = "C")
-           
- if res1.IsSome then 
+
+ if res1.IsSome then
     raise (Exception($"Oops: - Unexpected member N.T.C!"))
 
  // Instead, there is a C#-facing method N.T.NewC for each non-nullary union case
- let res2 = System.Reflection.Assembly.GetExecutingAssembly() 
-            |> getType "N.T" 
+ let res2 = System.Reflection.Assembly.GetExecutingAssembly()
+            |> getType "N.T"
             |> getMethods
             |> Array.tryFind (fun a -> a.Name = "NewC")
 

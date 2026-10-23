@@ -14,5 +14,5 @@ module CheckSelfConstrainedSRTP =
         for x in xs do
            sum <- sum + x
         'T.DivideByInt(sum, xs.Length)
-        
+
     printfn ""

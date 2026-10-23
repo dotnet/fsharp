@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 // Test the ability to specify an anon, generic type
 
 let Name<'a> = typeof<'a>.Name
