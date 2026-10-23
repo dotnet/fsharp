@@ -1959,6 +1959,48 @@ let main _ =
         |> shouldSucceed
         |> withExitCode 0
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 08 - Inlined Run inside an enclosing machine`` optimize =
+        FSharp """
+#nowarn "3513"
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type Inner(offset: int) =
+    member _.Offset = offset
+
+    member inline this.Run(value: int) =
+        if __useResumableCode then
+            __stateMachine<unit, int>
+                (MoveNextMethodImpl<_>(fun _ -> ()))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun _ -> value + this.Offset))
+        else
+            value + this.Offset
+
+let inline run () =
+    if __useResumableCode then
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun _ -> ()))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun sm ->
+                sm.Data <- 41
+                Inner(1).Run(sm.Data)))
+    else
+        42
+
+[<EntryPoint>]
+let main _ =
+    if run () = 42 then 0 else 1
+"""
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+
     [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
         FSharp """
