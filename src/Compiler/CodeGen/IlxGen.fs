@@ -4617,7 +4617,10 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
     match (stripDebugPoints f, tyargs, curriedArgs) with
     // Look for tailcall to turn into branch
-    | Expr.Val(v, _, _), _, _ when IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel ->
+    | Expr.Val(v, _, _), _, _ when
+        cenv.options.localOptimizationsEnabled
+        && IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel
+        ->
         let kind, mark = ListAssoc.find g.valRefEq v eenv.innerVals // already checked above in when guard
 
         // Generate the arguments for the direct tail call.
@@ -4814,7 +4817,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 if isNil laterArgs && not isSelfInit then
                     let isDllImport = IsValRefIsDllImport g vref
                     let hasByrefArg = mspec.FormalArgTypes |> List.exists IsILTypeByref
-                    let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
+
+                    let makesNoCriticalTailcalls =
+                        vref.MakesNoCriticalTailcalls
+                        && not (IsBranchTailcall cenv eenv (vref, tyargs, curriedArgs) sequel)
+
                     let hasStructObjArg = (boxity = AsValue) && takesInstanceArg
 
                     CanTailcall(
