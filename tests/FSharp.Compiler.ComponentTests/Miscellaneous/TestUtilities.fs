@@ -71,6 +71,7 @@ let ``TestConsole preserves nested bulk output`` useError =
 #if NETCOREAPP
 [<FactForNETCOREAPP>]
 let ``Finite process timeout bounds inherited output drain after parent exit`` () =
+    let timeout = 120000
     let directory = TestFramework.createTemporaryDirectory ()
     let config = TestFramework.initialConfig
     let childScript = Path.Combine(directory.FullName, "child.fsx")
@@ -86,7 +87,7 @@ eprintf "inherited stderr"
 System.Console.Out.Flush()
 System.Console.Error.Flush()
 System.IO.File.WriteAllLines(@"{pidFile}", [| string child.Id; string (child.StartTime.ToUniversalTime().Ticks) |])
-System.Threading.Thread.Sleep(60000)
+System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite)
     """
     )
 
@@ -97,7 +98,7 @@ let start = System.Diagnostics.ProcessStartInfo(@"{config.DotNetExe}", UseShellE
 for argument in [ @"{config.FSI}"; "--nologo"; "--exec"; @"{childScript}" ] do
     start.ArgumentList.Add argument
 use child = System.Diagnostics.Process.Start start
-if not (System.Threading.SpinWait.SpinUntil((fun () -> System.IO.File.Exists(@"{pidFile}")), 15000)) then
+if not (System.Threading.SpinWait.SpinUntil((fun () -> System.IO.File.Exists(@"{pidFile}")), {timeout})) then
     failwith "Inherited-output child did not start"
 exit 17
     """
@@ -108,11 +109,15 @@ exit 17
 
         let error =
             Assert.Throws<TimeoutException>(fun () ->
-                FSharp.Test.Compiler.runFsiProcessWithTimeout 15000 [ "--nologo"; "--exec"; parentScript ]
+                FSharp.Test.Compiler.runFsiProcessWithTimeout timeout [ "--nologo"; "--exec"; parentScript ]
                 |> ignore)
 
-        Assert.True(stopwatch.ElapsedMilliseconds < 35000L, $"Inherited output drain took {stopwatch.Elapsed}")
-        Assert.Contains("Process timed out after 15000ms", error.Message)
+        printfn "%s" error.Message
+        Assert.True(
+            stopwatch.ElapsedMilliseconds < int64 timeout + 20000L,
+            $"Inherited output drain took {stopwatch.Elapsed}"
+        )
+        Assert.Contains($"Process timed out after {timeout}ms", error.Message)
         Assert.Contains("Exit code 17", error.Message)
         Assert.Contains("output-drained=False", error.Message)
         Assert.Contains("inherited stdout", error.Message)

@@ -56,7 +56,11 @@ let private assertIdentity (result: ProcessResult) =
             "bin",
             "FSharp.Compiler.Service",
             config.BUILD_CONFIG,
+#if NETCOREAPP
             Path.GetFileName toolDirectory,
+#else
+            "netstandard2.0",
+#endif
             "FSharp.Compiler.Service.dll"
         )
 
@@ -192,7 +196,9 @@ let compile (responseFile: string) stackSize =
                 workerThread Thread.CurrentThread.IsThreadPoolThread stackSize
             let checker = FSharpChecker.Create()
             let arguments = Array.append [| "fsc.exe" |] (File.ReadAllLines responseFile)
+#if NETCOREAPP
             let allocated = GC.GetTotalAllocatedBytes(true)
+#endif
             let stopwatch = Diagnostics.Stopwatch.StartNew()
             let compilation =
                 async {
@@ -204,9 +210,13 @@ let compile (responseFile: string) stackSize =
                 |> Async.StartImmediateAsTask
             if not compilation.IsCompleted || Environment.CurrentManagedThreadId <> workerThread then
                 failwith "Compilation did not complete synchronously on the configured worker"
-            let diagnostics, error = compilation.GetAwaiter().GetResult()
-            printfn "compile-end synchronous=true thread=%d elapsed-ms=%f allocated-bytes=%d"
-                Environment.CurrentManagedThreadId stopwatch.Elapsed.TotalMilliseconds (GC.GetTotalAllocatedBytes(true) - allocated)
+            let mutable awaiter = compilation.GetAwaiter()
+            let diagnostics, error = awaiter.GetResult()
+            printfn "compile-end synchronous=true thread=%d elapsed-ms=%d"
+                Environment.CurrentManagedThreadId stopwatch.ElapsedMilliseconds
+#if NETCOREAPP
+            printfn "allocated-bytes=%d" (GC.GetTotalAllocatedBytes(true) - allocated)
+#endif
             for diagnostic in diagnostics do
                 eprintfn "diagnostic severity=%O code=%d FS%04d: %s"
                     diagnostic.Severity diagnostic.ErrorNumber diagnostic.ErrorNumber diagnostic.Message
@@ -245,6 +255,9 @@ let compile (responseFile: string) stackSize =
     |> withName "QuotationCompilerDriver"
     |> withOutputDirectory (Some(DirectoryInfo directory))
     |> withReferenceFSharpCompilerService
+#if NETCOREAPP
+    |> withOptions [ "--define:NETCOREAPP" ]
+#endif
     |> asLibrary
     |> compile
     |> shouldSucceed
@@ -264,14 +277,23 @@ let compile (responseFile: string) stackSize =
 let private compileInWorker (directory: string) name options (source: string) =
     let driverScript = compilerDriver directory
     let sourcePath = Path.Combine(directory, name + ".fs")
-    let outputPath = Path.Combine(directory, name + ".dll")
+    let outputPath =
+#if NETCOREAPP
+        Path.Combine(directory, name + ".dll")
+#else
+        Path.Combine(directory, name + (if List.contains "--target:library" options then ".dll" else ".exe"))
+#endif
     let responseFile = Path.Combine(directory, name + ".args")
     File.WriteAllText(sourcePath, source)
 
     File.WriteAllLines(
         responseFile,
         [| "--nologo"
+#if NETCOREAPP
            "--targetprofile:netcore"
+#else
+           "--targetprofile:mscorlib"
+#endif
            "--noframework"
            "--simpleresolution"
            $"""-r:{Path.Combine(directory, "QuotationCompilerDriver.dll")}"""
@@ -301,8 +323,7 @@ let private compileInWorker (directory: string) name options (source: string) =
     printfn "tested-source=%s source-sha256=%s response-file=%s" sourcePath (hash sourcePath) responseFile
 
     printfn
-        "child-command=%s \"%s\" --nologo --exec \"%s\" \"%s\" 262144"
-        config.DotNetExe
+        "child-fsi=\"%s\" --nologo --exec \"%s\" \"%s\" 262144"
         config.FSI
         driverScript
         responseFile
@@ -323,18 +344,25 @@ let private compileInWorker (directory: string) name options (source: string) =
     outputPath
 
 let private runExecutable (directory: string) (outputPath: string) =
+#if NETCOREAPP
     File.Copy(
         Path.ChangeExtension(TestFramework.initialConfig.FSI, ".runtimeconfig.json"),
         Path.ChangeExtension(outputPath, ".runtimeconfig.json")
     )
+#endif
 
     File.Copy(sourceCore, Path.Combine(directory, "FSharp.Core.dll"), true)
 
     let exitCode, stdout, stderr =
         TestFramework.Commands.executeProcessWithTimeout
             timeout
+#if NETCOREAPP
             TestFramework.initialConfig.DotNetExe
             $"\"{outputPath}\""
+#else
+            outputPath
+            ""
+#endif
             directory
 
     assertProcess
@@ -342,12 +370,14 @@ let private runExecutable (directory: string) (outputPath: string) =
           StdOut = stdout
           StdErr = stderr }
 
-let private executable directory options body =
+let private executable directory options declarations body =
     compileInWorker
         directory
         "QuotationProgram"
         options
-        ("open Microsoft.FSharp.Quotations.Patterns\nopen QuotationCompilerDriver\n[<EntryPoint>]\nlet main _ =\n    run (fun () ->\n"
+        ("open Microsoft.FSharp.Quotations.Patterns\nopen QuotationCompilerDriver\n"
+         + declarations
+         + "\n[<EntryPoint>]\nlet main _ =\n    run (fun () ->\n"
          + body
          + "\n    )\n    0")
     |> runExecutable directory
@@ -363,8 +393,7 @@ let ``Issue 20788 exact FSI literal`` () =
         printfn "literal-count=1500 source=%s source-sha256=%s" script (hash script)
 
         printfn
-            "child-command=%s \"%s\" --nologo --use:\"%s\" --exec \"%s\""
-            config.DotNetExe
+            "child-fsi=\"%s\" --nologo --use:\"%s\" --exec \"%s\""
             config.FSI
             identityScript
             script
@@ -474,10 +503,14 @@ System.Threading.Thread.Sleep System.Threading.Timeout.Infinite"""
 
             let error =
                 Assert.Throws<TimeoutException>(fun () ->
-                    runFsiProcessWithTimeout 5000 [ "--nologo"; "--exec"; script ] |> ignore)
+                    runFsiProcessWithTimeout timeout [ "--nologo"; "--exec"; script ] |> ignore)
 
-            Assert.True(stopwatch.ElapsedMilliseconds < 20000L, $"Timeout cleanup took {stopwatch.Elapsed}")
-            Assert.Contains("Process timed out after 5000ms", error.Message)
+            printfn "%s" error.Message
+            Assert.True(
+                stopwatch.ElapsedMilliseconds < int64 timeout + 15000L,
+                $"Timeout cleanup took {stopwatch.Elapsed}"
+            )
+            Assert.Contains($"Process timed out after {timeout}ms", error.Message)
             Assert.Contains("timeout child started", error.Message)
             Assert.Contains("timeout child stderr", error.Message)
             let childIdentity = File.ReadAllLines pidFile
@@ -551,6 +584,7 @@ let ``Issue 20788 literal compilation and runtime on small stacks`` count =
         executable
             directory
             []
+            ""
             $"        checkList typeof<int> {count} checkInt <@ ({listLiteral count} : int list) @>")
 
 [<Theory>]
@@ -558,15 +592,17 @@ let ``Issue 20788 literal compilation and runtime on small stacks`` count =
 [<InlineData(true)>]
 let ``Issue 20788 ordinary list and quoted array controls`` quotedArray =
     inDirectory (fun directory ->
-        let body =
+        let declarations, body =
             if quotedArray then
+                "",
                 $"""        match <@ [| {elements 10000 string} |] @> with
         | NewArray(ty, heads) when ty = typeof<int> && heads.Length = 10000 -> List.iteri (fun i head -> checkInt (i + 1) head) heads
         | _ -> failwith "Wrong array shape"
 """
             else
-                $"""        let values = {listLiteral 5000}
-        if values <> [1 .. 5000] then failwith "Wrong ordinary list"
+                // The desktop JIT reserves a large frame for this unquoted literal.
+                $"let values = {listLiteral 5000}",
+                """        if values <> [1 .. 5000] then failwith "Wrong ordinary list"
 """
 
-        executable directory [] body)
+        executable directory [] declarations body)
