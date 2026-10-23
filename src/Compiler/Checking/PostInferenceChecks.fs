@@ -948,7 +948,7 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
-let rec instantiatedResultHead g (typars: Typars) tyargs (args: Expr list) ty =
+let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty =
     // stripTyEqns would instantiate entire abbreviation bodies, even when only the result head is needed.
     match stripTyparEqns ty with
     | TType_var(tp, _) ->
@@ -963,27 +963,33 @@ let rec instantiatedResultHead g (typars: Typars) tyargs (args: Expr list) ty =
                     formalTp
 
             if typarEq tp formalTp then
-                instantiatedResultHead g [] [] args actualTy
+                instantiatedResultHead g m [] [] args actualTy
             else
-                instantiatedResultHead g restTypars restTyargs args ty
+                instantiatedResultHead g m restTypars restTyargs args ty
         | _ -> struct {| Type = ty; Args = args |}
-    | TType_fun(_, returnTy, _) when not args.IsEmpty -> instantiatedResultHead g typars tyargs args.Tail returnTy
+    | TType_fun(_, returnTy, _) when not args.IsEmpty -> instantiatedResultHead g m typars tyargs args.Tail returnTy
     | TType_app(tcref, tinst, _) ->
         match tcref.TypeAbbrev with
         | Some bodyTy ->
-            let result = instantiatedResultHead g tcref.Typars tinst args bodyTy
-            instantiatedResultHead g typars tyargs result.Args result.Type
+            let result = instantiatedResultHead g m tcref.Typars tinst args bodyTy
+            instantiatedResultHead g m typars tyargs result.Args result.Type
         | None when tcref.IsMeasureableReprTycon ->
-            let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
-            let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
+            let reprTy = reduceTyconRefMeasureableOrProvided g tcref [] |> stripTyEqns g
 
-            struct {| Type = actualTy
-                      Args = args |}
+            match tryTcrefOfAppTy g reprTy with
+            | ValueSome reprTcref when not reprTcref.IsMeasureableReprTycon && not (isSpanLikeTyconRef g m reprTcref) ->
+                struct {| Type = reprTy; Args = args |}
+            | _ ->
+                let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
+                let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
+
+                struct {| Type = actualTy
+                          Args = args |}
         | None -> struct {| Type = ty; Args = args |}
     | ty -> struct {| Type = ty; Args = args |}
 
 let isSpanLikeInstantiatedResult g m typars tyargs args ty =
-    let result = instantiatedResultHead g typars tyargs args ty
+    let result = instantiatedResultHead g m typars tyargs args ty
 
     let resultTy =
         if result.Args.IsEmpty then
@@ -1027,7 +1033,7 @@ let rec isSpanLikeExpr g expr =
     | Expr.Op(TOp.DebugLocalScope _, _, [ body ], _)
     | Expr.Sequential(_, body, NormalSeq, _)
     | Expr.Sequential(body, _, ThenDoSeq, _) -> isSpanLikeExpr g body
-    | _ -> isSpanLikeTy g expr.Range (tyOfExpr g expr)
+    | _ -> isSpanLikeInstantiatedResult g expr.Range [] [] [] (tyOfExpr g expr)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =

@@ -176,19 +176,27 @@ let bad = add (Small 3)
 """
         |> verifyRejectedApplication optimize [ captureDiagnostic 7 16 23 ]
 
-    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
-    let ``Issue 20803 - byref-like field partial application`` optimize =
+    [<TheoryForNETCOREAPP;
+      InlineData(false, false);
+      InlineData(true, false);
+      InlineData(false, true);
+      InlineData(true, true)>]
+    let ``Issue 20803 - byref-like field partial application`` optimize measured =
+        let fieldType = if measured then "TaggedSpan<'u>" else "Span<int>"
+
         FSharp
-            """module Consumer
+            $"""module Consumer
 open System
 open System.Runtime.CompilerServices
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
 [<Struct; IsByRefLike; NoEquality; NoComparison>]
-type Holder = { Item: Span<int> }
+type Holder<[<Measure>] 'u> = {{ Item: {fieldType} }}
 let add (s: Span<int>) x = s.Length + x
-let good (h: Holder) = add h.Item 1
-let bad (h: Holder) = add h.Item
+let good (h: Holder<1>) = add h.Item 1
+let bad (h: Holder<1>) = add h.Item
 """
-        |> verifyRejectedApplication optimize [ captureDiagnostic 8 27 33 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 10 30 36 ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
@@ -296,6 +304,19 @@ type Alias<'T> = 'T
 type FunctionAlias<'T> = 'T -> 'T
 type ListAlias<'T> = 'T list
 type U<'T> = U of 'T
+[<Measure>] type kg
+type MeasuredR<[<Measure>] 'u> = { Value: float<'u> }
+type MeasuredU<[<Measure>] 'u> = MeasuredU of float<'u>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedRecord<[<Measure>] 'u> = R<int>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedStruct<[<Measure>] 'u> = S<int>
+let identityMeasure (x: float<'u>) = x
+let measured (f: float<'u> -> float<'u>) x = f (identityMeasure x)
+let measuredField (f: float<'u> -> float<'u>) (r: MeasuredR<'u>) = f r.Value
+let measuredUnionField (f: float<'u> -> float<'u>) (r: MeasuredU<'u>) = f (let (MeasuredU value) = r in value)
+let taggedRecord (f: TaggedRecord<'u> -> int) = f Unchecked.defaultof<TaggedRecord<'u>>
+let taggedStruct (f: TaggedStruct<'u> -> int) = f Unchecked.defaultof<TaggedStruct<'u>>
 let invoke (f: (int -> int) -> int) = f (fun (x: int) -> x)
 let array (f: int[] -> int) = f [| 1; 2; 3 |]
 let bytes (f: byte[] -> byte) = f "abc"B
@@ -347,6 +368,10 @@ if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
    || aliasField id { Value = 2 } <> 2 || aliasFunction id { Value = id } <> 1
    || aliasList List.sum { Value = [1; 2; 3] } <> 6
    || unionField id (U 5) <> 5
+   || measured id 1.0<kg> <> 1.0<kg> || measured id 2.0 <> 2.0
+   || measuredField id { Value = 3.0<kg> } <> 3.0<kg> || measuredField id { Value = 4.0 } <> 4.0
+   || measuredUnionField id (MeasuredU 5.0<kg>) <> 5.0<kg> || measuredUnionField id (MeasuredU 6.0) <> 6.0
+   || taggedRecord (fun _ -> 7) <> 7 || taggedStruct (fun _ -> 8) <> 8
    || partialOption 8 <> 15 || partialWrapped 9 <> 17
    || partial 4 <> 7 then
     failwith "higher-order arguments"
