@@ -1138,7 +1138,9 @@ and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
         && diagnosticsLogger.ErrorCount = errorCount
     then
         match stripDebugPoints arg with
-        | Expr.Op(TOp.Tuple _, _, _, _) -> ()
+        | Expr.Lambda _
+        | Expr.TyLambda _
+        | Expr.Op((TOp.Tuple _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> ()
         | _ ->
             if isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg) then
                 errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))

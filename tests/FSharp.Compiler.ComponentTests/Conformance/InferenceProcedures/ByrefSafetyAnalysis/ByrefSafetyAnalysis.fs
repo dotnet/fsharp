@@ -21,7 +21,14 @@ module ByrefSafetyAnalysis =
         |> withName "Issue20803Provider"
         |> withOptimization optimize
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    let private verifyRejectedApplication optimize diagnostics compilation =
+        compilation
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics diagnostics
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - constructed span partial application`` optimize =
         FSharp
             """module Consumer
@@ -30,12 +37,9 @@ let add (s: Span<int>) (x: int) = s.Length + x
 let bad = add (Span<int> [| 1; 2; 3 |])
 """
         |> asLibrary
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 4 16 39 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 16 39 ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - inferred curried arity`` optimize =
         let provider = issue20803Provider optimize
 
@@ -67,24 +71,22 @@ open System
 let f (s: Span<int>) = fun () -> s.Length
 let bad = f (Span<int> [| 1; 2; 3 |])
 """
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 4 14 37 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 14 37 ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - imported measurable representation`` optimize =
         let provider = issue20803Provider optimize
         provider |> compile |> shouldSucceed |> withDiagnostics [] |> ignore
 
         FSharp "module Consumer\nlet add (s: System.Span<int>) x = s.Length + x\nlet bad = add (Provider.make ())"
         |> withReferences [ provider ]
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 3 16 32 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 3 16 32 ]
 
-    [<Theory; InlineData(false, false); InlineData(false, true); InlineData(true, false); InlineData(true, true)>]
+    [<TheoryForNETCOREAPP;
+      InlineData(false, false);
+      InlineData(false, true);
+      InlineData(true, false);
+      InlineData(true, true)>]
     let ``Issue 20803 - signature and imported curried applications`` optimize separateAssembly =
         let consumer =
             "module Consumer\nlet p = Provider.add (System.Span<int>.Empty)\nlet q = Provider.f (System.Span<int>.Empty)"
@@ -99,12 +101,9 @@ let bad = f (Span<int> [| 1; 2; 3 |])
                 |> withAdditionalSourceFiles [ FsSourceWithFileName "Consumer.fs" consumer ]
 
         compilation
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 2 23 45; captureDiagnostic 3 21 43 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 2 23 45; captureDiagnostic 3 21 43 ]
 
-    [<Theory;
+    [<TheoryForNETCOREAPP;
       InlineData(false, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
       InlineData(true, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
       InlineData(false, "Span<int>", "Span<int>.Empty", 31);
@@ -125,12 +124,9 @@ let make () = Span<int>([| 1; 2; 3 |])
 let add (s: {ty}) x = s.Length + x
 let bad = add ({argument})
 """
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 9 16 endCol ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 9 16 endCol ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - later curried groups`` optimize =
         FSharp
             """module Consumer
@@ -138,12 +134,9 @@ open System
 let later x (s: Span<int>) y = x + s.Length + y
 let p = later 1 (Span<int>.Empty)
 """
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [ captureDiagnostic 4 18 33 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 18 33 ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
         FSharp
             """module Consumer
@@ -159,10 +152,8 @@ let address () =
     let x = 1
     byref &x
 """
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics
+        |> verifyRejectedApplication
+            optimize
             [ (Error 418, Line 6, Col 9, Line 6, Col 10, "The byref typed value 's' cannot be used at this point")
               (Error 412,
                Line 8,
@@ -177,7 +168,7 @@ let address () =
                Col 13,
                "The address of the variable 'x' cannot be used at this point") ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing receiver and inner lambda diagnostics`` optimize =
         FSharp
             """module Consumer
@@ -193,10 +184,8 @@ let inner (s: Span<int>) =
     let g () = s.Length
     g
 """
-        |> withOptimization optimize
-        |> compile
-        |> shouldFail
-        |> withDiagnostics
+        |> verifyRejectedApplication
+            optimize
             [ (Error 406,
                Line 9,
                Col 5,
@@ -210,7 +199,7 @@ let inner (s: Span<int>) =
                Col 24,
                "The byref-typed variable 's' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.") ]
 
-    [<Theory; InlineData(false); InlineData(true)>]
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - legal synchronous applications`` optimize =
         FsFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs")
         |> withReferences [ issue20803Provider optimize ]
@@ -220,7 +209,7 @@ let inner (s: Span<int>) =
         |> shouldSucceed
         |> withStdOutContains "Issue 20803 controls passed"
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Issue 20803 - FSI legal synchronous applications`` () =
         let provider = __SOURCE_DIRECTORY__ ++ "Issue20803Provider.fs"
         let consumer = __SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs"
@@ -234,13 +223,29 @@ let inner (s: Span<int>) =
         |> shouldSucceed
         |> withEvalValueEquals 7
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Issue 20803 - FSI capture diagnostic`` () =
         Fsx "let add (s: System.Span<int>) x = s.Length + x\nlet bad = add (System.Span<int>.Empty)"
         |> withOptions [ "--typecheck-only" ]
         |> eval
         |> shouldFail
         |> withDiagnostics [ captureDiagnostic 2 16 38 ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - ordinary higher-order arguments`` optimize =
+        FSharp
+            """module Consumer
+let invoke (f: (int -> int) -> int) = f (fun (x: int) -> x)
+let array (f: int[] -> int) = f [| 1; 2; 3 |]
+let bytes (f: byte[] -> byte) = f "abc"B
+let uint16s (f: uint16[] -> uint16) = f [| 1us; 2us; 3us |]
+if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
+   || bytes Array.head <> 97uy || uint16s Array.sum <> 6us then
+    failwith "higher-order arguments"
+"""
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
 
     let withPrelude =
         withReferences [
