@@ -33,6 +33,17 @@ compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide with
 To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
 and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
 
+## Type hierarchy benchmarks
+
+`TypeHierarchyBenchmarks.fs` type checks a generated file full of `comparison` and `equality`
+constraints on BCL types (`int`, `decimal`, `DateTime`, `Guid`, `int64`, `string`, `TimeSpan`). Each
+constraint makes the checker walk the type's interface hierarchy.
+
+```dotnet run -c Release --filter *TypeHierarchy*```
+
+`ColdCheck` uses a fresh checker per iteration, like a compiler run. `WarmRecheck` keeps one checker and
+edits the file, like an IDE. Compare `Mean` and `Allocated` across branches.
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |

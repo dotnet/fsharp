@@ -111,14 +111,35 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
             let checkNullness = g.langFeatureNullness && g.checkNullness
-            for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
-                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
-                    if checkNullness then
-                        let typeAttrs = AttributesFromIL(attrsIdx,attrs)
-                        let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
-                        RescopeAndImportILType scoref amap m tinst nullness intfTy
-                    else
-                        RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+            // Name resolution can apply an enclosing type's arguments to a nested type that declares fewer
+            // type parameters (see MakeNestedType), so the instantiation is not always well formed.
+            let tinstMatchesTypars = List.length tinst = List.length tcref.Typars
+            if checkNullness || not tinstMatchesTypars then
+                for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
+                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                        if checkNullness then
+                            let typeAttrs = AttributesFromIL(attrsIdx,attrs)
+                            let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
+                            RescopeAndImportILType scoref amap m tinst nullness intfTy
+                        else
+                            RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+            else
+                // The interfaces are imported once with the definition's own type parameters and
+                // instantiated per use, like ImmediateInterfaceTypesOfFSharpTycon for F# types.
+                let skipUnrefIntfs = (skipUnref = SkipUnrefInterfaces.Yes)
+                let key = struct (tcref.Stamp, skipUnrefIntfs)
+                let formalIntfTys =
+                    match amap.ILInterfacesOfTyconCache.TryGetValue key with
+                    | true, intfTys -> intfTys
+                    | _ ->
+                        let formalInst = generalizeTypars tcref.Typars
+                        let intfTys =
+                            [ for intf in tdef.Implements.Value do
+                                if not skipUnrefIntfs || CanRescopeAndImportILType scoref amap m intf.Type then
+                                    RescopeAndImportILTypeSkipNullness scoref amap m formalInst intf.Type ]
+                        amap.ILInterfacesOfTyconCache.TryAdd(key, intfTys) |> ignore
+                        intfTys
+                yield! instTypes (mkTyconRefInst tcref tinst) formalIntfTys
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
