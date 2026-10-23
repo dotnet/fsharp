@@ -104,15 +104,19 @@ let bad = f (Span<int> [| 1; 2; 3 |])
         |> verifyRejectedApplication optimize [ captureDiagnostic 2 23 45; captureDiagnostic 3 21 43 ]
 
     [<TheoryForNETCOREAPP;
-      InlineData(false, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
-      InlineData(true, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 39);
-      InlineData(false, "Span<int>", "Span<int>.Empty", 31);
-      InlineData(true, "Span<int>", "Span<int>.Empty", 31);
-      InlineData(false, "Span<int>", "make ()", 23);
-      InlineData(true, "Span<int>", "make ()", 23);
-      InlineData(false, "Small", "Small(3)", 24);
-      InlineData(true, "Small", "Small(3)", 24)>]
-    let ``Issue 20803 - computed byref-like arguments`` optimize ty argument endCol =
+      InlineData(false, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 16, 39);
+      InlineData(true, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 16, 39);
+      InlineData(false, "Span<int>", "Span<int>.Empty", 16, 31);
+      InlineData(true, "Span<int>", "Span<int>.Empty", 16, 31);
+      InlineData(false, "Span<int>", "make ()", 16, 23);
+      InlineData(true, "Span<int>", "make ()", 16, 23);
+      InlineData(false, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
+      InlineData(true, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
+      InlineData(false, "Span<int>", "ignore 1; Span<int>.Empty", 16, 41);
+      InlineData(true, "Span<int>", "ignore 1; Span<int>.Empty", 16, 41);
+      InlineData(false, "Small", "Small(3)", 16, 24);
+      InlineData(true, "Small", "Small(3)", 16, 24)>]
+    let ``Issue 20803 - computed byref-like arguments`` optimize ty argument startCol endCol =
         FSharp
             $"""module Consumer
 open System
@@ -124,7 +128,7 @@ let make () = Span<int>([| 1; 2; 3 |])
 let add (s: {ty}) x = s.Length + x
 let bad = add ({argument})
 """
-        |> verifyRejectedApplication optimize [ captureDiagnostic 9 16 endCol ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 9 startCol endCol ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - later curried groups`` optimize =
@@ -148,6 +152,19 @@ let good = add { Value = 3 } 4
 let bad = add { Value = 3 }
 """
         |> verifyRejectedApplication optimize [ captureDiagnostic 7 15 28 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - byref-like union partial application`` optimize =
+        FSharp
+            """module Consumer
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Small = Small of int
+let add (Small value) x = value + x
+let good = add (Small 3) 4
+let bad = add (Small 3)
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 7 16 23 ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
@@ -259,17 +276,31 @@ let record (f: R<int> -> int) = f { Value = 1 }
 let structRecord (f: S<int> -> int) = f { Value = 2 }
 let anonRecord (f: {| Value: int |} -> int) = f {| Value = 3 |}
 let structAnonRecord (f: struct {| Value: int |} -> int) = f struct {| Value = 4 |}
+let option (f: int option -> int) = f (Some 1)
+let list (f: int list -> int) = f [1; 2; 3]
+let valueOption (f: int voption -> int) = f (ValueSome 2)
+let wrappedLambda (f: (int -> int) -> int) = f (let n = 1 in fun x -> x + n)
+let wrappedArray (f: int[] -> int) = f (let n = 1 in [| n |])
+let sequentialArray (f: int[] -> int) = f (ignore 1; [| 2 |])
+let recursiveLambda (f: (int -> int) -> int) = f (let rec loop x = if x = 0 then 0 else loop (x - 1) in fun x -> loop x)
 let add (r: R<int>) x = r.Value + x
 let partial = add { Value = 3 }
 let addAnon (r: {| Value: int |}) x = r.Value + x
 let partialAnon = addAnon {| Value = 5 |}
 let addStructAnon (r: struct {| Value: int |}) x = r.Value + x
 let partialStructAnon = addStructAnon struct {| Value = 6 |}
+let addOption (r: int option) x = Option.get r + x
+let partialOption = addOption (Some 7)
+let partialWrapped = add (let n = 8 in { Value = n })
 if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
    || bytes Array.head <> 97uy || uint16s Array.sum <> 6us
    || record (fun r -> r.Value) <> 1 || structRecord (fun r -> r.Value) <> 2
    || anonRecord (fun r -> r.Value) <> 3 || structAnonRecord (fun r -> r.Value) <> 4
    || partialAnon 7 <> 12 || partialStructAnon 8 <> 14
+   || option Option.get <> 1 || list List.sum <> 6 || valueOption ValueOption.get <> 2
+   || wrappedLambda (fun f -> f 4) <> 5 || wrappedArray Array.sum <> 1
+   || sequentialArray Array.sum <> 2 || recursiveLambda (fun f -> f 3) <> 0
+   || partialOption 8 <> 15 || partialWrapped 9 <> 17
    || partial 4 <> 7 then
     failwith "higher-order arguments"
 """

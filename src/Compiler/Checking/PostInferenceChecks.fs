@@ -948,6 +948,22 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+let rec isSpanLikeExpr g expr =
+    match stripDebugPoints expr with
+    | Expr.Lambda _
+    | Expr.TyLambda _
+    | Expr.Op((TOp.Tuple _ | TOp.AnonRecd _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false
+    | Expr.Op(TOp.Recd(_, tcref), _, _, _)
+    | Expr.Op(TOp.UnionCase(UnionCaseRef(tcref, _)), _, _, _) -> isSpanLikeTyconRef g expr.Range tcref
+    | Expr.Let(_, body, _, _)
+    | Expr.LetRec(_, body, _, _)
+    | Expr.TyChoose(_, body, _)
+    | Expr.StaticOptimization(_, _, body, _)
+    | Expr.Op(TOp.DebugLocalScope _, _, [ body ], _)
+    | Expr.Sequential(_, body, NormalSeq, _)
+    | Expr.Sequential(body, _, ThenDoSeq, _) -> isSpanLikeExpr g body
+    | _ -> isSpanLikeTy g expr.Range (tyOfExpr g expr)
+
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
@@ -1137,15 +1153,7 @@ and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
         && ctxt = PermitByRefExpr.No
         && diagnosticsLogger.ErrorCount = errorCount
     then
-        let isSpanLike =
-            match stripDebugPoints arg with
-            | Expr.Lambda _
-            | Expr.TyLambda _
-            | Expr.Op((TOp.Tuple _ | TOp.AnonRecd _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false
-            | Expr.Op(TOp.Recd(_, tcref), _, _, _) -> isSpanLikeTyconRef cenv.g arg.Range tcref
-            | _ -> isSpanLikeTy cenv.g arg.Range (tyOfExpr cenv.g arg)
-
-        if isSpanLike then
+        if isSpanLikeExpr cenv.g arg then
             errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))
 
     limit
