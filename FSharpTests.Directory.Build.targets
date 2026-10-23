@@ -42,4 +42,8 @@
       </ItemGroup>
   </Target>
 
+  <!-- FastBuildFromCache: when /p:FastBuildFromCache=true, intercepts CoreCompile
+       for eligible test projects with a diagnostics server call via BeforeTargets. -->
+  <Import Project="eng\targets\FastBuildFromCache.targets" Condition="'$(FastBuildFromCache)' == 'true'" />
+
 </Project>
