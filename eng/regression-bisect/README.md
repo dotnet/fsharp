@@ -548,9 +548,10 @@ precede the authenticated search reservation; successful replay of the candidate
 bad decision and boundary reads must precede the first confirmation reservation.
 Missing, incomplete, failed or reordered Git traces block even when the final
 signed checkpoint and report are otherwise complete.
-Search and boundary admission require the authenticated pending reservation at
-its original generation and the pending execution claim at its execution
-generation. A later committed snapshot cannot replace either missing transition.
+All six workers (stable, main, good search, bisect and both confirmations) require
+the authenticated pending reservation at its original generation and the pending
+execution claim at its execution generation. A later committed snapshot cannot
+replace either missing transition, including for workers without Git selection.
 A missing restart trace or a mutation outside the selected fixed slots,
 freshness anchor and controller dispatch blocks verification. The only mutable
 trial fault is `resultAck: true`, which simulates losing the fixed fake result
@@ -652,8 +653,10 @@ adoption. Neither is relabelled as this completed trial. Production stays disabl
 The subsequent verifier-only trace repair was checked read-only against this
 retained native ledger: all 201 Git commands have successful matching results,
 and both selection sequences precede their authenticated reservations.
-Reservation and execution-claim transitions are also required at their exact
-generations; removing either transition now blocks read-only verification.
+Reservation and execution-claim transitions are now required at their exact
+generations for all six workers; CLI regressions independently remove each of
+the twelve transitions and remove all twelve together. The earlier two-worker
+check did not cover stable, main, good search or the parent confirmation.
 Native product, containment and restart receipts are reused at the revision above,
 not claimed as new execution; no worker allowance was reset or added.
 
@@ -680,6 +683,14 @@ lost-ack adoption, required-loss and stale-input rejection, hostile inputs,
 runtime/diagnostic distinctions, identity fallback negatives, matrix coverage
 and immutable old producer metadata. These cheap tests do not establish either
 physical acceptance gate.
+
+All-six admission validation on 2026-10-23 reproduced eight false acceptances
+before the fix. The focused read-only CLI run passed 42 tests after the fix;
+the documented full scoped command passed all 2,691 tests (exit 0), including
+the twelve independent transition-loss cases and combined loss. Syntax, CLI help
+and diff checks exited 0. Exact commands, exit codes, outputs and tested source
+hashes are retained outside the checkout. These are synthetic harness checks,
+not a new native product, containment or controlled-trial execution.
 
 Harness validation on 2026-09-22: the stale-discussion CLI regressions first
 returned `verified` incorrectly, then passed with read-only production intake.

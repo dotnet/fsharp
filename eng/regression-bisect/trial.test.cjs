@@ -615,18 +615,21 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         const descriptions = new Set(entries.filter(e => e.kind === "api" && e.method === "POST" &&
             e.body.context === "regression-bisect/123/456" &&
             generations.some(g => e.body.description.startsWith(`checkpoint:${g}:`))).map(e => e.body.description));
+        assert.equal(descriptions.size, generations.length, "each mutation must remove the original authenticated transition");
         const digests = new Set([...descriptions].map(d => d.split(":")[2]));
         return entries.filter(e => !(e.kind === "api" && (
             e.method === "PATCH" && e.route === "issues/comments/456" && digests.has(contracts.digest(e.body.body)) ||
             e.method === "POST" && e.body.context === "regression-bisect/123/456" && descriptions.has(e.body.description))));
     };
-    const gitTraceChanges = {
-        ...Object.fromEntries([3, 4].flatMap(index => ["generation", "executionGeneration"].map(field => [
-            `missing ${index === 3 ? "search" : "boundary"} ${field === "generation" ? "reservation" : "claim"} checkpoint`,
-            entries => withoutCheckpoints(entries, [complete.records[index][field]]),
+    const admissionTraceChanges = {
+        ...Object.fromEntries(complete.records.flatMap((record, index) => ["generation", "executionGeneration"].map(field => [
+            `missing ${index + 1} ${record.request.phase} ${field === "generation" ? "reservation" : "claim"} checkpoint`,
+            entries => withoutCheckpoints(entries, [record[field]]),
         ]))),
-        "missing reservation and claim checkpoints": entries => withoutCheckpoints(entries,
-            complete.records.slice(3, 5).flatMap(r => [r.generation, r.executionGeneration])),
+        "missing all-six reservation and claim checkpoints": entries => withoutCheckpoints(entries,
+            complete.records.flatMap(r => [r.generation, r.executionGeneration])),
+    };
+    const gitTraceChanges = {
         "missing Git trace": entries => entries.filter(e => !["git", "git-result"].includes(e.kind)),
         "missing bisect trace": entries => entries.filter(e => !e.args?.includes("bisect")),
         "missing Git commands": entries => entries.filter(e => e.kind !== "git"),
@@ -661,6 +664,9 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         ["process trace", /process trace/], ["early bisect", /before authenticated endpoints/],
         ["early selection", /before authenticated endpoints/],
         ["unrelated mutation", /mutation ledger/],
+        ...Object.keys(admissionTraceChanges).map(name => [name, name.endsWith("claim checkpoint")
+            ? /trial trace missing authenticated pending execution claim/
+            : /trial trace missing authenticated pending reservation/]),
         ...Object.keys(gitTraceChanges).map(name => [name, /Git trace/]),
     ]) await t.test(target, async () => {
         const saved = path.join(r.evidence, "trial.json"), bytes = await fs.readFile(saved);
@@ -678,11 +684,12 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
                 { kind: "api", method: "PATCH", route: "issues/124", body: { state: "closed" } };
             await fs.writeFile(lost.file, JSON.stringify(entry) + "\n" + lost.bytes);
         }
-        if (gitTraceChanges[target]) {
+        const traceChange = admissionTraceChanges[target] ?? gitTraceChanges[target];
+        if (traceChange) {
             lost = { file: `${r.api}.ledger` };
             lost.bytes = await fs.readFile(lost.file);
             const entries = lost.bytes.toString("utf8").trim().split("\n").map(JSON.parse);
-            await fs.writeFile(lost.file, gitTraceChanges[target](entries).map(e => JSON.stringify(e)).join("\n") + "\n");
+            await fs.writeFile(lost.file, traceChange(entries).map(e => JSON.stringify(e)).join("\n") + "\n");
         }
         if (["checkpoint", "result"].includes(target)) await r.update(db => {
             db.comments.find(c => c.id === (target === "checkpoint" ? 456 : 457)).body += "forged";
