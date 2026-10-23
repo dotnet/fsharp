@@ -568,6 +568,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
                 | Equals "$" -> ValueSome DOLLAR
                 | Equals "%" -> ValueSome (PERCENT_OP "%")
                 | Equals "%%" -> ValueSome (PERCENT_OP "%%")
+                | Equals "|" -> ValueSome BAR
                 | Equals "" -> ValueNone
                 | StartsWith "="
                 | StartsWith "!="

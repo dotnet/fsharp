@@ -173,7 +173,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynPat> headBindingPattern
 %type <SynType> appTypeNullableInParens
 %type <SynType> atomType
-%type <SynType> atomTypeOrAnonRecdType
+%type <SynType> atomTypeOrAnonType
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
@@ -3793,7 +3793,7 @@ constrPattern:
         let m = unionRanges (rhs parseState 1) argsM
         SynPat.LongIdent(lid, None, None, args, vis, m) }
 
-  | COLON_QMARK atomTypeOrAnonRecdType %prec pat_isinst
+  | COLON_QMARK atomTypeOrAnonType %prec pat_isinst
       { let m = unionRanges (rhs parseState 1) $2.Range
         SynPat.IsInst($2, m) }
 
@@ -6728,10 +6728,10 @@ typeArgListElements:
       { [], [] }
 
 powerType:
-  | atomTypeOrAnonRecdType
+  | atomTypeOrAnonType
     { $1 }
 
-  | atomTypeOrAnonRecdType INFIX_AT_HAT_OP atomicRationalConstant
+  | atomTypeOrAnonType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator())
        if $2 = "^-" then
            let afterMinus = (rhs parseState 2).EndRange
@@ -6740,7 +6740,7 @@ powerType:
            SynType.MeasurePower($1, SynRationalConst.Negate($3, m), lhs parseState)
        else SynType.MeasurePower($1, $3, lhs parseState) }
 
-atomTypeOrAnonRecdType:
+atomTypeOrAnonType:
   | atomType
      { $1 }
 
@@ -6751,6 +6751,9 @@ atomTypeOrAnonRecdType:
              | SynFieldOrSpread.Field (SynField([], false, Some id, ty, false, _xmldoc, None, _m, _trivia)) -> Some(id, ty)
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd(isStruct, flds2, rhs parseState 1) }
+
+  | anonUnionType
+    { SynType.AnonUnion ($1,(rhs parseState 1, $1 |> List.map(fun (SynAnonUnionCase(range = m)) -> m)) ||> List.fold unionRanges) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -6830,6 +6833,28 @@ atomType:
   | appTypeCon DOT ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
        $1 }
+
+/* The core of an anonymous union type definition */
+anonUnionType:
+  | LPAREN attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls rparen
+      {
+        let (nextXmlDoc, _) = $3
+        ($2 (grabXmlDoc(parseState, [], 1))) :: $4 nextXmlDoc
+      }
+
+attrAnonUnionCaseDecls:
+  | attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls
+    {
+      (fun xmlDoc ->
+        let (nextXmlDoc, _) = $2
+        $1 xmlDoc :: $3 nextXmlDoc
+      )
+    }
+  | attrAnonUnionCaseDecl { (fun xmlDoc -> [ $1 xmlDoc ]) }
+
+/* The core of an anonymous union case definition */
+attrAnonUnionCaseDecl:
+  | typ { let mDecl = rhs parseState 1 in (fun xmlDoc -> SynAnonUnionCase ($1, xmlDoc, mDecl)) }
 
 typeArgsNoHpaDeprecated:
   | typeArgsActual

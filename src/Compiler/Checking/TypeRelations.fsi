@@ -18,6 +18,10 @@ type CanCoerce =
 val TypeDefinitelySubsumesTypeNoCoercion:
     ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
 
+/// Same function as TypeDefinitelySubsumesTypeNoCoercion, but does not require reference types for subsumption checks
+val TypeSubsumesTypeForExhaustiveness:
+    ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
+
 /// The feasible equivalence relation. Part of the language spec.
 val TypesFeasiblyEquivalent:
     stripMeasures: bool -> ndeep: int -> g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool

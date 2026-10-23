@@ -8,6 +8,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler.DiagnosticsLogger
@@ -48,19 +49,10 @@ let getTypeSubsumptionCache =
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
     Extras.WeakMap.getOrCreate factory
 
-/// Implements a :> b without coercion based on finalized (no type variable) types
-// Note: This relation is approximate and not part of the language specification.
-//
-//  Some appropriate uses:
-//     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
-//     tc.fs: TcRuntimeTypeTest (approximate warning for redundant runtime type tests)
-//     tc.fs: TcExnDefnCore (error for bad exception abbreviation)
-//     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
-//
-let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
+let rec private subsumesNoCoercionAux allowValueTypeChain ndeep g amap m ty1 ty2 =
 
     if ndeep > 100 then
-        error(InternalError("Large class hierarchy (possibly recursive, detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
+        error(InternalError("Large class hierarchy (possibly recursive, detected in subsumesNoCoercionAux), ty1 = " + (DebugPrint.showType ty1), m))
 
     if ty1 === ty2 then true
     elif typeEquiv g ty1 ty2 then true
@@ -71,16 +63,31 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
         (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
         // Follow the supertype chain
         (isAppTy g ty2 &&
-        isRefTy g ty2 &&
+        (allowValueTypeChain || isRefTy g ty2) &&
 
         ((match GetSuperTypeOfType g amap m ty2 with
             | None -> false
-            | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
+            | Some ty -> subsumesNoCoercionAux allowValueTypeChain (ndeep+1) g amap m ty1 ty) ||
 
         // Follow the interface hierarchy
         (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> List.exists (subsumesNoCoercionAux allowValueTypeChain (ndeep+1) g amap m ty1))))
+
+/// Implements a :> b without coercion based on finalized (no type variable) types
+// Note: This relation is approximate and not part of the language specification.
+//
+//  Some appropriate uses:
+//     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
+//     tc.fs: TcRuntimeTypeTest (approximate warning for redundant runtime type tests)
+//     tc.fs: TcExnDefnCore (error for bad exception abbreviation)
+//     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
+//
+let TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
+    subsumesNoCoercionAux false ndeep g amap m ty1 ty2
+
+let TypeSubsumesTypeForExhaustiveness ndeep g amap m ty1 ty2 =
+    subsumesNoCoercionAux true ndeep g amap m ty1 ty2
 
 let stripAll stripMeasures g ty =
     if stripMeasures then
@@ -119,6 +126,9 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
         TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
 
+    | TType_anon_union (_, l1, _), TType_anon_union(_, l2, _) ->
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+
     | _ ->
         false
 
@@ -149,6 +159,9 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
         | TType_fun _, TType_fun _ ->
             TypesFeasiblyEquiv ndeep g amap m ty1 ty2
 
+        | TType_anon_union (_, l1, _), TType_anon_union (_, l2, _) ->
+            ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
+
         | _ ->
             // F# reference types are subtypes of type 'obj'
                 if isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
@@ -157,7 +170,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
                     true
                 else
                     let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
-                    // See if any interface in type hierarchy of ty2 is a supertype of ty1
+                    // See if ty1 i a supertype of any interface implemented by ty2
                     List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
     match ty1, ty2 with

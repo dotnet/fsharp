@@ -2449,6 +2449,10 @@ let u_tyar_spec st =
 
 let u_tyar_specs = (u_list u_tyar_spec)
 
+let u_anonUnionInfo st =
+    let (commonAncestor, unsortedIndices) = u_tup2 u_ty (u_array u_int) st
+    AnonUnionInfo.Create(commonAncestor, unsortedIndices)
+
 /// Write nullness information to stream B for a type.
 /// Always writes exactly one byte to keep stream B aligned with unconditional reads in u_ty.
 /// Other data (e.g. typar constraints) is also written to stream B unconditionally,
@@ -2525,7 +2529,14 @@ let _ =
         | TType_anon(anonInfo, l) ->
             p_byte 9 st
             p_anonInfo anonInfo st
+            p_tys l st
+
+        | TType_anon_union (unionInfo, l, nullness) ->
+            p_nullnessB 21 nullness st // B tags: 21=WithNull, 22=WithoutNull, 23=Ambivalent
+            p_byte 10 st
+            p_tup2 p_ty (p_array p_int) (unionInfo.CommonAncestorTy, unionInfo.UnsortedCaseSourceIndices) st
             p_tys l st)
+            
 
 let _ =
     fill_u_ty (fun st ->
@@ -2609,6 +2620,18 @@ let _ =
             let anonInfo = u_anonInfo st
             let l = u_tys st
             TType_anon(anonInfo, l)
+
+        | 10 ->
+            let tagB = u_byteB st
+            let anonUnionInfo = u_anonUnionInfo st
+            let l = u_tys st
+
+            match tagB with
+            | 0 -> TType_anon_union(anonUnionInfo, l, KnownAmbivalentToNull)
+            | 21 -> TType_anon_union(anonUnionInfo, l, KnownWithNull)
+            | 22 -> TType_anon_union(anonUnionInfo, l, KnownWithoutNull)
+            | 23 -> TType_anon_union(anonUnionInfo, l, KnownAmbivalentToNull)
+            | _ -> ufailwith st "u_ty - 10/B"
 
         | _ -> ufailwith st "u_typ")
 
