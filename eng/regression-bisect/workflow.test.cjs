@@ -239,6 +239,20 @@ test("scoped validation is not a second production scheduler and has no executio
     assert.deepEqual(validation.jobs.validate.steps.filter(s => s["timeout-minutes"]).map(s => s["timeout-minutes"]), [15, 30]);
 });
 
+test("isolated fleet compilation preserves the shared action registry and full generated-file guard", () => {
+    const validation = YAML.parse(read(".github/workflows/regression-bisect-validation.yml"));
+    const steps = validation.jobs.validate.steps;
+    const compile = steps.find(step => step.name === "Compile twice with the isolated fleet compiler").run;
+    assert.match(compile, /\.github\\aw\\actions-lock\.json/);
+    assert.match(compile, /\$actionsLockBytes = \[IO\.File\]::ReadAllBytes\(\$actionsLock\)/);
+    assert.match(compile, /finally\s*\{\s*\[IO\.File\]::WriteAllBytes\(\$actionsLock, \$actionsLockBytes\)/);
+    assert.ok(compile.indexOf("ReadAllBytes") < compile.indexOf("foreach ($pass in 1, 2)"));
+    assert.match(compile, /Compiled lock differs/);
+    const suite = steps.find(step => step.name === "Offline scoped suite").run;
+    assert.match(suite, /git diff --exit-code\s*\n/);
+    assert.match(suite, /git diff --check/);
+});
+
 test("validation runs the production containment smoke on an ephemeral Linux runner", () => {
     const validation = YAML.parse(read(".github/workflows/regression-bisect-validation.yml"));
     const linux = validation.jobs.containment;

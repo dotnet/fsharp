@@ -399,6 +399,8 @@ define the supported custom-job/output graph and authority split used here.
 The inputs are the AW Markdown and `.github/aw/actions-lock.json`.
 Structural tests also bind its model settings to `shared/model-defaults.md`.
 The lock is compiler output, never hand-edited.
+Isolated compilation restores the shared action registry byte-for-byte, including entries required by newer workflows.
+Validation still checks both compiled lock hashes and rejects other tracked-file changes.
 Its scoped Git attributes preserve LF bytes and the compiler's generated
 trailing whitespace/blank EOF; handwritten files keep normal whitespace checks.
 
@@ -407,13 +409,19 @@ trailing whitespace/blank EOF; handwritten files keep normal whitespace checks.
 # $Receipts is a private existing directory, outside the helper checkout.
 if ((Get-FileHash $Compiler -Algorithm SHA256).Hash.ToLower() -ne
     'fb8789c9ed8fc3c7d36c50659e6171268bb8cc13e95206aed20600fe82942e57') { throw 'Compiler digest mismatch' }
-$hashes = foreach ($pass in 1, 2) {
-    $p = Start-Process $Compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
-        -NoNewWindow -PassThru -RedirectStandardOutput "$Receipts\compile-$pass.stdout" `
-        -RedirectStandardError "$Receipts\compile-$pass.stderr"
-    if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
-    if ($p.ExitCode -ne 0) { throw 'Compile failed' }
-    (Get-FileHash '.github\workflows\regression-bisect.lock.yml' -Algorithm SHA256).Hash
+$actionsLock = Join-Path $PWD '.github\aw\actions-lock.json'
+$actionsLockBytes = [IO.File]::ReadAllBytes($actionsLock)
+try {
+    $hashes = foreach ($pass in 1, 2) {
+        $p = Start-Process $Compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
+            -NoNewWindow -PassThru -RedirectStandardOutput "$Receipts\compile-$pass.stdout" `
+            -RedirectStandardError "$Receipts\compile-$pass.stderr"
+        if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
+        if ($p.ExitCode -ne 0) { throw 'Compile failed' }
+        (Get-FileHash '.github\workflows\regression-bisect.lock.yml' -Algorithm SHA256).Hash
+    }
+} finally {
+    [IO.File]::WriteAllBytes($actionsLock, $actionsLockBytes)
 }
 if ($hashes[0] -ne $hashes[1]) { throw 'Nondeterministic lock output' }
 node --test eng\regression-bisect\workflow.test.cjs

@@ -51,14 +51,20 @@ jobs:
           if ((Get-FileHash $compiler -Algorithm SHA256).Hash.ToLower() -ne
               'fb8789c9ed8fc3c7d36c50659e6171268bb8cc13e95206aed20600fe82942e57') { throw 'Compiler digest mismatch' }
           $expected = (Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash
-          foreach ($pass in 1, 2) {
-            $p = Start-Process $compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
-              -NoNewWindow -PassThru -RedirectStandardOutput "$env:RUNNER_TEMP\compile-$pass.stdout" `
-              -RedirectStandardError "$env:RUNNER_TEMP\compile-$pass.stderr"
-            if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
-            Get-Content "$env:RUNNER_TEMP\compile-$pass.stdout", "$env:RUNNER_TEMP\compile-$pass.stderr"
-            if ($p.ExitCode -ne 0) { throw 'Compile failed' }
-            if ((Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash -ne $expected) { throw 'Compiled lock differs' }
+          $actionsLock = Join-Path $PWD '.github\aw\actions-lock.json'
+          $actionsLockBytes = [IO.File]::ReadAllBytes($actionsLock)
+          try {
+            foreach ($pass in 1, 2) {
+              $p = Start-Process $compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
+                -NoNewWindow -PassThru -RedirectStandardOutput "$env:RUNNER_TEMP\compile-$pass.stdout" `
+                -RedirectStandardError "$env:RUNNER_TEMP\compile-$pass.stderr"
+              if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
+              Get-Content "$env:RUNNER_TEMP\compile-$pass.stdout", "$env:RUNNER_TEMP\compile-$pass.stderr"
+              if ($p.ExitCode -ne 0) { throw 'Compile failed' }
+              if ((Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash -ne $expected) { throw 'Compiled lock differs' }
+            }
+          } finally {
+            [IO.File]::WriteAllBytes($actionsLock, $actionsLockBytes)
           }
       - name: Verify Windows process supervisor
         shell: pwsh
