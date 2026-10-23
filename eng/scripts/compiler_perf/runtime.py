@@ -573,6 +573,7 @@ def main(argv=None):
                         adapter.install_harness()
                         adapter.arm()
                         (controller.root / "agent-server").mkdir(mode=0o700)
+                        token = bridge.endpoint_token(controller.root)
                         controller.save("runtime-service", {"state": "launching"})
                         command = [sys.executable, "-I", str(Path(__file__).resolve()), "serve", "--root", args.root,
                                    "--repository", args.repository, "--journal", args.journal, "--workspace", args.workspace]
@@ -581,8 +582,7 @@ def main(argv=None):
                             child = subprocess.Popen(command, cwd=controller.repository, env=environment,
                                                      stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                                      start_new_session=True)
-                    adapter.wait_service(child, lambda: asyncio.run(probe_service(bridge.endpoint_token(controller.root))))
-                    token = bridge.endpoint_token(controller.root)
+                    adapter.wait_service(child, lambda: asyncio.run(probe_service(token)))
                     print("::add-mask::" + token)
                     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
                         stream.write("token=" + token + "\nexecution_deadline_ms=" +

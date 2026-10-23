@@ -1000,11 +1000,15 @@ class RuntimeTests(unittest.TestCase):
                 if failure == "output-denied":
                     output.mkdir()
                 def child(command, *args, **kwargs):
-                    if command[3:4] == ["serve"] and failure == "launch-denied":
-                        raise OSError("Denied service launch")
+                    if command[3:4] == ["serve"]:
+                        token = (controller.root / "endpoint-key").read_text(encoding="ascii")
+                        self.assertEqual(bridge.endpoint_token(controller.root), token)
+                        if failure == "launch-denied":
+                            raise OSError("Denied service launch")
                     return owned if command[3:4] == ["serve"] else popen(command, *args, **kwargs)
                 async def probe(token):
                     self.assertFalse((controller.root / "controller.lock").exists())
+                    self.assertEqual(token, (controller.root / "endpoint-key").read_text(encoding="ascii"))
                     if failure == "sigterm":
                         runtime.signal.raise_signal(runtime.signal.SIGTERM)
                     if failure in ("probe-denied", "cancelled"):

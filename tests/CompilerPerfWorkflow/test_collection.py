@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 import unittest
@@ -433,6 +434,49 @@ class CollectionTests(unittest.TestCase):
                     self.assertEqual(result["status"], "blocked_collection")
                     self.assertEqual(result["reason"], expected)
                     self.assertIn("exit_status", result)
+
+    def test_tool_input_does_not_block_supervision(self):
+        for reason in ("timeout", "monitor", "cancelled", "budget_exceeded"):
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as directory, \
+                    mock.patch.dict(c.LIMITS, log_bytes=10000):
+                root = Path(directory)
+                script = "import sys,time; "
+                if reason == "budget_exceeded":
+                    script += "print('x' * 20000, flush=True); "
+                script += "time.sleep(1.5); sys.stdin.buffer.read()"
+                error = KeyboardInterrupt if reason == "cancelled" else ValueError("monitor")
+                monitor = mock.Mock(side_effect=[None, error]) if reason in ("monitor", "cancelled") else None
+                started = time.monotonic()
+                try:
+                    result = c.run_tool([sys.executable, "-c", script], root, c.tool_environment(), root,
+                                        "stdin", timeout=.1 if reason == "timeout" else 5, monitor=monitor,
+                                        input_bytes=b"x" * 262144)
+                except c.CollectionCancelled as error:
+                    self.assertEqual(reason, "cancelled")
+                    result = error.result
+                else:
+                    self.assertNotEqual(reason, "cancelled")
+                self.assertEqual(result["reason"], reason)
+                self.assertEqual(result["status"], "blocked_collection")
+                self.assertLess(time.monotonic() - started, 1)
+                self.assertIsNotNone(result["exit_status"])
+                self.assertFalse(list(root.glob("*.raw")))
+                self.assertTrue(all(Path(log["path"]).is_file() for log in result["logs"]))
+
+    def test_tool_receives_complete_binary_input(self):
+        for source, data in itertools.product(("bytes", "file"), (b"", b"x\0\xff" * 100000)):
+            with self.subTest(source=source, size=len(data)), tempfile.TemporaryDirectory() as directory, \
+                    tempfile.TemporaryFile() as stream:
+                root = Path(directory)
+                stream.write(data)
+                stream.seek(0)
+                script = "import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())"
+                result = c.run_tool([sys.executable, "-c", script], root, c.tool_environment(), root, "stdin",
+                                    **({"input_bytes": data} if source == "bytes" else {"input_file": stream}))
+                self.assertEqual(result["status"], "collected")
+                self.assertEqual(result["stdout"].strip(), c.m.hashlib.sha256(data).hexdigest())
+                self.assertFalse(stream.closed)
+                self.assertFalse(list(root.glob("*.raw")))
 
     def test_tool_completion_reaps_only_owned_descendants(self):
         for mode, streams in itertools.product(("timeout", "success", "failure"), ("inherited", "detached")):

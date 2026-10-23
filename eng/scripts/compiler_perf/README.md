@@ -427,10 +427,10 @@ protected-agent-env\Scripts\python -m pip install -r eng\scripts\compiler_perf\r
 protected-agent-env\Scripts\python eng\scripts\compiler_perf\runtime.py configuration
 ```
 
-Start the protected HTTP server before gateway initialization. It creates or
-reuses the owner-only `<root>\endpoint-key`; only the trusted gateway receives
-that scoped bearer capability. The supported
-configuration fragment is `mcp-servers.compiler-perf` with `type: http`,
+Start the protected HTTP server before gateway initialization. `start-service`
+creates or reuses and closes the owner-only `<root>\endpoint-key` before launching
+the server; only the trusted gateway receives that scoped bearer capability.
+The supported configuration fragment is `mcp-servers.compiler-perf` with `type: http`,
 `url: http://127.0.0.1:8765/mcp`, `allowed: [investigate]`, and an `Authorization`
 header carrying **only** the endpoint capability. Never use a write-capable Git
 token. HTTP entries cannot specify `command`, `args`, `env` or `mounts`.
@@ -1227,6 +1227,8 @@ Neither a status flag nor an exporter exit code alone is evidence.
 Persisted command arguments, stdout/stderr and failure reasons redact credential
 assignments, including quoted JSON values, escaped quotes and truncated strings.
 Raw tool streams are deleted after bounded sanitization.
+Command input bytes are staged in a temporary file before launch so a child
+delaying stdin reads cannot block timeout, cancellation or output-budget checks.
 
 The summary keeps these quantities separate:
 

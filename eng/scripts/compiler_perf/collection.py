@@ -1,6 +1,7 @@
 """Bounded, private diagnostics replays. Never produces acceptance samples."""
 
 import argparse
+from contextlib import ExitStack
 import csv
 import ctypes
 from datetime import datetime
@@ -15,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 
@@ -481,24 +483,22 @@ def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None
     command = None
     try:
         m.require(input_bytes is None or input_file is None, "Only one tool input is allowed")
-        command = Command(arguments, cwd, environment, root, phase,
-                          *((input_file,) if input_file is not None else ()))
-        if input_bytes is not None:
-            remaining = memoryview(input_bytes)
-            while remaining:
-                written = os.write(command.process.stdin.fileno(), remaining)
-                m.require(written > 0, "Child input pipe closed")
-                remaining = remaining[written:]
-            command.process.stdin.close()
-        while True:
-            command.check()
-            if monitor:
-                monitor()
-            m.require(time.monotonic() - command.start < timeout, "timeout")
-            if command.process.poll() is not None:
-                break
-            time.sleep(.05)
-        return command.finish()
+        with ExitStack() as stack:
+            if input_bytes is not None:
+                input_file = stack.enter_context(tempfile.TemporaryFile())
+                input_file.write(input_bytes)
+                input_file.seek(0)
+            command = Command(arguments, cwd, environment, root, phase,
+                              *((input_file,) if input_file is not None else ()))
+            while True:
+                command.check()
+                if monitor:
+                    monitor()
+                m.require(time.monotonic() - command.start < timeout, "timeout")
+                if command.process.poll() is not None:
+                    break
+                time.sleep(.05)
+            return command.finish()
     except (OSError, ValueError, KeyboardInterrupt) as error:
         issue = "cancelled" if isinstance(error, KeyboardInterrupt) else str(error)
         result = command.finish(issue) if command else classify_failure(
