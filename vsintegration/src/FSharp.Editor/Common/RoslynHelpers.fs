@@ -231,6 +231,13 @@ module internal RoslynHelpers =
         Async.Start(computation, cancellationToken)
 
 module internal OpenDeclarationHelper =
+    let getInsertionPosition (getLineStr: int -> string) (ctx: InsertionContext) =
+        match ctx.ScopeKind with
+        | ScopeKind.Namespace when (getLineStr (ctx.Pos.Line - 1)).StartsWith("namespace", StringComparison.Ordinal) ->
+            Position.mkPos (ctx.Pos.Line + 1) ctx.Pos.Column
+        | ScopeKind.Namespace -> ctx.Pos
+        | _ -> ParsedInput.AdjustInsertionPoint getLineStr ctx
+
     /// <summary>
     /// Inserts open declaration into `SourceText`.
     /// </summary>
@@ -259,7 +266,8 @@ module internal OpenDeclarationHelper =
         let getLineStr line =
             sourceText.Lines.[line].ToString().Trim()
 
-        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
+        let pos = getInsertionPosition getLineStr ctx
+
         let docLine = Line.toZ pos.Line
         let lineStr = (String.replicate pos.Column " ") + "open " + ns
 
