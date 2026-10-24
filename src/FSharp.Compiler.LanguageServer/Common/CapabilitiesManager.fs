@@ -29,8 +29,8 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                     (DiagnosticOptions(
                         WorkDoneProgress = true,
                         InterFileDependencies = true,
-                        Identifier = "potato",
-                        WorkspaceDiagnostics = true
+                        Identifier = "syntax",
+                        WorkspaceDiagnostics = false
                     )),
             //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
             //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
