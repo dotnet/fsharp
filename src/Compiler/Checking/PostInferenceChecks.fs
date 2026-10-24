@@ -959,7 +959,12 @@ let rec tryNonSpanLikeRepresentationHead g m ty =
         | None -> ValueSome ty
     | _ -> ValueNone
 
-let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty =
+[<Struct; NoEquality; NoComparison>]
+type private InstantiatedResultHead =
+    { Type: TType
+      Args: Expr list }
+
+let rec private instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty : InstantiatedResultHead =
     // stripTyEqns would instantiate entire abbreviation bodies, even when only the result head is needed.
     match stripTyparEqns ty with
     | TType_var(tp, _) ->
@@ -977,7 +982,7 @@ let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty 
                 instantiatedResultHead g m [] [] args actualTy
             else
                 instantiatedResultHead g m restTypars restTyargs args ty
-        | _ -> struct {| Type = ty; Args = args |}
+        | _ -> { Type = ty; Args = args }
     | TType_fun(_, returnTy, _) when not args.IsEmpty -> instantiatedResultHead g m typars tyargs args.Tail returnTy
     | TType_app(tcref, tinst, _) ->
         match tcref.TypeAbbrev with
@@ -986,15 +991,15 @@ let rec instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty 
             instantiatedResultHead g m typars tyargs result.Args result.Type
         | None when tcref.IsMeasureableReprTycon ->
             match tryNonSpanLikeRepresentationHead g m ty with
-            | ValueSome headTy -> struct {| Type = headTy; Args = args |}
+            | ValueSome headTy -> { Type = headTy; Args = args }
             | _ ->
                 let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
                 let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
 
-                struct {| Type = actualTy
-                          Args = args |}
-        | None -> struct {| Type = ty; Args = args |}
-    | ty -> struct {| Type = ty; Args = args |}
+                { Type = actualTy
+                  Args = args }
+        | None -> { Type = ty; Args = args }
+    | ty -> { Type = ty; Args = args }
 
 let isSpanLikeInstantiatedResult g m typars tyargs args ty =
     let result = instantiatedResultHead g m typars tyargs args ty
