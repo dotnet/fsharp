@@ -446,11 +446,7 @@ type TypeCheckingConfig =
     }
 
 [<RequireQualifiedAccess>]
-type ImportReuseKey =
-    {
-        LangVersion: decimal
-        CheckNullness: bool
-    }
+type ImportReuseKey = { ImportsNullness: bool }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -1421,8 +1417,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member _.importReuseKey =
         {
-            ImportReuseKey.LangVersion = data.langVersion.SpecifiedVersion
-            ImportReuseKey.CheckNullness = data.checkNullness
+            ImportReuseKey.ImportsNullness =
+                data.checkNullness
+                && data.langVersion.SupportsFeature LanguageFeature.NullnessChecking
         }
 
     member _.dumpSignatureData = data.dumpSignatureData
