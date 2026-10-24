@@ -8369,10 +8369,10 @@ and GenDecisionTreeJoin cenv cgbuf eenv (bind: Binding, body, m) sequel contf =
     let stackBefore = cgbuf.GetCurrentStack()
     let startMark, endMark as scopeMarks = StartDelayedLocalScope "decisionJoin" cgbuf
 
-    let binds =
-        mkInvisibleBinds args (args |> List.map (fun v -> mkDefault (m, v.Type)))
+    let eenv =
+        (eenv, args)
+        ||> List.fold (fun eenv v -> snd (AllocLocalVal cenv cgbuf v eenv None scopeMarks))
 
-    let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
     let entry = CG.GenerateDelayMark cgbuf "decisionJoin"
     let dispatch = CG.GenerateDelayMark cgbuf "decisionDispatch"
 
