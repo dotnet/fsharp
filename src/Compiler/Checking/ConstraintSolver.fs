@@ -4461,23 +4461,19 @@ let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintIn
 /// does not determine to whatever processes the code generated from the solution: inlining the method and solving
 /// its nested traits. Once that is done, any still unsolved, e.g. 'X of 'static member M<'X>(x: int) : int', are
 /// finished the way ApplyDefaults and SolveInternalUnknowns finish a file: their member constraints are solved,
-/// then ApplyTyparDefaultsByPriority and SolveTyparWithChosenSolution apply. A trait over generic types belongs to
-/// an inline template solved again at each call site, so its solution stays open.
+/// then ApplyTyparDefaultsByPriority and SolveTyparWithChosenSolution apply. This holds in generic code too: in an
+/// inline template the processed solution is stored and reused by every instantiation, so nothing later determines
+/// them, just as type checking defaults a direct call's undetermined type parameters there.
 let FinishCodegenTraitSolution tcVal g amap m (traitInfo: TraitConstraintInfo) =
     let openTypars minst =
         (freeInTypes CollectTypars minst).FreeTypars
         |> Zset.elements
         |> List.filter (fun tp -> tp.Rigidity <> TyparRigidity.Rigid)
 
-    let isGround () =
-        (freeInTypes CollectTypars (traitInfo.SupportTypes @ traitInfo.CompiledObjectAndArgumentTypes @ Option.toList traitInfo.CompiledReturnType))
-            .FreeTypars
-            .IsEmpty
-
     // Nearly every solution has nothing open, so check that before creating a solver state.
     match traitInfo.Solution with
     | Some(FSMethSln(minst = minst))
-    | Some(ILMethSln(minst = minst)) when not (List.isEmpty (openTypars minst)) && isGround () ->
+    | Some(ILMethSln(minst = minst)) when not (List.isEmpty (openTypars minst)) ->
         let css = CreateCodegenState tcVal g amap
         let denv = DisplayEnv.Empty g
         let unsolved () = openTypars minst

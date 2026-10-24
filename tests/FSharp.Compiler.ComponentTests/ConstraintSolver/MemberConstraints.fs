@@ -442,6 +442,61 @@ let main _ =
         |> shouldFail
         |> withErrorCode 71
 
+    // Generic callers reuse the solution for every instantiation, so 'X is defaulted there too, as for a direct call.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved in generic code by a method with an undetermined type parameter`` (optimize: bool) =
+        FSharp
+            """
+type C =
+    static member inline M<'T, 'X>(x: 'T) =
+        x, typeof<'X>
+
+let inline call (w: ^W) (x: 'T) =
+    (^W : (static member M : 'T -> 'T * System.Type) x)
+
+let generic (x: 'T) = call Unchecked.defaultof<C> x
+let inline genericInline (x: 'T) = call Unchecked.defaultof<C> x
+
+[<EntryPoint>]
+let main _ =
+    if snd (generic 1) <> typeof<obj> || snd (generic "a") <> typeof<obj> then failwith "generic failed"
+    if snd (genericInline 1) <> typeof<obj> || snd (genericInline "a") <> typeof<obj> then failwith "genericInline failed"
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Generic code cannot satisfy a member constraint on 'X that involves 'T; called directly, M is rejected the same way.
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Trait solved in generic code by a method whose undetermined type parameter has an unsatisfiable member constraint`` (optimize: bool) =
+        FSharp
+            """
+type C =
+    static member inline M<'T, ^X when ^X : (static member Foo : 'T -> int)>(x: 'T) =
+        (^X : (static member Foo : 'T -> int) x)
+
+let inline call (w: ^W) (x: 'T) =
+    (^W : (static member M : 'T -> int) x)
+
+let generic (x: 'T) = call Unchecked.defaultof<C> x
+
+[<EntryPoint>]
+let main _ =
+    printfn "%d" (generic 1)
+    0
+            """
+        |> withOptimization optimize
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withErrorCode 71
+
     // https://github.com/dotnet/fsharp/issues/8690
     [<Theory>]
     [<InlineData(true)>]

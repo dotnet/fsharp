@@ -375,8 +375,8 @@ val ApplyTyparDefaultsByPriority: DisplayEnv -> ConstraintSolverState -> Typar l
 val CodegenWitnessExprForTraitConstraint:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
-/// Finish the type parameters a codegen solution of a ground trait left open, once the code generated from the
-/// solution has been processed: inlined and its nested traits solved. Callers of CodegenWitnessExprForTraitConstraint
+/// Finish the type parameters a codegen trait solution left open, once the code generated from the solution has
+/// been processed: inlined and its nested traits solved. Callers of CodegenWitnessExprForTraitConstraint
 /// call it with the same trait; the witness lambda functions call it themselves.
 val FinishCodegenTraitSolution:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<unit>
