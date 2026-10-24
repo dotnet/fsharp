@@ -80,9 +80,9 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26515.1">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.26523.10">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>ed9b62fbe0647cadb40b25793463110495e19984</Sha>
+      <Sha>e7190175efc76434762e73a7a881ac451186ce2d</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.25467.1">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
