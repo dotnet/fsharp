@@ -7,6 +7,396 @@ open FSharp.Test
 open FSharp.Test.Compiler
 
 module ByrefSafetyAnalysis =
+    let private captureDiagnostic line startCol endCol =
+        (Error 3235,
+         Line line,
+         Col startCol,
+         Line line,
+         Col endCol,
+         "A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.")
+
+    let private issue20803Provider optimize =
+        FsFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Provider.fsi")
+        |> withAdditionalSourceFiles [ SourceFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Provider.fs") ]
+        |> withName "Issue20803Provider"
+        |> withOptimization optimize
+
+    let private verifyRejectedApplication optimize diagnostics compilation =
+        compilation
+        |> withOptimization optimize
+        |> compile
+        |> shouldFail
+        |> withDiagnostics diagnostics
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - constructed span partial application`` optimize =
+        FSharp
+            """module Consumer
+open System
+let add (s: Span<int>) (x: int) = s.Length + x
+let bad = add (Span<int> [| 1; 2; 3 |])
+"""
+        |> asLibrary
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 16 39 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - inferred curried arity`` optimize =
+        let provider = issue20803Provider optimize
+
+        let inferred =
+            FSharp "module Arity\nlet f (s: System.Span<int>) = fun () -> s.Length"
+
+        for compilation, moduleName, names in [ provider, "Provider", [ "add"; "f" ]; inferred, "Arity", [ "f" ] ] do
+            let assembly =
+                compilation
+                |> withOptimization optimize
+                |> compile
+                |> shouldSucceed
+                |> withDiagnostics []
+                |> getAssembly
+
+            for name in names do
+                let methodInfo = assembly.GetType(moduleName).GetMethod(name)
+
+                let attribute =
+                    methodInfo.GetCustomAttributes(typeof<CompilationArgumentCountsAttribute>, false)
+                    |> Assert.Single
+                    :?> CompilationArgumentCountsAttribute
+
+                Assert.Equal<int>([| 1; 1 |], attribute.Counts)
+
+        FSharp
+            """module Consumer
+open System
+let f (s: Span<int>) = fun () -> s.Length
+let bad = f (Span<int> [| 1; 2; 3 |])
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 14 37 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - imported measurable representation`` optimize =
+        let provider = issue20803Provider optimize
+        provider |> compile |> shouldSucceed |> withDiagnostics [] |> ignore
+
+        FSharp "module Consumer\nlet add (s: System.Span<int>) x = s.Length + x\nlet bad = add (Provider.make ())"
+        |> withReferences [ provider ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 3 16 32 ]
+
+    [<TheoryForNETCOREAPP;
+      InlineData(false, false);
+      InlineData(false, true);
+      InlineData(true, false);
+      InlineData(true, true)>]
+    let ``Issue 20803 - signature and imported curried applications`` optimize separateAssembly =
+        let consumer =
+            "module Consumer\nlet p = Provider.add (System.Span<int>.Empty)\nlet q = Provider.f (System.Span<int>.Empty)"
+
+        let provider = issue20803Provider optimize
+
+        let compilation =
+            if separateAssembly then
+                FSharp consumer |> withReferences [ provider ]
+            else
+                provider
+                |> withAdditionalSourceFiles [ FsSourceWithFileName "Consumer.fs" consumer ]
+
+        compilation
+        |> verifyRejectedApplication optimize [ captureDiagnostic 2 23 45; captureDiagnostic 3 21 43 ]
+
+    [<TheoryForNETCOREAPP;
+      InlineData(false, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 16, 39);
+      InlineData(true, "ReadOnlySpan<int>", "ReadOnlySpan<int>.Empty", 16, 39);
+      InlineData(false, "Span<int>", "Span<int>.Empty", 16, 31);
+      InlineData(true, "Span<int>", "Span<int>.Empty", 16, 31);
+      InlineData(false, "Span<int>", "make ()", 16, 23);
+      InlineData(true, "Span<int>", "make ()", 16, 23);
+      InlineData(false, "Span<int>", "genericSpan<1> ()", 16, 33);
+      InlineData(true, "Span<int>", "genericSpan<1> ()", 16, 33);
+      InlineData(false, "Span<int>", "recursiveSpan<1> ()", 16, 35);
+      InlineData(true, "Span<int>", "recursiveSpan<1> ()", 16, 35);
+      InlineData(false, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
+      InlineData(true, "Span<int>", "let n = 1 in Span<int> [| n |]", 20, 21);
+      InlineData(false, "Span<int>", "ignore 1; Span<int>.Empty", 16, 41);
+      InlineData(true, "Span<int>", "ignore 1; Span<int>.Empty", 16, 41);
+      InlineData(false, "Small", "Small(3)", 16, 24);
+      InlineData(true, "Small", "Small(3)", 16, 24)>]
+    let ``Issue 20803 - computed byref-like arguments`` optimize ty argument startCol endCol =
+        FSharp
+            $"""module Consumer
+open System
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike>]
+type Small(value: int) =
+    member _.Length = value
+let make () = Span<int>([| 1; 2; 3 |])
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
+let genericSpan<[<Measure>] 'u> () : TaggedSpan<'u> = Unchecked.defaultof<_>
+let rec recursiveSpan<[<Measure>] 'u> () : TaggedSpan<'u> =
+    if false then otherSpan () else Unchecked.defaultof<_>
+and otherSpan () = recursiveSpan ()
+let add (s: {ty}) x = s.Length + x
+let bad = add ({argument})
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 15 startCol endCol ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - later curried groups`` optimize =
+        FSharp
+            """module Consumer
+open System
+let later x (s: Span<int>) y = x + s.Length + y
+let p = later 1 (Span<int>.Empty)
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 18 33 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - byref-like record partial application`` optimize =
+        FSharp
+            """module Consumer
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Small = { Value: int }
+let add (r: Small) x = r.Value + x
+let good = add { Value = 3 } 4
+let bad = add { Value = 3 }
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 7 15 28 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - byref-like union partial application`` optimize =
+        FSharp
+            """module Consumer
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Small = Small of int
+let add (Small value) x = value + x
+let good = add (Small 3) 4
+let bad = add (Small 3)
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 7 16 23 ]
+
+    [<TheoryForNETCOREAPP;
+      InlineData(false, false);
+      InlineData(true, false);
+      InlineData(false, true);
+      InlineData(true, true)>]
+    let ``Issue 20803 - byref-like field partial application`` optimize measured =
+        let fieldType = if measured then "TaggedSpan<'u>" else "Span<int>"
+
+        FSharp
+            $"""module Consumer
+open System
+open System.Runtime.CompilerServices
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
+[<Struct; IsByRefLike; NoEquality; NoComparison>]
+type Holder<[<Measure>] 'u> = {{ Item: {fieldType} }}
+let add (s: Span<int>) x = s.Length + x
+let good (h: Holder<1>) = add h.Item 1
+let bad (h: Holder<1>) = add h.Item
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 10 30 36 ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - existing variable and tuple diagnostics`` optimize =
+        FSharp
+            """module Consumer
+open System
+let add (s: Span<int>) x = s.Length + x
+let local () =
+    let s = Span<int>.Empty
+    add s
+let tupled (s: Span<int>, x) y = s.Length + x + y
+let bad = tupled (Span<int>.Empty, 1)
+let byref (x: inref<int>) y = x + y
+let address () =
+    let x = 1
+    byref &x
+"""
+        |> verifyRejectedApplication
+            optimize
+            [ (Error 418, Line 6, Col 9, Line 6, Col 10, "The byref typed value 's' cannot be used at this point")
+              (Error 412,
+               Line 8,
+               Col 19,
+               Line 8,
+               Col 37,
+               "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+              (Error 421,
+               Line 12,
+               Col 12,
+               Line 12,
+               Col 13,
+               "The address of the variable 'x' cannot be used at this point") ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - existing receiver and inner lambda diagnostics`` optimize =
+        FSharp
+            """module Consumer
+open System
+open System.Runtime.CompilerServices
+[<Struct; IsByRefLike>]
+type Small(value: int) =
+    member _.Add x = value + x
+let receiver () =
+    let mutable s = Small(3)
+    s.Add
+let inner (s: Span<int>) =
+    let g () = s.Length
+    g
+"""
+        |> verifyRejectedApplication
+            optimize
+            [ (Error 406,
+               Line 9,
+               Col 5,
+               Line 9,
+               Col 10,
+               "The byref-typed variable 'objectArg' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
+              (Error 406,
+               Line 11,
+               Col 16,
+               Line 11,
+               Col 24,
+               "The byref-typed variable 's' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.") ]
+
+    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - legal synchronous applications`` optimize =
+        FsFromPath(__SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs")
+        |> withReferences [ issue20803Provider optimize ]
+        |> withOptimization optimize
+        |> withNoWarn 20
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "Issue 20803 controls passed"
+
+    [<FactForNETCOREAPP>]
+    let ``Issue 20803 - FSI legal synchronous applications`` () =
+        let provider = __SOURCE_DIRECTORY__ ++ "Issue20803Provider.fs"
+        let consumer = __SOURCE_DIRECTORY__ ++ "Issue20803Positive.fs"
+
+        Fsx
+            $"""#load @"{provider}"
+#load @"{consumer}"
+7"""
+        |> withNoWarn 20
+        |> eval
+        |> shouldSucceed
+        |> withEvalValueEquals 7
+
+    [<FactForNETCOREAPP>]
+    let ``Issue 20803 - FSI capture diagnostic`` () =
+        Fsx "let add (s: System.Span<int>) x = s.Length + x\nlet bad = add (System.Span<int>.Empty)"
+        |> withOptions [ "--typecheck-only" ]
+        |> eval
+        |> shouldFail
+        |> withDiagnostics [ captureDiagnostic 2 16 38 ]
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``Issue 20803 - ordinary higher-order arguments`` optimize =
+        FSharp
+            """module Consumer
+type R<'T> = { Value: 'T }
+[<Struct>]
+type S<'T> = { Value: 'T }
+type Alias<'T> = 'T
+type FunctionAlias<'T> = 'T -> 'T
+type ListAlias<'T> = 'T list
+type U<'T> = U of 'T
+[<Measure>] type kg
+type MeasuredR<[<Measure>] 'u> = { Value: float<'u> }
+type MeasuredU<[<Measure>] 'u> = MeasuredU of float<'u>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedRecord<[<Measure>] 'u> = R<int>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedStruct<[<Measure>] 'u> = S<int>
+[<MeasureAnnotatedAbbreviation>]
+type TaggedFloat<[<Measure>] 'u> = float<'u>
+[<MeasureAnnotatedAbbreviation>]
+type NestedFloat<[<Measure>] 'u> = TaggedFloat<'u>
+[<MeasureAnnotatedAbbreviation>]
+type DeepFloat<[<Measure>] 'u> = NestedFloat<'u>
+type MeasuredAlias<[<Measure>] 'u> = DeepFloat<'u>
+type NestedR<[<Measure>] 'u> = { Value: MeasuredAlias<'u> }
+let idTagged (x: TaggedFloat<'u>) = x
+let nestedMeasured<[<Measure>] 'u> (f: TaggedFloat<'u> -> int) (x: TaggedFloat<'u>) = f (idTagged x)
+let deepMeasured<[<Measure>] 'u> (f: MeasuredAlias<'u> -> int) (x: MeasuredAlias<'u>) = f (id x)
+let nestedMeasuredField<[<Measure>] 'u> (f: MeasuredAlias<'u> -> int) (r: NestedR<'u>) = f r.Value
+let identityMeasure (x: float<'u>) = x
+let measured (f: float<'u> -> float<'u>) x = f (identityMeasure x)
+let measuredField (f: float<'u> -> float<'u>) (r: MeasuredR<'u>) = f r.Value
+let measuredUnionField (f: float<'u> -> float<'u>) (r: MeasuredU<'u>) = f (let (MeasuredU value) = r in value)
+let taggedRecord (f: TaggedRecord<'u> -> int) = f Unchecked.defaultof<TaggedRecord<'u>>
+let taggedStruct (f: TaggedStruct<'u> -> int) = f Unchecked.defaultof<TaggedStruct<'u>>
+let invoke (f: (int -> int) -> int) = f (fun (x: int) -> x)
+let array (f: int[] -> int) = f [| 1; 2; 3 |]
+let bytes (f: byte[] -> byte) = f "abc"B
+let uint16s (f: uint16[] -> uint16) = f [| 1us; 2us; 3us |]
+let record (f: R<int> -> int) = f { Value = 1 }
+let structRecord (f: S<int> -> int) = f { Value = 2 }
+let anonRecord (f: {| Value: int |} -> int) = f {| Value = 3 |}
+let structAnonRecord (f: struct {| Value: int |} -> int) = f struct {| Value = 4 |}
+let option (f: int option -> int) = f (Some 1)
+let list (f: int list -> int) = f [1; 2; 3]
+let valueOption (f: int voption -> int) = f (ValueSome 2)
+let wrappedLambda (f: (int -> int) -> int) = f (let n = 1 in fun x -> x + n)
+let wrappedArray (f: int[] -> int) = f (let n = 1 in [| n |])
+let sequentialArray (f: int[] -> int) = f (ignore 1; [| 2 |])
+let recursiveLambda (f: (int -> int) -> int) = f (let rec loop x = if x = 0 then 0 else loop (x - 1) in fun x -> loop x)
+let identity (f: int -> int) = f (id 1)
+let mapped (f: int list -> int) xs = f (List.map id xs)
+let field (f: int -> int) (r: R<int>) = f r.Value
+let structField (f: int -> int) (r: S<int>) = f r.Value
+let genericField (f: 'T -> 'T) (r: R<'T>) = f r.Value
+let nested (f: int -> int) = f (id id 1)
+let functionField (f: int -> int) (r: R<int -> int>) = f (r.Value 1)
+let wrappedApplication (f: int -> int) = f (let n = 1 in id n)
+let aliasField (f: int -> int) (r: R<Alias<int>>) = f r.Value
+let aliasFunction (f: int -> int) (r: R<FunctionAlias<int>>) = f (r.Value 1)
+let aliasList (f: int list -> int) (r: R<ListAlias<int>>) = f r.Value
+let unionField (f: int -> int) (u: U<int>) = f (let (U value) = u in value)
+let add (r: R<int>) x = r.Value + x
+let partial = add { Value = 3 }
+let addAnon (r: {| Value: int |}) x = r.Value + x
+let partialAnon = addAnon {| Value = 5 |}
+let addStructAnon (r: struct {| Value: int |}) x = r.Value + x
+let partialStructAnon = addStructAnon struct {| Value = 6 |}
+let addOption (r: int option) x = Option.get r + x
+let partialOption = addOption (Some 7)
+let partialWrapped = add (let n = 8 in { Value = n })
+if invoke (fun f -> f 42) <> 42 || array Array.sum <> 6
+   || bytes Array.head <> 97uy || uint16s Array.sum <> 6us
+   || record (fun r -> r.Value) <> 1 || structRecord (fun r -> r.Value) <> 2
+   || anonRecord (fun r -> r.Value) <> 3 || structAnonRecord (fun r -> r.Value) <> 4
+   || partialAnon 7 <> 12 || partialStructAnon 8 <> 14
+   || option Option.get <> 1 || list List.sum <> 6 || valueOption ValueOption.get <> 2
+   || wrappedLambda (fun f -> f 4) <> 5 || wrappedArray Array.sum <> 1
+   || sequentialArray Array.sum <> 2 || recursiveLambda (fun f -> f 3) <> 0
+   || identity id <> 1 || mapped List.sum [1; 2; 3] <> 6
+   || field id { Value = 3 } <> 3 || structField id { Value = 4 } <> 4
+   || genericField id { Value = "value" } <> "value"
+   || nested id <> 1 || functionField id { Value = id } <> 1 || wrappedApplication id <> 1
+   || aliasField id { Value = 2 } <> 2 || aliasFunction id { Value = id } <> 1
+   || aliasList List.sum { Value = [1; 2; 3] } <> 6
+   || unionField id (U 5) <> 5
+   || measured id 1.0<kg> <> 1.0<kg> || measured id 2.0 <> 2.0
+   || measuredField id { Value = 3.0<kg> } <> 3.0<kg> || measuredField id { Value = 4.0 } <> 4.0
+   || measuredUnionField id (MeasuredU 5.0<kg>) <> 5.0<kg> || measuredUnionField id (MeasuredU 6.0) <> 6.0
+   || taggedRecord (fun _ -> 7) <> 7 || taggedStruct (fun _ -> 8) <> 8
+   || nestedMeasured<kg> (fun _ -> 1) Unchecked.defaultof<_> <> 1
+   || nestedMeasured<1> int 2.0 <> 2
+   || deepMeasured<kg> (fun _ -> 3) Unchecked.defaultof<_> <> 3 || deepMeasured<1> int 4.0 <> 4
+   || nestedMeasuredField<kg> (fun _ -> 5) { Value = Unchecked.defaultof<_> } <> 5
+   || nestedMeasuredField<1> int { Value = 6.0 } <> 6
+   || partialOption 8 <> 15 || partialWrapped 9 <> 17
+   || partial 4 <> 7 then
+    failwith "higher-order arguments"
+"""
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
     let withPrelude =
         withReferences [
             FsFromPath (__SOURCE_DIRECTORY__ ++ "Prelude.fs")
