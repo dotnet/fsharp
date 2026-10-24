@@ -383,6 +383,41 @@ let main _ =
         |> withOptions ["--nowarn:25"]
         |> runWithSettings true true
 
+    [<Theory>]
+    [<InlineData("int", false)>]
+    [<InlineData("int", true)>]
+    [<InlineData("unit", false)>]
+    [<InlineData("unit", true)>]
+    [<InlineData("nonTailAction", false)>]
+    [<InlineData("nonTailAction", true)>]
+    [<InlineData("nonTailMatch", false)>]
+    [<InlineData("nonTailMatch", true)>]
+    let ``Issue 20632 - promoted joins preserve attributed tail diagnostics`` kind optimize =
+        let recurse = "run (remaining - 1) token stack col"
+        let finish, fallback =
+            if kind = "unit" then "()", "()" else "0", "-1"
+        let action = if kind = "nonTailAction" then $"1 + {recurse}" else recurse
+        let expression = $"""(
+            match token, stack with
+            | (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7), C0 value :: _ when guard 0 value col -> {action}
+            | _ -> {fallback})"""
+        let prefix = if kind = "nonTailMatch" then "1 + " else ""
+        let code = $"""[<TailCall>]
+let rec run remaining token stack col =
+    if remaining = 0 then {finish} else
+        {prefix}{expression}"""
+        let compilation =
+            template "ContextMatch.fs" ["{{MODULE_ATTRIBUTE}}", ""; "{{CASE}}", code]
+            |> asLibrary
+            |> withLangVersion80
+            |> withOptimization optimize
+            |> withRealInternalSignature true
+            |> compile
+        if kind = "nonTailAction" || kind = "nonTailMatch" then
+            compilation |> shouldFail |> withWarningCode 3569 |> ignore
+        else
+            compilation |> shouldSucceed |> ignore
+
 #if NETCOREAPP
     [<Collection(nameof NotThreadSafeResourceCollection)>]
     type CompilerAllocation() =
