@@ -14,10 +14,10 @@ This file should be imported by eng/Versions.props
     <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
     <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.13.0-1.26516.14</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26516.14</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.13.0-1.26516.14</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.13.0-1.26516.14</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>18.13.0-1.26523.4</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26523.4</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.13.0-1.26523.4</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.13.0-1.26523.4</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet-optimization dependencies -->
     <optimizationlinuxarm64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationlinuxarm64MIBCRuntimePackageVersion>
     <optimizationlinuxx64MIBCRuntimePackageVersion>1.0.0-prerelease.26502.1</optimizationlinuxx64MIBCRuntimePackageVersion>
