@@ -104,19 +104,12 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) =
     isReturnsResumableCodeTy g v.TauType
 
-// We allow a prefix of bindings prior to the state machine, e.g.
-//     task { .. }
-// becomes
-//     let builder@ = task
-//     ....
-let isStateMachineBindingVar g (v: Val) =
-    isExpandVar g v  ||
-    (let nm = v.LogicalName
-     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal))
+let isPureTemp g (bind: Binding) =
+    (bind.Var.IsCompilerGenerated || bind.Var.IsMemberThisVal)
+    && not (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g bind.Expr)
 
-let isMachineDefinition g (bind: Binding) =
-    isStateMachineBindingVar g bind.Var
-    && (isExpandVar g bind.Var || not (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g bind.Expr))
+let isUnusedPureTemp g (bind: Binding) bodyExpr =
+    isPureTemp g bind && not (Zset.contains bind.Var (freeInExpr CollectLocals bodyExpr).FreeLocals)
 
 type env =
     {
@@ -140,7 +133,7 @@ let IsStateMachineExpr g overallExpr =
     let rec go seenBinding expr =
         match expr with
         // 'let' binding of initial code
-        | Expr.Let (defn, bodyExpr, m, _) when seenBinding || isStateMachineBindingVar g defn.Var ->
+        | Expr.Let (defn, bodyExpr, m, _) when seenBinding || isExpandVar g defn.Var ->
             match go true bodyExpr with
             | None -> None
             | Some altExpr as r ->
@@ -202,16 +195,12 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
 
         match expr with
         // Bind 'let __expand_ABC = bindExpr in bodyExpr'
-        | Expr.Let (defn, bodyExpr, m, _) when isStateMachineBindingVar g defn.Var ->
+        | Expr.Let (defn, bodyExpr, _, _) when isExpandVar g defn.Var ->
             if sm_verbose then printfn "binding %A --> %A..." defn.Var defn.Expr
-            let envR = recordDefinition env defn
-            let envR2, bodyR = BindResumableCodeDefinitions envR bodyExpr
-            // A dropped builder or receiver temp loses its side effect when unused (#13099).
-            if not (isExpandVar g defn.Var) && Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g defn.Expr &&
-               not (Zset.contains defn.Var (freeInExpr CollectLocals bodyExpr).FreeLocals) then
-                envR2, mkSequential m defn.Expr bodyR
-            else
-                envR2, bodyR
+            BindResumableCodeDefinitions (recordDefinition env defn) bodyExpr
+
+        | Expr.Let (defn, bodyExpr, _, _) when isUnusedPureTemp g defn bodyExpr ->
+            BindResumableCodeDefinitions env bodyExpr
 
          // Eliminate 'if __useResumableCode ...'
          | IfUseResumableStateMachinesExpr g (thenExpr, _) ->
@@ -404,6 +393,8 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     let rec makeRewriteEnv (env: env) =
         { PreIntercept = Some (fun cont e ->
             match e with
+            | Expr.Let (bind, bodyExpr, _, _) when isUnusedPureTemp g bind bodyExpr ->
+                Some (RewriteExpr (makeRewriteEnv env) bodyExpr)
             | Expr.Let (bind, bodyExpr, m, _) when isExpandVar g bind.Var ->
                 let bodyR = RewriteExpr (makeRewriteEnv (recordDefinition env bind)) bodyExpr
                 if Zset.contains bind.Var (freeInExpr CollectLocals bodyR).FreeLocals then
@@ -445,22 +436,28 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         let rec walkPrefix env expr prefixChain =
             match expr with
             | Expr.Let (bind, bodyExpr, _, _) ->
-                let isDefinition = isMachineDefinition g bind
+                let isDefinition = isExpandVar g bind.Var
                 let env = if isDefinition then recordDefinition env bind else env
                 walkPrefix env bodyExpr ((bind, isDefinition) :: prefixChain)
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> walkPrefix env thenExpr prefixChain
             | _ -> env, List.rev prefixChain, expr
         let env, prefixChain, expr = walkPrefix initialEnv inputExpr []
-        let prefixBindings, env =
-            let kept, _, emitted =
-                (prefixChain, ([], Zset.empty valOrder, env.EmittedDefns))
-                ||> List.foldBack (fun (bind, isDefinition) (kept, needed, emitted) ->
-                    if isDefinition && not (Zset.contains bind.Var needed) then
-                        kept, needed, emitted
-                    else
-                        let emitted = if isDefinition then Zset.add bind.Var emitted else emitted
-                        bind :: kept, Zset.union needed (freeInExpr CollectLocals bind.Expr).FreeLocals, emitted)
-            kept, { env with EmittedDefns = emitted }
+        let freeLocals (e: Expr) = (freeInExpr CollectLocals e).FreeLocals
+        let usedByMachine =
+            (freeLocals expr, prefixChain)
+            ||> List.fold (fun used (bind, isDefinition) -> if isDefinition then Zset.union used (freeLocals bind.Expr) else used)
+        let prefixBindings, _ =
+            (prefixChain, ([], Zset.empty valOrder))
+            ||> List.foldBack (fun (bind, isDefinition) (kept, needed) ->
+                let isKept =
+                    if isDefinition then Zset.contains bind.Var needed
+                    else not (isPureTemp g bind) || Zset.contains bind.Var needed || Zset.contains bind.Var usedByMachine
+                if isKept then bind :: kept, Zset.union needed (freeLocals bind.Expr) else kept, needed)
+        let env =
+            { env with
+                EmittedDefns =
+                    (env.EmittedDefns, prefixBindings)
+                    ||> List.fold (fun emitted bind -> if isExpandVar g bind.Var then Zset.add bind.Var emitted else emitted) }
         match expr with
         | StructStateMachineExpr g
                (dataTy,
