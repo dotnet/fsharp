@@ -104,12 +104,25 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
 let isExpandVar g (v: Val) =
     isReturnsResumableCodeTy g v.TauType
 
+// We allow a prefix of bindings prior to the state machine, e.g.
+//     task { .. }
+// becomes
+//     let builder@ = task
+//     ....
+let isStateMachineBindingVar g (v: Val) =
+    isExpandVar g v  ||
+    (let nm = v.LogicalName
+     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal))
+
 let isPureTemp g (bind: Binding) =
-    (bind.Var.IsCompilerGenerated || bind.Var.IsMemberThisVal)
+    (bind.Var.IsCompilerGenerated || isStateMachineBindingVar g bind.Var)
     && not (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g bind.Expr)
 
+let isFreeIn (v: Val) expr =
+    Zset.contains v (freeInExpr CollectLocals expr).FreeLocals
+
 let isUnusedPureTemp g (bind: Binding) bodyExpr =
-    isPureTemp g bind && not (Zset.contains bind.Var (freeInExpr CollectLocals bodyExpr).FreeLocals)
+    isPureTemp g bind && not (isFreeIn bind.Var bodyExpr)
 
 type env =
     {
@@ -130,11 +143,12 @@ let recordDefinition (env: env) (bind: Binding) =
 /// Detect prefix of expanded, optimized state machine expressions
 /// This is run on every expression during codegen
 let IsStateMachineExpr g overallExpr =
-    let rec go seenBinding expr =
+    // Any binding may follow resumable code; restricting the bindings before it keeps this check off ordinary let chains.
+    let rec go seenResumableCode expr =
         match expr with
         // 'let' binding of initial code
-        | Expr.Let (defn, bodyExpr, m, _) when seenBinding || isExpandVar g defn.Var ->
-            match go true bodyExpr with
+        | Expr.Let (defn, bodyExpr, m, _) when seenResumableCode || isStateMachineBindingVar g defn.Var ->
+            match go (seenResumableCode || isExpandVar g defn.Var) bodyExpr with
             | None -> None
             | Some altExpr as r ->
                 match altExpr with
@@ -397,7 +411,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
                 Some (RewriteExpr (makeRewriteEnv env) bodyExpr)
             | Expr.Let (bind, bodyExpr, m, _) when isExpandVar g bind.Var ->
                 let bodyR = RewriteExpr (makeRewriteEnv (recordDefinition env bind)) bodyExpr
-                if Zset.contains bind.Var (freeInExpr CollectLocals bodyR).FreeLocals then
+                if isFreeIn bind.Var bodyR then
                     let defnR = RewriteExpr (makeRewriteEnv env) bind.Expr
                     Some (mkLetBind m (mkBind bind.DebugPoint bind.Var defnR) bodyR)
                 else
@@ -442,22 +456,22 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> walkPrefix env thenExpr prefixChain
             | _ -> env, List.rev prefixChain, expr
         let env, prefixChain, expr = walkPrefix initialEnv inputExpr []
-        let freeLocals (e: Expr) = (freeInExpr CollectLocals e).FreeLocals
-        let usedByMachine =
-            (freeLocals expr, prefixChain)
-            ||> List.fold (fun used (bind, isDefinition) -> if isDefinition then Zset.union used (freeLocals bind.Expr) else used)
-        let prefixBindings, _ =
-            (prefixChain, ([], Zset.empty valOrder))
+        let freeLocals exprs = (accFreeInExprs CollectLocals exprs emptyFreeVars).FreeLocals
+        let usedByMachine = freeLocals (expr :: [ for bind, isDefinition in prefixChain do if isDefinition then bind.Expr ])
+        let selectPrefix used =
+            (prefixChain, ([], emptyFreeVars))
             ||> List.foldBack (fun (bind, isDefinition) (kept, needed) ->
                 let isKept =
-                    if isDefinition then Zset.contains bind.Var needed
-                    else not (isPureTemp g bind) || Zset.contains bind.Var needed || Zset.contains bind.Var usedByMachine
-                if isKept then bind :: kept, Zset.union needed (freeLocals bind.Expr) else kept, needed)
+                    Zset.contains bind.Var needed.FreeLocals
+                    || not isDefinition && (not (isPureTemp g bind) || Zset.contains bind.Var used)
+                if isKept then bind :: kept, accFreeInExpr CollectLocals bind.Expr needed else kept, needed)
+            |> fst
+        // Expansion can remove uses, so the bindings emitted are chosen again from the lowered bodies.
+        // That selection is a subset of this one, so every definition it emits is cloned when expanded.
+        let candidateBindings = selectPrefix usedByMachine
         let env =
             { env with
-                EmittedDefns =
-                    (env.EmittedDefns, prefixBindings)
-                    ||> List.fold (fun emitted bind -> if isExpandVar g bind.Var then Zset.add bind.Var emitted else emitted) }
+                EmittedDefns = Zset.addList [ for bind in candidateBindings do if isExpandVar g bind.Var then bind.Var ] env.EmittedDefns }
         match expr with
         | StructStateMachineExpr g
                (dataTy,
@@ -478,6 +492,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
                     printfn "%s" (DebugPrint.showExpr setStateMachineBodyR)
                     printfn "----------- AFTER REWRITE afterCodeBodyR ----------------------"
                     printfn "%s" (DebugPrint.showExpr afterCodeBodyR)
+                let prefixBindings = selectPrefix (freeLocals [ moveNextExprR; setStateMachineBodyR; afterCodeBodyR ])
                 LoweredStateMachine
                     (prefixBindings, templateStructTy, dataTy, stateVars, thisVars,
                         (moveNextThisVar, moveNextExprR),

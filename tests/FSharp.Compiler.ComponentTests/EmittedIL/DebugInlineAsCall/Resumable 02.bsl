@@ -12,42 +12,38 @@ let main _ =
 
 Test::main
   (6,13-6,17)  task
-    IL_0000:  call TaskBuilderModule::get_task
-    IL_0005:  stloc.1
-    IL_0006:  ldloc.1
-    IL_0007:  stloc.2
-    IL_0008:  ldloca.s 3
-    IL_000a:  initobj t@6
-    IL_0010:  ldloca.s 3
-    IL_0012:  stloc.s 4
-    IL_0014:  ldloc.s 4
-    IL_0016:  ldflda t@6::Data
-    IL_001b:  call Create
-    IL_0020:  stfld MethodBuilder
-    IL_0025:  ldloc.s 4
-    IL_0027:  ldflda t@6::Data
-    IL_002c:  ldflda MethodBuilder
-    IL_0031:  ldloc.s 4
-    IL_0033:  call Start
-    IL_0038:  ldloc.s 4
-    IL_003a:  ldflda t@6::Data
-    IL_003f:  ldflda MethodBuilder
-    IL_0044:  call get_Task
-    IL_0049:  stloc.0
+    IL_0000:  ldloca.s 1
+    IL_0002:  initobj t@6
+    IL_0008:  ldloca.s 1
+    IL_000a:  stloc.2
+    IL_000b:  ldloc.2
+    IL_000c:  ldflda t@6::Data
+    IL_0011:  call Create
+    IL_0016:  stfld MethodBuilder
+    IL_001b:  ldloc.2
+    IL_001c:  ldflda t@6::Data
+    IL_0021:  ldflda MethodBuilder
+    IL_0026:  ldloc.2
+    IL_0027:  call Start
+    IL_002c:  ldloc.2
+    IL_002d:  ldflda t@6::Data
+    IL_0032:  ldflda MethodBuilder
+    IL_0037:  call get_Task
+    IL_003c:  stloc.0
 
   (11,5-11,25)  if t.Result = 3 then
-    IL_004a:  ldloc.0
-    IL_004b:  callvirt get_Result
-    IL_0050:  ldc.i4.3
-    IL_0051:  bne.un.s IL_0055
+    IL_003d:  ldloc.0
+    IL_003e:  callvirt get_Result
+    IL_0043:  ldc.i4.3
+    IL_0044:  bne.un.s IL_0048
 
   (11,26-11,27)  0
-    IL_0053:  ldc.i4.0
-    IL_0054:  ret
+    IL_0046:  ldc.i4.0
+    IL_0047:  ret
 
   (11,33-11,34)  1
-    IL_0055:  ldc.i4.1
-    IL_0056:  ret
+    IL_0048:  ldc.i4.1
+    IL_0049:  ret
 
 t@6::MoveNext
   <hidden>
