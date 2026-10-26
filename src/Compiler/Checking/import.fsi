@@ -54,7 +54,8 @@ type ImportMap =
     member g: TcGlobals
 
     /// Interfaces declared by an IL type definition, imported with the definition's own type parameters.
-    member internal ILInterfacesOfTyconCache: ConcurrentDictionary<struct (Stamp * bool), TType list>
+    /// ValueNone marks a definition whose interfaces must be imported per use.
+    member internal ILInterfacesOfTyconCache: ConcurrentDictionary<Stamp, TType list voption>
 
 module Nullness =
 
