@@ -3766,7 +3766,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("ErasedWithConstructor.Provided.MyType", "file1", ((5, 8), (5, 9)), [ "member" ]) // line 5: let _ = >T<()  (ctor)
            ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((5, 8), (5, 21)), [ "member" ]) // line 5: let _ = >T().DoNothing<()
            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // line 7: type Record = { Field: >int< }
-           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // (repeated)
            ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), [ "field" ]) // line 7: type Record = { >Field<: int }
            ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), [ "record" ]) // line 7: type >Record< = ...
            ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), [ "record" ]) // line 8: let r = { >Record<.Field = 1 }
