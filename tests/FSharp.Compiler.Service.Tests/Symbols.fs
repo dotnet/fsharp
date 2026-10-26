@@ -1904,6 +1904,83 @@ let r2 = {| ...r1; C = 3 |}
             if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
                 failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
 
+    let private symbolUses (checkResults: FSharpCheckFileResults) =
+        [ for su in checkResults.GetAllUsesOfAllSymbolsInFile() -> string su.Symbol, tups su.Range, attribsOfSymbolUse su ]
+
+    [<Fact>]
+    let ``Record spread 01 - Type definition`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A: int }
+type R2 = { ...R1; B: int }
+let r = { A = 1; B = 2 }
+let _ = { r with A = 1 }
+"""
+        symbolUses checkResults
+        |> shouldEqual
+            [ "int", ((2, 15), (2, 18)), [ "type" ]
+              "field A", ((2, 12), (2, 13)), [ "defn" ]
+              "R1", ((2, 5), (2, 7)), [ "defn" ]
+              "R1", ((3, 15), (3, 17)), [ "type" ]
+              "int", ((3, 22), (3, 25)), [ "type" ]
+              "field B", ((3, 19), (3, 20)), [ "defn" ]
+              "R2", ((3, 5), (3, 7)), [ "defn" ]
+              "field A", ((4, 10), (4, 11)), []
+              "field B", ((4, 17), (4, 18)), []
+              "val r", ((4, 4), (4, 5)), [ "defn" ]
+              "val r", ((5, 10), (5, 11)), []
+              "field A", ((5, 17), (5, 18)), []
+              "Test", ((1, 0), (1, 0)), [ "defn" ] ]
+
+        let spreadField = checkResults |> findSymbolUse (fun su -> su.Range.StartLine = 5 && string su.Symbol = "field A")
+        let declaration = spreadField.Symbol.DeclarationLocation |> Option.get
+        tups declaration |> shouldEqual ((2, 12), (2, 13))
+        declaration.IsSynthetic |> shouldEqual true
+
+    [<Fact>]
+    let ``Record spread 02 - Expression`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A: int; B: int }
+let r = { A = 1; B = 2 }
+let _ = { ...r; B = 2 }
+"""
+        symbolUses checkResults
+        |> shouldEqual
+            [ "int", ((2, 15), (2, 18)), [ "type" ]
+              "int", ((2, 23), (2, 26)), [ "type" ]
+              "field A", ((2, 12), (2, 13)), [ "defn" ]
+              "field B", ((2, 20), (2, 21)), [ "defn" ]
+              "R1", ((2, 5), (2, 7)), [ "defn" ]
+              "field A", ((3, 10), (3, 11)), []
+              "field B", ((3, 17), (3, 18)), []
+              "val r", ((3, 4), (3, 5)), [ "defn" ]
+              "val r", ((4, 13), (4, 14)), []
+              "field B", ((4, 16), (4, 17)), []
+              "Test", ((1, 0), (1, 0)), [ "defn" ] ]
+
+    [<Fact>]
+    let ``Record spread 03 - Anonymous record expression`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A: int; B: int }
+let r = { A = 1; B = 2 }
+let _ = {| ...r; B = 2 |}
+"""
+        symbolUses checkResults
+        |> shouldEqual
+            [ "int", ((2, 15), (2, 18)), [ "type" ]
+              "int", ((2, 23), (2, 26)), [ "type" ]
+              "field A", ((2, 12), (2, 13)), [ "defn" ]
+              "field B", ((2, 20), (2, 21)), [ "defn" ]
+              "R1", ((2, 5), (2, 7)), [ "defn" ]
+              "field A", ((3, 10), (3, 11)), []
+              "field B", ((3, 17), (3, 18)), []
+              "val r", ((3, 4), (3, 5)), [ "defn" ]
+              "val r", ((4, 14), (4, 15)), []
+              "field B", ((4, 17), (4, 18)), []
+              "Test", ((1, 0), (1, 0)), [ "defn" ] ]
+
 module FileSignature =
     open FSharp.Compiler.NameResolution
 
