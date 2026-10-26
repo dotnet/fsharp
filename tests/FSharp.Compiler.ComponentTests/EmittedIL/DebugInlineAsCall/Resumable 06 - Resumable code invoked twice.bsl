@@ -39,26 +39,22 @@ Test::main
     IL_0005:  stloc.0
 
   (32,18-32,19)  b
-    IL_0006:  ldloc.0
-    IL_0007:  stloc.2
-    IL_0008:  ldloc.2
-    IL_0009:  stloc.3
-    IL_000a:  ldloca.s 4
-    IL_000c:  initobj result@32
-    IL_0012:  ldloca.s 4
-    IL_0014:  stloc.s 5
-    IL_0016:  ldloc.s 5
-    IL_0018:  ldflda result@32::Data
-    IL_001d:  ldfld Result@
-    IL_0022:  stloc.1
+    IL_0006:  ldloca.s 2
+    IL_0008:  initobj result@32
+    IL_000e:  ldloca.s 2
+    IL_0010:  stloc.3
+    IL_0011:  ldloc.3
+    IL_0012:  ldflda result@32::Data
+    IL_0017:  ldfld Result@
+    IL_001c:  stloc.1
 
   (33,5-33,18)  ignore result
-    IL_0023:  ldloc.1
-    IL_0024:  stloc.s 6
+    IL_001d:  ldloc.1
+    IL_001e:  stloc.s 4
 
   (34,5-34,6)  0
-    IL_0026:  ldc.i4.0
-    IL_0027:  ret
+    IL_0020:  ldc.i4.0
+    IL_0021:  ret
 
 Test::<sum>__debug@32
   <hidden>
