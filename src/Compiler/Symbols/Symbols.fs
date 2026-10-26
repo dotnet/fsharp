@@ -796,7 +796,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
                 let ent = FSharpEntity(cenv, tcref, [])
                 cache.TryAdd(tycon.Stamp, (ent :> obj)) |> ignore
                 ent
-        | _ -> FSharpEntity(cenv, tcref)
+        | ValueSome _ -> FSharpEntity(cenv, tcref)
+        | ValueNone -> FSharpEntity(cenv, tcref, [])
 
     member _.Entity = entity
 
