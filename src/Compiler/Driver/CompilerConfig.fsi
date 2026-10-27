@@ -249,6 +249,10 @@ type CompilerEmitArtifacts =
 /// Adapter interface that lets the core emit pipeline remain unaware of hot reload
 /// implementation details while still offering extension points for capture/fallback flows.
 type ICompilerEmitHook =
+    /// Collects module debug records from the active extension after code generation.
+    abstract GetModuleCustomDebugInfo:
+        compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> PdbModuleCustomDebugInfo list
+
     abstract ValidateConfiguration:
         emitCaptureArtifacts: bool * debugInfo: bool * embeddedPdb: bool * localOptimizationsEnabled: bool -> unit
 

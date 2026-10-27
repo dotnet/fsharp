@@ -1,6 +1,7 @@
 module internal FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
 open System
+open FSharp.Compiler.EnvironmentHelpers
 open System.Collections.Generic
 open Microsoft.FSharp.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
@@ -13,25 +14,13 @@ open FSharp.Compiler.AbstractIL.DeltaTableLayout
 open FSharp.Compiler.AbstractIL.DeltaMetadataSerializer
 
 [<Literal>]
-let private TraceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
+let private TraceMetadataFlagName = EnvironmentVariableNames.HotReloadTraceMetadata
 
 [<Literal>]
-let private TraceHeapsFlagName = "FSHARP_HOTRELOAD_TRACE_HEAPS"
+let private TraceHeapsFlagName = EnvironmentVariableNames.HotReloadTraceHeaps
 
 [<Literal>]
-let private TraceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
-
-/// Local copy of FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy. That module is a new
-/// utility file added by the hot-reload feature branch and isn't part of this extraction's
-/// scope, so the writer's trace-flag checks carry their own tiny copy instead of pulling in
-/// an extra out-of-scope file.
-let private isEnvVarTruthy (name: string) =
-    match Environment.GetEnvironmentVariable(name) with
-    | null
-    | "" -> false
-    | value when String.Equals(value, "1", StringComparison.OrdinalIgnoreCase) -> true
-    | value when String.Equals(value, "true", StringComparison.OrdinalIgnoreCase) -> true
-    | _ -> false
+let private TraceMethodsFlagName = EnvironmentVariableNames.HotReloadTraceMethods
 
 let private shouldTraceMetadata () = isEnvVarTruthy TraceMetadataFlagName
 

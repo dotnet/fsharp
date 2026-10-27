@@ -24,11 +24,11 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         lazy FSharpEditAndContinueLanguageService(fun () -> FSharp.Compiler.HotReloadState.getSessionStore ())
 
     let sessionStore () = getSessionStore ()
-    static let traceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
+    static let traceMetadataFlagName = EnvironmentVariableNames.HotReloadTraceMetadata
 
-    static let traceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
+    static let traceMethodsFlagName = EnvironmentVariableNames.HotReloadTraceMethods
 
-    static let traceTimingFlagName = "FSHARP_HOTRELOAD_TRACE_TIMING"
+    static let traceTimingFlagName = EnvironmentVariableNames.HotReloadTraceTiming
 
     static let traceTiming = lazy (isEnvVarTruthy traceTimingFlagName)
 

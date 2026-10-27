@@ -242,9 +242,11 @@ type internal FSharpHotReloadService
     let pendingOutputFingerprints =
         Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, (DateTime * byte[] option) option>()
 
-    let traceTiming = lazy (isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_TIMING")
+    let traceTiming =
+        lazy (isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceTiming)
 
-    let traceSessionTransitions = isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_SESSIONS"
+    let traceSessionTransitions =
+        isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceSessions
 
     let finishTiming stage (stopwatch: System.Diagnostics.Stopwatch) =
         stopwatch.Stop()
@@ -505,7 +507,7 @@ type internal FSharpHotReloadService
                             // File.Exists/stable-file/fingerprint pipeline, which must observe the
                             // freshly written output. Flag off: no code path change beyond the env read.
                             let! inProcessCompileResult =
-                                if not (isEnvVarTruthy "FSHARP_HOTRELOAD_INPROCESS_COMPILE") then
+                                if not (isEnvVarTruthy EnvironmentVariableNames.HotReloadInProcessCompile) then
                                     async.Return(Result.Ok None)
                                 else
                                     async {
@@ -726,7 +728,7 @@ type internal FSharpHotReloadService
                                                 // Diagnostic side channel: FSHARP_HOTRELOAD_DUMP_DELTAS=<dir> persists
                                                 // each emitted delta's blobs so a live session's output can be decoded
                                                 // offline (metadata/IL/PDB plus the updated tokens). Best-effort only.
-                                                match Environment.GetEnvironmentVariable "FSHARP_HOTRELOAD_DUMP_DELTAS" with
+                                                match Environment.GetEnvironmentVariable EnvironmentVariableNames.HotReloadDumpDeltas with
                                                 | null
                                                 | "" -> ()
                                                 | dumpDir ->

@@ -219,6 +219,8 @@ module RowElementTags =
     let ResolutionScope (tag: ResolutionScopeTag) = assert (tag.Tag <= 4); ResolutionScopeMin + tag.Tag (* + 3 + 1 = max CustomAttributeType.Tag + 1 *)
     let [<Literal>] ResolutionScopeMax = 178
 
+// Metadata layout changes also affect AbstractIL/DeltaMetadataSerializer.fs and ILBaselineReader.fs.
+// Run tests/scripts/check-hotreload-metadata-parity.sh after changes to shared row encodings.
 [<Struct>]
 type RowElement(tag: int32, idx: int32) =
 
