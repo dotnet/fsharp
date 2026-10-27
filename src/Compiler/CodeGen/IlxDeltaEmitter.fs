@@ -2662,7 +2662,6 @@ let private buildMethodAndParameterRows
     (baselineMethodSpecRowCount: int)
     (methodSpecRowsByToken: Dictionary<int, MethodSpecificationRowInfo>)
     (tryGetTypeDefRowId: string -> int option)
-    (baselineParamRowCount: int)
     =
     let methodUpdatesWithDefs, methodMetadataLookup =
         buildMethodUpdatesWithMetadata orderedMethodInputs metadataReader builder remapUserString remapEntityToken
@@ -2691,51 +2690,6 @@ let private buildMethodAndParameterRows
 
     let methodSpecificationRowsSnapshot =
         buildMethodSpecificationRowsSnapshot traceMetadata methodUpdatesWithDefs baselineMethodSpecRowCount methodSpecRowsByToken
-
-    // Keep the ParamList column of ADDED method rows monotone (Roslyn parity / ECMA list
-    // encoding): a parameterless added method points at the NEXT param row rather than 0,
-    // so readers compute an empty [next, next) range instead of a bogus one. The runtime
-    // ignores this column for EnC deltas (suppressed), but mdv and other readers do not.
-    let methodDefinitionRowsSnapshot =
-        let paramRowsByMethod =
-            parameterDefinitionRowsSnapshot
-            |> List.groupBy (fun row -> row.Key.Method)
-            |> dict
-
-        // Added param rows continue from the baseline Param table, so the cursor starts at
-        // the first appended row id (or one past the baseline table when nothing is added).
-        let mutable nextParamRowId =
-            parameterDefinitionRowsSnapshot
-            |> List.filter (fun row -> row.IsAdded)
-            |> List.map (fun row -> row.RowId)
-            |> function
-                | [] -> baselineParamRowCount + 1
-                | rows -> List.min rows
-
-        methodDefinitionRowsSnapshot
-        |> List.sortBy (fun row -> row.RowId)
-        |> List.map (fun row ->
-            if not row.IsAdded then
-                row
-            else
-                let ownParams =
-                    match paramRowsByMethod.TryGetValue row.Key with
-                    | true, rows -> rows |> List.filter (fun p -> p.IsAdded)
-                    | _ -> []
-
-                match ownParams with
-                | [] ->
-                    { row with
-                        FirstParameterRowId = Some nextParamRowId
-                    }
-                | rows ->
-                    let firstRow = rows |> List.map (fun p -> p.RowId) |> List.min
-                    let lastRow = rows |> List.map (fun p -> p.RowId) |> List.max
-                    nextParamRowId <- lastRow + 1
-
-                    { row with
-                        FirstParameterRowId = Some firstRow
-                    })
 
     methodUpdatesWithDefs, parameterDefinitionRowsSnapshot, methodDefinitionRowsSnapshot, methodSpecificationRowsSnapshot
 
@@ -5573,7 +5527,6 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         match addedTypeDeltaTokens.TryGetValue typeName with
                         | true, token -> Some(token &&& 0x00FFFFFF)
                         | _ -> None)
-                lastParamRowId
 
         let (propertyDefinitionRowsSnapshot,
              eventDefinitionRowsSnapshot,
