@@ -2722,9 +2722,13 @@ type TraitWitnessInfo =
 
     override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
 
-/// Non-generic marker interface for storing in TraitConstraintInfo.
+/// Non-generic interface for storing in TraitConstraintInfo.
 /// The actual typed contract is ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader>.
-type ITraitContext = interface end
+type ITraitContext =
+    abstract Remap:
+        remapType: (TType -> TType) *
+        remapValRef: (ValRef -> ValRef) *
+        remapTyconStamp: (Stamp -> Stamp) -> ITraitContext
 
 /// Generic typed interface for trait context operations.
 /// 'AccessRights = AccessorDomain, 'MethodInfo = MethInfo, 'InfoReader = InfoReader at use sites.
@@ -5555,6 +5559,9 @@ type TOp =
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values)
     | LValueOp of LValueOperation * ValRef
 
+    /// Exposes existing storage under a source name for the scope of the single body argument.
+    | DebugLocalScope of ValRef * name: string
+
     /// IL method calls.
     ///     isProperty -- used for quotation reflection, property getters & setters
     ///     noTailCall - DllImport? if so don't tailcall
@@ -5610,6 +5617,7 @@ type TOp =
         | Label n -> "Label(" + string n + ")"
         | TraitCall info -> "TraitCall(" + info.MemberLogicalName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
+        | DebugLocalScope (_, name) -> "DebugLocalScope(" + name + ")"
         | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 
 /// Represents the kind of record construction operation.

@@ -46,6 +46,8 @@ module internal TypeRemapping =
     [<NoEquality; NoComparison; Sealed>]
     type TyconRefMap<'T> =
 
+        member Contents: StampMap<'T>
+
         /// Get the entry for the given type definition
         member Item: TyconRef -> 'T with get
 
@@ -65,6 +67,9 @@ module internal TypeRemapping =
         member IsEmpty: bool
 
         member TryGetValue: TyconRef -> bool * 'T
+
+        /// The stamp remapping must be injective, including unchanged keys.
+        member Map: remapStamp: (Stamp -> Stamp) * mapping: ('T -> 'U) -> TyconRefMap<'U>
 
         /// The empty map
         static member Empty: TyconRefMap<'T>
@@ -433,6 +438,8 @@ module internal TypeDecomposition =
     [<return: Struct>]
     val (|AppTy|_|): TcGlobals -> TType -> (TyconRef * TypeInst) voption
 
+    val (|NonGenericSysType|_|): TcGlobals -> struct (string list * string) -> TType -> bool
+
     [<return: Struct>]
     val (|RefTupleTy|_|): TcGlobals -> TType -> TTypes voption
 
@@ -512,6 +519,9 @@ module internal TypeEquivalence =
 
     val traitsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
 
+    val traitSlnAEquivAux:
+        Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintSln option -> TraitConstraintSln option -> bool
+
     val traitKeysAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
 
     val returnTypesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool
@@ -543,6 +553,8 @@ module internal TypeEquivalence =
     val typeEquiv: TcGlobals -> TType -> TType -> bool
 
     val traitsAEquiv: TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
+
+    val traitSlnAEquiv: TcGlobals -> TypeEquivEnv -> TraitConstraintSln option -> TraitConstraintSln option -> bool
 
     val traitKeysAEquiv: TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
 

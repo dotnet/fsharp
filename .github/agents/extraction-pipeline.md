@@ -508,3 +508,19 @@ Final check on the complete artifact set:
 - No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs (verified by grep in 5.6)
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
 - Dimension frequency was counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
+
+### 5.8 Structural leftover gate
+
+Run this before any claim-versus-code panel, and again before calling the artifacts clean. A panel that only checks whether a named symbol exists will miss a transplanted outline number. That panel did not finish.
+
+`### Wave` and `### Additional` are not numbered headings. Ignore lines inside fenced code.
+
+Fail the artifact when any of these is true:
+
+- A `### N.` heading is not exactly one more than the previous `### N.` in that file. The first one must be `### 1.`.
+- A file has a `### N.` heading and also a topical `###` heading. A topical heading does not start with a digit, `Wave`, or `Additional`.
+- A heading's body, up to the next heading, is only a "Moved to" line.
+- An ordered item `N.` in prose has no item `N-1` earlier in that list.
+- A heading, including its number, is copied from another agent's heading.
+
+Delete the foreign number and the empty stub. Keep a rule only under a heading that belongs in this file. Do not report the review clean while this gate fails.

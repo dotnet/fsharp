@@ -214,13 +214,12 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
                 //warning(Error(FSComp.SR.stateMachineMacroTypars(), m))
                 None
             else
-                let macroParams = List.concat macroParamsCurried
-                let macroVal2 = mkLambdas g m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
-                if args.Length < macroParams.Length then
+                let macroVal2 = mkMultiLambdas g m macroTypars macroParamsCurried (macroBody, tyOfExpr g macroBody)
+                if args.Length < macroParamsCurried.Length then
                     //warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
                     None
                 else
-                    let nowArgs, laterArgs = List.splitAt macroParams.Length args
+                    let nowArgs, laterArgs = List.splitAt macroParamsCurried.Length args
                     let expandedExpr = MakeApplicationAndBetaReduce g (macroVal2, (tyOfExpr g macroVal2), [], nowArgs, m)
                     if sm_verbose then printfn "reduced application f = %A nowArgs= %A --> %A" macroVal2 nowArgs expandedExpr
                     if isNil laterArgs then
