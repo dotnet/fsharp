@@ -1,5 +1,6 @@
 module internal FSharp.Compiler.HotReloadEmitHook
 
+open FSharp.Compiler.EnvironmentHelpers
 open System
 open System.IO
 open FSharp.Compiler
@@ -28,7 +29,7 @@ let internal validateClosureNameRows (derivedRows: Map<int, Map<int list, string
             | _ -> None)
 
     if not mismatches.IsEmpty then
-        if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+        if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
             printfn
                 "[fsharp-hotreload][closure-names] capture validation FAILED: derived tables disagree with the emit-time recording: %A"
                 mismatches
@@ -126,6 +127,16 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
         | None -> ()
 
     interface ICompilerEmitHook with
+        member _.GetModuleCustomDebugInfo(compilerGlobalState) =
+            if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadDisableSynthesizedNameSnapshotCdi) = "1" then
+                []
+            else
+                match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
+                | Some map ->
+                    collectRecordedSynthesizedNameSnapshot (compilerGlobalState :> obj) map
+                    |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
+                | None -> []
+
         member _.ValidateConfiguration(emitCaptureArtifacts, debugInfo, embeddedPdb, localOptimizationsEnabled) =
             if emitCaptureArtifacts then
                 if not debugInfo then
@@ -164,7 +175,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                          optimizedImpls
                          session.CurrentGeneration
 
-                 if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                 if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
                      printfn
                          "[fsharp-hotreload][closure-names] hook install: tables=%d gen=%d assigned=%d names=%A"
                          (Map.count session.Baseline.EncClosureNames)
@@ -182,7 +193,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                      let derivedNames =
                          HotReloadBaseline.computeBaselineOccurrenceKeyedClosureNames tcGlobals optimizedImpls
 
-                     if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                     if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
                          printfn
                              "[fsharp-hotreload][closure-names] capture not covered by active session; baseline install: derived=%d"
                              (Map.count derivedNames)
@@ -203,7 +214,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                  let derivedNames =
                      HotReloadBaseline.computeBaselineOccurrenceKeyedClosureNames tcGlobals optimizedImpls
 
-                 if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                 if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
                      printfn
                          "[fsharp-hotreload][closure-names] baseline install: derived=%d names=%A"
                          (Map.count derivedNames)

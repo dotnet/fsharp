@@ -24,9 +24,9 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         lazy FSharpEditAndContinueLanguageService(fun () -> FSharp.Compiler.HotReloadState.getSessionStore ())
 
     let sessionStore () = getSessionStore ()
-    static let traceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
+    static let traceMetadataFlagName = EnvironmentVariableNames.HotReloadTraceMetadata
 
-    static let traceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
+    static let traceMethodsFlagName = EnvironmentVariableNames.HotReloadTraceMethods
 
     // Keep hot reload activity tags local so Activity.fsi stays main-compatible.
     static let activityTagGeneration = "generation"

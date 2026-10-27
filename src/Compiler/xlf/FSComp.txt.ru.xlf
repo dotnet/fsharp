@@ -574,12 +574,12 @@
       </trans-unit>
       <trans-unit id="fscHotReloadIncompatibleWithOptimization">
         <source>Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</source>
-        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) is incompatible with optimizations (--optimize+). Add '--optimize-' or remove '--optimize+' from the compilation options.</target>
+        <target state="translated">Флаг получения дельты при горячей перезагрузке (--test:HotReloadDeltas) несовместим с флагом оптимизации кода (--optimize+). Добавьте флаг '--optimize-' или удалите флаг '--optimize+' из настроек компиляции.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscHotReloadRequiresDebugInfo">
         <source>Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</source>
-        <target state="new">Hot reload delta capture (--test:HotReloadDeltas) requires debug symbols (--debug+). Add '--debug+' or remove '--debug-' from the compilation options.</target>
+        <target state="translated">Флаг получения дельты при горячей перезагрузке (--test:HotReloadDeltas) требует наличия флага символов отладки (--debug+). Добавьте флаг '--debug+' или удалите флаг '--debug-' из настроек компиляции.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscHotReloadRequiresPortableDebugInfo">

@@ -265,7 +265,7 @@ type FSharpChecker
         tryGetOutputPathFromCommandLineOptions projectSnapshot.ProjectFileName (projectSnapshot.OtherOptions |> List.toArray)
 
     [<Literal>]
-    let HotReloadTraceOutputFlagName = "FSHARP_HOTRELOAD_TRACE_OUTPUT"
+    let HotReloadTraceOutputFlagName = EnvironmentVariableNames.HotReloadTraceOutput
 
     let traceOutputFingerprint = isEnvVarTruthy HotReloadTraceOutputFlagName
 

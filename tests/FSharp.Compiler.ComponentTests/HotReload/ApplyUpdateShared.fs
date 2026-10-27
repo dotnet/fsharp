@@ -144,20 +144,21 @@ let internal probeApplyUpdateAssembly (tracePrefix: string) (assemblyPath: strin
     | Some flags -> printfn "[%s] Debugger flags (computed)=%A" tracePrefix flags
     | None -> printfn "[%s] Debugger flags (computed)=<unavailable>" tracePrefix
 
+    let tryReadDebuggerField name =
+        moduleType.GetField(name, BindingFlags.Instance ||| BindingFlags.NonPublic)
+        |> ValueOption.ofObj
+        |> ValueOption.map (fun field -> field.GetValue(assembly.ManifestModule) :?> int)
+
     let dbgBits =
         moduleType.GetMethod("GetDebuggerInfoBits", BindingFlags.Instance ||| BindingFlags.NonPublic)
-        |> Option.ofObj
-        |> Option.map (fun m -> m.Invoke(assembly.ManifestModule, [||]) :?> int)
-        |> Option.orElseWith (fun () ->
-            [ "m_debuggerInfoBits"; "m_debuggerBits" ]
-            |> Seq.tryPick (fun name ->
-                moduleType.GetField(name, BindingFlags.Instance ||| BindingFlags.NonPublic)
-                |> Option.ofObj
-                |> Option.map (fun f -> f.GetValue(assembly.ManifestModule) :?> int)))
+        |> ValueOption.ofObj
+        |> ValueOption.map (fun methodInfo -> methodInfo.Invoke(assembly.ManifestModule, [||]) :?> int)
+        |> ValueOption.orElseWith (fun () -> tryReadDebuggerField "m_debuggerInfoBits")
+        |> ValueOption.orElseWith (fun () -> tryReadDebuggerField "m_debuggerBits")
 
     match dbgBits with
-    | Some bits -> printfn "[%s] DebuggerInfoBits=0x%X" tracePrefix bits
-    | None -> printfn "[%s] DebuggerInfoBits=<unavailable>" tracePrefix
+    | ValueSome bits -> printfn "[%s] DebuggerInfoBits=0x%X" tracePrefix bits
+    | ValueNone -> printfn "[%s] DebuggerInfoBits=<unavailable>" tracePrefix
 
     try
         let moduleInfo = assembly.GetType("Sample.ModuleInfo", throwOnError = true)

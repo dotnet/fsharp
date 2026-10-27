@@ -20,7 +20,8 @@ type internal HotReloadCapabilities = { Flags: HotReloadCapabilityFlags }
 module internal HotReloadCapability =
 
     [<Literal>]
-    let private RuntimeApplyFeatureFlagName = "FSHARP_HOTRELOAD_ENABLE_RUNTIME_APPLY"
+    let private RuntimeApplyFeatureFlagName =
+        EnvironmentVariableNames.HotReloadEnableRuntimeApply
 
     let private runtimeApplySupported: bool =
 #if NET5_0_OR_GREATER

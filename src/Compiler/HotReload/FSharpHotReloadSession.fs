@@ -242,7 +242,8 @@ type internal FSharpHotReloadService
     let pendingOutputFingerprints =
         Dictionary<FSharp.Compiler.HotReloadState.HotReloadProjectKey, (DateTime * byte[] option) option>()
 
-    let traceSessionTransitions = isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_SESSIONS"
+    let traceSessionTransitions =
+        isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceSessions
 
     let describeSessionStartTransition transition =
         match transition with

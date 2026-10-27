@@ -3,6 +3,7 @@
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
 
+open FSharp.Compiler.EnvironmentHelpers
 open FSharp.Compiler.IlxGenSupport
 
 open System
@@ -6673,7 +6674,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     // env var; wired to the hot-reload codegen flag once the class path is validated.
     let emitStateMachineAsClass =
         g.emitHotReloadClassStateMachines
-        || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy "FSHARP_HOTRELOAD_CLASS_STATEMACHINES"
+        || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy EnvironmentVariableNames.HotReloadClassStateMachines
 
     let stateMachineBoxity =
         if emitStateMachineAsClass then
