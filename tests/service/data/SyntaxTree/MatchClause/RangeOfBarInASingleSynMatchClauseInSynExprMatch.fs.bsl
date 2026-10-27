@@ -21,7 +21,8 @@ ImplFile
                               (3,16--3,29)), (3,15--3,16), Some (3,29--3,30),
                            (3,15--3,30))), Const (Unit, (3,34--3,36)),
                      (3,2--3,36), Yes, { ArrowRange = Some (3,31--3,33)
-                                         BarRange = Some (3,0--3,1) })],
+                                         BarRange = Some (3,0--3,1)
+                                         WhenKeyword = Some (3,10--3,14) })],
                  (2,0--3,36), { MatchKeyword = (2,0--2,5)
                                 WithKeyword = (2,10--2,14) }), (2,0--3,36))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],

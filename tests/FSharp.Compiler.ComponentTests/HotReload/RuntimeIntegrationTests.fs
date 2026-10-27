@@ -3168,6 +3168,22 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                "--test:HotReloadDeltas"
                                $"--out:{dllPath}" |] }
 
+            // An unrelated capture with the same method name must not seed this output's closure names.
+            let unrelatedPath = Path.Combine(projectDir, "Unrelated.fs")
+            let unrelatedOutputPath = Path.Combine(projectDir, "Unrelated.dll")
+            File.WriteAllText(unrelatedPath, "module Unrelated\nlet transform (input: int list) = List.map (fun x -> x + 1) input\n")
+            let unrelatedOptions =
+                projectOptions.OtherOptions
+                |> Array.map (fun option ->
+                    if option.StartsWith("--out:", StringComparison.Ordinal) then
+                        $"--out:{unrelatedOutputPath}"
+                    else
+                        option)
+            let unrelatedDiagnostics, _ =
+                checker.Compile(Array.concat [ [| "fsc.exe" |]; unrelatedOptions; [| unrelatedPath |] ])
+                |> Async.RunSynchronouslyImmediate
+            Assert.DoesNotContain(unrelatedDiagnostics, fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
             checker.InvalidateAll()
             let compileDiagnostics, _ =
                 checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])

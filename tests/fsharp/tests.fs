@@ -55,15 +55,18 @@ module CoreTests =
 #endif
 
 
-    [<Fact>]
-    let ``SDKTests`` () =
+    [<Theory>]
+    [<InlineData("")>]
+    [<InlineData("0")>]
+    [<InlineData("1")>]
+    let ``SDKTests`` (compilerPreference: string) =
         let cfg = testConfig "SDKTests"
 
         let FSharpRepositoryPath = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 
         let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
 
-        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath} -property:_FSharpUseNetSdkCompilerVsOption={compilerPreference}")
 
 #if !NETCOREAPP
     // Pinned to 10.0: at 11.0 ErrorOnMissingSignatureAttribute turns FS3888 (attribute on impl but

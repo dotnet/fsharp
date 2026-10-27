@@ -2,14 +2,20 @@ module RuntimeAsyncSequence
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open System.Threading.Tasks.Sources
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
-open RuntimeAsyncSequenceBuilder
 
-let check message condition = if not condition then failwith message
+open Microsoft.FSharp.Control
+
+module AsyncSeq2 =
+    let inline cancellationToken () = __runtimeAsyncSequenceCancellationToken()
+
+
+let check message condition = if not condition then failwith message else printfn "%s PASSED" message
 let gate<'T> () = TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
 
 let checkDispatch (iterator: IAsyncEnumerator<'T>) =
@@ -35,7 +41,7 @@ type SingleConsumeSource() =
             check "single consumption" (consumed = 1)
             core.GetResult token
 
-let example (work: Task<int>) (resource: IAsyncDisposable) = runtimeAsyncSeq {
+let example (work: Task<int>) (resource: IAsyncDisposable) = asyncSeq2 {
     use cleanup = resource
     let! value = work
     let! value = ValueTask.FromResult(value).ConfigureAwait(false)
@@ -43,9 +49,9 @@ let example (work: Task<int>) (resource: IAsyncDisposable) = runtimeAsyncSeq {
     for offset in [1; 2] do
         yield value + offset
     yield! [10]
-    for value in runtimeAsyncSeq { yield 11 } do
+    for value in asyncSeq2 { yield 11 } do
         yield value
-    yield! runtimeAsyncSeq { yield 12 }
+    yield! asyncSeq2 { yield 12 }
 }
 
 let run () = __runtimeAsyncReturnUnit (
@@ -54,11 +60,11 @@ let run () = __runtimeAsyncReturnUnit (
     let resource = { new IAsyncDisposable with member _.DisposeAsync() = closed <- closed + 1; ValueTask(cleanup.Task) }
     let source = example work.Task resource
     let iterator = source.GetAsyncEnumerator()
-    check "reuse first enumeration" (obj.ReferenceEquals(source, iterator))
+    check "enumerator is separate from the sequence" (not (obj.ReferenceEquals(source, iterator)))
     checkDispatch iterator
     let unused = source.GetAsyncEnumerator()
-    let nestedFresh = (unused :?> IAsyncEnumerable<int>).GetAsyncEnumerator()
-    check "fresh clones are already acquired" (not (obj.ReferenceEquals(iterator, unused)) && not (obj.ReferenceEquals(unused, nestedFresh)))
+    let nestedFresh = source.GetAsyncEnumerator()
+    check "each enumeration is independent" (not (obj.ReferenceEquals(iterator, unused)) && not (obj.ReferenceEquals(unused, nestedFresh)))
     AsyncHelpers.Await(unused.DisposeAsync())
     AsyncHelpers.Await(nestedFresh.DisposeAsync())
     check "unstarted disposal is cold" (closed = 0)
@@ -86,14 +92,14 @@ let run () = __runtimeAsyncReturnUnit (
     check "shared source is evaluated once" (total = 80 && List.ofSeq ordering = [1])
 
     let mutable entered = 0
-    let concurrent = runtimeAsyncSeq { entered <- entered + 1; yield 1 }
+    let concurrent = asyncSeq2 { entered <- entered + 1; yield 1 }
     let acquisitions = Array.init 8 (fun _ -> Task.Run(fun () -> concurrent.GetAsyncEnumerator()))
     let iterators = AsyncHelpers.Await(Task.WhenAll acquisitions)
     let identities = HashSet<IAsyncEnumerator<int>>(HashIdentity.Reference)
     for iterator in iterators do
         check "independent concurrent acquisitions" (identities.Add iterator)
         AsyncHelpers.Await(iterator.DisposeAsync())
-    check "one first-enumeration reuse" ((iterators |> Array.filter (fun iterator -> obj.ReferenceEquals(concurrent, iterator))).Length = 1)
+    check "no enumeration reuses the sequence" (iterators |> Array.forall (fun iterator -> not (obj.ReferenceEquals(concurrent, iterator))))
     check "concurrent acquisition is cold" (entered = 0)
     let moved = AsyncHelpers.Await(iterator.MoveNextAsync())
     check "terminal disposal" (not moved && closed = 1)
@@ -117,7 +123,7 @@ let run () = __runtimeAsyncReturnUnit (
                 member _.DisposeAsync() =
                     cleanupEntered.SetResult()
                     ValueTask(cleanup.Task) }
-        let source = runtimeAsyncSeq {
+        let source = asyncSeq2 {
             use cleanup = resource
             if prefix then yield 1
             let! value = work.Task
@@ -144,7 +150,7 @@ let run () = __runtimeAsyncReturnUnit (
         let work = gate<int>()
         let bodyError, cleanupError = InvalidOperationException("body"), InvalidOperationException("cleanup")
         let mutable closed = 0
-        let source = runtimeAsyncSeq {
+        let source = asyncSeq2 {
             try
                 let! value = work.Task
                 yield value
@@ -170,9 +176,9 @@ let run () = __runtimeAsyncReturnUnit (
         let pending = SingleConsumeSource()
         let source =
             match form with
-            | 0 -> runtimeAsyncSeq { let! value = pending.Value in yield value }
-            | 1 -> runtimeAsyncSeq { let! value = pending.Value.ConfigureAwait(false) in yield value }
-            | _ -> runtimeAsyncSeq { let! value = pending in yield value }
+            | 0 -> asyncSeq2 { let! value = pending.Value in yield value }
+            | 1 -> asyncSeq2 { let! value = pending.Value.ConfigureAwait(false) in yield value }
+            | _ -> asyncSeq2 { let! value = pending in yield value }
         let iterator = source.GetAsyncEnumerator()
         let move = iterator.MoveNextAsync()
         check "pending source" (not move.IsCompleted && pending.Consumed = 0)
@@ -180,9 +186,9 @@ let run () = __runtimeAsyncReturnUnit (
         check "typed awaiter result" (AsyncHelpers.Await move && iterator.Current = 42 && pending.Consumed = 1)
         AsyncHelpers.Await(iterator.DisposeAsync())
 
-    let callbacks = Queue<SendOrPostCallback * obj>()
-    let context = { new SynchronizationContext() with override _.Post(callback, state) = callbacks.Enqueue(callback, state) }
-    let source = runtimeAsyncSeq {
+    use callbacks = new BlockingCollection<SendOrPostCallback * obj>()
+    let context = { new SynchronizationContext() with override _.Post(callback, state) = callbacks.Add((callback, state)) }
+    let source = asyncSeq2 {
         do! Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding ||| ConfigureAwaitOptions.ContinueOnCapturedContext)
         yield 1
     }
@@ -195,17 +201,23 @@ let run () = __runtimeAsyncReturnUnit (
         finally
             SynchronizationContext.SetSynchronizationContext previous
     check "forced yield posts to captured context" (not move.IsCompleted && callbacks.Count = 1)
-    let callback, state = callbacks.Dequeue()
-    callback.Invoke state
+    let mutable continuation = Unchecked.defaultof<SendOrPostCallback * obj>
+    while not move.IsCompleted do
+        if not (callbacks.TryTake(&continuation, 5000)) then
+            failwith "Forced yield continuation was not posted"
+        let callback, state = continuation
+        callback.Invoke state
     check "forced yield result" (AsyncHelpers.Await move && iterator.Current = 1)
     AsyncHelpers.Await(iterator.DisposeAsync())
 
     let mutable effects = 0
     let mutable entered = 0
     let source =
-        runtimeAsyncSeq.Run(effects <- effects + 1; fun () ->
+        effects <- effects + 1
+        asyncSeq2 {
             entered <- entered + 1
-            seq { yield entered })
+            yield entered
+        }
     check "eager prefix, cold body" (effects = 1 && entered = 0)
     for enumeration in 1..2 do
         let iterator = source.GetAsyncEnumerator()
@@ -213,10 +225,11 @@ let run () = __runtimeAsyncReturnUnit (
         check "prefix once, fresh body" (moved && iterator.Current = enumeration && effects = 1 && entered = enumeration)
         AsyncHelpers.Await(iterator.DisposeAsync())
 
-    let source = withCancellation(fun token -> runtimeAsyncSeq {
-        token.ThrowIfCancellationRequested()
-        yield token
-    })
+    
+    
+    let source = asyncSeq2 {
+            yield AsyncSeq2.cancellationToken ()
+        }
     use first = new CancellationTokenSource()
     use second = new CancellationTokenSource()
     for token in [first.Token; second.Token] do
@@ -232,6 +245,3 @@ let run () = __runtimeAsyncReturnUnit (
         check "cancellation identity" (error.CancellationToken = first.Token)
     AsyncHelpers.Await(iterator.DisposeAsync())
 )
-
-[<EntryPoint>]
-let main _ = run().GetAwaiter().GetResult(); 0

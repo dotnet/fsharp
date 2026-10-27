@@ -1,5 +1,6 @@
 module FSharp.Compiler.Service.Tests.CompletionTests
 
+open System.ComponentModel
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Test.Assert
@@ -409,6 +410,16 @@ module Options =
             assertItemsWithNames contains [name] info
         )
 
+    let private assertCSharpInteropItemWithOptions getOption (options: FSharpCodeCompletionOptions list) name source =
+        let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+        let compilerOptions = [| $"-r:{csharpAssembly}" |]
+        options
+        |> List.iter (fun options ->
+            let contains = getOption options
+            let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions options source
+            assertItemsWithNames contains [name] info
+        )
+
     module AllowObsolete =
         let private allowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = true }
         let private disallowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = false }
@@ -732,16 +743,8 @@ type T() =
 T.{caret}
 """
 
-        /// Helper to assert completion with a reference to the CSharp_Analysis assembly
         let private assertCSharpInteropItem name source =
-            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
-            let compilerOptions = [| $"-r:{csharpAssembly}" |]
-            [allowObsoleteOptions; disallowObsoleteOptions]
-            |> List.iter (fun completionOptions ->
-                let contains = completionOptions.SuggestObsoleteSymbols
-                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
-                assertItemsWithNames contains [name] info
-            )
+            assertCSharpInteropItemWithOptions _.SuggestObsoleteSymbols [allowObsoleteOptions; disallowObsoleteOptions] name source
 
         // https://github.com/dotnet/fsharp/issues/13512
         [<Fact>]
@@ -775,21 +778,430 @@ open FSharp.Compiler.Service.Tests
 ObsoleteMembersClass.{caret}
 """
 
+        [<Fact>]
+        let ``Nested module 01`` () =
+            assertItem "x" """
+module M =
+    module N =
+        [<System.Obsolete>]
+        let x = 1
+
+M.N.{caret}
+"""
+
+        [<Fact>]
+        let ``Nested module 02`` () =
+            assertItem "x" """
+module M =
+    [<System.Obsolete>]
+    module N =
+        [<System.Obsolete>]
+        let x = 1
+
+M.N.{caret}
+"""
+
+        [<Fact>]
+        let ``Nested type 01`` () =
+            Checker.getCompletionInfo """
+module M =
+    type T() =
+        [<System.Obsolete>]
+        static member Prop = 1
+
+M.T.{caret}
+"""
+            |> assertHasItemWithNames ["Prop"]
+
+        [<Fact>]
+        let ``Nested module - Record field 01`` () =
+            assertItem "R" """
+module M =
+    module N =
+        [<System.Obsolete>]
+        type R = { F: int }
+
+let r = { M.N.{caret} }
+"""
+
+        [<Fact>]
+        let ``Nested module - Record field 02`` () =
+            Checker.getCompletionInfo """
+module M =
+    [<System.Obsolete>]
+    module N =
+        type R = { F: int }
+
+let r = { M.N.{caret} }
+"""
+            |> assertHasItemWithNames ["R"]
+
         // https://github.com/dotnet/fsharp/issues/13512
         [<Fact>]
         let ``CSharp - Non-obsolete members are always shown`` () =
-            let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
-            let compilerOptions = [| $"-r:{csharpAssembly}" |]
-            let source = """
+            for name in ["NonObsoleteField"; "NonObsoleteMethod"; "NonObsoleteProperty"; "NonObsoleteEvent"] do
+                assertCSharpInteropItemWithOptions (fun _ -> true) [allowObsoleteOptions; disallowObsoleteOptions] name """
 open FSharp.Compiler.Service.Tests
 ObsoleteMembersClass.{caret}
 """
-            [allowObsoleteOptions; disallowObsoleteOptions]
-            |> List.iter (fun completionOptions ->
-                let info = Checker.getCompletionInfoWithCompilerAndCompletionOptions compilerOptions completionOptions source
-                assertItemsWithNames true ["NonObsoleteField"; "NonObsoleteMethod"; "NonObsoleteProperty"; "NonObsoleteEvent"] info
-            )
 
+
+    module EditorBrowsableNever =
+        let private allowOptions = { FSharpCodeCompletionOptions.Default with SuggestEditorBrowsableSymbols = EditorBrowsableState.Never }
+        let private disallowOptions = { FSharpCodeCompletionOptions.Default with SuggestEditorBrowsableSymbols = EditorBrowsableState.Advanced }
+
+        let private suggestsNever (options: FSharpCodeCompletionOptions) =
+            options.SuggestEditorBrowsableSymbols = EditorBrowsableState.Never
+
+        let private assertItemAlways (name: string) source =
+            assertItemWithOptions (fun _ -> true) [allowOptions; disallowOptions] name source
+
+        let private assertItemWithOptions =
+            assertItemWithOptions suggestsNever
+
+        let assertItem (name: string) source =
+            assertItemWithOptions [allowOptions; disallowOptions] name source
+
+        let private assertCSharpInteropItem contains name source =
+            assertCSharpInteropItemWithOptions contains [allowOptions; disallowOptions] name source
+
+        [<Fact>]
+        let ``Prop - Instance 01`` () =
+            assertItem "Prop" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    member this.Prop = 1
+
+T().{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Static 01`` () =
+            assertItem "Prop" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Always 01`` () =
+            assertItemAlways "Prop" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable>]
+    static member Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Method - Static 01`` () =
+            assertItem "Method" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Method() = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Event - Instance 01`` () =
+            assertItem "Ev" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Never); CLIEvent>]
+    member _.Ev = Event<System.EventHandler, _>().Publish
+
+T().{caret}
+"""
+
+        [<Fact>]
+        let ``Union 01`` () =
+            assertItem "A" """
+open System.ComponentModel
+
+type U =
+    | [<EditorBrowsable(EditorBrowsableState.Never)>] A
+    | B
+
+U.{caret}
+"""
+
+        [<Fact>]
+        let ``Union 02`` () =
+            assertItem "A" """
+open System.ComponentModel
+
+type U =
+    | [<EditorBrowsable(EditorBrowsableState.Never)>] A
+    | B
+
+let y = 1
+
+do
+    {caret}
+"""
+
+        [<Fact>]
+        let ``Type 01`` () =
+            assertItem "T" """
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+type T() = class end
+
+{caret}
+"""
+
+        [<Fact>]
+        let ``Type 02`` () =
+            assertItem "T" """
+open System.ComponentModel
+
+module M =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    type T() = class end
+
+M.{caret}
+"""
+
+        [<Fact>]
+        let ``Prop - Nested type 01`` () =
+            assertItem "Prop" """
+open System.ComponentModel
+
+module M =
+    type T() =
+        [<EditorBrowsable(EditorBrowsableState.Never)>]
+        static member Prop = 1
+
+M.T.{caret}
+"""
+
+        [<Fact>]
+        let ``Type - Members of hidden type are shown`` () =
+            assertItemAlways "Prop" """
+open System.ComponentModel
+
+module M =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    type T() =
+        static member Prop = 1
+
+M.T.{caret}
+"""
+
+        [<Fact>]
+        let ``Module 01`` () =
+            assertItem "M" """
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+module M =
+    let x = 1
+
+let y = 1
+
+do
+    {caret}
+"""
+
+        [<Fact>]
+        let ``Module 02`` () =
+            assertItem "N" """
+open System.ComponentModel
+
+module M =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    module N =
+        let x = 1
+
+M.{caret}
+"""
+
+        [<Fact>]
+        let ``Module - Contents of hidden module are shown`` () =
+            assertItemAlways "x" """
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+module M =
+    let x = 1
+
+M.{caret}
+"""
+
+        [<Fact>]
+        let ``Value 01`` () =
+            assertItem "x" """
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+let x = 1
+
+{caret}
+"""
+
+        [<Fact>]
+        let ``Value 02`` () =
+            assertItem "x" """
+open System.ComponentModel
+
+module M =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    let x = 1
+
+M.{caret}
+"""
+
+        [<Fact>]
+        let ``Exception 01`` () =
+            assertItem "E" """
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
+exception E
+
+{caret}
+"""
+
+        [<Fact>]
+        let ``Active pattern 01`` () =
+            assertItem "Even" """
+open System.ComponentModel
+
+module M =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    let (|Even|Odd|) x = if x % 2 = 0 then Even else Odd
+
+M.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Type is hidden`` () =
+            assertCSharpInteropItem suggestsNever "EditorBrowsableNeverClass" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsable{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Members of hidden type are shown`` () =
+            assertCSharpInteropItem (fun _ -> true) "Prop" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableNeverClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Field is hidden`` () =
+            assertCSharpInteropItem suggestsNever "NeverField" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Method is hidden`` () =
+            assertCSharpInteropItem suggestsNever "NeverMethod" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Property is hidden`` () =
+            assertCSharpInteropItem suggestsNever "NeverProperty" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Event is hidden`` () =
+            assertCSharpInteropItem suggestsNever "NeverEvent" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Other states are always shown`` () =
+            for name in ["AdvancedProperty"; "AlwaysProperty"; "VisibleProperty"] do
+                assertCSharpInteropItem (fun _ -> true) name """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+    module EditorBrowsableAdvanced =
+        let private allowOptions = { FSharpCodeCompletionOptions.Default with SuggestEditorBrowsableSymbols = EditorBrowsableState.Advanced }
+        let private disallowOptions = { FSharpCodeCompletionOptions.Default with SuggestEditorBrowsableSymbols = EditorBrowsableState.Always }
+
+        let private suggestsAdvanced (options: FSharpCodeCompletionOptions) =
+            options.SuggestEditorBrowsableSymbols <> EditorBrowsableState.Always
+
+        let private assertItemNever (name: string) source =
+            assertItemWithOptions (fun _ -> false) [allowOptions; disallowOptions] name source
+
+        let private assertItemWithOptions =
+            assertItemWithOptions suggestsAdvanced
+
+        let assertItem (name: string) source =
+            assertItemWithOptions [allowOptions; disallowOptions] name source
+
+        let private assertCSharpInteropItem contains name source =
+            assertCSharpInteropItemWithOptions contains [allowOptions; disallowOptions] name source
+
+        [<Fact>]
+        let ``Default shows advanced items`` () =
+            FSharpCodeCompletionOptions.Default.SuggestEditorBrowsableSymbols |> shouldEqual EditorBrowsableState.Advanced
+
+        [<Fact>]
+        let ``Prop - Static 01`` () =
+            assertItem "Prop" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Advanced)>]
+    static member Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``Never items are not affected`` () =
+            assertItemNever "Prop" """
+open System.ComponentModel
+
+type T() =
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Prop = 1
+
+T.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Advanced property`` () =
+            assertCSharpInteropItem suggestsAdvanced "AdvancedProperty" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
+
+        [<Fact>]
+        let ``CSharp - Advanced type`` () =
+            assertCSharpInteropItem suggestsAdvanced "EditorBrowsableAdvancedClass" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsable{caret}
+"""
+
+            assertCSharpInteropItem (fun _ -> false) "NeverProperty" """
+open FSharp.Compiler.Service.Tests
+EditorBrowsableMembersClass.{caret}
+"""
 
     module PatternNameSuggestions =
         let private suggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = true }

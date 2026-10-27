@@ -792,6 +792,7 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
     | TOp.Label label -> "Label:" + string label
     | TOp.TraitCall traitInfo -> "TraitCall:" + traitInfo.MemberLogicalName
     | TOp.LValueOp(lvOp, vref) -> "LValueOp:" + string lvOp + ":" + vref.LogicalName
+    | TOp.DebugLocalScope(vref, name) -> "DebugLocalScope:" + vref.LogicalName + ":" + name
     | TOp.ILCall(isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, _, _, _) ->
         "ILCall:"
         + string isVirtual
@@ -1270,6 +1271,8 @@ let private opIdentity denv (op: TOp) =
     | TOp.Label label -> identityNode "label" [ string label ]
     | TOp.TraitCall traitInfo -> traitIdentity denv traitInfo
     | TOp.LValueOp(operation, vref) -> identityNode "lvalue" [ string operation; valIdentity denv vref ]
+    // Runtime-async lowering exposes this storage under a source-level debug name.
+    | TOp.DebugLocalScope(vref, name) -> identityNode "debug-local-scope" [ valIdentity denv vref; name ]
     | TOp.ILCall(isVirtual,
                  isProtected,
                  isStruct,
