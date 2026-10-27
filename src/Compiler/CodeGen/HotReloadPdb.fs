@@ -2,6 +2,7 @@
 /// ILBaselineReader; emitDelta serializes the Portable PDB delta through SRM's PortablePdbBuilder.
 module internal FSharp.Compiler.HotReloadPdb
 
+open FSharp.Compiler.EnvironmentHelpers
 open System
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -17,15 +18,8 @@ open FSharp.Compiler.HotReloadBaseline
 module ILBaselineReader = FSharp.Compiler.AbstractIL.ILBaselineReader
 
 let private shouldTracePdb () =
-    let isEnabled (name: string) =
-        match Environment.GetEnvironmentVariable(name) with
-        | null -> false
-        | value when String.Equals(value, "1", StringComparison.OrdinalIgnoreCase) -> true
-        | value when String.Equals(value, "true", StringComparison.OrdinalIgnoreCase) -> true
-        | _ -> false
-
-    isEnabled "FSHARP_HOTRELOAD_TRACE_PDB"
-    || isEnabled "FSHARP_HOTRELOAD_TRACE_METADATA"
+    isEnvVarTruthy EnvironmentVariableNames.HotReloadTracePdb
+    || isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceMetadata
 
 /// Create a PDB snapshot from Portable PDB bytes.
 /// Uses pure F# parsing instead of SRM for the reading path.
@@ -198,11 +192,9 @@ let emitDelta
 
                             emittedMethodRows.Add(baselineMethodRow)
                             emitted <- true
-                        else if
-                            // A newly added method whose row exceeds the baseline
-                            // MethodDebugInformation count has no debug info to re-emit here.
-                            shouldTracePdb ()
-                        then
+                        // A newly added method whose row exceeds the baseline
+                        // MethodDebugInformation count has no debug info to re-emit here.
+                        else if shouldTracePdb () then
                             let rowCount = reader.MethodDebugInformation.Count
 
                             printfn

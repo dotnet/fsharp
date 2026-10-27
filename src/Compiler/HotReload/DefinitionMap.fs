@@ -93,24 +93,24 @@ module FSharpDefinitionMap =
 
     /// Retrieves synthesized symbols classified as added.
     let synthesizedAdded (map: FSharpDefinitionMap) : SymbolId list =
-        synthesized map
+        map.Changes
         |> List.choose (fun change ->
-            match change.EditKind with
-            | SymbolEditKind.Added -> Some change.Symbol
+            match change.IsSynthesized, change.EditKind with
+            | true, SymbolEditKind.Added -> Some change.Symbol
             | _ -> None)
 
     /// Retrieves synthesized symbols classified as updated.
     let synthesizedUpdated (map: FSharpDefinitionMap) : (SymbolChange * SemanticEditKind) list =
-        synthesized map
+        map.Changes
         |> List.choose (fun change ->
-            match change.EditKind with
-            | SymbolEditKind.Updated kind -> Some(change, kind)
+            match change.IsSynthesized, change.EditKind with
+            | true, SymbolEditKind.Updated kind -> Some(change, kind)
             | _ -> None)
 
     /// Retrieves synthesized symbols classified as deleted.
     let synthesizedDeleted (map: FSharpDefinitionMap) : SymbolId list =
-        synthesized map
+        map.Changes
         |> List.choose (fun change ->
-            match change.EditKind with
-            | SymbolEditKind.Deleted -> Some change.Symbol
+            match change.IsSynthesized, change.EditKind with
+            | true, SymbolEditKind.Deleted -> Some change.Symbol
             | _ -> None)

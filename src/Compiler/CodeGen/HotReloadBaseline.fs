@@ -25,12 +25,13 @@ open FSharp.Compiler.EnvironmentHelpers
 let private tableCount = DeltaTokens.TableCount
 
 [<Literal>]
-let private TraceHeapOffsetsFlagName = "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
+let private TraceHeapOffsetsFlagName =
+    EnvironmentVariableNames.HotReloadTraceHeapOffsets
 
 let private traceHeapOffsets = lazy (isEnvVarTruthy TraceHeapOffsetsFlagName)
 
 let private traceClosureNames =
-    lazy (isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES")
+    lazy (isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceClosureNames)
 
 /// Align a size to a 4-byte boundary (stream alignment per ECMA-335).
 /// Used for Blob and UserString heap cumulative tracking, per Roslyn behavior.
