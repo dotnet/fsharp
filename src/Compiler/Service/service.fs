@@ -1278,8 +1278,7 @@ type FSharpChecker
                     reportingPhase = false
                 }
 
-            let runtimeAsyncReportedRanges =
-                System.Collections.Concurrent.ConcurrentDictionary<range, unit>()
+            let runtimeAsyncReportedRanges = System.Collections.Concurrent.ConcurrentDictionary<range, unit>()
 
             let optimizeImplFile env hidingInfo implFile =
                 let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
