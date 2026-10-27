@@ -408,7 +408,7 @@ let ApplyAllOptimizations
          }: PhaseInputs)
         : PhaseRes =
         let file =
-            LowerRuntimeAsync.TransformImplFile tcGlobals runtimeAsyncReportedRanges file
+            LowerRuntimeAsync.TransformImplFile tcGlobals importMap runtimeAsyncReportedRanges file
 
         file, prevPhase
 
