@@ -10,6 +10,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -248,16 +249,18 @@ and ConvExpr cenv env (expr : Expr) =
 and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
     let g = cenv.g
     if g.generateWitnesses && not env.suppressWitnesses then
-        let witnessExprs =
-            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs
-            |> CommitOperationResult
-        let env = { env with suppressWitnesses = true }
-        witnessExprs |> List.map (fun arg ->
+        let convertWitness (traitInfo: TraitConstraintInfo) arg =
+            let env =
+                match traitInfo.Solution with
+                | Some (FSMethSln _) when g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions -> env
+                | _ -> { env with suppressWitnesses = true }
             match arg with
             | Choice1Of2 traitInfo ->
                 ConvWitnessInfo cenv env m traitInfo
             | Choice2Of2 arg ->
-                ConvExpr cenv env arg)
+                ConvExpr cenv env arg
+        ConstraintSolver.CodegenWitnessesForTyparInstWith cenv.tcVal g cenv.amap m tps tyargs convertWitness
+        |> CommitOperationResult
     else
         []
 
@@ -1375,4 +1378,3 @@ let ConvReflectedDefinition cenv methName v e =
 
     let mbaseR = ConvMethodBase cenv env (methName, v)
     mbaseR, astExprWithWitnessLambdas
-
