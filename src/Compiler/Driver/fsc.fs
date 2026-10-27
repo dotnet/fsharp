@@ -41,7 +41,6 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -880,13 +879,13 @@ let main3
 
         optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
-    if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
-        match optimizedImpls with
-        | CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations ->
-            ReportTime tcConfig "TailCall Checks"
+    let (CheckedAssemblyAfterOptimization checkedImplFileAfterOptimizations) =
+        optimizedImpls
 
-            for f in checkedImplFileAfterOptimizations do
-                TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
+    ReportTime tcConfig "TailCall Checks"
+
+    for f in checkedImplFileAfterOptimizations do
+        TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), f.ImplFile.Contents)
 
     let refAssemblySignatureHash =
         match tcConfig.emitMetadataAssembly with
@@ -1010,7 +1009,7 @@ let main4
     // The hook receives the optimized impl files about to be lowered so the hot reload
     // closure mapping can extract lambda occurrences from the same tree IlxGen lowers
     // (stamp-keyed) and install naming state on this compilation's CompilerGlobalState.
-    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, tcGlobals, optimizedImpls)
+    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, outfile, tcGlobals, optimizedImpls)
 
     // Create the Abstract IL generator
     // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)

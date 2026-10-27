@@ -54,6 +54,18 @@ let ``QuickInfo.LetBindingsInTypes`` () =
     let ff{caret}f n = n + 1"""
 
 [<Fact>]
+let ``Issue 2650 - class-local function tooltip includes argument names`` () =
+    assertTooltipContains
+        "val fn1: arg1: 'a -> arg2: int -> arg3: int -> int"
+        """type Test() =
+    let fn{caret}1 (arg1: 'a) (arg2: int) (arg3: int) =
+        let ys = Seq.empty<'a>
+        arg2 + arg3
+
+    member _.X = ""
+    member _.Fn = fn1"""
+
+[<Fact>]
 let ``Basic`` () =
     assertTooltipContains
         "Bob ="

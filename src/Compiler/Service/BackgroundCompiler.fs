@@ -6,6 +6,7 @@ open FSharp.Compiler.BuildGraph
 open System
 open System.Diagnostics
 open System.IO
+open System.Runtime.CompilerServices
 open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -175,6 +176,8 @@ type internal IBackgroundCompiler =
 
     abstract member ProjectChecked: IEvent<FSharpProjectOptions>
 
+    abstract member SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
+
 type internal ParseCacheLockToken() =
     interface LockToken
 
@@ -256,14 +259,20 @@ type internal BackgroundCompiler
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache
-    /// Information about the derived script closure.
-    let scriptClosureCache =
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, LoadClosure>(
-            projectCacheSize,
-            areSame = FSharpProjectOptions.AreSameForChecking,
-            areSimilar = FSharpProjectOptions.UseSameProject
-        )
+    [<VolatileField>]
+    let mutable referenceStampProvider: (string -> DateTime) option = None
+
+    // Option record copies share this reference set, so it owns the closure until those options are released.
+    let scriptClosures =
+        ConditionalWeakTable<FSharpUnresolvedReferencesSet, FSharpProjectOptions * LoadClosure>()
+
+    let tryGetScriptClosure (options: FSharpProjectOptions) =
+        match options.UnresolvedReferences with
+        | Some references ->
+            match scriptClosures.TryGetValue references with
+            | true, (originalOptions, closure) when FSharpProjectOptions.AreSameForChecking(originalOptions, options) -> Some closure
+            | _ -> None
+        | None -> None
 
     let frameworkTcImportsCache =
         FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
@@ -355,7 +364,7 @@ type internal BackgroundCompiler
             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
             let projectReferences = getProjectReferences options userOpName
 
-            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            let loadClosure = tryGetScriptClosure options
 
             let dependencyProvider =
                 if options.UseScriptResolutionRules then
@@ -386,7 +395,8 @@ type internal BackgroundCompiler
                     shareImportedAssemblies,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications
+                    useChangeNotifications,
+                    referenceStampProvider |> ValueOption.ofOption
                 )
 
             match builderOpt with
@@ -725,7 +735,7 @@ type internal BackgroundCompiler
             // Get additional script #load closure information if applicable.
             // For scripts, this will have been recorded by GetProjectOptionsFromScript.
             let tcConfig = tcPrior.TcConfig
-            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            let loadClosure = tryGetScriptClosure options
 
             let! checkAnswer =
                 FSharpCheckFileResults.CheckOneFile(
@@ -1042,7 +1052,7 @@ type internal BackgroundCompiler
                         dependencyFiles = builder.AllDependenciesDeprecated
                     )
 
-                let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+                let loadClosure = tryGetScriptClosure options
 
                 let typedResults =
                     FSharpCheckFileResults.Make(
@@ -1358,6 +1368,9 @@ type internal BackgroundCompiler
                         yield "-r:" + fst r
                 |]
 
+            let unresolvedReferences =
+                FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences)
+
             let options =
                 {
                     ProjectFileName = fileName + ".fsproj" // Make a name that is unique in this directory.
@@ -1368,12 +1381,12 @@ type internal BackgroundCompiler
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true
                     LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some(FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    UnresolvedReferences = Some unresolvedReferences
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     Stamp = optionsStamp
                 }
 
-            scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
+            scriptClosures.Add(unresolvedReferences, (options, loadClosure))
 
             let diags =
                 let flatErrors = options.OtherOptions |> Array.contains "--flaterrors"
@@ -1452,8 +1465,7 @@ type internal BackgroundCompiler
                 parseFileCache.Clear(ltok))
 
             incrementalBuildersCache.Clear(AnyCallerThread)
-            frameworkTcImportsCache.Clear()
-            scriptClosureCache.Clear AnyCallerThread)
+            frameworkTcImportsCache.Clear())
 
     member _.DownsizeCaches() =
         use _ = Activity.startNoTags "BackgroundCompiler.DownsizeCaches"
@@ -1464,10 +1476,12 @@ type internal BackgroundCompiler
                 parseFileCache.Resize(ltok, newKeepStrongly = 1))
 
             incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1)
-            frameworkTcImportsCache.Downsize()
-            scriptClosureCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1))
+            frameworkTcImportsCache.Downsize())
 
     member _.FrameworkImportsCache = frameworkTcImportsCache
+
+    member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) =
+        referenceStampProvider <- Some getReferenceStamp
 
     static member ActualParseFileCount = actualParseFileCount
 
@@ -1523,6 +1537,9 @@ type internal BackgroundCompiler
             this.FindReferencesInFile(fileName, projectSnapshot.ToOptions(), symbol, true, userOpName)
 
         member _.FrameworkImportsCache: FrameworkImportsCache = self.FrameworkImportsCache
+
+        member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) : unit =
+            self.SetReferenceStampProvider getReferenceStamp
 
         member _.GetAssemblyData(options: FSharpProjectOptions, _fileName: string, userOpName: string) : Async<ProjectAssemblyDataResult> =
             self.GetAssemblyData(options, userOpName)

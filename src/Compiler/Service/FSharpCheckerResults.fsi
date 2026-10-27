@@ -3,12 +3,14 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.ComponentModel
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -240,10 +242,13 @@ type public FSharpParsingOptions =
 type public FSharpCodeCompletionOptions =
     { SuggestPatternNames: bool
       SuggestObsoleteSymbols: bool
+      SuggestEditorBrowsableSymbols: EditorBrowsableState
       SuggestGeneratedOverrides: bool
       SuggestOverrideBodies: bool }
 
     static member Default: FSharpCodeCompletionOptions
+
+    member internal AllowUnseen: UnseenItems
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

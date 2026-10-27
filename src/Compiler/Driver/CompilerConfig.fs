@@ -451,6 +451,8 @@ type TypeCheckingConfig =
 /// running a second IL writer pass that could diverge from what hit disk.
 type CompilerEmitArtifacts =
     {
+        /// Output identity that owns the captured baseline.
+        OutputPath: string
         IlxMainModule: ILModuleDef
         TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
         AssemblyBytes: byte[]
@@ -476,7 +478,10 @@ type ICompilerEmitHook =
     /// (stamp-keyed) and install per-compile naming state on the compilation's
     /// CompilerGlobalState (tcGlobals.CompilerGlobalState).
     abstract PrepareForCodeGeneration:
-        emitCaptureArtifacts: bool * tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals * optimizedImpls: CheckedAssemblyAfterOptimization ->
+        emitCaptureArtifacts: bool *
+        outputPath: string *
+        tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals *
+        optimizedImpls: CheckedAssemblyAfterOptimization ->
             unit
 
     abstract BeforeFileEmit:
@@ -507,7 +512,7 @@ type ICompilerEmitHook =
 type private NoOpCompilerEmitHook() =
     interface ICompilerEmitHook with
         member _.ValidateConfiguration(_emitCaptureArtifacts, _debugInfo, _embeddedPdb, _localOptimizationsEnabled) = ()
-        member _.PrepareForCodeGeneration(_emitCaptureArtifacts, _tcGlobals, _optimizedImpls) = ()
+        member _.PrepareForCodeGeneration(_emitCaptureArtifacts, _outputPath, _tcGlobals, _optimizedImpls) = ()
         member _.BeforeFileEmit(_emitCaptureArtifacts, _compilerGlobalState) = ()
 
         member _.TryEmitWithArtifacts
@@ -1173,11 +1178,7 @@ type TcConfigBuilder =
         // #r "Assembly"
         | NonNull path, Null -> tcConfigB.AddReferencedAssemblyByPath(m, path)
 
-        | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
+        | _, NonNull dependencyManager -> tcConfigB.AddDependencyManagerText(dependencyManager, directive, m, path)
 
         | Null, Null when directive = Directive.Include -> errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))
 

@@ -812,6 +812,7 @@ type FSharpHotReloadSession
         |> List.choose (function
             | FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(projectFileName, outputFileName) ->
                 Some(ProjectSnapshot.FSharpProjectIdentifier(projectFileName, outputFileName))
+            | FSharp.Compiler.HotReloadState.HotReloadProjectKey.CapturedOutput _
             | FSharp.Compiler.HotReloadState.HotReloadProjectKey.Ambient -> None)
 
     /// Test seam: the per-project session view (committed baseline joined with the

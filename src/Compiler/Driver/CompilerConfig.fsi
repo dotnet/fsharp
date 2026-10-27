@@ -231,6 +231,8 @@ type TypeCheckingConfig =
 /// running a second IL writer pass that could diverge from what hit disk.
 type CompilerEmitArtifacts =
     {
+        /// Output identity that owns the captured baseline.
+        OutputPath: string
         IlxMainModule: ILModuleDef
         TokenMappings: FSharp.Compiler.AbstractIL.ILBinaryWriter.ILTokenMappings
         AssemblyBytes: byte[]
@@ -257,6 +259,7 @@ type ICompilerEmitHook =
     /// CompilerGlobalState (tcGlobals.CompilerGlobalState).
     abstract PrepareForCodeGeneration:
         emitCaptureArtifacts: bool *
+        outputPath: string *
         tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals *
         optimizedImpls: TypedTree.CheckedAssemblyAfterOptimization ->
             unit

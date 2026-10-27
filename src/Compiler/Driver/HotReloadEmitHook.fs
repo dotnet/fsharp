@@ -51,10 +51,22 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
     // (FSharpChecker.Compile sets the context around the compile), the hook serves THAT
     // session's chained closure-name/synthesized-name state. Without a context the hook
     // falls back to the service it was constructed with (the ambient store).
-    let resolveSessionAccess () =
+    let capturedOutputKey outputPath =
+        let fullPath = Path.GetFullPath outputPath
+
+        let identity =
+            if Path.DirectorySeparatorChar = '\\' then
+                fullPath.ToUpperInvariant()
+            else
+                fullPath
+
+        HotReloadState.HotReloadProjectKey.CapturedOutput identity
+
+    let resolveSessionAccess outputPath =
         match HotReloadState.tryGetCurrentEmissionContext () with
         | Some context -> FSharpEditAndContinueLanguageService(context.Store), Some context.ProjectKey
-        | None -> editAndContinueService, None
+        // Method names can match across unrelated projects. Only the same output can replay a capture.
+        | None -> editAndContinueService, Some(capturedOutputKey outputPath)
 
     let hasScopedEmissionContext () =
         (HotReloadState.tryGetCurrentEmissionContext ()).IsSome
@@ -65,8 +77,8 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
     // the same process. The capture is SESSION-INDEPENDENT: capture compiles never run under
     // a scoped emission context, the capture slot is not any session's store, and sessions
     // never read it — they reconstruct baselines from the on-disk dll + pdb. The slot serves
-    // capture-to-capture name chaining within one host, standalone fsc validation and
-    // unit-level tooling/tests; checker creation resets it (the host boundary).
+    // capture-to-capture name chaining for the same output, standalone fsc validation,
+    // and tests. A different output starts a fresh capture without name replay.
     let captureArtifacts (compilerGlobalState: CompilerGlobalState) (artifacts: CompilerEmitArtifacts) =
         let portablePdbSnapshot =
             artifacts.PortablePdbBytes |> Option.map HotReloadPdb.createSnapshot
@@ -97,7 +109,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
             HotReloadBaseline.resolveClosureNameRowsByToken baseline artifacts.ClosureNameRows
 
         let baseline =
-            match editAndContinueService.TryGetSession() with
+            match editAndContinueService.TryGetSession(projectKey = capturedOutputKey artifacts.OutputPath) with
             | ValueSome session when not (Map.isEmpty session.Baseline.EncClosureNames) ->
                 { baseline with
                     EncClosureNames = recordedRows
@@ -106,7 +118,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 validateClosureNameRows baseline.EncClosureNames recordedRows
                 baseline
 
-        editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls)
+        editAndContinueService.StartSession(baseline, artifacts.OptimizedImpls, projectKey = capturedOutputKey artifacts.OutputPath)
         |> ignore
 
         match tryGetCompilerGeneratedNameMap (compilerGlobalState :> obj) with
@@ -125,12 +137,12 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 if localOptimizationsEnabled then
                     error (Error(FSComp.SR.fscHotReloadIncompatibleWithOptimization (), rangeStartup))
 
-        member _.PrepareForCodeGeneration(emitCaptureArtifacts, tcGlobals, optimizedImpls) =
+        member _.PrepareForCodeGeneration(emitCaptureArtifacts, outputPath, tcGlobals, optimizedImpls) =
             let compilerGlobalState = tcGlobals.CompilerGlobalState.Value
 
             // Resolve the session this compile serves: the scoped emission context when the
             // host set one (a session entity's tracked project), the ambient service otherwise.
-            let sessionService, scopedProjectKey = resolveSessionAccess ()
+            let sessionService, scopedProjectKey = resolveSessionAccess outputPath
 
             let tryGetActiveSession () =
                 sessionService.TryGetSession(?projectKey = scopedProjectKey)
@@ -293,6 +305,7 @@ type internal DefaultHotReloadEmitHook(editAndContinueService: FSharpEditAndCont
                 captureArtifacts
                     compilerGlobalState
                     {
+                        OutputPath = outputFile
                         IlxMainModule = ilxMainModule
                         TokenMappings = tokenMappings
                         AssemblyBytes = assemblyBytes
