@@ -26,26 +26,29 @@ module internal UnifiedSettings =
             Preview = read<bool> reader "interactive.preview"
         }
 
-    let subscribeToInteractive (reader: ISettingsReader) =
-        let refresh () =
-            Session.SessionsProperties.Update(readInteractive reader)
+    let subscribeToChanges (reader: ISettingsReader) (pattern: string) refresh =
+        let gate = obj ()
+        let refreshSerialized () = lock gate refresh
 
         let subscription =
             reader.SubscribeToChanges(
                 (fun _ ->
                     try
-                        refresh ()
+                        refreshSerialized ()
                     with error ->
                         ActivityLog.LogError("F# Unified Settings", error.ToString())),
-                "languages.fsharp.interactive.*"
+                pattern
             )
 
         try
-            refresh ()
+            refreshSerialized ()
             subscription
         with _ ->
             subscription.Dispose()
             reraise ()
+
+    let subscribeToInteractive (reader: ISettingsReader) =
+        subscribeToChanges reader "languages.fsharp.interactive.*" (fun () -> Session.SessionsProperties.Update(readInteractive reader))
 
 [<Guid(UnifiedSettings.ServiceId)>]
 type internal FSharpSettingsProvider(readCompiler: unit -> bool, writeCompiler: bool -> unit, logError: exn -> unit) =

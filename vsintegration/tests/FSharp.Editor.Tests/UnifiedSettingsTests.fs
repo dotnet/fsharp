@@ -46,11 +46,12 @@ module UnifiedSettingsTests =
                     yield $"languages.fsharp.{category}.{Char.ToLowerInvariant name[0]}{name.Substring(1)}", defaults, property
         |]
 
-    type private NativeHost() =
+    type private NativeHost(?onRead: string -> obj -> unit) =
         let definitions = registrations ()
         let defaults = Dictionary<string, obj>(StringComparer.Ordinal)
         let values = Dictionary<string, obj>(StringComparer.Ordinal)
         let subscriptions = ResizeArray<Action<SettingsUpdate> * string[]>()
+        let onRead = defaultArg onRead (fun _ _ -> ())
         let mutable reads = 0
         let mutable commits = 0
         let mutable commitOutcome = SettingCommitOutcome.Success
@@ -69,9 +70,13 @@ module UnifiedSettingsTests =
         let get name =
             reads <- reads + 1
 
-            match values.TryGetValue name with
-            | true, value -> value
-            | _ -> defaults[name]
+            let value =
+                match values.TryGetValue name with
+                | true, value -> value
+                | _ -> defaults[name]
+
+            onRead name value
+            value
 
         let notify (names: seq<string>) =
             let update =
@@ -292,6 +297,95 @@ module UnifiedSettingsTests =
         Assert.Equal(0, host.SubscriptionCount)
         host.Set("languages.fsharp.formatting.formatOnPaste", false)
         Assert.True(options.Formatting.FormatOnPaste)
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Refreshes serialize initialization and concurrent notifications`` (interactive: bool, initializing: bool) =
+        let timeout = TimeSpan.FromSeconds 10.
+        use firstRead = new ManualResetEventSlim()
+        use releaseRead = new ManualResetEventSlim()
+        let mutable blockNextRead = 0
+
+        let moniker =
+            if interactive then
+                "languages.fsharp.interactive.preferAnyCpuVersion"
+            else
+                "languages.fsharp.intelliSense.showAfterCharIsTyped"
+
+        let host =
+            NativeHost(fun name value ->
+                if name = moniker && Interlocked.CompareExchange(&blockNextRead, 0, 1) = 1 then
+                    Assert.Equal(box true, value)
+                    firstRead.Set()
+                    Assert.True(releaseRead.Wait timeout, "The first refresh was not released."))
+
+        let original = Session.SessionsProperties.Current
+        let mutable subscription = None
+
+        let mutable currentValue =
+            fun () -> Session.SessionsProperties.Current.PreferAnyCpuVersion
+
+        let initialize () =
+            if interactive then
+                UnifiedSettings.subscribeToInteractive host.Reader
+            else
+                let options = new EditorOptions(host.Reader)
+                currentValue <- fun () -> options.IntelliSense.ShowAfterCharIsTyped
+                options :> IDisposable
+
+        try
+            if not initializing then
+                subscription <- Some(initialize ())
+
+            Volatile.Write(&blockNextRead, 1)
+
+            let first =
+                Task.Run(
+                    Action(fun () ->
+                        if initializing then
+                            subscription <- Some(initialize ())
+                        else
+                            host.Set(moniker, true))
+                )
+
+            let mutable second = Task.CompletedTask
+
+            try
+                Assert.True(firstRead.Wait timeout, "The first refresh did not read the old value.")
+                let callbackThread = TaskCompletionSource<Thread>()
+
+                second <-
+                    Task.Factory.StartNew(
+                        Action(fun () ->
+                            callbackThread.SetResult Thread.CurrentThread
+                            host.Set(moniker, false)),
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default
+                    )
+
+                Assert.True(callbackThread.Task.Wait timeout, "The second refresh did not start.")
+
+                Assert.True(
+                    SpinWait.SpinUntil(
+                        (fun () ->
+                            second.IsCompleted
+                            || callbackThread.Task.Result.ThreadState.HasFlag ThreadState.WaitSleepJoin),
+                        timeout
+                    ),
+                    "The second refresh neither completed nor waited for the first refresh."
+                )
+            finally
+                releaseRead.Set()
+                Assert.True(Task.WaitAll([| first; second |], timeout), "The refreshes did not complete.")
+
+            Assert.False(currentValue (), "The older refresh overwrote the latest setting value.")
+        finally
+            subscription |> Option.iter _.Dispose()
+            Session.SessionsProperties.Update original
 
     [<Fact>]
     let ``Headless options remain isolated and support typed overrides`` () =

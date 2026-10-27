@@ -242,23 +242,7 @@ type EditorOptions private (reader: ISettingsReader option) =
 
     let subscription =
         reader
-        |> Option.map (fun reader ->
-            let subscription =
-                reader.SubscribeToChanges(
-                    (fun _ ->
-                        try
-                            refresh reader
-                        with error ->
-                            ActivityLog.LogError("F# Unified Settings", error.ToString())),
-                    "languages.fsharp.*"
-                )
-
-            try
-                refresh reader
-                subscription
-            with _ ->
-                subscription.Dispose()
-                reraise ())
+        |> Option.map (fun reader -> UnifiedSettings.subscribeToChanges reader "languages.fsharp.*" (fun () -> refresh reader))
 
     new() = new EditorOptions(None)
 
