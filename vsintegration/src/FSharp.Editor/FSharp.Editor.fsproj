@@ -43,9 +43,9 @@
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\Vs.fs" />
-    <Compile Include="Options\SettingsStore.fs" />
-    <Compile Include="Options\UIHelpers.fs" />
+    <Compile Include="Options\UnifiedSettings.fs" />
     <Compile Include="Options\EditorOptions.fs" />
+    <Compile Include="Options\UnifiedSettingsMigration.fs" />
     <Compile Include="Telemetry\TelemetryReporter.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
@@ -187,7 +187,13 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Settings.Manifest.Build" PrivateAssets="all" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <VsSettingsManifest Include="Options\fsharpSettings.registration.json" Validate="true" IncludeInVSIX="false" />
+    <Content Include="Options\fsharpSettings.registration.json" Link="fsharpSettings.registration.json" CopyToOutputDirectory="PreserveNewest" IncludeInVSIX="true" />
   </ItemGroup>
 
   <ItemGroup>

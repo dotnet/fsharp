@@ -66,14 +66,35 @@ let timeoutApp _descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     ev.WaitOne(timeoutMS) |> ignore
     r
 
-module SessionsProperties =
-    let mutable useAnyCpuVersion = true     // 64-bit by default
-    let mutable fsiUseNetCore = true        // NetCore by default
-    let mutable fsiArgs = "--optimize"
-    let mutable fsiShadowCopy = true
-    let mutable fsiDebugMode = false
-    let mutable fsiPreview = false
-    let ServerPrompt="SERVER-PROMPT>" + Environment.NewLine
+type InteractiveOptions =
+    { PreferAnyCpuVersion: bool
+      UseNetCore: bool
+      CommandLineArgs: string
+      ShadowCopy: bool
+      DebugMode: bool
+      Preview: bool }
+
+    static member Default =
+        { PreferAnyCpuVersion = true
+          UseNetCore = true
+          CommandLineArgs = "--optimize"
+          ShadowCopy = true
+          DebugMode = false
+          Preview = false }
+
+type SessionsProperties private () =
+    [<VolatileField>]
+    static let mutable current = InteractiveOptions.Default
+
+    static member Current = current
+    static member Update options = current <- options
+    static member useAnyCpuVersion = current.PreferAnyCpuVersion
+    static member fsiUseNetCore = current.UseNetCore
+    static member fsiArgs = current.CommandLineArgs
+    static member fsiShadowCopy = current.ShadowCopy
+    static member fsiDebugMode = current.DebugMode
+    static member fsiPreview = current.Preview
+    static member ServerPrompt = "SERVER-PROMPT>" + Environment.NewLine
 
 // This code pre-dates the events/object system.
 // Later: Tidy up.

@@ -373,4 +373,71 @@ Use live (unsaved) buffers for analysis</value>
 {2}</value>
     <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
   </data>
+  <data name="UnifiedSettingsIntelliSenseTitle" xml:space="preserve">
+    <value>IntelliSense</value>
+  </data>
+  <data name="UnifiedSettingsQuickInfoTitle" xml:space="preserve">
+    <value>Quick Info</value>
+  </data>
+  <data name="UnifiedSettingsAdvancedTitle" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="UnifiedSettingsInteractiveTitle" xml:space="preserve">
+    <value>F# Interactive</value>
+  </data>
+  <data name="UnifiedSettingsBackingStoreDescription" xml:space="preserve">
+    <value>This compiler setting uses the user-wide F# compiler configuration.</value>
+    <comment>Description of the storage for the F# compiler option in Unified Settings. User-wide means shared by Visual Studio instances for the same Windows user.</comment>
+  </data>
+  <data name="UnifiedSettingsShowCompletionAfterTypingTitle" xml:space="preserve">
+    <value>Show completion list after a character is typed</value>
+  </data>
+  <data name="UnifiedSettingsShowCompletionAfterDeletionTitle" xml:space="preserve">
+    <value>Show completion list after a character is deleted</value>
+  </data>
+  <data name="UnifiedSettingsShowUnopenedSymbolsTitle" xml:space="preserve">
+    <value>Show symbols in unopened namespaces</value>
+  </data>
+  <data name="UnifiedSettingsInMemoryCrossProjectReferencesTitle" xml:space="preserve">
+    <value>Enable in-memory cross project references</value>
+  </data>
+  <data name="UnifiedSettingsShowNavigationLinksTitle" xml:space="preserve">
+    <value>Show navigation links</value>
+  </data>
+  <data name="UnifiedSettingsUnderlineStyleTitle" xml:space="preserve">
+    <value>Navigation link underline style</value>
+  </data>
+  <data name="UnifiedSettingsDotUnderlineLabel" xml:space="preserve">
+    <value>Dot underline</value>
+  </data>
+  <data name="UnifiedSettingsDashUnderlineLabel" xml:space="preserve">
+    <value>Dash underline</value>
+  </data>
+  <data name="UnifiedSettingsSolidUnderlineLabel" xml:space="preserve">
+    <value>Solid underline</value>
+  </data>
+  <data name="UnifiedSettingsDescriptionWidthTitle" xml:space="preserve">
+    <value>Use a preferred description width</value>
+  </data>
+  <data name="UnifiedSettingsDescriptionWidthDescription" xml:space="preserve">
+    <value>Format signatures to the preferred width by adding line breaks conforming with F# syntax rules.</value>
+  </data>
+  <data name="UnifiedSettingsMigrationDescription" xml:space="preserve">
+    <value>Import existing F# settings</value>
+  </data>
+  <data name="UnifiedSettingsCacheFactorDescription" xml:space="preserve">
+    <value>Enter an integer from 1 to 10000. Higher numbers use more memory for caching. Changing the value wipes the cache.</value>
+  </data>
+  <data name="UnifiedSettingsStaleCompletionDescription" xml:space="preserve">
+    <value>Enter an integer from 0 to 10000 milliseconds before stale results are used.</value>
+  </data>
+  <data name="UnifiedSettingsRestartRequiredDescription" xml:space="preserve">
+    <value>Restart Visual Studio for changes to take effect.</value>
+  </data>
+  <data name="UnifiedSettingsTransparentCompilerDescription" xml:space="preserve">
+    <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry. Restart Visual Studio for changes to take effect.</value>
+  </data>
+  <data name="UnifiedSettingsOperationFailed" xml:space="preserve">
+    <value>Unable to read or update the F# setting. See the Activity Log for details.</value>
+  </data>
 </root>

@@ -1,10 +1,12 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Concurrent
 open System.Composition
-open System.Runtime.InteropServices
-open Microsoft.VisualStudio.FSharp.UIResources
+
 open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio.Utilities.UnifiedSettings
 
 module DefaultTuning =
     /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
@@ -16,8 +18,6 @@ type EnterKeySetting =
     | NewlineOnCompleteWord
     | AlwaysNewline
 
-// CLIMutable to make the record work also as a view model
-[<CLIMutable>]
 type IntelliSenseOptions =
     {
         ShowAfterCharIsTyped: bool
@@ -42,7 +42,6 @@ type QuickInfoUnderlineStyle =
     | Dash
     | Solid
 
-[<CLIMutable>]
 type QuickInfoOptions =
     {
         DisplayLinks: bool
@@ -59,7 +58,6 @@ type QuickInfoOptions =
             ShowRemarks = true
         }
 
-[<CLIMutable>]
 type CodeFixesOptions =
     {
         SimplifyName: bool
@@ -81,7 +79,6 @@ type CodeFixesOptions =
             RemoveParens = false
         }
 
-[<CLIMutable>]
 type LanguageServicePerformanceOptions =
     {
         EnableInMemoryCrossProjectReferences: bool
@@ -110,7 +107,6 @@ type LanguageServicePerformanceOptions =
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
         }
 
-[<CLIMutable>]
 type AdvancedOptions =
     {
         IsBlockStructureEnabled: bool
@@ -139,7 +135,6 @@ type AdvancedOptions =
             SolutionBackgroundAnalysis = false
         }
 
-[<CLIMutable>]
 type FormattingOptions =
     {
         FormatOnPaste: bool
@@ -148,89 +143,156 @@ type FormattingOptions =
     static member Default = { FormatOnPaste = false }
 
 [<Shared; Export>]
-type EditorOptions() =
-    // we use in-memory store when outside of VS, e.g. in unit tests
-    let store = SettingsStore.Create()
+type EditorOptions private (reader: ISettingsReader option) =
+    let cache = ConcurrentDictionary<Type, obj>()
+
+    let register (value: 'T) = cache[typeof<'T>] <- value
+
+    let refresh reader =
+        let boolean suffix =
+            UnifiedSettings.read<bool> reader suffix
+
+        let integer suffix = UnifiedSettings.read<int> reader suffix
+
+        let text suffix =
+            UnifiedSettings.read<string> reader suffix
+
+        register
+            {
+                ShowAfterCharIsTyped = boolean "intelliSense.showAfterCharIsTyped"
+                ShowAfterCharIsDeleted = boolean "intelliSense.showAfterCharIsDeleted"
+                IncludeSymbolsFromUnopenedNamespacesOrModules = boolean "intelliSense.includeSymbolsFromUnopenedNamespacesOrModules"
+                EnterKeySetting =
+                    match text "intelliSense.enterKeySetting" with
+                    | "NeverNewline" -> NeverNewline
+                    | "NewlineOnCompleteWord" -> NewlineOnCompleteWord
+                    | "AlwaysNewline" -> AlwaysNewline
+                    | value -> invalidOp $"Unknown F# Enter key setting: {value}."
+                GenerateBodyForOverriddenMethod = boolean "intelliSense.generateBodyForOverriddenMethod"
+            }
+
+        register
+            {
+                DisplayLinks = boolean "quickInfo.displayLinks"
+                UnderlineStyle =
+                    match text "quickInfo.underlineStyle" with
+                    | "Dot" -> QuickInfoUnderlineStyle.Dot
+                    | "Dash" -> QuickInfoUnderlineStyle.Dash
+                    | "Solid" -> QuickInfoUnderlineStyle.Solid
+                    | value -> invalidOp $"Unknown F# underline style: {value}."
+                DescriptionWidth =
+                    if boolean "quickInfo.descriptionWidth" then
+                        Some(integer "quickInfo.descriptionWidthInCharacters")
+                    else
+                        None
+                ShowRemarks = boolean "quickInfo.showRemarks"
+            }
+
+        register
+            {
+                SimplifyName = boolean "codeFixes.simplifyName"
+                AlwaysPlaceOpensAtTopLevel = boolean "codeFixes.alwaysPlaceOpensAtTopLevel"
+                UnusedOpens = boolean "codeFixes.unusedOpens"
+                UnusedDeclarations = boolean "codeFixes.unusedDeclarations"
+                SuggestNamesForErrors = boolean "codeFixes.suggestNamesForErrors"
+                RemoveParens = boolean "codeFixes.removeParens"
+            }
+
+        register
+            {
+                EnableInMemoryCrossProjectReferences = boolean "performance.enableInMemoryCrossProjectReferences"
+                TransparentCompilerCacheFactor = integer "performance.transparentCompilerCacheFactor"
+                AllowStaleCompletionResults = boolean "performance.allowStaleCompletionResults"
+                TimeUntilStaleCompletion = integer "performance.timeUntilStaleCompletion"
+                EnableParallelReferenceResolution = boolean "performance.enableParallelReferenceResolution"
+                EnableFastFindReferencesAndRename = boolean "performance.enableFastFindReferencesAndRename"
+                EnablePartialTypeChecking = boolean "performance.enablePartialTypeChecking"
+                KeepAllBackgroundResolutions = boolean "performance.keepAllBackgroundResolutions"
+                KeepAllBackgroundSymbolUses = boolean "performance.keepAllBackgroundSymbolUses"
+                EnableBackgroundItemKeyStoreAndSemanticClassification =
+                    boolean "performance.enableBackgroundItemKeyStoreAndSemanticClassification"
+            }
+
+        register
+            {
+                IsBlockStructureEnabled = boolean "advanced.isBlockStructureEnabled"
+                IsOutliningEnabled = boolean "advanced.isOutliningEnabled"
+                IsInlayTypeHintsEnabled = boolean "advanced.isInlayTypeHintsEnabled"
+                IsInlayParameterNameHintsEnabled = boolean "advanced.isInlayParameterNameHintsEnabled"
+                IsInlayReturnTypeHintsEnabled = boolean "advanced.isInlayReturnTypeHintsEnabled"
+                IsUseLiveBuffersEnabled = boolean "advanced.isUseLiveBuffersEnabled"
+                UseTransparentCompiler = boolean "advanced.useTransparentCompiler"
+                TransparentCompilerSnapshotReuse = boolean "advanced.transparentCompilerSnapshotReuse"
+                SendAdditionalTelemetry = boolean "advanced.sendAdditionalTelemetry"
+                SolutionBackgroundAnalysis = boolean "advanced.solutionBackgroundAnalysis"
+            }
+
+        register
+            {
+                FormatOnPaste = boolean "formatting.formatOnPaste"
+            }
 
     do
-        store.Register QuickInfoOptions.Default
-        store.Register CodeFixesOptions.Default
-        store.Register LanguageServicePerformanceOptions.Default
-        store.Register AdvancedOptions.Default
-        store.Register IntelliSenseOptions.Default
-        store.Register FormattingOptions.Default
+        register QuickInfoOptions.Default
+        register CodeFixesOptions.Default
+        register LanguageServicePerformanceOptions.Default
+        register AdvancedOptions.Default
+        register IntelliSenseOptions.Default
+        register FormattingOptions.Default
 
-    member _.IntelliSense: IntelliSenseOptions = store.Get()
-    member _.QuickInfo: QuickInfoOptions = store.Get()
-    member _.CodeFixes: CodeFixesOptions = store.Get()
-    member _.LanguageServicePerformance: LanguageServicePerformanceOptions = store.Get()
-    member _.Advanced: AdvancedOptions = store.Get()
-    member _.Formatting: FormattingOptions = store.Get()
+    let subscription =
+        reader
+        |> Option.map (fun reader ->
+            let subscription =
+                reader.SubscribeToChanges(
+                    (fun _ ->
+                        try
+                            refresh reader
+                        with error ->
+                            ActivityLog.LogError("F# Unified Settings", error.ToString())),
+                    "languages.fsharp.*"
+                )
 
-    [<Export(typeof<SettingsStore.ISettingsStore>)>]
-    member _.SettingsStore = store
+            try
+                refresh reader
+                subscription
+            with _ ->
+                subscription.Dispose()
+                reraise ())
 
-    member _.With value = store.Register value
+    new() = new EditorOptions(None)
+
+    internal new(reader: ISettingsReader) = new EditorOptions(Some reader)
+
+    [<ImportingConstructor>]
+    new([<Import(AllowDefault = true)>] serviceProvider: SVsServiceProvider) =
+        new EditorOptions(
+            if isNull serviceProvider then
+                None
+            else
+                let manager =
+                    serviceProvider.GetService(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsManager>)
+                    :?> ISettingsManager
+
+                Some(manager.GetReader())
+        )
+
+    member _.IntelliSense = unbox<IntelliSenseOptions> cache[typeof<IntelliSenseOptions>]
+    member _.QuickInfo = unbox<QuickInfoOptions> cache[typeof<QuickInfoOptions>]
+    member _.CodeFixes = unbox<CodeFixesOptions> cache[typeof<CodeFixesOptions>]
+
+    member _.LanguageServicePerformance =
+        unbox<LanguageServicePerformanceOptions> cache[typeof<LanguageServicePerformanceOptions>]
+
+    member _.Advanced = unbox<AdvancedOptions> cache[typeof<AdvancedOptions>]
+    member _.Formatting = unbox<FormattingOptions> cache[typeof<FormattingOptions>]
+
+    member _.With value = register value
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
-module internal OptionsUI =
-
-    open OptionsUIHelpers
-
-    [<Guid(Guids.intelliSenseOptionPageIdString)>]
-    type internal IntelliSenseOptionPage() =
-        inherit AbstractOptionPage<IntelliSenseOptions>()
-
-        override this.CreateView() =
-            let view = IntelliSenseOptionControl()
-
-            view.charTyped.Unchecked.Add
-            <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
-
-            let path = nameof EnterKeySetting
-            bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline
-            bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord
-            bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
-
-            upcast view
-
-    [<Guid(Guids.quickInfoOptionPageIdString)>]
-    type internal QuickInfoOptionPage() =
-        inherit AbstractOptionPage<QuickInfoOptions>()
-
-        override this.CreateView() =
-            let view = QuickInfoOptionControl()
-            let path = nameof QuickInfoOptions.Default.UnderlineStyle
-            bindRadioButton view.solid path QuickInfoUnderlineStyle.Solid
-            bindRadioButton view.dot path QuickInfoUnderlineStyle.Dot
-            bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
-            bindCheckBox view.displayLinks (nameof QuickInfoOptions.Default.DisplayLinks)
-            bindDescriptionWidthTextBox view.descriptionWidth (nameof QuickInfoOptions.Default.DescriptionWidth)
-            bindCheckBox view.showRemarks (nameof QuickInfoOptions.Default.ShowRemarks)
-            upcast view
-
-    [<Guid(Guids.codeFixesOptionPageIdString)>]
-    type internal CodeFixesOptionPage() =
-        inherit AbstractOptionPage<CodeFixesOptions>()
-        override this.CreateView() = upcast CodeFixesOptionControl()
-
-    [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
-    type internal LanguageServicePerformanceOptionPage() =
-        inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
-
-        override this.CreateView() =
-            upcast LanguageServicePerformanceOptionControl()
-
-    [<Guid(Guids.advancedSettingsPageIdString)>]
-    type internal AdvancedSettingsOptionPage() =
-        inherit AbstractOptionPage<AdvancedOptions>()
-        override _.CreateView() = upcast AdvancedOptionsControl()
-
-    [<Guid(Guids.formattingOptionPageIdString)>]
-    type internal FormattingOptionPage() =
-        inherit AbstractOptionPage<FormattingOptions>()
-        override _.CreateView() = upcast FormattingOptionsControl()
+    interface IDisposable with
+        member _.Dispose() = subscription |> Option.iter _.Dispose()
 
 [<AutoOpen>]
 module EditorOptionsExtensions =
