@@ -1267,7 +1267,7 @@ type FSharpChecker
 
             // Dev-loop optimization: use minimal passes only (no extra loops, no detuple,
             // no TLR, no cross-assembly opt). This DLL is for local testing, not shipping.
-            // OptimizeImplFile + LowerLocalMutables + LowerCalls are mandatory for correct IlxGen.
+            // Mandatory lowering follows the normal compiler order.
             let minimalSettings =
                 { tcConfig.optSettings with
                     jitOptUser = Some false
@@ -1277,6 +1277,9 @@ type FSharpChecker
                     abstractBigTargets = false
                     reportingPhase = false
                 }
+
+            let runtimeAsyncReportedRanges =
+                System.Collections.Concurrent.ConcurrentDictionary<range, unit>()
 
             let optimizeImplFile env hidingInfo implFile =
                 let (env', file, _optInfo, hidingInfo'), optDuringCodeGen =
@@ -1293,6 +1296,8 @@ type FSharpChecker
                         implFile
                     )
 
+                // Runtime async lowering moves suspensions out of handlers and can introduce captured mutable locals.
+                let file = LowerRuntimeAsync.TransformImplFile tcGlobals runtimeAsyncReportedRanges file
                 let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
                 let file = LowerCalls.LowerImplFile tcGlobals file
 

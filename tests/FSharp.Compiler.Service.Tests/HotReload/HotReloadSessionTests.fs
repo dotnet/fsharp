@@ -744,6 +744,101 @@ module HotReloadSessionTests =
 
         File.ReadAllBytes(outfile)
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``CompileFromCheckedProject moves suspensions out of exception handlers`` (incremental: bool) =
+        withProjectDir "fcs-hotreload-runtime-async-lowering" (fun projectDir ->
+            let source =
+                """
+module RuntimeAsyncHotReload
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let run (gate: Task<int>) (cleanup: Task) (cleanupStarted: TaskCompletionSource) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            AsyncHelpers.Await gate + 2
+        finally
+            cleanupStarted.SetResult()
+            AsyncHelpers.Await cleanup)
+"""
+
+            let sourcePath = Path.Combine(projectDir, "Library.fs")
+            let outputPath = Path.Combine(projectDir, "Library.dll")
+            File.WriteAllText(sourcePath, source)
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker sourcePath outputPath source []
+            let options =
+                { options with
+                    OtherOptions =
+                        options.OtherOptions
+                        |> Array.map (fun option ->
+                            if option.StartsWith("-r:", StringComparison.Ordinal) && option.EndsWith("FSharp.Core.dll", StringComparison.OrdinalIgnoreCase) then
+                                $"-r:{TargetFrameworkUtil.shippedNetFSharpCorePath.Value}"
+                            else
+                                option) }
+            let results = checkProjectOrFail checker options
+            let bytes =
+                withEnvVar "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" (if incremental then "1" else null) (fun () ->
+                    compileFromCheckedProjectAndReadBytes checker results outputPath)
+
+            let assembly = Assembly.Load bytes
+            let method = assembly.GetType("RuntimeAsyncHotReload", true).GetMethod("run")
+            let body = method.GetMethodBody()
+            let il = body.GetILAsByteArray()
+            let suspensions = ResizeArray<int>()
+            let mutable offset = 0
+
+            // The runtime cannot suspend inside a handler, even when a completed task hides that error during execution.
+            while offset < il.Length do
+                let instructionOffset = offset
+                let first = int il[offset]
+                offset <- offset + 1
+                let opcode =
+                    if first = 0xFE then
+                        let second = int il[offset]
+                        offset <- offset + 1
+                        0xFE00 ||| second
+                    else
+                        first
+
+                let operandType = opcodeOperandTypes.Value[opcode]
+                if operandType = OperandType.InlineMethod then
+                    let calledMethod = method.Module.ResolveMethod(BitConverter.ToInt32(il, offset))
+                    if calledMethod.Name = "Await" && calledMethod.DeclaringType.FullName = "System.Runtime.CompilerServices.AsyncHelpers" then
+                        suspensions.Add(instructionOffset)
+
+                let operandSize =
+                    match operandType with
+                    | OperandType.InlineNone -> 0
+                    | OperandType.ShortInlineBrTarget
+                    | OperandType.ShortInlineI
+                    | OperandType.ShortInlineVar -> 1
+                    | OperandType.InlineVar -> 2
+                    | OperandType.InlineI8
+                    | OperandType.InlineR -> 8
+                    | OperandType.InlineSwitch -> 4 + 4 * BitConverter.ToInt32(il, offset)
+                    | _ -> 4
+                offset <- offset + operandSize
+
+            Assert.NotEmpty(suspensions)
+            for clause in body.ExceptionHandlingClauses do
+                Assert.DoesNotContain(suspensions, fun position -> position >= clause.HandlerOffset && position < clause.HandlerOffset + clause.HandlerLength)
+
+            let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+            let cleanup = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+            let cleanupStarted = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+            let result = method.Invoke(null, [| box gate.Task; box cleanup.Task; box cleanupStarted |]) :?> Task<int>
+            Assert.False(result.IsCompleted)
+            gate.SetResult(40)
+            cleanupStarted.Task.WaitAsync(TimeSpan.FromSeconds 10.).GetAwaiter().GetResult()
+            Assert.False(result.IsCompleted)
+            cleanup.SetResult()
+            Assert.Equal(42, result.WaitAsync(TimeSpan.FromSeconds 10.).GetAwaiter().GetResult()))
+
     let private addProjectOrFail (session: FSharpHotReloadSession) snapshot =
         match session.AddProject(snapshot) |> Async.RunSynchronouslyImmediate with
         | Ok() -> ()

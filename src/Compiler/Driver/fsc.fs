@@ -1026,7 +1026,7 @@ let main4
     // The hook receives the optimized impl files about to be lowered so the hot reload
     // closure mapping can extract lambda occurrences from the same tree IlxGen lowers
     // (stamp-keyed) and install naming state on this compilation's CompilerGlobalState.
-    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, tcGlobals, optimizedImpls)
+    compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, outfile, tcGlobals, optimizedImpls)
 
     // Create the Abstract IL generator
     // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)

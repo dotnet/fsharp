@@ -15,8 +15,9 @@ open FSharp.Compiler.TypedTree
 [<RequireQualifiedAccess>]
 type HotReloadProjectKey =
     | Project of projectFileName: string * outputFileName: string
-    /// Identity-less hosts: the fsc emit-hook capture path and the legacy module-level
-    /// helpers do not know which project they serve; their state lives in this slot.
+    /// A compiler capture owns one output even when no project file exists.
+    | CapturedOutput of outputFileName: string
+    /// Legacy hosts without an output identity keep their state in this slot.
     | Ambient
 
 /// <summary>

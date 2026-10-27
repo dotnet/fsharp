@@ -20,10 +20,12 @@ open FSharp.Test.Compiler
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module ClosureIdentityTests =
 
-    let private compileHotReloadLibrary source =
+    let private compileHotReloadLibrary outputDirectory source =
         FSharp source
         |> withOptions [ "--langversion:preview"; "--debug+"; "--test:HotReloadDeltas"; "--optimize-" ]
         |> asLibrary
+        |> withName "ClosureIdentitySample"
+        |> withOutputDirectory (Some outputDirectory)
         |> compile
         |> shouldSucceed
 
@@ -72,13 +74,15 @@ let transform (input: int list) =
 
     [<Fact>]
     let ``baseline capture records occurrence-chain to closure-name tables on the session`` () =
+        let outputDirectory = Directory.CreateTempSubdirectory("fsharp-closure-identity-")
+
         try
             // Two top-level lambdas in one member: the baseline capture must join the
             // IlxGen stamp -> name recording with the occurrence extraction and store
             // chain -> name tables, keyed by MethodDef token, on the session baseline.
             let compilation =
                 genSource "x > 0" "x * 2 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
 
             let emittedNames =
                 compilation
@@ -112,15 +116,18 @@ let transform (input: int list) =
                 Assert.Contains(name, emittedNames)
         finally
             global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+            outputDirectory.Delete(true)
 
     [<Fact>]
     let ``closure class names are identical across body-edit delta generations`` () =
+        let outputDirectory = Directory.CreateTempSubdirectory("fsharp-closure-identity-")
+
         try
             // Generation 1 (baseline): a member with two lambdas — a capture-free
             // filter and a map closing over 'input'.
             let gen1Names =
                 genSource "x > 0" "x * 2 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.True(
@@ -131,7 +138,7 @@ let transform (input: int list) =
             // Generation 2: both lambda bodies edited, lambda set unchanged.
             let gen2Names =
                 genSource "x > 1" "x * 3 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.Equal<string list>(gen1Names, gen2Names)
@@ -140,14 +147,14 @@ let transform (input: int list) =
             // not just for a single regeneration.
             let gen3Names =
                 genSource "x >= 2" "x * 5 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.Equal<string list>(gen1Names, gen3Names)
         finally
-            // The flag-on compiles above replace the process-global hot reload
-            // session; clear it so later tests in the collection start clean.
+            // The generations share one output identity. Clear its capture before the next test.
             global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+            outputDirectory.Delete(true)
 
     let private sessionClosureNameTables () =
         match global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.TryGetSession() with
@@ -167,10 +174,12 @@ let transform (input: int list) =
         // the allocator path (stamp-keyed Reused names), not bare sequence replay. For a
         // pure body-edit chain the emitted names AND the chained tables must stay
         // byte-identical in every generation.
+        let outputDirectory = Directory.CreateTempSubdirectory("fsharp-closure-identity-")
+
         try
             let gen1Names =
                 genSource "x > 0" "x * 2 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             let gen1Tables = sessionClosureNameTables ()
@@ -178,7 +187,7 @@ let transform (input: int list) =
 
             let gen2Names =
                 genSource "x > 1" "x * 3 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.Equal<string list>(gen1Names, gen2Names)
@@ -187,13 +196,14 @@ let transform (input: int list) =
 
             let gen3Names =
                 genSource "x >= 2" "x * 5 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.Equal<string list>(gen1Names, gen3Names)
             Assert.Equal<Set<string>>(allTableNames gen1Tables, allTableNames (sessionClosureNameTables ()))
         finally
             global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+            outputDirectory.Delete(true)
 
     [<Fact>]
     let ``occurrence-keyed naming survives an added lambda: survivors keep baseline names, the added one is generation-suffixed`` () =
@@ -204,10 +214,12 @@ let transform (input: int list) =
         // {base}@hotreload#g{N}_o{i} generation-suffixed name. Emission of the added
         // member in a DELTA is still rejected by classification (LambdaShapeChange) —
         // emission is the delta emitter's job; this pins the naming contract it builds on.
+        let outputDirectory = Directory.CreateTempSubdirectory("fsharp-closure-identity-")
+
         try
             let gen1Names =
                 genSource "x > 0" "x * 2 + List.length input"
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             Assert.True(gen1Names.Length >= 2, $"Expected at least two baseline closures, got: %A{gen1Names}")
@@ -224,7 +236,7 @@ let transform (input: int list) =
     |> List.filter (fun x -> x > 0)
     |> List.map (fun x -> x * 2 + List.length input)
 """
-                |> compileHotReloadLibrary
+                |> compileHotReloadLibrary outputDirectory
                 |> getHotReloadTypeNames
 
             // Every baseline closure class name survives byte-identically.
@@ -251,3 +263,4 @@ let transform (input: int list) =
                 Assert.Contains(simpleName, chainedNames)
         finally
             global.FSharp.Compiler.HotReload.FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
+            outputDirectory.Delete(true)
