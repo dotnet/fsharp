@@ -214,7 +214,7 @@ module internal HotReloadIncrementalEmit =
                         Steps = updatedSteps
                     }
 
-                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_TIMING") = "1" then
+                if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceTiming) = "1" then
                     printfn "[fsharp-hotreload][incremental-emit] reused-prefix=%d total=%d" reusablePrefixLength inputs.Length
 
                 updatedSteps |> Array.map _.Output |> Array.toList)
@@ -392,7 +392,7 @@ type FSharpChecker
         tryGetOutputPathFromCommandLineOptions projectSnapshot.ProjectFileName (projectSnapshot.OtherOptions |> List.toArray)
 
     [<Literal>]
-    let HotReloadTraceOutputFlagName = "FSHARP_HOTRELOAD_TRACE_OUTPUT"
+    let HotReloadTraceOutputFlagName = EnvironmentVariableNames.HotReloadTraceOutput
 
     let traceOutputFingerprint = isEnvVarTruthy HotReloadTraceOutputFlagName
 
@@ -1328,7 +1328,7 @@ type FSharpChecker
 
             let optimizedImpls, optDataResources =
                 let impls =
-                    if isEnvVarTruthy "FSHARP_HOTRELOAD_INCREMENTAL_EMIT" then
+                    if isEnvVarTruthy EnvironmentVariableNames.HotReloadIncrementalEmit then
                         HotReloadIncrementalEmit.runWithFallback optimizeWithCachedPerFileTrees optimizeWithThreadedEnvironment
                     else
                         optimizeWithThreadedEnvironment ()
@@ -1349,7 +1349,7 @@ type FSharpChecker
                         optimizedImpls
                         replay.CurrentGeneration
 
-                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_CLOSURENAMES") = "1" then
+                if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
                     printfn
                         "[fsharp-hotreload][closure-names] in-process install: tables=%d gen=%d assigned=%d names=%A"
                         (Map.count replay.Baseline.EncClosureNames)
@@ -1429,7 +1429,7 @@ type FSharpChecker
             let moduleCustomDebugInfoRows =
                 match naming with
                 | HotReloadEmitNaming.PreserveInstalledState _ when
-                    Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI")
+                    Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadDisableSynthesizedNameSnapshotCdi)
                     <> "1"
                     ->
                     match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with

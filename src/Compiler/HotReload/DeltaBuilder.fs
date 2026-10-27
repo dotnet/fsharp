@@ -13,7 +13,8 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeDiff
 
-let private traceMethodResolution = isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_METHODS"
+let private traceMethodResolution =
+    isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceMethods
 
 let private checkedFiles (CheckedAssemblyAfterOptimization impls) =
     impls |> Seq.map (fun afterOpt -> afterOpt.ImplFile)
@@ -627,16 +628,16 @@ let mapSymbolChangesToDelta
         [
             yield!
                 FSharpSymbolChanges.propertyAccessorsUpdated changes
-                |> List.map (fun change -> change.Symbol, change.ContainingEntity)
+                |> Seq.map (fun change -> change.Symbol, change.ContainingEntity)
             yield!
                 FSharpSymbolChanges.propertyAccessorsDeleted changes
-                |> List.map (fun symbol -> symbol, None)
+                |> Seq.map (fun symbol -> symbol, None)
             yield!
                 FSharpSymbolChanges.eventAccessorsUpdated changes
-                |> List.map (fun change -> change.Symbol, change.ContainingEntity)
+                |> Seq.map (fun change -> change.Symbol, change.ContainingEntity)
             yield!
                 FSharpSymbolChanges.eventAccessorsDeleted changes
-                |> List.map (fun symbol -> symbol, None)
+                |> Seq.map (fun symbol -> symbol, None)
         ]
         |> List.filter (fun (symbol, _) ->
             match symbol.MemberKind with

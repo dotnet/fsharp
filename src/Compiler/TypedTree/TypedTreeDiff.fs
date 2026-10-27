@@ -141,7 +141,7 @@ let capabilityForAddition (kind: AdditionKind) : EditAndContinueCapability =
 /// IlxGen) so the classifier and the emitted state machine agree.
 let classStateMachines (g: TcGlobals) =
     g.emitHotReloadClassStateMachines
-    || isEnvVarTruthy "FSHARP_HOTRELOAD_CLASS_STATEMACHINES"
+    || isEnvVarTruthy EnvironmentVariableNames.HotReloadClassStateMachines
 
 type SemanticEdit =
     {
@@ -317,11 +317,7 @@ let private hashList (items: seq<int>) =
     acc
 
 let private traceHotReloadMethodDiff =
-    match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_METHODS") with
-    | null -> false
-    | value when String.Equals(value, "1", StringComparison.OrdinalIgnoreCase) -> true
-    | value when String.Equals(value, "true", StringComparison.OrdinalIgnoreCase) -> true
-    | _ -> false
+    isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceMethods
 
 let private propertyDisplayName (vref: ValRef) =
     let name = vref.PropertyName
@@ -1353,14 +1349,14 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
         | Expr.Lambda(_, _, _, parameters, body, _, _) ->
             let parameterIdentity =
                 parameters
-                |> List.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
+                |> Seq.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
                 |> identityNode "parameters"
 
             identityNode "lambda" [ parameterIdentity; recurse body ]
         | Expr.TyLambda(_, typeParameters, body, _, _) ->
             let typeParameterIdentity =
                 typeParameters
-                |> List.map (fun parameter ->
+                |> Seq.map (fun parameter ->
                     identityNode "type-parameter" [ parameter.DisplayName; typarConstraintsDigest denv [ parameter ] ])
                 |> identityNode "type-parameters"
 
@@ -1371,22 +1367,22 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
                 "let-rec"
                 [
                     bindings
-                    |> List.map (bindingIdentityCore denv traversal)
+                    |> Seq.map (bindingIdentityCore denv traversal)
                     |> identityNode "bindings"
                     recurse body
                 ]
         | Expr.Match(_, _, decision, targets, _, exprType) ->
             let targetIdentity =
                 targets
-                |> Array.map (fun (TTarget(boundValues, targetExpr, stateFlags)) ->
+                |> Seq.map (fun (TTarget(boundValues, targetExpr, stateFlags)) ->
                     identityNode
                         "target"
                         [
                             boundValues
-                            |> List.map (fun value -> identityNode "bound" [ value.LogicalName; tyToString denv value.Type ])
+                            |> Seq.map (fun value -> identityNode "bound" [ value.LogicalName; tyToString denv value.Type ])
                             |> identityNode "values"
                             stateFlags
-                            |> Option.map (List.map string >> identityNode "state-flags")
+                            |> Option.map (Seq.map string >> identityNode "state-flags")
                             |> Option.defaultValue "none"
                             recurse targetExpr
                         ])
@@ -1407,14 +1403,14 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
                     [
                         slotSignatureIdentityCore denv traversal slotSignature
                         attributes
-                        |> List.map (attribIdentityCore denv traversal)
+                        |> Seq.map (attribIdentityCore denv traversal)
                         |> identityNode "attributes"
                         typeParameters
-                        |> List.map (fun parameter -> parameter.DisplayName)
+                        |> Seq.map (fun parameter -> parameter.DisplayName)
                         |> identityNode "type-parameters"
                         parameters
-                        |> List.concat
-                        |> List.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
+                        |> Seq.concat
+                        |> Seq.map (fun parameter -> identityNode "parameter" [ parameter.LogicalName; tyToString denv parameter.Type ])
                         |> identityNode "parameters"
                         recurse body
                     ]
@@ -1427,14 +1423,14 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
                     |> Option.map (mkLocalValRef >> valIdentity denv)
                     |> Option.defaultValue "none"
                     recurse ctorCall
-                    overrides |> List.map methodIdentity |> identityNode "overrides"
+                    overrides |> Seq.map methodIdentity |> identityNode "overrides"
                     interfaceImpls
-                    |> List.map (fun (interfaceType, methods) ->
+                    |> Seq.map (fun (interfaceType, methods) ->
                         identityNode
                             "interface"
                             [
                                 tyToString denv interfaceType
-                                methods |> List.map methodIdentity |> identityNode "methods"
+                                methods |> Seq.map methodIdentity |> identityNode "methods"
                             ])
                     |> identityNode "interfaces"
                 ]
@@ -1453,7 +1449,7 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
                 "type-choose"
                 [
                     typeParameters
-                    |> List.map (fun parameter -> parameter.DisplayName)
+                    |> Seq.map (fun parameter -> parameter.DisplayName)
                     |> identityNode "type-parameters"
                     recurse body
                 ]
@@ -1461,7 +1457,7 @@ let rec private exprIdentityCore (denv: DisplayEnv) (traversal: ExpressionIdenti
         | Expr.StaticOptimization(conditions, whenTrue, whenFalse, _) ->
             let conditionIdentity =
                 conditions
-                |> List.map (function
+                |> Seq.map (function
                     | TTyconEqualsTycon(first, second) -> identityNode "type-equals" [ tyToString denv first; tyToString denv second ]
                     | TTyconIsStruct ty -> identityNode "type-is-struct" [ tyToString denv ty ])
                 |> identityNode "conditions"
@@ -1490,7 +1486,7 @@ and private decisionTreeIdentityCore denv traversal decision =
                 [
                     exprIdentityCore denv traversal input
                     cases
-                    |> List.map (fun (TCase(test, caseTree)) ->
+                    |> Seq.map (fun (TCase(test, caseTree)) ->
                         identityNode
                             "case"
                             [
@@ -1507,7 +1503,7 @@ and private decisionTreeIdentityCore denv traversal decision =
                 "success"
                 [
                     string targetNumber
-                    results |> List.map (exprIdentityCore denv traversal) |> identityNode "results"
+                    results |> Seq.map (exprIdentityCore denv traversal) |> identityNode "results"
                 ]
         | TDBind(binding, body) ->
             identityNode
@@ -1526,7 +1522,7 @@ and private decisionTestIdentityCore denv traversal test =
             "test-union"
             [
                 $"{compiledTyconName caseRef.TyconRef}.{caseRef.CaseName}"
-                typeArgs |> List.map (tyToString denv) |> identityNode "types"
+                typeArgs |> Seq.map (tyToString denv) |> identityNode "types"
             ]
     | DecisionTreeTest.ArrayLength(length, ty) -> identityNode "test-array-length" [ string length; tyToString denv ty ]
     | DecisionTreeTest.Const value -> identityNode "test-const" [ constDigest value ]
@@ -1537,7 +1533,7 @@ and private decisionTestIdentityCore denv traversal test =
             "test-active-pattern"
             [
                 exprIdentityCore denv traversal activePatternExpr
-                resultTypes |> List.map (tyToString denv) |> identityNode "result-types"
+                resultTypes |> Seq.map (tyToString denv) |> identityNode "result-types"
                 string returnKind
                 activePatternValue
                 |> Option.map (fun (vref, typeArgs) ->
@@ -1545,7 +1541,7 @@ and private decisionTestIdentityCore denv traversal test =
                         "active-pattern-value"
                         [
                             valIdentity denv vref
-                            typeArgs |> List.map (tyToString denv) |> identityNode "types"
+                            typeArgs |> Seq.map (tyToString denv) |> identityNode "types"
                         ])
                 |> Option.defaultValue "none"
                 string index
@@ -1560,14 +1556,14 @@ and private slotSignatureIdentityCore
     =
     let typeParameters (values: Typar list) =
         values
-        |> List.map (fun parameter -> identityNode "type-parameter" [ parameter.DisplayName; typarConstraintsDigest denv [ parameter ] ])
+        |> Seq.map (fun parameter -> identityNode "type-parameter" [ parameter.DisplayName; typarConstraintsDigest denv [ parameter ] ])
         |> identityNode "type-parameters"
 
     let parameters =
         parameterGroups
-        |> List.map (fun group ->
+        |> Seq.map (fun group ->
             group
-            |> List.map (fun (TSlotParam(name, ty, isIn, isOut, isOptional, attributes)) ->
+            |> Seq.map (fun (TSlotParam(name, ty, isIn, isOut, isOptional, attributes)) ->
                 identityNode
                     "slot-parameter"
                     [
@@ -1577,7 +1573,7 @@ and private slotSignatureIdentityCore
                         string isOut
                         string isOptional
                         attributes
-                        |> List.map (attribIdentityCore denv traversal)
+                        |> Seq.map (attribIdentityCore denv traversal)
                         |> identityNode "attributes"
                     ])
             |> identityNode "parameter-group")
@@ -1611,8 +1607,8 @@ and private attribIdentityCore denv traversal (Attrib(typeRef, kind, unnamedArgs
         [
             compiledTyconName typeRef
             kindIdentity
-            unnamedArgs |> List.map expressionIdentity |> identityNode "arguments"
-            namedArgs |> List.map namedArgIdentity |> identityNode "named-arguments"
+            unnamedArgs |> Seq.map expressionIdentity |> identityNode "arguments"
+            namedArgs |> Seq.map namedArgIdentity |> identityNode "named-arguments"
             string appliedToAccessor
             targets |> Option.map string |> Option.defaultValue "none"
         ]

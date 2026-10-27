@@ -1308,18 +1308,8 @@ let main6
 
                     let moduleCustomDebugInfoRows =
                         match hotReloadCaptureInputs with
-                        | Some _ when
-                            Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_DISABLE_SYNTHESIZED_NAME_SNAPSHOT_CDI")
-                            <> "1"
-                            ->
-                            match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
-                            | Some map ->
-                                FSharp.Compiler.HotReloadBaseline.collectRecordedSynthesizedNameSnapshot
-                                    (tcGlobals.CompilerGlobalState.Value :> obj)
-                                    map
-                                |> EncMethodDebugInformation.computeSynthesizedNameSnapshotCustomDebugInfoRows
-                            | None -> []
-                        | _ -> []
+                        | Some _ -> compilerEmitHook.GetModuleCustomDebugInfo(tcGlobals.CompilerGlobalState.Value)
+                        | None -> []
 
                     let ilWriteOptions: ILBinaryWriter.options =
                         {

@@ -551,6 +551,29 @@ module TypedTreeDiffTests =
 
         Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.TypeLayoutChange)
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``same-named base or interface swap across namespaces fails closed`` (isInterface: bool) =
+        use harness = new DiffTestHarness()
+        let declarations, implementation =
+            if isInterface then
+                "module First =\n    type Marker = interface end\nmodule Second =\n    type Marker = interface end\n", "interface {0}.Marker"
+            else
+                "module First =\n    type Base() = class end\nmodule Second =\n    type Base() = class end\n", "inherit {0}.Base()"
+
+        let source (namespaceName: string) =
+            "module Library\n" + declarations + "type Derived() =\n    " + System.String.Format(implementation, namespaceName) + "\n"
+
+        harness.Rewrite(source "First")
+        let baseline = harness.Compile()
+        harness.Rewrite(source "Second")
+        let updated = harness.Compile()
+        let result = harness.Diff baseline updated
+
+        // Display names coincide, but the emitted base and interface tokens differ.
+        Assert.Contains(result.RudeEdits, fun rude -> rude.Kind = RudeEditKind.TypeLayoutChange)
+
     [<Fact>]
     let ``lambda lowering shape change triggers rude edit`` () =
         use harness = new DiffTestHarness()

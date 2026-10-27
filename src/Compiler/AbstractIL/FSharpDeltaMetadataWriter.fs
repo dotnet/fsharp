@@ -14,13 +14,13 @@ open FSharp.Compiler.AbstractIL.DeltaTableLayout
 open FSharp.Compiler.AbstractIL.DeltaMetadataSerializer
 
 [<Literal>]
-let private TraceMetadataFlagName = "FSHARP_HOTRELOAD_TRACE_METADATA"
+let private TraceMetadataFlagName = EnvironmentVariableNames.HotReloadTraceMetadata
 
 [<Literal>]
-let private TraceHeapsFlagName = "FSHARP_HOTRELOAD_TRACE_HEAPS"
+let private TraceHeapsFlagName = EnvironmentVariableNames.HotReloadTraceHeaps
 
 [<Literal>]
-let private TraceMethodsFlagName = "FSHARP_HOTRELOAD_TRACE_METHODS"
+let private TraceMethodsFlagName = EnvironmentVariableNames.HotReloadTraceMethods
 
 let private shouldTraceMetadata () = isEnvVarTruthy TraceMetadataFlagName
 
