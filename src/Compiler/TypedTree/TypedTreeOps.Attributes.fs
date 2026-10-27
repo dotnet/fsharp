@@ -2002,7 +2002,8 @@ module internal DebugPrint =
                     | TFSharpStruct -> "struct"
                     | TFSharpEnum -> "enum"
                     | TFSharpRecord -> "record"
-                    | _ -> failwith "???"
+                    | TFSharpUnion
+                    | TFSharpDelegate _ -> failwith "unreachable"
 
                 let inherits =
                     match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with

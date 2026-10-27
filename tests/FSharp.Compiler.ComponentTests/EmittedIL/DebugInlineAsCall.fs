@@ -1924,16 +1924,21 @@ let main _ =
         |> withExitCode 0
         |> verifySequencePoints
 
-    [<Fact>]
-    let ``Resumable 06 - Resumable code invoked twice`` () =
-        FSharp (resumableBuilder runInvokingTwice)
-        |> withDebug
-        |> withNoOptimize
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> withExitCode 0
-        |> verifySequencePoints
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 06 - Resumable code invoked twice`` optimize =
+        let result =
+            FSharp (resumableBuilder runInvokingTwice)
+            |> withDebug
+            |> withOptimization optimize
+            |> asExe
+            |> compileAndRun
+            |> shouldSucceed
+            |> withExitCode 0
+
+        if not optimize then
+            verifySequencePoints result |> ignore
 
     [<Theory>]
     [<InlineData(false)>]

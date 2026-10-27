@@ -2,8 +2,6 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
-open System.Collections.Generic
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -118,11 +116,8 @@ let isPureTemp g (bind: Binding) =
     (bind.Var.IsCompilerGenerated || isStateMachineBindingVar g bind.Var)
     && not (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit g bind.Expr)
 
-let isFreeIn (v: Val) expr =
-    Zset.contains v (freeInExpr CollectLocals expr).FreeLocals
-
 let isUnusedPureTemp g (bind: Binding) bodyExpr =
-    isPureTemp g bind && not (isFreeIn bind.Var bodyExpr)
+    isPureTemp g bind && not (isVarFreeInExpr bind.Var bodyExpr)
 
 type env =
     {
@@ -195,13 +190,14 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         pcCount <- pcCount + 1
         pcCount
 
-    let expandedDefns = HashSet<Stamp>()
+    let mutable expandedDefns = Zset.empty valOrder
 
     let takeDefinition (env: env) (v: Val) =
         let defn = env.ResumableCodeDefns[v]
-        if outerResumableCodeDefns.ContainsVal v || Zset.contains v env.EmittedDefns || not (expandedDefns.Add v.Stamp) then
+        if outerResumableCodeDefns.ContainsVal v || Zset.contains v env.EmittedDefns || Zset.contains v expandedDefns then
             copyExpr g CloneAll defn
         else
+            expandedDefns <- Zset.add v expandedDefns
             defn
 
     // Record definitions for any resumable code
@@ -407,15 +403,9 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
     let rec makeRewriteEnv (env: env) =
         { PreIntercept = Some (fun cont e ->
             match e with
-            | Expr.Let (bind, bodyExpr, _, _) when isUnusedPureTemp g bind bodyExpr ->
+            | Expr.Let (bind, bodyExpr, _, _) when isExpandVar g bind.Var || isUnusedPureTemp g bind bodyExpr ->
+                let env = if isExpandVar g bind.Var then recordDefinition env bind else env
                 Some (RewriteExpr (makeRewriteEnv env) bodyExpr)
-            | Expr.Let (bind, bodyExpr, m, _) when isExpandVar g bind.Var ->
-                let bodyR = RewriteExpr (makeRewriteEnv (recordDefinition env bind)) bodyExpr
-                if isFreeIn bind.Var bodyR then
-                    let defnR = RewriteExpr (makeRewriteEnv env) bind.Expr
-                    Some (mkLetBind m (mkBind bind.DebugPoint bind.Var defnR) bodyR)
-                else
-                    Some bodyR
             | _ ->
             match TryReduceExpr env e [] id with
             | Some e2 -> Some (cont e2)
@@ -450,36 +440,35 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>) =
         let rec walkPrefix env expr prefixChain =
             match expr with
             | Expr.Let (bind, bodyExpr, _, _) ->
-                let isDefinition = isExpandVar g bind.Var
-                let env = if isDefinition then recordDefinition env bind else env
-                walkPrefix env bodyExpr ((bind, isDefinition) :: prefixChain)
+                let env = if isExpandVar g bind.Var then recordDefinition env bind else env
+                walkPrefix env bodyExpr (bind :: prefixChain)
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> walkPrefix env thenExpr prefixChain
             | _ -> env, List.rev prefixChain, expr
         let env, prefixChain, expr = walkPrefix initialEnv inputExpr []
-        let freeLocals exprs = (accFreeInExprs CollectLocals exprs emptyFreeVars).FreeLocals
-        let usedByMachine = freeLocals (expr :: [ for bind, isDefinition in prefixChain do if isDefinition then bind.Expr ])
-        let selectPrefix used =
-            (prefixChain, ([], emptyFreeVars))
-            ||> List.foldBack (fun (bind, isDefinition) (kept, needed) ->
-                let isKept =
-                    Zset.contains bind.Var needed.FreeLocals
-                    || not isDefinition && (not (isPureTemp g bind) || Zset.contains bind.Var used)
-                if isKept then bind :: kept, accFreeInExpr CollectLocals bind.Expr needed else kept, needed)
-            |> fst
-        // Expansion can remove uses, so the bindings emitted are chosen again from the lowered bodies.
-        // That selection is a subset of this one, so every definition it emits is cloned when expanded.
-        let candidateBindings = selectPrefix usedByMachine
-        let env =
-            { env with
-                EmittedDefns = Zset.addList [ for bind in candidateBindings do if isExpandVar g bind.Var then bind.Var ] env.EmittedDefns }
         match expr with
         | StructStateMachineExpr g
                (dataTy,
                 (moveNextThisVar, moveNextBody),
                 (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody),
                 (afterCodeThisVar, afterCodeBody)) ->
+            let freeLocals exprs = (accFreeInExprs CollectLocals exprs emptyFreeVars).FreeLocals
+            let selectPrefix used =
+                (prefixChain, ([], emptyFreeVars))
+                ||> List.foldBack (fun bind (kept, needed) ->
+                    let isKept =
+                        Zset.contains bind.Var needed.FreeLocals
+                        || not (isExpandVar g bind.Var) && (not (isPureTemp g bind) || Zset.contains bind.Var used)
+                    if isKept then bind :: kept, accFreeInExpr CollectLocals bind.Expr needed else kept, needed)
+                |> fst
+            // remake2 selects the bindings to emit again from the lowered bodies, where expansion has removed uses.
+            // That selection is a subset of this one, so takeDefinition clones every definition that is also emitted.
+            let usedByMachine = freeLocals (expr :: [ for bind in prefixChain do if isExpandVar g bind.Var then bind.Expr ])
+            let candidateBindings = selectPrefix usedByMachine
             let templateStructTy = g.mk_ResumableStateMachine_ty dataTy
-            let env = { env with TemplateStructTy = Some templateStructTy }
+            let env =
+                { env with
+                    EmittedDefns = Zset.addList [ for bind in candidateBindings do if isExpandVar g bind.Var then bind.Var ] env.EmittedDefns
+                    TemplateStructTy = Some templateStructTy }
             if sm_verbose then printfn "Found struct machine..."
             if sm_verbose then printfn "Found struct machine jump table call..."
             let setStateMachineBodyR = ConvertStateMachineLeafExpression env setStateMachineBody
