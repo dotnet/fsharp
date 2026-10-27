@@ -51,22 +51,22 @@
       <Sha>3645b6aa36ad41775a73e57a620787a3d38327a0</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Collections.Immutable" Version="10.0.14">
+    <Dependency Name="System.Collections.Immutable" Version="10.0.10">
       <Uri>https://github.com/dotnet/dotnet</Uri>
       <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Composition" Version="10.0.14">
+    <Dependency Name="System.Composition" Version="10.0.10">
       <Uri>https://github.com/dotnet/dotnet</Uri>
       <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.14">
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.10">
       <Uri>https://github.com/dotnet/dotnet</Uri>
       <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Reflection.Metadata" Version="10.0.14">
+    <Dependency Name="System.Reflection.Metadata" Version="10.0.10">
       <Uri>https://github.com/dotnet/dotnet</Uri>
       <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
     </Dependency>
