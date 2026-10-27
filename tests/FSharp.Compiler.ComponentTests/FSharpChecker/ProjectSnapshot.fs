@@ -32,7 +32,7 @@ let ``ConditionalDefines matches FSharpParsingOptions`` (isInteractive: bool) =
 [<InlineData("--langversion:")>]
 [<InlineData("-langversion:9.0")>]
 let ``LangVersionText matches FSharpParsingOptions`` (options: string) =
-    let otherOptions = options.Split(' ', StringSplitOptions.RemoveEmptyEntries) |> Array.toList
+    let otherOptions = options.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
 
     let projectConfig = ProjectConfig("Dummy.fsproj", None, [], otherOptions)
 
