@@ -645,7 +645,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementUShort (uint16 row.Attributes)
                 stringElement nameToken
                 blobElement signatureToken
-                rowElementSimpleIndex TableNames.Param (row.FirstParameterRowId |> Option.defaultValue 0)
+                // Roslyn suppresses ParamList in deltas. EncLog owns parameter associations.
+                rowElementSimpleIndex TableNames.Param 0
             |]
 
         methodRows.Add rowElements

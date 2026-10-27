@@ -95,7 +95,7 @@ assert_contains "metadata-parity" "hotreload-metadata-parity-check:"
 run_step "service-tests" \
   env DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 \
   "${DOTNET}" test --project tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj \
-  -c Debug --no-build -- --filter-class "*HotReload*"
+  -c Debug --no-build -- --filter-class "*HotReload*" --filter-class "*DeltaMetadata*"
 assert_contains "service-tests" "Test run summary: Passed!"
 assert_contains "service-tests" "failed: 0"
 

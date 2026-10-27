@@ -2707,41 +2707,42 @@ module FSharpDeltaMetadataWriterTests =
         let methodDef = reader.GetMethodDefinition methodHandle
         let methodRowId = MetadataTokens.GetRowNumber methodHandle
 
-        // ParamList should be non-zero and point into the Param table.
-        let paramList = methodDef.GetParameters() |> Seq.toArray
+        // Roslyn leaves ParamList nil. EncLog associates each parameter with its method.
+        Assert.Empty(methodDef.GetParameters())
+        let paramList =
+            [| for row in 1 .. reader.GetTableRowCount(TableIndex.Param) -> MetadataTokens.ParameterHandle row |]
         Assert.NotEmpty(paramList)
 
-        if paramList.Length > 0 then
-            let paramSeqs : Set<uint16> =
-                paramList
-                |> Array.map (fun p -> uint16 (reader.GetParameter(p).SequenceNumber))
-                |> Set.ofArray
+        let paramSeqs : Set<uint16> =
+            paramList
+            |> Array.map (fun p -> uint16 (reader.GetParameter(p).SequenceNumber))
+            |> Set.ofArray
 
-            // Some added methods (void returns) may omit an explicit Seq#0 row; ensure at least the first param is present.
-            Assert.True(paramSeqs.Contains 1us, "Seq#1 value parameter must be present when Param rows are emitted")
+        // Some added methods (void returns) may omit an explicit Seq#0 row; ensure at least the first param is present.
+        Assert.True(paramSeqs.Contains 1us, "Seq#1 value parameter must be present when Param rows are emitted")
 
-            // EncLog/EncMap include Param and MethodDef.
-            let encLog = readEncLogEntriesFromMetadata delta.Metadata |> Array.ofSeq
-            // Roslyn/CLR shape: the AddMethod entry carries the PARENT TypeDef token; the
-            // method row itself is logged with Default. AddParameter entries carry the
-            // parent MethodDef token followed by the Param row with Default.
-            Assert.Contains((TableNames.Method.Index, methodRowId, EditAndContinueOperation.Default.Value), encLog)
-            Assert.True(
-                encLog
-                |> Array.exists (fun (tableIndex, _, op) ->
-                    tableIndex = TableNames.TypeDef.Index && op = EditAndContinueOperation.AddMethod.Value),
-                "Expected a (TypeDef, AddMethod) parent EncLog entry.")
-            Assert.Contains((TableNames.Method.Index, methodRowId, EditAndContinueOperation.AddParameter.Value), encLog)
+        // EncLog/EncMap include Param and MethodDef.
+        let encLog = readEncLogEntriesFromMetadata delta.Metadata |> Array.ofSeq
+        // Roslyn/CLR shape: the AddMethod entry carries the PARENT TypeDef token; the
+        // method row itself is logged with Default. AddParameter entries carry the
+        // parent MethodDef token followed by the Param row with Default.
+        Assert.Contains((TableNames.Method.Index, methodRowId, EditAndContinueOperation.Default.Value), encLog)
+        Assert.True(
+            encLog
+            |> Array.exists (fun (tableIndex, _, op) ->
+                tableIndex = TableNames.TypeDef.Index && op = EditAndContinueOperation.AddMethod.Value),
+            "Expected a (TypeDef, AddMethod) parent EncLog entry.")
+        Assert.Contains((TableNames.Method.Index, methodRowId, EditAndContinueOperation.AddParameter.Value), encLog)
 
-            let paramRowIds =
-                paramList |> Array.map MetadataTokens.GetRowNumber
-            for rid in paramRowIds do
-                Assert.Contains((TableNames.Param.Index, rid, EditAndContinueOperation.Default.Value), encLog)
+        let paramRowIds =
+            paramList |> Array.map MetadataTokens.GetRowNumber
+        for rid in paramRowIds do
+            Assert.Contains((TableNames.Param.Index, rid, EditAndContinueOperation.Default.Value), encLog)
 
-            let encMap = readEncMapEntriesFromMetadata delta.Metadata |> Array.ofSeq
-            Assert.Contains((TableNames.Method.Index, methodRowId), encMap)
-            for rid in paramRowIds do
-                Assert.Contains((TableNames.Param.Index, rid), encMap)
+        let encMap = readEncMapEntriesFromMetadata delta.Metadata |> Array.ofSeq
+        Assert.Contains((TableNames.Method.Index, methodRowId), encMap)
+        for rid in paramRowIds do
+            Assert.Contains((TableNames.Param.Index, rid), encMap)
 
     [<Fact>]
     let ``abstract metadata serializer matches metadata builder output for async methods`` () =

@@ -10,6 +10,11 @@ if [[ ! -x "${DOTNET}" ]]; then
   exit 1
 fi
 
+if ! command -v mdv >/dev/null 2>&1; then
+  echo "error: mdv is required for the metadata parity gate" >&2
+  exit 1
+fi
+
 cd "${ROOT}"
 
 # Tests run on Microsoft.Testing.Platform (xunit.v3); use MTP filter syntax.

@@ -497,7 +497,7 @@ module MdvValidationTests =
 
         resolvedArgs.ToArray(), sourceFiles.ToArray()
 
-    let private compileProject (checker: FSharpChecker) (fsPath: string) (dllPath: string) (source: string) =
+    let private compileProjectWithOptions additionalOptions (checker: FSharpChecker) (fsPath: string) (dllPath: string) (source: string) =
         File.WriteAllText(fsPath, source)
 
         let projectOptions, _ =
@@ -515,6 +515,7 @@ module MdvValidationTests =
                 SourceFiles = [| fsPath |]
                 OtherOptions =
                     projectOptions.OtherOptions
+                    |> Array.append additionalOptions
                     |> Array.append
                         [| "--target:library"
                            "--langversion:preview"
@@ -545,6 +546,8 @@ module MdvValidationTests =
         match compileErrors, compileException with
         | [||], None -> projectOptions, projectResults
         | errs, _ -> failwithf "Compilation produced errors: %A" (errs |> Array.map (fun d -> d.Message))
+
+    let private compileProject = compileProjectWithOptions [||]
 
     let private createBaseline (tcGlobals: FSharp.Compiler.TcGlobals.TcGlobals) (dllPath: string) =
         let pdbPath = Path.ChangeExtension(dllPath, ".pdb")
@@ -644,17 +647,11 @@ module MdvValidationTests =
             let errors = proc.StandardError.ReadToEnd()
             proc.WaitForExit()
             if proc.ExitCode <> 0 then
-                if
-                    proc.ExitCode = 150
-                    && errors.IndexOf("install or update .NET", StringComparison.OrdinalIgnoreCase) >= 0
-                then
-                    None
-                else
-                    failwithf "mdv exited with %d. stdout:%s stderr:%s" proc.ExitCode output errors
+                failwithf "mdv exited with %d. stdout:%s stderr:%s" proc.ExitCode output errors
             else
                 Some output
         with :? System.ComponentModel.Win32Exception ->
-            // mdv CLI not installed / not on PATH in this environment — treat as unavailable.
+            Assert.Skip("metadata-tools (mdv) CLI not found on PATH.")
             None
 
     let private runMdv baselinePath deltaMeta deltaIl =
@@ -2606,6 +2603,9 @@ module Demo =
 
     [<Fact>]
     let ``mdv validates consecutive async method edits`` () =
+        // Closure edits require the same capture flag on disk and in the session.
+        let compileProject = compileProjectWithOptions [| "--test:HotReloadDeltas" |]
+
         let checker =
             FSharpChecker.Create(
                 keepAssemblyContents = true,
@@ -2658,6 +2658,28 @@ module Demo =
             let baselineCopy = Path.Combine(projectDir, "baseline.dll")
             File.Copy(dllPath, baselineCopy, true)
 
+            let runtimeAssembly =
+                if MetadataUpdater.IsSupported then
+                    Some(System.Reflection.Assembly.Load(File.ReadAllBytes(baselineCopy)))
+                else
+                    None
+
+            let assertRuntimeMessage expected =
+                runtimeAssembly
+                |> Option.iter (fun assembly ->
+                    let method = assembly.GetType("MdVAsync.Demo", true).GetMethod("GetMessage")
+                    let computation = method.Invoke(null, [||]) :?> Async<string>
+                    Assert.Equal(expected, Async.RunSynchronously computation))
+
+            let applyAndAssert expected (delta: FSharpHotReloadDelta) =
+                runtimeAssembly
+                |> Option.iter (fun assembly ->
+                    let pdb = delta.Pdb |> Option.defaultValue Array.empty
+                    MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdb.AsSpan()))
+                assertRuntimeMessage expected
+
+            assertRuntimeMessage "Integration async baseline 1"
+
             use session = checker.CreateHotReloadSession()
 
             match session.AddProject(snapshotOf baselineOptions) |> Async.RunSynchronously with
@@ -2671,6 +2693,8 @@ module Demo =
                 | Ok delta ->
                     session.Commit()
                     delta
+
+            applyAndAssert "Integration async updated v2 2" delta1
 
             let meta1Path = Path.Combine(deltaDir, "1.meta")
             let il1Path = Path.Combine(deltaDir, "1.il")
@@ -2686,17 +2710,15 @@ module Demo =
                     session.Commit()
                     delta
 
-            // TODO: Once checker-based multi-delta sessions forward EncId chaining, assert delta2.BaseGenerationId here.
+            applyAndAssert "Integration async updated v3 3" delta2
+            Assert.Equal(delta1.GenerationId, delta2.BaseGenerationId)
 
             let meta2Path = Path.Combine(deltaDir, "2.meta")
             let il2Path = Path.Combine(deltaDir, "2.il")
             File.WriteAllBytes(meta2Path, delta2.Metadata)
             File.WriteAllBytes(il2Path, delta2.IL)
 
-            // Validate delta structure for async state machine compilation.
-            // Async methods compile to state machines with MoveNext methods. The user strings
-            // may be in the baseline heap (referenced by state machine IL) rather than duplicated
-            // in the delta. We validate the deltas have the correct structure instead.
+            // Each generation must contain the changed async closure body and its new literal.
             Assert.NotEmpty(delta1.Metadata)
             Assert.NotEmpty(delta1.IL)
             Assert.NotEmpty(delta1.UpdatedMethods)
@@ -2709,6 +2731,10 @@ module Demo =
             | Some output ->
                 Assert.Contains("Generation 1", output)
                 Assert.Contains("Generation 2", output)
+                let deltas = output.Substring(output.IndexOf(">>> Generation 1:", StringComparison.Ordinal))
+                Assert.DoesNotContain("<bad metadata>", deltas)
+                assertGenerationContains output 1 "Integration async updated v2"
+                assertGenerationContains output 2 "Integration async updated v3"
             | None ->
                 printfn "mdv not available; skipping async multi-generation verification."
 
