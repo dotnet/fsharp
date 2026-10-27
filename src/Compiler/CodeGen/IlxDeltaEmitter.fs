@@ -305,14 +305,20 @@ let private opCodeLookup: Lazy<Dictionary<int, OpCode>> =
 let private traceFlag name = lazy (isEnvVarTruthy name)
 
 /// Trace flags for hot reload debugging - controlled via environment variables
-let private traceUserStringUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_STRINGS"
+let private traceUserStringUpdates =
+    traceFlag EnvironmentVariableNames.HotReloadTraceStrings
 
 let private traceSynthesizedMappings =
-    traceFlag "FSHARP_HOTRELOAD_TRACE_SYNTHESIZED"
+    traceFlag EnvironmentVariableNames.HotReloadTraceSynthesized
 
-let private traceMethodUpdates = traceFlag "FSHARP_HOTRELOAD_TRACE_METHODS"
-let private traceMetadata = traceFlag "FSHARP_HOTRELOAD_TRACE_METADATA"
-let private traceHeapOffsets = traceFlag "FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS"
+let private traceMethodUpdates =
+    traceFlag EnvironmentVariableNames.HotReloadTraceMethods
+
+let private traceMetadata =
+    traceFlag EnvironmentVariableNames.HotReloadTraceMetadata
+
+let private traceHeapOffsets =
+    traceFlag EnvironmentVariableNames.HotReloadTraceHeapOffsets
 
 type private PositionalTypeInfo =
     {
@@ -3478,14 +3484,26 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
         RemapAssemblyRefToken = remapAssemblyRefToken
     }
 
-/// Emits metadata, IL, and portable PDB deltas with token mappings for the baseline and new definitions.
-///
-/// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
-/// caller has one and no emitted-artifact PDB is available. <c>request.EmittedArtifacts</c>
-/// carries bytes and token mappings from the real fresh compile write when the session compiled
-/// in-process. When neither is present, the emitter falls back to the legacy in-memory rewrite
-/// (callers that construct modules with debug points, e.g. the component tests, need no sibling file).
-let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
+/// Normalizes nested and namespace separators for declaration matching.
+let private normalizeTypePathName (name: string) =
+    name.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
+    |> String.concat "."
+
+/// Captured matching inputs preserve the order of synthesized-name snapshot reads.
+type private DeclarationMatchingContext =
+    {
+        Request: IlxDeltaRequest
+        UsesRecordedSnapshot: bool
+        CanDisambiguateAliases: bool
+        SynthesizedBuckets: IDictionary<string, string[]> option
+        AddedUserTypeNames: Set<string>
+        SymbolMatcher: FSharpSymbolMatcher
+        ChangedTypeNames: string list
+        IsResumableHelper: ILTypeDef -> bool
+    }
+
+/// Captures declaration identity inputs before the fresh assembly emission.
+let private createDeclarationMatchingContext (request: IlxDeltaRequest) : DeclarationMatchingContext =
     let usesRecordedSynthesizedSnapshot =
         request.SynthesizedNames |> Option.exists (fun map -> map.UsesRecordedSnapshot)
 
@@ -3511,10 +3529,6 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     // NewTypeDefinition and projects their IL names into the added-entity symbols. The
     // symbol path is dot-joined while IL nests with '+', so matching normalizes both
     // sides to dot-separated segments.
-    let normalizeTypePathName (name: string) =
-        name.Split([| '.'; '+' |], StringSplitOptions.RemoveEmptyEntries)
-        |> String.concat "."
-
     let addedUserTypeNames =
         request.SymbolChanges
         |> Option.map FSharpSymbolChanges.addedEntitySymbols
@@ -3552,90 +3566,60 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         else
             false
 
-    let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
+    {
+        Request = request
+        UsesRecordedSnapshot = usesRecordedSynthesizedSnapshot
+        CanDisambiguateAliases = canDisambiguateSynthesizedAliases
+        SynthesizedBuckets = synthesizedBuckets
+        AddedUserTypeNames = addedUserTypeNames
+        SymbolMatcher = symbolMatcher
+        ChangedTypeNames = symbolChangeTypeNames
+        IsResumableHelper = isUpdatedMethodResumableCodeHelper
+    }
 
-    if traceHeapOffsets.Value then
-        let heaps = request.Baseline.Metadata.HeapSizes
+/// Declaration matching owns alias validation, registration, and no-edit cleanup.
+type private DeclarationMatches =
+    {
+        TypeTokenMap: Dictionary<int, int>
+        FieldTokenMap: Dictionary<int, int>
+        MethodTokenMap: Dictionary<int, int>
+        MatchedMethodTokenPairs: Dictionary<int, int>
+        PropertyTokenMap: Dictionary<int, int>
+        EventTokenMap: Dictionary<int, int>
+        AddedMethodTokens: Dictionary<MethodDefinitionKey, int>
+        AddedFieldTokens: Dictionary<FieldDefinitionKey, int>
+        AddedTypeNewTokens: Dictionary<string, int>
+        AddedTypeDeltaTokens: Dictionary<string, int>
+        AddedTypeDefs: ResizeArray<ILTypeDef list * ILTypeDef * string>
+        AddedTypeShapes: Dictionary<string, SynthesizedTypeShape>
+        AddedTypeMetadataNameByKey: Dictionary<string, string>
+        AddedPropertyTokens: Dictionary<PropertyDefinitionKey, int>
+        AddedEventTokens: Dictionary<EventDefinitionKey, int>
+        AddedPropertyTokenLookup: Dictionary<int, PropertyDefinitionKey>
+        AddedEventTokenLookup: Dictionary<int, EventDefinitionKey>
+        PropertyHandleLookup: Dictionary<PropertyDefinitionKey, PropertyDefinitionHandle>
+        EventHandleLookup: Dictionary<EventDefinitionKey, EventDefinitionHandle>
+        TryGetBaselineTypeName: string -> string
+        TryResolveFreshTypeNameForKey: string -> string option
+    }
 
-        printfn
-            "[fsharp-hotreload][heap-offsets] Generation %d - Baseline heap sizes passed to IlDeltaStreamBuilder:"
-            request.CurrentGeneration
+/// Records nonidentity definition-token correspondences.
+let private addDefinitionTokenMapping (dict: Dictionary<int, int>) newToken baselineToken =
+    if newToken <> 0 && baselineToken <> 0 && newToken <> baselineToken then
+        dict[newToken] <- baselineToken
 
-        printfn "[fsharp-hotreload][heap-offsets]   UserStringHeapSize = %d" heaps.UserStringHeapSize
-        printfn "[fsharp-hotreload][heap-offsets]   StringHeapSize = %d" heaps.StringHeapSize
-        printfn "[fsharp-hotreload][heap-offsets]   BlobHeapSize = %d" heaps.BlobHeapSize
-        printfn "[fsharp-hotreload][heap-offsets]   GuidHeapSize = %d" heaps.GuidHeapSize
-        printfn "[fsharp-hotreload][heap-offsets]   NextGeneration = %d, EncId = %A" request.Baseline.NextGeneration request.Baseline.EncId
-
+/// Collects declaration correspondences before metadata row preparation.
+let private collectDefinitionMappings
+    (context: DeclarationMatchingContext)
+    (emittedTokenMappings: ILWriter.ILTokenMappings)
+    : DeclarationMatches =
+    let request = context.Request
+    let usesRecordedSynthesizedSnapshot = context.UsesRecordedSnapshot
+    let canDisambiguateSynthesizedAliases = context.CanDisambiguateAliases
+    let synthesizedBuckets = context.SynthesizedBuckets
+    let addedUserTypeNames = context.AddedUserTypeNames
+    let isUpdatedMethodResumableCodeHelper = context.IsResumableHelper
     let baselineTypeTokens = request.Baseline.TypeTokens
-
-    let primaryScopeRef =
-        match request.Module.Manifest with
-        | Some manifest ->
-            let publicKey =
-                manifest.PublicKey |> Option.map (fun key -> PublicKey.KeyAsToken key)
-
-            let asmRef =
-                ILAssemblyRef.Create(manifest.Name, None, publicKey, manifest.Retargetable, manifest.Version, manifest.Locale)
-
-            ILScopeRef.Assembly asmRef
-        | None -> ILScopeRef.PrimaryAssembly
-
-    let fsharpCoreScopeRef =
-        ILScopeRef.Assembly(ILAssemblyRef.Create("FSharp.Core", None, None, false, None, None))
-
-    let ilg = mkILGlobals (primaryScopeRef, [], fsharpCoreScopeRef)
-
-    let writerOptions = defaultWriterOptions ilg HashAlgorithm.Sha256
-
-    let assemblyBytes, pdbBytesOpt, emittedTokenMappings =
-        match request.EmittedArtifacts with
-        | Some artifacts -> artifacts.AssemblyBytes, artifacts.PdbBytes, artifacts.TokenMappings
-        | None ->
-            let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
-                ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
-
-            assemblyBytes, pdbBytesOpt, emittedTokenMappings
-
-    // The fresh compile's debug data: the caller-supplied on-disk PDB when available, else the
-    // artifact or rewrite PDB. Feeds the sequence-point analysis and the PDB delta.
-    let effectiveDebugPdb = freshDebugPdb |> Option.orElse pdbBytesOpt
-
-    if traceUserStringUpdates.Value then
-        try
-            let tempDll =
-                Path.Combine(Path.GetTempPath(), $"fsharp-hotreload-ilmodule-{System.Guid.NewGuid():N}.dll")
-
-            File.WriteAllBytes(tempDll, assemblyBytes)
-            printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
-        with ex ->
-            printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
-
-    use peStream = new MemoryStream(assemblyBytes, writable = false)
-    use peReader = new PEReader(peStream)
-    let metadataReader = peReader.GetMetadataReader()
-    let moduleDef = metadataReader.GetModuleDefinition()
-    let moduleName = metadataReader.GetString moduleDef.Name
-    let baselineModuleNameOffset = request.Baseline.ModuleNameOffset
-    let userStringCalculator = builder.UserStringCalculator
-    let stringTokenCache = Dictionary<int, int>()
-    let userStringUpdates = ResizeArray<int * int * string>()
-
-    let logUserString originalToken newToken text =
-        if traceUserStringUpdates.Value then
-            printfn "[fsharp-hotreload][userstring] original=0x%08X new=0x%08X text=%s" originalToken newToken text
-
-    let remapUserString token =
-        match stringTokenCache.TryGetValue token with
-        | true, mapped -> mapped
-        | _ ->
-            let handle = MetadataTokens.UserStringHandle token
-            let value = metadataReader.GetUserString handle
-            let newToken = userStringCalculator.GetOrAddUserString value
-            stringTokenCache[token] <- newToken
-            userStringUpdates.Add((token, newToken, value))
-            logUserString token newToken value
-            newToken
 
     let typeTokenMap = Dictionary<int, int>()
     let fieldTokenMap = Dictionary<int, int>()
@@ -4250,10 +4234,6 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         let baselineName = tryGetBaselineTypeName typeRef.FullName
         baselineTypeTokens |> Map.tryFind baselineName
 
-    let addMapping (dict: Dictionary<int, int>) newToken baselineToken =
-        if newToken <> 0 && baselineToken <> 0 && newToken <> baselineToken then
-            dict[newToken] <- baselineToken
-
     let addAddedTypeDefinition (enclosing: ILTypeDef list) (typeDef: ILTypeDef) fullName newTypeToken =
         let addedTypeKey = createAddedTypeKey typeDef fullName
 
@@ -4356,7 +4336,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     )
                 | None -> request.Baseline.TokenMappings.TypeDefTokenMap(enclosing, typeDef)
 
-        addMapping typeTokenMap newTypeToken baselineTypeToken
+        addDefinitionTokenMapping typeTokenMap newTypeToken baselineTypeToken
 
         typeDef.Fields.AsList()
         |> List.iter (fun fieldDef ->
@@ -4395,7 +4375,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 let newFieldToken =
                     emittedTokenMappings.FieldDefTokenMap (enclosing, typeDef) fieldDef
 
-                addMapping fieldTokenMap newFieldToken baselineFieldToken
+                addDefinitionTokenMapping fieldTokenMap newFieldToken baselineFieldToken
             | None when declaringTypeIsAdded ->
                 // Field of an ADDED type (closure capture field / cached-instance field):
                 // appended to the delta Field table, parented to the NEW TypeDef row. The
@@ -4545,7 +4525,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 if newMethodToken <> 0 && baselineMethodToken <> 0 then
                     matchedMethodTokenPairs[newMethodToken] <- baselineMethodToken
 
-                addMapping methodTokenMap newMethodToken baselineMethodToken
+                addDefinitionTokenMapping methodTokenMap newMethodToken baselineMethodToken
             | None when declaringTypeIsAdded ->
                 // Method of an ADDED type (closure .ctor / Invoke override): emitted as an
                 // added method parented to the NEW TypeDef row.
@@ -4587,7 +4567,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     request.Baseline.PropertyTokens |> Map.tryFind propertyKey
 
             match baselinePropertyTokenOpt with
-            | Some baselinePropertyToken -> addMapping propertyTokenMap newPropertyToken baselinePropertyToken
+            | Some baselinePropertyToken -> addDefinitionTokenMapping propertyTokenMap newPropertyToken baselinePropertyToken
             | None when declaringTypeIsAdded ->
                 if not (addedPropertyTokens.ContainsKey propertyKey) then
                     addedPropertyTokens[propertyKey] <- newPropertyToken
@@ -4623,7 +4603,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                     request.Baseline.EventTokens |> Map.tryFind eventKey
 
             match baselineEventTokenOpt with
-            | Some baselineEventToken -> addMapping eventTokenMap newEventToken baselineEventToken
+            | Some baselineEventToken -> addDefinitionTokenMapping eventTokenMap newEventToken baselineEventToken
             | None when declaringTypeIsAdded ->
                 if not (addedEventTokens.ContainsKey eventKey) then
                     addedEventTokens[eventKey] <- newEventToken
@@ -4689,10 +4669,576 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         freshFullNameByAddedTypeKey.Clear()
         addedTypeMetadataNameByKey.Clear()
 
-    let addedMethodKeys =
-        addedMethodTokens |> Seq.map (fun kvp -> kvp.Key) |> Seq.toList
+    {
+        TypeTokenMap = typeTokenMap
+        FieldTokenMap = fieldTokenMap
+        MethodTokenMap = methodTokenMap
+        MatchedMethodTokenPairs = matchedMethodTokenPairs
+        PropertyTokenMap = propertyTokenMap
+        EventTokenMap = eventTokenMap
+        AddedMethodTokens = addedMethodTokens
+        AddedFieldTokens = addedFieldTokens
+        AddedTypeNewTokens = addedTypeNewTokens
+        AddedTypeDeltaTokens = addedTypeDeltaTokens
+        AddedTypeDefs = addedTypeDefs
+        AddedTypeShapes = addedTypeShapes
+        AddedTypeMetadataNameByKey = addedTypeMetadataNameByKey
+        AddedPropertyTokens = addedPropertyTokens
+        AddedEventTokens = addedEventTokens
+        AddedPropertyTokenLookup = addedPropertyTokenLookup
+        AddedEventTokenLookup = addedEventTokenLookup
+        PropertyHandleLookup = propertyHandleLookup
+        EventHandleLookup = eventHandleLookup
+        TryGetBaselineTypeName = tryGetBaselineTypeName
+        TryResolveFreshTypeNameForKey = tryResolveFreshTypeNameForKey
+    }
 
-    // ------------------------------------------------------------------------------------------
+/// Read-only declaration registries and remappers used to prepare added-definition rows.
+type private AddedDefinitionRowContext =
+    {
+        MetadataReader: MetadataReader
+        BaselineTypeTokens: Map<string, int>
+        BaselineTableRowCounts: IReadOnlyList<int>
+        AddedFieldTokens: IReadOnlyDictionary<FieldDefinitionKey, int>
+        AddedFieldDeltaTokens: IReadOnlyDictionary<FieldDefinitionKey, int>
+        AddedMethodTokens: IReadOnlyDictionary<MethodDefinitionKey, int>
+        AddedMethodDeltaTokens: IReadOnlyDictionary<MethodDefinitionKey, int>
+        AddedTypeNewTokens: IReadOnlyDictionary<string, int>
+        AddedTypeDeltaTokens: IReadOnlyDictionary<string, int>
+        AddedTypeDefs: IReadOnlyList<ILTypeDef list * ILTypeDef * string>
+        AddedTypeMetadataNameByKey: IReadOnlyDictionary<string, string>
+        TryGetBaselineTypeName: string -> string
+        RemapDefinitionToken: int -> int
+        RemapEntityToken: int -> int
+    }
+
+/// Prepared metadata rows for added fields, types, and their relationships.
+type private AddedDefinitionRows =
+    {
+        Fields: FieldDefinitionRowInfo list
+        Constants: ConstantRowInfo list
+        Types: TypeDefinitionRowInfo list
+        NestedTypes: NestedClassRowInfo list
+        GenericParameters: GenericParamRowInfo list
+        GenericConstraints: GenericParamConstraintRowInfo list
+        Interfaces: InterfaceImplRowInfo list
+        MethodImplementations: MethodImplRowInfo list
+    }
+
+/// Prepares added-definition metadata in field, constant, type, generic, and interface order.
+let private buildAddedDefinitionRows (context: AddedDefinitionRowContext) : AddedDefinitionRows =
+    let metadataReader = context.MetadataReader
+    let baselineTypeTokens = context.BaselineTypeTokens
+    let baselineTableRowCounts = context.BaselineTableRowCounts
+    let addedFieldTokens = context.AddedFieldTokens
+    let addedFieldDeltaTokens = context.AddedFieldDeltaTokens
+    let addedMethodTokens = context.AddedMethodTokens
+    let addedMethodDeltaTokens = context.AddedMethodDeltaTokens
+    let addedTypeNewTokens = context.AddedTypeNewTokens
+    let addedTypeDeltaTokens = context.AddedTypeDeltaTokens
+    let addedTypeDefs = context.AddedTypeDefs
+    let addedTypeMetadataNameByKey = context.AddedTypeMetadataNameByKey
+    let tryGetBaselineTypeName = context.TryGetBaselineTypeName
+    let remapDefinitionToken = context.RemapDefinitionToken
+    let remapEntityToken = context.RemapEntityToken
+
+    // Snapshot the added Field rows from the fresh compile. Field signatures (FieldSig,
+    // ECMA-335 II.23.2.4) embed TypeDefOrRef coded indexes of the in-memory compile, so
+    // they flow through the same signature-blob remapper as method/local signatures
+    // before entering the delta blob heap.
+    let fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list =
+        addedFieldDeltaTokens
+        |> Seq.sortBy (fun kvp -> kvp.Value)
+        |> Seq.map (fun (KeyValue(key, deltaToken)) ->
+            let newToken = addedFieldTokens.[key]
+            let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
+            let fieldDef = metadataReader.GetFieldDefinition fieldHandle
+
+            // FieldLayout (explicit [<FieldOffset>]), FieldMarshal (interop
+            // marshalling) and FieldRVA (static data blobs, e.g. large array
+            // initializers) rows have no writer support; shipping the Field row
+            // without them silently corrupts layout/marshalling/data. Fail closed
+            // precisely.
+            if fieldDef.GetOffset() >= 0 then
+                raise (
+                    HotReloadUnsupportedEditException(
+                        $"Added field '{key.DeclaringType}::{key.Name}' declares an explicit offset (FieldLayout); hot reload deltas cannot express FieldLayout rows yet. Please rebuild."
+                    )
+                )
+
+            if not (fieldDef.GetMarshallingDescriptor().IsNil) then
+                raise (
+                    HotReloadUnsupportedEditException(
+                        $"Added field '{key.DeclaringType}::{key.Name}' carries marshalling metadata (FieldMarshal); hot reload deltas cannot express FieldMarshal rows yet. Please rebuild."
+                    )
+                )
+
+            if fieldDef.GetRelativeVirtualAddress() <> 0 then
+                raise (
+                    HotReloadUnsupportedEditException(
+                        $"Added field '{key.DeclaringType}::{key.Name}' maps static data (FieldRVA); hot reload deltas cannot express FieldRVA rows yet. Please rebuild."
+                    )
+                )
+
+            let signature =
+                metadataReader.GetBlobBytes fieldDef.Signature
+                |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
+
+            let parentRowId =
+                match baselineTypeTokens |> Map.tryFind key.DeclaringType with
+                | Some typeToken -> typeToken &&& 0x00FFFFFF
+                | None ->
+                    match addedTypeDeltaTokens.TryGetValue key.DeclaringType with
+                    | true, deltaTypeToken -> deltaTypeToken &&& 0x00FFFFFF
+                    | _ ->
+                        // Registration already gated on the baseline type token, so this only
+                        // fires if the baseline maps changed under us; fail closed.
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Added field '{key.DeclaringType}::{key.Name}' has no baseline TypeDef token; please rebuild."
+                            )
+                        )
+
+            {
+                FieldDefinitionRowInfo.Key = key
+                RowId = deltaToken &&& 0x00FFFFFF
+                IsAdded = true
+                ParentTypeDefRowId = parentRowId
+                Attributes = fieldDef.Attributes
+                Name = metadataReader.GetString fieldDef.Name
+                NameOffset = None
+                Signature = signature
+                SignatureOffset = None
+            })
+        |> Seq.toList
+
+    if traceMethodUpdates.Value then
+        for row in fieldDefinitionRowsSnapshot do
+            printfn
+                "[fsharp-hotreload][field-add] %s::%s rowId=%d parentTypeDef=%d"
+                row.Key.DeclaringType
+                row.Key.Name
+                row.RowId
+                row.ParentTypeDefRowId
+
+    // Constant rows for ADDED literal fields (enum members, union Tags holder
+    // constants, [<Literal>] values): ECMA-335 II.22.9 — Type is the fresh compile's
+    // ELEMENT_TYPE code, Parent the new delta Field row (HasConstant, tag Field),
+    // Value the raw constant blob copied into the DELTA blob heap (primitive bytes,
+    // nothing to remap). Rows are ordered by the parent Field row id (the table's
+    // HasConstant sort key — all parents here are Fields) and numbered past the
+    // chained baseline Constant row count. C# reference template: 'new_enum'
+    // (reference_mdv_new_enum.txt) — three Constant rows trail the generation-1 log
+    // as plain Default entries, EncMap adds.
+    let constantRowsSnapshot: ConstantRowInfo list =
+        let baselineConstantRowCount = baselineTableRowCounts.[TableNames.Constant.Index]
+
+        addedFieldDeltaTokens
+        |> Seq.sortBy (fun kvp -> kvp.Value)
+        |> Seq.choose (fun (KeyValue(key, deltaToken)) ->
+            let newToken = addedFieldTokens.[key]
+            let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
+            let fieldDef = metadataReader.GetFieldDefinition fieldHandle
+            let constantHandle = fieldDef.GetDefaultValue()
+
+            if constantHandle.IsNil then
+                None
+            else
+                let constant = metadataReader.GetConstant constantHandle
+
+                Some
+                    {
+                        ConstantRowInfo.RowId = 0
+                        TypeCode = byte constant.TypeCode
+                        Parent = HC_Field(FieldHandle(deltaToken &&& 0x00FFFFFF))
+                        Value = metadataReader.GetBlobBytes constant.Value
+                    })
+        |> Seq.mapi (fun index row ->
+            { row with
+                RowId = baselineConstantRowCount + index + 1
+            })
+        |> Seq.toList
+
+    if traceMethodUpdates.Value then
+        for row in constantRowsSnapshot do
+            printfn
+                "[fsharp-hotreload][constant-add] rowId=%d parentFieldRow=%d typeCode=0x%02X valueBytes=%d"
+                row.RowId
+                row.Parent.RowId
+                (int row.TypeCode)
+                row.Value.Length
+
+    // Snapshot ADDED TypeDef rows (closure classes synthesized for added lambdas).
+    // Name/namespace/attributes come from the fresh compile's metadata; the Extends
+    // coded index is remapped from fresh rows to baseline/delta rows. Nested types
+    // (F# closure classes are nested in their module type) additionally produce a
+    // NestedClass row pointing at the enclosing TypeDef.
+    let typeDefinitionRowsSnapshot, nestedClassRowsSnapshot =
+        if addedTypeDefs.Count = 0 then
+            [], []
+        else
+            let baselineNestedClassRowCount = baselineTableRowCounts.[TableNames.Nested.Index]
+            let typeRows = ResizeArray<TypeDefinitionRowInfo>()
+            let nestedRows = ResizeArray<NestedClassRowInfo>()
+
+            let resolveEnclosingTypeDefRowId (enclosing: ILTypeDef list) (fullName: string) =
+                match enclosing with
+                | [] -> None
+                | _ ->
+                    let parentType = List.last enclosing
+                    let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
+
+                    let parentRef =
+                        mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
+
+                    let parentBaselineName = tryGetBaselineTypeName parentRef.FullName
+
+                    match baselineTypeTokens |> Map.tryFind parentBaselineName with
+                    | Some token -> Some(token &&& 0x00FFFFFF)
+                    | None ->
+                        match addedTypeDeltaTokens.TryGetValue parentBaselineName with
+                        | true, token -> Some(token &&& 0x00FFFFFF)
+                        | _ ->
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Added type '{fullName}' is nested in '{parentBaselineName}', which has no baseline or delta TypeDef row; please rebuild."
+                                )
+                            )
+
+            for (enclosing, _typeDef, fullName) in addedTypeDefs do
+                let deltaToken = addedTypeDeltaTokens.[fullName]
+                let rowId = deltaToken &&& 0x00FFFFFF
+                let newToken = addedTypeNewTokens.[fullName]
+                let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+                let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+
+                let name =
+                    match addedTypeMetadataNameByKey.TryGetValue fullName with
+                    | true, metadataName -> metadataName
+                    | _ -> metadataReader.GetString freshTypeDef.Name
+
+                // Explicit/sized layouts need a ClassLayout row (ECMA-335 II.22.8)
+                // the writer cannot express; shipping the TypeDef without it would
+                // corrupt the runtime layout. Fail closed precisely.
+                let typeLayout = freshTypeDef.GetLayout()
+
+                if not typeLayout.IsDefault then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added type '{fullName}' declares an explicit layout (ClassLayout PackingSize={typeLayout.PackingSize}, Size={typeLayout.Size}); hot reload deltas cannot express ClassLayout rows yet. Please rebuild."
+                        )
+                    )
+
+                let namespaceName =
+                    if freshTypeDef.Namespace.IsNil then
+                        ""
+                    else
+                        metadataReader.GetString freshTypeDef.Namespace
+
+                let extends =
+                    if freshTypeDef.BaseType.IsNil then
+                        None
+                    else
+                        let baseToken = MetadataTokens.GetToken freshTypeDef.BaseType
+
+                        match freshTypeDef.BaseType.Kind with
+                        | HandleKind.TypeReference ->
+                            let mapped = remapEntityToken baseToken
+                            Some(TDR_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF)))
+                        | HandleKind.TypeDefinition ->
+                            let mapped = remapDefinitionToken baseToken
+                            Some(TDR_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF)))
+                        | HandleKind.TypeSpecification ->
+                            // Content-validated TypeSpec remap: resolves to the matching
+                            // baseline row, or appends a new TypeSpec row to the delta
+                            // for a genuinely new instantiation (e.g. the first
+                            // FSharpFunc<A,B> closure of that shape in the assembly).
+                            let mapped = remapEntityToken baseToken
+                            Some(TDR_TypeSpec(TypeSpecHandle(mapped &&& 0x00FFFFFF)))
+                        | kind ->
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Added type '{fullName}' has unsupported base-type handle kind {kind}; please rebuild."
+                                )
+                            )
+
+                let enclosingRowId = resolveEnclosingTypeDefRowId enclosing fullName
+
+                typeRows.Add
+                    {
+                        TypeDefinitionRowInfo.FullName = fullName
+                        RowId = rowId
+                        Attributes = freshTypeDef.Attributes
+                        Name = name
+                        NameOffset = None
+                        Namespace = namespaceName
+                        NamespaceOffset = None
+                        Extends = extends
+                        EnclosingTypeDefRowId = enclosingRowId
+                    }
+
+                match enclosingRowId with
+                | Some enclosingRow ->
+                    nestedRows.Add
+                        {
+                            NestedClassRowInfo.RowId = baselineNestedClassRowCount + nestedRows.Count + 1
+                            NestedTypeDefRowId = rowId
+                            EnclosingTypeDefRowId = enclosingRow
+                        }
+                | None -> ()
+
+            typeRows |> Seq.sortBy (fun row -> row.RowId) |> Seq.toList, nestedRows |> Seq.toList
+
+    if traceMethodUpdates.Value then
+        for row in typeDefinitionRowsSnapshot do
+            printfn
+                "[fsharp-hotreload][type-add] %s rowId=%d nestedIn=%A extends=%A"
+                row.FullName
+                row.RowId
+                row.EnclosingTypeDefRowId
+                row.Extends
+
+    // GenericParam rows for ADDED generic methods and ADDED generic types (closure
+    // classes over generic members). C# reference template (csharp_enc_reference
+    // 'generic_method_add'): the added MethodDef's AddMethod/AddParameter pairs are
+    // followed by a plain 'GenericParam ... Default' EncLog entry, and the row appears
+    // in EncMap as an add. GenericParam rows of UPDATED definitions are baseline rows
+    // and are never re-emitted. IL constraints on the type parameters emit
+    // GenericParamConstraint rows owned by the new GenericParam rows (C# reference
+    // template 'generic_constraint_add').
+    let genericParamRowsSnapshot, genericParamConstraintRowsSnapshot =
+        let pending = ResizeArray<int * GenericParameterHandle * TypeOrMethodDef * string>()
+
+        let collect (display: string) (owner: TypeOrMethodDef) (handles: GenericParameterHandleCollection) =
+            for handle in handles do
+                let genericParam = metadataReader.GetGenericParameter handle
+
+                if genericParam.GetCustomAttributes().Count > 0 then
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added generic definition '{display}' has type-parameter custom attributes, which hot reload deltas cannot emit yet; please rebuild."
+                        )
+                    )
+
+                pending.Add(genericParam.Index, handle, owner, display)
+
+        for KeyValue(key, deltaToken) in addedMethodDeltaTokens do
+            let freshToken = addedMethodTokens.[key]
+            let methodHandle = MetadataTokens.MethodDefinitionHandle(freshToken &&& 0x00FFFFFF)
+            let freshMethodDef = metadataReader.GetMethodDefinition methodHandle
+
+            collect
+                $"{key.DeclaringType}::{key.Name}"
+                (TOMD_MethodDef(MethodDefHandle(deltaToken &&& 0x00FFFFFF)))
+                (freshMethodDef.GetGenericParameters())
+
+        for (_, _, fullName) in addedTypeDefs do
+            let deltaToken = addedTypeDeltaTokens.[fullName]
+            let newToken = addedTypeNewTokens.[fullName]
+            let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+            let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+
+            collect fullName (TOMD_TypeDef(TypeDefHandle(deltaToken &&& 0x00FFFFFF))) (freshTypeDef.GetGenericParameters())
+
+        let baselineGenericParamRowCount =
+            baselineTableRowCounts.[TableNames.GenericParam.Index]
+
+        // The GenericParam table is sorted by the Owner coded index (ECMA-335 II.22.20:
+        // owner, then Number); keep the appended delta rows in the same relative order.
+        let orderedParams =
+            pending
+            |> Seq.sortBy (fun (number, _, owner, _) -> (owner.RowId <<< 1) ||| owner.CodedTag, number)
+            |> Seq.mapi (fun index (number, handle, owner, display) ->
+                let genericParam = metadataReader.GetGenericParameter handle
+
+                {
+                    GenericParamRowInfo.RowId = baselineGenericParamRowCount + index + 1
+                    Number = number
+                    Attributes = genericParam.Attributes
+                    Owner = owner
+                    Name = metadataReader.GetString genericParam.Name
+                    NameOffset = None
+                },
+                handle,
+                display)
+            |> Seq.toList
+
+        // Constraint rows are owned by the new GenericParam rows. The table sorts on
+        // Owner (ECMA-335 II.22.21); the params are already in owner order, and the
+        // constraints of one param keep their fresh-compile order.
+        let baselineConstraintRowCount =
+            baselineTableRowCounts.[TableNames.GenericParamConstraint.Index]
+
+        let constraintRows =
+            let rows = ResizeArray<GenericParamConstraintRowInfo>()
+
+            for (paramRow, handle, display) in orderedParams do
+                let genericParam = metadataReader.GetGenericParameter handle
+
+                for constraintHandle in genericParam.GetConstraints() do
+                    let genericConstraint =
+                        metadataReader.GetGenericParameterConstraint constraintHandle
+
+                    let constraintToken = MetadataTokens.GetToken genericConstraint.Type
+
+                    let constraintRef =
+                        match genericConstraint.Type.Kind with
+                        | HandleKind.TypeReference -> TDR_TypeRef(TypeRefHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
+                        | HandleKind.TypeDefinition -> TDR_TypeDef(TypeDefHandle(remapDefinitionToken constraintToken &&& 0x00FFFFFF))
+                        | HandleKind.TypeSpecification -> TDR_TypeSpec(TypeSpecHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
+                        | kind ->
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Added generic definition '{display}' has a type-parameter constraint with unsupported handle kind {kind}; please rebuild."
+                                )
+                            )
+
+                    rows.Add
+                        {
+                            GenericParamConstraintRowInfo.RowId = baselineConstraintRowCount + rows.Count + 1
+                            OwnerGenericParamRowId = paramRow.RowId
+                            Constraint = constraintRef
+                        }
+
+            rows |> List.ofSeq
+
+        orderedParams |> List.map (fun (row, _, _) -> row), constraintRows
+
+    if traceMethodUpdates.Value then
+        for row in genericParamRowsSnapshot do
+            printfn "[fsharp-hotreload][generic-param] rowId=%d number=%d owner=%A name=%s" row.RowId row.Number row.Owner row.Name
+
+    // InterfaceImpl rows for ADDED types (C# 'new_class' reference template: the new
+    // class's InterfaceImpl row is a plain Default EncLog entry trailing the log,
+    // EncMap add) and MethodImpl rows for their explicit interface implementations
+    // (F# classes implement interfaces explicitly — `interface X with` — so unlike
+    // C#'s implicit public mapping every implemented slot carries a MethodImpl row;
+    // records/unions map their synthesized comparers publicly and need none).
+    let interfaceImplRowsSnapshot, methodImplRowsSnapshot =
+        if addedTypeDefs.Count = 0 then
+            [], []
+        else
+            let interfaceRows = ResizeArray<int * TypeDefOrRef>()
+            let methodImplRows = ResizeArray<int * MethodDefOrRef * MethodDefOrRef>()
+
+            let remapMethodDefOrRef (context: string) (handle: EntityHandle) =
+                let token = MetadataTokens.GetToken handle
+
+                match handle.Kind with
+                | HandleKind.MethodDefinition -> MDOR_MethodDef(MethodDefHandle(remapDefinitionToken token &&& 0x00FFFFFF))
+                | HandleKind.MemberReference -> MDOR_MemberRef(MemberRefHandle(remapEntityToken token &&& 0x00FFFFFF))
+                | kind ->
+                    raise (
+                        HotReloadUnsupportedEditException(
+                            $"Added type member implementation '{context}' has unsupported method handle kind {kind}; please rebuild."
+                        )
+                    )
+
+            for (_, _, fullName) in addedTypeDefs do
+                let deltaToken = addedTypeDeltaTokens.[fullName]
+                let classRowId = deltaToken &&& 0x00FFFFFF
+                let newToken = addedTypeNewTokens.[fullName]
+                let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
+                let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
+
+                for implHandle in freshTypeDef.GetInterfaceImplementations() do
+                    let impl = metadataReader.GetInterfaceImplementation implHandle
+                    let interfaceToken = MetadataTokens.GetToken impl.Interface
+
+                    let interfaceRef =
+                        match impl.Interface.Kind with
+                        | HandleKind.TypeReference -> TDR_TypeRef(TypeRefHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
+                        | HandleKind.TypeDefinition -> TDR_TypeDef(TypeDefHandle(remapDefinitionToken interfaceToken &&& 0x00FFFFFF))
+                        | HandleKind.TypeSpecification -> TDR_TypeSpec(TypeSpecHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
+                        | kind ->
+                            raise (
+                                HotReloadUnsupportedEditException(
+                                    $"Added type '{fullName}' implements an interface with unsupported handle kind {kind}; please rebuild."
+                                )
+                            )
+
+                    interfaceRows.Add(classRowId, interfaceRef)
+
+                for implHandle in freshTypeDef.GetMethodImplementations() do
+                    let impl = metadataReader.GetMethodImplementation implHandle
+
+                    methodImplRows.Add(
+                        classRowId,
+                        remapMethodDefOrRef fullName impl.MethodBody,
+                        remapMethodDefOrRef fullName impl.MethodDeclaration
+                    )
+
+            let baselineInterfaceImplRowCount =
+                baselineTableRowCounts.[TableNames.InterfaceImpl.Index]
+
+            let baselineMethodImplRowCount =
+                baselineTableRowCounts.[TableNames.MethodImpl.Index]
+
+            // Both tables sort on the Class column (ECMA-335 II.22.23 / II.22.27;
+            // InterfaceImpl additionally on the Interface coded index); keep the
+            // appended delta rows in the same relative order.
+            let interfaceImplList =
+                interfaceRows
+                |> Seq.sortBy (fun (classRowId, interfaceRef) -> (classRowId, (interfaceRef.RowId <<< 2) ||| interfaceRef.CodedTag))
+                |> Seq.mapi (fun index (classRowId, interfaceRef) ->
+                    {
+                        InterfaceImplRowInfo.RowId = baselineInterfaceImplRowCount + index + 1
+                        ClassTypeDefRowId = classRowId
+                        Interface = interfaceRef
+                    })
+                |> Seq.toList
+
+            let methodImplList =
+                methodImplRows
+                |> Seq.sortBy (fun (classRowId, _, _) -> classRowId)
+                |> Seq.mapi (fun index (classRowId, body, declaration) ->
+                    {
+                        MethodImplRowInfo.RowId = baselineMethodImplRowCount + index + 1
+                        ClassTypeDefRowId = classRowId
+                        MethodBody = body
+                        MethodDeclaration = declaration
+                    })
+                |> Seq.toList
+
+            interfaceImplList, methodImplList
+
+    if traceMethodUpdates.Value then
+        for row in interfaceImplRowsSnapshot do
+            printfn "[fsharp-hotreload][interface-impl] rowId=%d class=%d interface=%A" row.RowId row.ClassTypeDefRowId row.Interface
+
+        for row in methodImplRowsSnapshot do
+            printfn
+                "[fsharp-hotreload][method-impl] rowId=%d class=%d body=%A declaration=%A"
+                row.RowId
+                row.ClassTypeDefRowId
+                row.MethodBody
+                row.MethodDeclaration
+
+    {
+        Fields = fieldDefinitionRowsSnapshot
+        Constants = constantRowsSnapshot
+        Types = typeDefinitionRowsSnapshot
+        NestedTypes = nestedClassRowsSnapshot
+        GenericParameters = genericParamRowsSnapshot
+        GenericConstraints = genericParamConstraintRowsSnapshot
+        Interfaces = interfaceImplRowsSnapshot
+        MethodImplementations = methodImplRowsSnapshot
+    }
+
+/// Debug-line analysis is separate from definition and metadata row allocation.
+type private SequencePointDeltaAnalysis =
+    {
+        Updates: FSharp.Compiler.CodeAnalysis.FSharpSequencePointUpdates list
+        FreshPoints: Map<int, ActiveStatementAnalysis.MethodSequencePoints>
+        RecompileMethods: MethodDefinitionKey list
+    }
+
+/// Classifies debugger line changes without access to mutable emission registries.
+let private analyzeSequencePointChanges
+    (request: IlxDeltaRequest)
+    (effectiveDebugPdb: byte[] option)
+    (matchedMethodTokenPairs: seq<KeyValuePair<int, int>>)
+    : SequencePointDeltaAnalysis =
     // Sequence-point analysis. Diff every baseline-matched method's fresh sequence
     // points against the committed snapshot (the debugger's current view of its lines):
     //   - UniformLineShift -> a line-edit segment (the debugger rebinds without recompilation;
@@ -4782,6 +5328,141 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             |> String.concat ", "
 
         printfn "[fsharp-hotreload][sequence-points] trivia-edit recompiles: %s" names
+
+    {
+        Updates = sequencePointUpdates
+        FreshPoints = freshSequencePointsByToken
+        RecompileMethods = triviaRecompileKeys
+    }
+
+/// Emits metadata, IL, and portable PDB deltas with token mappings for the baseline and new definitions.
+///
+/// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
+/// caller has one and no emitted-artifact PDB is available. <c>request.EmittedArtifacts</c>
+/// carries bytes and token mappings from the real fresh compile write when the session compiled
+/// in-process. When neither is present, the emitter falls back to the legacy in-memory rewrite
+/// (callers that construct modules with debug points, e.g. the component tests, need no sibling file).
+let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta =
+    let matchingContext = createDeclarationMatchingContext request
+    let symbolMatcher = matchingContext.SymbolMatcher
+    let symbolChangeTypeNames = matchingContext.ChangedTypeNames
+    let isUpdatedMethodResumableCodeHelper = matchingContext.IsResumableHelper
+
+    let builder = IlDeltaStreamBuilder(Some request.Baseline.Metadata)
+
+    if traceHeapOffsets.Value then
+        let heaps = request.Baseline.Metadata.HeapSizes
+
+        printfn
+            "[fsharp-hotreload][heap-offsets] Generation %d - Baseline heap sizes passed to IlDeltaStreamBuilder:"
+            request.CurrentGeneration
+
+        printfn "[fsharp-hotreload][heap-offsets]   UserStringHeapSize = %d" heaps.UserStringHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   StringHeapSize = %d" heaps.StringHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   BlobHeapSize = %d" heaps.BlobHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   GuidHeapSize = %d" heaps.GuidHeapSize
+        printfn "[fsharp-hotreload][heap-offsets]   NextGeneration = %d, EncId = %A" request.Baseline.NextGeneration request.Baseline.EncId
+
+    let primaryScopeRef =
+        match request.Module.Manifest with
+        | Some manifest ->
+            let publicKey =
+                manifest.PublicKey |> Option.map (fun key -> PublicKey.KeyAsToken key)
+
+            let asmRef =
+                ILAssemblyRef.Create(manifest.Name, None, publicKey, manifest.Retargetable, manifest.Version, manifest.Locale)
+
+            ILScopeRef.Assembly asmRef
+        | None -> ILScopeRef.PrimaryAssembly
+
+    let fsharpCoreScopeRef =
+        ILScopeRef.Assembly(ILAssemblyRef.Create("FSharp.Core", None, None, false, None, None))
+
+    let ilg = mkILGlobals (primaryScopeRef, [], fsharpCoreScopeRef)
+
+    let writerOptions = defaultWriterOptions ilg HashAlgorithm.Sha256
+
+    let assemblyBytes, pdbBytesOpt, emittedTokenMappings =
+        match request.EmittedArtifacts with
+        | Some artifacts -> artifacts.AssemblyBytes, artifacts.PdbBytes, artifacts.TokenMappings
+        | None ->
+            let assemblyBytes, pdbBytesOpt, emittedTokenMappings, _ =
+                ILWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, request.Module, id)
+
+            assemblyBytes, pdbBytesOpt, emittedTokenMappings
+
+    // The fresh compile's debug data: the caller-supplied on-disk PDB when available, else the
+    // artifact or rewrite PDB. Feeds the sequence-point analysis and the PDB delta.
+    let effectiveDebugPdb = freshDebugPdb |> Option.orElse pdbBytesOpt
+
+    if traceUserStringUpdates.Value then
+        try
+            let tempDll =
+                Path.Combine(Path.GetTempPath(), $"fsharp-hotreload-ilmodule-{System.Guid.NewGuid():N}.dll")
+
+            File.WriteAllBytes(tempDll, assemblyBytes)
+            printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
+        with ex ->
+            printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
+
+    use peStream = new MemoryStream(assemblyBytes, writable = false)
+    use peReader = new PEReader(peStream)
+    let metadataReader = peReader.GetMetadataReader()
+    let moduleDef = metadataReader.GetModuleDefinition()
+    let moduleName = metadataReader.GetString moduleDef.Name
+    let baselineModuleNameOffset = request.Baseline.ModuleNameOffset
+    let userStringCalculator = builder.UserStringCalculator
+    let stringTokenCache = Dictionary<int, int>()
+    let userStringUpdates = ResizeArray<int * int * string>()
+
+    let logUserString originalToken newToken text =
+        if traceUserStringUpdates.Value then
+            printfn "[fsharp-hotreload][userstring] original=0x%08X new=0x%08X text=%s" originalToken newToken text
+
+    let remapUserString token =
+        match stringTokenCache.TryGetValue token with
+        | true, mapped -> mapped
+        | _ ->
+            let handle = MetadataTokens.UserStringHandle token
+            let value = metadataReader.GetUserString handle
+            let newToken = userStringCalculator.GetOrAddUserString value
+            stringTokenCache[token] <- newToken
+            userStringUpdates.Add((token, newToken, value))
+            logUserString token newToken value
+            newToken
+
+    let definitions = collectDefinitionMappings matchingContext emittedTokenMappings
+    let typeTokenMap = definitions.TypeTokenMap
+    let fieldTokenMap = definitions.FieldTokenMap
+    let methodTokenMap = definitions.MethodTokenMap
+    let matchedMethodTokenPairs = definitions.MatchedMethodTokenPairs
+    let propertyTokenMap = definitions.PropertyTokenMap
+    let eventTokenMap = definitions.EventTokenMap
+    let addedMethodTokens = definitions.AddedMethodTokens
+    let addedFieldTokens = definitions.AddedFieldTokens
+    let addedTypeNewTokens = definitions.AddedTypeNewTokens
+    let addedTypeDeltaTokens = definitions.AddedTypeDeltaTokens
+    let addedTypeDefs = definitions.AddedTypeDefs
+    let addedTypeShapes = definitions.AddedTypeShapes
+    let addedTypeMetadataNameByKey = definitions.AddedTypeMetadataNameByKey
+    let addedPropertyTokens = definitions.AddedPropertyTokens
+    let addedEventTokens = definitions.AddedEventTokens
+    let addedPropertyTokenLookup = definitions.AddedPropertyTokenLookup
+    let addedEventTokenLookup = definitions.AddedEventTokenLookup
+    let propertyHandleLookup = definitions.PropertyHandleLookup
+    let eventHandleLookup = definitions.EventHandleLookup
+    let tryGetBaselineTypeName = definitions.TryGetBaselineTypeName
+    let tryResolveFreshTypeNameForKey = definitions.TryResolveFreshTypeNameForKey
+
+    let addedMethodKeys =
+        addedMethodTokens |> Seq.map (fun kvp -> kvp.Key) |> Seq.toList
+
+    let sequencePointAnalysis =
+        analyzeSequencePointChanges request effectiveDebugPdb matchedMethodTokenPairs
+
+    let sequencePointUpdates = sequencePointAnalysis.Updates
+    let freshSequencePointsByToken = sequencePointAnalysis.FreshPoints
+    let triviaRecompileKeys = sequencePointAnalysis.RecompileMethods
 
     let allUpdatedMethods =
         (request.UpdatedMethods @ triviaRecompileKeys @ addedMethodKeys)
@@ -4972,7 +5653,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let deltaToken = 0x06000000 ||| rowId
             addedMethodDeltaTokens[key] <- deltaToken
             matchedMethodTokenPairs[newToken] <- deltaToken
-            addMapping methodTokenMap newToken deltaToken
+            addDefinitionTokenMapping methodTokenMap newToken deltaToken
 
     // Allocate delta Field rows for added static fields. Row ids continue from the baseline
     // Field table (like AddedOrChangedMethods); the fresh-compile token maps to the delta
@@ -4996,7 +5677,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let rowId = fieldDefinitionIndex.Add key
             let deltaToken = 0x04000000 ||| rowId
             addedFieldDeltaTokens[key] <- deltaToken
-            addMapping fieldTokenMap newToken deltaToken
+            addDefinitionTokenMapping fieldTokenMap newToken deltaToken
 
     // Keep definition-token projection separate from metadata-reference remapping.
     let definitionTokenRemapper =
@@ -5049,7 +5730,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     let remapAssemblyRefToken = metadataReferenceRemapper.RemapAssemblyRefToken
 
     // Fresh-compile MethodDef tokens keyed by the baseline-coordinate token they map to.
-    // addMapping records fresh -> baseline pairs only when the row ids DIFFER, so a
+    // addDefinitionTokenMapping records fresh -> baseline pairs only when the row ids DIFFER, so a
     // missing entry means the fresh row coincides with the baseline row. Method bodies,
     // attributes, signatures and parameters of updated methods must be read from the
     // fresh reader through THIS map; the baseline token is only the emission row.
@@ -5146,7 +5827,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let rowId = propertyDefinitionIndex.Add key
             let deltaToken = 0x17000000 ||| rowId
             addedPropertyDeltaTokens[key] <- deltaToken
-            addMapping propertyTokenMap newToken deltaToken
+            addDefinitionTokenMapping propertyTokenMap newToken deltaToken
 
     for KeyValue(key, token) in addedPropertyDeltaTokens do
         propertyTokenToKey[token] <- key
@@ -5166,7 +5847,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             let rowId = eventDefinitionIndex.Add key
             let deltaToken = 0x14000000 ||| rowId
             addedEventDeltaTokens[key] <- deltaToken
-            addMapping eventTokenMap newToken deltaToken
+            addDefinitionTokenMapping eventTokenMap newToken deltaToken
 
     for KeyValue(key, token) in addedEventDeltaTokens do
         eventTokenToKey[token] <- key
@@ -5610,480 +6291,33 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
         let methodUpdates = methodUpdatesWithDefs |> List.map (fun (update, _, _) -> update)
 
-        // Snapshot the added Field rows from the fresh compile. Field signatures (FieldSig,
-        // ECMA-335 II.23.2.4) embed TypeDefOrRef coded indexes of the in-memory compile, so
-        // they flow through the same signature-blob remapper as method/local signatures
-        // before entering the delta blob heap.
-        let fieldDefinitionRowsSnapshot: FieldDefinitionRowInfo list =
-            addedFieldDeltaTokens
-            |> Seq.sortBy (fun kvp -> kvp.Value)
-            |> Seq.map (fun (KeyValue(key, deltaToken)) ->
-                let newToken = addedFieldTokens.[key]
-                let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
-                let fieldDef = metadataReader.GetFieldDefinition fieldHandle
-
-                // FieldLayout (explicit [<FieldOffset>]), FieldMarshal (interop
-                // marshalling) and FieldRVA (static data blobs, e.g. large array
-                // initializers) rows have no writer support; shipping the Field row
-                // without them silently corrupts layout/marshalling/data. Fail closed
-                // precisely.
-                if fieldDef.GetOffset() >= 0 then
-                    raise (
-                        HotReloadUnsupportedEditException(
-                            $"Added field '{key.DeclaringType}::{key.Name}' declares an explicit offset (FieldLayout); hot reload deltas cannot express FieldLayout rows yet. Please rebuild."
-                        )
-                    )
-
-                if not (fieldDef.GetMarshallingDescriptor().IsNil) then
-                    raise (
-                        HotReloadUnsupportedEditException(
-                            $"Added field '{key.DeclaringType}::{key.Name}' carries marshalling metadata (FieldMarshal); hot reload deltas cannot express FieldMarshal rows yet. Please rebuild."
-                        )
-                    )
-
-                if fieldDef.GetRelativeVirtualAddress() <> 0 then
-                    raise (
-                        HotReloadUnsupportedEditException(
-                            $"Added field '{key.DeclaringType}::{key.Name}' maps static data (FieldRVA); hot reload deltas cannot express FieldRVA rows yet. Please rebuild."
-                        )
-                    )
-
-                let signature =
-                    metadataReader.GetBlobBytes fieldDef.Signature
-                    |> remapSignatureBlobWith (remapTypeDefOrRefCodedIndexWith remapEntityToken)
-
-                let parentRowId =
-                    match request.Baseline.TypeTokens |> Map.tryFind key.DeclaringType with
-                    | Some typeToken -> typeToken &&& 0x00FFFFFF
-                    | None ->
-                        match addedTypeDeltaTokens.TryGetValue key.DeclaringType with
-                        | true, deltaTypeToken -> deltaTypeToken &&& 0x00FFFFFF
-                        | _ ->
-                            // Registration already gated on the baseline type token, so this only
-                            // fires if the baseline maps changed under us; fail closed.
-                            raise (
-                                HotReloadUnsupportedEditException(
-                                    $"Added field '{key.DeclaringType}::{key.Name}' has no baseline TypeDef token; please rebuild."
-                                )
-                            )
-
+        let addedDefinitionRows =
+            buildAddedDefinitionRows
                 {
-                    FieldDefinitionRowInfo.Key = key
-                    RowId = deltaToken &&& 0x00FFFFFF
-                    IsAdded = true
-                    ParentTypeDefRowId = parentRowId
-                    Attributes = fieldDef.Attributes
-                    Name = metadataReader.GetString fieldDef.Name
-                    NameOffset = None
-                    Signature = signature
-                    SignatureOffset = None
-                })
-            |> Seq.toList
+                    MetadataReader = metadataReader
+                    BaselineTypeTokens = request.Baseline.TypeTokens
+                    BaselineTableRowCounts = baselineTableRowCounts
+                    AddedFieldTokens = addedFieldTokens
+                    AddedFieldDeltaTokens = addedFieldDeltaTokens
+                    AddedMethodTokens = addedMethodTokens
+                    AddedMethodDeltaTokens = addedMethodDeltaTokens
+                    AddedTypeNewTokens = addedTypeNewTokens
+                    AddedTypeDeltaTokens = addedTypeDeltaTokens
+                    AddedTypeDefs = addedTypeDefs
+                    AddedTypeMetadataNameByKey = addedTypeMetadataNameByKey
+                    TryGetBaselineTypeName = tryGetBaselineTypeName
+                    RemapDefinitionToken = definitionTokenRemapper.RemapDefinitionToken
+                    RemapEntityToken = remapEntityToken
+                }
 
-        if traceMethodUpdates.Value then
-            for row in fieldDefinitionRowsSnapshot do
-                printfn
-                    "[fsharp-hotreload][field-add] %s::%s rowId=%d parentTypeDef=%d"
-                    row.Key.DeclaringType
-                    row.Key.Name
-                    row.RowId
-                    row.ParentTypeDefRowId
-
-        // Constant rows for ADDED literal fields (enum members, union Tags holder
-        // constants, [<Literal>] values): ECMA-335 II.22.9 — Type is the fresh compile's
-        // ELEMENT_TYPE code, Parent the new delta Field row (HasConstant, tag Field),
-        // Value the raw constant blob copied into the DELTA blob heap (primitive bytes,
-        // nothing to remap). Rows are ordered by the parent Field row id (the table's
-        // HasConstant sort key — all parents here are Fields) and numbered past the
-        // chained baseline Constant row count. C# reference template: 'new_enum'
-        // (reference_mdv_new_enum.txt) — three Constant rows trail the generation-1 log
-        // as plain Default entries, EncMap adds.
-        let constantRowsSnapshot: ConstantRowInfo list =
-            let baselineConstantRowCount = baselineTableRowCounts.[TableNames.Constant.Index]
-
-            addedFieldDeltaTokens
-            |> Seq.sortBy (fun kvp -> kvp.Value)
-            |> Seq.choose (fun (KeyValue(key, deltaToken)) ->
-                let newToken = addedFieldTokens.[key]
-                let fieldHandle = MetadataTokens.FieldDefinitionHandle(newToken &&& 0x00FFFFFF)
-                let fieldDef = metadataReader.GetFieldDefinition fieldHandle
-                let constantHandle = fieldDef.GetDefaultValue()
-
-                if constantHandle.IsNil then
-                    None
-                else
-                    let constant = metadataReader.GetConstant constantHandle
-
-                    Some
-                        {
-                            ConstantRowInfo.RowId = 0
-                            TypeCode = byte constant.TypeCode
-                            Parent = HC_Field(FieldHandle(deltaToken &&& 0x00FFFFFF))
-                            Value = metadataReader.GetBlobBytes constant.Value
-                        })
-            |> Seq.mapi (fun index row ->
-                { row with
-                    RowId = baselineConstantRowCount + index + 1
-                })
-            |> Seq.toList
-
-        if traceMethodUpdates.Value then
-            for row in constantRowsSnapshot do
-                printfn
-                    "[fsharp-hotreload][constant-add] rowId=%d parentFieldRow=%d typeCode=0x%02X valueBytes=%d"
-                    row.RowId
-                    row.Parent.RowId
-                    (int row.TypeCode)
-                    row.Value.Length
-
-        // Snapshot ADDED TypeDef rows (closure classes synthesized for added lambdas).
-        // Name/namespace/attributes come from the fresh compile's metadata; the Extends
-        // coded index is remapped from fresh rows to baseline/delta rows. Nested types
-        // (F# closure classes are nested in their module type) additionally produce a
-        // NestedClass row pointing at the enclosing TypeDef.
-        let typeDefinitionRowsSnapshot, nestedClassRowsSnapshot =
-            if addedTypeDefs.Count = 0 then
-                [], []
-            else
-                let baselineNestedClassRowCount = baselineTableRowCounts.[TableNames.Nested.Index]
-                let typeRows = ResizeArray<TypeDefinitionRowInfo>()
-                let nestedRows = ResizeArray<NestedClassRowInfo>()
-
-                let resolveEnclosingTypeDefRowId (enclosing: ILTypeDef list) (fullName: string) =
-                    match enclosing with
-                    | [] -> None
-                    | _ ->
-                        let parentType = List.last enclosing
-                        let parentEnclosing = enclosing |> List.take (List.length enclosing - 1)
-
-                        let parentRef =
-                            mkRefForNestedILTypeDef ILScopeRef.Local (parentEnclosing, parentType)
-
-                        let parentBaselineName = tryGetBaselineTypeName parentRef.FullName
-
-                        match request.Baseline.TypeTokens |> Map.tryFind parentBaselineName with
-                        | Some token -> Some(token &&& 0x00FFFFFF)
-                        | None ->
-                            match addedTypeDeltaTokens.TryGetValue parentBaselineName with
-                            | true, token -> Some(token &&& 0x00FFFFFF)
-                            | _ ->
-                                raise (
-                                    HotReloadUnsupportedEditException(
-                                        $"Added type '{fullName}' is nested in '{parentBaselineName}', which has no baseline or delta TypeDef row; please rebuild."
-                                    )
-                                )
-
-                for (enclosing, _typeDef, fullName) in addedTypeDefs do
-                    let deltaToken = addedTypeDeltaTokens.[fullName]
-                    let rowId = deltaToken &&& 0x00FFFFFF
-                    let newToken = addedTypeNewTokens.[fullName]
-                    let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
-                    let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
-
-                    let name =
-                        match addedTypeMetadataNameByKey.TryGetValue fullName with
-                        | true, metadataName -> metadataName
-                        | _ -> metadataReader.GetString freshTypeDef.Name
-
-                    // Explicit/sized layouts need a ClassLayout row (ECMA-335 II.22.8)
-                    // the writer cannot express; shipping the TypeDef without it would
-                    // corrupt the runtime layout. Fail closed precisely.
-                    let typeLayout = freshTypeDef.GetLayout()
-
-                    if not typeLayout.IsDefault then
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added type '{fullName}' declares an explicit layout (ClassLayout PackingSize={typeLayout.PackingSize}, Size={typeLayout.Size}); hot reload deltas cannot express ClassLayout rows yet. Please rebuild."
-                            )
-                        )
-
-                    let namespaceName =
-                        if freshTypeDef.Namespace.IsNil then
-                            ""
-                        else
-                            metadataReader.GetString freshTypeDef.Namespace
-
-                    let extends =
-                        if freshTypeDef.BaseType.IsNil then
-                            None
-                        else
-                            let baseToken = MetadataTokens.GetToken freshTypeDef.BaseType
-
-                            match freshTypeDef.BaseType.Kind with
-                            | HandleKind.TypeReference ->
-                                let mapped = remapEntityToken baseToken
-                                Some(TDR_TypeRef(TypeRefHandle(mapped &&& 0x00FFFFFF)))
-                            | HandleKind.TypeDefinition ->
-                                let mapped = definitionTokenRemapper.RemapDefinitionToken baseToken
-                                Some(TDR_TypeDef(TypeDefHandle(mapped &&& 0x00FFFFFF)))
-                            | HandleKind.TypeSpecification ->
-                                // Content-validated TypeSpec remap: resolves to the matching
-                                // baseline row, or appends a new TypeSpec row to the delta
-                                // for a genuinely new instantiation (e.g. the first
-                                // FSharpFunc<A,B> closure of that shape in the assembly).
-                                let mapped = remapEntityToken baseToken
-                                Some(TDR_TypeSpec(TypeSpecHandle(mapped &&& 0x00FFFFFF)))
-                            | kind ->
-                                raise (
-                                    HotReloadUnsupportedEditException(
-                                        $"Added type '{fullName}' has unsupported base-type handle kind {kind}; please rebuild."
-                                    )
-                                )
-
-                    let enclosingRowId = resolveEnclosingTypeDefRowId enclosing fullName
-
-                    typeRows.Add
-                        {
-                            TypeDefinitionRowInfo.FullName = fullName
-                            RowId = rowId
-                            Attributes = freshTypeDef.Attributes
-                            Name = name
-                            NameOffset = None
-                            Namespace = namespaceName
-                            NamespaceOffset = None
-                            Extends = extends
-                            EnclosingTypeDefRowId = enclosingRowId
-                        }
-
-                    match enclosingRowId with
-                    | Some enclosingRow ->
-                        nestedRows.Add
-                            {
-                                NestedClassRowInfo.RowId = baselineNestedClassRowCount + nestedRows.Count + 1
-                                NestedTypeDefRowId = rowId
-                                EnclosingTypeDefRowId = enclosingRow
-                            }
-                    | None -> ()
-
-                typeRows |> Seq.sortBy (fun row -> row.RowId) |> Seq.toList, nestedRows |> Seq.toList
-
-        if traceMethodUpdates.Value then
-            for row in typeDefinitionRowsSnapshot do
-                printfn
-                    "[fsharp-hotreload][type-add] %s rowId=%d nestedIn=%A extends=%A"
-                    row.FullName
-                    row.RowId
-                    row.EnclosingTypeDefRowId
-                    row.Extends
-
-        // GenericParam rows for ADDED generic methods and ADDED generic types (closure
-        // classes over generic members). C# reference template (csharp_enc_reference
-        // 'generic_method_add'): the added MethodDef's AddMethod/AddParameter pairs are
-        // followed by a plain 'GenericParam ... Default' EncLog entry, and the row appears
-        // in EncMap as an add. GenericParam rows of UPDATED definitions are baseline rows
-        // and are never re-emitted. IL constraints on the type parameters emit
-        // GenericParamConstraint rows owned by the new GenericParam rows (C# reference
-        // template 'generic_constraint_add').
-        let genericParamRowsSnapshot, genericParamConstraintRowsSnapshot =
-            let pending = ResizeArray<int * GenericParameterHandle * TypeOrMethodDef * string>()
-
-            let collect (display: string) (owner: TypeOrMethodDef) (handles: GenericParameterHandleCollection) =
-                for handle in handles do
-                    let genericParam = metadataReader.GetGenericParameter handle
-
-                    if genericParam.GetCustomAttributes().Count > 0 then
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added generic definition '{display}' has type-parameter custom attributes, which hot reload deltas cannot emit yet; please rebuild."
-                            )
-                        )
-
-                    pending.Add(genericParam.Index, handle, owner, display)
-
-            for KeyValue(key, deltaToken) in addedMethodDeltaTokens do
-                let freshToken = addedMethodTokens.[key]
-                let methodHandle = MetadataTokens.MethodDefinitionHandle(freshToken &&& 0x00FFFFFF)
-                let freshMethodDef = metadataReader.GetMethodDefinition methodHandle
-
-                collect
-                    $"{key.DeclaringType}::{key.Name}"
-                    (TOMD_MethodDef(MethodDefHandle(deltaToken &&& 0x00FFFFFF)))
-                    (freshMethodDef.GetGenericParameters())
-
-            for (_, _, fullName) in addedTypeDefs do
-                let deltaToken = addedTypeDeltaTokens.[fullName]
-                let newToken = addedTypeNewTokens.[fullName]
-                let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
-                let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
-
-                collect fullName (TOMD_TypeDef(TypeDefHandle(deltaToken &&& 0x00FFFFFF))) (freshTypeDef.GetGenericParameters())
-
-            let baselineGenericParamRowCount =
-                baselineTableRowCounts.[TableNames.GenericParam.Index]
-
-            // The GenericParam table is sorted by the Owner coded index (ECMA-335 II.22.20:
-            // owner, then Number); keep the appended delta rows in the same relative order.
-            let orderedParams =
-                pending
-                |> Seq.sortBy (fun (number, _, owner, _) -> (owner.RowId <<< 1) ||| owner.CodedTag, number)
-                |> Seq.mapi (fun index (number, handle, owner, display) ->
-                    let genericParam = metadataReader.GetGenericParameter handle
-
-                    {
-                        GenericParamRowInfo.RowId = baselineGenericParamRowCount + index + 1
-                        Number = number
-                        Attributes = genericParam.Attributes
-                        Owner = owner
-                        Name = metadataReader.GetString genericParam.Name
-                        NameOffset = None
-                    },
-                    handle,
-                    display)
-                |> Seq.toList
-
-            // Constraint rows are owned by the new GenericParam rows. The table sorts on
-            // Owner (ECMA-335 II.22.21); the params are already in owner order, and the
-            // constraints of one param keep their fresh-compile order.
-            let baselineConstraintRowCount =
-                baselineTableRowCounts.[TableNames.GenericParamConstraint.Index]
-
-            let constraintRows =
-                let rows = ResizeArray<GenericParamConstraintRowInfo>()
-
-                for (paramRow, handle, display) in orderedParams do
-                    let genericParam = metadataReader.GetGenericParameter handle
-
-                    for constraintHandle in genericParam.GetConstraints() do
-                        let genericConstraint =
-                            metadataReader.GetGenericParameterConstraint constraintHandle
-
-                        let constraintToken = MetadataTokens.GetToken genericConstraint.Type
-
-                        let constraintRef =
-                            match genericConstraint.Type.Kind with
-                            | HandleKind.TypeReference -> TDR_TypeRef(TypeRefHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
-                            | HandleKind.TypeDefinition ->
-                                TDR_TypeDef(TypeDefHandle(definitionTokenRemapper.RemapDefinitionToken constraintToken &&& 0x00FFFFFF))
-                            | HandleKind.TypeSpecification -> TDR_TypeSpec(TypeSpecHandle(remapEntityToken constraintToken &&& 0x00FFFFFF))
-                            | kind ->
-                                raise (
-                                    HotReloadUnsupportedEditException(
-                                        $"Added generic definition '{display}' has a type-parameter constraint with unsupported handle kind {kind}; please rebuild."
-                                    )
-                                )
-
-                        rows.Add
-                            {
-                                GenericParamConstraintRowInfo.RowId = baselineConstraintRowCount + rows.Count + 1
-                                OwnerGenericParamRowId = paramRow.RowId
-                                Constraint = constraintRef
-                            }
-
-                rows |> List.ofSeq
-
-            orderedParams |> List.map (fun (row, _, _) -> row), constraintRows
-
-        if traceMethodUpdates.Value then
-            for row in genericParamRowsSnapshot do
-                printfn "[fsharp-hotreload][generic-param] rowId=%d number=%d owner=%A name=%s" row.RowId row.Number row.Owner row.Name
-
-        // InterfaceImpl rows for ADDED types (C# 'new_class' reference template: the new
-        // class's InterfaceImpl row is a plain Default EncLog entry trailing the log,
-        // EncMap add) and MethodImpl rows for their explicit interface implementations
-        // (F# classes implement interfaces explicitly — `interface X with` — so unlike
-        // C#'s implicit public mapping every implemented slot carries a MethodImpl row;
-        // records/unions map their synthesized comparers publicly and need none).
-        let interfaceImplRowsSnapshot, methodImplRowsSnapshot =
-            if addedTypeDefs.Count = 0 then
-                [], []
-            else
-                let interfaceRows = ResizeArray<int * TypeDefOrRef>()
-                let methodImplRows = ResizeArray<int * MethodDefOrRef * MethodDefOrRef>()
-
-                let remapMethodDefOrRef (context: string) (handle: EntityHandle) =
-                    let token = MetadataTokens.GetToken handle
-
-                    match handle.Kind with
-                    | HandleKind.MethodDefinition ->
-                        MDOR_MethodDef(MethodDefHandle(definitionTokenRemapper.RemapDefinitionToken token &&& 0x00FFFFFF))
-                    | HandleKind.MemberReference -> MDOR_MemberRef(MemberRefHandle(remapEntityToken token &&& 0x00FFFFFF))
-                    | kind ->
-                        raise (
-                            HotReloadUnsupportedEditException(
-                                $"Added type member implementation '{context}' has unsupported method handle kind {kind}; please rebuild."
-                            )
-                        )
-
-                for (_, _, fullName) in addedTypeDefs do
-                    let deltaToken = addedTypeDeltaTokens.[fullName]
-                    let classRowId = deltaToken &&& 0x00FFFFFF
-                    let newToken = addedTypeNewTokens.[fullName]
-                    let typeHandle = MetadataTokens.TypeDefinitionHandle(newToken &&& 0x00FFFFFF)
-                    let freshTypeDef = metadataReader.GetTypeDefinition typeHandle
-
-                    for implHandle in freshTypeDef.GetInterfaceImplementations() do
-                        let impl = metadataReader.GetInterfaceImplementation implHandle
-                        let interfaceToken = MetadataTokens.GetToken impl.Interface
-
-                        let interfaceRef =
-                            match impl.Interface.Kind with
-                            | HandleKind.TypeReference -> TDR_TypeRef(TypeRefHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
-                            | HandleKind.TypeDefinition ->
-                                TDR_TypeDef(TypeDefHandle(definitionTokenRemapper.RemapDefinitionToken interfaceToken &&& 0x00FFFFFF))
-                            | HandleKind.TypeSpecification -> TDR_TypeSpec(TypeSpecHandle(remapEntityToken interfaceToken &&& 0x00FFFFFF))
-                            | kind ->
-                                raise (
-                                    HotReloadUnsupportedEditException(
-                                        $"Added type '{fullName}' implements an interface with unsupported handle kind {kind}; please rebuild."
-                                    )
-                                )
-
-                        interfaceRows.Add(classRowId, interfaceRef)
-
-                    for implHandle in freshTypeDef.GetMethodImplementations() do
-                        let impl = metadataReader.GetMethodImplementation implHandle
-
-                        methodImplRows.Add(
-                            classRowId,
-                            remapMethodDefOrRef fullName impl.MethodBody,
-                            remapMethodDefOrRef fullName impl.MethodDeclaration
-                        )
-
-                let baselineInterfaceImplRowCount =
-                    baselineTableRowCounts.[TableNames.InterfaceImpl.Index]
-
-                let baselineMethodImplRowCount =
-                    baselineTableRowCounts.[TableNames.MethodImpl.Index]
-
-                // Both tables sort on the Class column (ECMA-335 II.22.23 / II.22.27;
-                // InterfaceImpl additionally on the Interface coded index); keep the
-                // appended delta rows in the same relative order.
-                let interfaceImplList =
-                    interfaceRows
-                    |> Seq.sortBy (fun (classRowId, interfaceRef) -> (classRowId, (interfaceRef.RowId <<< 2) ||| interfaceRef.CodedTag))
-                    |> Seq.mapi (fun index (classRowId, interfaceRef) ->
-                        {
-                            InterfaceImplRowInfo.RowId = baselineInterfaceImplRowCount + index + 1
-                            ClassTypeDefRowId = classRowId
-                            Interface = interfaceRef
-                        })
-                    |> Seq.toList
-
-                let methodImplList =
-                    methodImplRows
-                    |> Seq.sortBy (fun (classRowId, _, _) -> classRowId)
-                    |> Seq.mapi (fun index (classRowId, body, declaration) ->
-                        {
-                            MethodImplRowInfo.RowId = baselineMethodImplRowCount + index + 1
-                            ClassTypeDefRowId = classRowId
-                            MethodBody = body
-                            MethodDeclaration = declaration
-                        })
-                    |> Seq.toList
-
-                interfaceImplList, methodImplList
-
-        if traceMethodUpdates.Value then
-            for row in interfaceImplRowsSnapshot do
-                printfn "[fsharp-hotreload][interface-impl] rowId=%d class=%d interface=%A" row.RowId row.ClassTypeDefRowId row.Interface
-
-            for row in methodImplRowsSnapshot do
-                printfn
-                    "[fsharp-hotreload][method-impl] rowId=%d class=%d body=%A declaration=%A"
-                    row.RowId
-                    row.ClassTypeDefRowId
-                    row.MethodBody
-                    row.MethodDeclaration
+        let fieldDefinitionRowsSnapshot = addedDefinitionRows.Fields
+        let constantRowsSnapshot = addedDefinitionRows.Constants
+        let typeDefinitionRowsSnapshot = addedDefinitionRows.Types
+        let nestedClassRowsSnapshot = addedDefinitionRows.NestedTypes
+        let genericParamRowsSnapshot = addedDefinitionRows.GenericParameters
+        let genericParamConstraintRowsSnapshot = addedDefinitionRows.GenericConstraints
+        let interfaceImplRowsSnapshot = addedDefinitionRows.Interfaces
+        let methodImplRowsSnapshot = addedDefinitionRows.MethodImplementations
 
         let baselineHeapOffsets =
             request.Baseline.Metadata.HeapSizes |> MetadataHeapOffsets.OfHeapSizes

@@ -1,6 +1,6 @@
 # Hot Reload: T-Gro Feedback Closure Matrix
 
-Last updated: 2026-03-02
+Last updated: 2026-10-27
 Source comments: NatElkins/fsharp#1 (T-Gro top-level review comments, 2026-02-20)
 
 ## Goal
@@ -39,7 +39,7 @@ Track each major review concern with objective status and evidence so follow-up 
 
 - Status: **Addressed**
 - Evidence:
-  - `FSharpHotReloadService` owns session orchestration and state transitions; checker delegates through thin APIs: `src/Compiler/Service/service.fs`.
+  - `FSharpHotReloadService` owns session orchestration in `src/Compiler/HotReload/FSharpHotReloadSession.fs`. The checker delegates through its construction callbacks.
 
 ### 4) Keep normal compilation naming semantics upstream-equivalent when hot reload is off
 
@@ -81,14 +81,18 @@ Track each major review concern with objective status and evidence so follow-up 
 
 - Status: **Addressed**
 - Evidence:
-  - Delta metadata emission uses a single proven hand-written serializer that builds the table/heap streams from the shared row model: `src/Compiler/CodeGen/FSharpDeltaMetadataWriter.fs`, `src/Compiler/CodeGen/DeltaMetadataSerializer.fs`.
+  - Delta metadata emission uses a single proven hand-written serializer that builds the table/heap streams from the shared row model: `src/Compiler/AbstractIL/FSharpDeltaMetadataWriter.fs`, `src/Compiler/AbstractIL/DeltaMetadataSerializer.fs`.
   - Automated parity gate validates emitted deltas against `mdv` component output: `tests/scripts/check-hotreload-metadata-parity.sh`, `tests/FSharp.Compiler.ComponentTests/HotReload/MdvValidationTests.fs`.
-  - Serializer hardening remains in place (heap-offset validation + malformed index tests): `src/Compiler/CodeGen/DeltaMetadataSerializer.fs`, `tests/FSharp.Compiler.Service.Tests/HotReload/FSharpDeltaMetadataWriterTests.fs`.
+  - `AbstractIL/ilwrite.fs` links metadata maintainers to the delta serializer, baseline reader, and parity gate.
+  - Serializer hardening remains in place (heap-offset validation + malformed index tests): `src/Compiler/AbstractIL/DeltaMetadataSerializer.fs`, `tests/FSharp.Compiler.Service.Tests/HotReload/FSharpDeltaMetadataWriterTests.fs`.
 
 ### 9) Large `IlxDeltaEmitter` single-function blast radius
 
-- Status: **Addressed**
+- Status: **Responsibilities separated. The orchestration function remains large.**
 - Evidence:
+  - `analyzeSequencePointChanges` owns debug-line classification with immutable inputs and a typed result. It cannot mutate emission registries.
+  - `collectDefinitionMappings` owns alias matching, declaration registration, and no-edit cleanup. Its input context preserves snapshot timing.
+  - `buildAddedDefinitionRows` owns field, constant, type, generic, and interface rows. Its input registries expose read-only views.
   - `emitDelta` now routes metadata row assembly through explicit helper phases (`buildMethodAndParameterRows`, `buildPropertyEventAndSemanticsRows`, `buildCustomAttributeRows`).
   - Final payload assembly (`added/changed method projection`, `PDB delta`, `baseline apply`) now runs through dedicated `finalizeDeltaArtifacts` helpers (`buildAddedOrChangedMethods`, `buildDeltaToUpdatedMethodTokenMap`) instead of inline logic.
   - Metadata reference remapping (`TypeRef`, `MemberRef`, `MethodSpec`, `AssemblyRef`, entity-token dispatch) is extracted into `createMetadataReferenceRemapper`: `src/Compiler/CodeGen/IlxDeltaEmitter.fs`.
@@ -106,7 +110,7 @@ Track each major review concern with objective status and evidence so follow-up 
 
 - Status: **Addressed**
 - Evidence:
-  - Shared helper used from `Utilities/EnvironmentHelpers.fs`.
+  - `Utilities/EnvironmentHelpers.fs` owns shared flag names and truth-value parsing. Exact-value switches retain their existing semantics.
 
 ### 12) ApplyUpdate setup duplication
 
@@ -127,12 +131,12 @@ Track each major review concern with objective status and evidence so follow-up 
   - Guard now enforces allowlist + mandatory hash-locking for every drifted `.fsi`: `tests/scripts/check-main-fsi-drift.sh`.
   - Refresh helper added: `tests/scripts/refresh-main-fsi-drift-hashes.sh`.
   - Reduced one main-relative signature drift by localizing hot-reload activity tag literals in `EditAndContinueLanguageService` and removing `Activity.fsi` from the allowlisted drift set (`10 -> 9` files).
-  - Removed hot-reload-specific `FSharpCheckProjectResults` signature exposure (`TypedImplementationFiles`, `HotReloadOptimizationData`) and switched service retrieval to non-public reflection so this branch no longer grows explicit hot-reload API surface in `FSharpCheckerResults.fsi`.
-  - Removed stale `FSharpCheckerResults.fsi` entries from the main-relative `.fsi` drift allowlist/hash lock once the file returned to parity with `origin/main`, reducing tracked drift surface to 8 files.
+  - `TypedImplementationFiles` is internal. The compiler service accesses it directly, without reflection into its own assembly.
+  - The allowlist records intentional signature changes. The hash gate detects additional changes.
 - Remaining gap:
-  - The allowlisted drift set is still non-trivial and should be reduced through targeted refactors.
+  - The generic hook and experimental session API require intentional signature changes. Maintainers must review this boundary before merge.
 
-## Validation performed for this update
+## Historical validation from the earlier implementation
 
 - `./.dotnet/dotnet build FSharp.sln -c Debug -v minimal`
 - `DOTNET_MODIFIABLE_ASSEMBLIES=debug COMPlus_ForceEnc=1 ./.dotnet/dotnet test --project tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Debug --no-build -v minimal -- --filter-class "*HotReload*"` (`328` passed)
