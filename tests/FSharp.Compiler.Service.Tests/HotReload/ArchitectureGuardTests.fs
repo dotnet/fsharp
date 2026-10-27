@@ -160,6 +160,9 @@ let ``driver hot reload implementation references stay behind boundary files`` (
           "open FSharp.Compiler.HotReloadEmitHook\n"
           "open FSharp.Compiler.HotReloadState\n"
           "FSharp.Compiler.HotReload."
+          "FSharp.Compiler.HotReloadBaseline."
+          "FSharp.Compiler.HotReloadPdb."
+          "FSharp.Compiler.HotReloadEmitHook."
           "FSharp.Compiler.HotReloadState."
           "FSharpEditAndContinueLanguageService.Instance" ]
 
@@ -181,6 +184,12 @@ let ``ilx delta emitter phases stay explicit`` () =
             "let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequest) : IlxDelta ="
             "        let typeReferenceRowList, memberReferenceRowList, assemblyReferenceRowList, typeSpecificationRowList ="
 
+    Assert.Contains("let private collectDefinitionMappings", source)
+    Assert.Contains("let private buildAddedDefinitionRows", source)
+    Assert.Contains("collectDefinitionMappings matchingContext emittedTokenMappings", emitDeltaSource)
+    Assert.Contains("buildAddedDefinitionRows", emitDeltaSource)
+    Assert.Contains("let private analyzeSequencePointChanges", source)
+    Assert.Contains("analyzeSequencePointChanges request effectiveDebugPdb matchedMethodTokenPairs", emitDeltaSource)
     Assert.Contains("let private buildMethodAndParameterRows", source)
     Assert.Contains("let private buildPropertyEventAndSemanticsRows", source)
     Assert.Contains("let private buildCustomAttributeRows", source)
