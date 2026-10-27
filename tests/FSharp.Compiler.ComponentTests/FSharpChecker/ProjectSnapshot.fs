@@ -22,6 +22,25 @@ let ``ConditionalDefines matches FSharpParsingOptions`` (isInteractive: bool) =
 
     Assert.Equal<string list>(parsingOptions.ConditionalDefines, projectConfig.ConditionalDefines)
 
+[<Theory>]
+[<InlineData("")>]
+[<InlineData("--langversion:8.0")>]
+[<InlineData("-d:X --langversion:preview")>]
+[<InlineData("--langversion:9.0 /langversion:LATEST")>]
+[<InlineData("--langversion:4.7")>]
+[<InlineData("--langversion:foo")>]
+[<InlineData("--langversion:")>]
+[<InlineData("-langversion:9.0")>]
+let ``LangVersionText matches FSharpParsingOptions`` (options: string) =
+    let otherOptions = options.Split(' ', StringSplitOptions.RemoveEmptyEntries) |> Array.toList
+
+    let projectConfig = ProjectConfig("Dummy.fsproj", None, [], otherOptions)
+
+    let parsingOptions, _ =
+        FSharpChecker.Create().GetParsingOptionsFromCommandLineArgs(otherOptions)
+
+    Assert.Equal(parsingOptions.LangVersionText, projectConfig.LangVersionText)
+
 // TODO: restore tests
 
 //[<Fact>]

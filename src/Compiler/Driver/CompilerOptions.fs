@@ -1136,15 +1136,15 @@ let GetLanguageVersions () =
     }
     |> String.concat Environment.NewLine
 
-let setLanguageVersion (specifiedVersion: string) =
+let ParseLanguageVersion (specifiedVersion: string) =
     if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
-        ()
+        Ok(LanguageVersion(specifiedVersion))
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
-        error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+        Result.Error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
     elif not (LanguageVersion.IsVersionSupported specifiedVersion) then
-        error (Error(FSComp.SR.optsLangVersionOutOfSupport (specifiedVersion, "10.0"), rangeCmdArgs))
-
-    LanguageVersion(specifiedVersion)
+        Result.Error(Error(FSComp.SR.optsLangVersionOutOfSupport (specifiedVersion, "10.0"), rangeCmdArgs))
+    else
+        Ok(LanguageVersion(specifiedVersion))
 
 let languageFlags tcConfigB =
     [
@@ -1168,9 +1168,11 @@ let languageFlags tcConfigB =
             "langversion",
             tagLangVersionValues,
             OptionString(fun switch ->
-                let newVersion = setLanguageVersion switch
-                // Preserve disabled features when updating version
-                tcConfigB.langVersion <- newVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)),
+                match ParseLanguageVersion switch with
+                | Ok newVersion ->
+                    // Preserve disabled features when updating version
+                    tcConfigB.langVersion <- newVersion.WithDisabledFeatures(Set.toArray tcConfigB.disabledLanguageFeatures)
+                | Result.Error e -> error e),
             None,
             Some(FSComp.SR.optsSetLangVersion ())
         )
