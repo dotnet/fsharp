@@ -37,7 +37,7 @@
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>13</FCSMinorVersion>
+    <FCSMinorVersion>14</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -100,8 +100,13 @@
     <!-- Shared pin for the editor packages in eng/Packages.props; must match 18.9.179 (resolved transitively
          via Microsoft.CodeAnalysis.EditorFeatures / .LanguageServices.ExternalAccess 5.11.0). Full NU1109
          rationale lives there, next to the 18.9.x pins. -->
-    <VisualStudioEditorPackagesVersion>18.9.179</VisualStudioEditorPackagesVersion>
+    <VisualStudioEditorPackagesVersion>18.12.46</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
+
+    <!-- Apex VS integration-test packages, consumed by-name via $(...) in
+         vsintegration/tests/FSharp.Editor.Apex.IntegrationTests, so they stay properties here. -->
+    <MicrosoftTestApexVisualStudioVersion>18.7.0-preview-1-11715-043</MicrosoftTestApexVisualStudioVersion>
+    <MSTestVersion>3.6.4</MSTestVersion>
 
     <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
          stay a property rather than being inlined into eng/Packages.props. -->

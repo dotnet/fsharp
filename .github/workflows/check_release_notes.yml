@@ -4,7 +4,6 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled]
     branches:
         - 'main'
-        - 'release/*'
 permissions:
   contents: read
   issues: write
@@ -20,6 +19,7 @@ jobs:
       pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
+      LOCALIZATION_BOT: dotnet-oneloc-localization[bot]
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -282,7 +282,7 @@ jobs:
           exit 0
         fi
 
-        OPT_OUT_RELEASE_NOTES=$(jq -r 'any(.labels[]; .name == "NO_RELEASE_NOTES")' <<< "$_current_pr")
+        OPT_OUT_RELEASE_NOTES=$(jq -r --arg bot "$LOCALIZATION_BOT" 'any(.labels[]; .name == "NO_RELEASE_NOTES") or .user.login == $bot' <<< "$_current_pr")
         echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
         RELEASE_NOTES_REQUIRED=false
         if [[ $RELEASE_NOTES_NOT_FOUND != "" && "$OPT_OUT_RELEASE_NOTES" != true ]]; then
@@ -303,7 +303,7 @@ jobs:
                 echo ""
                 echo "## :white_check_mark: Release-note check exempted"
                 echo ""
-                echo "The <kbd>NO_RELEASE_NOTES</kbd> label exempts this pull request."
+                echo "The <kbd>NO_RELEASE_NOTES</kbd> label or localization-bot authorship exempts this pull request."
             else
                 echo "${RELEASE_NOTES_MESSAGE}"
             fi
@@ -312,7 +312,7 @@ jobs:
         } >> "$GITHUB_OUTPUT"
 
         if [[ "$RELEASE_NOTES_REQUIRED" = true ]]; then
-            exit 1
+            echo "::warning::Release notes are required unless the pull request is labelled NO_RELEASE_NOTES."
         fi
     # Keep one bot comment current without evaluating pull request content as JavaScript.
     # Posting the informational comment is best-effort and must never fail the check:
@@ -353,7 +353,8 @@ jobs:
                     ...context.repo,
                     pull_number: context.issue.number
                 });
-                const exempt = current.labels.some(label => label.name === 'NO_RELEASE_NOTES');
+                const exempt = current.labels.some(label => label.name === 'NO_RELEASE_NOTES') ||
+                    current.user?.login === process.env.LOCALIZATION_BOT;
                 if (current.head.sha !== process.env.PR_HEAD_SHA ||
                     String(exempt) !== process.env.RELEASE_NOTES_EXEMPT) {
                     core.info('Skipping outdated release-note comment.');

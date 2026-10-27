@@ -301,7 +301,7 @@ val mkAbstractMember:
                 SynMemberDefn list
 
 val mkMatchClauses:
-    patternAndGuard: SynPat * SynExpr option ->
+    patternAndGuard: SynPat * range option * SynExpr option ->
         patternResult: range option * SynExpr ->
             mNextBar: range option ->
             nextClauses: (range option -> SynMatchClause list * range) option ->
@@ -309,7 +309,7 @@ val mkMatchClauses:
                 (range option -> SynMatchClause list * range)
 
 val mkMatchClausesRecoverMissingResult:
-    patternAndGuard: SynPat * SynExpr option ->
+    patternAndGuard: SynPat * range option * SynExpr option ->
         exprDebugString: string ->
         mExpr: range option ->
         mNextBar: range option ->

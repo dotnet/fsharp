@@ -34,6 +34,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CodeAnalysis
@@ -44,7 +45,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.InfoReader
@@ -1345,15 +1345,14 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             """    #help "idn";;                                 // %s"""
             (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
-        if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in
-                dependencyProvider.GetRegisteredDependencyManagerHelpText(
-                    tcConfigB.compilerToolPaths,
-                    getOutputDir tcConfigB,
-                    tcConfigB.sdkDirOverride,
-                    reportError m
-                ) do
-                fsiConsoleOutput.uprintfn "%s" msg
+        for msg in
+            dependencyProvider.GetRegisteredDependencyManagerHelpText(
+                tcConfigB.compilerToolPaths,
+                getOutputDir tcConfigB,
+                tcConfigB.sdkDirOverride,
+                reportError m
+            ) do
+            fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
 
@@ -2336,12 +2335,6 @@ type internal FsiDynamicCompiler
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        // RFC FS-1043: each FSI fragment is its own compilation unit but shares the session CcuThunk, so the
-        // extension-operator solution sink must be reset per fragment. Otherwise identical-layout submissions
-        // (same dummy file name, same ranges) leave stale entries that the range-based disambiguation cannot
-        // tell apart from the current fragment, poisoning a later same-shaped submission.
-        tcGlobals.ClearExtensionOperatorSolutions(tcState.Ccu)
-
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
         // Typecheck. The lock stops the type checker running at the same time as the
@@ -2956,12 +2949,8 @@ type internal FsiDynamicCompiler
             istate, CompletedWithAlreadyReportedError
 
         | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
-                istate, Completed None
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
-                istate, Completed None
+            fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
+            istate, Completed None
 
         | _, _ when directiveKind = Directive.Include ->
             errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))
@@ -4605,7 +4594,7 @@ type FsiInteractionProcessor
                 rangeStdin0
                 ad
                 lid
-                false
+                UnseenItems.None
 
         let names = nItems |> List.map (fun d -> d.DisplayName)
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))

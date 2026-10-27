@@ -99,3 +99,54 @@ The downside of course being that the `id` function can't propagate to composed 
 
 More generally, any time a first-order function is passed as an argument to a second-order function, the first-order function is not inlined even if everything is marked as `inline`. This results in a performance penalty.
 
+## Optimization phases
+
+[`OptimizeInputs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/OptimizeInputs.fs) (`ApplyAllOptimizations`) runs these phases on each implementation file, in order:
+
+1. `firstLoop`: [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fs). Only this pass produces the cross-module optimization data saved for other assemblies.
+2. `lowerRuntimeAsync`: [`LowerRuntimeAsync.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerRuntimeAsync.fs), see [Runtime-async optimizations](#runtime-async-optimizations).
+3. `lowerLocalMutables`: [`LowerLocalMutables.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerLocalMutables.fs) turns mutable locals captured by closures into reference cells.
+4. `ExtraLoop`: `Optimizer.fs` again, only with `--extraoptimizationloops:n` for n > 0.
+5. `Detuple`: `DetupleArgs.fs`, only when optimizing.
+6. `InnerLambdasToToplevelFuncs`: `InnerLambdasToTopLevelFuncs.fs`, only when optimizing.
+7. `LowerCalls`: `LowerCalls.fs`.
+8. `FinalSimplify`: `Optimizer.fs` again, only when optimizing.
+
+Sequence expressions, resumable state machines, list and array comprehensions, and runtime-async sequences are lowered later, during code generation in `IlxGen.fs`.
+
+## Runtime-async optimizations
+
+[Runtime async](runtime-async.md) adds rewrites that keep suspensions inside the runtime-async method they belong to. They run only in a runtime-async context or in the `lowerRuntimeAsync` phase, never on ordinary code; a new rewrite should keep that boundary. [`runtime-async.md`](runtime-async.md#custom-optimizations) describes each rewrite in detail.
+
+### Terms
+
+* **Return marker**: `__runtimeAsyncReturn`, `__runtimeAsyncReturnValueTask`, or their `Unit` forms.
+* **Body**: the argument of a return marker. It is consumed in place: at the top of a method or closure it becomes that method's IL body; anywhere else, code generation wraps it in a closure that is invoked at once.
+* **Sequence marker**: `__runtimeAsyncSequence`.
+* **Recipe**: the `unit -> seq<'T>` argument of a sequence marker. It is a thunk rather than a `seq<'T>` so that it stays a known lambda value through inlining. `LowerAsyncSeq.fs` applies it at compile time and lowers the sequence into a runtime-async `MoveNextAsync` method; code before its sequence expression runs on each enumeration.
+* **Marker**: a return or sequence marker.
+* **Suspension**: a call to `AsyncHelpers.Await`, `AwaitAwaiter`, or `UnsafeAwaitAwaiter`.
+* **Runtime-async code**: an expression containing a marker or a suspension, directly or through the inline and local values it references (`RuntimeAsyncAnalyzer.ContainsRuntimeAsyncCode`). Inline values containing it are inlined even with `--optimize-`.
+* **Runtime-async context**: code that ends up in a body or recipe, including code inlined there; object-expression methods inside it are excluded. It is `runtimeAsyncContext` in `Optimizer.fs` and `inContext` in `LowerRuntimeAsync.fs`.
+* **Callback**: a compiler-owned, single-argument `InlineIfLambda` function or delegate, typically a builder continuation. A suspending callback contains a suspension.
+* **Construction**: the expression bound to a callback. Its **construction prefix** is the bindings, effects, and debug wrappers in front of the lambda (`RuntimeAsyncConstructionPrefix`).
+* **Body preparation**: the last step of `lowerRuntimeAsync` for each body. It reports byref, byref-like, and pinned locals used after a suspension (FS3919) and rewrites exception handlers that contain suspensions.
+* **`TOp.DebugLocalScope`**: a backend-only node that shows existing storage under a source name for a lexical scope. It keeps the names of captures hoisted out of callbacks visible in the debugger.
+
+### Rewrites
+
+* **Await-input local elimination** (`Optimizer.fs`): folds a single-use local into the argument of a suspension.
+* **Callback-capture floating** (`Optimizer.fs`): moves the bindings and effects in front of a callback's lambda out of its binding, so the callback is a plain lambda that ordinary inlining handles.
+* **Returned-closure reduction** (`RuntimeAsyncAnalysis.fs`): after a forced inlining, pushes an application through bindings (recursive ones included), sequencing, and branches to beta-reduce a closure returned by a builder combinator.
+* **Single-use delegate inlining** (`LowerRuntimeAsync.fs`): substitutes a suspending delegate's body at its only invocation.
+* **Callback defunctionalization** (`LowerRuntimeAsync.fs`): replaces a suspending callback, typically one chosen by a branch, with a branch tag and hoisted captures; each invocation dispatches to a copy of the chosen body. Copies are limited to 2000 expression nodes per callback across all invocations.
+
+The optimizer also changes some ordinary behavior for runtime-async code:
+
+* Values containing runtime-async code are inlined even with `--optimize-`, and the result is reoptimized with inlining forced.
+* A large expression that contains a suspension is never split into a separate method, because that method would not be runtime-async.
+* A method whose body is a return marker is never exported as an inline definition.
+* A debug pipe chain in a runtime-async context is reoptimized once its synthetic input bindings are in scope.
+
+A suspension that none of these can move into a runtime-async method is reported as FS3918.
+
