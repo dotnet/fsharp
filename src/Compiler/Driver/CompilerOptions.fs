@@ -224,6 +224,41 @@ let DumpCompilerOptionBlocks blocks =
 let isSlashOpt (opt: string) =
     opt[0] = '/' && (opt.Length = 1 || not (opt[1..].Contains "/"))
 
+// returns a tuple - the option minus switchchars, the option tokenand  the option argument string
+let ParseCompilerOption (option: string) =
+
+    // Get option arguments, I.e everything following first:
+    let opts = option.Split([| ':' |])
+    let optArgs = String.Join(":", opts[1..])
+
+    let opt =
+        if String.IsNullOrEmpty(option) then
+            ""
+        // if it doesn't start with a '-' or '/', reject outright
+        elif option[0] <> '-' && option[0] <> '/' then
+            ""
+        elif option <> "--" then
+            // is it an abbreviated or MSFT-style option?
+            // if so, strip the first character and move on with your life
+            // Weirdly a -- option can't have only a 1 character name
+            if option.Length = 2 || isSlashOpt option then
+                option[1..]
+            elif option.Length >= 3 && option[2] = ':' then
+                option[1..]
+            elif option.StartsWithOrdinal("--") then
+                match option.Length with
+                | l when l >= 4 && option[3] = ':' -> ""
+                | l when l > 3 -> option[2..]
+                | _ -> ""
+            else
+                ""
+        else
+            option
+
+    // grab the option token
+    let token = opt.Split([| ':' |])[0]
+    opt, token, optArgs
+
 module ResponseFile =
 
     type ResponseFileData = ResponseFileLine list
@@ -259,41 +294,6 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
-
-    // returns a tuple - the option minus switchchars, the option tokenand  the option argument string
-    let parseOption (option: string) =
-
-        // Get option arguments, I.e everything following first:
-        let opts = option.Split([| ':' |])
-        let optArgs = String.Join(":", opts[1..])
-
-        let opt =
-            if String.IsNullOrEmpty(option) then
-                ""
-            // if it doesn't start with a '-' or '/', reject outright
-            elif option[0] <> '-' && option[0] <> '/' then
-                ""
-            elif option <> "--" then
-                // is it an abbreviated or MSFT-style option?
-                // if so, strip the first character and move on with your life
-                // Weirdly a -- option can't have only a 1 character name
-                if option.Length = 2 || isSlashOpt option then
-                    option[1..]
-                elif option.Length >= 3 && option[2] = ':' then
-                    option[1..]
-                elif option.StartsWithOrdinal("--") then
-                    match option.Length with
-                    | l when l >= 4 && option[3] = ':' -> ""
-                    | l when l > 3 -> option[2..]
-                    | _ -> ""
-                else
-                    ""
-            else
-                option
-
-        // grab the option token
-        let token = opt.Split([| ':' |])[0]
-        opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if String.IsNullOrEmpty(argString) then
@@ -360,7 +360,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let option, optToken, argString = parseOption opt
+            let option, optToken, argString = ParseCompilerOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with

@@ -2,8 +2,25 @@ module FSharpChecker.ProjectSnapshot
 
 open Xunit
 open System
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
+#nowarn 57
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``ConditionalDefines matches FSharpParsingOptions`` (isInteractive: bool) =
+    let otherOptions =
+        [ "--define:A"; "-d:B"; "/define:C"; "/d:D"; "--debug+"; "-o:out.dll"; "--define:E:F"; "--define:"; "-define:G"; "--d:H"; "define:I" ]
+
+    let projectConfig =
+        ProjectConfig("Dummy.fsproj", None, [], otherOptions, useScriptResolutionRules = isInteractive)
+
+    let parsingOptions, _ =
+        FSharpChecker.Create().GetParsingOptionsFromCommandLineArgs(otherOptions, isInteractive = isInteractive)
+
+    Assert.Equal<string list>(parsingOptions.ConditionalDefines, projectConfig.ConditionalDefines)
 
 // TODO: restore tests
 
