@@ -66,14 +66,35 @@ let timeoutApp _descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     ev.WaitOne(timeoutMS) |> ignore
     r
 
-module SessionsProperties =
-    let mutable useAnyCpuVersion = true     // 64-bit by default
-    let mutable fsiUseNetCore = true        // NetCore by default
-    let mutable fsiArgs = "--optimize"
-    let mutable fsiShadowCopy = true
-    let mutable fsiDebugMode = false
-    let mutable fsiPreview = false
-    let ServerPrompt="SERVER-PROMPT>" + Environment.NewLine
+type InteractiveOptions =
+    { PreferAnyCpuVersion: bool
+      UseNetCore: bool
+      CommandLineArgs: string
+      ShadowCopy: bool
+      DebugMode: bool
+      Preview: bool }
+
+    static member Default =
+        { PreferAnyCpuVersion = true
+          UseNetCore = true
+          CommandLineArgs = "--optimize"
+          ShadowCopy = true
+          DebugMode = false
+          Preview = false }
+
+type SessionsProperties private () =
+    [<VolatileField>]
+    static let mutable current = InteractiveOptions.Default
+
+    static member Current = current
+    static member Update options = current <- options
+    static member useAnyCpuVersion = current.PreferAnyCpuVersion
+    static member fsiUseNetCore = current.UseNetCore
+    static member fsiArgs = current.CommandLineArgs
+    static member fsiShadowCopy = current.ShadowCopy
+    static member fsiDebugMode = current.DebugMode
+    static member fsiPreview = current.Preview
+    static member ServerPrompt = "SERVER-PROMPT>" + Environment.NewLine
 
 // This code pre-dates the events/object system.
 // Later: Tidy up.
@@ -133,8 +154,8 @@ let catchAll trigger x =
     try trigger x
     with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
-let determineFsiPath () =
-    if SessionsProperties.fsiUseNetCore then
+let determineFsiPath (options: InteractiveOptions) =
+    if options.UseNetCore then
         let pf = Environment.GetEnvironmentVariable("ProgramW6432")
         let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
         let exe = Path.Combine(pf,"dotnet","dotnet.exe")
@@ -144,7 +165,7 @@ let determineFsiPath () =
         exe, arg, false
     else
         let fsiExeName () =
-            if SessionsProperties.useAnyCpuVersion then
+            if options.PreferAnyCpuVersion then
                 "fsiAnyCpu.exe"
             elif RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
                 "fsiArm64.exe"
@@ -236,9 +257,8 @@ let readOutputAsync (reader: StreamReader) trigger =
         }
     Async.StartImmediate (read 0)
 
-let fsiStartInfo channelName sourceFile =
+let fsiStartInfo (options: InteractiveOptions) (fsiPath, fsiFirstArgs, fsiSupportsShadowcopy) channelName sourceFile =
     let procInfo = new ProcessStartInfo()
-    let fsiPath, fsiFirstArgs, fsiSupportsShadowcopy  = determineFsiPath ()
 
     procInfo.FileName  <- fsiPath
 
@@ -257,13 +277,13 @@ let fsiStartInfo channelName sourceFile =
         |> addStringOption true "fsi-server-input-codepage" inCP
         |> addStringOption true "fsi-server-lcid" Thread.CurrentThread.CurrentUICulture.LCID
         |> addStringOption true "fsi-server" channelName
-        |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
-        |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
+        |> (fun s -> s +  sprintf " %s" options.CommandLineArgs)
+        |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" options.ShadowCopy
         // For best debug experience, need optimizations OFF and debug info ON
         // tack these on the end, they will override whatever comes earlier
-        |> addBoolOption SessionsProperties.fsiDebugMode "optimize" false
-        |> addBoolOption SessionsProperties.fsiDebugMode "debug" true
-        |> addStringOption SessionsProperties.fsiPreview "langversion" "preview"
+        |> addBoolOption options.DebugMode "optimize" false
+        |> addBoolOption options.DebugMode "debug" true
+        |> addStringOption options.Preview "langversion" "preview"
 
     procInfo.Arguments <- procArgs
     procInfo.CreateNoWindow <- true
@@ -296,9 +316,10 @@ type FsiSession(sourceFile) =
         let salt = randomSalt.Next()
         sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
-    let procInfo = fsiStartInfo channelName sourceFile
+    let options = SessionsProperties.Current
+    let procInfo = fsiStartInfo options (determineFsiPath options) channelName sourceFile
 
-    let usingNetCore = SessionsProperties.fsiUseNetCore
+    let usingNetCore = options.UseNetCore
 
     let cmdProcess = new Process(StartInfo=procInfo)
     let fsiOutput = Event<_>()
@@ -386,7 +407,7 @@ type FsiSession(sourceFile) =
             // of inner process to complete on startup.  The only scenario where we ask for the process ID immediately after
             // process startup is when the user clicks "Start Debugging" before the process has started.
             for i in 0..10 do
-                if SessionsProperties.fsiUseNetCore && trueProcessPid.IsNone then
+                if usingNetCore && trueProcessPid.IsNone then
                     if File.Exists(trueProcessIdFile) then
                         let lines = File.ReadAllLines trueProcessIdFile
                         trueProcessPid <-
