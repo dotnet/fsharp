@@ -313,6 +313,15 @@ type TypedTreeDiffTests() =
         Assert.Empty(result.RudeEdits)
         Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
         Assert.Equal("value", edit.Symbol.LogicalName)
+        Assert.True(edit.BaselineHash.IsSome)
+        Assert.True(edit.UpdatedHash.IsSome)
+        Assert.NotEqual(edit.BaselineHash, edit.UpdatedHash)
+
+        let reverseResult = harness.Diff updated baseline
+        let reverseEdit = Assert.Single(reverseResult.SemanticEdits)
+        Assert.Empty(reverseResult.RudeEdits)
+        Assert.Equal(edit.BaselineHash, reverseEdit.UpdatedHash)
+        Assert.Equal(edit.UpdatedHash, reverseEdit.BaselineHash)
 
     [<Fact>]
     member _.``field-backed module value initializer update fails closed`` () =

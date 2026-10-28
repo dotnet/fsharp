@@ -827,7 +827,6 @@ type private BindingSnapshot =
         ConstraintsText: string
         MetadataText: string
         BodyIdentity: string
-        BodyHash: int
         IsSynthesized: bool
         IsFieldBackedModuleValue: bool
         ContainingEntity: string option
@@ -1061,7 +1060,6 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
                     tryExtensionReceiverName var expr |> Option.defaultValue "none"
                 ]
         BodyIdentity = bodyIdentity
-        BodyHash = stableHash bodyIdentity
         IsSynthesized = var.IsCompilerGenerated
         IsFieldBackedModuleValue = isFieldBackedModuleValue
         ContainingEntity = containingEntity
@@ -1280,7 +1278,10 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
                 Message = "A field-backed module value initializer cannot be reapplied after module initialization."
             }
     else
-        Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baseline.BodyHash) (Some updated.BodyHash)))
+        // Exact identities detect body changes. Only accepted body edits need hashes.
+        let baselineHash = stableHash baseline.BodyIdentity
+        let updatedHash = stableHash updated.BodyIdentity
+        Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baselineHash) (Some updatedHash)))
 
 let private compareBindingLists (baseline: BindingSnapshot list) (updated: BindingSnapshot list) =
     let edits = ResizeArray<SemanticEdit>()
