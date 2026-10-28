@@ -1269,20 +1269,17 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
                 Kind = RudeEditKind.InlineChange
                 Message = "Inline annotation changed."
             }
-    elif
-        baseline.BodyIdentity <> updated.BodyIdentity
-        && baseline.IsFieldBackedModuleValue
-    then
+    elif baseline.BodyIdentity = updated.BodyIdentity then
+        Choice1Of2 None
+    elif baseline.IsFieldBackedModuleValue then
         Choice2Of2
             {
                 Symbol = Some baseline.Symbol
                 Kind = RudeEditKind.Unsupported
                 Message = "A field-backed module value initializer cannot be reapplied after module initialization."
             }
-    elif baseline.BodyIdentity <> updated.BodyIdentity then
-        Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baseline.BodyHash) (Some updated.BodyHash)))
     else
-        Choice1Of2 None
+        Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baseline.BodyHash) (Some updated.BodyHash)))
 
 let private compareBindingLists (baseline: BindingSnapshot list) (updated: BindingSnapshot list) =
     let edits = ResizeArray<SemanticEdit>()
