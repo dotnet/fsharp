@@ -6,6 +6,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
+open AddOpenOnTopSharedTests
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
@@ -157,6 +158,32 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
     let actual = codeFix |> tryFix code mode
 
     Assert.Equal(expected, actual)
+
+let private bodyMargin = String.replicate 30 " "
+
+let placements =
+    scenarios
+        [
+            ("nested module declared on one line",
+             "module Module1 = let x = Console.WriteLine 42\n",
+             "module Module1 =\n                 open System\n\n                 let x = Console.WriteLine 42\n")
+
+            ("use before a nested module declared on one line",
+             "module Module1\nlet x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n",
+             "module Module1\n\nopen System\n\nlet x = Console.WriteLine 42\n[<Obsolete>] module Module2 = let y = 1\n")
+
+            ("use in the attribute of a nested module declared on one line",
+             "module Module1\n[<Obsolete>] module Module2 = let y = 1\n",
+             "module Module1\n\nopen System\n\n[<Obsolete>] module Module2 = let y = 1\n")
+
+            ("use in the body of a nested module declared on one line with an attribute",
+             "module Module1\n[<Obsolete>] module Module2 = let y = Console.WriteLine 42\n",
+             $"module Module1\n[<Obsolete>] module Module2 =\n{bodyMargin}open System\n\n{bodyMargin}let y = Console.WriteLine 42\n")
+        ]
+
+[<Theory; MemberData(nameof placements)>]
+let ``Fixes FS0039 for missing opens - placement`` (_scenario: string, code: string, fixedCode: string) =
+    expectOpenSystem mode code fixedCode
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
