@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
-        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="translated">Continuez à analyser l'intégralité de la solution pour les diagnostics en tant que tâche en arrière-plan de basse priorité (nécessite un redémarrage)</target>
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task</source>
+        <target state="needs-review-translation">Continuez à analyser l'intégralité de la solution pour les diagnostics en tant que tâche en arrière-plan de basse priorité</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
@@ -33,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="translated">Utiliser des tampons en direct (non enregistrés) pour l’analysye (redémarrage requis)</target>
+        <source>Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Utiliser des tampons en direct (non enregistrés) pour l’analysye</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Parallelization">
-        <source>Parallelization (requires restart)</source>
-        <target state="translated">Parallélisation (Nécessite un redémarrage)</target>
+        <source>Parallelization</source>
+        <target state="needs-review-translation">Parallélisation</target>
         <note />
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
@@ -328,8 +328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
-        <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">Utiliser Transparent Compiler (redémarrage requis)</target>
+        <source>Use Transparent Compiler</source>
+        <target state="needs-review-translation">Utiliser Transparent Compiler</target>
         <note />
       </trans-unit>
     </body>

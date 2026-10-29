@@ -35,11 +35,112 @@
     "languages.fsharp.compiler": {
       "title": "@Properties:FSharpCompilerMisc;FSharp.VS.FSI.dll",
       "order": 7
+    },
+    "languages.fsharp.intelliSense.completionLists": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Completion_Lists;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.intelliSense.enterKey": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enter_Key_Rule;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 1
+    },
+    "languages.fsharp.quickInfo.navigationLinks": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Navigation_links;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.quickInfo.formatting": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Formatting;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 1
+    },
+    "languages.fsharp.codeFixes.fixes": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Code_Fixes;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.performance.projectAndCaching": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Project_Performance;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.performance.intelliSense": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:IntelliSense_Performance;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 1
+    },
+    "languages.fsharp.performance.parallelization": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Parallelization;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 2
+    },
+    "languages.fsharp.performance.findReferences": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Find_References_Performance;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 3
+    },
+    "languages.fsharp.performance.languageService": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Language_Service_Settings;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 4
+    },
+    "languages.fsharp.advanced.blockStructure": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Block_Structure;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.advanced.outlining": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Outlining;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 1
+    },
+    "languages.fsharp.advanced.inlayHints": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Inlay_Hints;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 2
+    },
+    "languages.fsharp.advanced.liveBuffers": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:LiveBuffers;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 3
+    },
+    "languages.fsharp.advanced.transparentCompiler": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:TransparentCompiler;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 4
+    },
+    "languages.fsharp.advanced.additionalTelemetry": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:AdditionalTelemetry;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 5
+    },
+    "languages.fsharp.advanced.backgroundAnalysis": {
+      "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Background_analysis;FSharp.UIResources.dll",
+      "hideFromNavigation": true,
+      "order": 6
+    },
+    "languages.fsharp.interactive.debugging": {
+      "title": "@Properties:FSharpInteractiveDebugging;FSharp.VS.FSI.dll",
+      "hideFromNavigation": true,
+      "order": 0
+    },
+    "languages.fsharp.interactive.fsiPreview": {
+      "title": "@Properties:FSharpInteractivePreview;FSharp.VS.FSI.dll",
+      "hideFromNavigation": true,
+      "order": 1
+    },
+    "languages.fsharp.interactive.misc": {
+      "title": "@Properties:FSharpInteractiveMisc;FSharp.VS.FSI.dll",
+      "hideFromNavigation": true,
+      "order": 2
     }
   },
   "properties": {
     "languages.fsharp.intelliSense.showAfterCharIsTyped": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.intelliSense.completionLists" } ],
       "title": "@FSharp.Editor:UnifiedSettingsShowCompletionAfterTypingTitle;FSharp.Editor.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -48,6 +149,7 @@
     },
     "languages.fsharp.intelliSense.showAfterCharIsDeleted": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.intelliSense.completionLists" } ],
       "title": "@FSharp.Editor:UnifiedSettingsShowCompletionAfterDeletionTitle;FSharp.Editor.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -56,6 +158,7 @@
     },
     "languages.fsharp.intelliSense.includeSymbolsFromUnopenedNamespacesOrModules": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.intelliSense.completionLists" } ],
       "title": "@FSharp.Editor:UnifiedSettingsShowUnopenedSymbolsTitle;FSharp.Editor.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -64,6 +167,7 @@
     },
     "languages.fsharp.intelliSense.generateBodyForOverriddenMethod": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.intelliSense.completionLists" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Generate_Body_For_Overridden_Method;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -72,6 +176,7 @@
     },
     "languages.fsharp.intelliSense.enterKeySetting": {
       "type": "string",
+      "placements": [ { "category": "languages.fsharp.intelliSense.enterKey" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enter_Key_Rule;FSharp.UIResources.dll",
       "enum": [ "NeverNewline", "NewlineOnCompleteWord", "AlwaysNewline" ],
       "enumItemLabels": [
@@ -86,6 +191,7 @@
     },
     "languages.fsharp.quickInfo.displayLinks": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.quickInfo.navigationLinks" } ],
       "title": "@FSharp.Editor:UnifiedSettingsShowNavigationLinksTitle;FSharp.Editor.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -109,6 +215,7 @@
     },
     "languages.fsharp.quickInfo.descriptionWidth": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.quickInfo.formatting" } ],
       "title": "@FSharp.Editor:UnifiedSettingsDescriptionWidthTitle;FSharp.Editor.dll",
       "description": "@FSharp.Editor:UnifiedSettingsDescriptionWidthDescription;FSharp.Editor.dll",
       "default": false,
@@ -137,6 +244,7 @@
     },
     "languages.fsharp.codeFixes.simplifyName": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Simplify_name_code_fix;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -145,6 +253,7 @@
     },
     "languages.fsharp.codeFixes.alwaysPlaceOpensAtTopLevel": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Always_place_opens_at_top_level;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -153,6 +262,7 @@
     },
     "languages.fsharp.codeFixes.unusedOpens": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Unused_opens_code_fix;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -161,6 +271,7 @@
     },
     "languages.fsharp.codeFixes.unusedDeclarations": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Unused_declaration_code_fix;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -169,6 +280,7 @@
     },
     "languages.fsharp.codeFixes.suggestNamesForErrors": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Suggest_names_for_errors_code_fix;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -177,6 +289,7 @@
     },
     "languages.fsharp.codeFixes.removeParens": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.codeFixes.fixes" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Remove_parens_code_fix;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -185,6 +298,7 @@
     },
     "languages.fsharp.performance.enableInMemoryCrossProjectReferences": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.projectAndCaching" } ],
       "title": "@FSharp.Editor:UnifiedSettingsInMemoryCrossProjectReferencesTitle;FSharp.Editor.dll",
       "description": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Tooltip_in_memory_cross_project_references;FSharp.UIResources.dll",
       "default": true,
@@ -194,6 +308,7 @@
     },
     "languages.fsharp.performance.transparentCompilerCacheFactor": {
       "type": "integer",
+      "enableWhen": "${config:languages.fsharp.performance.enableInMemoryCrossProjectReferences} == 'true'",
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Transparent_Compiler_Cache_Factor;FSharp.UIResources.dll",
       "description": "@FSharp.Editor:UnifiedSettingsCacheFactorDescription;FSharp.Editor.dll",
       "minimum": 1,
@@ -205,6 +320,7 @@
     },
     "languages.fsharp.performance.enablePartialTypeChecking": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.projectAndCaching" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_partial_type_checking;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -213,6 +329,7 @@
     },
     "languages.fsharp.performance.allowStaleCompletionResults": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.intelliSense" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_Stale_IntelliSense_Results;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -233,8 +350,9 @@
     },
     "languages.fsharp.performance.enableParallelReferenceResolution": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.parallelization" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_Parallel_Reference_Resolution;FSharp.UIResources.dll",
-      "description": "@FSharp.Editor:UnifiedSettingsRestartRequiredDescription;FSharp.Editor.dll",
+      "requiresRestart": true,
       "default": false,
       "transientScopesSupported": false,
       "migration": { "roamingOnly": true },
@@ -242,6 +360,7 @@
     },
     "languages.fsharp.performance.enableFastFindReferencesAndRename": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.findReferences" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_Fast_Find_References;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -250,6 +369,7 @@
     },
     "languages.fsharp.performance.keepAllBackgroundResolutions": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.languageService" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Keep_All_Background_Resolutions;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -258,6 +378,7 @@
     },
     "languages.fsharp.performance.keepAllBackgroundSymbolUses": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.languageService" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Keep_All_Background_Symbol_Uses;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -266,6 +387,7 @@
     },
     "languages.fsharp.performance.enableBackgroundItemKeyStoreAndSemanticClassification": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.performance.languageService" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_Background_ItemKeyStore_And_Semantic_Classification;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -274,6 +396,7 @@
     },
     "languages.fsharp.advanced.isBlockStructureEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.blockStructure" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Show_guides;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -282,6 +405,7 @@
     },
     "languages.fsharp.advanced.isOutliningEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.outlining" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Show_Outlining;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -290,6 +414,7 @@
     },
     "languages.fsharp.advanced.isInlayTypeHintsEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.inlayHints" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Show_Inlay_Type_Hints;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -298,6 +423,7 @@
     },
     "languages.fsharp.advanced.isInlayReturnTypeHintsEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.inlayHints" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Show_Return_Type_Hints;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -306,6 +432,7 @@
     },
     "languages.fsharp.advanced.isInlayParameterNameHintsEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.inlayHints" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Show_Inlay_Parameter_Name_Hints;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -314,8 +441,9 @@
     },
     "languages.fsharp.advanced.isUseLiveBuffersEnabled": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.liveBuffers" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Enable_Live_Buffers;FSharp.UIResources.dll",
-      "description": "@FSharp.Editor:UnifiedSettingsRestartRequiredDescription;FSharp.Editor.dll",
+      "requiresRestart": true,
       "default": true,
       "transientScopesSupported": false,
       "migration": { "roamingOnly": true },
@@ -323,8 +451,10 @@
     },
     "languages.fsharp.advanced.useTransparentCompiler": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.transparentCompiler" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Use_Transparent_Compiler;FSharp.UIResources.dll",
       "description": "@FSharp.Editor:UnifiedSettingsTransparentCompilerDescription;FSharp.Editor.dll",
+      "requiresRestart": true,
       "default": false,
       "transientScopesSupported": false,
       "migration": { "roamingOnly": true },
@@ -332,6 +462,7 @@
     },
     "languages.fsharp.advanced.transparentCompilerSnapshotReuse": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.transparentCompiler" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Transparent_Compiler_Snapshot_Reuse;FSharp.UIResources.dll",
       "default": false,
       "transientScopesSupported": false,
@@ -340,6 +471,7 @@
     },
     "languages.fsharp.advanced.sendAdditionalTelemetry": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.additionalTelemetry" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Send_Additional_Telemetry;FSharp.UIResources.dll",
       "default": true,
       "transientScopesSupported": false,
@@ -348,8 +480,9 @@
     },
     "languages.fsharp.advanced.solutionBackgroundAnalysis": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.advanced.backgroundAnalysis" } ],
       "title": "@Microsoft.VisualStudio.FSharp.UIResources.Strings:Analyze_full_solution_on_background;FSharp.UIResources.dll",
-      "description": "@FSharp.Editor:UnifiedSettingsRestartRequiredDescription;FSharp.Editor.dll",
+      "requiresRestart": true,
       "default": false,
       "transientScopesSupported": false,
       "migration": { "roamingOnly": true },
@@ -364,56 +497,62 @@
     },
     "languages.fsharp.interactive.preferAnyCpuVersion": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.interactive.misc" } ],
       "title": "@Properties:FSharpInteractiveAnyCpu;FSharp.VS.FSI.dll",
       "description": "@Properties:FSharpInteractiveAnyCpuDescr;FSharp.VS.FSI.dll",
-      "default": true,
-      "transientScopesSupported": false,
-      "order": 0,
-      "migration": { "roamingOnly": true }
-    },
-    "languages.fsharp.interactive.commandLineArgs": {
-      "type": "string",
-      "title": "@Properties:FSharpInteractiveOptions;FSharp.VS.FSI.dll",
-      "description": "@Properties:FSharpInteractiveOptionsDescr;FSharp.VS.FSI.dll",
-      "default": "--optimize",
-      "transientScopesSupported": false,
-      "order": 1,
-      "migration": { "roamingOnly": true }
-    },
-    "languages.fsharp.interactive.shadowCopy": {
-      "type": "boolean",
-      "title": "@Properties:FSharpInteractiveShadowCopy;FSharp.VS.FSI.dll",
-      "description": "@Properties:FSharpInteractiveShadowCopyDescr;FSharp.VS.FSI.dll",
-      "default": true,
-      "transientScopesSupported": false,
-      "order": 2,
-      "migration": { "roamingOnly": true }
-    },
-    "languages.fsharp.interactive.useNetCore": {
-      "type": "boolean",
-      "title": "@Properties:FSharpInteractiveUseNetCore;FSharp.VS.FSI.dll",
-      "description": "@Properties:FSharpInteractiveUseNetCoreDescr;FSharp.VS.FSI.dll",
       "default": true,
       "transientScopesSupported": false,
       "order": 3,
       "migration": { "roamingOnly": true }
     },
+    "languages.fsharp.interactive.commandLineArgs": {
+      "type": "string",
+      "placements": [ { "category": "languages.fsharp.interactive.misc" } ],
+      "title": "@Properties:FSharpInteractiveOptions;FSharp.VS.FSI.dll",
+      "description": "@Properties:FSharpInteractiveOptionsDescr;FSharp.VS.FSI.dll",
+      "default": "--optimize",
+      "transientScopesSupported": false,
+      "order": 0,
+      "migration": { "roamingOnly": true }
+    },
+    "languages.fsharp.interactive.shadowCopy": {
+      "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.interactive.misc" } ],
+      "title": "@Properties:FSharpInteractiveShadowCopy;FSharp.VS.FSI.dll",
+      "description": "@Properties:FSharpInteractiveShadowCopyDescr;FSharp.VS.FSI.dll",
+      "default": true,
+      "transientScopesSupported": false,
+      "order": 1,
+      "migration": { "roamingOnly": true }
+    },
+    "languages.fsharp.interactive.useNetCore": {
+      "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.interactive.misc" } ],
+      "title": "@Properties:FSharpInteractiveUseNetCore;FSharp.VS.FSI.dll",
+      "description": "@Properties:FSharpInteractiveUseNetCoreDescr;FSharp.VS.FSI.dll",
+      "default": true,
+      "transientScopesSupported": false,
+      "order": 2,
+      "migration": { "roamingOnly": true }
+    },
     "languages.fsharp.interactive.debugMode": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.interactive.debugging" } ],
       "title": "@Properties:FSharpInteractiveDebugMode;FSharp.VS.FSI.dll",
       "description": "@Properties:FSharpInteractiveDebugModeDescr;FSharp.VS.FSI.dll",
       "default": false,
       "transientScopesSupported": false,
-      "order": 4,
+      "order": 0,
       "migration": { "roamingOnly": true }
     },
     "languages.fsharp.interactive.preview": {
       "type": "boolean",
+      "placements": [ { "category": "languages.fsharp.interactive.fsiPreview" } ],
       "title": "@Properties:FSharpInteractivePreviewMode;FSharp.VS.FSI.dll",
       "description": "@Properties:FSharpInteractivePreviewModeDescr;FSharp.VS.FSI.dll",
       "default": false,
       "transientScopesSupported": false,
-      "order": 5,
+      "order": 0,
       "migration": { "roamingOnly": true }
     },
     "languages.fsharp.compiler.settings": {

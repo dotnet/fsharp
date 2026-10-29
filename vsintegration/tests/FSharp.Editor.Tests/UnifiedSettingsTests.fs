@@ -38,6 +38,20 @@ module UnifiedSettingsTests =
     let private registrations () =
         (manifest ()).["properties"] :?> JObject
 
+    let private localizedString (resource: string) =
+        let separator = resource.IndexOf(";", StringComparison.Ordinal)
+        let colon = resource.IndexOf(":", StringComparison.Ordinal)
+
+        let assembly =
+            match resource.Substring(separator + 1) with
+            | "FSharp.Editor.dll" -> typeof<EditorOptions>.Assembly
+            | "FSharp.VS.FSI.dll" -> typeof<FSharpCompilerSettings>.Assembly
+            | "FSharp.UIResources.dll" -> Assembly.Load("FSharp.UIResources")
+            | name -> invalidOp $"Unexpected settings resource assembly: {name}."
+
+        let manager = ResourceManager(resource.Substring(1, colon - 1), assembly)
+        manager.GetString(resource.Substring(colon + 1, separator - colon - 1))
+
     let private editorSettings () =
         [|
             for category, defaults in editorRecords do
@@ -260,6 +274,131 @@ module UnifiedSettingsTests =
         for category in ((manifest ()).["categories"] :?> JObject).Properties() do
             let category = category.Value
             Assert.Null(category["legacyOptionPageId"])
+
+    [<Fact>]
+    let ``Legacy page groups are ordered and hidden from navigation`` () =
+        let categories = (manifest ()).["categories"] :?> JObject
+
+        let pages =
+            [|
+                "intelliSense", [| "completionLists"; "enterKey" |]
+                "quickInfo", [| "navigationLinks"; "formatting" |]
+                "codeFixes", [| "fixes" |]
+                "performance",
+                [|
+                    "projectAndCaching"
+                    "intelliSense"
+                    "parallelization"
+                    "findReferences"
+                    "languageService"
+                |]
+                "advanced",
+                [|
+                    "blockStructure"
+                    "outlining"
+                    "inlayHints"
+                    "liveBuffers"
+                    "transparentCompiler"
+                    "additionalTelemetry"
+                    "backgroundAnalysis"
+                |]
+                "interactive", [| "debugging"; "fsiPreview"; "misc" |]
+            |]
+
+        Assert.Equal(29, categories.Count)
+
+        for page, groups in pages do
+            for order, group in Array.indexed groups do
+                let category = categories[$"languages.fsharp.{page}.{group}"]
+                Assert.True(category["hideFromNavigation"].Value<bool>())
+                Assert.Equal(order, category["order"].Value<int>())
+
+        for property in (registrations ()).Properties() do
+            let setting = property.Value
+
+            if not (isNull setting["placements"]) then
+                let placement = Assert.Single(setting["placements"].Values<JObject>())
+                let category = categories[placement["category"].Value<string>()]
+                Assert.True(category["hideFromNavigation"].Value<bool>())
+                Assert.Null(setting["enableWhen"])
+
+    [<Fact>]
+    let ``Interactive groups and settings retain the legacy window order`` () =
+        let settings = registrations ()
+        let categories = (manifest ()).["categories"] :?> JObject
+
+        let groups =
+            [|
+                "debugging", "Debugging", [| "debugMode" |]
+                "fsiPreview", "FSI Preview", [| "preview" |]
+                "misc", "Misc", [| "commandLineArgs"; "shadowCopy"; "useNetCore"; "preferAnyCpuVersion" |]
+            |]
+
+        for group, title, members in groups do
+            let categoryName = $"languages.fsharp.interactive.{group}"
+            let category = categories[categoryName]
+            Assert.Equal(title, localizedString (category["title"].Value<string>()))
+
+            for order, name in Array.indexed members do
+                let setting = settings[$"languages.fsharp.interactive.{name}"]
+                let placement = Assert.Single(setting["placements"].Values<JObject>())
+                Assert.Equal(categoryName, placement["category"].Value<string>())
+                Assert.Equal(order, setting["order"].Value<int>())
+
+    [<Theory>]
+    [<InlineData("performance.transparentCompilerCacheFactor",
+                 "performance.enableInMemoryCrossProjectReferences",
+                 "performance.projectAndCaching")>]
+    [<InlineData("performance.timeUntilStaleCompletion", "performance.allowStaleCompletionResults", "performance.intelliSense")>]
+    [<InlineData("quickInfo.underlineStyle", "quickInfo.displayLinks", "quickInfo.navigationLinks")>]
+    [<InlineData("quickInfo.descriptionWidthInCharacters", "quickInfo.descriptionWidth", "quickInfo.formatting")>]
+    let ``Dependent settings follow their parent into the legacy group`` (child: string, parent: string, group: string) =
+        let settings = registrations ()
+        let child = settings[$"languages.fsharp.{child}"]
+        Assert.Equal($"${{config:languages.fsharp.{parent}}} == 'true'", child["enableWhen"].Value<string>())
+        Assert.Null(child["placements"])
+        let parent = settings[$"languages.fsharp.{parent}"]
+        let placement = Assert.Single(parent["placements"].Values<JObject>())
+        Assert.Equal($"languages.fsharp.{group}", placement["category"].Value<string>())
+
+    [<Fact>]
+    let ``Restart requirements use metadata rather than labels or descriptions`` () =
+        let expected =
+            [|
+                "languages.fsharp.advanced.isUseLiveBuffersEnabled"
+                "languages.fsharp.advanced.solutionBackgroundAnalysis"
+                "languages.fsharp.advanced.useTransparentCompiler"
+                "languages.fsharp.performance.enableParallelReferenceResolution"
+            |]
+
+        let actual =
+            (registrations ()).Properties()
+            |> Seq.filter (fun property ->
+                let setting = property.Value
+
+                not (isNull setting["requiresRestart"])
+                && setting["requiresRestart"].Value<bool>())
+            |> Seq.map _.Name
+            |> Seq.sort
+            |> Seq.toArray
+
+        Assert.Equal<string>(expected, actual)
+
+        for property in
+            (manifest ()).Descendants()
+            |> Seq.choose (function
+                | :? JProperty as property -> Some property
+                | _ -> None) do
+            if property.Name = "title" || property.Name = "description" then
+                let value = property.Value.Value<string>()
+
+                let text =
+                    if value.StartsWith("@", StringComparison.Ordinal) then
+                        localizedString value
+                    else
+                        value
+
+                Assert.Equal(-1, text.IndexOf("restart", StringComparison.OrdinalIgnoreCase))
 
     [<Fact>]
     let ``Native defaults match the typed editor defaults`` () =
@@ -491,6 +630,58 @@ module UnifiedSettingsTests =
         Assert.False(changed.ShadowCopy)
         Assert.True(changed.DebugMode)
         Assert.True(changed.Preview)
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Interactive launches use one snapshot despite later settings changes`` (useNetCore: bool, debugMode: bool) =
+        let original = Session.SessionsProperties.Current
+
+        try
+            let options =
+                { Session.InteractiveOptions.Default with
+                    UseNetCore = useNetCore
+                    PreferAnyCpuVersion = false
+                    ShadowCopy = false
+                    DebugMode = debugMode
+                    Preview = true
+                }
+
+            Session.SessionsProperties.Update options
+            let snapshot = Session.SessionsProperties.Current
+
+            Session.SessionsProperties.Update
+                { options with
+                    UseNetCore = not useNetCore
+                    PreferAnyCpuVersion = true
+                    CommandLineArgs = "--warn:5"
+                    ShadowCopy = true
+                    DebugMode = not debugMode
+                    Preview = false
+                }
+
+            let executable = "fsi-test.exe", (if useNetCore then "fsi" else ""), not useNetCore
+            let startInfo = Session.fsiStartInfo snapshot executable "snapshot-test" null
+
+            Assert.Contains(" --optimize", startInfo.Arguments)
+            Assert.DoesNotContain("--warn:5", startInfo.Arguments)
+            Assert.Contains(" --langversion:preview", startInfo.Arguments)
+
+            if useNetCore then
+                Assert.StartsWith("fsi ", startInfo.Arguments)
+                Assert.DoesNotContain("--shadowcopyreferences", startInfo.Arguments)
+            else
+                Assert.Contains(" --shadowcopyreferences-", startInfo.Arguments)
+
+            if debugMode then
+                Assert.Contains(" --optimize- --debug+", startInfo.Arguments)
+            else
+                Assert.DoesNotContain(" --optimize-", startInfo.Arguments)
+                Assert.DoesNotContain(" --debug+", startInfo.Arguments)
+        finally
+            Session.SessionsProperties.Update original
 
     [<Fact>]
     let ``Fresh profiles remain uncustomized and can import data arriving after startup`` () =
@@ -790,23 +981,9 @@ module UnifiedSettingsTests =
 
     [<Fact>]
     let ``Localized resources resolve in their owning shipped assembly`` () =
-        let assemblies =
-            dict
-                [
-                    "FSharp.Editor.dll", typeof<EditorOptions>.Assembly
-                    "FSharp.VS.FSI.dll", typeof<FSharpCompilerSettings>.Assembly
-                    "FSharp.UIResources.dll", Assembly.Load("FSharp.UIResources")
-                ]
-
         for value in (manifest ()).Descendants() do
             if value.Type = JTokenType.String then
                 let resource = value.Value<string>()
 
                 if resource.StartsWith("@", StringComparison.Ordinal) then
-                    let separator = resource.IndexOf(';')
-                    let colon = resource.IndexOf(':')
-
-                    let manager =
-                        ResourceManager(resource.Substring(1, colon - 1), assemblies[resource.Substring(separator + 1)])
-
-                    Assert.False(String.IsNullOrEmpty(manager.GetString(resource.Substring(colon + 1, separator - colon - 1))), resource)
+                    Assert.False(String.IsNullOrEmpty(localizedString resource), resource)

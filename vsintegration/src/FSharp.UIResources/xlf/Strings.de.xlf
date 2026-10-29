@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
-        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="translated">Analyse der gesamten Projektmappe zur Diagnose als Hintergrundaufgabe mit niedriger Priorität fortsetzen (Neustart erforderlich)</target>
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task</source>
+        <target state="needs-review-translation">Analyse der gesamten Projektmappe zur Diagnose als Hintergrundaufgabe mit niedriger Priorität fortsetzen</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
@@ -33,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="translated">Livepuffer (nicht gespeichert) zur Analyse verwenden (Neustart erforderlich)</target>
+        <source>Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">Livepuffer (nicht gespeichert) zur Analyse verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Parallelization">
-        <source>Parallelization (requires restart)</source>
-        <target state="translated">Parallelisierung (Neustart erforderlich)</target>
+        <source>Parallelization</source>
+        <target state="needs-review-translation">Parallelisierung</target>
         <note />
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
@@ -328,8 +328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
-        <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">Transparenten Compiler verwenden (Neustart erforderlich)</target>
+        <source>Use Transparent Compiler</source>
+        <target state="needs-review-translation">Transparenten Compiler verwenden</target>
         <note />
       </trans-unit>
     </body>

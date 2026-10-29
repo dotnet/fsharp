@@ -431,11 +431,8 @@ Use live (unsaved) buffers for analysis</value>
   <data name="UnifiedSettingsStaleCompletionDescription" xml:space="preserve">
     <value>Enter an integer from 0 to 10000 milliseconds before stale results are used.</value>
   </data>
-  <data name="UnifiedSettingsRestartRequiredDescription" xml:space="preserve">
-    <value>Restart Visual Studio for changes to take effect.</value>
-  </data>
   <data name="UnifiedSettingsTransparentCompilerDescription" xml:space="preserve">
-    <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry. Restart Visual Studio for changes to take effect.</value>
+    <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</value>
   </data>
   <data name="UnifiedSettingsOperationFailed" xml:space="preserve">
     <value>Unable to read or update the F# setting. See the Activity Log for details.</value>
