@@ -203,14 +203,39 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         | Some extendedName -> receiverTypes.Exists(fun struct (name, _) -> name = extendedName)
         | None -> true
 
+    let hasPublicDefaultConstructor (entity: FSharpEntity) =
+        entity.MembersFunctionsAndValues
+        |> Seq.exists (fun candidate ->
+            candidate.IsConstructor
+            && candidate.Accessibility.IsPublic
+            && candidate.CurriedParameterGroups |> Seq.forall (fun group -> group.Count = 0))
+
+    let definitionMeetsKindConstraint (definition: FSharpEntity) (typeConstraint: FSharpGenericParameterConstraint) =
+        (not typeConstraint.IsNonNullableValueTypeConstraint || definition.IsValueType)
+        && (not typeConstraint.IsReferenceTypeConstraint || not definition.IsValueType)
+        && (not typeConstraint.IsUnmanagedConstraint || definition.IsValueType)
+        && (not typeConstraint.IsEnumConstraint || definition.IsEnum)
+        && (not typeConstraint.IsDelegateConstraint || definition.IsDelegate)
+        && (not typeConstraint.IsRequiresDefaultConstructorConstraint
+            || definition.IsValueType
+            || hasPublicDefaultConstructor definition)
+
+    let receiverMeetsKindConstraint (receiverTypes: ReceiverTypes) (typeConstraint: FSharpGenericParameterConstraint) =
+        receiverTypes.Count = 0
+        || (let struct (_, receiver) = receiverTypes[0]
+            definitionMeetsKindConstraint receiver.TypeDefinition typeConstraint)
+
+    let receiverMeetsConstraint (receiverTypes: ReceiverTypes) (typeConstraint: FSharpGenericParameterConstraint) =
+        receiverMeetsKindConstraint receiverTypes typeConstraint
+        && (not typeConstraint.IsCoercesToConstraint
+            || typeConstraint.CoercesToTarget.IsGenericParameter
+            || receiverTypesInclude receiverTypes typeConstraint.CoercesToTarget)
+
     let csharpExtensionExtendsOneOf (receiverTypes: ReceiverTypes) (extension: FSharpMemberOrFunctionOrValue) =
         match extension.CurriedParameterGroups |> Seq.tryHead |> Option.bind Seq.tryHead with
         | Some thisParameter when thisParameter.Type.IsGenericParameter ->
             thisParameter.Type.GenericParameter.Constraints
-            |> Seq.forall (fun typeConstraint ->
-                not typeConstraint.IsCoercesToConstraint
-                || typeConstraint.CoercesToTarget.IsGenericParameter
-                || receiverTypesInclude receiverTypes typeConstraint.CoercesToTarget)
+            |> Seq.forall (receiverMeetsConstraint receiverTypes)
         | Some thisParameter -> receiverTypesInclude receiverTypes thisParameter.Type
         | None -> true
 

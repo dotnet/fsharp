@@ -50,6 +50,22 @@ module Use =
     let release (x: {receiverType}) = x.Release()
 """
 
+let private constrainedOn constrainedTo receiverType =
+    $"""namespace Lib
+
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type ConstrainedExtensions =
+    [<Extension>]
+    static member Constrained<'T when 'T : {constrainedTo}>(value: 'T) = value
+
+namespace App
+
+module Use =
+    let constrained (x: {receiverType}) = x.Constrained()
+"""
+
 let extensionOpens =
     scenarios
         [
@@ -68,6 +84,26 @@ let extensionOpens =
             ("a C# extension on a disposable type parameter extends a stream", releaseOn "System.IO.MemoryStream", [| "open Lib" |])
 
             ("a C# extension on a disposable type parameter does not extend a number", releaseOn "int", [||])
+
+            ("a C# extension on a struct type parameter extends a number", constrainedOn "struct" "int", [| "open Lib" |])
+
+            ("a C# extension on a struct type parameter does not extend a string", constrainedOn "struct" "string", [||])
+
+            ("a C# extension on a class type parameter extends a string", constrainedOn "not struct" "string", [| "open Lib" |])
+
+            ("a C# extension on a class type parameter does not extend a number", constrainedOn "not struct" "int", [||])
+
+            ("a C# extension on a type parameter with a default constructor extends a builder",
+             constrainedOn "(new: unit -> 'T)" "System.Text.StringBuilder",
+             [| "open Lib" |])
+
+            ("a C# extension on a type parameter with a default constructor does not extend a string",
+             constrainedOn "(new: unit -> 'T)" "string",
+             [||])
+
+            ("a C# extension on an enum type parameter does not extend a number", constrainedOn "enum<int>" "int", [||])
+
+            ("a C# extension on a delegate type parameter does not extend a string", constrainedOn "delegate<unit, unit>" "string", [||])
 
             ("only the modules whose F# extension member extends the receiver",
              """module Module1
