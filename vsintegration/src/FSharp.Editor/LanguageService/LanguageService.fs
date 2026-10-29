@@ -220,6 +220,16 @@ type internal FSharpWorkspaceServiceFactory
 
             let optionsManager = FSharpProjectOptionsManager(checker, workspace)
 
+            workspace.WorkspaceChanged.Add(fun args ->
+                match args.Kind with
+                | WorkspaceChangeKind.ProjectRemoved -> ProjectSnapshotCache.removeProject args.ProjectId
+                | WorkspaceChangeKind.SolutionRemoved
+                | WorkspaceChangeKind.SolutionCleared
+                | WorkspaceChangeKind.SolutionReloaded ->
+                    for projectId in args.OldSolution.ProjectIds do
+                        ProjectSnapshotCache.removeProject projectId
+                | _ -> ())
+
             { new IFSharpWorkspaceService with
                 member _.Checker = checker
                 member _.FSharpProjectOptionsManager = optionsManager
@@ -235,6 +245,7 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, m
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             metadataAsSource.ClearGeneratedFiles()
             projectManager.ClearAllCaches()
+            ProjectSnapshotCache.clear ()
             VSConstants.S_OK
 
         member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
