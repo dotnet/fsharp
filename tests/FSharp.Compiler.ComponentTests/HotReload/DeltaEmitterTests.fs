@@ -1431,7 +1431,8 @@ module DeltaEmitterTests =
             {
                 IlxDeltaRequest.Baseline = baseline
                 UpdatedTypes = [ "Sample.Multi" ]
-                UpdatedMethods = methodKeys
+                // Repeated requests still emit one body and one metadata row per method.
+                UpdatedMethods = methodKeys @ List.rev methodKeys @ methodKeys
                 UpdatedAccessors = []
                 Module = updatedModule
                 SymbolChanges = None
