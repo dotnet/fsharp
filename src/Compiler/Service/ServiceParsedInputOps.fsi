@@ -187,11 +187,26 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
+    val internal getScopeInfo: pos: pos * parsedInput: ParsedInput -> struct (ShortIdents * ShortIdents)
+
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val TryFindInsertionContext:
         currentLine: int ->
+        parsedInput: ParsedInput ->
+        partiallyQualifiedName: MaybeUnresolvedIdent[] ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) *
+            ShortIdents option (*  entityNamespace *) *
+            ShortIdents option (* entity: *) *
+            ShortIdents)
+                -> (InsertionContextEntity * InsertionContext)[])
+
+    /// Like `TryFindInsertionContext`, for a use at a position: on the line of a nested module declared in one line
+    /// that carries an attribute, only a use after the start of the module's body is inside the module.
+    val internal TryFindInsertionContextAt:
+        currentPos: pos ->
         parsedInput: ParsedInput ->
         partiallyQualifiedName: MaybeUnresolvedIdent[] ->
         insertionPoint: OpenStatementInsertionPoint ->
@@ -209,12 +224,30 @@ module public ParsedInput =
         insertionPoint: OpenStatementInsertionPoint ->
             InsertionContext
 
+    /// Like `FindNearestPointToInsertOpenDeclaration`, for a use at a position.
+    val internal FindNearestPointToInsertOpenDeclarationAt:
+        currentPos: pos ->
+        parsedInput: ParsedInput ->
+        entity: ShortIdents ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            InsertionContext
+
     /// Returns long identifier at position.
     val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
 
     /// Moves the insertion point below the blank line that follows a declaration header. `getLineStr` returns
     /// the trimmed text of a zero-based line, or an empty string past the end of the file.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module internal Entity =
+    val getRelativeNamespace: targetNs: ShortIdents -> sourceNs: ShortIdents -> ShortIdents
+
+    val getOpenableNamespace:
+        requiresQualifiedAccessParent: ShortIdents option ->
+        autoOpenParent: ShortIdents option ->
+        candidate: ShortIdents ->
+            struct (ShortIdents * ShortIdents * ShortIdents)
 
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =

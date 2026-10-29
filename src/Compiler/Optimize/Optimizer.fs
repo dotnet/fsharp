@@ -17,7 +17,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.RuntimeAsyncAnalysis
-open FSharp.Compiler.RuntimeAsyncExceptionRewrite
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -424,6 +423,8 @@ type cenv =
 
       optimizing: bool
 
+      inlineBaseCallsForExport: bool
+
       scope: CcuThunk
 
       localInternalVals: Dictionary<Stamp, ValInfo>
@@ -442,7 +443,7 @@ type cenv =
 
       realsig: bool
 
-      specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
+      specializedInlineVals: HashMultiMap<Stamp, TType list * Expr>
 
       forcedInlineVals: Dictionary<Stamp, bool>
 
@@ -461,12 +462,12 @@ type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
 
-      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of specialized types
+      /// Prevents recursive inlining/specialization. Maps lambda ID to a list of instantiations
       /// currently being processed. An empty list means "block unconditionally" (used by normal
       /// inlining and non-concrete debug specialization). A non-empty list means "block only these
-      /// specific type specializations" (used by concrete debug specialization, allowing different
-      /// type instantiations of the same function to proceed).
-      dontInline: Map<Stamp, TType list>
+      /// specific instantiations" (used by concrete debug specialization, allowing different
+      /// instantiations of the same function to proceed).
+      dontInline: Map<Stamp, TType list list>
 
       /// Recursively bound vars. If an sub-expression that is a candidate for method splitting
       /// contains any of these variables then don't split it, for fear of mucking up tailcalls.
@@ -499,9 +500,6 @@ type IncrementalOptimizationEnv =
       /// Indicates that the expression being optimized is the body of a runtime-async marker.
       runtimeAsyncContext: bool
 
-      /// Runtime async diagnostics must only be reported once across optimization passes.
-      runtimeAsyncReportedRanges: HashSet<range>
-
     }
 
     static member Empty =
@@ -517,8 +515,7 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          runtimeAsyncContext = false
-          runtimeAsyncReportedRanges = HashSet<range>() }
+          runtimeAsyncContext = false }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -1735,6 +1732,7 @@ and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
 and OpHasEffect context g m op tyargs =
     match op with
+    | TOp.DebugLocalScope _ -> false
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) ->
@@ -2719,6 +2717,61 @@ let EtaExpandUnderAppliedValBinding g expr =
     | EtaFloatableValLet g (bind, body, m, etaExpanded) -> floatEtaCaptures bind body m etaExpanded
     | _ -> expr
 
+/// `let p = (let c = e in fun x -> ...)`  ~>  `let c = e in let p = fun x -> ...`, p an [<InlineIfLambda>]
+/// binding, so the lambda or delegate becomes a `CurriedLambdaValue` the optimizer can inline. The captures
+/// are evaluated at the same point and are not in scope in the body.
+let FloatInlineIfLambdaCaptures g expr =
+    let rec isFloatable rhs =
+        match rhs with
+        | Expr.Let(_, rest, _, _)
+        | Expr.Sequential(_, rest, NormalSeq, _) -> isFloatable rest
+        | _ ->
+            match stripDebugPoints rhs with
+            | Expr.Lambda _
+            | Expr.TyLambda _
+            | NewDelegateExpr g _ -> true
+            | _ -> false
+
+    match expr with
+    | Expr.Let(bind, body, m, _) when
+        bind.Var.InlineIfLambda
+        && (match bind.Expr with
+            | Expr.Let _
+            | Expr.Sequential(_, _, NormalSeq, _) -> isFloatable bind.Expr
+            | _ -> false)
+        ->
+        let rec rebind rhs =
+            match rhs with
+            | Expr.Let(capture, rest, mLet, _) -> mkLetBind mLet capture (rebind rest)
+            | Expr.Sequential(first, rest, NormalSeq, mSeq) -> Expr.Sequential(first, rebind rest, NormalSeq, mSeq)
+            | rhs -> mkLet bind.DebugPoint m bind.Var rhs body
+
+        rebind bind.Expr
+    | _ -> expr
+
+let private traitConstraintsOfTyarg tyarg =
+    match tyarg with
+    // The witnesses selected for a call live in the constraint cells of its solved type arguments.
+    | TType_var(tp, _) ->
+        tp.Constraints
+        |> List.choose (function
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo
+            | _ -> None)
+    | _ -> []
+
+let private solvedTraitEquiv g aenv (traitInfo1: TraitConstraintInfo) (traitInfo2: TraitConstraintInfo) =
+    traitsAEquiv g aenv traitInfo1 traitInfo2
+    && traitSlnAEquiv g aenv traitInfo1.Solution traitInfo2.Solution
+
+let private tyargEquiv g aenv tyarg1 tyarg2 =
+    typeAEquiv g aenv tyarg1 tyarg2
+    && List.lengthsEqAndForall2 (solvedTraitEquiv g aenv) (traitConstraintsOfTyarg tyarg1) (traitConstraintsOfTyarg tyarg2)
+
+let private specializationKeyEquiv g tyargs1 tyargs2 =
+    // Under --checknulls the specialized body keeps or drops null guards by the nullness of the type arguments.
+    let aenv = TypeEquivEnv.EmptyWithNullChecks g
+    List.lengthsEqAndForall2 (tyargEquiv g aenv) tyargs1 tyargs2
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard(fun () ->
@@ -2797,11 +2850,6 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
         let info = runtimeAsyncReturn.Value
         let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
-        for v in GetRuntimeAsyncNonPreservableUses g bodyR do
-            if env.runtimeAsyncReportedRanges.Add v.Range then
-                errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
-
-        let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
         Expr.App(f, fty, tyargs, [ bodyR ], m),
         { bodyInfo with
             HasEffect = true
@@ -3067,6 +3115,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ =
       match op with
+      | TOp.DebugLocalScope _ -> 0, argValues[0]
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2, value_
 
@@ -3271,6 +3320,7 @@ and OptimizeLinearExpr cenv env expr contf =
     let expr = DetectAndOptimizeForEachExpression g OptimizeAllForExpressions expr
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr
     let expr = if cenv.settings.alwaysInline then EtaExpandUnderAppliedValBinding g expr else expr
+    let expr = if env.runtimeAsyncContext && cenv.settings.alwaysInline then FloatInlineIfLambdaCaptures g expr else expr
     let expr = stripExpr expr
 
     // Matching on 'match __resumableEntry() with ...` is really a first-class language construct which we
@@ -3884,21 +3934,28 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         else
             None
 
-    let containsRuntimeAsyncFragment expr =
+    let containsRuntimeAsyncCode expr =
         match runtimeAsyncAnalyzer with
-        | Some analyzer -> analyzer.ContainsFragment expr
+        | Some analyzer -> analyzer.ContainsRuntimeAsyncCode expr
         | None -> false
 
     let reoptimizeRuntimeAsync reduced =
-        let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
-
-        let reduced =
-            if containsRuntimeAsyncFragment reduced then
-                fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-            else
-                reduced
-
-        InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+        if containsRuntimeAsyncCode reduced then
+            let preserveCallSite = not cenv.settings.LocalOptimizationsEnabled
+            let cenv =
+                { cenv with
+                    settings =
+                        { cenv.settings with
+                            alwaysInline = true
+                            localOptUser = Some true } }
+            let result = fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
+            match runtimeAsyncAnalyzer with
+            | Some analyzer ->
+                let result = ReduceRuntimeAsyncReturnedClosureApplications g analyzer result
+                if preserveCallSite then PreserveRuntimeAsyncCallSiteDebugPoint g m result else result
+            | None -> result
+        else
+            reduced
 
     let mustInlineRuntimeAsync =
         match runtimeAsyncAnalyzer, stripExpr valExpr with
@@ -3912,10 +3969,9 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
              || (not alwaysInline
                  && vref.ShouldInline
                  && not (shouldForceInlineInDebug cenv env vref)) ->
-        let traits =
+        let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
-            GetTraitConstraintInfosOfTypars g tps
-        let hasNoTraits = traits.IsEmpty
+            GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
 
         // Direct-calling an SRTP callee is only safe when every tyarg is a bare typar: then the
         // callee's SRTP constraints land on the caller's own typars and IlxGen rewrites the
@@ -3989,16 +4045,16 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
             let allTyargsAreConcrete = List.isEmpty freeTypars
 
-            // Proceed with specialization only if this (stamp, type) pair isn't already being
+            // Proceed with specialization only if this (stamp, instantiation) pair isn't already being
             // processed. For concrete type args, allow different type instantiations of the same
             // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
             // non-concrete type args, never specialize recursively.
             let canSpecialize =
                 match Map.tryFind origLambdaId env.dontInline with
-                | Some tys ->
+                | Some insts ->
                     allTyargsAreConcrete &&
-                    not tys.IsEmpty &&
-                    not (tys |> List.exists (typeEquiv g specLambdaTy))
+                    not insts.IsEmpty &&
+                    not (insts |> List.exists (specializationKeyEquiv g tyargs))
                 | None -> true
 
             if not canSpecialize then
@@ -4008,31 +4064,27 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             else
 
             let specialize () =
-                let existingTypes = defaultArg (Map.tryFind origLambdaId argEnv.dontInline) []
-                let types = if allTyargsAreConcrete then specLambdaTy :: existingTypes else []
+                let existingInsts = defaultArg (Map.tryFind origLambdaId argEnv.dontInline) []
+                let insts = if allTyargsAreConcrete then tyargs :: existingInsts else []
                 let env =
                     { argEnv with
-                        dontInline = Map.add origLambdaId types argEnv.dontInline }
+                        dontInline = Map.add origLambdaId insts argEnv.dontInline }
                 OptimizeExpr cenv env specLambda |> fst
 
-            // The type-only cache key does not include selected SRTP witnesses.
-            let canCacheSpecialization =
-                allTyargsAreConcrete &&
-                (hasNoTraits || not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions))
-
             let specLambdaR =
-                if canCacheSpecialization then
-                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (ty, _) -> typeEquiv g ty specLambdaTy) with
+                if allTyargsAreConcrete then
+                    match cenv.specializedInlineVals.FindAll(origLambdaId) |> List.tryFind (fun (inst, _) -> specializationKeyEquiv g inst tyargs) with
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
                     let specLambdaR = specialize ()
-                    cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
+                    cenv.specializedInlineVals.Add(origLambdaId, (tyargs, specLambdaR))
                     specLambdaR
                 else
                     specialize ()
 
+            // InlineIfLambda callbacks keep their source points; forced inline helpers belong at the call site.
             let specLambdaR =
-                if mustInlineRuntimeAsync then
+                if mustInlineRuntimeAsync && not vref.InlineIfLambda then
                     remarkExpr m specLambdaR
                 else
                     specLambdaR
@@ -4324,6 +4376,13 @@ and OptimizeFuncInApplication cenv env f0 mWithArgs =
 /// Optimize/analyze an application of a function to type and term arguments
 and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     let g = cenv.g
+    let cenv =
+        match f0, args with
+        | Expr.Val(vref, _, _), Expr.Val(baseVal, _, _) :: _
+            when cenv.inlineBaseCallsForExport && vref.ShouldInline && baseVal.IsBaseVal ->
+            { cenv with settings = { cenv.settings with alwaysInline = true; localOptUser = Some true } }
+        | _ -> cenv
+
     // trying to devirtualize
     match TryDevirtualizeApplication cenv env (f0, tyargs, args, m) with
     | Some res ->
@@ -4560,6 +4619,22 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
+        let usesBase baseVal expr =
+            let fvs = freeInExpr CollectLocals expr
+            usesMethodLocalConstructsOrProtectedField cenv fvs expr || fvs.FreeLocals.Contains baseVal
+
+        // (inline body, its size, whether it still uses 'base'); None when there is no 'base'
+        let inlineBodyInfo =
+            match baseValOpt with
+            | None -> None
+            | Some baseVal when not (usesBase baseVal bodyR) -> Some (bodyR, bodyinfo.TotalSize, false)
+            | Some baseVal ->
+                match vspec with
+                | Some v when v.ShouldInline && not cenv.settings.LocalOptimizationsEnabled ->
+                    let inlineBodyR, inlineBodyInfo = OptimizeExpr { cenv with inlineBaseCallsForExport = true } env body
+                    Some (inlineBodyR, inlineBodyInfo.TotalSize, usesBase baseVal inlineBodyR)
+                | _ -> Some (bodyR, bodyinfo.TotalSize, true)
+
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -4593,15 +4668,19 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
 
         // can't inline any values with semi-recursive object references to self or base
         let value_ =
-          match baseValOpt with
+          match inlineBodyInfo with
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy)
-          | Some baseVal ->
-              let fvs = freeInExpr CollectLocals bodyR
-              if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then
-                  UnknownValue
-              else
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, exprTy)
+          | Some (_, _, true) ->
+              match vspec with
+              | Some v when v.ShouldInline ->
+                  errorR (Error(FSComp.SR.optInlineMemberCannotUseBase(), m))
+                  // Already reported; stop FS0073 and failed-inline errors at use sites
+                  v.SetInlineInfo ValInline.Never
+              | _ -> ()
+              UnknownValue
+          | Some (inlineBodyR, inlineBodySize, false) ->
+              let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (inlineBodyR, bodyTy)
+              CurriedLambdaValue (lambdaId, arities, inlineBodySize, expr2, exprTy)
 
         let estimatedSize =
             match vspec with
@@ -4613,6 +4692,10 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
                  HasEffect=false
                  MightMakeCriticalTailcall = false
                  Info= value_ }
+
+    // Inline instance members may be wrapped in free-choice typars; unwrap them so 'base' uses are handled above
+    | Expr.TyChoose _ when vspec |> Option.exists (fun v -> v.ShouldInline && v.IsInstanceMember) ->
+        OptimizeLambdas vspec cenv env valReprInfo (ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr) exprTy
 
     | _ ->
         OptimizeExpr cenv env expr
@@ -4674,7 +4757,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     cenv.emitTailcalls &&
     not env.disableMethodSplitting &&
     // Never split a runtime-async body: the split-off method would not be a runtime-async
-    // method, so its Await calls would be rejected by IlxGen (FS3916).
+    // method, so its Await calls would be rejected by IlxGen (FS3918).
     not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g).ContainsSuspension e) &&
     einfo.FunctionSize >= threshold &&
 
@@ -5373,6 +5456,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           g=tcGlobals
           amap=importMap
           optimizing=true
+          inlineBaseCallsForExport=false
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           traitCtxt=traitCtxt

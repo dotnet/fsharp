@@ -8,6 +8,239 @@ open FSharp.Test.Compiler
 
 module InterpolatedStringsTests =
 
+    [<Theory>]
+    [<InlineData("$\"%t{fun () -> printed}\"", "printed")>]
+    [<InlineData("$@\"%t{fun () -> printed}\"", "printed")>]
+    [<InlineData("$\"\"\"%t{fun () -> printed}\"\"\"", "printed")>]
+    [<InlineData("$\"%t{fun () -> x}%02d{1}%t{fun () -> y}\"", "x01y")>]
+    let ``Issue 20757 - printf thunk holes do not warn about ToString`` (expression: string, expected: string) =
+        Fsx ("let printed, x, y = \"printed\", \"x\", \"y\"\nlet s = " + expression + "\nif s <> \"" + expected + "\" then failwith \"Unexpected thunk formatting\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("string")>]
+    [<InlineData("obj")>]
+    [<InlineData("System.IComparable")>]
+    [<InlineData("System.ICloneable")>]
+    let ``Issue 20757 - string-rendering thunk holes enforce state and residue types`` (targetType: string) =
+        for thunk in ["fun (_: int) -> \"bad\""; "fun () -> 42"] do
+            Fsx ("let value: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\"")
+            |> withLangVersionPreview
+            |> typecheck
+            |> shouldFail
+            |> withErrorCode 1
+            |> ignore
+
+    [<Theory>]
+    [<InlineData("string")>]
+    [<InlineData("obj")>]
+    [<InlineData("System.IComparable")>]
+    [<InlineData("System.ICloneable")>]
+    let ``Issue 20757 - string-rendering thunk holes render before upcasting`` (targetType: string) =
+        Fsx ("let value: " + targetType + " = $\"\"\"%t{fun () -> \"ok\"}%02d{1}\"\"\"\nif string value <> \"ok01\" then failwith \"Unexpected thunk formatting\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("PrintfFormat<string, int, string, string>", "fun (state: int) -> string state")>]
+    [<InlineData("PrintfFormat<string, unit, int, string>", "fun () -> 42")>]
+    let ``Issue 20757 - captured format thunk holes retain custom state and residue types`` (targetType: string, thunk: string) =
+        Fsx ("let format: " + targetType + " = $\"\"\"%t{" + thunk + "}\"\"\"")
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:3884"]
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("%A")>]
+    [<InlineData("%O")>]
+    let ``Issue 20757 - explicit printf function formatting retains diagnostics`` (specifier: string) =
+        Fsx ("let s = $\"" + specifier + "{fun () -> 1}\"")
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror:3884"]
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20757 - printf interpolation matrix across files and assemblies`` () =
+        let fixture = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "AheadOfTime", "NativeAOT", "PrintfInterpolation")
+        let library =
+            FsFromPath(System.IO.Path.Combine(fixture, "Library", "Formatting.fs"))
+            |> withName "PrintfInterpolationLibrary"
+            |> asLibrary
+            |> withLangVersionPreview
+        FsFromPath(System.IO.Path.Combine(fixture, "Formatting.fs"))
+        |> withAdditionalSourceFiles [SourceFromPath(System.IO.Path.Combine(fixture, "Program.fs"))]
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "01:02:03"
+
+    [<Fact>]
+    let ``Issue 20757 - non-string printf surfaces remain unchanged`` () =
+        Fsx """
+let check expected actual = if actual <> expected then failwith "Unexpected formatting"
+let format: Printf.StringFormat<string> = $"%02d{1}:%02d{2}"
+check "01:02" (sprintf format)
+check "01" (sprintf "%02d" 1)
+check "[1; 2]" $"%A{[1; 2]}"
+let inline structured value = $"%02d{1}|%A{value}|%02d{2}"
+check "01|[1; 2]|02" (structured [1; 2])
+check "01|Some \"x\"|02" (structured (Some "x"))
+let optional = Some "x"
+check "[1; 2]|Some \"x\"" $"%A{[1; 2]}|%A{optional}"
+let formattable: System.FormattableString = $"{1,3:D2}"
+check " 01" (formattable.ToString(System.Globalization.CultureInfo.InvariantCulture))
+let asInterface: System.IFormattable = $"{1:D2}"
+check "01" (asInterface.ToString(null, System.Globalization.CultureInfo.InvariantCulture))
+"""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("%02d", "true", "int", "bool", 20)>]
+    [<InlineData("%b", "1", "bool", "int", 15)>]
+    let ``Issue 20757 - fallback hole diagnostics retain user ranges`` (specifier: string, value: string, expected: string, actual: string, endColumn: int) =
+        Fsx ("let s = $\"" + specifier + "{" + value + "}\"")
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 1, Col (endColumn - value.Length), Line 1, Col endColumn,
+            if specifier = "%02d" then
+                "The type 'bool' is not compatible with any of the types byte,int16,int32,int64,sbyte,uint16,uint32,uint64,nativeint,unativeint, arising from the use of a printf-style format string"
+            else
+                "This expression was expected to have type" + Environment.NewLine + "    '" + expected + "'    " + Environment.NewLine +
+                "but here has type" + Environment.NewLine + "    '" + actual + "'    ")
+
+    [<Fact>]
+    let ``Issue 20752 - multiple fallback formats compile and run`` () =
+        Fsx """let flag = true
+let s = $"%b{flag} %b{flag}"
+if s <> "true true" then failwithf "Unexpected interpolation: %s" s
+"""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("")>]
+    [<InlineData("fr-FR")>]
+    let ``Issue 20752 - fallback and fast formats preserve exact invariant output`` (culture: string) =
+        let fallbacks =
+            [ "%b{true}", "true"; "%A{[1; 2]}", "[1; 2]"; "%f{1.25}", "1.250000"
+              "%5d{42}", "   42"; "%.2f{1.25}", "1.25" ]
+        let fastFormats =
+            [ "%s{\"x\"}", "x"; "%c{'x'}", "x"; "%d{42}", "42"; "%i{42}", "42"; "%M{1.25M}", "1.25" ]
+        let checks =
+            [ for fallback, fallbackOutput in fallbacks do
+                  for fast, fastOutput in fastFormats do
+                      for parts, expected in
+                          [ [fallback; fast], fallbackOutput + " " + fastOutput
+                            [fast; fallback], fastOutput + " " + fallbackOutput
+                            [fast; fallback; fast], fastOutput + " " + fallbackOutput + " " + fastOutput ] do
+                          let expression = "$\"\"\"" + String.concat " " parts + "\"\"\""
+                          yield "check (" + expression + ") " + sprintf "%A" expected ]
+            |> String.concat "\n"
+        Fsx (
+            "let originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture\ntry\n"
+            + "    System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo "
+            + sprintf "%A" culture
+            + "\n    let check actual expected = if actual <> expected then failwithf \"Expected %A, got %A\" expected actual\n"
+            + String.concat "\n" (checks.Split('\n') |> Array.map (fun line -> "    " + line))
+            + "\nfinally\n    System.Threading.Thread.CurrentThread.CurrentCulture <- originalCulture\n"
+        )
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20752 - hole boundaries and string syntaxes preserve exact output`` () =
+        let cases =
+            [ "$\"\"", ""; "$\"%%\"", "%"; "$\"%b{true}\"", "true"
+              "$\"%b{true}%b{false}\"", "truefalse"; "$\"%b{true}%b{false}%b{true}\"", "truefalsetrue"
+              "$\"%d{42}%i{42}%M{1.25M}\"", "42421.25"
+              "$@\"%b{true} %b{false}\"", "true false"; "@$\"%b{true} %b{false}\"", "true false"
+              "$\"%b{true}\\n%b{false}\"", "true\nfalse"; "$\"%b{true}\n%b{false}\"", "true\nfalse"
+              "$\"\"\"%b{true} %b{false}\"\"\"", "true false"
+              "$$\"\"\"%%b{{true}} %%b{{false}}\"\"\"", "true false"
+              "$\"{{%%}} %b{true} %b{false}\"", "{%} true false"
+              "$\"\"\"{$\"%b{true} %b{false}\"} %b{true}\"\"\"", "true false true"
+              "$\"\"\"{sprintf \"%b %d\" true 42} %b{false}\"\"\"", "true 42 false" ]
+        let checks =
+            cases
+            |> List.map (fun (expression, expected) -> "check (" + expression + ") " + sprintf "%A" expected)
+            |> String.concat "\n"
+        Fsx (
+            "let check actual expected = if actual <> expected then failwithf \"Expected %A, got %A\" expected actual\n"
+            + checks
+        )
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20752 - contexts generic holes and other formatting paths are preserved`` () =
+        Fsx """
+open System
+open System.Globalization
+let check actual expected = if actual <> expected then failwithf "Expected %A, got %A" expected actual
+let flag = true
+let s: string = $"%b{flag} %b{flag}"
+check s "true true"
+let messages = ResizeArray<string>()
+let log (msg: string) = messages.Add msg
+log $"%b{flag}"
+log $"%b{flag} %b{flag}"
+check (List.ofSeq messages) ["true"; "true true"]
+let logInferred msg = printfn "%s" msg
+logInferred $"%b{flag} %b{flag}"
+let show x = $"%A{x} %b{true}"
+check (show 42) "42 true"
+check (show [1; 2]) "[1; 2] true"
+check (sprintf "%b %d" true 42) "true 42"
+check $"{1.25,6:F2}" "  1.25"
+check (sprintf $"%b{true} %d{42}") "true 42"
+let format: PrintfFormat<string, unit, string, string> = $"%b{true} %d{42}"
+check (sprintf format) "true 42"
+let formattable: FormattableString = $"{1.25,6:F2} {42}"
+check formattable.ArgumentCount 2
+check formattable.Format "{0,6:F2} {1}"
+check (formattable.ToString CultureInfo.InvariantCulture) "  1.25 42"
+let interfaceFormat: IFormattable = $"{1.25,6:F2} {42}"
+check (interfaceFormat.ToString(null, CultureInfo.InvariantCulture)) "  1.25 42"
+"""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("$\"\"\"%b{hole 1 true}%s{hole 2 \"x\"}%5d{hole 3 42}\"\"\"", "truex   42")>]
+    [<InlineData("$\"\"\"{$\"%b{hole 1 true} %b{hole 2 false}\"} {sprintf \"%d\" (hole 3 42)}\"\"\"", "true false 42")>]
+    let ``Issue 20752 - adjacent nested and sprintf holes evaluate once left to right`` (expression: string, expected: string) =
+        let source = """
+let trace = ResizeArray<int>()
+let counters = Array.zeroCreate<int> 3
+let hole n value =
+    trace.Add n
+    counters[n - 1] <- counters[n - 1] + 1
+    value
+let check actual expected = if actual <> expected then failwithf "Expected %A, got %A" expected actual
+        """
+        Fsx (
+            source + "\ncheck (" + expression + ") " + sprintf "%A" expected
+            + "\ncheck (List.ofSeq trace) [1; 2; 3]\ncheck counters [|1; 1; 1|]"
+        )
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Regression: Empty Interpolated String properly typechecks with explicit type on binding`` () =
         Fsx """ let a:byte = $"string" """

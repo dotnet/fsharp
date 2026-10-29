@@ -232,8 +232,8 @@ type internal FSharpCompletionProvider
                 else
                     Seq.max mruItems.Values
 
-            for number = 0 to declarationItems.Length - 1 do
-                let declarationItem = declarationItems[number]
+            for number = 0 to declarations.Items.Length - 1 do
+                let declarationItem = declarations.Items[number]
 
                 let glyph =
                     Tokenizer.FSharpGlyphToRoslynGlyph(declarationItem.Glyph, declarationItem.Accessibility)
@@ -472,8 +472,8 @@ type internal FSharpCompletionProvider
                         |> ValueOption.defaultValue [||]
 
                     let ctx =
-                        ParsedInput.FindNearestPointToInsertOpenDeclaration
-                            line.LineNumber
+                        ParsedInput.FindNearestPointToInsertOpenDeclarationAt
+                            (Position.fromZ line.LineNumber (item.Span.Start - line.Start))
                             parseResults.ParseTree
                             fullNameIdents
                             insertionPoint

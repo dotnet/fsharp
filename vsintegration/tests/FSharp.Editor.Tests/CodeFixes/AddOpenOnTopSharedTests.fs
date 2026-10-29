@@ -38,17 +38,39 @@ let expectOpenSystem mode code fixedCode =
 
     Assert.Equal(expected, codeFix |> tryFix code mode)
 
+let modeOf alwaysPlaceOpensAtTopLevel =
+    WithSettings
+        { CodeFixesOptions.Default with
+            AlwaysPlaceOpensAtTopLevel = alwaysPlaceOpensAtTopLevel
+        }
+
+let expectOpenSystemInBothModes code fixedCode =
+    for alwaysPlaceOpensAtTopLevel in [ true; false ] do
+        expectOpenSystem (modeOf alwaysPlaceOpensAtTopLevel) code fixedCode
+
 [<Theory>]
 [<InlineData(true)>]
 [<InlineData(false)>]
 let ``Fixes FS0039 for missing opens - module has an attribute on the same line`` (alwaysPlaceOpensAtTopLevel: bool) =
-    let mode =
-        WithSettings
-            { CodeFixesOptions.Default with
-                AlwaysPlaceOpensAtTopLevel = alwaysPlaceOpensAtTopLevel
-            }
-
     expectOpenSystem
-        mode
+        (modeOf alwaysPlaceOpensAtTopLevel)
         "[<AutoOpen>] module Module1\n\nConsole.WriteLine 42\n"
         "[<AutoOpen>] module Module1\n\nopen System\n\nConsole.WriteLine 42\n"
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - block comment runs on from the module header`` () =
+    expectOpenSystemInBothModes
+        "module Module1 (* header\n*)\nConsole.WriteLine 42\n"
+        "module Module1 (* header\n*)\n\nopen System\n\nConsole.WriteLine 42\n"
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - block comment runs on from the namespace header`` () =
+    expectOpenSystemInBothModes
+        "namespace Ns (* header\n*)\ntype T() =\n    member _.M() = Console.WriteLine 42\n"
+        "namespace Ns (* header\n*)\n\nopen System\n\ntype T() =\n    member _.M() = Console.WriteLine 42\n"
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - block comment ending the header shares its line with the first declaration`` () =
+    expectOpenSystemInBothModes
+        "module Module1 (* header\n*) let x = Console.WriteLine 42\n"
+        "module Module1 (* header\n*)\n   open System\n\n   let x = Console.WriteLine 42\n"
