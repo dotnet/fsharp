@@ -12,17 +12,20 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
-/// Every editor operation on a document shares one token cache, keyed by document id and defines, so
-/// classification and symbol lookup read and write the same entries from whatever thread they run on.
+type private DocumentVersion =
+    {
+        Text: SourceText
+        SingleThreadedClassificationPerLine: (string * TextSpan)[][]
+    }
+
 type TokenizerCacheConcurrencyTests() =
 
-    let fileName = "C:\\test.fs"
+    let fileName = "C:\test.fs"
     let defines = []
     let langVersion = Some "preview"
+    let workerCount = max 8 Environment.ProcessorCount
 
-    // Block comments and triple-quoted strings make a line's classification depend on the lex state
-    // threaded out of the line before it, so a torn cache misclassifies lines instead of losing them.
-    let source =
+    let sourceWithMultiLineTokens =
         String.Join(
             "\n",
             [|
@@ -40,11 +43,6 @@ type TokenizerCacheConcurrencyTests() =
             |]
         )
 
-    // Dropping every `*)` leaves the first block comment open to the end of the file: the lines keep
-    // their text and hash but change lex state, which is what drives cached entries out of the cache.
-    let sourceText = SourceText.From source
-    let commentedText = SourceText.From(source.Replace(" *)", ""))
-
     let newDocumentId () =
         DocumentId.CreateNewId(ProjectId.CreateNewId())
 
@@ -58,53 +56,74 @@ type TokenizerCacheConcurrencyTests() =
     let lineSpan (text: SourceText) startLine endLine =
         TextSpan.FromBounds(text.Lines.[startLine].Start, text.Lines.[endLine].End)
 
-    /// What an uncontended scan of the document produces, one line at a time.
-    let scanEveryLine (text: SourceText) =
+    let versionOf (text: SourceText) =
         let documentId = newDocumentId ()
 
-        Array.init text.Lines.Count (fun i -> classify documentId text (lineSpan text i i))
+        {
+            Text = text
+            SingleThreadedClassificationPerLine = Array.init text.Lines.Count (fun i -> classify documentId text (lineSpan text i i))
+        }
 
-    let expectedRange (perLine: (string * TextSpan)[][]) startLine endLine =
-        Array.concat perLine.[startLine..endLine]
+    let closedComments = versionOf (SourceText.From sourceWithMultiLineTokens)
+
+    let unclosedComments =
+        versionOf (SourceText.From(sourceWithMultiLineTokens.Replace(" *)", "")))
+
+    let bothVersions = [| closedComments; unclosedComments |]
+
+    let alternatingVersion worker iteration = bothVersions.[(worker + iteration) % 2]
+
+    let lineCount = closedComments.Text.Lines.Count
+
+    let anyLines (random: Random) =
+        let a, b = random.Next lineCount, random.Next lineCount
+        min a b, max a b
+
+    let documentIdWithCacheOfOneLine () =
+        let documentId = newDocumentId ()
+        let oneLine = SourceText.From "let x = 1"
+        classify documentId oneLine (lineSpan oneLine 0 0) |> ignore
+        documentId
 
     let describe (spans: (string * TextSpan)[]) =
         spans |> Seq.map (fun (kind, span) -> $"{kind}{span}") |> String.concat " "
 
-    let runConcurrently workerCount (work: int -> unit) =
+    let readLines (failures: ConcurrentQueue<string>) documentId (version: DocumentVersion) (startLine, endLine) =
+        let actual =
+            classify documentId version.Text (lineSpan version.Text startLine endLine)
+
+        let expected =
+            Array.concat version.SingleThreadedClassificationPerLine.[startLine..endLine]
+
+        if actual <> expected then
+            failures.Enqueue $"lines {startLine}..{endLine}\n  expected {describe expected}\n  actual   {describe actual}"
+
+    let expectNoDivergence (failures: ConcurrentQueue<string>) =
+        let diverged = String.concat Environment.NewLine failures
+        Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+
+    let runConcurrently (work: int -> unit) =
         let workers =
             Array.init workerCount (fun worker -> Task.Run(Action(fun () -> work worker)))
 
         Task.WaitAll workers
 
-    let workerCount = max 8 Environment.ProcessorCount
-
     [<Fact>]
     member _.``Overlapping concurrent reads of one document's token cache agree with a single-threaded scan``() =
-        let perLine = scanEveryLine sourceText
-        let lineCount = sourceText.Lines.Count
         let documentId = newDocumentId ()
         let failures = ConcurrentQueue<string>()
+        let text = closedComments.Text
 
-        runConcurrently workerCount (fun worker ->
+        runConcurrently (fun worker ->
             let random = Random(worker)
 
             for _ in 1..60 do
-                let startLine, endLine =
-                    let a = random.Next lineCount
-                    let b = random.Next lineCount
-                    min a b, max a b
+                readLines failures documentId closedComments (anyLines random)
 
-                let actual = classify documentId sourceText (lineSpan sourceText startLine endLine)
-                let expected = expectedRange perLine startLine endLine
-
-                if actual <> expected then
-                    failures.Enqueue $"lines {startLine}..{endLine}\n  expected {describe expected}\n  actual   {describe actual}"
-
-                // Symbol lookup reads the same cache, and does so a line at a time.
                 Tokenizer.getSymbolAtPosition (
                     documentId,
-                    sourceText,
-                    random.Next sourceText.Length,
+                    text,
+                    random.Next text.Length,
                     fileName,
                     defines,
                     SymbolLookupKind.Greedy,
@@ -115,79 +134,42 @@ type TokenizerCacheConcurrencyTests() =
                 )
                 |> ignore)
 
-        let diverged = String.concat Environment.NewLine failures
-        Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+        expectNoDivergence failures
 
     [<Fact>]
     member _.``Concurrent reads of two versions of a document keep invalidating the cache correctly``() =
-        let perLine = scanEveryLine sourceText
-        let commentedPerLine = scanEveryLine commentedText
-        let lineCount = sourceText.Lines.Count
+        let lastLine = lineCount - 1
 
-        // Without this the test would pass on a cache that never invalidates anything.
-        Assert.NotEqual<(string * TextSpan)[]>(perLine.[lineCount - 1], commentedPerLine.[lineCount - 1])
+        Assert.True(
+            closedComments.SingleThreadedClassificationPerLine.[lastLine]
+            <> unclosedComments.SingleThreadedClassificationPerLine.[lastLine],
+            "The versions must classify the last line differently, or no cached entry is ever invalidated"
+        )
 
         let documentId = newDocumentId ()
         let failures = ConcurrentQueue<string>()
 
-        runConcurrently workerCount (fun worker ->
+        runConcurrently (fun worker ->
             let random = Random(worker)
 
             for iteration in 1..60 do
-                let text, expectedPerLine =
-                    if (worker + iteration) % 2 = 0 then
-                        sourceText, perLine
-                    else
-                        commentedText, commentedPerLine
+                readLines failures documentId (alternatingVersion worker iteration) (anyLines random))
 
-                let startLine, endLine =
-                    let a = random.Next lineCount
-                    let b = random.Next lineCount
-                    min a b, max a b
-
-                let actual = classify documentId text (lineSpan text startLine endLine)
-                let expected = expectedRange expectedPerLine startLine endLine
-
-                if actual <> expected then
-                    failures.Enqueue $"lines {startLine}..{endLine}\n  expected {describe expected}\n  actual   {describe actual}")
-
-        let diverged = String.concat Environment.NewLine failures
-        Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+        expectNoDivergence failures
 
     [<Fact>]
     member _.``Concurrent scans that grow the cache of a document first seen shorter agree with a single-threaded scan``() =
-        let perLine = scanEveryLine sourceText
-        let commentedPerLine = scanEveryLine commentedText
-        let lineCount = sourceText.Lines.Count
-        let shortText = SourceText.From "let x = 1"
         let failures = ConcurrentQueue<string>()
 
-        // A cache is sized for the first text it sees, so every round starts from one slot and the scans
-        // below race on growing it.
         for round in 1..20 do
-            let documentId = newDocumentId ()
-            classify documentId shortText (lineSpan shortText 0 0) |> ignore
+            let documentId = documentIdWithCacheOfOneLine ()
 
-            runConcurrently workerCount (fun worker ->
+            runConcurrently (fun worker ->
                 let random = Random(round * workerCount + worker)
 
                 for iteration in 1..10 do
-                    let text, expectedPerLine =
-                        if (worker + iteration) % 2 = 0 then
-                            sourceText, perLine
-                        else
-                            commentedText, commentedPerLine
-
-                    // Half the requests read from the first line, through the entries each growth copies.
                     let endLine = random.Next lineCount
                     let startLine = if iteration % 2 = 0 then 0 else random.Next(endLine + 1)
+                    readLines failures documentId (alternatingVersion worker iteration) (startLine, endLine))
 
-                    let actual = classify documentId text (lineSpan text startLine endLine)
-                    let expected = expectedRange expectedPerLine startLine endLine
-
-                    if actual <> expected then
-                        failures.Enqueue
-                            $"round {round}, lines {startLine}..{endLine}\n  expected {describe expected}\n  actual   {describe actual}")
-
-        let diverged = String.concat Environment.NewLine failures
-        Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+        expectNoDivergence failures
