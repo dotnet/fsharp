@@ -412,6 +412,11 @@
         <target state="translated">Une étape d'une plage ne peut pas être zéro.</target>
         <note />
       </trans-unit>
+      <trans-unit id="structTupleNoProperties">
+        <source>Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</source>
+        <target state="new">Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
         <target state="translated">System.Threading.SynchronizationContext.Current du thread appelant est null.</target>

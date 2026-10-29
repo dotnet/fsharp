@@ -1010,7 +1010,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         with _ ->
             false, (EOF LexerStateEncoding.revertToDefaultLexCont, 0, 0)
 
-    /// Scan a token starting with the given lexer state, without allocating an option for the result.
+    // Scan a token starting with the given lexer state
     member x.ScanTokenValue(lexState: FSharpTokenizerLexState) : struct (FSharpTokenInfo voption * FSharpTokenizerLexState) =
 
         use _ = UseBuildPhase BuildPhase.Parse
@@ -1122,7 +1122,6 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
         struct (tokenDataOption, lexintFinal)
 
-    // Scan a token starting with the given lexer state
     member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
         let struct (tokenDataOption, lexintFinal) = x.ScanTokenValue(lexState)
         ValueOption.toOption tokenDataOption, lexintFinal

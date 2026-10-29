@@ -454,115 +454,87 @@ module internal Tokenizer =
         member val ClassifiedSpans = classifiedSpans
         member val SavedTokens = savedTokens
 
-        member data.IsValid(textLine: TextLine, lineContents: string) =
-            data.LineStart = textLine.Start && data.HashCode = lineContents.GetHashCode()
-
         member data.IsValid(textLine: TextLine) =
             data.LineStart = textLine.Start
             && let lineContents = textLine.Text.ToString(textLine.Span) in
                data.HashCode = lineContents.GetHashCode()
 
-    // Shared by concurrent editor operations (classification and symbol lookup), so each entry access
-    // must be thread-safe. A cached line is reused when its text and start lex state match; its start lex
-    // state is trusted to resume a scan only while no edit above it can have changed that state.
-    //
-    // Reads take no lock. Writes and growth are serialized, and a grown array is published only once it
-    // holds every entry of the one it replaces, so a reader sees either array whole. The slots are
-    // `option` rather than `voption` so that each one is written as a single reference and cannot tear.
+    let private linesResumableAfterEdits (older: SourceText) (newer: SourceText) =
+        let firstEdit =
+            newer.GetChangeRanges older
+            |> Seq.fold (fun first change -> min first change.Span.Start) Int32.MaxValue
+
+        if firstEdit = Int32.MaxValue then
+            older.Lines.Count
+        else
+            older.Lines.GetLineFromPosition(firstEdit).LineNumber + 1
+
     type private SourceTextData(approxLines: int) =
-        let sync = obj ()
+        let writeLock = obj ()
 
         [<VolatileField>]
         let mutable data: SourceLineData option array = Array.zeroCreate (max approxLines 1)
 
-        // Called under `sync` only.
+        let lastScannedText = WeakReference<SourceText>(null)
+        let mutable currentGeneration = 0
+        let mutable resumableLines = 0
+
         let extendTo i =
-            let current = data
-
-            if i < current.Length then
-                current
-            else
-                let grown = Array.zeroCreate (max (i + 1) (current.Length * 2))
-                Array.blit current 0 grown 0 current.Length
+            if i >= data.Length then
+                let grown = Array.zeroCreate (max (i + 1) (data.Length * 2))
+                Array.blit data 0 grown 0 data.Length
                 data <- grown
-                grown
-
-        // The text the entries were last scanned for, a count bumped whenever it changes, and how many leading
-        // lines of it have a start lex state known to hold. Read and written under `sync` only.
-        //
-        // The text is held weakly. The entries of a define set the project no longer uses stay for as long as
-        // the document is scanned under another one, and would keep a whole snapshot alive with them.
-        let text = WeakReference<SourceText>(null)
-        let mutable generation = 0
-        let mutable trustedLines = 0
 
         member x.Item
             with get (i: int) =
-                let current = data
+                let snapshot = data
 
-                if i < current.Length then
-                    match current.[i] with
-                    | Some v -> ValueSome v
-                    | None -> ValueNone
+                if i < snapshot.Length then
+                    ValueOption.ofOption snapshot.[i]
                 else
                     ValueNone
 
-        /// Switches the cache to `current`. Returns the generation to pass back to the members below, and how
-        /// many leading lines have a start lex state that holds for `current`.
-        member x.Enter(current: SourceText) =
-            lock sync (fun () ->
-                match text.TryGetTarget() with
-                | true, known when obj.ReferenceEquals(known, current) -> ()
-                | isKnown, known ->
-                    // An edit can change the lex state only of the lines below the first line it touches.
-                    // What was edited since a text that is gone cannot be told, so nothing is trusted.
-                    trustedLines <-
+        member x.BeginScan(text: SourceText) =
+            lock writeLock (fun () ->
+                match lastScannedText.TryGetTarget() with
+                | true, scanned when obj.ReferenceEquals(scanned, text) -> ()
+                | isKnown, scanned ->
+                    resumableLines <-
                         if isKnown then
-                            let mutable firstEdit = Int32.MaxValue
-
-                            for change in current.GetChangeRanges known do
-                                firstEdit <- min firstEdit change.Span.Start
-
-                            if firstEdit = Int32.MaxValue then
-                                trustedLines
-                            else
-                                min trustedLines (known.Lines.GetLineFromPosition(firstEdit).LineNumber + 1)
+                            min resumableLines (linesResumableAfterEdits scanned text)
                         else
                             0
 
-                    text.SetTarget current
-                    generation <- generation + 1
+                    lastScannedText.SetTarget text
+                    currentGeneration <- currentGeneration + 1
 
-                struct (generation, trustedLines))
+                struct (currentGeneration, resumableLines))
 
-        /// Whether `entry`, read at `line`, is still there in `gen`, so its start lex state can resume a scan.
-        member x.CanResumeFrom(line, entry: SourceLineData, gen) =
-            lock sync (fun () ->
-                gen = generation
+        member x.CanResumeFrom(line, entry: SourceLineData, generation) =
+            lock writeLock (fun () ->
+                generation = currentGeneration
                 && line < data.Length
                 && (match data.[line] with
                     | Some cached -> obj.ReferenceEquals(cached, entry)
                     | None -> false))
 
-        /// Stores `entry` unless the cache has moved on to another text since `gen`.
-        member x.Store(line, entry, gen) =
-            lock sync (fun () ->
-                if gen = generation then
-                    (extendTo line).[line] <- Some entry)
+        member x.StoreIfCurrent(line, entry, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    extendTo line
+                    data.[line] <- Some entry)
 
-        /// Records that a scan in `gen` has confirmed the start lex state of the first `lineCount` lines.
-        member x.Trust(lineCount, gen) =
-            lock sync (fun () ->
-                if gen = generation then
-                    trustedLines <- max trustedLines lineCount)
+        member x.ConfirmResumableLines(count, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    resumableLines <- max resumableLines count)
 
         member x.ClearFrom(n) =
-            lock sync (fun () ->
-                let current = data
+            lock writeLock (fun () ->
                 let mutable i = n
 
-                while i < current.Length && current.[i].IsSome do
-                    current.[i] <- None
+                while i < data.Length && data.[i].IsSome do
+                    data.[i] <- None
                     i <- i + 1)
 
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
@@ -594,54 +566,66 @@ module internal Tokenizer =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray<SavedTokenInfo>()
+        let mutable tokenInfoOption = ValueNone
         let mutable previousLexState = lexState
 
-        let processToken token =
-            let classificationType = compilerTokenToRoslynToken token.ColorClass
+        let processToken () =
+            let classificationType =
+                compilerTokenToRoslynToken (tokenInfoOption.Value.ColorClass)
 
-            for i = token.LeftColumn to token.RightColumn do
+            for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
                 Array.set colorMap i classificationType
 
-            tokens.Add(SavedTokenInfo.Create token)
+            let token = tokenInfoOption.Value
+            let savedToken = SavedTokenInfo.Create token
+
+            tokens.Add savedToken
 
         let scanAndColorNextToken () =
             let struct (info, nextLexState) = lineTokenizer.ScanTokenValue(previousLexState)
+            tokenInfoOption <- info
             previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
             match info with
             | ValueSome info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
-                processToken
-                    {
-                        LeftColumn = info.LeftColumn
-                        RightColumn = info.RightColumn - 2
-                        ColorClass = FSharpTokenColorKind.Number
-                        CharClass = FSharpTokenCharKind.Literal
-                        FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
-                        Tag = info.Tag
-                        TokenName = "INT32"
-                        FullMatchedLength = info.FullMatchedLength - 2
-                    }
+                tokenInfoOption <-
+                    ValueSome
+                        {
+                            LeftColumn = info.LeftColumn
+                            RightColumn = info.RightColumn - 2
+                            ColorClass = FSharpTokenColorKind.Number
+                            CharClass = FSharpTokenCharKind.Literal
+                            FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                            Tag = info.Tag
+                            TokenName = "INT32"
+                            FullMatchedLength = info.FullMatchedLength - 2
+                        }
 
-                processToken
-                    {
-                        LeftColumn = info.RightColumn - 1
-                        RightColumn = info.RightColumn
-                        ColorClass = FSharpTokenColorKind.Operator
-                        CharClass = FSharpTokenCharKind.Operator
-                        FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
-                        Tag = FSharpTokenTag.DOT_DOT
-                        TokenName = "DOT_DOT"
-                        FullMatchedLength = 2
-                    }
+                processToken ()
 
-            | ValueSome info -> processToken info
+                tokenInfoOption <-
+                    ValueSome
+                        {
+                            LeftColumn = info.RightColumn - 1
+                            RightColumn = info.RightColumn
+                            ColorClass = FSharpTokenColorKind.Operator
+                            CharClass = FSharpTokenCharKind.Operator
+                            FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                            Tag = FSharpTokenTag.DOT_DOT
+                            TokenName = "DOT_DOT"
+                            FullMatchedLength = 2
+                        }
+
+                processToken ()
+
+            | ValueSome _ -> processToken ()
             | _ -> ()
 
-            info.IsSome
+        scanAndColorNextToken ()
 
-        while scanAndColorNextToken () do
-            ()
+        while tokenInfoOption.IsSome do
+            scanAndColorNextToken ()
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
@@ -699,13 +683,11 @@ module internal Tokenizer =
         ) =
         [
             let lines = sourceText.Lines
-            let struct (generation, trustedLines) = sourceTextDataCache.Enter sourceText
+            let struct (generation, resumableLines) = sourceTextDataCache.BeginScan sourceText
 
-            // Go backwards to the last valid cached line whose start lex state still holds. A line that only
-            // looks valid can sit below an edit that kept its position but changed its lex state. The entry is
-            // kept rather than read again: a concurrent scan of other text can clear or replace that slot.
+            // Go backwards to find the last cached scanned line that is valid
             let struct (scanStartLine, validStart) =
-                let mutable i = min startLine (trustedLines - 1)
+                let mutable i = min startLine (resumableLines - 1)
                 let mutable found = ValueNone
 
                 while i > 0 && found.IsNone do
@@ -735,15 +717,11 @@ module internal Tokenizer =
                     //   2. the hash codes match
                     //   3. the start-of-line lex states are the same
                     match sourceTextDataCache.[i] with
-                    | ValueSome data when
-                        data.IsValid(textLine, lineContents)
-                        && data.LexStateAtStartOfLine.Equals(lexState)
-                        ->
-                        data
+                    | ValueSome data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextDataCache.Store(i, newData, generation)
+                        sourceTextDataCache.StoreIfCurrent(i, newData, generation)
                         newData
 
                 lexState <- lineData.LexStateAtEndOfLine
@@ -751,7 +729,7 @@ module internal Tokenizer =
                 if i >= startLine then
                     yield lineData, lineContents
 
-            sourceTextDataCache.Trust(endLine + 1, generation)
+            sourceTextDataCache.ConfirmResumableLines(endLine + 1, generation)
 
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then
@@ -927,10 +905,14 @@ module internal Tokenizer =
                 | SymbolLookupKind.Precise -> 0
                 | SymbolLookupKind.Greedy -> 1
 
-            draftTokens
-            |> List.filter (fun x ->
-                x.LeftColumn <= linePos.Character
-                && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
+            [
+                for x in draftTokens do
+                    if
+                        x.LeftColumn <= linePos.Character
+                        && (x.RightColumn + rightColumnCorrection) >= linePos.Character
+                    then
+                        yield x
+            ]
 
         // Select IDENT token. If failed, select OPERATOR token.
         let symbol =
@@ -1103,9 +1085,6 @@ module internal Tokenizer =
         else
             false
 
-    let private forbiddenSymbolNameChars =
-        [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '"' |]
-
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
 
         let inline isIdentifier (ident: string) =
@@ -1124,9 +1103,11 @@ module internal Tokenizer =
             not (String.IsNullOrEmpty s)
             && FSharpKeywords.NormalizeIdentifierBackticks s |> isIdentifier
 
+        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
+
         let inline isTypeNameIdent (s: string) =
             not (String.IsNullOrEmpty s)
-            && s.IndexOfAny forbiddenSymbolNameChars = -1
+            && s.IndexOfAny forbiddenChars = -1
             && isFixableIdentifier s
 
         let inline isUnionCaseIdent (s: string) =

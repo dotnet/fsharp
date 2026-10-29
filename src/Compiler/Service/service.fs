@@ -256,6 +256,9 @@ type FSharpChecker
 
     member _.ReferenceResolver = legacyReferenceResolver
 
+    member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) =
+        backgroundCompiler.SetReferenceStampProvider getReferenceStamp
+
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
@@ -530,7 +533,12 @@ type FSharpChecker
             ?userOpName: string
         ) =
         let userOpName = defaultArg userOpName "Unknown"
-        let documentSource = defaultArg documentSource DocumentSource.FileSystem
+
+        let documentSource =
+            match documentSource, getSource with
+            | Some documentSource, _ -> documentSource
+            | None, Some getSource -> DocumentSource.Custom getSource
+            | None, None -> DocumentSource.FileSystem
 
         backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
@@ -638,22 +646,16 @@ type FSharpChecker
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
         let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
-        let mutable lexState = state
-        let mutable token = ValueNone
-
-        let scanNext () =
-            let struct (t, s) = lineTokenizer.ScanTokenValue(lexState)
-            token <- t
-            lexState <- s
-            token.IsSome
+        let mutable state = (None, state)
 
         let tokens =
             [|
-                while scanNext () do
-                    yield token.Value
+                while (state <- lineTokenizer.ScanToken(snd state)
+                       (fst state).IsSome) do
+                    yield (fst state).Value
             |]
 
-        tokens, lexState
+        tokens, snd state
 
     /// Tokenize an entire file, line by line
     member x.TokenizeFile(source: string) : FSharpTokenInfo[][] =

@@ -44,6 +44,10 @@ module internal FSharpConstants =
     let FSharpLanguageServiceCallbackName = "F# Language Service"
 
     [<Literal>]
+    let copilotSymbolProviderName =
+        "Microsoft.VisualStudio.FSharp.CopilotSymbolContextProvider"
+
+    [<Literal>]
     /// "FSharp"
     let FSharpLanguageLongName = "FSharp"
 
