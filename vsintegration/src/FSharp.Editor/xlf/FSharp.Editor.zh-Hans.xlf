@@ -440,6 +440,26 @@ Show remarks in Quick Info</source>
         <target state="translated">将表达式用括号括起来</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToReferenceAnonymousRecord">
+        <source>Convert to reference anonymous record</source>
+        <target state="new">Convert to reference anonymous record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructAnonymousRecord">
+        <source>Convert to struct anonymous record</source>
+        <target state="new">Convert to struct anonymous record</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
