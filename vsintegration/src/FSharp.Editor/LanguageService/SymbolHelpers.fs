@@ -124,7 +124,7 @@ module internal SymbolHelpers =
                 let otherFile = getOtherFile currentDocument.FilePath
 
                 let! otherFileCheckResults =
-                    match currentDocument.Project.Solution.TryGetDocumentFromPath otherFile with
+                    match currentDocument.TryGetSolutionDocumentFromPath otherFile with
                     | ValueSome doc ->
                         cancellableTask {
                             let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findReferencedSymbolsAsync")
