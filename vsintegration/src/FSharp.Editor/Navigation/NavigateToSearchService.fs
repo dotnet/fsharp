@@ -7,10 +7,10 @@ open System.IO
 open System.Composition
 open System.Collections.Immutable
 open System.Collections.Concurrent
-open System.Globalization
 open System.Linq
 open System.Threading
 open System.Threading.Tasks
+open System.Globalization
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
@@ -41,12 +41,11 @@ type internal FSharpNavigableItemsCache
     let cache = ConcurrentDictionary<DocumentId, NavigableItemsEntry>()
 
     do
-        match workspace with
-        | null -> ()
-        | workspace ->
-            workspace.WorkspaceChanged.Add(fun e ->
+        if workspace <> null then
+            workspace.WorkspaceChanged.Add
+            <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
-                    cache.Clear())
+                    cache.Clear()
 
     let store (document: Document) version approximate parseTree =
         let items = NavigateTo.GetNavigableItems parseTree
@@ -86,6 +85,12 @@ type internal FSharpNavigableItemsCache
                 let! parseResults = document.GetFSharpQuickParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 return store document currentVersion true parseResults.ParseTree
         }
+
+    /// Uses the version the document already knows: asking for it could read a closed file from disk.
+    member _.TryGetCachedNavigableItems(document: Document) =
+        match cache.TryGetValue document.Id, document.TryGetTextVersion() with
+        | (true, entry), (true, currentVersion) when entry.Version = currentVersion && not entry.Approximate -> ValueSome entry.Items
+        | _ -> ValueNone
 
     member _.CreateMatcherFor(searchPattern: string) =
         let patternMatcher =
@@ -207,7 +212,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             let! items = getItems document
 
             let processed =
-                seq {
+                [|
                     for item in items do
                         let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
                         let patternMatch = tryMatch item
@@ -237,9 +242,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                                         )
                                     )
                         | _ -> ()
-                }
+                |]
 
-            return processed |> Seq.toImmutableArray
+            return processed
         }
 
     /// Priority items first, each half in its original order, as NavigateTo's own service orders its work.
@@ -265,17 +270,31 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results =
-                    project.Documents
-                    |> Seq.map (processDocument itemsCache.GetNavigableItems tryMatch kinds)
-                    |> CancellableTask.whenAll
+                let tasks =
+                    [|
+                        for doc in project.Documents do
+                            yield processDocument itemsCache.GetNavigableItems tryMatch kinds doc
+                    |]
 
-                return results |> Seq.collect _.AsEnumerable() |> Seq.toImmutableArray
+                let! results = CancellableTask.whenAll tasks
+
+                let results' = ImmutableArray.CreateBuilder()
+
+                for navResults in results do
+                    for navResult in navResults do
+                        results'.Add navResult
+
+                return results'.ToImmutable()
+
             }
             |> CancellableTask.start cancellationToken
 
         member _.SearchDocumentAsync(document: Document, searchPattern, kinds, cancellationToken) =
-            processDocument itemsCache.GetNavigableItems (createMatcherFor searchPattern) kinds document cancellationToken
+            cancellableTask {
+                let! result = processDocument itemsCache.GetNavigableItems (createMatcherFor searchPattern) kinds document
+                return Array.toImmutableArray result
+            }
+            |> CancellableTask.start cancellationToken
 
         member _.KindsProvided = kindsProvided
 
@@ -303,7 +322,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                     let! results = throttled (processDocument itemsCache.GetNavigableItemsWhileLoading tryMatch kinds document)
 
                     if results.Length > 0 then
-                        do! onResultsFound.Invoke results
+                        do! onResultsFound.Invoke(Array.toImmutableArray results)
                 }
 
             // Every document waits on the throttle in the order it is started, so priority documents, and the
