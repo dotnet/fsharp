@@ -4250,8 +4250,9 @@ let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern
 let tryEvalConstant (g: TcGlobals) (expr: Expr) =
     try
         suppressErrorReporting (fun () -> ValueSome(EvalLiteralExprOrAttribArg g expr))
-    with ReportedError _ ->
-        ValueNone
+    with
+    | ReportedError _
+    | :? DivideByZeroException -> ValueNone
 
 let tryConstantHoleText (g: TcGlobals) (formatting: SynInterpolationFormatting) (hole: Expr) =
     match formatting, tryEvalConstant g hole with
