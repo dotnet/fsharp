@@ -6,6 +6,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
 open CodeFixTestFramework
+open AddOpenOnTopSharedTests
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
@@ -77,6 +78,28 @@ Console.WriteLine 42
     let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
+
+let placements =
+    scenarios
+        [
+            ("declaration shares its line with the end of a comment",
+             "(* header\n*) Console.WriteLine 42\n",
+             "(* header\n*)\n   open System\n\n   Console.WriteLine 42\n")
+
+            ("explicit top level module without a blank line",
+             "module Module1\nConsole.WriteLine 42\n",
+             "module Module1\n\nopen System\n\nConsole.WriteLine 42\n")
+
+            ("last line with no line break", "module Module1\nConsole.WriteLine 42", "module Module1\n\nopen System\n\nConsole.WriteLine 42")
+
+            ("namespace without a blank line",
+             "namespace N1\nmodule M1 =\n    Console.WriteLine 42\n",
+             "namespace N1\n\nopen System\n\nmodule M1 =\n    Console.WriteLine 42\n")
+        ]
+
+[<Theory; MemberData(nameof placements)>]
+let ``Fixes FS0039 for missing opens - placement`` (_scenario: string, code: string, fixedCode: string) =
+    expectOpenSystem Auto code fixedCode
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - there is already an open directive`` () =
