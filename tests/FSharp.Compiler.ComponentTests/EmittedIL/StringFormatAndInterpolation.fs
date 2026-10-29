@@ -6,6 +6,50 @@ open Xunit
 open FSharp.Test.Compiler
 
 module ``StringFormatAndInterpolation`` =
+    [<Fact>]
+    let ``Issue 20752 - fallback formats retain sprintf and Concat lowering`` () =
+        FSharp """
+module StringFormatAndInterpolation
+let f (flag: bool) = $"%b{flag} %b{flag}"
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyILPresent [
+            "Microsoft.FSharp.Core.PrintfModule::PrintFormatToStringThen"
+            "System.String::Concat"
+        ]
+
+    [<Fact>]
+    let ``Issue 20757 - padded timestamp uses captured printf formats`` () =
+        let result =
+            FSharp """
+module Timestamp
+let format (now: System.DateTime) = $"%02d{now.Hour}:%02d{now.Minute}:%02d{now.Second}"
+"""
+            |> compile
+            |> shouldSucceed
+        result |> verifyILPresent [
+            "ldstr      \"%02d%P()\""
+            "::.ctor(string,"
+            "object[],"
+            "System.Type[])"
+            "PrintFormatToStringThen<string>"
+            "System.String::Concat"
+        ]
+        result |> verifyILNotPresent ["FSharpFunc`2<int32,string>"; "::Invoke(int32)"]
+
+    [<Theory>]
+    [<InlineData("$\"%d{n}%i{n}\"", "System.String::Concat")>]
+    [<InlineData("$\"x{n}\"", "System.String::Concat")>]
+    [<InlineData("$\"{n,6:D2}\"", "System.String::Format")>]
+    let ``Issue 20757 - fast paths do not construct printf formats`` (expression: string, call: string) =
+        let result =
+            FSharp ("module FastPath\nlet format (n: int) = " + expression)
+            |> compile
+            |> shouldSucceed
+        result |> verifyILPresent [call]
+        result |> verifyILNotPresent ["PrintfFormat"; "PrintFormatToStringThen"]
+
 #if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
     [<Fact>]
     let ``Interpolated string with no holes is reduced to a string or simple format when used in printf``() =
