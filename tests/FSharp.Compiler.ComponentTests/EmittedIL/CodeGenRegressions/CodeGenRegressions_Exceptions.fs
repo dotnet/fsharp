@@ -209,3 +209,63 @@ let main _ = test ()
         |> run
         |> shouldSucceed
         |> ignore
+
+    let private verifyAndRunDebug source =
+        let compiled =
+            FSharp source
+            |> asExe
+            |> withDebug
+            |> withNoOptimize
+            |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
+
+        compiled |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
+        compiled |> run |> shouldSucceed |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/20871
+    [<Fact>]
+    let ``Issue_20871_RaiseWithRecordCopyInAsync`` () =
+        verifyAndRunDebug """
+module Test
+
+type Artifacts =
+    { Value: int }
+    static member None = { Value = 0 }
+
+exception UnexpectedFailureException of Artifacts
+
+let read () = async { return () }
+
+let handle () =
+    async {
+        match Some () with
+        | None -> raise (UnexpectedFailureException { Artifacts.None with Value = 1 })
+        | Some _ -> do! read ()
+    }
+
+[<EntryPoint>]
+let main _ =
+    handle () |> Async.RunSynchronously
+    0
+"""
+
+    // https://github.com/dotnet/fsharp/issues/20564
+    [<Fact>]
+    let ``Issue_20564_RaiseWithConditionalArgument`` () =
+        verifyAndRunDebug """
+module Test
+
+open System
+
+let repro (b: bool) = Math.Max(1, raise (Exception(if b then "x" else "y")))
+
+[<EntryPoint>]
+let main _ =
+    try
+        repro true |> ignore
+        1
+    with
+    | :? InvalidProgramException -> 2
+    | e when e.Message = "x" -> 0
+"""
