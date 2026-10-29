@@ -1665,6 +1665,9 @@ module internal ExprRemapping =
             keepRecursiveValLinks: bool
         }
 
+    /// Returns the TcGlobals associated with this remap context.
+    let GetRemapContextGlobals (ctxt: RemapContext) : TcGlobals = ctxt.g
+
     let mkRemapContext g stackGuard =
         {
             g = g
@@ -1778,12 +1781,18 @@ module internal ExprRemapping =
 
     and copyAndRemapAndBindVals ctxt compgen tmenv vs =
         let vs2 = vs |> List.map (copyVal compgen)
+
+        if ctxt.g.realsig then
+            List.zip vs vs2
+            |> List.iter (fun (v, v2) -> ctxt.g.RealsigClosureParentRekey(v, v2))
         let tmenvinner = bindLocalVals vs vs2 tmenv
         vs2 |> List.iter (fixupValData ctxt compgen tmenvinner)
         vs2, tmenvinner
 
     and copyAndRemapAndBindVal ctxt compgen tmenv v =
         let v2 = v |> copyVal compgen
+
+        if ctxt.g.realsig then ctxt.g.RealsigClosureParentRekey(v, v2)
         let tmenvinner = bindLocalVal v v2 tmenv
         fixupValData ctxt compgen tmenvinner v2
         v2, tmenvinner
