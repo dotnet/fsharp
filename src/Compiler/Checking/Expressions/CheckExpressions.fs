@@ -4247,9 +4247,31 @@ let EliminateNullnessFromInputType (g: TcGlobals) (inputTy: TType) (pat: Pattern
     | None -> eliminateNull inputTy pat
     | _ -> inputTy
 
+let powersOfTen = [| 1e0; 1e1; 1e2; 1e3; 1e4; 1e5; 1e6; 1e7; 1e8; 1e9; 1e10; 1e11; 1e12; 1e13; 1e14; 1e15; 1e16; 1e17; 1e18 |]
+
+// The text .NET Framework (15 digits) and .NET Core (shortest that reads back) print alike: 15-digit text that reads back to the same
+// double, rebuilt as digits / 10^fractionDigits with one exact division instead of Double.Parse or a Decimal conversion.
+let constFloatText (d: float) =
+    let magnitude = abs d
+
+    match magnitude with
+    | 0.0 -> if BitConverter.DoubleToInt64Bits d = 0L then ValueSome "0" else ValueNone
+    | _ when magnitude >= 1e-4 && magnitude < 1e15 ->
+        let text = d.ToString("G15", Globalization.CultureInfo.InvariantCulture)
+        let point = text.IndexOf '.'
+        let fractionDigits = if point < 0 then 0 else text.Length - point - 1
+        let digits = text |> Seq.fold (fun digits c -> if Char.IsDigit c then digits * 10L + int64 c - int64 '0' else digits) 0L
+
+        if text.IndexOf 'E' < 0 && float digits / powersOfTen[fractionDigits] = magnitude then
+            ValueSome text
+        else
+            ValueNone
+    | _ -> ValueNone
+
 [<return: Struct>]
 let (|PrimitiveConstText|_|) (c: Const) =
     match c with
+    | Const.Double n -> constFloatText n
     | Const.SByte n -> ValueSome(string n)
     | Const.Int16 n -> ValueSome(string n)
     | Const.Int32 n -> ValueSome(string n)
