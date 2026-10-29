@@ -553,9 +553,6 @@ type TypeReprEnv
             // Random value for post-hoc diagnostic analysis on generated tree *
             uint16 666
 
-    /// Check if a type parameter is in the environment
-    member _.ContainsKey(tp: Typar) = reprs.ContainsKey(tp.Stamp)
-
     /// Add an additional type parameter to the environment. If the parameter is a units-of-measure parameter
     /// then it is ignored, since it doesn't correspond to a .NET type parameter.
     member tyenv.AddOne(tp: Typar) =
@@ -736,15 +733,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var(tp, _) ->
-        if tyenv.ContainsKey tp then
-            mkILTyvarTy tyenv[tp, m]
-        else
-            // Unsolved type variable not in the TypeReprEnv — can arise for inline SRTP
-            // functions where constraint resolution leaves phantom typars unsolved.
-            // Default the typar and generate the type for the default to avoid an ICE.
-            let defaultTy = TypeRelations.ChooseTyparSolution g cenv.amap tp
-            GenTypeAux cenv m tyenv voidOK ptrsOK defaultTy
+    | TType_var(tp, _) -> mkILTyvarTy tyenv[tp, m]
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -6137,6 +6126,10 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
             GenExpr cenv cgbuf eenv replacementExpr sequel
         | Some expr ->
             let expr = cenv.optimizeDuringCodeGen false expr
+
+            ConstraintSolver.FinishCodegenTraitSolution cenv.tcVal g cenv.amap m traitInfo
+            |> CommitOperationResult
+
             GenExpr cenv cgbuf eenv expr sequel
 
 //--------------------------------------------------------------------------
@@ -7764,6 +7757,14 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | Env(_, _, Some(moreFtyvs, _))
             | Local(_, _, Some(moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
             | _ -> ftyvs)
+
+    // A struct state machine's type can mention type variables its MoveNext body does not, e.g. through its Data type
+    let cloFreeTyvars =
+        match boxity with
+        | ILBoxity.AsValue ->
+            (cloFreeTyvars, thisVars)
+            ||> List.fold (fun ftyvs v -> unionFreeTyvars ftyvs (freeInType CollectTyparsNoCaching v.Type))
+        | ILBoxity.AsObject -> cloFreeTyvars
 
     let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
