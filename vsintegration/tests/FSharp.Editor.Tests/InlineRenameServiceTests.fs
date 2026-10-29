@@ -1,72 +1,60 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Editor.Tests
+module FSharp.Editor.Tests.InlineRenameServiceTests
 
-module InlineRenameServiceTests =
+open System
+open System.Threading
+open Xunit
+open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Editor.Tests.Helpers
 
-    open System
-    open System.Threading
-    open Xunit
-    open Microsoft.VisualStudio.FSharp.Editor
-    open FSharp.Editor.Tests.Helpers
+let private renameUnderCaret (fileContents: string) (caretAt: string) (newName: string) =
+    let document =
+        RoslynTestHelpers.CreateSolution(fileContents)
+        |> RoslynTestHelpers.GetSingleDocument
 
-    /// Drives the rename the way Visual Studio does: resolve the symbol under the caret,
-    /// collect what would be rewritten, then ask whether the new name is accepted.
-    let private rename (fileContents: string) (caretAt: string) (newName: string) =
-        let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
-            |> RoslynTestHelpers.GetSingleDocument
+    let position = fileContents.IndexOf(caretAt, StringComparison.Ordinal)
+    Assert.True(position >= 0, $"'{caretAt}' is not in the test source")
 
-        let position = fileContents.IndexOf(caretAt, StringComparison.Ordinal)
-        Assert.True(position >= 0, $"'{caretAt}' is not in the test source")
+    let info =
+        InlineRenameService().GetRenameInfoAsync(document, position, CancellationToken.None).Result
 
-        let info =
-            InlineRenameService().GetRenameInfoAsync(document, position, CancellationToken.None).Result
+    Assert.NotNull info
 
-        Assert.NotNull info
+    let locationSet =
+        info.FindRenameLocationsAsync(false, false, CancellationToken.None).Result
 
-        let locationSet =
-            info.FindRenameLocationsAsync(Unchecked.defaultof<_>, Unchecked.defaultof<_>, CancellationToken.None).Result
+    let replacements =
+        locationSet.GetReplacementsAsync(newName, CancellationToken.None).Result
 
-        let replacements =
-            locationSet.GetReplacementsAsync(newName, CancellationToken.None).Result
+    locationSet.Locations.Count, replacements.ReplacementTextValid
 
-        locationSet.Locations.Count, replacements.ReplacementTextValid
-
-    let private selfIdentifierWithUse =
+[<Theory>]
+[<InlineData("this.TestMethodThis", "_", 2, false, Label = "used, renamed to _")>]
+[<InlineData("this.TestMethodThis", "``_``", 2, true, Label = "used, renamed to escaped _")>]
+[<InlineData("this.TestMethodThis", "self", 2, true, Label = "used, renamed to another name")>]
+[<InlineData("this.TestMethod", "_", 1, true, Label = "unused, renamed to _")>]
+[<InlineData("__.TestMethodDoubleUnderscore", "this", 2, true, Label = "__, caret on its declaration")>]
+[<InlineData("__.TestMethod()", "this", 2, true, Label = "__, caret on a use")>]
+let ``Renaming a self identifier renames its uses and accepts _ only when there are none``
+    (caretAt: string, newName: string, expectedLocations: int, isAccepted: bool)
+    =
+    let source =
         """
 type RenameTest() =
     member this.TestMethod() = "Hello, World!"
     member this.TestMethodThis() = this.TestMethod()
+    member __.TestMethodDoubleUnderscore() = __.TestMethod()
 """
 
-    let private selfIdentifierWithoutUse =
+    Assert.Equal((expectedLocations, isAccepted), renameUnderCaret source caretAt newName)
+
+[<Theory>]
+[<InlineData("Even|Odd", Label = "caret on the declaration")>]
+[<InlineData("Even ->", Label = "caret on a use")>]
+let ``An active pattern case is renamed from its declaration and from its uses`` (caretAt: string) =
+    let source =
         """
-type RenameTest() =
-    member this.TestMethod() = "Hello, World!"
-"""
-
-    [<Theory>]
-    [<InlineData("_", false)>]
-    [<InlineData("``_``", true)>]
-    [<InlineData("self", true)>]
-    let ``A self identifier that is used is renamed only to a referenceable name`` (newName: string, isAccepted: bool) =
-        let locations, isValid = rename selfIdentifierWithUse "this.TestMethodThis" newName
-        Assert.Equal(2, locations)
-        Assert.Equal(isAccepted, isValid)
-
-    [<Fact>]
-    let ``Renaming a self identifier that is not used to _ is accepted`` () =
-        let locations, isValid = rename selfIdentifierWithoutUse "this.TestMethod" "_"
-        Assert.Equal(1, locations)
-        Assert.True isValid
-
-    [<Theory>]
-    [<InlineData "Even|Odd">]
-    [<InlineData "Even ->">]
-    let ``An active pattern case is renamed from its declaration and from its uses`` (caretAt: string) =
-        let source =
-            """
 module M
 
 let (|Even|Odd|) n = if n % 2 = 0 then Even else Odd
@@ -77,21 +65,6 @@ let f n =
     | Odd -> false
 """
 
-        let locations, isValid = rename source caretAt "DivisibleByTwo"
-        Assert.True(locations >= 3, $"Expected the declaration and both uses, got {locations} locations")
-        Assert.True isValid
-
-    [<Fact>]
-    let ``A self identifier named __ renames its declaration together with its uses`` () =
-        let source =
-            """
-type RenameTest() =
-    member this.TestMethod() = "Hello, World!"
-    member __.TestMethodDoubleUnderscore() = __.TestMethod()
-"""
-
-        let fromDeclaration, _ = rename source "__.TestMethodDoubleUnderscore" "this"
-        Assert.Equal(2, fromDeclaration)
-
-        let fromUse, _ = rename source "__.TestMethod()" "this"
-        Assert.Equal(2, fromUse)
+    let locations, isValid = renameUnderCaret source caretAt "DivisibleByTwo"
+    Assert.True(locations >= 3, $"Expected the declaration and both uses, got {locations} locations")
+    Assert.True isValid
