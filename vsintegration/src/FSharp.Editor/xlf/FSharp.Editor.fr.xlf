@@ -111,15 +111,6 @@ Suggérer des noms pour les identificateurs non résolus ;</target>
         <target state="new">{0} in {1}
 {2}</target>
         <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
-      <trans-unit id="ExtractToLetBinding">
-        <source>Extract to let binding</source>
-        <target state="new">Extract to let binding</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ExtractToLiteral">
-        <source>Extract to literal</source>
-        <target state="new">Extract to literal</target>
-        <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
@@ -447,6 +438,16 @@ Afficher les notes dans Info express</target>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
         <target state="translated">Mettre l'expression entre parenthèses</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
         <note />
       </trans-unit>
     </body>
