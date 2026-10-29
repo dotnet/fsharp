@@ -1253,7 +1253,7 @@ type internal TransparentCompiler
                 |> Seq.map (fun f -> LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotWithSources(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, sources |> Array.toList)
+            return projectSnapshot.With(sources |> Array.toList)
 
         }
 
@@ -1629,7 +1629,7 @@ type internal TransparentCompiler
                 |> Seq.map (ComputeParseFile projectSnapshot tcConfig)
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
+            return projectSnapshot.With(parsedInputs |> Array.toList)
         }
 
     /// Parse the files of a project, except the implementation files that have a signature file before them.
@@ -1692,7 +1692,7 @@ type internal TransparentCompiler
 
                         FSharpParsedFile(file.FileName, file.Version, file.Source, placeholder, [||]))
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedFiles |> Array.toList)
+            return projectSnapshot.With(parsedFiles |> Array.toList)
         }
 
     // Type check file and all its dependencies
