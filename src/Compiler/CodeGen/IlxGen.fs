@@ -5822,15 +5822,19 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
             let after1 = CG.GenerateDelayMark cgbuf "fake_join"
             let after2 = CG.GenerateDelayMark cgbuf "fake_join"
             let after3 = CG.GenerateDelayMark cgbuf "fake_join"
+            let stackBefore = cgbuf.GetCurrentStack()
             CG.EmitInstrs cgbuf (pop 0) Push0 [ mkLdcInt32 0; I_brcmp(BI_brfalse, after2.CodeLabel) ]
 
             CG.SetMarkToHere cgbuf after1
             CG.EmitInstrs cgbuf (pop 0) (Push [ ilRetTy ]) [ AI_ldnull; I_unbox_any ilRetTy; I_br after3.CodeLabel ]
 
+            // The fake value is only on the stack on the never-taken path, so a spill in arg1 must not see it.
             CG.SetMarkToHere cgbuf after2
+            CG.SetStack cgbuf stackBefore
             GenExpr cenv cgbuf eenv arg1 Continue
             CG.EmitInstr cgbuf (pop 1) Push0 I_throw
             CG.SetMarkToHere cgbuf after3
+            CG.SetStack cgbuf (ilRetTy :: stackBefore)
             GenSequel cenv eenv.cloc cgbuf sequel
     | _ ->
         // float or float32 or float<_> or float32<_>
