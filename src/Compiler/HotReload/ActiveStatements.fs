@@ -411,12 +411,15 @@ module internal ActiveStatementAnalysis =
     let tryCreateLineShiftSegment (methodToken: int) (committed: MethodSequencePoints) (lineDelta: int) =
         match committed.Document, committed.VisiblePoints with
         | Some document, (_ :: _ as visiblePoints) ->
+            let firstPoint = visiblePoints |> List.minBy (fun point -> point.StartLine)
+            let lastPoint = visiblePoints |> List.maxBy (fun point -> point.EndLine)
+
             Some
                 {
                     FileName = document
                     // PDB lines are 1-based; the contract is zero-based.
-                    OldStartLine = (visiblePoints |> List.map (fun p -> p.StartLine) |> List.min) - 1
-                    OldEndLine = (visiblePoints |> List.map (fun p -> p.EndLine) |> List.max) - 1
+                    OldStartLine = firstPoint.StartLine - 1
+                    OldEndLine = lastPoint.EndLine - 1
                     LineDelta = lineDelta
                     MethodToken = methodToken
                 }
