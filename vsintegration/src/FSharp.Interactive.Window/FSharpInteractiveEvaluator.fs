@@ -46,9 +46,7 @@ type internal FSharpInteractiveEvaluator
     let mutable subscriptions: IDisposable list = []
     let mutable disposed = false
 
-    // The window submits text without saying where it came from, so an editor command leaves the
-    // origin here for the submission it is about to make. Both run on the UI thread.
-    let mutable nextSubmissionOrigin: struct (string * int) voption = ValueNone
+    let origins = SubmissionOrigins()
 
     // Output arrives on the threads pumping the session's console streams, hence the window's
     // writers: its editing operations belong to the UI thread.
@@ -94,12 +92,9 @@ type internal FSharpInteractiveEvaluator
 
         subscriptions <- []
 
-    member _.SetNextSubmissionOrigin(sourcePath: string, startLine: int) =
-        nextSubmissionOrigin <-
-            if String.IsNullOrEmpty sourcePath then
-                ValueNone
-            else
-                ValueSome(struct (sourcePath, startLine))
+    member _.AddSubmissionOrigin(text: string, sourcePath: string, startLine: int) =
+        if not (String.IsNullOrEmpty sourcePath) then
+            origins.Add(text, sourcePath, startLine)
 
     interface IInteractiveEvaluator with
 
@@ -136,10 +131,7 @@ type internal FSharpInteractiveEvaluator
 
         member _.ExecuteCodeAsync(text) =
             task {
-                // Taken before anything can fail, so that an origin never outlives its own
-                // submission and lands on the next text typed into the window.
-                let origin = nextSubmissionOrigin
-                nextSubmissionOrigin <- ValueNone
+                let origin = origins.Take text
 
                 let! started = startedAsync (fun options -> host.EnsureStartedAsync options)
 

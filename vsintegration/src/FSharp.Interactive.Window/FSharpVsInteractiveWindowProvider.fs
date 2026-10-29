@@ -119,6 +119,6 @@ type internal FSharpVsInteractiveWindowProvider
     member this.SubmitFromEditor(text: string, sourcePath: string, startLine: int) =
         let toolWindow = this.Open(0, focus = false)
 
-        evaluator |> ValueOption.iter _.SetNextSubmissionOrigin(sourcePath, startLine)
+        evaluator |> ValueOption.iter _.AddSubmissionOrigin(text, sourcePath, startLine)
 
         toolWindow.InteractiveWindow.SubmitAsync [| text |] |> ignore
