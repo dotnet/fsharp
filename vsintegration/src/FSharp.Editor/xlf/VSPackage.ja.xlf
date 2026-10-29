@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ja" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="100">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="101">
+        <source>F# Source File</source>
+        <target state="translated">F# ソース ファイル</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6000">
+        <source>F# Tools</source>
+        <target state="translated">F# ツール</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6001">
+        <source>F# Interactive</source>
+        <target state="translated">F# インタラクティブ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6008">
+        <source>IntelliSense</source>
+        <target state="translated">IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6009">
+        <source>QuickInfo</source>
+        <target state="translated">QuickInfo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6010">
+        <source>Code Fixes</source>
+        <target state="translated">コード修正</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6011">
+        <source>Performance</source>
+        <target state="translated">パフォーマンス</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">詳細</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">書式設定</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
