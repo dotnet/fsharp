@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Reflection
 open System.Linq
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
@@ -27,6 +28,7 @@ module MefHelpers =
         let imports =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
+                "Microsoft.CodeAnalysis.CSharp.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
                 "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
@@ -170,8 +172,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> Seq.distinctBy (fun x -> x.Key)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
-    let langServices =
-        new TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
+    let languageServices = ConcurrentDictionary<string, HostLanguageServices>()
 
     override _.Workspace = workspace
 
@@ -189,9 +190,10 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     override _.FindLanguageServices(_filter) = Seq.empty
 
     override _.GetLanguageServices(languageName) =
-        match languageName with
-        | LanguageNames.FSharp -> langServices :> HostLanguageServices
-        | _ -> raise (NotSupportedException(sprintf "Language '%s' not supported in FSharp VS tests." languageName))
+        languageServices.GetOrAdd(
+            languageName,
+            (fun language -> new TestHostLanguageServices(this, language, exportProvider) :> HostLanguageServices)
+        )
 
     override _.HostServices = hostServices
 
@@ -233,7 +235,8 @@ type RoslynTestHelpers private () =
 
         match extension with
         | ".fsx" -> SourceCodeKind.Script
-        | ".fsi" -> SourceCodeKind.Regular
+        | ".fsi"
+        | ".cs" -> SourceCodeKind.Regular
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
