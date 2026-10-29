@@ -948,6 +948,106 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | None -> ()
     | Some e -> errorR(e)
 
+let rec tryNonSpanLikeRepresentationHead g m ty =
+    // Only a substitution-independent negative proof may bypass dimensionless-measure normalization.
+    match stripTyparEqns ty with
+    | TType_app(tcref, _, _) when not (isSpanLikeTyconRef g m tcref) ->
+        match tcref.TypeAbbrev with
+        | Some bodyTy -> tryNonSpanLikeRepresentationHead g m bodyTy
+        | None when tcref.IsMeasureableReprTycon ->
+            tryNonSpanLikeRepresentationHead g m (reduceTyconRefMeasureableOrProvided g tcref [])
+        | None -> ValueSome ty
+    | _ -> ValueNone
+
+[<Struct; NoEquality; NoComparison>]
+type private InstantiatedResultHead =
+    { Type: TType
+      Args: Expr list }
+
+let rec private instantiatedResultHead g m (typars: Typars) tyargs (args: Expr list) ty : InstantiatedResultHead =
+    // stripTyEqns would instantiate entire abbreviation bodies, even when only the result head is needed.
+    match stripTyparEqns ty with
+    | TType_var(tp, _) ->
+        match typars, tyargs with
+        | formalTp :: restTypars, actualTy :: restTyargs ->
+            let formalTp =
+                if formalTp.IsSolved then
+                    match tryAnyParTy g (mkTyparTy formalTp) with
+                    | ValueSome normalizedTp -> normalizedTp
+                    | ValueNone -> formalTp
+                else
+                    formalTp
+
+            if typarEq tp formalTp then
+                instantiatedResultHead g m [] [] args actualTy
+            else
+                instantiatedResultHead g m restTypars restTyargs args ty
+        | _ -> { Type = ty; Args = args }
+    | TType_fun(_, returnTy, _) when not args.IsEmpty -> instantiatedResultHead g m typars tyargs args.Tail returnTy
+    | TType_app(tcref, tinst, _) ->
+        match tcref.TypeAbbrev with
+        | Some bodyTy ->
+            let result = instantiatedResultHead g m tcref.Typars tinst args bodyTy
+            instantiatedResultHead g m typars tyargs result.Args result.Type
+        | None when tcref.IsMeasureableReprTycon ->
+            match tryNonSpanLikeRepresentationHead g m ty with
+            | ValueSome headTy -> { Type = headTy; Args = args }
+            | _ ->
+                let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
+                let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
+
+                { Type = actualTy
+                  Args = args }
+        | None -> { Type = ty; Args = args }
+    | ty -> { Type = ty; Args = args }
+
+let isSpanLikeInstantiatedResult g m typars tyargs args ty =
+    let result = instantiatedResultHead g m typars tyargs args ty
+
+    let resultTy =
+        if result.Args.IsEmpty then
+            result.Type
+        else
+            reduceIteratedFunTy g result.Type result.Args
+
+    isSpanLikeTy g m resultTy
+
+let rec isSpanLikeExpr g expr =
+    match stripDebugPoints expr with
+    | Expr.App(_, functionTy, tyargs, args, m) ->
+        match stripTyparEqns functionTy with
+        | TType_forall(typars, bodyTy) -> isSpanLikeInstantiatedResult g m typars tyargs args bodyTy
+        | functionTy -> isSpanLikeInstantiatedResult g m [] [] args functionTy
+    | Expr.Op(TOp.ValFieldGet field, tyargs, _, m) ->
+        let fieldSpec = field.Tycon.AllFieldTable.FieldsByName[field.FieldName]
+        isSpanLikeInstantiatedResult g m field.Tycon.Typars tyargs [] fieldSpec.FormalType
+    | Expr.Op(TOp.UnionCaseFieldGet(caseRef, index), tyargs, _, m) ->
+        let caseSpec =
+            match caseRef.TyconRef.UnionTypeInfo with
+            | ValueSome info -> info.CasesTable.CasesByName[caseRef.CaseName]
+            | ValueNone -> error (InternalError("Expected a union type in argument result classification", m))
+
+        isSpanLikeInstantiatedResult
+            g
+            m
+            caseRef.TyconRef.Typars
+            tyargs
+            []
+            (caseSpec.FieldTable.FieldByIndex index).FormalType
+    | Expr.Lambda _
+    | Expr.TyLambda _
+    | Expr.Op((TOp.Tuple _ | TOp.AnonRecd _ | TOp.Array | TOp.Bytes _ | TOp.UInt16s _), _, _, _) -> false
+    | Expr.Op(TOp.Recd(_, tcref), _, _, _)
+    | Expr.Op(TOp.UnionCase(UnionCaseRef(tcref, _)), _, _, _) -> isSpanLikeTyconRef g expr.Range tcref
+    | Expr.Let(_, body, _, _)
+    | Expr.LetRec(_, body, _, _)
+    | Expr.TyChoose(_, body, _)
+    | Expr.StaticOptimization(_, _, body, _)
+    | Expr.Op(TOp.DebugLocalScope _, _, [ body ], _)
+    | Expr.Sequential(_, body, NormalSeq, _)
+    | Expr.Sequential(body, _, ThenDoSeq, _) -> isSpanLikeExpr g body
+    | _ -> isSpanLikeInstantiatedResult g expr.Range [] [] [] (tyOfExpr g expr)
+
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
     CheckExpr cenv env expr PermitByRefExpr.No |> ignore
@@ -1127,6 +1227,21 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (ctxt: PermitByRefExpr) =
     else
         { scope = 1; flags = LimitFlags.None }
 
+and CheckCallArgument cenv env (arg: Expr) (ctxt: PermitByRefExpr) =
+    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    let errorCount = diagnosticsLogger.ErrorCount
+    let limit = CheckExpr cenv env arg ctxt
+
+    if
+        cenv.reportErrors
+        && ctxt = PermitByRefExpr.No
+        && diagnosticsLogger.ErrorCount = errorCount
+    then
+        if isSpanLikeExpr cenv.g arg then
+            errorR (Error(FSComp.SR.chkNoSpanLikeValueFromExpression (), arg.Range))
+
+    limit
+
 /// Check call arguments, including the return argument.
 and CheckCall cenv env m returnTy args ctxts ctxt =
     let limitArgs = CheckExprs cenv env args ctxts
@@ -1143,7 +1258,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
             | [] -> PermitByRefExpr.No, []
             | ctxt :: ctxts -> ctxt, ctxts
 
-        let receiverLimit = CheckExpr cenv env receiverArg receiverContext
+        let receiverLimit = CheckCallArgument cenv env receiverArg receiverContext
         let limitArgs =
             let limitArgs = CheckExprs cenv env args ctxts
             // We do not include the receiver's limit in the limit args unless the receiver is a stack referring span-like.
@@ -2018,7 +2133,7 @@ and CheckExprs cenv env exprs ctxts : Limit =
     let ctxts = Array.ofList ctxts
     let argArity i = if i < ctxts.Length then ctxts[i] else PermitByRefExpr.No
     exprs
-    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i))
+    |> List.mapi (fun i exp -> CheckCallArgument cenv env exp (argArity i))
     |> CombineLimits
 
 and CheckExprsNoByRefLike cenv env exprs : Limit =
