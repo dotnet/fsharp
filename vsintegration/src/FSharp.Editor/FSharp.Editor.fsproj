@@ -176,7 +176,6 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <!-- MenuCommandService, the base of the command service the package registers commands on. -->
     <Reference Include="System.Design" />
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Windows.Forms" />

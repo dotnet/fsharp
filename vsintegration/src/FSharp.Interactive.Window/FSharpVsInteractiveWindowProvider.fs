@@ -18,8 +18,7 @@ open Microsoft.VisualStudio.FSharp.Interactive.Session
 
 module InteractiveWindowGuids =
 
-    /// Visual Studio persists the window's place in the layout under this, so it must not change
-    /// once shipped.
+    /// Persisted in users' layouts: never change.
     [<Literal>]
     let ToolWindowIdString = "6B0F0D9E-1B4A-4C4E-9E2D-6F3B2A5C7D18"
 
@@ -27,15 +26,15 @@ module InteractiveWindowGuids =
 
     let FSharpLanguageServiceId = Guids.guidFsharpLanguageService
 
-    /// The same as FSharpConstants.FSharpContentTypeName in FSharp.Editor, which sits above this
-    /// project and cannot be referenced from here.
+    /// Must equal FSharpConstants.FSharpContentTypeName (FSharp.Editor).
     [<Literal>]
     let FSharpContentTypeName = "F#"
 
 module internal InteractiveHostOptionsFactory =
 
-    /// Called on the UI thread, where the window's evaluator calls in.
     let private solutionDirectory () =
+        ThreadHelper.ThrowIfNotOnUIThread()
+
         try
             match ServiceProvider.GlobalProvider.GetService typeof<SVsSolution> with
             | :? IVsSolution as solution ->
@@ -95,7 +94,6 @@ type internal FSharpVsInteractiveWindowProvider
         interactiveWindow.TextView.Closed.Add(fun _ ->
             (created :> IDisposable).Dispose()
 
-            // Only this window's own fields: a close arriving late must not forget a newer window.
             if obj.ReferenceEquals(window, toolWindow) then
                 window <- null
 
@@ -115,7 +113,6 @@ type internal FSharpVsInteractiveWindowProvider
         toolWindow.Show focus
         toolWindow
 
-    /// Shows the window without taking focus from the document the user is still typing in.
     member this.SubmitFromEditor(text: string, sourcePath: string, startLine: int) =
         let toolWindow = this.Open(0, focus = false)
 

@@ -47,9 +47,6 @@ type internal FSharpLexicalScanner() =
                         }
                 | None -> scanning <- false
 
-        // The lexer state carries more than "inside a string or comment", so comparing it with the
-        // initial state says nothing. An identifier tokenized with that state does: inside an
-        // unterminated construct it comes back coloured as part of it.
         member _.EndsInsideMultiLineConstruct =
             match (tokenizer.CreateLineTokenizer probeIdentifier).ScanToken state with
             | Some token, _ ->

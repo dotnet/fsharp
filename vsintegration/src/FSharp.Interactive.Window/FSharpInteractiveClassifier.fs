@@ -12,9 +12,6 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 
-/// Input carries lexer state across lines: a submission is one small fragment of code. Output is
-/// neither: it grows for the life of the session and mixes printed values with whatever the code
-/// wrote to the console, so each of its lines is coloured on its own.
 type internal FSharpInteractiveClassifier
     (buffer: ITextBuffer, registry: IClassificationTypeRegistryService, scanners: ILexicalScannerFactory, carriesStateAcrossLines: bool) =
 
@@ -34,19 +31,16 @@ type internal FSharpInteractiveClassifier
             | null -> ValueNone
             | classification -> ValueSome classification)
 
-    // Both interactive content types are shared with every language the window package hosts, and
-    // a buffer reaches us before its window has finished claiming it, so ownership is asked again
-    // on each request until it is known.
-    let mutable ours = false
+    let mutable ownershipConfirmed = false
 
     let isOurs () =
-        if not ours then
-            ours <-
+        if not ownershipConfirmed then
+            ownershipConfirmed <-
                 match InteractiveWindowExtensions.GetInteractiveWindow buffer with
                 | null -> FSharpInteractiveWindows.ownsOutputBuffer buffer
                 | window -> window.Evaluator :? FSharpInteractiveEvaluator
 
-        ours
+        ownershipConfirmed
 
     let changed =
         Event<EventHandler<ClassificationChangedEventArgs>, ClassificationChangedEventArgs>()
@@ -57,8 +51,6 @@ type internal FSharpInteractiveClassifier
                 let snapshot = args.After
                 let start = snapshot.GetLineFromPosition(args.Changes[0].NewPosition).Start
 
-                // With carried state an edit can open or close a string or comment, which recolours
-                // everything after it.
                 let last =
                     if carriesStateAcrossLines then
                         SnapshotPoint(snapshot, snapshot.Length)
@@ -116,7 +108,7 @@ type internal FSharpInteractiveInputClassifierProvider
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, true))
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, carriesStateAcrossLines = true))
 
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(PredefinedInteractiveContentTypes.InteractiveOutputContentTypeName)>]
@@ -126,4 +118,4 @@ type internal FSharpInteractiveOutputClassifierProvider
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, false))
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, carriesStateAcrossLines = false))

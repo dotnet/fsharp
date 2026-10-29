@@ -669,8 +669,6 @@ let ``the session exits when its host process exits`` () =
 
 [<Fact>]
 let ``the last owner named on the command line is the one that counts`` () =
-    // A host puts its own switches after the user's arguments to keep them from naming another owner,
-    // which holds only if the last occurrence wins.
     use earlier = new FsiServerHarness()
 
     use session =

@@ -5,8 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Interactive
 open System
 open System.Collections.Generic
 
-/// Whether Enter submits what was typed or adds another line. The window asks on the UI thread, on
-/// every Enter, so the judgement is lexical.
 module internal SubmissionAnalysis =
 
     let private ordinalSet (items: string seq) =
@@ -24,6 +22,8 @@ module internal SubmissionAnalysis =
     let private opening = ordinalSet [ "("; "["; "{"; "[|"; "[<"; "{|" ]
 
     let private closing = ordinalSet [ ")"; "]"; "}"; "|]"; ">]"; "|}" ]
+
+    let private literalPlaceholder = "\"\""
 
     let private (|Opening|Closing|Ordinary|) token =
         if opening.Contains token then Opening
@@ -55,9 +55,7 @@ module internal SubmissionAnalysis =
                 match token.Kind with
                 | LexicalKind.Comment
                 | LexicalKind.InactiveCode -> ()
-                // Stands for any literal: its contents are not code, so the brackets and
-                // terminators inside it must not count.
-                | LexicalKind.String -> lastToken <- ValueSome "\"\""
+                | LexicalKind.String -> lastToken <- ValueSome literalPlaceholder
                 | _ when token.IsWithin line ->
                     let value = line.Substring(token.Start, token.Length)
 
@@ -78,7 +76,6 @@ module internal SubmissionAnalysis =
 
     let isComplete (scanners: ILexicalScannerFactory) (text: string) =
         if String.IsNullOrWhiteSpace text then
-            // The window submits an empty one to start a session.
             true
         else
             match scan scanners text with

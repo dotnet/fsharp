@@ -7,8 +7,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <Nullable>enable</Nullable>
-    <!-- FSharp.VS.FSI below references the F# compiler, which this assembly must not compile
-         against: the lexer comes from its host (LexicalScanning.fs). -->
+    <!-- Keeps the F# compiler, reached through FSharp.VS.FSI, out of this assembly. -->
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
@@ -17,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Shared as source: fsi exposes no assembly for both ends of the protocol to reference. -->
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
@@ -34,7 +32,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
-    <!-- For the localised strings and the options of the existing F# Interactive window. -->
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
 

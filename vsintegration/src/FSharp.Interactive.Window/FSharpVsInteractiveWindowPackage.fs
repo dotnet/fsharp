@@ -30,7 +30,6 @@ type internal FSharpVsInteractiveWindowPackage() =
 
     interface IVsToolWindowFactory with
 
-        /// Called when Visual Studio restores the window from a persisted layout.
         member this.CreateToolWindow(toolWindowType: byref<Guid>, id: uint32) =
             if toolWindowType <> InteractiveWindowGuids.ToolWindowId then
                 VSConstants.E_FAIL
