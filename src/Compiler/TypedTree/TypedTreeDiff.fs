@@ -3086,9 +3086,9 @@ let private compareBindings
                 }
             )
         elif
-            baselineBinding.BodyIdentity <> updatedBinding.BodyIdentity
-            && (baselineBinding.IsFieldBackedModuleValue
-                || updatedBinding.IsFieldBackedModuleValue)
+            (baselineBinding.IsFieldBackedModuleValue
+             || updatedBinding.IsFieldBackedModuleValue)
+            && baselineBinding.BodyIdentity <> updatedBinding.BodyIdentity
         then
             rude.Add(
                 {
