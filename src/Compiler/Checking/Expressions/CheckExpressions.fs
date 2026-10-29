@@ -11535,6 +11535,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, _, rhsExpr), _, debugPoint) ->
         let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
         let mBinding = pat.Range
+        let outerTpenv = tpenv
 
         let isClassLetBinding =
             match declKind, kind with
@@ -11757,24 +11758,35 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
-        // The parameters of a function binding are the binders of its outer lambda chain
         let parameterCandidates () =
             let candidates = ImmutableArrayBuilder.create 4
 
-            let rec addBinders expr =
+            let rec addLambdaBinders expr =
                 match stripDebugPoints expr with
                 | Expr.Lambda (_, _, _, vs, body, _, _) ->
                     for v in vs do
                         if not (v.IsMemberThisVal || v.IsCtorThisVal || v.IsCompilerGenerated) then
                             candidates.Add(struct (v.LogicalName, Item.Value(mkLocalValRef v)))
 
-                    addBinders body
+                    addLambdaBinders body
                 | _ -> ()
 
-            addBinders rhsExprChecked
+            addLambdaBinders rhsExprChecked
             candidates.ToImmutable()
 
-        ReportXmlDocRefUses cenv.tcSink xmlDoc parameterCandidates (fun () -> XmlDocTyparCandidates declaredTypars)
+        let typarCandidates () =
+            let (UnscopedTyparEnv outer) = outerTpenv
+            let (UnscopedTyparEnv inner) = tpenv
+
+            XmlDocTyparCandidates
+                [
+                    yield! declaredTypars
+                    for KeyValue(name, typar) in inner do
+                        if not (outer.ContainsKey name) then
+                            yield typar
+                ]
+
+        ReportXmlDocRefUses cenv.tcSink xmlDoc parameterCandidates typarCandidates
 
         match apinfoOpt with
         | Some (apinfo, apOverallTy, m) ->
@@ -13776,7 +13788,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, isGeneratedEventVal)
 
         let parameters = PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
-        ReportXmlDocRefUses cenv.tcSink xmlDoc (fun () -> parameters) (fun () -> XmlDocTyparCandidates allDeclaredTypars)
+        ReportXmlDocRefUses cenv.tcSink xmlDoc (fun () -> parameters) (fun () -> XmlDocTyparCandidates generalizedTypars)
 
         assert(vspec.InlineInfo = inlineFlag)
 
