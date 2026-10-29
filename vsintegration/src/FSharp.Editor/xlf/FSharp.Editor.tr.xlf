@@ -305,6 +305,121 @@ Açıklamaları Hızlı Bilgide göster</target>
         <target state="translated">Alan bildiriminde beklenmeyen '=' sembolü. ':' veya başka bir belirteç bekleniyordu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnifiedSettingsAdvancedTitle">
+        <source>Advanced</source>
+        <target state="new">Advanced</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsBackingStoreDescription">
+        <source>This compiler setting uses the user-wide F# compiler configuration.</source>
+        <target state="new">This compiler setting uses the user-wide F# compiler configuration.</target>
+        <note>Description of the storage for the F# compiler option in Unified Settings. User-wide means shared by Visual Studio instances for the same Windows user.</note>
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsCacheFactorDescription">
+        <source>Enter an integer from 1 to 10000. Higher numbers use more memory for caching. Changing the value wipes the cache.</source>
+        <target state="new">Enter an integer from 1 to 10000. Higher numbers use more memory for caching. Changing the value wipes the cache.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsCompilerUseNetSdkDescription">
+        <source>When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</source>
+        <target state="new">When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsCompilerUseNetSdkTitle">
+        <source>Use the .NET SDK F# compiler for builds</source>
+        <target state="new">Use the .NET SDK F# compiler for builds</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsDashUnderlineLabel">
+        <source>Dash underline</source>
+        <target state="new">Dash underline</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsDescriptionWidthDescription">
+        <source>Format signatures to the preferred width by adding line breaks conforming with F# syntax rules.</source>
+        <target state="new">Format signatures to the preferred width by adding line breaks conforming with F# syntax rules.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsDescriptionWidthTitle">
+        <source>Use a preferred description width</source>
+        <target state="new">Use a preferred description width</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsDotUnderlineLabel">
+        <source>Dot underline</source>
+        <target state="new">Dot underline</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsInMemoryCrossProjectReferencesTitle">
+        <source>Enable in-memory cross project references</source>
+        <target state="new">Enable in-memory cross project references</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsIntelliSenseTitle">
+        <source>IntelliSense</source>
+        <target state="new">IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsInteractiveTitle">
+        <source>F# Interactive</source>
+        <target state="new">F# Interactive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsMigrationDescription">
+        <source>Import existing F# settings</source>
+        <target state="new">Import existing F# settings</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsOperationFailed">
+        <source>Unable to read or update the F# setting. See the Activity Log for details.</source>
+        <target state="new">Unable to read or update the F# setting. See the Activity Log for details.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsQuickInfoTitle">
+        <source>Quick Info</source>
+        <target state="new">Quick Info</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsShowCompletionAfterDeletionTitle">
+        <source>Show completion list after a character is deleted</source>
+        <target state="new">Show completion list after a character is deleted</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsShowCompletionAfterTypingTitle">
+        <source>Show completion list after a character is typed</source>
+        <target state="new">Show completion list after a character is typed</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsShowNavigationLinksTitle">
+        <source>Show navigation links</source>
+        <target state="new">Show navigation links</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsShowUnopenedSymbolsTitle">
+        <source>Show symbols in unopened namespaces</source>
+        <target state="new">Show symbols in unopened namespaces</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsSolidUnderlineLabel">
+        <source>Solid underline</source>
+        <target state="new">Solid underline</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsStaleCompletionDescription">
+        <source>Enter an integer from 0 to 10000 milliseconds before stale results are used.</source>
+        <target state="new">Enter an integer from 0 to 10000 milliseconds before stale results are used.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsTransparentCompilerDescription">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</source>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsUnderlineStyleTitle">
+        <source>Navigation link underline style</source>
+        <target state="new">Navigation link underline style</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnusedOpens">
         <source>Open declaration can be removed.</source>
         <target state="translated">Açık bildirim kaldırılabilir.</target>

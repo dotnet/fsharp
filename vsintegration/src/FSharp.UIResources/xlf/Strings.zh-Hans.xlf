@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
-        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="translated">继续分析整个解决方案以将诊断作为低优先级后台任务(需要重启)</target>
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task</source>
+        <target state="needs-review-translation">继续分析整个解决方案以将诊断作为低优先级后台任务</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
@@ -33,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="translated">使用实时(未保存)缓冲区进行分析(需要重新启动)</target>
+        <source>Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">使用实时(未保存)缓冲区进行分析</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Parallelization">
-        <source>Parallelization (requires restart)</source>
-        <target state="translated">并行化(需要重启)</target>
+        <source>Parallelization</source>
+        <target state="needs-review-translation">并行化</target>
         <note />
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
@@ -328,8 +328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
-        <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">使用透明编译器(需要重启)</target>
+        <source>Use Transparent Compiler</source>
+        <target state="needs-review-translation">使用透明编译器</target>
         <note />
       </trans-unit>
     </body>

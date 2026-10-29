@@ -223,7 +223,7 @@
     <value>Diagnostics</value>
   </data>
   <data name="Parallelization" xml:space="preserve">
-    <value>Parallelization (requires restart)</value>
+    <value>Parallelization</value>
   </data>
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
     <value>Enable parallel reference resolution</value>
@@ -250,7 +250,7 @@
     <value>Keep background symbol keys</value>
   </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
-    <value>Use live (unsaved) buffers for analysis (restart required)</value>
+    <value>Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
     <value>Live Buffers</value>
@@ -280,10 +280,10 @@
     <value>Transparent Compiler (experimental)</value>
   </data>
   <data name="Use_Transparent_Compiler" xml:space="preserve">
-    <value>Use Transparent Compiler (restart required)</value>
+    <value>Use Transparent Compiler</value>
   </data>
   <data name="Analyze_full_solution_on_background" xml:space="preserve">
-    <value>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</value>
+    <value>Keep analyzing the entire solution for diagnostics as a low priority background task</value>
   </data>
   <data name="Background_analysis" xml:space="preserve">
     <value>Background analysis</value>

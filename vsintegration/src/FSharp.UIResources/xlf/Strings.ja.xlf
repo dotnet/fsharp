@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
-        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="translated">診断のソリューション全体を低優先度のバックグラウンド タスクとして分析し続ける (再起動が必要)</target>
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task</source>
+        <target state="needs-review-translation">診断のソリューション全体を低優先度のバックグラウンド タスクとして分析し続ける</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
@@ -33,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="translated">ライブ (未保存) バッファーをチェックに使用する (再起動が必要)</target>
+        <source>Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">ライブ (未保存) バッファーをチェックに使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -123,8 +123,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Parallelization">
-        <source>Parallelization (requires restart)</source>
-        <target state="translated">並列化 (再起動が必要)</target>
+        <source>Parallelization</source>
+        <target state="needs-review-translation">並列化</target>
         <note />
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
@@ -328,8 +328,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
-        <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">Transparent Compiler を使用する (再起動が必要)</target>
+        <source>Use Transparent Compiler</source>
+        <target state="needs-review-translation">Transparent Compiler を使用する</target>
         <note />
       </trans-unit>
     </body>

@@ -261,9 +261,8 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
         member _.CreateService(_) = upcast settings
 
 [<Guid(FSharpConstants.packageGuidString)>]
-[<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
-[<ProvideOptionPage(typeof<FSharp.Interactive.FSharpCompilerPropertyPage>, "F# Tools", "Compiler", 6000s, 6015s, true)>]
-
+[<ProvideSettingsManifest(PackageRelativeManifestFile = "fsharpSettings.registration.json")>]
+[<ProvideService(typeof<FSharpSettingsProvider>, IsAsyncQueryable = true)>]
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
@@ -276,17 +275,6 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
                     Window = "34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")
 // The following should place the ToolWindow with the OutputWindow by default.
 >]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>,
-                                  "F#",
-                                  null,
-                                  "Performance",
-                                  "6011",
-                                  "PerformancePageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012", "AdvancedPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014", "FormattingPageKeywords")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -329,18 +317,71 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
+    let mutable settingsLifetime = None
+
+    let initializeSettings =
+        lazy
+            (task {
+                let! native = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsManager>)
+
+                let native =
+                    native :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
+
+                let! legacy = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsSettingsPersistenceManager>)
+                let! metadata = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsMetadata>)
+
+                let! migration =
+                    UnifiedSettingsMigration.startAsync
+                        native
+                        (legacy :?> Microsoft.VisualStudio.Settings.ISettingsManager5)
+                        (metadata :?> Microsoft.Internal.VisualStudio.Services.UnifiedSettings.IUnifiedSettingsMetadata)
+                        this.DisposalToken
+
+                try
+                    let interactive = UnifiedSettings.subscribeToInteractive (native.GetReader())
+
+                    settingsLifetime <-
+                        Some
+                            { new IDisposable with
+                                member _.Dispose() =
+                                    interactive.Dispose()
+                                    migration.Dispose()
+                            }
+                with error ->
+                    migration.Dispose()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
+            })
+
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
+    do
+        this.AddService(
+            typeof<FSharpSettingsProvider>,
+            AsyncServiceCreatorCallback(fun _ cancellationToken _ ->
+                cancellationToken.ThrowIfCancellationRequested()
+
+                Task.FromResult<obj>(
+                    new FSharpSettingsProvider(
+                        (fun () -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler),
+                        (fun value -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler <- value),
+                        (fun error -> ActivityLog.LogError("F# Unified Settings", error.ToString()))
+                    )
+                )),
+            true
+        )
+
 #if DEBUG
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
+#endif
 
     override this.Dispose(disposing: bool) =
-        base.Dispose(disposing: bool)
-
         if disposing then
+            settingsLifetime |> Option.iter _.Dispose()
+#if DEBUG
             flushTelemetry ()
 #endif
+        base.Dispose(disposing: bool)
 
     override this.RegisterInitializeAsyncWork(packageRegistrationTasks: PackageLoadTasks) : unit =
         base.RegisterInitializeAsyncWork(packageRegistrationTasks)
@@ -349,13 +390,11 @@ type internal FSharpPackage() as this =
             true,
             (fun _tasks cancellationToken ->
                 foregroundCancellableTask {
+                    do! initializeSettings.Value
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let theme = exportProvider.GetExport<ISetThemeColors>().Value
                     theme.SetColors()
-
-                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-                    this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>) |> ignore
 
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
@@ -370,6 +409,7 @@ type internal FSharpPackage() as this =
             false,
             (fun _tasks cancellationToken ->
                 cancellableTask {
+                    do! initializeSettings.Value
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let workspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
