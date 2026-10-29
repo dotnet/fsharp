@@ -317,9 +317,7 @@ let internal tryFindSynthesizedTypeShapeMismatch (baseline: SynthesizedTypeShape
 let private dedupeMethodKeys (keys: MethodDefinitionKey list) =
     let seen = HashSet<MethodDefinitionKey>(HashIdentity.Structural)
 
-    keys
-    |> List.fold (fun acc key -> if seen.Add key then key :: acc else acc) []
-    |> List.rev
+    keys |> List.filter seen.Add
 
 let private rewriteMethodBody (remapUserString: int -> int) (remapEntityToken: int -> int) (body: MethodBodyBlock) =
     let ilBytes = body.GetILBytes().ToArray()
