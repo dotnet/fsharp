@@ -6,21 +6,19 @@ open System.Collections.Immutable
 
 open FSharp.Compiler.Text
 
-/// The tag an XML doc attribute value belongs to
+/// The tag an XmlDocRef comes from
 [<RequireQualifiedAccess>]
 type XmlDocRefKind =
     | Param
     | ParamRef
     | TypeParam
     | TypeParamRef
-    | Cref
 
-/// An attribute value in an XML doc that names something else: a `name` or a `cref`
+/// A `name` attribute value of an XML doc and its source range
 [<Struct>]
 type XmlDocRef =
     {
         Kind: XmlDocRefKind
-        /// The attribute value as written
         Text: string
         /// The source range of the value, without its quotes
         Range: range
@@ -32,7 +30,7 @@ type public XmlDoc =
 
     new: unprocessedLines: string[] * range: range -> XmlDoc
 
-    /// Lines with their source ranges; one range per line, or none when the doc did not come from source
+    /// One range per line, or none when the doc did not come from source
     new: unprocessedLines: string[] * lineRanges: ImmutableArray<range> * range: range -> XmlDoc
 
     /// Merge two XML documentation
@@ -65,9 +63,8 @@ type public XmlDoc =
     /// The source range of each unprocessed line; empty when the doc did not come from source
     member LineRanges: ImmutableArray<range>
 
-    /// The `name` and `cref` attribute values of `param`, `paramref`, `typeparam`, `typeparamref`,
-    /// `see`, `seealso`, `exception` and `permission` elements, with their source ranges. The doc's own lines are
-    /// parsed as XML, `<include>` unexpanded; a doc without line ranges, of plain text or badly formed names nothing.
+    /// The `name` values of the `param`, `paramref`, `typeparam` and `typeparamref` elements, with their source ranges;
+    /// empty for a doc without line ranges, of plain text, or badly formed
     member GetRefs: unit -> ImmutableArray<XmlDocRef>
 
     /// Get the lines before insertion of implicit summary tags and encoding
