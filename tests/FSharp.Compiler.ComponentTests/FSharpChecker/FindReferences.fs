@@ -945,7 +945,7 @@ let explicitNested = { outer with Inner = { state with Count = 3 } }
                 [|3, 5, 3, 10, "Outer"
                   7, 13, 7, 43, "{ outer with Inner.Count = 2 }"
                   8, 21, 8, 68, "{ outer with Inner = { state with Count = 3 } }"|],
-                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
                 |> Array.map (fun use' -> describe use'.Range)
                 |> Array.sort)
             Assert.Equal<(int * int * int * int * string) array>(

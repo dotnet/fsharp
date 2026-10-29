@@ -1843,7 +1843,7 @@ module SyntaxHighlightingBug =
         ]
 """
 
-        checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.AllInCode)
         |> Array.filter (fun item -> item.Type = SemanticClassificationType.Operator)
         |> shouldBeEmpty
 
