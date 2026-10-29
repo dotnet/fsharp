@@ -256,6 +256,9 @@ type FSharpChecker
 
     member _.ReferenceResolver = legacyReferenceResolver
 
+    member _.SetReferenceStampProvider(getReferenceStamp: string -> DateTime) =
+        backgroundCompiler.SetReferenceStampProvider getReferenceStamp
+
     member _.MatchBraces(fileName, sourceText: ISourceText, options: FSharpParsingOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
@@ -530,7 +533,12 @@ type FSharpChecker
             ?userOpName: string
         ) =
         let userOpName = defaultArg userOpName "Unknown"
-        let documentSource = defaultArg documentSource DocumentSource.FileSystem
+
+        let documentSource =
+            match documentSource, getSource with
+            | Some documentSource, _ -> documentSource
+            | None, Some getSource -> DocumentSource.Custom getSource
+            | None, None -> DocumentSource.FileSystem
 
         backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
