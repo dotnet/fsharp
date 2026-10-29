@@ -362,22 +362,25 @@ module internal ActiveStatementAnalysis =
             let mutable lineDelta = ValueNone
             let mutable different = false
 
-            for committedPoint, freshPoint in List.zip committed.Points fresh.Points do
-                match committedPoint, freshPoint with
-                | PdbSequencePoint.Hidden oldOffset, PdbSequencePoint.Hidden newOffset when oldOffset = newOffset -> ()
-                | PdbSequencePoint.Visible oldPoint, PdbSequencePoint.Visible newPoint when
-                    oldPoint.ILOffset = newPoint.ILOffset
-                    && oldPoint.StartColumn = newPoint.StartColumn
-                    && oldPoint.EndColumn = newPoint.EndColumn
-                    && newPoint.EndLine - newPoint.StartLine = oldPoint.EndLine - oldPoint.StartLine
-                    ->
-                    let delta = newPoint.StartLine - oldPoint.StartLine
+            List.iter2
+                (fun committedPoint freshPoint ->
+                    match committedPoint, freshPoint with
+                    | PdbSequencePoint.Hidden oldOffset, PdbSequencePoint.Hidden newOffset when oldOffset = newOffset -> ()
+                    | PdbSequencePoint.Visible oldPoint, PdbSequencePoint.Visible newPoint when
+                        oldPoint.ILOffset = newPoint.ILOffset
+                        && oldPoint.StartColumn = newPoint.StartColumn
+                        && oldPoint.EndColumn = newPoint.EndColumn
+                        && newPoint.EndLine - newPoint.StartLine = oldPoint.EndLine - oldPoint.StartLine
+                        ->
+                        let delta = newPoint.StartLine - oldPoint.StartLine
 
-                    match lineDelta with
-                    | ValueNone -> lineDelta <- ValueSome delta
-                    | ValueSome existing when existing = delta -> ()
-                    | ValueSome _ -> different <- true
-                | _ -> different <- true
+                        match lineDelta with
+                        | ValueNone -> lineDelta <- ValueSome delta
+                        | ValueSome existing when existing = delta -> ()
+                        | ValueSome _ -> different <- true
+                    | _ -> different <- true)
+                committed.Points
+                fresh.Points
 
             if different then
                 SequencePointComparison.Different
