@@ -373,4 +373,19 @@ Use live (unsaved) buffers for analysis</value>
 {2}</value>
     <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
   </data>
+  <data name="ExtractToLetBinding" xml:space="preserve">
+    <value>Extract to let binding</value>
+  </data>
+  <data name="ExtractToLiteral" xml:space="preserve">
+    <value>Extract to literal</value>
+  </data>
+  <data name="ExtractToLocalFunction" xml:space="preserve">
+    <value>Extract to local function</value>
+  </data>
+  <data name="ExtractToModuleFunction" xml:space="preserve">
+    <value>Extract to module function</value>
+  </data>
+  <data name="ExtractToPrivateMember" xml:space="preserve">
+    <value>Extract to private member</value>
+  </data>
 </root>
