@@ -1446,15 +1446,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 
     PublishValueDefn cenv env declKind vspec
 
-    let shouldNotifySink (vspec: Val) =
-        match vspec.MemberInfo with
-        // visualfsharp#3699: the range of `base` spans the whole `inherit` expression, so reporting it
-        // makes its environment the most deeply nested one at the constructor arguments, shadowing theirs.
-        | None when vspec.IsBaseVal -> false
-        | _ -> true
+    let shadowsCtorParams = vspec.IsBaseVal
 
     match cenv.tcSink.CurrentSink with
-    | Some _ when not vspec.IsCompilerGenerated && shouldNotifySink vspec ->
+    | Some _ when not vspec.IsCompilerGenerated && not shadowsCtorParams ->
         let nenv = AddFakeNamedValRefToNameEnv vspec.DisplayName env.NameEnv (mkLocalValRef vspec)
         CallEnvSink cenv.tcSink (vspec.Range, nenv, env.eAccessRights)
         let vref = mkLocalValRef vspec
