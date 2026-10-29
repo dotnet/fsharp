@@ -339,24 +339,21 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                             match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
-                            | ValueNone -> addLastGood document.Id sourceText textSpan result
-                            | ValueSome(struct (_, checkResults)) ->
+                            // Results without type information come from an aborted check and classify to
+                            // nothing; caching that would pin the version to no colours.
+                            | ValueSome(struct (_, checkResults)) when checkResults.HasFullTypeCheckInfo ->
                                 // The cache is keyed by version, not by span, so it has to hold the whole file:
                                 // the next request at this version is usually for a different span.
                                 let classificationData =
                                     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                                // Every checked file resolves at least its enclosing module - an implicit one as a
-                                // zero-width item - so nothing here means the classification itself failed (an
-                                // aborted check, or SemanticClassification.fs recovering with an empty array).
-                                // Caching that would pin the version to no colours.
-                                if classificationData.Length = 0 then
-                                    addLastGood document.Id sourceText textSpan result
-                                else
-                                    let classificationDataLookup = itemToSemanticClassificationLookup classificationData
-                                    do! openedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-                                    rememberLastGood document.Id sourceText classificationDataLookup
-                                    addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
+                                // A checked file can have nothing to classify - `namespace global` over
+                                // declarations an inactive #if hides - and that is the answer for this version.
+                                let classificationDataLookup = itemToSemanticClassificationLookup classificationData
+                                do! openedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                                rememberLastGood document.Id sourceText classificationDataLookup
+                                addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
+                            | _ -> addLastGood document.Id sourceText textSpan result
                 }
                 // A cancellation that is not Roslyn's own (a superseded or aborted check surfaces as one)
                 // must not turn into an empty answer, which Roslyn would paint as "no colours".
