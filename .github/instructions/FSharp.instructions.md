@@ -22,6 +22,7 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 - `nameof` over a string literal that names a value, member or type.
 - An explicit `StringComparison` on every `Equals`, `StartsWith`, `EndsWith`, `IndexOf` and `Compare`, and an explicit comparer on every `HashSet<string>` and `Dictionary<string, _>`. `Ordinal` by default; culture-sensitive comparison is a decision, never a default. Reach for `OrdinalIgnoreCase` only where the thing compared really is case-insensitive – never for identifiers, which are case-sensitive.
 - `Contains` has no `StringComparison` overload on `netstandard2.0`. Spell it `text.IndexOf(value, StringComparison.Ordinal) >= 0`, as `XmlDocInheritance.fs` does.
+- Where `System.Memory` is referenced (`src/Compiler`, `vsintegration`; not `FSharp.Core`), inspect a string slice – compare, trim, scan, match a prefix – as a `ReadOnlySpan<char>` (`text.AsSpan(start, length)`), not a `Substring`, and allocate with `Substring` only for the value that leaves the function. A slice that outlives the stack frame is a `ReadOnlyMemory<char>`. The `StringComparison` rule above holds for the span overloads too.
 
 ## Values and types
 
