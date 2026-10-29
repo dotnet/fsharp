@@ -56,10 +56,7 @@ let internal canonicalQualifiedName (path: string list) (logicalName: string) =
         | head :: rest when head.Contains(".") ->
             let segs = head.Split('.') |> Array.toList
 
-            if
-                List.length rest >= List.length segs
-                && List.truncate (List.length segs) rest = segs
-            then
+            if List.truncate (List.length segs) rest = segs then
                 rest
             else
                 path
