@@ -124,7 +124,6 @@ extends:
                   zipSources: false
 
             variables:
-            - group: DotNet-DevDiv-Insertion-Workflow-Variables
             - name: _SignType
               value: Real
             steps:

@@ -1,5 +1,5 @@
 ---
-name: Performance celebration article
+name: performance-celebration-article
 description: Measure and collect .NET performance evidence, then present and celebrate verified wins in threading, scaling, CPU, wall time, throughput, allocation, GC, or memory for F# and .NET developers.
 ---
 

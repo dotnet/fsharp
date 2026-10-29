@@ -15,8 +15,6 @@ type internal SR =
 
     static member GetTextOpt: key:string -> string option
 
-    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
-    static member SwallowResourceText: bool with get, set
     // END BOILERPLATE
     /// No arguments
     /// (Originally from Messages.txt:1)
