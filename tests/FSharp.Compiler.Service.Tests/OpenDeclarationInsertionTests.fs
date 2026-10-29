@@ -3,25 +3,39 @@ module FSharp.Compiler.Service.Tests.OpenDeclarationInsertionTests
 open Xunit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Text
 
 /// Computes the position an `open` would be inserted at, mirroring the real editor consumer
 /// (RoslynHelpers.insertContext): `FindNearestPointToInsertOpenDeclaration` followed by
 /// `AdjustInsertionPoint`. Asserting on the adjusted position is what the user actually sees.
-let private findOpenInsertionAt currentLine insertionPoint fileName (source: string) (entity: string) =
+let private adjustedInsertion findNearest fileName (source: string) (entity: string) =
     let parseTree = parseSourceCode (fileName, source)
 
     let lines = source.Replace("\r\n", "\n").Split('\n')
 
-    let idents = entity.Split('.')
-
-    let ctx =
-        ParsedInput.FindNearestPointToInsertOpenDeclaration currentLine parseTree idents insertionPoint
+    let ctx = findNearest parseTree (entity.Split('.'))
 
     let getLineStr line =
         if line >= 0 && line < lines.Length then lines.[line].Trim() else ""
 
     let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
     pos.Line, pos.Column
+
+let private findOpenInsertionAt currentLine insertionPoint fileName source entity =
+    adjustedInsertion
+        (fun parseTree idents ->
+            ParsedInput.FindNearestPointToInsertOpenDeclaration currentLine parseTree idents insertionPoint)
+        fileName
+        source
+        entity
+
+let private findOpenInsertionFrom (usePos: pos) insertionPoint fileName source entity =
+    adjustedInsertion
+        (fun parseTree idents ->
+            ParsedInput.FindNearestPointToInsertOpenDeclarationAt usePos parseTree idents insertionPoint)
+        fileName
+        source
+        entity
 
 let private findOpenInsertion insertionPoint fileName (source: string) entity =
     findOpenInsertionAt (source.TrimEnd().Split('\n').Length) insertionPoint fileName source entity
@@ -127,8 +141,35 @@ let x = System.IO.File.ReadAllText "a"
 type T() =
     member _.M() = System.IO.File.ReadAllText "a"
 """, 2)>]
+[<InlineData("""module Foo (* header
+*)
+let x = System.IO.File.ReadAllText "a"
+""", 3)>]
+[<InlineData("""namespace Ns (* header
+*)
+type T() =
+    member _.M() = System.IO.File.ReadAllText "a"
+""", 3)>]
 let ``Open goes below the header of a module or namespace, with or without a blank line`` (source: string, expectedLine: int) =
     Assert.Equal(expectedLine, findOpenInsertionLine "test.fs" source "System.IO")
+
+[<Fact>]
+let ``Open goes in front of the declaration that follows a block comment ending the header`` () =
+    let source = """module Foo (* header
+*) let x = System.IO.File.ReadAllText "a"
+"""
+    Assert.Equal((2, 3), findOpenInsertion OpenStatementInsertionPoint.TopLevel "test.fs" source "System.IO")
+
+[<Fact>]
+let ``Open goes below every block comment that runs on from the header`` () =
+    let source = """module Top
+
+module M = (* first
+*) (* second
+*)
+    let x = System.IO.File.ReadAllText "a"
+"""
+    Assert.Equal((6, 4), findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO")
 
 [<Fact>]
 let ``Open placed at the first declaration of a nested module declared on one line`` () =
@@ -147,6 +188,15 @@ let ``Open stays out of a nested module declared on one line that the use is not
     let source = $"module Top\nlet x = Console.WriteLine 42\n{nestedModule}\n"
     let pos = findOpenInsertionAt useLine OpenStatementInsertionPoint.Nearest "test.fs" source "System"
     Assert.Equal((2, 0), pos)
+
+[<Theory>]
+[<InlineData(5, 0)>]
+[<InlineData(32, 24)>]
+let ``Open goes into an attributed nested module declared on one line only for a use in its body`` (useColumn: int, openColumn: int) =
+    let source = "module Top\n[<Obsolete>] module M = let y = System.IO.File.ReadAllText \"a\"\n"
+    let usePos = Position.mkPos 2 useColumn
+    let pos = findOpenInsertionFrom usePos OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
+    Assert.Equal((2, openColumn), pos)
 
 [<Fact>]  // Only #r/#load drive placement; other directives (#time/#help/#I/...) must not
 let ``Non reference directive does not drive placement in fsx`` () =

@@ -159,6 +159,8 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
 
     Assert.Equal(expected, actual)
 
+let private bodyMargin = String.replicate 30 " "
+
 let placements =
     scenarios
         [
@@ -173,11 +175,32 @@ let placements =
             ("use in the attribute of a nested module declared on one line",
              "module Module1\n[<Obsolete>] module Module2 = let y = 1\n",
              "module Module1\n\nopen System\n\n[<Obsolete>] module Module2 = let y = 1\n")
+
+            ("use in the body of a nested module declared on one line with an attribute",
+             "module Module1\n[<Obsolete>] module Module2 = let y = Console.WriteLine 42\n",
+             $"module Module1\n[<Obsolete>] module Module2 =\n{bodyMargin}open System\n\n{bodyMargin}let y = Console.WriteLine 42\n")
         ]
 
 [<Theory; MemberData(nameof placements)>]
 let ``Fixes FS0039 for missing opens - placement`` (_scenario: string, code: string, fixedCode: string) =
     expectOpenSystem mode code fixedCode
+
+[<Fact>]
+let ``Offers open type inside a nested module declared on one line with an attribute for a use in its body`` () =
+    let bodyMargin = String.replicate 31 " "
+
+    let code =
+        "module Top\nmodule Original =\n    let ReadLine () = 123\nopen Original\n[<System.Obsolete>] module M = let x = WriteLine \"hi\"\nlet number: int = ReadLine()\n"
+
+    let expected =
+        $"module Top\nmodule Original =\n    let ReadLine () = 123\nopen Original\n[<System.Obsolete>] module M =\n{bodyMargin}open type System.Console\n\n{bodyMargin}let x = WriteLine \"hi\"\nlet number: int = ReadLine()\n"
+
+    let actual =
+        codeFix
+        |> openFixes code mode
+        |> List.find (fun fix -> fix.Message = "open type System.Console")
+
+    Assert.Equal(expected, actual.FixedCode)
 
 [<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =

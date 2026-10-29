@@ -163,10 +163,6 @@ type public InsertionContextEntity =
         /// Namespace that is needed to open to make the entity resolvable in the current scope.
         Namespace: string option
 
-        /// How many leading idents of the entity's full name `Namespace` covers: what tells whether a plain `open`
-        /// reaches it (a namespace or F# module) or only `open type` does (a type).
-        NamespaceIdentCount: int
-
         /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
         FullDisplayName: string
 
@@ -187,6 +183,8 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
+    val internal getScopeInfo: pos: pos * parsedInput: ParsedInput -> struct (ShortIdents * ShortIdents)
+
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
@@ -201,9 +199,32 @@ module public ParsedInput =
             ShortIdents)
                 -> (InsertionContextEntity * InsertionContext)[])
 
+    /// Like `TryFindInsertionContext`, for a use at a position: on the line of a nested module declared in one line
+    /// that carries an attribute, only a use after the start of the module's body is inside the module.
+    /// Each result also says how many leading idents of the entity's full name its `Namespace` covers, which tells
+    /// whether a plain `open` reaches it (a namespace or F# module) or only `open type` does (a type).
+    val internal TryFindInsertionContextAt:
+        currentPos: pos ->
+        parsedInput: ParsedInput ->
+        partiallyQualifiedName: MaybeUnresolvedIdent[] ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) *
+            ShortIdents option (*  entityNamespace *) *
+            ShortIdents option (* entity: *) *
+            ShortIdents)
+                -> struct (InsertionContextEntity * InsertionContext * (* namespaceIdentCount: *) int)[])
+
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:
         currentLine: int ->
+        parsedInput: ParsedInput ->
+        entity: ShortIdents ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            InsertionContext
+
+    /// Like `FindNearestPointToInsertOpenDeclaration`, for a use at a position.
+    val internal FindNearestPointToInsertOpenDeclarationAt:
+        currentPos: pos ->
         parsedInput: ParsedInput ->
         entity: ShortIdents ->
         insertionPoint: OpenStatementInsertionPoint ->
@@ -215,6 +236,16 @@ module public ParsedInput =
     /// Moves the insertion point below the blank line that follows a declaration header. `getLineStr` returns
     /// the trimmed text of a zero-based line, or an empty string past the end of the file.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module internal Entity =
+    val getRelativeNamespace: targetNs: ShortIdents -> sourceNs: ShortIdents -> ShortIdents
+
+    val getOpenableNamespace:
+        requiresQualifiedAccessParent: ShortIdents option ->
+        autoOpenParent: ShortIdents option ->
+        candidate: ShortIdents ->
+            struct (ShortIdents * ShortIdents * ShortIdents)
 
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =

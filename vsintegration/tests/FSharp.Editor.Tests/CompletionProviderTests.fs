@@ -1171,6 +1171,13 @@ let x = A.``B C``
         VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
 
     [<Fact>]
+    let ``Completion after backticked binding name`` () =
+        let fileContents = "let ``what is this`` = System.DateTime.N"
+
+        VerifyCompletionList(fileContents, "System.DateTime.N", [ "Now" ], [])
+        VerifyCompletionListSpan(fileContents, "System.DateTime.N", "N")
+
+    [<Fact>]
     let ``Completion list span works with partial backtick identifier`` () =
         let fileContents =
             """
@@ -2241,3 +2248,13 @@ let x = Console.WriteLine 42
 """
 
         VerifyCompletionWithOpen(fileContents, "[<Obsol", "Obsolete", expected)
+
+    [<Fact>]
+    let ``Completion that adds an open goes into a nested module declared on one line with an attribute for a use in its body`` () =
+        let fileContents = "module Top\n[<Obsolete>] module M = let y = Conso\n"
+        let margin = String.replicate 24 " "
+
+        let expected =
+            $"module Top\n[<Obsolete>] module M =\n{margin}open System\n\n{margin}let y = Console\n"
+
+        VerifyCompletionWithOpen(fileContents, "let y = Conso", "Console", expected)

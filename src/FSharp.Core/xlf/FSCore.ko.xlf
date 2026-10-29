@@ -412,6 +412,11 @@
         <target state="translated">범위의 단계는 0일 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="structTupleNoProperties">
+        <source>Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</source>
+        <target state="new">Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
         <target state="translated">호출 스레드의 System.Threading.SynchronizationContext.Current가 null입니다.</target>

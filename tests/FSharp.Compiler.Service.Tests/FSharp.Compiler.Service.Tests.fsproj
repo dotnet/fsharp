@@ -37,6 +37,7 @@
     <Compile Include="ModuleReaderNamespaceTests.fs" />
     <Compile Include="ILBinaryReaderMemoryTests.fs" />
     <Compile Include="EditorTests.fs" />
+    <Compile Include="InterpolatedStringsTests.fs" />
     <Compile Include="Symbols.fs" />
     <Compile Include="RecordConstructorTests.fs" />
     <Compile Include="TestDoubles.fs" />
@@ -47,6 +48,7 @@
     <Compile Include="ProjectAnalysisTests.fs" />
     <Compile Include="MultiProjectAnalysisTests.fs" />
     <Compile Include="IncrementalBuilderRaceTests.fs" />
+    <Compile Include="ReferenceStampProviderTests.fs" />
     <Compile Include="PerfTests.fs" />
     <Compile Include="InteractiveCheckerTests.fs" />
     <Compile Include="ExprTests.fs" />
@@ -136,6 +138,7 @@
     <Compile Include="Completion\CompletionTests.OpenDirectives.fs" />
     <Compile Include="Completion\CompletionTests.Operators.fs" />
     <Compile Include="Completion\CompletionTests.PatternMatching.fs" />
+    <Compile Include="ActivePatternCompletionTests.fs" />
     <Compile Include="Completion\CompletionTests.PrintfFormat.fs" />
     <Compile Include="Completion\CompletionTests.Properties.fs" />
     <Compile Include="Completion\CompletionTests.Queries.fs" />

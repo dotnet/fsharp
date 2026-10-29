@@ -1022,16 +1022,15 @@ module internal Rewriting =
         remapTyconToNonLocal ctxt tmenv x
 
     (* Which constraints actually get compiled to .NET constraints? *)
-    let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx =
+    let isCompiledOrWitnessPassingConstraint cx =
         match cx with
         | TyparConstraint.SupportsNull _ // this implies the 'class' constraint
         | TyparConstraint.IsReferenceType _ // this is the 'class' constraint
         | TyparConstraint.IsNonNullableStruct _
-        | TyparConstraint.IsReferenceType _
         | TyparConstraint.RequiresDefaultConstructor _
         | TyparConstraint.IsUnmanaged _ //  implies "struct" and also causes a modreq
-        | TyparConstraint.CoercesTo _ -> true
-        | TyparConstraint.MayResolveMember _ when g.langVersion.SupportsFeature LanguageFeature.WitnessPassing -> true
+        | TyparConstraint.CoercesTo _
+        | TyparConstraint.MayResolveMember _ -> true
         | _ -> false
 
     // Is a value a first-class polymorphic value with .NET constraints, or witness-passing constraints?
@@ -1042,7 +1041,7 @@ module internal Rewriting =
         && v.Type
            |> destForallTy g
            |> fst
-           |> List.exists (fun tp -> HasConstraint (isCompiledOrWitnessPassingConstraint g) tp)
+           |> List.exists (HasConstraint isCompiledOrWitnessPassingConstraint)
 
     // Does a type support a given interface?
     type Entity with
