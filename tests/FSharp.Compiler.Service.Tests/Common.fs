@@ -401,6 +401,13 @@ let inline dumpDiagnosticNumbers (results: FSharpCheckFileResults) =
     |> Array.map (fun e -> e.Range.ToString(), e.ErrorNumber)
     |> List.ofArray
 
+let dumpSymbolUses line (results: FSharpCheckFileResults) =
+    results.GetAllUsesOfAllSymbolsInFile()
+    |> Seq.filter (fun su -> su.Range.StartLine = line && not su.IsFromDefinition)
+    |> Seq.sortBy _.Range.StartColumn
+    |> Seq.map (fun su -> su.Range.ToString(), string su.Symbol)
+    |> List.ofSeq
+
 let getSymbolUses (results: FSharpCheckFileResults) =
     results.GetAllUsesOfAllSymbolsInFile()
 

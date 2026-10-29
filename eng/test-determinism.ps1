@@ -406,6 +406,7 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 try {
+  $msbuildMultiThreaded = $true
   . (Join-Path $PSScriptRoot "build-utils.ps1")
 
   # Create all of the logging directories
