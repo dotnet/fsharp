@@ -12,6 +12,8 @@ open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
+open Microsoft.ServiceHub.Framework
+open Microsoft.VisualStudio.Copilot
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.NativeInterop
@@ -22,6 +24,7 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Shell.ServiceBroker
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
@@ -55,6 +58,15 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 type internal FSharpWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (editorOptions: EditorOptions, metadataAsSourceService: FSharpMetadataAsSourceService) =
+
+    static do
+        FSharp.Compiler.Caches.EvictionProcessor.Error.Add(fun ex ->
+            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw()
+                })
+            |> ignore)
 
     let tryGetMetadataSnapshot (workspace: VisualStudioWorkspace) (path, timeStamp) =
         try
@@ -427,8 +439,8 @@ type internal FSharpPackage() as this =
 
 #if DEBUG
     override this.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
-        // The base task is what calls RegisterObjectBrowserLibraryManager; without it Debug builds
-        // would silently have no Object Browser.
+        // The base schedules LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync, which registers Copilot and
+        // calls RegisterObjectBrowserLibraryManager; without it Debug builds would silently have no Object Browser.
         base.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks)
 
         afterPackageLoadedTasks.AddTask(
@@ -441,6 +453,49 @@ type internal FSharpPackage() as this =
                 }
         )
 #endif
+
+    member private this.RegisterCopilotContextProviderAsync(cancellationToken: CancellationToken) : Task =
+        task {
+            try
+                // Copilot's registration part blocks on the main thread while MEF constructs it, so a background
+                // request deadlocks against the Git provider's request for it on the main thread at solution open.
+                do! this.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield = true, cancellationToken = cancellationToken)
+
+                let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
+
+                match container with
+                | :? IBrokeredServiceContainer as container ->
+                    // The Interactions service also serves ICopilotRegistrationService.
+                    let! registration =
+                        container
+                            .GetFullAccessServiceBroker()
+                            .GetProxyAsync<ICopilotRegistrationService>(CopilotDescriptors.InteractionService, cancellationToken)
+
+                    use registration = registration
+
+                    match registration with
+                    | null -> ()
+                    | registration ->
+                        let moniker =
+                            ServiceMoniker(
+                                FSharpConstants.copilotSymbolProviderName,
+                                Version CopilotDescriptors.CurrentContextProviderVersion
+                            )
+
+                        do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
+                | _ -> ()
+            with ex when not (ex :? OperationCanceledException) ->
+                DebugHelpers.FSharpOutputPane.logExceptionWithContext (ex, "Registering the Copilot context provider")
+        }
+
+    override this.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken) : Task =
+        let baseComponents =
+            base.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken)
+
+        task {
+            do! baseComponents
+            do! this.RegisterCopilotContextProviderAsync(cancellationToken)
+        }
 
     /// The other managed languages register their Object Browser libraries when their packages
     /// load, which normally takes opening one of their files. Nudge those packages awake for the
