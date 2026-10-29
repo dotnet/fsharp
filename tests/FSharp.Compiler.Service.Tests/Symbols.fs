@@ -691,12 +691,9 @@ type Foo =
 
     let private selfIdentifierRanges (checkResults: FSharpCheckFileResults) =
         checkResults.GetAllUsesOfAllSymbolsInFile()
-        |> Seq.filter (fun su ->
-            match su.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsMemberThisValue
-            | _ -> false)
-        |> Seq.map _.Range
-        |> Seq.sortBy (fun m -> m.StartLine, m.StartColumn)
+        |> Seq.filter (fun su -> chooseMemberOrFunctionOrValue su |> Option.exists _.IsMemberThisValue)
+        |> Seq.map (fun su -> getRangeCoords su.Range)
+        |> Seq.sort
         |> Seq.toList
 
     [<Theory>]
@@ -713,25 +710,18 @@ type Foo() =
 """
         let n = selfId.Length
 
-        match selfIdentifierRanges checkResults with
-        | [ mDeclInM; mUseInM; mDeclInN ] ->
-            assertRange (5, 11) (5, 11 + n) mDeclInM
-            assertRange (5, 18 + n) (5, 18 + 2 * n) mUseInM
-            assertRange (6, 11) (6, 11 + n) mDeclInN
-        | ranges -> failwith $"Expected three self identifier symbol uses, got %A{ranges}"
+        selfIdentifierRanges checkResults
+        |> shouldEqual [ (5, 11), (5, 11 + n); (5, 18 + n), (5, 18 + 2 * n); (6, 11), (6, 11 + n) ]
 
     [<Fact>]
-    let ``AutoProperty does not expose its compiler-generated self identifier`` () =
+    let ``Synthesized auto-property self identifier does not shadow the property range`` () =
         let _, checkResults = getParseAndCheckResults """
 namespace Foo
 
 type Foo =
     member val AutoPropGetSet = 0 with get, set
 """
-        // The synthesized `__` sits on the property name's range, so reporting it would shadow the property
-        match selfIdentifierRanges checkResults with
-        | [] -> ()
-        | ranges -> failwith $"Expected no self identifier symbol uses, got %A{ranges}"
+        selfIdentifierRanges checkResults |> shouldEqual []
 
     [<Fact>]
     let ``Property symbol is resolved for property`` () =
