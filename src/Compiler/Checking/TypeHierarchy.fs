@@ -94,6 +94,38 @@ let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
 [<RequireQualifiedAccess>]
 type SkipUnrefInterfaces = Yes | No
 
+/// Import decodes an 8-tuple application into TType_tuple only when its last argument is already a tuple,
+/// so a formal interface type that still contains one does not instantiate to what a per-use import yields.
+let rec private containsUndecodedTupleTy g ty =
+    match ty with
+    | TType_app (tcref, tinst, _) ->
+        tyconRefEq g tcref g.ref_tuple8_tcr
+        || tyconRefEq g tcref g.struct_tuple8_tcr
+        || List.exists (containsUndecodedTupleTy g) tinst
+    | TType_tuple (_, tys) -> List.exists (containsUndecodedTupleTy g) tys
+    | _ -> false
+
+/// The interfaces of an IL type definition imported once with its own type parameters, like
+/// ImmediateInterfaceTypesOfFSharpTycon for F# types. ValueNone when they must be imported per use.
+/// An unresolvable interface is not cached, so a later assembly load is seen on the next call.
+let private TryGetFormalInterfacesOfILTycon (amap: ImportMap) m scoref (tdef: ILTypeDef) (tcref: TyconRef) =
+    match amap.ILInterfacesOfTyconCache.TryGetValue tcref.Stamp with
+    | true, cached -> cached
+    | _ ->
+        let allImportable =
+            tdef.Implements.Value |> List.forall (fun intf -> CanRescopeAndImportILType scoref amap m intf.Type)
+        if not allImportable then
+            ValueNone
+        else
+            let formalInst = generalizeTypars tcref.Typars
+            let intfTys =
+                [ for intf in tdef.Implements.Value -> RescopeAndImportILTypeSkipNullness scoref amap m formalInst intf.Type ]
+            let cached =
+                if intfTys |> List.exists (containsUndecodedTupleTy amap.g) then ValueNone
+                else ValueSome intfTys
+            amap.ILInterfacesOfTyconCache.TryAdd(tcref.Stamp, cached) |> ignore
+            cached
+
 let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef) tinst =
     [
         match metadataOfTy g ty with
@@ -111,14 +143,24 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
             let checkNullness = g.langFeatureNullness && g.checkNullness
-            for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
-                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
-                    if checkNullness then
-                        let typeAttrs = AttributesFromIL(attrsIdx,attrs)
-                        let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
-                        RescopeAndImportILType scoref amap m tinst nullness intfTy
-                    else
-                        RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+            // Name resolution can apply an enclosing type's arguments to a nested type that declares fewer
+            // type parameters (see MakeNestedType), so the instantiation is not always well formed.
+            let tinstMatchesTypars = List.length tinst = List.length tcref.Typars
+            let formalIntfTys =
+                if checkNullness || not tinstMatchesTypars then ValueNone
+                else TryGetFormalInterfacesOfILTycon amap m scoref tdef tcref
+            match formalIntfTys with
+            | ValueSome formalIntfTys ->
+                yield! instTypes (mkTyconRefInst tcref tinst) formalIntfTys
+            | ValueNone ->
+                for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
+                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                        if checkNullness then
+                            let typeAttrs = AttributesFromIL(attrsIdx,attrs)
+                            let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
+                            RescopeAndImportILType scoref amap m tinst nullness intfTy
+                        else
+                            RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
