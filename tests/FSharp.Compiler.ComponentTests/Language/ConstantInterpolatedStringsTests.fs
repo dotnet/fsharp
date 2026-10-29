@@ -154,6 +154,19 @@ let Text = $"{1 / 0}"
               Error 837, Line 5, Col 12, Line 5, Col 22, "This is not a valid constant expression" ]
 
     [<Fact>]
+    let ``A decimal hole that divides by zero is rejected at the hole`` () =
+        preview """
+module Program
+
+[<Literal>]
+let Text = $"{1m / 0m}"
+"""
+        |> typecheck
+        |> withDiagnostics
+            [ Error 267, Line 5, Col 15, Line 5, Col 22, "This is not a valid constant expression or custom attribute value"
+              Error 837, Line 5, Col 12, Line 5, Col 24, "This is not a valid constant expression" ]
+
+    [<Fact>]
     let ``Only the first hole that breaks a rule is reported`` () =
         preview """
 module Program
