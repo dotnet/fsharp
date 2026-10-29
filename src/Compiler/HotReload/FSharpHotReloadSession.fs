@@ -542,7 +542,8 @@ type internal FSharpHotReloadService
         lock hotReloadGate (fun () ->
             editAndContinueService.CommitAllPendingUpdates() |> ignore
 
-            for entry in List.ofSeq pendingOutputFingerprints do
+            // Only the separate committed dictionary changes during enumeration.
+            for entry in pendingOutputFingerprints do
                 committedOutputFingerprints[entry.Key] <- entry.Value
 
             pendingOutputFingerprints.Clear())
@@ -769,7 +770,8 @@ type FSharpHotReloadSession
         ensureNotDisposed ()
 
         lock trackedInputsGate (fun () ->
-            for entry in List.ofSeq pendingTrackedInputs do
+            // Only the separate committed dictionary changes during enumeration.
+            for entry in pendingTrackedInputs do
                 committedTrackedInputs[entry.Key] <- entry.Value
 
             pendingTrackedInputs.Clear())
