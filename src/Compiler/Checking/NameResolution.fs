@@ -2343,7 +2343,7 @@ type TcResolutions
 
     member _.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
 
-    member _.CapturedRelatedSymbolUses =
+    member _.CapturedRelatedSymbolUsesInCode =
         capturedRelatedSymbolUses
         |> Seq.filter (fun struct (_, _, kind: RelatedSymbolUseKind) -> RelatedSymbolUseKind.AllInCode.HasFlag kind)
 
@@ -2356,9 +2356,7 @@ type TcSymbolUseData =
      DisplayEnv: DisplayEnv
      Range: range }
 
-/// `RelatedSymbolUseKind.All` was every bit until the names inside XML doc comments became a kind of their own.
-/// An enum value is compiled into its caller, so an assembly built against that `All` still passes this mask.
-let legacyAllRelatedSymbolUseKinds = enum<RelatedSymbolUseKind> 0x7FFFFFFF
+let allAsCompiledIntoOlderCallers = enum<RelatedSymbolUseKind> 0x7FFFFFFF
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 ///
@@ -2389,8 +2387,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     member _.GetUsesOfSymbol(item, ?relatedSymbolKinds: RelatedSymbolUseKind) =
         let kinds =
             match relatedSymbolKinds with
-            // A caller compiled when `All` was every bit still passes that mask, and must keep getting the uses in code only
-            | Some kinds when kinds = legacyAllRelatedSymbolUseKinds -> RelatedSymbolUseKind.AllInCode
+            | Some kinds when kinds = allAsCompiledIntoOlderCallers -> RelatedSymbolUseKind.AllInCode
             | Some kinds -> kinds
             | None -> RelatedSymbolUseKind.None
 
@@ -2666,7 +2663,6 @@ let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: Rel
     | None -> ()
     | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
 
-/// The type parameters of a declaration, as what a `<typeparam name>` or `<typeparamref name>` of its XML doc can name
 let XmlDocTyparCandidates (typars: Typars) =
     let candidates = ImmutableArrayBuilder.create typars.Length
 
@@ -2675,7 +2671,6 @@ let XmlDocTyparCandidates (typars: Typars) =
 
     candidates.MoveToImmutable()
 
-/// Report each of `docRefs` that names one of the candidates as a related use of it, at the range of the attribute value
 let ReportXmlDocRefs
     (currentSink: ITypecheckResultsSink)
     (docRefs: ImmutableArray<XmlDocRef>)
@@ -2689,15 +2684,11 @@ let ReportXmlDocRefs
             | XmlDocRefKind.ParamRef -> parameters
             | XmlDocRefKind.TypeParam
             | XmlDocRefKind.TypeParamRef -> typars
-            | XmlDocRefKind.Cref -> ImmutableArray.empty
 
         for struct (name, item) in candidates do
             if String.Equals(name, docRef.Text, StringComparison.Ordinal) then
                 currentSink.NotifyRelatedSymbolUse(docRef.Range, item, RelatedSymbolUseKind.XmlDocParameter)
 
-/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
-/// as a related use of the parameter or type parameter it names.
-/// The candidates are asked for only when there is a sink and the doc names something, so batch compilation builds neither.
 let inline ReportXmlDocRefUses
     (sink: TcResultsSink)
     (doc: XmlDoc)

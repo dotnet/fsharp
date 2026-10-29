@@ -11758,21 +11758,20 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
-        // The parameters of a function binding are the binders of its outer lambda chain
         let parameterCandidates () =
             let candidates = ImmutableArrayBuilder.create 4
 
-            let rec addBinders expr =
+            let rec addLambdaBinders expr =
                 match stripDebugPoints expr with
                 | Expr.Lambda (_, _, _, vs, body, _, _) ->
                     for v in vs do
                         if not (v.IsMemberThisVal || v.IsCtorThisVal || v.IsCompilerGenerated) then
                             candidates.Add(struct (v.LogicalName, Item.Value(mkLocalValRef v)))
 
-                    addBinders body
+                    addLambdaBinders body
                 | _ -> ()
 
-            addBinders rhsExprChecked
+            addLambdaBinders rhsExprChecked
             candidates.ToImmutable()
 
         let typarCandidates () =

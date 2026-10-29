@@ -205,7 +205,6 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false)
 
-        // The `<param>` tags of a primary constructor live on the type's doc
         let ctorParameters () =
             let candidates = ImmutableArrayBuilder.create ctorArgs.Length
 

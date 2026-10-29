@@ -12767,7 +12767,6 @@ FSharp.Compiler.Xml.XmlDocRef: System.String Text
 FSharp.Compiler.Xml.XmlDocRef: System.String ToString()
 FSharp.Compiler.Xml.XmlDocRef: System.String get_Text()
 FSharp.Compiler.Xml.XmlDocRef: Void .ctor(FSharp.Compiler.Xml.XmlDocRefKind, System.String, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 Cref
 FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 Param
 FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 ParamRef
 FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 TypeParam
@@ -12776,22 +12775,18 @@ FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(FSharp.Compiler.Xml.XmlDocRefK
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(FSharp.Compiler.Xml.XmlDocRefKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(System.Object)
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsCref
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsParam
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsParamRef
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsTypeParam
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsTypeParamRef
-FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsCref()
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsParam()
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsParamRef()
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsTypeParam()
 FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsTypeParamRef()
-FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind Cref
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind Param
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind ParamRef
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind TypeParam
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind TypeParamRef
-FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_Cref()
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_Param()
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_ParamRef()
 FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_TypeParam()
