@@ -223,7 +223,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
     let receiverMeetsKindConstraint (receiverTypes: ReceiverTypes) (typeConstraint: FSharpGenericParameterConstraint) =
         receiverTypes.Count = 0
         || (let struct (_, receiver) = receiverTypes[0]
-            definitionMeetsKindConstraint receiver.TypeDefinition typeConstraint)
+            definitionMeetsKindConstraint receiver.ErasedType.TypeDefinition typeConstraint)
 
     let receiverMeetsConstraint (receiverTypes: ReceiverTypes) (typeConstraint: FSharpGenericParameterConstraint) =
         receiverMeetsKindConstraint receiverTypes typeConstraint
