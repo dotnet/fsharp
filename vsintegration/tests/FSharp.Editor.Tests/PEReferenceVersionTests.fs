@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The version a referenced C# project's in-memory PE reference is kept for. The projects live in a plain
-/// workspace: the editor test host serves F# projects only.
+/// The version a referenced C# project's in-memory PE reference is kept for. Only the version is read, which
+/// needs neither an F# project nor the editor services: the projects live in a plain workspace.
 module FSharp.Editor.Tests.PEReferenceVersionTests
 
 open System.Collections.Immutable
