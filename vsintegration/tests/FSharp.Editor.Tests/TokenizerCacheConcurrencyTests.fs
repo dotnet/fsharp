@@ -20,7 +20,7 @@ type private DocumentVersion =
 
 type TokenizerCacheConcurrencyTests() =
 
-    let fileName = "C:\test.fs"
+    let fileName = "C:\\test.fs"
     let defines = []
     let langVersion = Some "preview"
     let workerCount = max 8 Environment.ProcessorCount
