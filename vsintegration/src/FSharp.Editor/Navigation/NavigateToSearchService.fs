@@ -16,15 +16,25 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
+open FSharp.Compiler
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open CancellableTasks
+
+[<Struct>]
+type private ParseKey =
+    | AnyDefines of filePath: string * langVersion: string
+    | DefinedAs of filePath: string * langVersion: string * defines: string list
 
 [<Export; Shared>]
 type internal FSharpNavigableItemsCache
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    let cache = ConcurrentDictionary<ParseKey, VersionStamp * NavigableItem array>()
+
+    /// The items a document last got, under whatever options: for the reader that cannot await them.
+    let ofDocument = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 
     do
         if workspace <> null then
@@ -32,24 +42,59 @@ type internal FSharpNavigableItemsCache
             <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
+                    ofDocument.Clear()
+
+    // Awaiting a project's options recomputes them after an edit to a C# project it references.
+    let parsingOptionsOf (document: Document) =
+        let optionsManager =
+            document.Project.Solution.GetFSharpWorkspaceService().FSharpProjectOptionsManager
+
+        match optionsManager.TryGetCachedOptionsByProjectId document.Project.Id with
+        | Some(_, parsingOptions, _) -> CancellableTask.singleton parsingOptions
+        | None ->
+            document.GetFSharpCompilationOptionsAsync(nameof (FSharpNavigableItemsCache))
+            |> CancellableTask.map (fun (_, _, parsingOptions, _) -> parsingOptions)
+
+    let storedUnder anyDefinesKey definedAsKey =
+        function
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = trivia))
+        | ParsedInput.SigFile(ParsedSigFileInput(trivia = trivia)) when trivia.ConditionalDirectives.IsEmpty -> anyDefinesKey
+        | _ -> definedAsKey
 
     member _.GetNavigableItems(document: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
+            let! parsingOptions = parsingOptionsOf document
+            let anyDefinesKey = AnyDefines(document.FilePath, parsingOptions.LangVersionText)
 
-            match cache.TryGetValue document.Id with
-            | true, (version, items) when version = currentVersion -> return items
-            | _ ->
+            let definedAsKey =
+                DefinedAs(
+                    document.FilePath,
+                    parsingOptions.LangVersionText,
+                    CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
+                )
+
+            let cached key =
+                match cache.TryGetValue key with
+                | true, (version, items) when version = currentVersion -> ValueSome items
+                | _ -> ValueNone
+
+            match cached anyDefinesKey |> ValueOption.orElseWith (fun () -> cached definedAsKey) with
+            | ValueSome items ->
+                ofDocument[document.Id] <- currentVersion, items
+                return items
+            | ValueNone ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigableItemsCache))
                 let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- currentVersion, items
+                cache[storedUnder anyDefinesKey definedAsKey parseResults.ParseTree] <- currentVersion, items
+                ofDocument[document.Id] <- currentVersion, items
                 return items
         }
 
     /// Uses the version the document already knows: asking for it could read a closed file from disk.
     member _.TryGetCachedNavigableItems(document: Document) =
-        match cache.TryGetValue document.Id, document.TryGetTextVersion() with
+        match ofDocument.TryGetValue document.Id, document.TryGetTextVersion() with
         | (true, (version, items)), (true, currentVersion) when version = currentVersion -> ValueSome items
         | _ -> ValueNone
 
@@ -159,20 +204,26 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
-
-            let! sourceText = document.GetTextAsync ct
-
             let! items = getNavigableItems document
 
-            let processed =
+            let matches =
                 [|
                     for item in items do
-                        let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
-                        let patternMatch = tryMatch item
+                        if kinds.Contains(navigateToItemKindToRoslynKind item.Kind) then
+                            match tryMatch item with
+                            | ValueSome m -> yield struct (item, m)
+                            | ValueNone -> ()
+                |]
 
-                        match contains, patternMatch with
-                        | true, ValueSome m ->
+            if matches.Length = 0 then
+                return [||]
+            else
+                let! ct = CancellableTask.getCancellationToken ()
+                let! sourceText = document.GetTextAsync ct
+
+                return
+                    [|
+                        for struct (item, m) in matches do
                             let sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
 
                             match sourceSpan with
@@ -195,10 +246,7 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                                             sourceSpan
                                         )
                                     )
-                        | _ -> ()
-                |]
-
-            return processed
+                    |]
         }
 
     interface IFSharpNavigateToSearchService with
@@ -214,15 +262,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                             yield processDocument tryMatch kinds doc
                     |]
 
-                let! results = CancellableTask.whenAll tasks
+                let! results = CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount) tasks
 
-                let results' = ImmutableArray.CreateBuilder()
-
-                for navResults in results do
-                    for navResult in navResults do
-                        results'.Add navResult
-
-                return results'.ToImmutable()
+                return results |> Array.concat |> Array.toImmutableArray
 
             }
             |> CancellableTask.start cancellationToken
