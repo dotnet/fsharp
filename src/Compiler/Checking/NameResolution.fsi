@@ -444,9 +444,8 @@ type internal TcResolutions =
     /// See TypeCheckInfo.GetCapturedNameResolutions for example.
     member CapturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>
 
-    /// Related symbol uses in code reported via NotifyRelatedSymbolUse (RelatedSymbolUseKind.AllInCode).
-    /// The names inside XML doc comments are left out: only TcSymbolUses.GetUsesOfSymbol hands them out, when asked for.
-    member CapturedRelatedSymbolUses: seq<struct (range * Item * RelatedSymbolUseKind)>
+    /// Related symbol uses reported via NotifyRelatedSymbolUse
+    member CapturedRelatedSymbolUsesInCode: seq<struct (range * Item * RelatedSymbolUseKind)>
 
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
@@ -659,10 +658,8 @@ val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: ra
 /// Report a related symbol use at a source range (does not affect colorization or symbol info)
 val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
 
-/// The type parameters of a declaration, as what a `<typeparam name>` or `<typeparamref name>` of its XML doc can name
 val internal XmlDocTyparCandidates: typars: Typars -> ImmutableArray<struct (string * Item)>
 
-/// Report each of `docRefs` that names one of the candidates as a related use of it, at the range of the attribute value
 val internal ReportXmlDocRefs:
     currentSink: ITypecheckResultsSink ->
     docRefs: ImmutableArray<XmlDocRef> ->
@@ -670,9 +667,7 @@ val internal ReportXmlDocRefs:
     typars: ImmutableArray<struct (string * Item)> ->
         unit
 
-/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
-/// as a related use of the parameter or type parameter it names.
-/// The candidates are asked for only when there is a sink and the doc names something, so batch compilation builds neither.
+/// Report the names in a declaration's XML doc that name its parameters or type parameters as related uses of them
 val inline internal ReportXmlDocRefUses:
     sink: TcResultsSink ->
     doc: XmlDoc ->
