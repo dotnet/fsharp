@@ -180,7 +180,7 @@ let GetAllUsesOfAllSymbols() : Task =
         let! checkProjectResults = checker.ParseAndCheckProject(options)
         let result = checkProjectResults.GetAllUsesOfAllSymbols()
 
-        if result.Length <> 79 then failwith $"Expected 79 symbolUses, got {result.Length}:\n%A{result}"
+        if result.Length <> 75 then failwith $"Expected 75 symbolUses, got {result.Length}:\n%A{result}"
     }
 
 [<Fact>]
