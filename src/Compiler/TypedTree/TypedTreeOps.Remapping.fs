@@ -1785,6 +1785,7 @@ module internal ExprRemapping =
         if ctxt.g.realsig then
             List.zip vs vs2
             |> List.iter (fun (v, v2) -> ctxt.g.RealsigClosureParentRekey(v, v2))
+
         let tmenvinner = bindLocalVals vs vs2 tmenv
         vs2 |> List.iter (fixupValData ctxt compgen tmenvinner)
         vs2, tmenvinner
@@ -1792,7 +1793,9 @@ module internal ExprRemapping =
     and copyAndRemapAndBindVal ctxt compgen tmenv v =
         let v2 = v |> copyVal compgen
 
-        if ctxt.g.realsig then ctxt.g.RealsigClosureParentRekey(v, v2)
+        if ctxt.g.realsig then
+            ctxt.g.RealsigClosureParentRekey(v, v2)
+
         let tmenvinner = bindLocalVal v v2 tmenv
         fixupValData ctxt compgen tmenvinner v2
         v2, tmenvinner
