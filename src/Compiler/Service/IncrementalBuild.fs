@@ -343,7 +343,7 @@ type BoundModel private (
                         if not r.IsSynthetic && preventDuplicates.Add struct(r.Start, r.End) then
                             builder.Write(cnr.Range, cnr.Item))
 
-                    sResolutions.CapturedRelatedSymbolUses
+                    sResolutions.CapturedRelatedSymbolUsesInCode
                     |> Seq.iter (fun struct (m, item, _kind) ->
                         if not m.IsSynthetic then
                             builder.Write(m, item))

@@ -13,12 +13,11 @@ type RelatedSymbolUseKind =
     | UnionCaseTester = 1
     /// Record type via copy-and-update expression (e.g., { r with ... } → RecordType)
     | CopyAndUpdateRecord = 2
-    /// Parameter or type parameter via the `name` of a `param`, `paramref`, `typeparam` or `typeparamref`
-    /// tag in the declaration's XML doc
+    /// Parameter or type parameter named by a param, paramref, typeparam or typeparamref tag of the XML doc
     | XmlDocParameter = 4
-    /// Every related use in code; leaves out the names inside XML doc comments, which only a rename needs
+    /// Every kind but XmlDocParameter
     | AllInCode = 3
-    /// Every related use, the names inside XML doc comments included
+    /// Every kind, XmlDocParameter included
     | AllInCodeAndDocs = 7
-    /// Every related use in code, the same as AllInCode
-    | [<System.Obsolete("Use AllInCode, which this equals, or AllInCodeAndDocs to also get the names inside XML doc comments.")>] All = 3
+    /// The same as AllInCode
+    | [<System.Obsolete("Use AllInCode, which this equals, or AllInCodeAndDocs.")>] All = 3

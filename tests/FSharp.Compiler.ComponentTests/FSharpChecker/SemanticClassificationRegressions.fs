@@ -11,7 +11,7 @@ open FSharp.Test.ProjectGeneration.Helpers
 #nowarn "57"
 
 /// Get semantic classification items for a single-file source using the transparent compiler.
-let getClassificationsOf (relatedSymbolKinds: RelatedSymbolUseKind) (source: string) =
+let getClassificationsWith (relatedSymbolKinds: RelatedSymbolUseKind) (source: string) =
     async {
         let! fileName, snapshot, checker = singleFileChecker source
         let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
@@ -19,8 +19,7 @@ let getClassificationsOf (relatedSymbolKinds: RelatedSymbolUseKind) (source: str
         return checkResults.GetSemanticClassification(None, relatedSymbolKinds)
     }
 
-let getClassifications (source: string) =
-    getClassificationsOf RelatedSymbolUseKind.AllInCode source
+let getClassifications source = getClassificationsWith RelatedSymbolUseKind.AllInCode source
 
 /// Extract the source substring covered by a classification item's range (single-line ranges).
 let private substringOfRange (source: string) (r: Range) =
@@ -77,10 +76,9 @@ let updated = { x with ValidationErrors = [] }
         )
     }
 
-/// (#20630) A parameter named in a `///` doc is reported as a related symbol use so that rename can
-/// rewrite it, but nothing inside a comment may be coloured, even when the caller asks for every related kind.
+/// (#20630)
 [<Fact>]
-let ``XML doc param names are not classified`` () : Task =
+let ``XML doc param names are not classified even for a caller that asks for every related kind`` () : Task =
     task {
         let source =
             """
@@ -91,15 +89,9 @@ module Test
 let add x y = x + y
 """
 
-        let! items = getClassificationsOf RelatedSymbolUseKind.AllInCodeAndDocs source
-
-        let insideDocs =
-            items
-            |> Seq.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
-            |> Seq.map (fun i -> i.Range, i.Type)
-            |> Seq.toArray
-
-        Assert.Empty insideDocs
+        let! items = getClassificationsWith RelatedSymbolUseKind.AllInCodeAndDocs source
+        let onDocLines = items |> Array.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
+        Assert.Empty(onDocLines |> Array.map (fun item -> item.Range, item.Type))
     }
 
 /// (#16621) Helper: assert UnionCase classifications on expected lines.
