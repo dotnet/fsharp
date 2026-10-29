@@ -1,0 +1,770 @@
+"""Local-only publication policy tests with disposable recipients and sinks."""
+
+import copy
+from datetime import datetime, timedelta, timezone
+import hashlib
+import importlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest import mock
+import uuid
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "eng" / "scripts" / "compiler_perf"))
+try:
+    a = importlib.import_module("artifacts")
+except ModuleNotFoundError:
+    a = None
+
+NOW = datetime(2026, 9, 20, 10, 0, tzinfo=timezone.utc)
+PROVENANCE = {"run_id": "test-run", "fingerprint": "a" * 64}
+
+
+class TemporaryRecipient:
+    """Keys exist only in a temporary owner directory, never in candidate environments."""
+
+    def __enter__(self):
+        self.directory = tempfile.TemporaryDirectory(prefix="compiler-perf-keys-")
+        self.root = Path(self.directory.name)
+        tool = Path(os.environ["COMPILER_PERF_TEST_AGE"]).absolute()
+        self.key = self.root / "identity.txt"
+        subprocess.run([str(tool.with_name("age-keygen" + tool.suffix)), "-o", str(self.key)],
+                       check=True, capture_output=True, timeout=30, env=a.c.tool_environment())
+        recipient = subprocess.run([str(tool.with_name("age-keygen" + tool.suffix)), "-y", str(self.key)],
+                                   check=True, capture_output=True, timeout=30,
+                                   env=a.c.tool_environment()).stdout.decode().strip()
+        self.config = {"recipient": recipient, "tool": a.c.m.file_record(tool)}
+        return self
+
+    def decrypt(self, path):
+        return subprocess.run([self.config["tool"]["path"], "--decrypt", "-i", str(self.key), str(path)],
+                              check=True, capture_output=True, timeout=30,
+                              env=a.c.tool_environment()).stdout
+
+    def __exit__(self, *_):
+        self.directory.cleanup()
+
+
+class ArtifactTests(unittest.TestCase):
+    def setUp(self):
+        self.assertIsNotNone(a, "artifact staging helper has not been implemented")
+        directory = tempfile.TemporaryDirectory(prefix="compiler-perf-artifacts-")
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.private = self.root / "private"
+        self.private.mkdir()
+        self.public = self.root / "public"
+
+    def entry(self, name="summary.json", kind="summary", content=None, conclusion="Bounded conclusion"):
+        if content is None:
+            content = {"schema_version": 1, "kind": "workflow-summary",
+                       "status": "completed_no_finding", "conclusion": conclusion}
+        data = json.dumps(content).encode() if isinstance(content, dict) else content
+        path = self.private / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return {"file": {"path": str(path), "sha256": hashlib.sha256(data).hexdigest(),
+                         "size_bytes": len(data)}, "kind": kind, "conclusion": conclusion}
+
+    def stage(self, entries, public=None):
+        return a.stage_artifacts(self.private, public or self.public, entries, NOW)
+
+    def test_fixed_production_policy_and_memory_schema(self):
+        self.assertEqual(a.PUBLIC_BYTES, 512 * 1024**2)
+        self.assertEqual(a.COMPACT_BYTES, 20 * 1024**2)
+        self.assertEqual(a.RETENTION_DAYS, 14)
+        result = self.stage([self.entry()])
+        self.assertEqual(result["kind"], "artifact-manifest")
+        self.assertEqual(result["retention_days"], 14)
+        self.assertEqual(a.mem.timestamp(result["expires_at"]), NOW + timedelta(days=14))
+        record = result["artifacts"][0]
+        a.mem.validate_artifact(record)
+        self.assertEqual(record["access"], "public")
+        self.assertEqual(record["type"], "summary")
+        self.assertEqual(record["availability"], "pending")
+        self.assertEqual(record["collected_at"], result["created_at"])
+        self.assertEqual(json.loads((self.public / "manifest.json").read_text()), result)
+        self.assertEqual(result["total_bytes"], sum(p.stat().st_size for p in self.public.iterdir()))
+
+    def test_read_file_uses_platform_timestamp_semantics(self):
+        entry = self.entry("heap.dmp", "dump", b"MDMPunchanged")
+        path = Path(entry["file"]["path"])
+        info = path.stat()
+        fields = {key: getattr(info, key) for key in
+                  ("st_dev", "st_ino", "st_size", "st_nlink", "st_mtime_ns", "st_ctime_ns")}
+        fields["st_birthtime_ns"] = getattr(info, "st_birthtime_ns", info.st_ctime_ns)
+        for platform, changed, accepted in (
+                ("nt", None, True), ("nt", "st_ctime_ns", True),
+                ("nt", "st_birthtime_ns", False), ("nt", "st_mtime_ns", False),
+                ("nt", "st_ino", False), ("posix", None, True), ("posix", "st_ctime_ns", False)):
+            with self.subTest(platform=platform, changed=changed):
+                opened, after = SimpleNamespace(**fields), SimpleNamespace(**fields)
+                if platform == "nt":
+                    opened.st_ctime_ns += 1000
+                    after.st_ctime_ns += 1000
+                if changed:
+                    setattr(after, changed, getattr(after, changed) + 100)
+                system = SimpleNamespace(**dict(vars(os), name=platform))
+                with mock.patch.object(a, "_open_file", side_effect=lambda p: os.open(
+                        p, os.O_RDONLY | getattr(os, "O_BINARY", 0))), \
+                        mock.patch.object(a, "os", system), mock.patch.object(
+                        system, "fstat", side_effect=[opened, after]):
+                    if accepted:
+                        digest, size, _, identity = a._read_file(path)
+                        self.assertEqual((digest, size), (entry["file"]["sha256"], entry["file"]["size_bytes"]))
+                        self.assertEqual(identity, a._identity(info))
+                    else:
+                        with self.assertRaisesRegex(ValueError, "Artifact changed while reading"):
+                            a._read_file(path)
+
+    def test_timestamp_preserving_rewrite_cannot_return_stale_hash_or_delete_dump(self):
+        with mock.patch.object(a, "_outside_git"):
+            owned = a.create_dump_workspace(self.root / "dump", [self.public])
+        path = owned.path / "heap.dmp"
+        fstat = os.fstat
+        for operation in ("read", "remove"):
+            with self.subTest(operation=operation):
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                before = path.stat()
+                calls = 0
+
+                def rewrite_after_read(descriptor):
+                    nonlocal calls
+                    calls += 1
+                    if calls == 2:
+                        path.write_bytes(b"MDMPmodified")
+                        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+                    return fstat(descriptor)
+
+                with mock.patch.object(a.os, "fstat", side_effect=rewrite_after_read):
+                    with self.assertRaises(PermissionError if os.name == "nt" else ValueError):
+                        if operation == "read":
+                            a._read_file(path)
+                        else:
+                            a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
+                self.assertEqual(calls, 2)
+                self.assertEqual(path.read_bytes(), b"MDMPoriginal" if os.name == "nt" else b"MDMPmodified")
+                self.assertEqual(path.stat().st_mtime_ns, before.st_mtime_ns)
+                self.assertEqual(a._identity(path.stat()), a._identity(before))
+
+    @unittest.skipUnless(os.name == "nt", "Windows file sharing contract")
+    def test_windows_read_handle_denies_writes_and_replacement_but_allows_readers(self):
+        entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace-private")
+        path = Path(entry["file"]["path"])
+
+        def read(stream):
+            self.assertEqual(path.read_bytes(), stream.read())
+            with self.assertRaises(PermissionError):
+                path.write_bytes(b"changed")
+            with self.assertRaises(PermissionError):
+                path.rename(self.private / "replacement.nettrace")
+
+        sha256, size, _, _ = a._read_file(path, use=read)
+        self.assertEqual((sha256, size), (entry["file"]["sha256"], entry["file"]["size_bytes"]))
+
+    def test_output_is_deterministic_and_only_explicit_files_are_staged(self):
+        first = self.entry("first.json", conclusion="First")
+        second = self.entry("second.json", conclusion="Second")
+        (self.private / "credentials.env").write_text("PASSWORD=must-not-publish")
+        left = self.stage([first, second])
+        other = self.root / "other"
+        right = self.stage([second, first], other)
+        self.assertEqual(left, right)
+        self.assertEqual({p.name: p.read_bytes() for p in self.public.iterdir()},
+                         {p.name: p.read_bytes() for p in other.iterdir()})
+        self.assertEqual(len(list(other.iterdir())), 3)
+
+    def test_reuses_independent_sanitization_for_summary_and_conclusion(self):
+        text = f"password=hunter2 Bearer secret-bearer github_pat_abcdef {self.private} top-secret-value"
+        with mock.patch.dict(os.environ, {"TEST_API_TOKEN": "top-secret-value"}):
+            result = self.stage([self.entry(conclusion=text)])
+        text = "".join(p.read_text() for p in self.public.iterdir())
+        for forbidden in ("hunter2", "secret-bearer", "github_pat_abcdef", str(self.private), "top-secret-value"):
+            self.assertNotIn(forbidden, text)
+        self.assertIn("[REDACTED]", text)
+        self.assertNotEqual(result["artifacts"][0]["sha256"], result["artifacts"][0]["source_sha256"])
+
+    def test_basic_auth_private_keys_and_access_key_credentials_are_redacted(self):
+        values = ("Authorization: Basic dXNlcjpwYXNz",
+                  "-----BEGIN PRIVATE KEY-----\nprivate-key-material\n-----END PRIVATE KEY-----",
+                  "access key AKIA1234567890ABCDEF")
+        for index, text in enumerate(values):
+            with self.subTest(text=text):
+                target = self.root / f"public-{index}"
+                self.stage([self.entry(conclusion=text)], target)
+                published = "".join(p.read_text() for p in target.iterdir())
+                for secret in ("dXNlcjpwYXNz", "private-key-material", "AKIA1234567890ABCDEF"):
+                    self.assertNotIn(secret, published)
+
+    def test_json_is_not_an_arbitrary_environment_or_input_container(self):
+        for key in ("environment", "env", "inputs", "command", "arguments", "content", "PASSWORD"):
+            with self.subTest(key=key):
+                value = {"schema_version": 1, "kind": "workflow-summary", "status": "inconclusive",
+                         "conclusion": "Safe", key: {"PATH": "private-input"}}
+                with self.assertRaises(ValueError):
+                    self.stage([self.entry(content=value)])
+                self.assertFalse(self.public.exists())
+        for key in ("status", "attempt_id"):
+            value = {"schema_version": 1, "kind": "workflow-summary", "status": "inconclusive",
+                     "conclusion": "Safe", key: "AKIA1234567890ABCDEF"}
+            with self.subTest(label=key), self.assertRaises(ValueError):
+                self.stage([self.entry(content=value)])
+
+    def test_unknown_kinds_and_sensitive_file_names_are_rejected(self):
+        for name, kind in (("heap.dmp", "dump"), ("input.rsp", "summary"), (".env", "summary"),
+                           ("environment.json", "summary"), ("private/summary.json", "summary"),
+                           ("build.binlog", "binlog"), ("arbitrary.json", "json")):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                self.stage([self.entry(name, kind)])
+        self.assertFalse(self.public.exists())
+
+    def test_invalid_identity_size_and_extra_entry_fields_fail_before_writing(self):
+        entry = self.entry()
+        for mutate in (lambda e: e["file"].update(sha256="0" * 64),
+                       lambda e: e["file"].update(size_bytes=10**20),
+                       lambda e: e["file"].update(size_bytes=True),
+                       lambda e: e.update(access="public"),
+                       lambda e: e.update(kind="dump"),
+                       lambda e: e.update(conclusion="x" * (a.CONCLUSION_BYTES + 1))):
+            bad = copy.deepcopy(entry)
+            mutate(bad)
+            with self.subTest(value=bad), self.assertRaises(ValueError):
+                self.stage([bad])
+        self.assertFalse(self.public.exists())
+
+    def test_traversal_outside_sources_and_overlapping_roots_are_rejected(self):
+        entry = self.entry()
+        bad = copy.deepcopy(entry)
+        bad["file"]["path"] = str(self.private / ".." / "private" / "summary.json")
+        with self.assertRaises(ValueError):
+            self.stage([bad])
+        if os.name == "nt":
+            bad["file"]["path"] = str(self.private / "summary.json.")
+            with self.assertRaises(ValueError):
+                self.stage([bad])
+        outside = self.root / "outside.json"
+        outside.write_bytes(Path(entry["file"]["path"]).read_bytes())
+        bad["file"]["path"] = str(outside)
+        with self.assertRaises(ValueError):
+            self.stage([bad])
+        for root in (self.private, self.private / "upload", self.root):
+            with self.subTest(root=root), self.assertRaises(ValueError):
+                self.stage([entry], root)
+
+    def test_hardlinked_source_is_rejected(self):
+        entry = self.entry()
+        os.link(entry["file"]["path"], self.private / "alias.json")
+        with self.assertRaises(ValueError):
+            self.stage([entry])
+
+    def test_ancestor_symlink_and_junction_are_rejected(self):
+        target = self.root / "target"
+        target.mkdir()
+        link = self.private / "link"
+        if os.name == "nt":
+            import subprocess
+            subprocess.run(["cmd.exe", "/c", "mklink", "/J", str(link), str(target)],
+                           check=True, capture_output=True)
+            self.addCleanup(lambda: link.rmdir() if link.exists() else None)
+        else:
+            link.symlink_to(target, target_is_directory=True)
+        path = target / "summary.json"
+        data = json.dumps({"schema_version": 1, "kind": "workflow-summary",
+                           "status": "inconclusive", "conclusion": "Safe"}).encode()
+        path.write_bytes(data)
+        entry = {"file": {"path": str(link / path.name), "sha256": hashlib.sha256(data).hexdigest()},
+                 "kind": "summary", "conclusion": "Safe"}
+        with self.assertRaises(ValueError):
+            self.stage([entry])
+        with self.assertRaises(ValueError):
+            a.stage_artifacts(link, self.public, [], NOW)
+        with self.assertRaises(ValueError):
+            self.stage([], link / "upload")
+
+    def test_nonempty_upload_root_is_never_recursively_reused(self):
+        self.public.mkdir()
+        (self.public / "private.env").write_text("secret")
+        with self.assertRaises(ValueError):
+            self.stage([self.entry()])
+        self.assertEqual((self.public / "private.env").read_text(), "secret")
+
+    def test_text_and_manifest_aggregate_budgets_fail_closed(self):
+        entry = self.entry()
+        for constant in ("COMPACT_BYTES", "PUBLIC_BYTES"):
+            with self.subTest(constant=constant), mock.patch.object(a, constant, 100):
+                with self.assertRaises(ValueError):
+                    self.stage([entry])
+                self.assertFalse(self.public.exists())
+        with mock.patch.dict(a.c.LIMITS, {"json_bytes": 16}):
+            with self.assertRaises(ValueError):
+                self.stage([entry])
+
+    def test_oversized_text_is_rejected_not_truncated(self):
+        entry = self.entry(content=b"x" * 257)
+        with mock.patch.dict(a.c.LIMITS, {"json_bytes": 256}), self.assertRaises(ValueError):
+            self.stage([entry])
+        self.assertFalse(self.public.exists())
+
+    def test_binary_identity_and_conclusion_survive_without_copy_or_truncation(self):
+        entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace" + b"x" * 8192)
+        with mock.patch.object(a, "PUBLIC_BYTES", 4096):
+            result = self.stage([entry])
+        record = result["artifacts"][0]
+        self.assertEqual(record["sha256"], entry["file"]["sha256"])
+        self.assertEqual(record["size_bytes"], entry["file"]["size_bytes"])
+        self.assertEqual(record["availability"], "unavailable")
+        self.assertIn("budget", record["reason"])
+        self.assertEqual(record["conclusion"], entry["conclusion"])
+        self.assertEqual(list(self.public.iterdir()), [self.public / "manifest.json"])
+        self.assertEqual(Path(entry["file"]["path"]).stat().st_size, 8200)
+
+    def test_raw_trace_is_private_even_if_small(self):
+        entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace\0PASSWORD=secret")
+        result = self.stage([entry])
+        record = result["artifacts"][0]
+        self.assertEqual(record["access"], "private")
+        self.assertEqual(record["availability"], "unavailable")
+        self.assertNotIn(str(self.private), json.dumps(result))
+        self.assertNotIn("secret", (self.public / "manifest.json").read_text())
+        plan = a.retention_result(self.public, result, NOW)
+        self.assertEqual([f["kind"] for f in plan["files"]], ["manifest"])
+        self.assertEqual(plan["status"], "blocked_retention")
+        (self.public / "manifest.json").write_bytes(b"private replacement")
+        self.assertEqual(a.retention_result(self.public, result, NOW)["files"], [])
+
+    def test_real_recipient_roundtrip_and_pending_transport(self):
+        with TemporaryRecipient() as key:
+            for size in (0, 1, 65535, 65536, 65537, 131072):
+                with self.subTest(size=size):
+                    original = bytes(range(256)) * (size // 256) + bytes(range(size % 256))
+                    entry = self.entry("compiler.nettrace", "profile-trace", original)
+                    root = self.root / f"encrypted-{size}"
+                    manifest = a.stage_artifacts(self.private, root, [entry], NOW,
+                                                 encryption=key.config, provenance=PROVENANCE)
+                    record = manifest["artifacts"][0]
+                    self.assertEqual(record["availability"], "pending", record["reason"])
+                    self.assertEqual(record["sha256"], hashlib.sha256(original).hexdigest())
+                    ciphertext = root / record["location"]
+                    self.assertEqual(key.decrypt(ciphertext), original)
+                    self.assertEqual(record["transport_sha256"], hashlib.sha256(ciphertext.read_bytes()).hexdigest())
+                    self.assertEqual(record["artifact_id"], "profile-trace-" + record["transport_sha256"])
+                    self.assertEqual(record["transport_size_bytes"], ciphertext.stat().st_size)
+                    self.assertNotEqual(record["sha256"], record["transport_sha256"])
+                    self.assertEqual(record["provenance"], PROVENANCE)
+                    self.assertEqual(record["encryption"]["method"], "age-X25519")
+                    self.assertEqual(manifest["total_bytes"], sum(p.stat().st_size for p in root.iterdir()))
+                    status = a.verify_artifacts(root, manifest, NOW)[0]
+                    self.assertTrue(status["uploadable"])
+                    self.assertFalse(status["available"])
+                    self.assertEqual(status["reason"], "pending")
+                    self.assertNotIn("AGE-SECRET-KEY", (root / "manifest.json").read_text())
+
+    def test_encryption_failures_preserve_compact_evidence_without_plaintext(self):
+        with TemporaryRecipient() as key:
+            for case in ("missing", "malformed", "checksum", "missing-tool", "nonzero", "truncated", "overflow",
+                         "denied-read", "denied-write", "wrong-version", "tool-changed"):
+                with self.subTest(case=case):
+                    config = copy.deepcopy(key.config)
+                    if case == "missing":
+                        config = None
+                    elif case == "malformed":
+                        config["recipient"] = "ssh-rsa arbitrary"
+                    elif case == "checksum":
+                        config["recipient"] = config["recipient"][:-1] + ("q" if config["recipient"][-1] != "q" else "p")
+                    elif case == "missing-tool":
+                        config["tool"]["path"] = str(self.root / "missing-age.exe")
+                    elif case == "tool-changed":
+                        config["tool"]["sha256"] = "0" * 64
+                    root = self.root / case
+                    entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace-private-bytes")
+                    real = a.c.run_tool
+
+                    def run(arguments, *args, **kwargs):
+                        self.assertFalse(any(re.search(r"TOKEN|SECRET|PASSWORD|CREDENTIAL|API_KEY", k, re.I)
+                                             for k in args[1]))
+                        if "--version" in arguments and case == "wrong-version":
+                            return {"status": "collected", "stdout": "v1.0.0"}
+                        if "--encrypt" in arguments and case in ("denied-read", "denied-write"):
+                            raise PermissionError(case)
+                        if "--encrypt" in arguments and case == "nonzero":
+                            return {"status": "blocked_collection", "exit_status": 1}
+                        result = real(arguments, *args, **kwargs)
+                        if "--encrypt" in arguments and case == "truncated":
+                            Path(arguments[arguments.index("--output") + 1]).write_bytes(b"age-encryption.org/v1\n")
+                        return result
+
+                    with mock.patch.object(a.c, "run_tool", side_effect=run), mock.patch.object(
+                            a, "PUBLIC_BYTES", 5000 if case == "overflow" else a.PUBLIC_BYTES):
+                        if case == "overflow":
+                            entry = self.entry("compiler.nettrace", "profile-trace", bytes(4900))
+                        manifest = a.stage_artifacts(self.private, root, [self.entry(), entry], NOW,
+                                                     encryption=config, provenance=PROVENANCE)
+                    self.assertEqual(manifest["status"], "blocked_retention")
+                    binary = next(r for r in manifest["artifacts"] if r["type"] == "profile-trace")
+                    self.assertEqual(binary["availability"], "unavailable")
+                    self.assertTrue(binary["reason"])
+                    self.assertEqual({p.suffix for p in root.iterdir()}, {".json"})
+                    self.assertTrue(Path(entry["file"]["path"]).exists())
+
+    def test_sink_receipt_binds_inventory_and_never_promotes_local_fixture(self):
+        manifest = a.stage_artifacts(self.private, self.public, [self.entry()], NOW,
+                                     provenance=dict(PROVENANCE, run_id="100"))
+        for case in ("local", "actions", "delayed", "failed", "retention", "hash", "expiry", "interrupted", "expired"):
+            with self.subTest(case=case):
+                def sink(plan):
+                    self.assertEqual(sum(f["size_bytes"] for f in plan["files"]), manifest["total_bytes"])
+                    if case == "interrupted":
+                        raise KeyboardInterrupt()
+                    receipt = {"scope": "local_fixture" if case == "local" else "actions", "acknowledged": True,
+                               "manifest_sha256": plan["manifest_sha256"], "artifact_id": "123",
+                               "location": "https://github.com/dotnet/fsharp/actions/runs/100/artifacts/123",
+                               "retention_days": 14, "created_at": plan["created_at"], "expires_at": plan["expires_at"]}
+                    if case == "delayed":
+                        receipt.update(created_at=(NOW + timedelta(hours=1)).isoformat(),
+                                       expires_at=(NOW + timedelta(days=14, hours=1)).isoformat())
+                    field = {"failed": ("acknowledged", False), "retention": ("retention_days", 90),
+                             "hash": ("manifest_sha256", "0" * 64), "expiry": ("expires_at", NOW.isoformat())}
+                    if case in field:
+                        receipt[field[case][0]] = field[case][1]
+                    return receipt
+
+                if case in ("local", "actions", "delayed"):
+                    records = a.acknowledge_artifacts(self.public, manifest,
+                                                     NOW + timedelta(hours=1) if case == "delayed" else NOW, sink)
+                    self.assertEqual(records[0]["availability"], "pending" if case == "local" else "available")
+                    a.mem.validate_artifact(records[0])
+                    self.assertEqual(records[0]["expires_at"], manifest["expires_at"])
+                else:
+                    with self.assertRaises(KeyboardInterrupt if case == "interrupted" else ValueError):
+                        now = iter((NOW, NOW + timedelta(days=14))).__next__ if case == "expired" else NOW
+                        a.acknowledge_artifacts(self.public, manifest, now, sink)
+                self.assertEqual(manifest["artifacts"][0]["availability"], "pending")
+
+    def test_legacy_manifest_cannot_authorize_plaintext_binary_transport(self):
+        manifest = self.stage([self.entry()])
+        record = manifest["artifacts"][0]
+        manifest["schema_version"] = 1
+        record.pop("schema_version")
+        record["availability"] = "available"
+        for kind in ("summary", "profile-trace"):
+            with self.subTest(kind=kind):
+                old = self.public / record["location"]
+                record.update(type=kind, kind=kind)
+                record["location"] = record["artifact_id"] + (".json" if kind == "summary" else ".age")
+                old.rename(self.public / record["location"])
+                while True:
+                    total = len(a.mem.encoded(manifest)) + record["size_bytes"]
+                    if total == manifest["total_bytes"]:
+                        break
+                    manifest["total_bytes"] = total
+                (self.public / "manifest.json").write_bytes(a.mem.encoded(manifest))
+                result = a.verify_artifacts(self.public, manifest, NOW)[0]
+                self.assertFalse(result["available"])
+                self.assertEqual(result["uploadable"], kind == "summary")
+
+    def test_owned_dump_analysis_encrypts_actual_bytes_then_removes_only_plaintext(self):
+        owned = a.create_dump_workspace(self.root / "dumps", [self.public])
+        original = b"MDMP" + bytes(range(256)) * 300
+        with TemporaryRecipient() as key:
+            for fails in (False, True):
+                with self.subTest(analysis_failed=fails):
+                    path = owned.path / "heap.dmp"
+                    path.write_bytes(original)
+                    file = a.c.m.file_record(path)
+                    destination = self.root / ("dump-public-" + str(fails))
+                    sequence = []
+
+                    def analyze(path):
+                        sequence.append("analyze")
+                        self.assertEqual(path.read_bytes(), original)
+                        if fails:
+                            raise KeyboardInterrupt()
+                        return "Heap statistics, not retained bytes"
+
+                    def retain(receipt, conclusion):
+                        sequence.append("encrypt")
+                        return a.stage_artifacts(owned.path, destination, [
+                            {"file": file, "kind": "dump", "conclusion": conclusion}], NOW,
+                            encryption=key.config, provenance=PROVENANCE, dump_workspace=owned)["artifacts"][0]
+
+                    if fails:
+                        with self.assertRaises(KeyboardInterrupt) as caught:
+                            a.analyze_owned_dump(owned, file, analyze, NOW, retain=retain)
+                        record = caught.exception.artifact
+                    else:
+                        record = a.analyze_owned_dump(owned, file, analyze, NOW, retain=retain)
+                    self.assertEqual(sequence, ["analyze", "encrypt"])
+                    self.assertFalse(path.exists())
+                    self.assertEqual(key.decrypt(destination / record["location"]), original)
+                    self.assertEqual(record["type"], "dump")
+
+    def test_dump_retention_interruption_preserves_hash_and_explicit_cleanup_failure(self):
+        owned = a.create_dump_workspace(self.root / "dumps", [self.public])
+        path = owned.path / "heap.dmp"
+        for failure in ("cancelled", "retention-denied", "delete-denied"):
+            with self.subTest(failure=failure):
+                path.write_bytes(b"MDMPowned bytes")
+                file = a.c.m.file_record(path)
+                original = a._unlink_open_file
+
+                def unlink(target, stream):
+                    if failure == "delete-denied" and target == path:
+                        raise PermissionError("owned plaintext deletion denied")
+                    return original(target, stream)
+
+                error = KeyboardInterrupt if failure == "cancelled" else PermissionError
+                with mock.patch.object(a, "_unlink_open_file", unlink), self.assertRaises(error) as raised:
+                    a.analyze_owned_dump(owned, file, lambda _: "Heap statistics", NOW,
+                                         retain=mock.Mock(side_effect=error("retention interrupted"))
+                                         if failure != "delete-denied" else None)
+                if failure != "delete-denied":
+                    self.assertEqual(raised.exception.artifact["sha256"], file["sha256"])
+                    self.assertEqual(raised.exception.artifact["availability"], "unavailable")
+                self.assertEqual(path.exists(), failure == "delete-denied")
+
+    def test_atomic_staging_write_denial_and_collision_leave_no_uploadable_root(self):
+        entry = self.entry()
+        real = Path.open
+        for case in ("denied", "directory", "collision"):
+            with self.subTest(case=case):
+                if case == "directory":
+                    Path(entry["file"]["path"]).unlink()
+                    Path(entry["file"]["path"]).mkdir()
+                def write(path, mode="r", *args, **kwargs):
+                    if case == "denied" and mode == "xb":
+                        raise PermissionError("denied output")
+                    return real(path, mode, *args, **kwargs)
+                with mock.patch.object(Path, "open", write), self.assertRaises((ValueError, OSError)):
+                    self.stage([entry], self.private if case == "collision" else self.public)
+                self.assertFalse(self.public.exists())
+                if case == "directory":
+                    Path(entry["file"]["path"]).rmdir()
+                    entry = self.entry()
+
+    def test_source_inventory_reuses_collector_total_bound(self):
+        entries = [self.entry(f"trace-{i}.nettrace", "profile-trace", b"Nettrace" + bytes([i]) * 64)
+                   for i in range(2)]
+        with mock.patch.dict(a.c.LIMITS, {"total_bytes": 100}), self.assertRaises(ValueError):
+            self.stage(entries)
+        self.assertFalse(self.public.exists())
+
+    def test_previous_staging_budget_includes_ciphertext_overhead(self):
+        with TemporaryRecipient() as key:
+            entry = self.entry("compiler.nettrace", "profile-trace", b"Nettrace" + bytes(8192))
+            entries = [self.entry(), entry]
+            reference = a.stage_artifacts(self.private, self.root / "reference", entries, NOW, encryption=key.config)
+            self.assertLess(entry["file"]["size_bytes"], reference["total_bytes"] - 1)
+            for bound in ("total", "compact"):
+                with self.subTest(bound=bound):
+                    root = self.root / bound
+                    prior = {"used_bytes": a.PUBLIC_BYTES - reference["total_bytes"] + 1} if bound == "total" else {
+                        "used_compact_bytes": a.COMPACT_BYTES - 100}
+                    if bound == "compact":
+                        with self.assertRaisesRegex(ValueError, "aggregate budget exceeded"):
+                            a.stage_artifacts(self.private, root, entries, NOW,
+                                              encryption=key.config, **prior)
+                        self.assertFalse(root.exists())
+                    else:
+                        manifest = a.stage_artifacts(self.private, root, entries, NOW,
+                                                     encryption=key.config, **prior)
+                        self.assertEqual(manifest["status"], "blocked_retention")
+                        self.assertLessEqual(manifest["total_bytes"] + prior["used_bytes"], a.PUBLIC_BYTES)
+                        self.assertEqual({p.suffix for p in root.iterdir()}, {".json"})
+
+    def test_expiry_checks_current_bytes_and_never_trusts_recorded_location(self):
+        manifest = self.stage([self.entry()])
+        self.assertTrue(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["available"])
+        expires = NOW + timedelta(days=14)
+        self.assertEqual(a.verify_artifacts(self.public, manifest, expires)[0]["reason"], "expired")
+        record = manifest["artifacts"][0]
+        path = self.public / record["location"]
+        original = path.read_bytes()
+        path.write_bytes(b"x" * len(original))
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+        path.unlink()
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+        bad = copy.deepcopy(manifest)
+        bad["artifacts"][0]["location"] = str(self.private / "summary.json")
+        self.assertFalse(a.verify_artifacts(self.public, bad, NOW)[0]["uploadable"])
+
+    def test_restart_rejects_linked_staged_content(self):
+        manifest = self.stage([self.entry()])
+        path = self.public / manifest["artifacts"][0]["location"]
+        os.link(path, self.root / "alias.json")
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+
+    def test_restart_cannot_extend_fixed_retention_or_accept_missing_manifest(self):
+        manifest = self.stage([self.entry()])
+        changed = copy.deepcopy(manifest)
+        changed["artifacts"][0]["expires_at"] = (NOW + timedelta(days=100)).isoformat()
+        with self.assertRaises(ValueError):
+            a.verify_artifacts(self.public, changed, NOW)
+        (self.public / "manifest.json").unlink()
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+
+    def test_restart_rejects_unlisted_public_inventory(self):
+        manifest = self.stage([self.entry()])
+        (self.public / "injected.env").write_text("PRIVATE=value")
+        self.assertFalse(a.verify_artifacts(self.public, manifest, NOW)[0]["uploadable"])
+
+    def test_duplicate_records_and_unbounded_entry_inventory_rejected(self):
+        entry = self.entry()
+        for entries in ([entry, entry], [entry] * (a.MAX_ENTRIES + 1)):
+            with self.assertRaises(ValueError):
+                self.stage(entries)
+        self.assertFalse(self.public.exists())
+
+    def test_malformed_and_nonfinite_json_are_rejected(self):
+        for value in (b'{"schema_version":1,"schema_version":1}', b'{"x":NaN}', b"\xff"):
+            with self.subTest(value=value), self.assertRaises((ValueError, UnicodeError)):
+                self.stage([self.entry(content=value)])
+
+    def test_dump_retention_has_no_plaintext_or_encryption_fallback(self):
+        result = a.dump_retention_policy()
+        self.assertEqual(result["status"], "owner_configuration_required")
+        self.assertFalse(result["plaintext_fallback"])
+        self.assertFalse(result["persistent"])
+        self.assertEqual(result["default"], "encrypted")
+
+    def test_dump_workspace_rejects_git_and_upload_ancestors(self):
+        with self.assertRaises(ValueError):
+            a.create_dump_workspace(ROOT / (".dump-forbidden-" + uuid.uuid4().hex), [self.public])
+        self.assertFalse((self.root / "dump").exists())
+        with mock.patch.object(a, "_outside_git"):
+            with self.assertRaises(ValueError):
+                a.create_dump_workspace(self.public / "dump", [self.public])
+        self.assertFalse(self.public.exists())
+
+    def test_owned_dump_cleanup_preserves_hash_and_never_unlinks_replacement(self):
+        with mock.patch.object(a, "_outside_git"):
+            owned = a.create_dump_workspace(self.root / "dump", [self.public])
+        dump = owned.path / "heap.dmp"
+        dump.write_bytes(b"MDMPprivate heap bytes")
+        record = a.c.m.file_record(dump)
+        receipt = a.claim_dump(owned, record)
+        result = a.remove_owned_dump(owned, receipt, "No retained growth", NOW)
+        self.assertFalse(dump.exists())
+        self.assertEqual(result["sha256"], record["sha256"])
+        self.assertEqual(result["availability"], "unavailable")
+        self.assertEqual(result["conclusion"], "No retained growth")
+        a.mem.validate_artifact(result)
+        dump.write_bytes(b"MDMPnew owned dump")
+        receipt = a.claim_dump(owned, a.c.m.file_record(dump))
+        dump.rename(owned.path / "previous.dmp")
+        dump.write_bytes(b"MDMPreplacement")
+        with self.assertRaises(ValueError):
+            a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
+        self.assertTrue(dump.exists())
+        if os.name != "nt":
+            self.assertEqual(stat.S_IMODE(owned.path.stat().st_mode), 0o700)
+
+    def test_dump_cleanup_requires_owned_root_and_matching_hash(self):
+        with mock.patch.object(a, "_outside_git"):
+            owned = a.create_dump_workspace(self.root / "dump", [self.public])
+        entry = self.entry("heap.dmp", "dump", b"MDMPnot owned")
+        with self.assertRaises(ValueError):
+            a.claim_dump(owned, entry["file"])
+        path = owned.path / "heap.dmp"
+        path.write_bytes(b"MDMPowned")
+        receipt = a.claim_dump(owned, a.c.m.file_record(path))
+        path.write_bytes(b"MDMPchanged")
+        with self.assertRaises(ValueError):
+            a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
+        self.assertTrue(path.exists())
+
+    def test_owned_dump_cleanup_rejects_replacement_after_validation(self):
+        for content in (b"MDMPoriginal", b"MDMPreplacement"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                owned = a.create_dump_workspace(Path(directory) / "dump-session")
+                path = owned.path / "heap.dmp"
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                record = a._record
+                original = owned.path / "original.dmp"
+
+                def replace_then_record(*args, **kwargs):
+                    path.rename(original)
+                    path.write_bytes(content)
+                    return record(*args, **kwargs)
+
+                with mock.patch.object(a, "_record", side_effect=replace_then_record):
+                    with self.assertRaises((ValueError, OSError)):
+                        a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                self.assertEqual(path.read_bytes(), content)
+                self.assertEqual(original.read_bytes(), b"MDMPoriginal")
+                self.assertEqual(a._identity(original.stat()), receipt["identity"])
+
+    def test_owned_dump_cleanup_holds_object_through_delete(self):
+        for content in (b"MDMPoriginal", b"MDMPreplacement"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                owned = a.create_dump_workspace(Path(directory) / "dump-session")
+                path = owned.path / "heap.dmp"
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                original = owned.path / "original.dmp"
+                unlink = a._unlink_open_file
+
+                def replace_before_delete(target, stream):
+                    if os.name == "nt":
+                        with self.assertRaises(PermissionError):
+                            path.rename(original)
+                        with self.assertRaises(PermissionError):
+                            path.write_bytes(content)
+                    else:
+                        path.rename(original)
+                        path.write_bytes(content)
+                    return unlink(target, stream)
+
+                with mock.patch.object(a, "_unlink_open_file", side_effect=replace_before_delete):
+                    if os.name == "nt":
+                        result = a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                        self.assertEqual(result["sha256"], receipt["sha256"])
+                        self.assertFalse(path.exists())
+                        self.assertFalse(original.exists())
+                    else:
+                        with self.assertRaisesRegex(ValueError, "Owned dump was replaced"):
+                            a.remove_owned_dump(owned, receipt, "Analyzed original", NOW)
+                        self.assertEqual(path.read_bytes(), content)
+                        self.assertEqual(original.read_bytes(), b"MDMPoriginal")
+
+    def test_dump_workspace_receipt_cannot_be_reconstructed_from_a_path(self):
+        entry = self.entry("heap.dmp", "dump", b"MDMPnot created by dump workspace")
+        forged = a.DumpWorkspace(self.private, a._identity(self.private.stat()))
+        with self.assertRaises(ValueError):
+            a.claim_dump(forged, entry["file"])
+
+    def test_dump_analysis_cleanup_covers_failure_and_oversized_conclusions(self):
+        with mock.patch.object(a, "_outside_git"):
+            owned = a.create_dump_workspace(self.root / "dump", [self.public])
+        path = owned.path / "heap.dmp"
+        for fails in (False, True):
+            with self.subTest(fails=fails):
+                path.write_bytes(b"MDMPephemeral")
+                record = a.c.m.file_record(path)
+                analyzer = mock.Mock(side_effect=RuntimeError("private analysis failure")) if fails else (
+                    mock.Mock(return_value="x" * (a.CONCLUSION_BYTES + 1)))
+                if fails:
+                    with self.assertRaises(RuntimeError) as raised:
+                        a.analyze_owned_dump(owned, record, analyzer, NOW)
+                    artifact = raised.exception.artifact
+                else:
+                    artifact = a.analyze_owned_dump(owned, record, analyzer, NOW)
+                self.assertFalse(path.exists())
+                self.assertEqual(artifact["sha256"], record["sha256"])
+                self.assertLessEqual(len(artifact["conclusion"].encode()), a.CONCLUSION_BYTES)
+                self.assertEqual(artifact["availability"], "unavailable")
+
+
+if __name__ == "__main__":
+    unittest.main()

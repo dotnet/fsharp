@@ -1,0 +1,16 @@
+<Project>
+  <Import Project="$(LocalFSharpCompilerPath)/UseLocalCompiler.Directory.Build.targets" />
+  <Target Name="CaptureCompilerPerf" AfterTargets="CoreCompile"
+          Condition="'$(MSBuildProjectName)' == 'FSharp.Compiler.Service' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Error Condition="'$(Configuration)' != 'Release' or '$(SkipCompilerExecution)' == 'true'"
+           Text="Compiler performance capture requires a real Release compilation." />
+    <Error Condition="'@(FscCommandLineArgs)' == ''" Text="Fsc did not return evaluated compiler arguments." />
+    <Error Condition="'$(ProduceReferenceAssembly)' != 'false' or '$(ProduceOnlyReferenceAssembly)' == 'true'"
+           Text="Reference assembly generation must be disabled: Fsc.CommandLineArgs omits the trailing refout option." />
+    <WriteLinesToFile File="$(CompilerPerfCaptureDir)/compiler.rsp" Lines="@(FscCommandLineArgs)"
+                      Overwrite="true" Encoding="UTF-8" />
+    <WriteLinesToFile File="$(CompilerPerfCaptureDir)/identity.txt"
+                      Lines="$(DotnetFscCompilerPath);$(Configuration);$(MSBuildProjectFullPath);$(TargetFramework)"
+                      Overwrite="true" Encoding="UTF-8" />
+  </Target>
+</Project>

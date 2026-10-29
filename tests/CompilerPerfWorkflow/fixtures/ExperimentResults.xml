@@ -1,0 +1,7 @@
+<assemblies>
+  <assembly total="1" passed="1" failed="0" skipped="0" errors="0">
+    <collection>
+      <test name="regression" method="regression" result="Pass" source-file="/synthetic/tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs" />
+    </collection>
+  </assembly>
+</assemblies>

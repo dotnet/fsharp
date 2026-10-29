@@ -1,0 +1,16 @@
+{
+  "loads": [
+    [{"status":404,"verified_missing":true}, "initialized"],
+    [{"status":404}, "blocked_setup"],
+    [{"status":403,"error":"permission denied"}, "blocked_setup"],
+    [{"status":429,"error":"throttled"}, "blocked_setup"],
+    [{"status":503,"error":"network failure"}, "blocked_setup"],
+    [{"status":200,"body":"{"}, "blocked_setup"],
+    [{"status":200,"body":"{\"schema_version\":2}"}, "blocked_setup"]
+  ],
+  "terminal_outcomes": ["completed_no_finding","blocked_setup","blocked_collection","inconclusive","rejected","cancelled"],
+  "retry": [
+    ["unchanged", false], ["title", false], ["source", false],
+    ["readme", false], ["path", true], ["workload", true], ["sdk", true], ["permission", true]
+  ]
+}
