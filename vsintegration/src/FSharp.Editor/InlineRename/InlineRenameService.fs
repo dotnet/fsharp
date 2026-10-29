@@ -60,9 +60,8 @@ type internal InlineRenameLocationSet
             let! newSolution =
                 applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
 
-            // Bare `_` names a binding nothing refers to: in expression position `_.M()` is the shorthand lambda.
-            // Read before normalization strips the backticks of ``_``, which is a referenceable name.
-            let isBareUnderscore = replacementText = "_"
+            let isUnescapedWildcardRenameOfUsedSymbol =
+                replacementText = "_" && locations.Length > 1
 
             let replacementText =
                 match symbolKind with
@@ -73,7 +72,7 @@ type internal InlineRenameLocationSet
 
             let replacementTextValid =
                 Tokenizer.isValidNameForSymbol (symbolKind, symbol, replacementText)
-                && not (isBareUnderscore && locations.Length > 1)
+                && not isUnescapedWildcardRenameOfUsedSymbol
 
             let documentIds = locations |> Seq.map (fun doc -> doc.Document.Id) |> Seq.distinct
             return new InlineRenameReplacementInfo(newSolution, replacementTextValid, documentIds) :> FSharpInlineRenameReplacementInfo
@@ -234,9 +233,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
     inherit FSharpInlineRenameServiceImplementation()
 
-    // Rewriting the uses without the declaration leaves a file that no longer compiles.
-    // The declaration of an active pattern case seen from a use is the whole `(|A|B|)`, so it must contain the use, not equal it.
-    static let declarationWouldBeRenamed (checkFileResults: FSharpCheckFileResults) (symbolUse: FSharpSymbolUse) ct =
+    static let hasDeclarationAmongUses (checkFileResults: FSharpCheckFileResults) (symbolUse: FSharpSymbolUse) ct =
         match symbolUse.Symbol.DeclarationLocation with
         | Some declRange when String.Equals(declRange.FileName, symbolUse.Range.FileName, StringComparison.Ordinal) ->
             checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken = ct)
@@ -270,7 +267,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
                 match symbolUse with
                 | None -> return Unchecked.defaultof<_>
-                | Some symbolUse when not (declarationWouldBeRenamed checkFileResults symbolUse ct) -> return Unchecked.defaultof<_>
+                | Some symbolUse when not (hasDeclarationAmongUses checkFileResults symbolUse ct) -> return Unchecked.defaultof<_>
                 | Some symbolUse ->
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | ValueNone -> return Unchecked.defaultof<_>
