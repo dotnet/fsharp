@@ -32,6 +32,7 @@
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="PathMapNavigationTests.fs" />
     <Compile Include="PEReferenceVersionTests.fs" />
+    <Compile Include="PEReferenceCacheTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
