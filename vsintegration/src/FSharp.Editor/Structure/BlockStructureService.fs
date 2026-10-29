@@ -156,8 +156,6 @@ open CancellableTasks
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
-    let emptyValue = FSharpBlockStructure ImmutableArray.empty
-
     interface IFSharpBlockStructureService with
 
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
@@ -166,12 +164,33 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
+                let! parseResults =
+                    cancellableTask {
+                        // A cancellation of its own making - the checker relabels the internal ones with
+                        // the caller's token - is no more an answer here than missing options are.
+                        let! parseResults =
+                            document.TryGetFSharpParseResultsAsync(nameof (FSharpBlockStructureService))
+                            |> CancellableTask.ifCanceledReturn ValueNone
+
+                        match parseResults with
+                        | ValueSome parseResults -> return parseResults
+                        | ValueNone ->
+                            // Outlining only needs a parse; while the project has no options (loading or
+                            // reloading) parse with the quick ones rather than collapse every region.
+                            return!
+                                document
+                                    .GetFSharpChecker()
+                                    .ParseFile(
+                                        document.FilePath,
+                                        sourceText.ToFSharpSourceText(),
+                                        document.GetFSharpQuickParsingOptions(),
+                                        userOpName = nameof (FSharpBlockStructureService)
+                                    )
+                    }
 
                 return
                     createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree
                     |> Seq.toImmutableArray
                     |> FSharpBlockStructure
             }
-            |> CancellableTask.ifCanceledReturn emptyValue
             |> CancellableTask.start cancellationToken
