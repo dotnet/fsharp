@@ -121,6 +121,7 @@ module internal FreeTypeVars =
 
         member this.WithTemplateReplacement(f, typars) =
             { this with
+                canCache = false
                 templateReplacement = Some(f, typars)
             }
 
