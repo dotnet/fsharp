@@ -82,13 +82,9 @@ param (
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
 
-# MSBuild's multi-threaded mode isn't run on CI unless it was explicitly requested via -msbuildMultiThreaded.
-# tools.ps1 reads $msbuildMultiThreaded, so this has to be settled before Arcade is imported.
-if ($ci -and -not $PSBoundParameters.ContainsKey('msbuildMultiThreaded')) {
-    $msbuildMultiThreaded = $false
-}
 $BuildCategory = ""
 $BuildMessage = ""
+$bootstrapMultiThreaded = !$PSBoundParameters.ContainsKey('msbuildMultiThreaded') -or $msbuildMultiThreaded
 
 $desktopTargetFramework = "net472"
 # Read product TFM from centralized source of truth via MSBuild
@@ -827,7 +823,7 @@ try {
 
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
-        $bootstrapDir = Make-BootstrapBuild
+        $bootstrapDir = Make-BootstrapBuild -msbuildMultiThreaded $bootstrapMultiThreaded
     }
 
     $script:BuildMessage = "Failure building product"

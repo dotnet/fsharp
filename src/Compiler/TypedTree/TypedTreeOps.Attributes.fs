@@ -7,6 +7,7 @@ open System
 open System.CodeDom.Compiler
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.ComponentModel
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -188,6 +189,19 @@ module internal ILExtensions =
                 | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
                 | "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" -> WellKnownILAttributes.RequireNamedArgumentsAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
+                | "System.ComponentModel.EditorBrowsableAttribute" ->
+                    let state =
+                        match attr with
+                        | ILAttribute.Decoded(_, [ ILAttribElem.Int32 state ], _) -> state
+                        // Read in place rather than through decodeILAttribData, which allocates: prolog, one int32, no named arguments
+                        | ILAttribute.Encoded(_, bytes, _) when bytes.Length = 8 && bytes[0] = 1uy && bytes[1] = 0uy ->
+                            BitConverter.ToInt32(bytes, 2)
+                        | _ -> int EditorBrowsableState.Always
+
+                    match enum<EditorBrowsableState> state with
+                    | EditorBrowsableState.Never -> WellKnownILAttributes.EditorBrowsableNever
+                    | EditorBrowsableState.Advanced -> WellKnownILAttributes.EditorBrowsableAdvanced
+                    | _ -> WellKnownILAttributes.None
                 | _ -> WellKnownILAttributes.None
 
     /// Compute well-known attribute flags for an ILAttributes collection.
