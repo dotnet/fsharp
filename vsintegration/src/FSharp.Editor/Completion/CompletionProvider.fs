@@ -472,8 +472,8 @@ type internal FSharpCompletionProvider
                         |> ValueOption.defaultValue [||]
 
                     let ctx =
-                        ParsedInput.FindNearestPointToInsertOpenDeclaration
-                            (Line.fromZ line.LineNumber)
+                        ParsedInput.FindNearestPointToInsertOpenDeclarationAt
+                            (Position.fromZ line.LineNumber (item.Span.Start - line.Start))
                             parseResults.ParseTree
                             fullNameIdents
                             insertionPoint

@@ -199,9 +199,30 @@ module public ParsedInput =
             ShortIdents)
                 -> (InsertionContextEntity * InsertionContext)[])
 
+    /// Like `TryFindInsertionContext`, for a use at a position: on the line of a nested module declared in one line
+    /// that carries an attribute, only a use after the start of the module's body is inside the module.
+    val internal TryFindInsertionContextAt:
+        currentPos: pos ->
+        parsedInput: ParsedInput ->
+        partiallyQualifiedName: MaybeUnresolvedIdent[] ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) *
+            ShortIdents option (*  entityNamespace *) *
+            ShortIdents option (* entity: *) *
+            ShortIdents)
+                -> (InsertionContextEntity * InsertionContext)[])
+
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:
         currentLine: int ->
+        parsedInput: ParsedInput ->
+        entity: ShortIdents ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            InsertionContext
+
+    /// Like `FindNearestPointToInsertOpenDeclaration`, for a use at a position.
+    val internal FindNearestPointToInsertOpenDeclarationAt:
+        currentPos: pos ->
         parsedInput: ParsedInput ->
         entity: ShortIdents ->
         insertionPoint: OpenStatementInsertionPoint ->

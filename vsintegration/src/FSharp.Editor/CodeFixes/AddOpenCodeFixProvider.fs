@@ -208,8 +208,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     OpenStatementInsertionPoint.Nearest
 
                             let createEntity =
-                                ParsedInput.TryFindInsertionContext
-                                    unresolvedIdentRange.StartLine
+                                ParsedInput.TryFindInsertionContextAt
+                                    unresolvedIdentRange.Start
                                     parseResults.ParseTree
                                     maybeUnresolvedIdents
                                     insertionPoint
