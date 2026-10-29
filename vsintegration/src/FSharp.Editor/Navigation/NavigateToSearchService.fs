@@ -78,12 +78,11 @@ type internal FSharpNavigableItemsCache
     let UnknownDefines = "??"
 
     do
-        match workspace with
-        | null -> ()
-        | workspace ->
-            workspace.WorkspaceChanged.Add(fun e ->
+        if workspace <> null then
+            workspace.WorkspaceChanged.Add
+            <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
-                    cache.Clear())
+                    cache.Clear()
 
     let dependsOnDefines (parseTree: ParsedInput) =
         match parseTree with
@@ -234,6 +233,12 @@ type internal FSharpNavigableItemsCache
                         let! parseResults = document.GetFSharpQuickParseResultsAsync(nameof (FSharpNavigableItemsCache))
                         return store document currentVersion true parseResults.ParseTree
         }
+
+    /// Uses the version the document already knows: asking for it could read a closed file from disk.
+    member _.TryGetCachedNavigableItems(document: Document) =
+        match document.TryGetTextVersion() with
+        | true, currentVersion -> tryCached document ((=) currentVersion) |> ValueOption.map _.Items
+        | _ -> ValueNone
 
     member _.CreateMatcherFor(searchPattern: string) =
         let patternMatcher =
