@@ -95,16 +95,6 @@ Suggérer des noms pour les identificateurs non résolus ;</target>
         <target state="translated">Utiliser '&lt;&gt;' pour vérifier l'inégalité</target>
         <note />
       </trans-unit>
-      <trans-unit id="ConvertToReferenceAnonymousRecord">
-        <source>Convert to reference anonymous record</source>
-        <target state="new">Convert to reference anonymous record</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConvertToReferenceTuple">
-        <source>Convert to reference tuple</source>
-        <target state="new">Convert to reference tuple</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="translated">Utiliser '=' pour vérifier l'égalité</target>
@@ -121,15 +111,6 @@ Suggérer des noms pour les identificateurs non résolus ;</target>
         <target state="new">{0} in {1}
 {2}</target>
         <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
-      <trans-unit id="ConvertToStructAnonymousRecord">
-        <source>Convert to struct anonymous record</source>
-        <target state="new">Convert to struct anonymous record</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConvertToStructTuple">
-        <source>Convert to struct tuple</source>
-        <target state="new">Convert to struct tuple</target>
-        <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
@@ -467,6 +448,16 @@ Afficher les notes dans Info express</target>
       <trans-unit id="ConvertToStructTuple">
         <source>Convert to struct tuple</source>
         <target state="new">Convert to struct tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToReferenceAnonymousRecord">
+        <source>Convert to reference anonymous record</source>
+        <target state="new">Convert to reference anonymous record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructAnonymousRecord">
+        <source>Convert to struct anonymous record</source>
+        <target state="new">Convert to struct anonymous record</target>
         <note />
       </trans-unit>
     </body>

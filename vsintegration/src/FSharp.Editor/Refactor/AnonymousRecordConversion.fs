@@ -26,6 +26,7 @@ let kind: StructKind =
                 | SynExpr.AnonRecd _ -> true
                 | _ -> false
         IsPat = fun _ _ -> false
+        IsParameterList = fun _ _ -> false
         IsType =
             function
             | SynType.AnonRecd _ -> true
