@@ -204,6 +204,17 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false)
+
+        let ctorParameters () =
+            let candidates = ImmutableArrayBuilder.create ctorArgs.Length
+
+            for v in ctorArgs do
+                candidates.Add(struct (v.LogicalName, Item.Value(mkLocalValRef v)))
+
+            candidates.MoveToImmutable()
+
+        ReportXmlDocRefUses cenv.tcSink xmlDoc ctorParameters (fun () -> ImmutableArray.empty)
+        ReportXmlDocRefUses cenv.tcSink tcref.Deref.XmlDoc ctorParameters (fun () -> ImmutableArray.empty)
         ctorValScheme, ctorVal
 
     let thisVal =

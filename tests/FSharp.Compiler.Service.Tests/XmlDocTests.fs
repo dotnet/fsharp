@@ -205,6 +205,107 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
         error, Line range.StartLine, Col range.StartColumn, Line range.EndLine, Col range.EndColumn, x.Message)
     |> shouldEqual expected
 
+module XmlDocRefs =
+
+    open System.Collections.Immutable
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.Xml
+    open FSharp.Test.Utilities
+
+    let private firstLine = 10
+
+    let private docColumn = 4
+
+    let private textColumn = docColumn + "///".Length
+
+    let private rangeOfLine i (text: string) =
+        Range.mkRange "test.fs" (Position.mkPos (firstLine + i) docColumn) (Position.mkPos (firstLine + i) (textColumn + text.Length))
+
+    let private docOf (lines: string[]) =
+        let lineRanges = lines |> Seq.mapi rangeOfLine |> ImmutableArray.CreateRange
+        XmlDoc(lines, lineRanges, Seq.reduce Range.unionRanges lineRanges)
+
+    let private expectRefs (markedDoc: string) =
+        let lines, refs = extractRefs markedDoc
+        let doc = docOf lines
+
+        Assert.Equal<string * (int * int * int)>(
+            [ for r in refs -> r.Text, (firstLine + r.Line, textColumn + r.Column, textColumn + r.Column + r.Text.Length) ],
+            doc.GetRefs() |> Seq.map (fun r -> r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
+        )
+
+        doc
+
+    [<Fact>]
+    let ``every tag kind`` () =
+        let doc =
+            expectRefs """ <summary>Every tag that names something.</summary>
+ <param name="{ref}x{/ref}">first</param>
+ <paramref name="{ref}x{/ref}"/>
+ <typeparam name="{ref}T{/ref}">t</typeparam>
+ <typeparamref name="{ref}T{/ref}"/>"""
+
+        Assert.Equal<XmlDocRefKind>(
+            [| XmlDocRefKind.Param; XmlDocRefKind.ParamRef; XmlDocRefKind.TypeParam; XmlDocRefKind.TypeParamRef |],
+            doc.GetRefs() |> Seq.map _.Kind
+        )
+
+    [<Theory>]
+    [<InlineData("""<param   name = '{ref}x{/ref}' >spaces and single quotes</param>
+<param foo="1" name="{ref}y{/ref}" bar="2">other attributes first</param>
+<paramref name="{ref}z{/ref}" /><paramref name="{ref}w{/ref}"/>two tags on one line""", Label = "attribute syntax variations")>]
+    [<InlineData("""<param notname="wrong" name="{ref}x{/ref}">suffix of another attribute</param>
+<param foo="a>b" name="{ref}y{/ref}">angle bracket in a value</param>""", Label = "only a whole attribute name matches, and a quoted > does not end the tag")>]
+    [<InlineData("""<param
+   name="{ref}x{/ref}">on the next line</param>
+<typeparam other="1"
+           name="{ref}T{/ref}">after another attribute</typeparam>""", Label = "a tag whose attributes run over several lines")>]
+    [<InlineData("""<param name=
+"{ref}x{/ref}"/>
+<param name
+  =
+  '{ref}y{/ref}'>the equals sign and the value each on a line of their own</param>""", Label = "a value on a later line than its attribute name")>]
+    [<InlineData("\n   \n<param name=\"{ref}x{/ref}\">after two blank lines</param>", Label = "leading blank lines are skipped")>]
+    [<InlineData("""<param name="x
+y">split value</param>
+<!-- <param name="z">commented out</param> -->
+<parameter name="w">not one of the tags</parameter>
+<param>no name</param>""", Label = "a value that runs over a line break, xml comments and unrelated tags name nothing")>]
+    [<InlineData("""<param name="x">closed</param>
+<param name="y">never closed""", Label = "a badly formed doc names nothing")>]
+    [<InlineData("""Adds one.
+<param name="x">text, not a tag</param>""", Label = "a doc of plain text is an escaped summary and names nothing")>]
+    let ``GetRefs finds exactly the marked values`` markedDoc = expectRefs markedDoc |> ignore
+
+    [<Fact>]
+    let ``a doc without line ranges has no refs`` () =
+        Assert.Empty(XmlDoc([| """<param name="x"/>""" |], Range.range0).GetRefs())
+        Assert.Empty(XmlDoc([| """<param name="x"/>""" |], Unchecked.defaultof<ImmutableArray<range>>, Range.range0).GetRefs())
+
+    [<Fact>]
+    let ``a merged doc keeps its refs when both halves have line ranges`` () =
+        let merged = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (docOf [| """<param name="y"/>""" |])
+        Assert.Equal<string>([| "x"; "y" |], merged.GetRefs() |> Seq.map _.Text)
+
+        let withoutRanges = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (XmlDoc([| """<param name="y"/>""" |], Range.range0))
+        Assert.Empty(withoutRanges.GetRefs())
+
+[<Fact>]
+let ``typeparam of a signature val that is generic through an annotation`` () =
+    let _, checkResults =
+        getParseAndCheckResultsOfSignatureFile """
+module Test
+
+/// <typeparam name="T">The element type.</typeparam>
+val id: x: 'T -> 'T
+"""
+
+    let docUses =
+        checkResults.GetUsesOfSymbolInFile(findSymbolByName "T" checkResults, relatedSymbolKinds = RelatedSymbolUseKind.XmlDocParameter)
+        |> Array.filter (fun use' -> use'.Range.StartLine = 4)
+
+    Assert.Single docUses |> ignore
+
 [<Fact>]
 let ``xml-doc eof``(): unit =
     checkSignatureAndImplementation """
