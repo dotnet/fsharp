@@ -29,6 +29,7 @@
     <Compile Include="CompletionProviderTests.fs" />
     <Compile Include="FindReferencesTests.fs" />
     <Compile Include="InlineRenameTests.fs" />
+    <Compile Include="FindReferencesFromCSharpTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="PathMapNavigationTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
@@ -100,6 +101,7 @@
 	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" />
+	<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
 
 	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />
