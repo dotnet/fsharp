@@ -689,6 +689,40 @@ type Foo =
         let backingFieldSymbols = allMfvs |> List.filter (fun mfv -> mfv.DisplayName.Contains("@"))
         Assert.True(backingFieldSymbols.IsEmpty, $"Compiler-generated backing field should not appear, but found: {backingFieldSymbols |> List.map (fun m -> m.DisplayName)}")
 
+    let private selfIdentifierRanges (checkResults: FSharpCheckFileResults) =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun su -> chooseMemberOrFunctionOrValue su |> Option.exists _.IsMemberThisValue)
+        |> Seq.map (fun su -> getRangeCoords su.Range)
+        |> Seq.sort
+        |> Seq.toList
+
+    [<Theory>]
+    [<InlineData "this">]
+    [<InlineData "self">]
+    [<InlineData "__">]
+    let ``Self identifier is reported at its declaration and at its uses`` (selfId: string) =
+        let _, checkResults = getParseAndCheckResults $"""
+namespace Foo
+
+type Foo() =
+    member {selfId}.M() = {selfId}.N()
+    member {selfId}.N() = 1
+"""
+        let n = selfId.Length
+
+        selfIdentifierRanges checkResults
+        |> shouldEqual [ (5, 11), (5, 11 + n); (5, 18 + n), (5, 18 + 2 * n); (6, 11), (6, 11 + n) ]
+
+    [<Fact>]
+    let ``Synthesized auto-property self identifier does not shadow the property range`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Foo
+
+type Foo =
+    member val AutoPropGetSet = 0 with get, set
+"""
+        selfIdentifierRanges checkResults |> shouldEqual []
+
     [<Fact>]
     let ``Property symbol is resolved for property`` () =
         let symbols = Checker.getSymbolUses """
