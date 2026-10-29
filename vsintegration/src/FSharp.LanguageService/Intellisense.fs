@@ -534,16 +534,16 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             span.iStartIndex
                     let textColorState = VsTextLines.TextColorState (VsTextView.Buffer view)
                     match colorizer.Value.GetTokenInformationAt(textColorState,line,col) with
-                    | ValueSome token as original when col > 0 && shouldTryToFindIdentToTheLeft token ->
+                    | Some token as original when col > 0 && shouldTryToFindIdentToTheLeft token ->
                         // try to step back one char
                         match colorizer.Value.GetTokenInformationAt(textColorState,line,col-1) with
-                        | ValueSome token as newInfo when token.CharClass <> FSharpTokenCharKind.WhiteSpace -> newInfo, col - 1
+                        | Some token as newInfo when token.CharClass <> FSharpTokenCharKind.WhiteSpace -> newInfo, col - 1
                         |   _ -> original, col
                     | otherwise -> otherwise, col
 
                 match tokenInformation with
-                |   ValueNone -> None
-                |   ValueSome token ->
+                |   None -> None
+                |   Some token ->
                         match token.CharClass, token.ColorClass with
                         |   FSharpTokenCharKind.Keyword, _
                         |   FSharpTokenCharKind.Operator, _
