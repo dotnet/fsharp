@@ -684,7 +684,6 @@ module internal Tokenizer =
         [
             let lines = sourceText.Lines
             let struct (generation, resumableLines) = sourceTextDataCache.BeginScan sourceText
-
             // Go backwards to find the last cached scanned line that is valid
             let struct (scanStartLine, validStart) =
                 let mutable i = min startLine (resumableLines - 1)
