@@ -8,6 +8,7 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
+    | AnonUnions
     | NullnessChecking
     | UnionIsPropertiesVisible
     | UnmanagedConstraintCsharpInterop

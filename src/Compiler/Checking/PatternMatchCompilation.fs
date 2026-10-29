@@ -653,6 +653,47 @@ let discrimsEq (g: TcGlobals) d1 d2 =
 
   | _ -> false
 
+/// Exhaustiveness of anonymous union pattern matching
+let isAnonymousUnionExhaustive g amap m constituents (nullness: Nullness) discrims refuted path =
+    // Accumulate all discriminators from current and refuted sets
+    let allDiscrims =
+        discrims @
+        (refuted |> List.collect (fun refutedItem ->
+            match refutedItem with
+            | RefutedInvestigation(p, ds) when pathEq p path -> ds
+            | _ -> []))
+
+    let hasNullCoverage =
+        allDiscrims |> List.exists (function DecisionTreeTest.IsNull -> true | _ -> false)
+
+    if not hasNullCoverage && nullness.Evaluate() = NullnessInfo.WithNull then
+        false
+    else
+        constituents |> List.forall (fun constituent ->
+            allDiscrims |> List.exists (fun discrim ->
+                match discrim with
+                | DecisionTreeTest.IsInst (_, tgtTy) ->
+                    TypeSubsumesTypeForExhaustiveness 0 g amap m tgtTy constituent
+                | _ -> false))
+
+let isAnonymousUnionAndExhaustive g amap m srcTy discrims refuted path =
+    srcTy
+    |> stripTyEqns g
+    |> (function
+    | TType_anon_union(_, constituents, nullness) -> isAnonymousUnionExhaustive g amap m constituents nullness discrims refuted path
+    | _ -> false)
+
+let isAnonymousUnionDiscrimImpossible g amap m discrim =
+    match discrim with
+    | DecisionTreeTest.IsInst (srcTy, tgtTy) ->
+        match stripTyEqns g srcTy with
+        | TType_anon_union(_, constituents, _) ->
+            constituents
+            |> List.forall (fun constituent ->
+                computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m constituent tgtTy = Implication.Fails)
+        | _ -> false
+    | _ -> false
+
 /// Redundancy of 'isinst' patterns
 let isDiscrimSubsumedBy g amap m discrim taken =
     discrimsEq g discrim taken
@@ -1290,28 +1331,43 @@ let private CompilePatternBasic
                     // All these constructs should have been eliminated in BindProjectionPattern
                     failwith "Unexpected pattern"
                 else
-                    let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
+                    let originalFrontiers = frontiers
+                    let frontiers =
+                        originalFrontiers
+                        |> List.filter (fun (Frontier(_, active, _)) ->
+                            if isMemOfActives path active then
+                                let _, patAtActive = lookupActive path active
+                                getDiscrimOfPattern patAtActive
+                                |> Option.exists (isAnonymousUnionDiscrimImpossible g amap patAtActive.Range)
+                                |> not
+                            else
+                                true)
 
-                    let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr
+                    if frontiers.Length <> originalFrontiers.Length then
+                        investigateMemoized refuted frontiers
+                    else
+                        let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
-                    // For each case, recursively compile the residue decision trees that result if that case successfully matches
-                    let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt
+                        let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr
 
-                    assert (not (isNil simulSetOfCases))
+                        // For each case, recursively compile the residue decision trees that result if that case successfully matches
+                        let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt
 
-                    // Work out what the default/fall-through tree looks like, is any
-                    // Check if match is complete, if so optimize the default case away.
-                    let defaultTreeOpt = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
+                        assert (not (isNil simulSetOfCases))
 
-                    // OK, build the whole tree and whack on the binding if any
-                    let finalDecisionTree =
-                        let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
-                        let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
-                        match bindOpt with
-                        | None -> tree
-                        | Some bind -> TDBind (bind, tree)
+                        // Work out what the default/fall-through tree looks like, is any
+                        // Check if match is complete, if so optimize the default case away.
+                        let defaultTreeOpt = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
 
-                    finalDecisionTree
+                        // OK, build the whole tree and whack on the binding if any
+                        let finalDecisionTree =
+                            let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
+                            let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
+                            match bindOpt with
+                            | None -> tree
+                            | Some bind -> TDBind (bind, tree)
+
+                        finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
         let vs2 = GetValsBoundByClause i refuted
@@ -1370,7 +1426,7 @@ let private CompilePatternBasic
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
     /// e.g. in the case of TPat_isinst. Ensure we only take at most one class of `TPat_query` at a time.
-    /// Record the clause numbers so we know which rule the TPat_query cam from, so that when we project through
+    /// Record the clause numbers so we know which rule the TPat_query came from, so that when we project through
     /// the frontier we only project the right rule.
     and ChooseSimultaneousEdges frontiers path =
         frontiers |> chooseSimultaneousEdgeSet [] (fun prev (Frontier (i, active, _)) ->
@@ -1537,6 +1593,15 @@ let private CompilePatternBasic
 
         let simulSetOfDiscrims = simulSetOfCases |> List.map (fun c -> c.Discriminator)
 
+        let anonUnionSrcTyOpt =
+            (let allDiscrims =
+                simulSetOfDiscrims @
+                (refuted |> List.collect (function
+                    | RefutedInvestigation(p, ds) when pathEq p path -> ds
+                    | _ -> []))
+             allDiscrims
+             |> List.tryPick (function DecisionTreeTest.IsInst (srcTy, _) -> Some srcTy | _ -> None))
+
         let isRefuted (Frontier (_i', active, _)) =
             isMemOfActives path active &&
             let _, patAtActive = lookupActive path active
@@ -1550,6 +1615,7 @@ let private CompilePatternBasic
         | DecisionTreeTest.Const (Const.SByte _) :: _  when simulSetOfCases.Length = 256 ->  None
         | DecisionTreeTest.Const Const.Unit :: _  ->  None
         | DecisionTreeTest.UnionCase (ucref, _) :: _ when  simulSetOfCases.Length = ucref.TyconRef.UnionCasesArray.Length -> None
+        | _ when anonUnionSrcTyOpt |> Option.exists (fun srcTy -> isAnonymousUnionAndExhaustive g amap mExpr srcTy simulSetOfDiscrims refuted path) -> None
         | DecisionTreeTest.ActivePatternCase _ :: _ -> error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", mMatch))
         | _ ->
             let fallthroughPathFrontiers = List.filter (isRefuted >> not) fallthroughPathFrontiers

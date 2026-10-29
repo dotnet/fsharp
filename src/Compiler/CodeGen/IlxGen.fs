@@ -728,6 +728,9 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         let cuspec, idx = GenUnionCaseSpec cenv m tyenv ucref args
         GetILTypeForAlternative cuspec idx
 
+    // should never be reached, always erased by stripTyEqnsAndMeasureEqns
+    | TType_anon_union(anonUnionInfo, _, _) -> GenTypeArgAux cenv m tyenv anonUnionInfo.CommonAncestorTy
+
     | TType_forall(tps, tau) ->
         let tps = DropErasedTypars tps
 

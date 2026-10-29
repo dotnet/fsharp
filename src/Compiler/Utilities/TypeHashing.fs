@@ -229,6 +229,8 @@ module rec HashTypes =
             |> hashListOrderMatters (hashTType g)
             |> pipeToHash (anonInfo.SortedNames |> hashListOrderMatters hashText)
             |> addFullStructuralHash (evalAnonInfoIsStruct anonInfo)
+
+        | TType_anon_union(_, t, _) -> hashListOrderIndependent (hashTType g) t
         | TType_tuple(tupInfo, t) ->
             t
             |> hashListOrderMatters (hashTType g)
@@ -545,6 +547,12 @@ module StructuralUtilities =
 
             | TType_anon(info, tys) ->
                 emitStamp ctx info.Stamp
+
+                for arg in tys do
+                    emitTType ctx arg
+
+            | TType_anon_union(_, tys, n) ->
+                emitNullness ctx n
 
                 for arg in tys do
                     emitTType ctx arg
