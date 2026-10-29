@@ -33,8 +33,31 @@ type internal InlineRenameLocationSet
 
     inherit FSharpInlineRenameLocationSet()
 
+    static let docTagName (replacementText: string) =
+        if
+            replacementText.StartsWith("'", StringComparison.Ordinal)
+            || replacementText.StartsWith("^", StringComparison.Ordinal)
+        then
+            replacementText.Substring(1)
+        elif Tokenizer.isDoubleBacktickIdent replacementText then
+            replacementText.Substring(2, replacementText.Length - 4)
+        else
+            replacementText
+
+    static let isXmlDocLine (sourceText: SourceText) (span: TextSpan) =
+        let line = sourceText.Lines.GetLineFromPosition(span.Start)
+        let mutable i = line.Start
+
+        while i < line.End && Char.IsWhiteSpace sourceText[i] do
+            i <- i + 1
+
+        i + 3 <= line.End
+        && sourceText[i] = '/'
+        && sourceText[i + 1] = '/'
+        && sourceText[i + 2] = '/'
+
     static let rec applyChanges
-        replacementText
+        (replacementText: string)
         (solution: Solution)
         (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
         =
@@ -45,9 +68,20 @@ type internal InlineRenameLocationSet
             | [] -> return solution
             | (document, locations) :: rest ->
                 let! oldSource = document.GetTextAsync(cancellationToken)
+                let docName = docTagName replacementText
 
                 let newSource =
-                    oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
+                    oldSource.WithChanges(
+                        locations
+                        |> List.map (fun l ->
+                            let text =
+                                if isXmlDocLine oldSource l.TextSpan then
+                                    docName
+                                else
+                                    replacementText
+
+                            TextChange(l.TextSpan, text))
+                    )
 
                 return! applyChanges replacementText (solution.WithDocumentText(document.Id, newSource)) rest
         }
@@ -98,7 +132,7 @@ type internal InlineRenameInfo
             }
 
     let symbolUses =
-        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document) ct
+        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document, RelatedSymbolUseKind.AllInCodeAndDocs) ct
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 

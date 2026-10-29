@@ -40,7 +40,7 @@ type internal RemoveSuperfluousCaptureForUnionCaseWithNoDataCodeFixProvider [<Im
                     RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)
 
                 let classifications =
-                    checkResults.GetSemanticClassification(Some m, RelatedSymbolUseKind.All)
+                    checkResults.GetSemanticClassification(Some m, RelatedSymbolUseKind.AllInCode)
 
                 return
                     classifications

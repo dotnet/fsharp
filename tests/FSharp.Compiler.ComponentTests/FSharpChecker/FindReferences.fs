@@ -945,7 +945,7 @@ let explicitNested = { outer with Inner = { state with Count = 3 } }
                 [|3, 5, 3, 10, "Outer"
                   7, 13, 7, 43, "{ outer with Inner.Count = 2 }"
                   8, 21, 8, 68, "{ outer with Inner = { state with Count = 3 } }"|],
-                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
                 |> Array.map (fun use' -> describe use'.Range)
                 |> Array.sort)
             Assert.Equal<(int * int * int * int * string) array>(
@@ -1131,6 +1131,127 @@ let count = list.Count
                     let assembly = symbolUse.Value.Symbol.Assembly
                     Assert.True(assembly.SimpleName.StartsWith("System") || assembly.SimpleName = "mscorlib" || assembly.SimpleName = "netstandard",
                         $"Assembly should be a system assembly, got: {assembly.SimpleName}"))
+            }
+
+/// https://github.com/dotnet/fsharp/issues/20630 https://github.com/dotnet/fsharp/issues/15134
+module XmlDocParameters =
+
+    open System
+    open FSharp.Test.Utilities
+
+    let private lineAfterModuleHeader = 2
+
+    let private legacyAll = enum<RelatedSymbolUseKind> 0x7FFFFFFF
+
+    let private expectDocUses (markedSource: string) =
+        let lines, refs = extractRefs markedSource
+        let rangeOf (r: MarkedRef) = lineAfterModuleHeader + r.Line, r.Column, r.Column + r.Text.Length
+        let isInDoc (r: MarkedRef) = lines[r.Line].TrimStart().StartsWith("///", StringComparison.Ordinal)
+        let codeRanges = refs |> List.filter (isInDoc >> not) |> List.map rangeOf |> List.sort |> List.toArray
+        let allRanges = refs |> List.map rangeOf |> List.sort |> List.toArray
+
+        checkAllSymbols (String.concat "\n" lines) (fun result allUses ->
+            let symbol =
+                (allUses |> Seq.find (fun su -> (su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn) = codeRanges[0])).Symbol
+
+            let usesOf kinds = result.GetUsesOfSymbolInFile(symbol, ?relatedSymbolKinds = kinds) |> Seq.map _.Range
+
+            usesOf None |> expectRanges codeRanges
+            usesOf (Some RelatedSymbolUseKind.AllInCode) |> expectRanges codeRanges
+            usesOf (Some legacyAll) |> expectRanges codeRanges
+            usesOf (Some RelatedSymbolUseKind.XmlDocParameter) |> expectRanges allRanges
+            usesOf (Some RelatedSymbolUseKind.AllInCodeAndDocs) |> expectRanges allRanges)
+
+    [<Theory>]
+    [<InlineData("""
+/// <summary>Adds.</summary>
+/// <param name="{ref}x{/ref}">The first number.</param>
+/// <param name="y">Added to <paramref name="{ref}x{/ref}"/>.</param>
+let add {ref}x{/ref} y = {ref}x{/ref} + y
+""", Label = "param and paramref of a let-bound function")>]
+    [<InlineData("""
+/// <param name=
+/// "{ref}x{/ref}"/>
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "a param name on the line after its attribute")>]
+    [<InlineData("""
+/// <typeparam name="{ref}T{/ref}">The element type, see <typeparamref name="{ref}T{/ref}"/>.</typeparam>
+/// <param name="x">The value.</param>
+let id<{ref}'T{/ref}> (x: {ref}'T{/ref}) = x
+""", Label = "typeparam and typeparamref of an explicitly generic function")>]
+    [<InlineData("""
+/// <typeparam name="{ref}T{/ref}">The element type, see <typeparamref name="{ref}T{/ref}"/>.</typeparam>
+let id (x: {ref}'T{/ref}) = x
+""", Label = "typeparam of a function that is generic through an annotation")>]
+    [<InlineData("""
+type C() =
+    /// <param name="{ref}value{/ref}">What to keep.</param>
+    member this.Keep({ref}value{/ref}: int) = {ref}value{/ref}
+""", Label = "param of a member, not confused with this")>]
+    [<InlineData("""
+/// <summary>A holder.</summary>
+/// <param name="{ref}seed{/ref}">The initial value.</param>
+type Holder({ref}seed{/ref}: int) =
+    member _.Seed = {ref}seed{/ref}
+""", Label = "param of a primary constructor documented on the type")>]
+    [<InlineData("""
+/// <typeparam name="{ref}T{/ref}">The payload.</typeparam>
+type Box<{ref}'T{/ref}>(value: {ref}'T{/ref}) =
+    member _.Value = value
+""", Label = "typeparam of a generic type")>]
+    [<InlineData("""
+type Shape =
+    /// <param name="{ref}radius{/ref}">Distance from the centre.</param>
+    | Circle of {ref}radius{/ref}: float
+""", Label = "param of a union case field")>]
+    [<InlineData("""
+/// <param name="nope">Not a parameter.</param>
+/// <param name="{ref}x{/ref}">The parameter.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "an unknown name in the doc reports nothing and does not break the others")>]
+    [<InlineData("""
+/// <param name="{ref}x{/ref}">Once.</param>
+/// <param name="{ref}x{/ref}">Twice.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "a duplicated param name reports every occurrence")>]
+    [<InlineData("""
+/// <param name="{ref}a b{/ref}">Spaced.</param>
+let f {ref}``a b``{/ref} = {ref}``a b``{/ref}
+""", Label = "a backticked parameter is matched by its bare name")>]
+    [<InlineData("""
+/// <inheritdoc cref="System.Object.ToString"/>
+/// <include file="nope.xml" path="doc"/>
+/// <param name="{ref}x{/ref}">Still found.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "inheritdoc and an unexpanded include next to the tags")>]
+    [<InlineData("""
+/// <summary>Kept.</summary>
+/// <!-- <param name="x">Commented out.</param> -->
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "a tag inside an xml comment names nothing")>]
+    [<InlineData("""
+/// Plain text first: <param name="x">Text, not a tag.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+""", Label = "a doc that starts with plain text is an escaped summary and names nothing")>]
+    let ``every caller finds the uses in code, only one that asks for the names in docs finds those too`` markedSource =
+        expectDocUses markedSource
+
+    [<Fact>]
+    let ``param of a signature file val is found in code but its doc stays out of find all references`` () =
+        let signature = """
+/// <param name="x">The first number.</param>
+val add: x: int -> y: int -> int
+"""
+        let implementation = "let add x y = x + y"
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = implementation; SignatureFile = Custom signature })
+            .Workflow {
+                placeCursor "Source" "x"
+                findAllReferences (expectToFind [
+                    "FileSource.fsi", 4, 9, 10
+                    "FileSource.fs", 2, 8, 9
+                    "FileSource.fs", 2, 14, 15
+                ])
             }
 
 /// https://github.com/dotnet/fsharp/issues/16993

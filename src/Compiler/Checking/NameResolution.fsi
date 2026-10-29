@@ -2,6 +2,8 @@
 
 module internal FSharp.Compiler.NameResolution
 
+open System.Collections.Immutable
+
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -15,6 +17,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Xml
 
 exception NoConstructorsAvailableForType of TType * DisplayEnv * range
 
@@ -442,7 +445,7 @@ type internal TcResolutions =
     member CapturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>
 
     /// Related symbol uses reported via NotifyRelatedSymbolUse
-    member CapturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>
+    member CapturedRelatedSymbolUsesInCode: seq<struct (range * Item * RelatedSymbolUseKind)>
 
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
@@ -654,6 +657,23 @@ val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: ra
 
 /// Report a related symbol use at a source range (does not affect colorization or symbol info)
 val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
+
+val internal XmlDocTyparCandidates: typars: Typars -> ImmutableArray<struct (string * Item)>
+
+val internal ReportXmlDocRefs:
+    currentSink: ITypecheckResultsSink ->
+    docRefs: ImmutableArray<XmlDocRef> ->
+    parameters: ImmutableArray<struct (string * Item)> ->
+    typars: ImmutableArray<struct (string * Item)> ->
+        unit
+
+/// Report the names in a declaration's XML doc that name its parameters or type parameters as related uses of them
+val inline internal ReportXmlDocRefUses:
+    sink: TcResultsSink ->
+    doc: XmlDoc ->
+    [<InlineIfLambda>] parameters: (unit -> ImmutableArray<struct (string * Item)>) ->
+    [<InlineIfLambda>] typars: (unit -> ImmutableArray<struct (string * Item)>) ->
+        unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit

@@ -4,7 +4,9 @@
 /// Name environment and name resolution
 module internal FSharp.Compiler.NameResolution
 
+open System
 open System.Collections.Generic
+open System.Collections.Immutable
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -33,6 +35,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -2328,7 +2331,7 @@ type TcResolutions
      capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>,
-     capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>) =
+     capturedRelatedSymbolUses: ResizeArray<struct (range * Item * RelatedSymbolUseKind)>) =
 
     static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
@@ -2340,7 +2343,9 @@ type TcResolutions
 
     member _.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
 
-    member _.CapturedRelatedSymbolUses = capturedRelatedSymbolUses
+    member _.CapturedRelatedSymbolUsesInCode =
+        capturedRelatedSymbolUses
+        |> Seq.filter (fun struct (_, _, kind: RelatedSymbolUseKind) -> RelatedSymbolUseKind.AllInCode.HasFlag kind)
 
     static member Empty = empty
 
@@ -2351,12 +2356,14 @@ type TcSymbolUseData =
      DisplayEnv: DisplayEnv
      Range: range }
 
+let allAsCompiledIntoOlderCallers = enum<RelatedSymbolUseKind> 0x7FFFFFFF
+
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 ///
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>, formatSpecifierLocations: (range * int)[]) =
+type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, capturedRelatedSymbolUses: ResizeArray<struct (range * Item * RelatedSymbolUseKind)>, formatSpecifierLocations: (range * int)[]) =
 
     let toSymbolUseData (cnr: CapturedNameResolution) =
         { ItemWithInst = cnr.ItemWithInst; ItemOccurrence = cnr.ItemOccurrence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
@@ -2371,14 +2378,19 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 
     let relatedSymbolUses =
         capturedRelatedSymbolUses
-        |> ResizeArray.mapToSmallArrayChunks (fun (m, item, kind) ->
+        |> ResizeArray.mapToSmallArrayChunks (fun struct (m, item, kind) ->
             struct ({ ItemWithInst = { Item = item; TyparInstantiation = emptyTyparInst }; ItemOccurrence = ItemOccurrence.Use; DisplayEnv = DisplayEnv.Empty g; Range = m }, kind))
 
     let capturedRelatedSymbolUses = ()
     do capturedRelatedSymbolUses // don't capture this!
 
     member _.GetUsesOfSymbol(item, ?relatedSymbolKinds: RelatedSymbolUseKind) =
-        let kinds = defaultArg relatedSymbolKinds RelatedSymbolUseKind.None
+        let kinds =
+            match relatedSymbolKinds with
+            | Some kinds when kinds = allAsCompiledIntoOlderCallers -> RelatedSymbolUseKind.AllInCode
+            | Some kinds -> kinds
+            | None -> RelatedSymbolUseKind.None
+
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
@@ -2402,7 +2414,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
     let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
-    let capturedRelatedSymbolUses = ResizeArray<range * Item * RelatedSymbolUseKind>()
+    let capturedRelatedSymbolUses = ResizeArray<struct (range * Item * RelatedSymbolUseKind)>()
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
@@ -2514,7 +2526,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
         member sink.NotifyRelatedSymbolUse(m, item, kind) =
             if allowedRange m then
-                capturedRelatedSymbolUses.Add((m, item, kind))
+                capturedRelatedSymbolUses.Add(struct (m, item, kind))
 
         member sink.NotifyOpenDeclaration openDeclaration =
             capturedOpenDeclarations.Add openDeclaration
@@ -2650,6 +2662,46 @@ let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: Rel
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
+
+let XmlDocTyparCandidates (typars: Typars) =
+    let candidates = ImmutableArrayBuilder.create typars.Length
+
+    for tp in typars do
+        candidates.Add(struct (tp.Name, Item.TypeVar(tp.Name, tp)))
+
+    candidates.MoveToImmutable()
+
+let ReportXmlDocRefs
+    (currentSink: ITypecheckResultsSink)
+    (docRefs: ImmutableArray<XmlDocRef>)
+    (parameters: ImmutableArray<struct (string * Item)>)
+    (typars: ImmutableArray<struct (string * Item)>)
+    =
+    for docRef in docRefs do
+        let candidates =
+            match docRef.Kind with
+            | XmlDocRefKind.Param
+            | XmlDocRefKind.ParamRef -> parameters
+            | XmlDocRefKind.TypeParam
+            | XmlDocRefKind.TypeParamRef -> typars
+
+        for struct (name, item) in candidates do
+            if String.Equals(name, docRef.Text, StringComparison.Ordinal) then
+                currentSink.NotifyRelatedSymbolUse(docRef.Range, item, RelatedSymbolUseKind.XmlDocParameter)
+
+let inline ReportXmlDocRefUses
+    (sink: TcResultsSink)
+    (doc: XmlDoc)
+    ([<InlineIfLambda>] parameters: unit -> ImmutableArray<struct (string * Item)>)
+    ([<InlineIfLambda>] typars: unit -> ImmutableArray<struct (string * Item)>)
+    =
+    match sink.CurrentSink with
+    | Some currentSink when doc.NonEmpty ->
+        let docRefs = doc.GetRefs()
+
+        if not docRefs.IsEmpty then
+            ReportXmlDocRefs currentSink docRefs (parameters ()) (typars ())
+    | _ -> ()
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
