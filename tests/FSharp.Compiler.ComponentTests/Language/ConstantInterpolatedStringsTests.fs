@@ -34,10 +34,10 @@ let Verbatim = $@"\{nameof Root}" + $"{Root}"
 let Version = 2
 
 [<Literal>]
-let Scalars = $"v{Version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{Root}"
+let Scalars = $"v{Version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|{1.5}|{-0.25}|{100.0}|{0.0001}|{123456789012345.0}|{0.0}|%s{Root}"
 
 let root, version = Root, Version
-let scalarsAtRunTime = $"v{version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{root}"
+let scalarsAtRunTime = $"v{version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|{1.5}|{-0.25}|{100.0}|{0.0001}|{123456789012345.0}|{0.0}|%s{root}"
 
 type TagAttribute(tags: string[]) =
     inherit System.Attribute()
@@ -57,7 +57,7 @@ printfn "%s|%b" Scalars (Scalars = scalarsAtRunTime)
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains @"api/v2/items|api/v2/items/{id}|\Rootapi/v2|api/v2/items: 3|api/v2/a,api/v2/b|api/v2!|false"
-        |> withStdOutContains "v2-True|-1|18446744073709551615|-12.3400|api/v2|true"
+        |> withStdOutContains "v2-True|-1|18446744073709551615|-12.3400|1.5|-0.25|100|0.0001|123456789012345|0|api/v2|true"
 
     [<Fact>]
     let ``An Obsolete message can be a constant interpolated string`` () =
@@ -112,7 +112,11 @@ type FromLiteral = Provided.Text<Items>"""
         |> shouldSucceed
 
     [<Theory>]
-    [<InlineData("{1.5}", 267)>]
+    [<InlineData("{0.1 + 0.2}", 267)>]
+    [<InlineData("{-0.0}", 267)>]
+    [<InlineData("{0.00001}", 267)>]
+    [<InlineData("{1e15}", 267)>]
+    [<InlineData("{1.5f}", 267)>]
     [<InlineData("{Root,10}", 267)>]
     [<InlineData("%d{Version}", 267)>]
     [<InlineData("%s{Version}", 267)>]
@@ -121,7 +125,7 @@ type FromLiteral = Provided.Text<Items>"""
     [<InlineData("{System.DayOfWeek.Monday}", 267)>]
     [<InlineData("{dir}", 267)>]
     [<InlineData("{dir + dir}{missing}", 39)>]
-    let ``A hole must be a non-null constant string, integer, decimal, character or Boolean`` (hole: string, errorCode: int) =
+    let ``A hole must be a non-null constant whose text does not depend on the runtime`` (hole: string, errorCode: int) =
         preview $"""
 module Program
 
@@ -172,12 +176,12 @@ let Text = $"{1m / 0m}"
 module Program
 
 [<Literal>]
-let Twice = $"{1.5}{1.5}"
+let Twice = $"{1.5f}{1.5f}"
 """
         |> typecheck
         |> withDiagnostics
-            [ Error 267, Line 5, Col 16, Line 5, Col 19, "This is not a valid constant expression or custom attribute value"
-              Error 837, Line 5, Col 13, Line 5, Col 26, "This is not a valid constant expression" ]
+            [ Error 267, Line 5, Col 16, Line 5, Col 20, "This is not a valid constant expression or custom attribute value"
+              Error 837, Line 5, Col 13, Line 5, Col 28, "This is not a valid constant expression" ]
 
     [<Theory>]
     [<InlineData("preview")>]
@@ -190,10 +194,10 @@ module Program
 let Root = "api/v2"
 
 [<Literal>]
-let Unevaluated = false && ($"{1.5}" = "1.5")
+let Unevaluated = false && ($"{1.5f}" = "1.5")
 
 [<Literal>]
-let Picked = if true then Root else $"{1.5}"
+let Picked = if true then Root else $"{1.5f}"
 """
         |> withLangVersion langVersion
         |> typecheck
