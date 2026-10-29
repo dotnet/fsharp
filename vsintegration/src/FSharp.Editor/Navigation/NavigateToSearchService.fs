@@ -13,6 +13,7 @@ open System.Globalization
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.NavigateTo
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
@@ -59,10 +60,23 @@ type internal FSharpNavigableItemsCache
                 searchPattern,
                 PatternMatcherCreationOptions(
                     cultureInfo = CultureInfo.CurrentUICulture,
-                    flags = PatternMatcherCreationFlags.AllowFuzzyMatching,
+                    flags =
+                        (PatternMatcherCreationFlags.AllowFuzzyMatching
+                         ||| PatternMatcherCreationFlags.IncludeMatchedSpans),
                     containerSplitCharacters = [ '.' ]
                 )
             )
+
+        // The results window highlights spans of the name, but the matcher reports them in the candidate it was
+        // given, which carries the container before the name: keep the ones inside the name, at its own offsets.
+        let spansOfName (offset: int) (m: PatternMatch) =
+            [|
+                for span in m.MatchedSpans do
+                    if span.Start >= offset then
+                        Microsoft.VisualStudio.Text.Span(span.Start - offset, span.Length)
+            |]
+            |> ImmutableArray.CreateRange
+            |> m.WithMatchedSpans
 
         fun (item: NavigableItem) ->
             // PatternMatcher will not match operators and some backtick escaped identifiers.
@@ -70,16 +84,22 @@ type internal FSharpNavigableItemsCache
             let name = item.Name
 
             if item.NeedsBackticks then
+                let matchedSpan start =
+                    ImmutableArray.Create(Microsoft.VisualStudio.Text.Span(start, searchPattern.Length))
+
                 match name.IndexOf(searchPattern, StringComparison.CurrentCultureIgnoreCase) with
-                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false))
-                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false))
-                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false))
+                | i when i > 0 -> ValueSome(PatternMatch(PatternMatchKind.Substring, false, false, matchedSpan i))
+                | 0 when name.Length = searchPattern.Length -> ValueSome(PatternMatch(PatternMatchKind.Exact, false, false, matchedSpan 0))
+                | 0 -> ValueSome(PatternMatch(PatternMatchKind.Prefix, false, false, matchedSpan 0))
                 | _ -> ValueNone
             else
                 // full name with dots allows for path matching, e.g.
                 // "f.c.so.elseif" will match "Fantomas.Core.SyntaxOak.ElseIfNode"
-                patternMatcher.TryMatch $"{item.Container.FullName}.{name}"
+                let container = item.Container.FullName
+
+                patternMatcher.TryMatch $"{container}.{name}"
                 |> ValueOption.ofNullable
+                |> ValueOption.map (spansOfName (container.Length + 1))
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache: FSharpNavigableItemsCache) =
@@ -154,6 +174,10 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
         | PatternMatchKind.Fuzzy -> FSharpNavigateToMatchKind.Fuzzy
         | _ -> FSharpNavigateToMatchKind.None
 
+    /// Where in the name the search pattern matched, for the results window to highlight.
+    let nameMatchSpans (m: PatternMatch) =
+        ImmutableArray.CreateRange [| for span in m.MatchedSpans -> TextSpan(span.Start, span.Length) |]
+
     let createMatcherFor (searchPattern: string) =
         itemsCache.CreateMatcherFor searchPattern
 
@@ -187,13 +211,17 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>] (itemsCache
                                         additionalInfo,
                                         kind,
                                         patternMatchKindToNavigateToMatchKind m.Kind,
+                                        m.IsCaseSensitive,
                                         item.Name,
+                                        nameMatchSpans m,
                                         FSharpNavigableItem(
                                             glyph,
                                             ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
                                             document,
                                             sourceSpan
-                                        )
+                                        ),
+                                        item.ParameterCount,
+                                        item.TypeParameterCount
                                     )
                         | _ -> ()
                 |]
