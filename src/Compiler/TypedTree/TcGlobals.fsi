@@ -13,6 +13,15 @@ type CompilationMode =
 
 val internal DummyFileNameForRangesWithoutASpecificLocation: string
 
+/// [realsig+] Cross-phase record used to carry the enclosing class's typars (and their stamps
+/// at typecheck time) to the TLR pipeline, where they are subtracted from reqdTypars. See docs on
+/// the definition in TcGlobals.fs.
+[<NoEquality; NoComparison>]
+type internal RealsigClosureParentInfo =
+    { closureVal: TypedTree.Val
+      ownerTypars: TypedTree.Typars
+      ownerTycon: TypedTree.TyconRef option }
+
 /// Represents an intrinsic value from FSharp.Core known to the compiler
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type internal IntrinsicValRef =
@@ -924,6 +933,21 @@ type internal TcGlobals =
     member raw_expr_tcr: TypedTree.EntityRef
 
     member realsig: bool
+
+    /// [realsig+] See RealsigClosureParentInfo. Register a closure's owning class typars with TcGlobals
+    /// so that TLR can later subtract them from reqdTypars when re-hosting the closure as a nested method.
+    member AddRealsigClosureParent: TypedTree.Val * TypedTree.Typars * TypedTree.TyconRef option -> unit
+
+    /// [realsig+] Look up the registered RealsigClosureParentInfo for a closure Val, if any.
+    member RealsigClosureParentTryGet: TypedTree.Val -> RealsigClosureParentInfo option
+
+    /// [realsig+] Remove the old closureVal entry and re-add it under newVal. If oldVal has no entry, this is a no-op.
+    member RealsigClosureParentRekey: TypedTree.Val * TypedTree.Val -> unit
+
+    /// [realsig+] Return the original (non-cloned) owner typars across every registered
+    /// RealsigClosureParentInfo. The consumer should match by Name+Range (not Stamp), since TLR
+    /// works on cloned typars that share the original's Name/Range but not its Stamp.
+    member RealsigOwnerTypars: unit -> TypedTree.Typar list
 
     member ref_tuple1_tcr: TypedTree.EntityRef
 
