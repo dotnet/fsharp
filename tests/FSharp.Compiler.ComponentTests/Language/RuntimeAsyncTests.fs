@@ -953,6 +953,145 @@ let f () : Task<int> =
         |> compileExeAndRun
         |> shouldSucceed
 
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``runtime async rethrow after a suspending handler or compensation keeps the original stack trace`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncRethrowStackTraceTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let throwingFrame () : int = raise (InvalidOperationException "boom")
+
+let suspendingFinally () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        finally
+            AsyncHelpers.Await(Task.Delay 1))
+
+let reraiseAfterSuspension () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        with _ ->
+            AsyncHelpers.Await(Task.Delay 1)
+            reraise ())
+
+let unmatchedSuspendingHandler () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        with :? TimeoutException ->
+            AsyncHelpers.Await(Task.Delay 1)
+            0)
+
+let failures = ResizeArray<string>()
+
+let check name (start: unit -> Task<int>) =
+    try
+        start().GetAwaiter().GetResult() |> ignore
+        failures.Add $"{name}: no exception"
+    with
+    | :? InvalidOperationException as error when error.Message = "boom" ->
+        if not ((string error.StackTrace).Contains "throwingFrame") then
+            failures.Add $"{name}: stack trace lost the original throw site:\n{error.StackTrace}"
+    | error -> failures.Add $"{name}: unexpected {error}"
+
+[<EntryPoint>]
+let main _ =
+    check "suspending finally" suspendingFinally
+    check "reraise after suspension" reraiseAfterSuspension
+    check "unmatched suspending handler" unmatchedSuspendingHandler
+
+    for failure in failures do
+        eprintfn "%s" failure
+
+    failures.Count
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``runtime async suspending handler or compensation does not allocate when the body succeeds`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncCaptureAllocationTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let compute (value: int) = value + 1000
+
+let plainHandler (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        with _ ->
+            0)
+
+let suspendingHandler (gate: Task) (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        with _ ->
+            AsyncHelpers.Await gate
+            0)
+
+let suspendingFinally (gate: Task) (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        finally
+            AsyncHelpers.Await gate)
+
+let iterations = 10_000
+
+// Each call completes synchronously, so it allocates only its Task<int> unless the rewrite adds more.
+let bytesPerCall (start: int -> Task<int>) =
+    for i in 1..iterations do
+        start(i).Result |> ignore
+
+    let before = GC.GetAllocatedBytesForCurrentThread()
+
+    for i in 1..iterations do
+        start(i).Result |> ignore
+
+    float (GC.GetAllocatedBytesForCurrentThread() - before) / float iterations
+
+[<EntryPoint>]
+let main _ =
+    let gate = Task.CompletedTask
+    let baseline = bytesPerCall plainHandler
+    let mutable failed = 0
+
+    for name, start in [ "suspending handler", suspendingHandler gate; "suspending finally", suspendingFinally gate ] do
+        let extra = bytesPerCall start - baseline
+
+        if extra > 1.0 then
+            eprintfn "%s allocates %.1f extra bytes per successful call" name extra
+            failed <- failed + 1
+
+    failed
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``runtime async reraise preserves the innermost exception after suspension`` () =
         FSharp """

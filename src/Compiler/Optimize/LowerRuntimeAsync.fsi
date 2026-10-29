@@ -16,9 +16,14 @@
 module internal FSharp.Compiler.LowerRuntimeAsync
 
 open System.Collections.Concurrent
+open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val TransformImplFile:
-    g: TcGlobals -> reportedRanges: ConcurrentDictionary<range, unit> -> implFile: CheckedImplFile -> CheckedImplFile
+    g: TcGlobals ->
+    amap: ImportMap ->
+    reportedRanges: ConcurrentDictionary<range, unit> ->
+    implFile: CheckedImplFile ->
+        CheckedImplFile

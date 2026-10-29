@@ -257,43 +257,56 @@ let outer (n: int) : Task<int> =
 let private ceAwaitInsideTry = """
       IL_0022:  newobj     instance void M/'outer@13-1'::.ctor()
       IL_0027:  stloc.3
+      IL_0028:  ldc.i4.0
+      IL_0029:  stloc.1
       .try
       {
         .try
         {
-          IL_0028:  ldc.i4.1
-          IL_0029:  call       class [runtime]System.Threading.Tasks.Task [runtime]System.Threading.Tasks.Task::Delay(int32)
-          IL_002e:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)
-          IL_0033:  ldloc.0
-          IL_0034:  ldc.i4.1
-          IL_0035:  add
-          IL_0036:  stloc.0
-          IL_0037:  leave.s    IL_003f
+          IL_002a:  ldc.i4.1
+          IL_002b:  call       class [runtime]System.Threading.Tasks.Task [runtime]System.Threading.Tasks.Task::Delay(int32)
+          IL_0030:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)
+          IL_0035:  ldloc.0
+          IL_0036:  ldc.i4.1
+          IL_0037:  add
+          IL_0038:  stloc.0
+          IL_0039:  leave.s    IL_0041
 
         }  
         finally
         {
-          IL_0039:  ldloc.0
-          IL_003a:  ldc.i4.s   100
-          IL_003c:  add
-          IL_003d:  stloc.0
-          IL_003e:  endfinally
+          IL_003b:  ldloc.0
+          IL_003c:  ldc.i4.s   100
+          IL_003e:  add
+          IL_003f:  stloc.0
+          IL_0040:  endfinally
         }  
 """
 
 // (2) `use` disposal emitted AFTER the protected region: the compiler rewrite hoists the awaited
 // DisposeAsync out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
 let private ceDisposalHoist = """
-      IL_0070:  isinst     [runtime]System.IAsyncDisposable
-      IL_0075:  stloc.s    V_8
-      IL_0077:  ldloc.s    V_8
-      IL_0079:  brfalse.s  IL_008d
+      IL_0063:  isinst     [runtime]System.IAsyncDisposable
+      IL_0068:  stloc.s    V_7
+      IL_006a:  ldloc.s    V_7
+      IL_006c:  brfalse.s  IL_0080
 
-      IL_007b:  ldloc.s    V_8
-      IL_007d:  stloc.s    V_9
-      IL_007f:  ldloc.s    V_9
-      IL_0081:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
-      IL_0086:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
+      IL_006e:  ldloc.s    V_7
+      IL_0070:  stloc.s    V_8
+      IL_0072:  ldloc.s    V_8
+      IL_0074:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
+      IL_0079:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
+"""
+
+// (3) After disposal, an exception the protected region recorded (a local that stays null on success, so
+// nothing is allocated) is rethrown with ExceptionDispatchInfo, keeping the stack trace of its original throw.
+let private ceDisposalRethrow = """
+      IL_009a:  ldloc.s    V_4
+      IL_009c:  brfalse.s  IL_00ac
+
+      IL_009e:  ldloc.s    V_4
+      IL_00a0:  call       class [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo::Capture(class [runtime]System.Exception)
+      IL_00a5:  callvirt   instance void [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo::Throw()
 """
 
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
@@ -329,7 +342,7 @@ let ``composed CE body: await inside try, hoisted disposal, async flag on the li
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldSucceed
-    |> verifyILContains [ ceAwaitInsideTry; ceDisposalHoist ]
+    |> verifyILContains [ ceAwaitInsideTry; ceDisposalHoist; ceDisposalRethrow ]
     |> withMetadataReader assertAsyncFlagOnLiftedClosureOnly
 
 // DEMO (auduchinok's sequence-points baseline format): source spans interleaved with the IL that
