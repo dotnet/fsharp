@@ -58,7 +58,6 @@ module FSharpSymbolMatcher =
 
     let rec private addTypeMatches
         (synthesizedBuckets: Dictionary<string, string[]> option)
-        (usesRecordedSnapshot: bool)
         (enclosing: ILTypeDef list)
         (types: Dictionary<string, TypeMatch>)
         (methods: Dictionary<MethodDefinitionKey, MethodMatch>)
@@ -78,7 +77,6 @@ module FSharpSymbolMatcher =
             }
 
         match synthesizedBuckets with
-        | Some _ when usesRecordedSnapshot -> ()
         | Some buckets when IsCompilerGeneratedName typeDef.Name ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeDef.Name
             let mapKey = SynthesizedNameMapKey basicName
@@ -115,34 +113,33 @@ module FSharpSymbolMatcher =
         |> List.iter (fun methodDef -> addMethodMatch typeRef enclosing typeDef methodDef methods)
 
         typeDef.NestedTypes.AsList()
-        |> List.iter (fun nested ->
-            addTypeMatches synthesizedBuckets usesRecordedSnapshot (enclosing @ [ typeDef ]) types methods (depth + 1) nested)
+        |> List.iter (fun nested -> addTypeMatches synthesizedBuckets (enclosing @ [ typeDef ]) types methods (depth + 1) nested)
 
-    let private createInternal
-        (moduleDef: ILModuleDef)
-        (synthesized: Dictionary<string, string[]> option)
-        (usesRecordedSnapshot: bool)
-        : FSharpSymbolMatcher =
+    let private createInternal (moduleDef: ILModuleDef) (synthesized: Dictionary<string, string[]> option) : FSharpSymbolMatcher =
         let typeMatches = Dictionary<string, TypeMatch>()
         let methodMatches = Dictionary<MethodDefinitionKey, MethodMatch>()
 
         moduleDef.TypeDefs.AsList()
-        |> List.iter (addTypeMatches synthesized usesRecordedSnapshot [] typeMatches methodMatches 0)
+        |> List.iter (addTypeMatches synthesized [] typeMatches methodMatches 0)
 
         {
             TypeMatches = typeMatches :> IReadOnlyDictionary<string, TypeMatch>
             MethodMatches = methodMatches :> IReadOnlyDictionary<MethodDefinitionKey, MethodMatch>
         }
 
-    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher = createInternal moduleDef None false
+    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher = createInternal moduleDef None
 
     let createWithSynthesizedNames (moduleDef: ILModuleDef) (synthesizedMap: FSharpSynthesizedTypeMaps) : FSharpSymbolMatcher =
-        let buckets = Dictionary<string, string[]>(StringComparer.Ordinal)
+        // Recorded names are exact identities, so this matcher does not expand aliases.
+        if synthesizedMap.UsesRecordedSnapshot then
+            create moduleDef
+        else
+            let buckets = Dictionary<string, string[]>(StringComparer.Ordinal)
 
-        for struct (basic, names) in synthesizedMap.Snapshot do
-            buckets[basic] <- names
+            for struct (basic, names) in synthesizedMap.Snapshot do
+                buckets[basic] <- names
 
-        createInternal moduleDef (Some buckets) synthesizedMap.UsesRecordedSnapshot
+            createInternal moduleDef (Some buckets)
 
     let tryGetTypeDef (matcher: FSharpSymbolMatcher) (fullName: string) =
         match matcher.TypeMatches.TryGetValue fullName with
