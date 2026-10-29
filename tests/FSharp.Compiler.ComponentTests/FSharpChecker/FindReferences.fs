@@ -1222,6 +1222,13 @@ let id<{ref}'T{/ref}> (x: {ref}'T{/ref}) = x
 """
 
     [<Fact>]
+    let ``typeparam of a function that is generic through an annotation`` () =
+        expectDocUses """
+/// <typeparam name="{ref}T{/ref}">The element type, see <typeparamref name="{ref}T{/ref}"/>.</typeparam>
+let id (x: {ref}'T{/ref}) = x
+"""
+
+    [<Fact>]
     let ``param of a member, not confused with this`` () =
         expectDocUses """
 type C() =
