@@ -39,15 +39,12 @@ type internal EditorSubmission =
     {
         Text: string
         SourcePath: string
-
-        /// One-based, as the compiler numbers lines.
-        StartLine: int
+        OneBasedStartLine: int
     }
 
 module internal EditorSubmission =
 
-    /// Sending a line also advances the caret, which is what makes repeated Alt+Enter walk down a script.
-    let read (documentFactory: ITextDocumentFactoryService) (view: ITextView) (kind: SendToInteractiveKind) =
+    let readAndAdvanceCaret (documentFactory: ITextDocumentFactoryService) (view: ITextView) (kind: SendToInteractiveKind) =
         let selection = view.Selection
         let sendsLine = kind.IsLine || selection.IsEmpty
 
@@ -81,7 +78,7 @@ module internal EditorSubmission =
                 {
                     Text = text
                     SourcePath = sourcePath
-                    StartLine = line + 1
+                    OneBasedStartLine = line + 1
                 }
 
 type internal FSharpInteractiveCommandFilter
@@ -99,9 +96,9 @@ type internal FSharpInteractiveCommandFilter
         member _.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             match pguidCmdGroup, nCmdId with
             | SendToInteractive kind ->
-                EditorSubmission.read documentFactory view kind
+                EditorSubmission.readAndAdvanceCaret documentFactory view kind
                 |> ValueOption.iter (fun submission ->
-                    provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.StartLine))
+                    provider.SubmitFromEditor(submission.Text, submission.SourcePath, submission.OneBasedStartLine))
 
                 VSConstants.S_OK
             | _ ->

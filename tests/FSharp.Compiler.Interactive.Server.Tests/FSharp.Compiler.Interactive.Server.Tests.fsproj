@@ -24,8 +24,6 @@
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
-    <!-- The Visual Studio window's submission rule and the editor's lexer it runs on, linked here so
-         that testing the two together needs no Windows-only host. -->
     <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\LexicalScanning.fs">
       <Link>LexicalScanning.fs</Link>
     </Compile>

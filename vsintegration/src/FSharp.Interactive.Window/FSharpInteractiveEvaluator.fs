@@ -9,9 +9,7 @@ open System.Threading.Tasks
 open Microsoft.VisualStudio.InteractiveWindow
 open Microsoft.VisualStudio.Text
 
-/// The window package records the window in the properties of its input buffers but not of its
-/// output buffers, and it replaces the output buffer on every reset. So an output buffer is
-/// recognised by asking the windows evaluating F# which buffer is theirs right now.
+/// The window package tags its input buffers with the window, but not its output buffer.
 module internal FSharpInteractiveWindows =
 
     let private windows = ResizeArray<IInteractiveWindow>()
@@ -48,8 +46,6 @@ type internal FSharpInteractiveEvaluator
 
     let origins = SubmissionOrigins()
 
-    // Output arrives on the threads pumping the session's console streams, hence the window's
-    // writers: its editing operations belong to the UI thread.
     let output () =
         match currentWindow with
         | null -> TextWriter.Null
@@ -113,7 +109,7 @@ type internal FSharpInteractiveEvaluator
                         [
                             host.OutputReceived.Subscribe(fun text -> output().Write text)
                             host.ErrorOutputReceived.Subscribe(fun text -> errorOutput().Write text)
-                            host.ProcessExited.Subscribe(fun exitCode ->
+                            host.SessionExitedUnexpectedly.Subscribe(fun exitCode ->
                                 writeErrorLine $"{VFSIstrings.SR.sessionTerminationDetected ()} (exit code {exitCode})")
                             host.SessionStarted.Subscribe(fun session -> output().WriteLine(ResultRendering.formatSessionStart session))
                         ]
@@ -121,8 +117,6 @@ type internal FSharpInteractiveEvaluator
         member _.InitializeAsync() =
             startedAsync (fun options -> host.EnsureStartedAsync options)
 
-        // `initialize` selects start-up work, of which an F# session has none to vary; it never
-        // means "do not start a replacement".
         member _.ResetAsync(_initialize) =
             startedAsync (fun options -> host.ResetAsync options)
 

@@ -14,7 +14,6 @@ type internal LexicalKind =
     | InactiveCode
     | Other
 
-/// A token within the line that was scanned.
 [<Struct>]
 type internal LexicalToken =
     {
@@ -26,13 +25,11 @@ type internal LexicalToken =
     member token.IsWithin(line: string) =
         token.Start >= 0 && token.Start + token.Length <= line.Length
 
-/// Carries the lexer's state from one scanned line to the next.
 type internal ILexicalScanner =
 
     abstract ScanLine: line: string * tokens: ResizeArray<LexicalToken> -> unit
 
     abstract EndsInsideMultiLineConstruct: bool
 
-/// Implemented by FSharp.Editor, so that this assembly needs no reference to the compiler.
 type internal ILexicalScannerFactory =
     abstract CreateScanner: unit -> ILexicalScanner

@@ -9,8 +9,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscArm64Project\fscArm64.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj" />
-    <!-- The .NET build of fsi, the only one with the JSON-RPC server: the F# Interactive window falls
-         back to it when the SDK's `dotnet fsi` has none. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj"
                       SetTargetFramework="TargetFramework=$(FSharpNetCoreProductTargetFramework)"
                       ReferenceOutputAssembly="false"
@@ -54,9 +52,7 @@
 ]]></_SwrNewLine>
   </PropertyGroup>
 
-  <!-- Under `dotnet exec` and without fsi.deps.json the host loads the assemblies next to fsi.dll, so the
-       folder is those and the runtime configuration. The block is one item, as the other blocks are:
-       MSBuild trims the indentation from the start of each item. -->
+  <!-- No fsi.deps.json: dotnet exec probes beside fsi.dll, so ship every dll. One item per block: MSBuild trims each item's leading whitespace. -->
   <Target Name="_GenerateInteractiveSwrFileContents">
     <ItemGroup>
       <_InteractiveFile Include="$(_InteractiveBinaries)*.dll;$(_InteractiveBinaries)fsi.runtimeconfig.json" />

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The rule that decides whether Enter submits an interaction or adds another line.
 module FSharp.Compiler.Interactive.Server.Tests.SubmissionAnalysisTests
 
 open Xunit
