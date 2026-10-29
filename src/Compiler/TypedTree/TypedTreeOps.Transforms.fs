@@ -1467,7 +1467,7 @@ module internal TupleCompilation =
             start <= 0xffffffffUL
             && step <= 0xffffffffUL
             && finish <= 0xffffffffUL
-            && finish <= start
+            && finish < start
             ->
             ValueSome EmptyRange
 
@@ -1519,12 +1519,6 @@ module internal TupleCompilation =
             ValueSome(Const.UInt64((uint64 finish - uint64 start) / (uint64 Int64.MaxValue + 1UL) + 1UL))
         | Expr.Const(value = Const.Int64 start), Expr.Const(value = Const.Int64 Int64.MinValue), Expr.Const(value = Const.Int64 finish) ->
             ValueSome(Const.UInt64((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
-        | Expr.Const(value = Const.IntPtr start), Expr.Const(value = Const.IntPtr Int64.MinValue), Expr.Const(value = Const.IntPtr finish) when
-            start <= finish
-            ->
-            ValueSome(Const.UIntPtr((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
-        | Expr.Const(value = Const.IntPtr start), Expr.Const(value = Const.IntPtr Int64.MinValue), Expr.Const(value = Const.IntPtr finish) ->
-            ValueSome(Const.UIntPtr((uint64 start - uint64 finish) / (uint64 Int64.MaxValue + 1UL) + 1UL))
 
         | Expr.Const(value = Const.Int64 start), Expr.Const(value = Const.Int64 step), Expr.Const(value = Const.Int64 finish) when
             start <= finish
@@ -1997,34 +1991,14 @@ module internal TupleCompilation =
         (buildLoop: Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)
         =
         let inline mkLetBindingsIfNeeded f =
-            match start, step, finish with
-            | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) -> f start step finish
+            let bindIfNeeded name operand k =
+                match operand with
+                | Expr.Const _ -> k operand
+                | Expr.Val(valRef, _, _) when not valRef.IsMutable -> k operand
+                | _ -> mkCompGenLetIn operand.Range name rangeTy operand (fun (_, bound) -> k bound)
 
-            | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), _ ->
-                mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) -> f start step finish)
-
-            | _, (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
-                mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) -> f start step finish)
-
-            | (Expr.Const _ | Expr.Val _), _, (Expr.Const _ | Expr.Val _) ->
-                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) -> f start step finish)
-
-            | _, (Expr.Const _ | Expr.Val _), _ ->
-                mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
-                    mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) -> f start step finish))
-
-            | (Expr.Const _ | Expr.Val _), _, _ ->
-                mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
-                    mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) -> f start step finish))
-
-            | _, _, (Expr.Const _ | Expr.Val _) ->
-                mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
-                    mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) -> f start step finish))
-
-            | _, _, _ ->
-                mkCompGenLetIn start.Range (nameof start) rangeTy start (fun (_, start) ->
-                    mkCompGenLetIn step.Range (nameof step) rangeTy step (fun (_, step) ->
-                        mkCompGenLetIn finish.Range (nameof finish) rangeTy finish (fun (_, finish) -> f start step finish)))
+            bindIfNeeded (nameof start) start (fun start ->
+                bindIfNeeded (nameof step) step (fun step -> bindIfNeeded (nameof finish) finish (fun finish -> f start step finish)))
 
         mkLetBindingsIfNeeded (fun start step finish ->
             /// Start at 0 and count up through count - 1.
