@@ -117,51 +117,33 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <!--
-    Only the strings the Visual Studio shell resolves on FSharpPackage's behalf belong here.
-    The shell goes through SVsResourceManager, which looks up the numeric ID against the fixed
-    basename "VSPackage" in the package assembly, so this file must embed as VSPackage.resources
-    (see ManifestResourceName in FSharp.Editor.fsproj). Strings the managed option-page code looks
-    up itself - the *PageKeywords named as the last argument of each ProvideLanguageEditorOptionPage
-    - come from the assembly's default resource set and stay in FSharp.Editor.resx.
-  -->
-  <!-- Display name of the registered F# language service, resolved via ProvideLanguageService's languageResourceID. -->
   <data name="100" xml:space="preserve">
     <value>F#</value>
   </data>
-  <!-- File-type name shown for FSharpEditorFactory, resolved via ProvideEditorFactory's nameResourceID. Same wording as FSharp.ProjectSystem.FSharp's 5011. -->
   <data name="101" xml:space="preserve">
     <value>F# Source File</value>
   </data>
-  <!-- Tools > Options category, resolved via ProvideOptionPage's categoryResourceID. Mirrors the "F# Tools" literal fallback already on the attribute. -->
   <data name="6000" xml:space="preserve">
     <value>F# Tools</value>
   </data>
-  <!-- Tools > Options page name, resolved via ProvideOptionPage's pageNameResourceID and ProvideKeyBindingTable's resource ID. Mirrors the "F# Interactive" literal fallback already on the attributes. -->
   <data name="6001" xml:space="preserve">
     <value>F# Interactive</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.IntelliSenseOptionPage. Mirrors its "IntelliSense" literal fallback. -->
   <data name="6008" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.QuickInfoOptionPage. Mirrors its "QuickInfo" literal fallback. -->
   <data name="6009" xml:space="preserve">
     <value>QuickInfo</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.CodeFixesOptionPage. Mirrors its "Code Fixes" literal fallback. -->
   <data name="6010" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.LanguageServicePerformanceOptionPage. Mirrors its "Performance" literal fallback. -->
   <data name="6011" xml:space="preserve">
     <value>Performance</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.AdvancedSettingsOptionPage. Mirrors its "Advanced" literal fallback. -->
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.FormattingOptionPage. Mirrors its "Formatting" literal fallback. -->
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
   </data>
