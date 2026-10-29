@@ -33,6 +33,21 @@ compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide with
 To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
 and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
 
+## Symbol API benchmarks
+
+`SymbolApiBenchmarks.fs` checks `decentlySizedStandAloneFile.fs` in the iteration setup, then walks every
+declaration and expression of the typed tree through the symbol API, asking each member for its parameters,
+attributes, declaring entity and full type, as a compiler back end or an analyzer does.
+
+```dotnet run -c Release --filter *SymbolApi*```
+
+Only the walk is measured: `WalkSymbols` is one pass, `WalkSymbolsRepeated` five passes over the same checked file. Compare `Mean` and `Allocated` across branches.
+
+For a real project, `walk-project` checks it from a captured fsc response file and prints, per sample, the time
+and allocation of a declaration walk over every file and of a `GetAllUsesOfAllSymbols` pass with tooltip-style
+queries on each use:
+```dotnet run -c Release -- walk-project <iterations> <response-file> <project-dir>```
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
