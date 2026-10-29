@@ -95,11 +95,6 @@ Suggest names for unresolved identifiers;</source>
         <target state="translated">使用 "&lt;&gt;" 进行不相等检查</target>
         <note />
       </trans-unit>
-      <trans-unit id="ConvertToReferenceTuple">
-        <source>Convert to reference tuple</source>
-        <target state="new">Convert to reference tuple</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="translated">使用 "=" 进行同等性检查</target>
@@ -110,10 +105,12 @@ Suggest names for unresolved identifiers;</source>
         <target state="translated">使用减法代替求反</target>
         <note />
       </trans-unit>
-      <trans-unit id="ConvertToStructTuple">
-        <source>Convert to struct tuple</source>
-        <target state="new">Convert to struct tuple</target>
-        <note />
+      <trans-unit id="CopilotSymbolTooltip">
+        <source>{0} in {1}
+{2}</source>
+        <target state="new">{0} in {1}
+{2}</target>
+        <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
@@ -441,6 +438,16 @@ Show remarks in Quick Info</source>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
         <target state="translated">将表达式用括号括起来</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
         <note />
       </trans-unit>
     </body>
