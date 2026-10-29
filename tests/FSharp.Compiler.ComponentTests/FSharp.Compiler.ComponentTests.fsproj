@@ -288,6 +288,11 @@
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_Realsig_MixedAssemblyModes.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_GenericClassTyparSplit.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_NestedScopesAndNameCollisions.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_PrivateMemberReach.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_StateMachineGenerators.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RecursiveInlineMemberDependencies.fs" />

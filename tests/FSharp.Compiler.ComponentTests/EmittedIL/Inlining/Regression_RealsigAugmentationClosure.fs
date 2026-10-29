@@ -1,6 +1,7 @@
 namespace EmittedIL.RealInternalSignature
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 /// Regression tests for dotnet/fsharp#19933.
@@ -57,23 +58,23 @@ module Regression_RealsigAugmentationClosure =
           // ---- shapes sharing the C/Secret/EntryPoint skeleton (cWith) ----
           "inner-rec (canonical)",
             cWith "    member _.Run() =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C().Run()",
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@" |]
 
           ; "property getter",
             cWith "    member _.Prop =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C().Prop",
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@" |]
 
           ; "static method",
             cWith "    static member Run() =\n        let rec h n = if n = 0 then C.Secret() else h (n - 1)\n        h 5" "C.Run()",
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@" |]
 
           ; "nested closures",
             cWith "    member _.Run() =\n        let rec h n =\n            let inner () = C.Secret()\n            if n = 0 then inner () else h (n - 1)\n        h 5" "C().Run()",
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@" |]
 
           ; "mutual inner-rec",
             cWith "    member _.Run() =\n        let rec ev n = if n = 0 then C.Secret() else od (n - 1)\n        and od n = if n = 0 then C.Secret() else ev (n - 1)\n        ev 5" "C().Run()",
-            [| "Sample/C/ev@"; "Sample/C/od@" |], [| "Sample/ev@"; "Sample/od@" |]
+            [| "Sample/C::ev@"; "Sample/C::od@" |], [| "Sample/ev@"; "Sample/od@" |]
 
           ; "seq state machine",
             cWith "    member _.Run() = seq { yield C.Secret() }" "(C().Run() |> Seq.head)",
@@ -96,7 +97,7 @@ let main _ =
     let c = C() in c.Set 41
     if c.Run() = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@" |]
 
           ; "generic type inner-rec",
             """module Sample
@@ -114,7 +115,7 @@ let main _ =
     Holder<int>.Set 41
     if Holder<int>().Run() = 42 then 0 else 1
 """,
-            [| "Sample/Holder`1/h@" |], [| "Sample/h@" |]
+            [| "Sample/Holder`1<!T>::h@" |], [| "Sample/h@" |]
 
           ; "generic method threads typars",
             """module Sample
@@ -133,7 +134,7 @@ let main _ =
     let (_, s) = Holder<int>().M<string>("x")
     if s = 42 then 0 else 1
 """,
-            [| "Sample/Holder`1/h@" |], [| "Sample/h@" |]
+            [| "Sample/Holder`1<!T>::h@" |], [| "Sample/h@";"Sample::h@" |]
 
           ; "property setter",
             """module Sample
@@ -154,7 +155,7 @@ let main _ =
     c.Prop <- 41
     if C.Get() = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "indexer",
             """module Sample
@@ -169,7 +170,7 @@ type C with
 [<EntryPoint>]
 let main _ = if C().[41] = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "operator",
             """module Sample
@@ -184,7 +185,7 @@ type C with
 [<EntryPoint>]
 let main _ = if (C(41) + C(1)).V = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "task state machine",
             """module Sample
@@ -201,7 +202,7 @@ let main _ =
     C.Set 41
     if (C().Run()).Result = 42 then 0 else 1
 """,
-            [| "Sample/C/Run@" |], [| "Sample/Run@"; "Sample/'Run@" |]
+            [| "Sample/C/Run@" |], [| "Sample/Run@" |]
 
           ; "async",
             """module Sample
@@ -217,7 +218,7 @@ let main _ =
     C.Set 41
     if (C().Run() |> Async.RunSynchronously) = 42 then 0 else 1
 """,
-            [| "Sample/C/Run@" |], [| "Sample/Run@"; "Sample/'Run@" |]
+            [| "Sample/C/Run@" |], [| "Sample/Run@" |]
 
           ; "quotation splice",
             """module Sample
@@ -239,7 +240,7 @@ let main _ =
     | Patterns.Value(o, _) -> if unbox<int> o = 30 then 0 else 1
     | _ -> 2
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "record augmentation",
             """module Sample
@@ -253,7 +254,7 @@ type R with
 [<EntryPoint>]
 let main _ = if { X = 41 }.Run() = 42 then 0 else 1
 """,
-            [| "Sample/R/h@" |], [| "Sample/h@" |]
+            [| "Sample/R::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "DU augmentation",
             """module Sample
@@ -269,7 +270,7 @@ type D with
 [<EntryPoint>]
 let main _ = if (A 41).Run() = 42 then 0 else 1
 """,
-            [| "Sample/D/h@" |], [| "Sample/h@" |]
+            [| "Sample/D::h@" |], [| "Sample/h@";"Sample::h@" |]
 
           ; "override member",
             """module Sample
@@ -287,7 +288,7 @@ type C with
 [<EntryPoint>]
 let main _ = if (C() :> B).M() = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "secondary constructor",
             """module Sample
@@ -302,7 +303,7 @@ type C with
 [<EntryPoint>]
 let main _ = if C().X = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "struct augmentation",
             """module Sample
@@ -320,7 +321,7 @@ type C with
 [<EntryPoint>]
 let main _ = if C(41).Run() = 42 then 0 else 1
 """,
-            [| "Sample/C/h@" |], [| "Sample/h@" |]
+            [| "Sample/C::h@" |], [| "Sample/h@"; "Sample::h@" |]
 
           ; "namespace-scoped type",
             """namespace MyNs
@@ -339,7 +340,7 @@ module Main =
         C.Set 41
         if C().Run() = 42 then 0 else 1
 """,
-            [| "MyNs.C/h@" |], [| "MyNs.h@" |]
+            [| "MyNs.C::h@" |], [| "MyNs.h@"; "MyNs::h@" |]
 
           ; "nested-module type",
             """module Top
@@ -358,7 +359,7 @@ let main _ =
     Inner.C.Set 41
     if Inner.C().Run() = 42 then 0 else 1
 """,
-            [| "Top/Inner/C/h@" |], [| "Top/Inner/h@" |]
+            [| "Top/Inner/C::h@" |], [| "Top/Inner/h@"; "Top/Inner::h@" |]
 
           // Two augmentations sharing the local closure name `h`: each must nest under its
           // OWN type and NEITHER may remain a module sibling. The shipped compiler emits the
@@ -384,7 +385,7 @@ type Beta<'U> with
 let main _ =
     if Alpha<int>().Run() = 5 && Beta<int>().Run() = 10 then 0 else 1
 """,
-            [| "Sample/Alpha`1/h@" |], [| "Sample/h@"; "Sample/'h@" |]
+            [| "Sample/Alpha`1<!T>::h@";"Sample/Beta`1<!U>::'h@" |], [| "Sample/h@";"Sample::'h@" |]
         ]
         |> List.map (fun (name: string, src: string, nested: string[], sibling: string[]) ->
             [| box name; box src; box nested; box sibling |])
@@ -399,16 +400,22 @@ let main _ =
         (nested: string[])
         (sibling: string[])
         =
-        ignore name
 
+        let name = name.Replace(" ", "_").Replace(",", "_").Replace("'", "_").Replace("`", "_")
         let result =
             FSharp source
+            |> withName name
             |> withRealInternalSignature true
             |> asExe
             |> withOptimize
             |> ignoreWarnings
             |> compile
             |> shouldSucceed
+            |> verifyPEFileWithSystemDlls
+            |> withOutputContainsAllInOrderWithWildcards [
+                $"All Classes and Methods in*{name}.exe Verified."
+                ]
+
 
         result |> verifyILPresent (List.ofArray nested)
         result |> verifyILNotPresent (List.ofArray sibling)
