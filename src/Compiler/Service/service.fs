@@ -218,7 +218,8 @@ module internal HotReloadIncrementalEmit =
                 if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceTiming) = "1" then
                     printfn "[fsharp-hotreload][incremental-emit] reused-prefix=%d total=%d" reusablePrefixLength inputs.Length
 
-                updatedSteps |> Array.map _.Output |> Array.toList)
+                // Preserve file order without an intermediate output array.
+                Array.foldBack (fun step outputs -> step.Output :: outputs) updatedSteps [])
 
     /// Runs the incremental path and falls back to the full threaded optimizer if it fails.
     let runWithFallback incremental fallback =
