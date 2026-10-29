@@ -1181,6 +1181,34 @@ type TcGlobals(
 
   member _.realsig = realsig
 
+  member g.WithLanguageSettings(newPathMap, newLangVersion, newRealsig, newCompilationMode) =
+      if
+          newPathMap = pathMap
+          && newLangVersion = langVersion
+          && newRealsig = realsig
+          && newCompilationMode = compilationMode
+      then
+          g
+      else
+          let copy =
+              TcGlobals(
+                  compilingFSharpCore,
+                  ilg,
+                  fslibCcu,
+                  directoryToResolveRelativePaths,
+                  isInteractive,
+                  checkNullness,
+                  useReflectionFreeCodeGen,
+                  tryFindSysTypeCcuHelper,
+                  emitDebugInfoInQuotations,
+                  noDebugAttributes,
+                  newPathMap,
+                  newLangVersion,
+                  newRealsig,
+                  newCompilationMode)
+
+          copy
+
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 
   member _.valRefEq x y = primValRefEq compilingFSharpCore fslibCcu x y
