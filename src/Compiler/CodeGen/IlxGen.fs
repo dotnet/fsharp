@@ -1539,6 +1539,7 @@ let GetValReprTypeInfoInCompiledForm g valReprInfo (vref: ValRef) m =
                 match vref.Type with
                 | TType_forall(tpsAll, _) -> tpsAll
                 | _ -> []
+
             info.ownerTypars @ own
         | _ -> tps
 
@@ -4863,34 +4864,34 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                      // consumed by the class; all type arguments bind the method itself.
                      | Some info when info.ownerTycon.IsNone -> []
                      | Some info -> info.ownerTypars
-                      | None ->
-                          // Re-hosted TLR closures are compiled as top-level methods that are
-                          // not member/module bindings. Only those inherit the host class's
-                          // typars; ordinary module functions (e.g. MyCollections.IEnumerator.check)
-                          // must not, or a non-generic module gets spurious generic args.
-                          //
-                          // [realsig+] Additionally, the callee's DeclaringEntity must itself be
-                          // a generic type (i.e. have >0 own typars). A call to a module-level
-                          // value (e.g. Test.patternInput@24) from inside a re-hosted TLR
-                          // closure's body (Test/f@29TT::Invoke) must NOT inherit the host
-                          // class's ambient typars: the callee is not a re-hosted closure, it
-                          // is a plain top-level value whose DeclaringEntity (the module class)
-                          // has 0 typars. The bug at hand (Issue_0002) is precisely this:
-                          // f@29TT::Invoke called Test::patternInput@24, and the code emitted
-                          // Test<!!a,!!b>::patternInput@24<!!0,object>() where !a,!b are the
-                          // ambient class typars, but Test is non-generic → TypeLoadException.
-                          // Guard: only use the ambient typars when the callee's declaring
-                          // entity is a generic type with >0 own typars.
-                          if
-                              (vref.IsCompiledAsTopLevel || vref.IsCompilerGenerated)
-                              && not (vref.IsMember || vref.IsMemberOrModuleBinding)
-                              && (match vref.TryDeclaringEntity with
-                                  | Parent dEnt -> List.length (dEnt.Typars |> DropErasedTypars) > 0
-                                  | ParentNone -> false)
-                          then
-                              Zset.elements (eenv.tyenv.AsUserProvidedTypars())
-                          else
-                              [])
+                     | None ->
+                         // Re-hosted TLR closures are compiled as top-level methods that are
+                         // not member/module bindings. Only those inherit the host class's
+                         // typars; ordinary module functions (e.g. MyCollections.IEnumerator.check)
+                         // must not, or a non-generic module gets spurious generic args.
+                         //
+                         // [realsig+] Additionally, the callee's DeclaringEntity must itself be
+                         // a generic type (i.e. have >0 own typars). A call to a module-level
+                         // value (e.g. Test.patternInput@24) from inside a re-hosted TLR
+                         // closure's body (Test/f@29TT::Invoke) must NOT inherit the host
+                         // class's ambient typars: the callee is not a re-hosted closure, it
+                         // is a plain top-level value whose DeclaringEntity (the module class)
+                         // has 0 typars. The bug at hand (Issue_0002) is precisely this:
+                         // f@29TT::Invoke called Test::patternInput@24, and the code emitted
+                         // Test<!!a,!!b>::patternInput@24<!!0,object>() where !a,!b are the
+                         // ambient class typars, but Test is non-generic → TypeLoadException.
+                         // Guard: only use the ambient typars when the callee's declaring
+                         // entity is a generic type with >0 own typars.
+                         if
+                             (vref.IsCompiledAsTopLevel || vref.IsCompilerGenerated)
+                             && not (vref.IsMember || vref.IsMemberOrModuleBinding)
+                             && (match vref.TryDeclaringEntity with
+                                 | Parent dEnt -> List.length (dEnt.Typars |> DropErasedTypars) > 0
+                                 | ParentNone -> false)
+                         then
+                             Zset.elements (eenv.tyenv.AsUserProvidedTypars())
+                         else
+                             [])
 
                 | _ -> []
 
@@ -7836,6 +7837,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
         let initialFreeTyvars =
             let userTypars = eenv.tyenv.AsUserProvidedTypars()
+
             match g.realsig with
             | true ->
                 { emptyFreeTyvars with

@@ -1020,7 +1020,9 @@ module internal Rewriting =
         // inp in TcGlobals.realsigClosureParents is keyed under the OLD stamp and is lost
         // for v2. Propagate it to the new copy so downstream TLR (RealsigClosureParentTryGet
         // in InnerLambdasToTopLevelFuncs createFHat / FlatEnvPacks.packEnv) can find it.
-        if g.realsig then g.RealsigClosureParentRekey(inp, v2)
+        if g.realsig then
+            g.RealsigClosureParentRekey(inp, v2)
+
         v2
 
     let ApplyExportRemappingToEntity g tmenv x =
