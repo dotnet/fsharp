@@ -1089,8 +1089,9 @@ let private identityNode (tag: string) (fields: string seq) =
 
 let private valIdentity denv (vref: ValRef) =
     let stableName =
-        tryStableValReferenceIdentity vref
-        |> Option.defaultValue $"local:{vref.LogicalName}"
+        match tryStableValReferenceIdentity vref with
+        | Some identity -> identity
+        | None -> $"local:{vref.LogicalName}"
 
     identityNode "val" [ stableName; tyToString denv vref.Type ]
 
