@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CompilerOptions
 open System
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Features
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]
@@ -48,6 +49,13 @@ val GetCompilerOptionBlocks: CompilerOptionBlock list -> width: int option -> st
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
 val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
+
+/// Split a single command-line argument into the option without switch chars, the option token and the option argument.
+/// The token is empty when the argument is not an option.
+val ParseCompilerOption: option: string -> string * string * string
+
+/// The language version --langversion selects for the given text, or the error it reports when the version is not accepted.
+val ParseLanguageVersion: specifiedVersion: string -> Result<LanguageVersion, exn>
 
 /// Parse and process a set of compiler options
 val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit

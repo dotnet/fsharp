@@ -5,6 +5,8 @@ module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open System
 open System.Collections.Generic
 open System.IO
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -63,6 +65,27 @@ module internal Helpers =
         options
         |> Seq.tryFind (fun (x: string) -> x.StartsWith("-o:"))
         |> Option.map (fun x -> x.Substring(3))
+
+    /// Mirrors the TcConfigBuilder.conditionalDefines produced from the given options: implicit define first, then each define prepended.
+    let findConditionalDefines (isInteractive: bool) (options: string seq) =
+        let implicitDefine = if isInteractive then "INTERACTIVE" else "COMPILED"
+
+        ([ implicitDefine ], options)
+        ||> Seq.fold (fun defines option ->
+            match ParseCompilerOption option with
+            | _, ("define" | "d"), define when define <> "" -> define :: defines
+            | _ -> defines)
+
+    /// Mirrors the TcConfigBuilder.langVersion produced from the given options: the last --langversion the compiler accepts, otherwise the default.
+    let findLangVersion (options: string seq) =
+        (LanguageVersion.Default, options)
+        ||> Seq.fold (fun langVersion option ->
+            match ParseCompilerOption option with
+            | _, "langversion", version ->
+                match ParseLanguageVersion version with
+                | Ok newVersion -> newVersion
+                | Result.Error _ -> langVersion
+            | _ -> langVersion)
 
 /// A snapshot of an F# source file.
 [<Experimental("This FCS API is experimental and subject to change.")>]
@@ -257,6 +280,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     member _.Identifier = projectConfig.Identifier
     member _.ReferencesOnDisk = projectConfig.ReferencesOnDisk
     member _.OtherOptions = projectConfig.OtherOptions
+    member _.ConditionalDefines = projectConfig.ConditionalDefines
+    member _.LangVersionText = projectConfig.LangVersionText
     member _.ReferencedProjects = referencedProjects
 
     member _.IsIncompleteTypeCheckEnvironment =
@@ -424,6 +449,11 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
             ((projectFileName, outputFileNameValue.Value |> Option.defaultValue "")
              |> FSharpProjectIdentifier)
 
+    let conditionalDefines =
+        lazy (findConditionalDefines useScriptResolutionRules otherOptions)
+
+    let langVersionText = lazy (findLangVersion otherOptions).VersionText
+
     new
         (
             projectFileName: string,
@@ -473,6 +503,8 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
     member _.ProjectId = projectId
     member _.ReferencesOnDisk = referencesOnDisk
     member _.OtherOptions = otherOptions
+    member _.ConditionalDefines = conditionalDefines.Value
+    member _.LangVersionText = langVersionText.Value
 
     member _.IsIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment
     member _.UseScriptResolutionRules = useScriptResolutionRules
@@ -596,6 +628,8 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     member _.SourceFiles = projectSnapshot.SourceFiles
     member _.ReferencesOnDisk = projectSnapshot.ReferencesOnDisk
     member _.OtherOptions = projectSnapshot.OtherOptions
+    member _.ConditionalDefines = projectSnapshot.ConditionalDefines
+    member _.LangVersionText = projectSnapshot.LangVersionText
     member _.ReferencedProjects = projectSnapshot.ReferencedProjects
 
     member _.IsIncompleteTypeCheckEnvironment =

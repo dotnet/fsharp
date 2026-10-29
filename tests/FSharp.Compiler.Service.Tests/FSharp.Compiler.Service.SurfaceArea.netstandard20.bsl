@@ -2505,7 +2505,9 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot] get_ReferencedProjects()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_ReferencesOnDisk()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalDefines()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_OtherOptions()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] OriginalLoadReferences
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] get_OriginalLoadReferences()
@@ -2525,8 +2527,10 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: ProjectConfi
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime LoadTime
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime get_LoadTime()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String Label
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String LangVersionText
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String ProjectFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String get_Label()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String get_ProjectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+FSharpReference: FSharpProjectSnapshot get_snapshot()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+FSharpReference: FSharpProjectSnapshot snapshot
@@ -2581,8 +2585,10 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentif
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_ReferencesOnDisk()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] CommandLineOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_CommandLineOptions()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalDefines()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_OtherOptions()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] OriginalLoadReferences
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] get_OriginalLoadReferences()
@@ -2597,9 +2603,11 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Cor
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime LoadTime
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime get_LoadTime()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String Label
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String LangVersionText
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectDirectory
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_Label()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectDirectory()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
