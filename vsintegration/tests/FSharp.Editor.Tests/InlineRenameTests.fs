@@ -630,7 +630,7 @@ type RecordRename() =
 
                 Assert.Equal<(int * int * int * int) array>(
                     [| 2, 5, 2, 10; 3, 19, 3, 24; 3, 28, 3, 66 |],
-                    implementationCheck.GetUsesOfSymbolInFile(entity, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                    implementationCheck.GetUsesOfSymbolInFile(entity, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
                     |> Array.map (fun use' -> coordinates use'.Range)
                     |> Array.sort
                 )
@@ -706,7 +706,7 @@ type RecordRename() =
                     check.GetSymbolUseAtLocation(2, 10, text.Lines[1].ToString(), [ "State" ]).Value
 
                 let all =
-                    check.GetUsesOfSymbolInFile(use'.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                    check.GetUsesOfSymbolInFile(use'.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
 
                 let! shared =
                     SymbolHelpers.getSymbolUses use' document check
@@ -825,7 +825,7 @@ type RecordRename() =
                     ValueNone
                     ValueSome RelatedSymbolUseKind.None
                     ValueSome RelatedSymbolUseKind.CopyAndUpdateRecord
-                    ValueSome RelatedSymbolUseKind.All
+                    ValueSome RelatedSymbolUseKind.AllInCode
                 ] do
                 let uses =
                     check.GetUsesOfSymbolInFile(entity, ?relatedSymbolKinds = ValueOption.toOption kinds)
@@ -835,7 +835,7 @@ type RecordRename() =
                         3, 5, 3, 10
                         7, 23, 7, 28
                         if
-                            kinds = ValueSome RelatedSymbolUseKind.All
+                            kinds = ValueSome RelatedSymbolUseKind.AllInCode
                             || kinds = ValueSome RelatedSymbolUseKind.CopyAndUpdateRecord
                         then
                             9, 19, 9, 57
