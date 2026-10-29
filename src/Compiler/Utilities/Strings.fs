@@ -1,8 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-// Not `inline`: optimization info for anything non-public is dropped at the assembly boundary, so an
-// InternalsVisibleTo friend compiled with --optimize+ (FSharp.Editor) fails with FS1116/FS1118 on an inline member.
-// For the same reason a public `inline` function must not call these: its body would reference an internal method.
 namespace Internal.Utilities.Library
 
 open System
@@ -40,7 +37,7 @@ module internal StringExtensions =
 
         [<Extension>]
         static member EqualsOrdinal(str: ReadOnlySpan<char>, value: string) =
-            str.Equals(value.AsSpan(), StringComparison.Ordinal)
+            ReadOnlySpanCharExtensions.EqualsOrdinal(str, value.AsSpan())
 
         [<Extension>]
         static member StartsWithOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
@@ -48,7 +45,7 @@ module internal StringExtensions =
 
         [<Extension>]
         static member StartsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
-            str.StartsWith(value.AsSpan(), StringComparison.Ordinal)
+            ReadOnlySpanCharExtensions.StartsWithOrdinal(str, value.AsSpan())
 
         [<Extension>]
         static member EndsWithOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
@@ -56,7 +53,7 @@ module internal StringExtensions =
 
         [<Extension>]
         static member EndsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
-            str.EndsWith(value.AsSpan(), StringComparison.Ordinal)
+            ReadOnlySpanCharExtensions.EndsWithOrdinal(str, value.AsSpan())
 
         [<Extension>]
         static member EndsWithOrdinalIgnoreCase(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
@@ -64,17 +61,10 @@ module internal StringExtensions =
 
         [<Extension>]
         static member EndsWithOrdinalIgnoreCase(str: ReadOnlySpan<char>, value: string) =
-            str.EndsWith(value.AsSpan(), StringComparison.OrdinalIgnoreCase)
+            ReadOnlySpanCharExtensions.EndsWithOrdinalIgnoreCase(str, value.AsSpan())
 
         [<Extension>]
-        static member IndexOf(str: ReadOnlySpan<char>, value: char) =
-            let mutable index = -1
-            let mutable i = 0
-
-            while i < str.Length && index = -1 do
-                if str[i] = value then index <- i else i <- i + 1
-
-            index
+        static member IndexOf(str: ReadOnlySpan<char>, value: char) = MemoryExtensions.IndexOf(str, value)
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
@@ -82,20 +72,15 @@ module internal StringExtensions =
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: string) =
-            str.IndexOf(value.AsSpan(), StringComparison.Ordinal)
-
-        // Searching a slice answers with an index into that slice, so the offset goes back on to
-        // report a position in `str` - what the String siblings these mirror return. A miss stays -1.
+            ReadOnlySpanCharExtensions.IndexOfOrdinal(str, value.AsSpan())
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex) =
-            let i = str.Slice(startIndex).IndexOf(value, StringComparison.Ordinal)
-            if i < 0 then i else i + startIndex
+            ReadOnlySpanCharExtensions.IndexOfOrdinal(str, value, startIndex, str.Length - startIndex)
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex) =
-            let i = str.Slice(startIndex).IndexOf(value.AsSpan(), StringComparison.Ordinal)
-            if i < 0 then i else i + startIndex
+            ReadOnlySpanCharExtensions.IndexOfOrdinal(str, value.AsSpan(), startIndex)
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>, startIndex, count) =
@@ -104,7 +89,4 @@ module internal StringExtensions =
 
         [<Extension>]
         static member IndexOfOrdinal(str: ReadOnlySpan<char>, value: string, startIndex, count) =
-            let i =
-                str.Slice(startIndex, count).IndexOf(value.AsSpan(), StringComparison.Ordinal)
-
-            if i < 0 then i else i + startIndex
+            ReadOnlySpanCharExtensions.IndexOfOrdinal(str, value.AsSpan(), startIndex, count)
