@@ -135,6 +135,7 @@ extends:
                       -configuration $(_BuildConfig)
                       -prepareMachine
                       -testAllButIntegrationAndAot
+                      -testUsingModules
                       -officialSkipTests $(SkipTests)
                       /p:SignType=$(_SignType)
                       /p:DotNetSignType=$(_SignType)
