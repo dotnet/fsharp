@@ -106,6 +106,7 @@ type FromLiteral = Provided.Text<Items>"""
     [<InlineData("%s{Root}", 267)>]
     [<InlineData("{NoValue}", 267)>]
     [<InlineData("{dir}", 267)>]
+    [<InlineData("{1 / 0}", 267)>]
     [<InlineData("{dir + dir}{missing}", 39)>]
     let ``A hole must be a non-null constant string without alignment or format specifier`` (hole: string, errorCode: int) =
         preview $"""
