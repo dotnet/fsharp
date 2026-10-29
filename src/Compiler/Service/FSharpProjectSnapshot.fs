@@ -170,21 +170,21 @@ type ReferenceOnDisk =
 
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
-    (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
+    private
+    (
+        projectConfig: ProjectConfig,
+        referencedProjects: FSharpReferencedProjectSnapshot list,
+        sourceFiles: 'T list,
+        baseVersion: Lazy<byte array>
+    ) =
 
-    // Version of project without source files
-    let baseVersion =
-        lazy
-            (projectConfig.Version
-             |> Md5Hasher.addBytes' (referencedProjects |> Seq.map _.Version))
-
-    let baseVersionString = lazy (baseVersion.Value |> Md5Hasher.toString)
+    let baseVersionString () = baseVersion.Value |> Md5Hasher.toString
 
     let baseCacheKeyWith (label, version) =
         { new ICacheKey<_, _> with
             member _.GetLabel() = $"{label} ({projectConfig.Label})"
             member _.GetKey() = projectConfig.Identifier
-            member _.GetVersion() = baseVersionString.Value, version
+            member _.GetVersion() = baseVersionString (), version
         }
 
     let noFileVersionsHash =
@@ -252,6 +252,15 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))
 
+    new(projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
+        // Version of project without source files
+        let baseVersion =
+            lazy
+                (projectConfig.Version
+                 |> Md5Hasher.addBytes' (referencedProjects |> Seq.map _.Version))
+
+        ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles, baseVersion)
+
     member _.ProjectFileName = projectConfig.ProjectFileName
     member _.ProjectId = projectConfig.ProjectId
     member _.Identifier = projectConfig.Identifier
@@ -285,8 +294,9 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
         |> List.tryFindIndex (fun x -> x.FileName = fileName)
         |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectConfig.ProjectFileName))
 
-    member private _.With(sourceFiles: 'T list) =
-        ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
+    /// Creates a copy of this snapshot with a new set of source files
+    member _.With<'U when 'U :> IFileSnapshot>(sourceFiles: 'U list) : ProjectSnapshotBase<'U> =
+        ProjectSnapshotBase<'U>(projectConfig, referencedProjects, sourceFiles, baseVersion)
 
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member this.Replace(changedSourceFiles: 'T list) =
