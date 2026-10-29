@@ -24,6 +24,7 @@
     <Compile Include="InteractiveHost.fs" />
     <Compile Include="LexicalScanning.fs" />
     <Compile Include="SubmissionAnalysis.fs" />
+    <Compile Include="SubmissionOrigins.fs" />
     <Compile Include="FSharpInteractiveEvaluator.fs" />
     <Compile Include="FSharpVsInteractiveWindowProvider.fs" />
     <Compile Include="FSharpInteractiveClassifier.fs" />

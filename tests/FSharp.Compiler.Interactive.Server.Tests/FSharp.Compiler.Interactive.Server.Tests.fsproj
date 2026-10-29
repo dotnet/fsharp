@@ -35,7 +35,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionAnalysis.fs">
       <Link>SubmissionAnalysis.fs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionOrigins.fs">
+      <Link>SubmissionOrigins.fs</Link>
+    </Compile>
     <Compile Include="SubmissionAnalysisTests.fs" />
+    <Compile Include="SubmissionOriginsTests.fs" />
     <Compile Include="FsiServerHarness.fs" />
     <Compile Include="FsiJsonRpcServerTests.fs" />
   </ItemGroup>
