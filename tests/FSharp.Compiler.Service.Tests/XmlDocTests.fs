@@ -356,6 +356,29 @@ module XmlDocRefs =
         Assert.Empty(withoutRanges.GetRefs())
 
 [<Fact>]
+let ``typeparam of a signature val that is generic through an annotation`` () =
+    let _, checkResults =
+        getParseAndCheckResultsOfSignatureFile """
+module Test
+
+/// <typeparam name="T">The element type.</typeparam>
+val id: x: 'T -> 'T
+"""
+
+    let typar =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.pick (fun use' ->
+            match use'.Symbol with
+            | :? FSharpGenericParameter as typar when typar.Name = "T" -> Some use'.Symbol
+            | _ -> None)
+
+    let docUses =
+        checkResults.GetUsesOfSymbolInFile(typar, relatedSymbolKinds = RelatedSymbolUseKind.XmlDocParameter)
+        |> Seq.filter (fun use' -> use'.Range.StartLine = 4)
+
+    Assert.Single docUses |> ignore
+
+[<Fact>]
 let ``xml-doc eof``(): unit =
     checkSignatureAndImplementation """
 module Test
