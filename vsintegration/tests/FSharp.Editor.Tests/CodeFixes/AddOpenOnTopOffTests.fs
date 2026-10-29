@@ -186,6 +186,23 @@ let ``Fixes FS0039 for missing opens - placement`` (_scenario: string, code: str
     expectOpenSystem mode code fixedCode
 
 [<Fact>]
+let ``Offers open type inside a nested module declared on one line with an attribute for a use in its body`` () =
+    let bodyMargin = String.replicate 31 " "
+
+    let code =
+        "module Top\nmodule Original =\n    let ReadLine () = 123\nopen Original\n[<System.Obsolete>] module M = let x = WriteLine \"hi\"\nlet number: int = ReadLine()\n"
+
+    let expected =
+        $"module Top\nmodule Original =\n    let ReadLine () = 123\nopen Original\n[<System.Obsolete>] module M =\n{bodyMargin}open type System.Console\n\n{bodyMargin}let x = WriteLine \"hi\"\nlet number: int = ReadLine()\n"
+
+    let actual =
+        codeFix
+        |> openFixes code mode
+        |> List.find (fun fix -> fix.Message = "open type System.Console")
+
+    Assert.Equal(expected, actual.FixedCode)
+
+[<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
     let code =
         """

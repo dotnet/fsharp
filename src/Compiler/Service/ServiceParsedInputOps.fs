@@ -158,7 +158,6 @@ type InsertionContextEntity =
         FullRelativeName: string
         Qualifier: string
         Namespace: string option
-        NamespaceIdentCount: int
         FullDisplayName: string
         LastIdent: ShortIdent
     }
@@ -284,18 +283,19 @@ module Entity =
                             else
                                 fullRelativeName
 
-                        Some
+                        let entity =
                             {
                                 FullRelativeName = formatIdents true fullRelativeName
                                 Qualifier = formatIdents (qualifier.Length = fullRelativeName.Length) qualifier
                                 Namespace = ns
-                                NamespaceIdentCount = (withoutQualifierWritten openableNs).Length
                                 FullDisplayName =
                                     match restIdents with
                                     | [| _ |] -> ""
                                     | _ -> formatIdents true restIdents
                                 LastIdent = Array.tryLast restIdents |> Option.defaultValue ""
-                            })
+                            }
+
+                        Some(struct (entity, (withoutQualifierWritten openableNs).Length)))
 
 module ParsedInput =
 
@@ -2706,9 +2706,9 @@ module ParsedInput =
                     )
 
                 entities
-                |> Array.map (fun e ->
+                |> Array.map (fun (struct (e, namespaceIdentCount)) ->
                     match find () with
-                    | struct (_, context) -> e, context)
+                    | struct (_, context) -> struct (e, context, namespaceIdentCount))
 
     let TryFindInsertionContext
         (currentLine: int)
@@ -2716,7 +2716,12 @@ module ParsedInput =
         (partiallyQualifiedName: MaybeUnresolvedIdent[])
         (insertionPoint: OpenStatementInsertionPoint)
         =
-        TryFindInsertionContextAt (mkPos currentLine 0) parsedInput partiallyQualifiedName insertionPoint
+        let findAt =
+            TryFindInsertionContextAt (mkPos currentLine 0) parsedInput partiallyQualifiedName insertionPoint
+
+        fun candidate ->
+            findAt candidate
+            |> Array.map (fun (struct (entity, context, _)) -> entity, context)
 
     let AdjustInsertionPoint (getLineStr: int -> string) ctx =
         match ctx.ScopeKind with

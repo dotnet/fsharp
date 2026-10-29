@@ -120,6 +120,9 @@ let private assertFixedCode (expected: string) (actual: string) =
     Assert.Equal(expected, actual.Replace("\r\n", "\n"))
     assertCompiles actual
 
+let private tryFix code mode (provider: AddOpenCodeFixProvider) =
+    provider |> multiFix code mode |> Seq.tryHead
+
 let private addOpenFix code mode =
     AddOpenCodeFixProvider(AssemblyContentProvider()) |> tryFix code mode
 
@@ -543,11 +546,12 @@ let ``referenced case Add Open uses the nearest physical scope without self-qual
             | ValueNone -> failwith "Expected automatic referenced-case diagnostic"
 
     let fix =
-        (provider :> IFSharpCodeFixProvider).GetCodeFixIfAppliesAsync context
+        (provider :> IFSharpMultiCodeFixProvider).GetCodeFixesAsync context
         |> CancellableTask.runSynchronouslyWithoutCancellation
+        |> Seq.tryHead
         |> function
-            | ValueSome fix -> fix
-            | ValueNone -> failwith "Expected referenced-case Add Open"
+            | Some fix -> fix
+            | None -> failwith "Expected referenced-case Add Open"
 
     Assert.Equal("open Outer.Patterns", fix.Message)
     let actual = text.WithChanges(fix.Changes).ToString()

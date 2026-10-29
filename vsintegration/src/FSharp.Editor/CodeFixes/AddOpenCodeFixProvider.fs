@@ -17,6 +17,14 @@ open FSharp.Compiler.Text
 
 open CancellableTasks
 
+type internal NameCandidate =
+    {
+        Entity: InsertionContextEntity
+        Context: InsertionContext
+        Symbol: AssemblySymbol
+        NamespaceIdentCount: int
+    }
+
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.AddOpen); Shared>]
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
@@ -73,8 +81,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 tryFindModuleOrTypeNamedByLeading leadingIdentCount (nameIdentCount - 1) parent
         | _ -> ValueNone
 
-    let tryGetOpenDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
-        match tryFindModuleOrTypeNamedByLeading entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+    let tryGetOpenDeclaration (candidate: NameCandidate) ns =
+        match
+            tryFindModuleOrTypeNamedByLeading candidate.NamespaceIdentCount candidate.Symbol.CleanedIdents.Length candidate.Symbol.Symbol
+        with
         | ValueSome opened when opened.IsFSharpModule -> ValueSome $"open {ns}"
         | ValueSome opened when opened.GenericParameters.Count > 0 -> ValueNone
         | ValueSome _ -> ValueSome $"open type {ns}"
@@ -82,18 +92,14 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     let isQualifiable (entity: InsertionContextEntity) = not (entity.LastIdent.StartsWith "op_")
 
-    let getSuggestionsAsCodeFixes
-        (firstIdentSpan: TextSpan)
-        (sourceText: SourceText)
-        (candidates: (InsertionContextEntity * InsertionContext * AssemblySymbol) list)
-        =
+    let getSuggestionsAsCodeFixes (firstIdentSpan: TextSpan) (sourceText: SourceText) (candidates: NameCandidate list) =
         seq {
             candidates
-            |> Seq.chooseV (fun (entity, ctx, symbol) ->
-                match entity.Namespace with
+            |> Seq.chooseV (fun candidate ->
+                match candidate.Entity.Namespace with
                 | Some ns ->
-                    tryGetOpenDeclaration entity symbol ns
-                    |> ValueOption.map (fun declaration -> declaration, entity.FullDisplayName, ctx)
+                    tryGetOpenDeclaration candidate ns
+                    |> ValueOption.map (fun declaration -> declaration, candidate.Entity.FullDisplayName, candidate.Context)
                 | None -> ValueNone)
             |> Seq.groupBy (fun (declaration, _, _) -> declaration)
             |> Seq.map (fun (declaration, xs) ->
@@ -112,8 +118,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
-            |> Seq.filter (fun (entity, _, _) -> isQualifiable entity)
-            |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
+            |> Seq.map _.Entity
+            |> Seq.filter isQualifiable
+            |> Seq.map (fun entity -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sortBy (fst >> qualificationOrder)
             |> Seq.truncate maxQualifySuggestions
@@ -271,7 +278,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             entities
                             |> Seq.collect (fun (symbol, idents) ->
                                 createEntity (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, idents)
-                                |> Seq.map (fun (entity, insertionContext) ->
+                                |> Seq.map (fun (struct (entity, insertionContext, namespaceIdentCount)) ->
                                     let entity =
                                         if symbol.Symbol :? FSharpActivePatternCase then
                                             if entity.FullDisplayName <> "" && entity.FullDisplayName <> patternName then
@@ -281,7 +288,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                         else
                                             entity
 
-                                    entity, insertionContext, symbol))
+                                    {
+                                        Entity = entity
+                                        Context = insertionContext
+                                        Symbol = symbol
+                                        NamespaceIdentCount = namespaceIdentCount
+                                    }))
                             |> Seq.toList
                             |> getSuggestionsAsCodeFixes
                                 (RoslynHelpers.FSharpRangeToTextSpan(sourceText, longIdent.Head.idRange))
