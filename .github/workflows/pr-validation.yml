@@ -33,18 +33,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: .\.github\scripts\pr-validation.ps1 -Mode Prepare
 
-      - name: Get Microsoft membership lookup token
-        id: membership-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ secrets.MICROSOFT_MEMBERS_APP_ID }}
-          private-key: ${{ secrets.MICROSOFT_MEMBERS_APP_PRIVATE_KEY }}
-          owner: microsoft
-          permission-members: read
-
       - name: Verify Microsoft organization membership
         env:
-          GITHUB_TOKEN: ${{ steps.membership-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: .\.github\scripts\pr-validation.ps1 -Mode Membership
 
       - name: Azure Login with OpenID Connect
@@ -72,5 +63,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_URL: ${{ steps.queue.outputs.url }}
           HEAD_SHA: ${{ steps.request.outputs.head }}
-          BASE_SHA: ${{ steps.request.outputs.base }}
+          PIPELINE_SHA: ${{ steps.request.outputs.pipeline }}
         run: .\.github\scripts\pr-validation.ps1 -Mode Report

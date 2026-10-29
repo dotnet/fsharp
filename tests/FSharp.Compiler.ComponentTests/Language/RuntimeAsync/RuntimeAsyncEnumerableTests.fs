@@ -4,15 +4,13 @@ open System
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open RuntimeAsyncEnumerable
-open RuntimeTaskBuilder
-open RuntimeTaskBuilder.RuntimeTask
-open AsyncSeqAwaitableExtensions
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 
 // Test that the runtime-async computation is not split by the Optimizer
 let except (itemsToExclude: IAsyncEnumerable<_>) (source: IAsyncEnumerable<_>) =
 
-    asyncSeq {
+    asyncSeq2 {
         use e = source.GetAsyncEnumerator CancellationToken.None
         let! hasFirst = e.MoveNextAsync()
 
@@ -84,7 +82,7 @@ type private TestAsyncSource(values: int[]) =
                 member _.DisposeAsync() = ValueTask() }
 
 let private basicSequence () =
-    asyncSeq {
+    asyncSeq2 {
         do! Task.Delay(5)
         yield "1"
         do! Task.Delay(5)
@@ -102,7 +100,7 @@ let private testBasicSequence () =
 let private testAwaitableKinds () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 let! taskValue = Task.FromResult 1
                 let! valueTaskValue = ValueTask<int>(2)
                 let! asyncValue = async { return 3 }
@@ -118,7 +116,7 @@ let private testAwaitableKinds () =
 let private testMergedAwaitables () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 do! Task.Delay(25)
                 let! taskValue = Task.FromResult 1
                 let! valueTaskValue = ValueTask<int>(2)
@@ -134,7 +132,7 @@ let private testMergedAwaitables () =
 let private testTryWith () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 try
                     yield 1
                     do! Task.Delay(10)
@@ -151,7 +149,7 @@ let private testTryFinally () =
     runtimeTask {
         let mutable cleanedUp = false
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 try
                     yield 3
                 finally
@@ -167,7 +165,7 @@ let private testUsing () =
     runtimeTask {
         let mutable disposed = false
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 use resource = new TrackingDisposable(fun () -> disposed <- true)
                 yield 4
             }
@@ -180,7 +178,7 @@ let private testUsing () =
 let private testWhile () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 let mutable value = 0
 
                 while value < 3 do
@@ -196,7 +194,7 @@ let private testWhile () =
 let private testYieldFrom () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 yield! [ 5; 6 ]
                 yield! (TestAsyncSource [| 7; 8 |] :> IAsyncEnumerable<int>)
             }
@@ -208,7 +206,7 @@ let private testYieldFrom () =
 let private testForAsyncEnumerable () =
     runtimeTask {
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 for value in (TestAsyncSource [| 9; 10 |] :> IAsyncEnumerable<int>) do
                     yield value + 1
             }
@@ -221,7 +219,7 @@ let private testPullDrivenEnumeration () =
     runtimeTask {
         let mutable sideEffects = 0
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 sideEffects <- sideEffects + 1
                 yield 1
                 sideEffects <- sideEffects + 1
@@ -246,7 +244,7 @@ let private testConcurrentMoveNext () =
     runtimeTask {
         let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
         let source =
-            asyncSeq {
+            asyncSeq2 {
                 do! gate.Task
                 yield 1
             }
@@ -269,7 +267,7 @@ let private testConcurrentMoveNext () =
 let testTailRecursion () =
     runtimeTask {
         let rec loop n =
-            asyncSeq {
+            asyncSeq2 {
                 if n > 0 then
                     if n % 10000 = 0 then
                         do! Task.Delay 1 // simulate some async work
