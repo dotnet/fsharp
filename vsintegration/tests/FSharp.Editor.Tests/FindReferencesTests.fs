@@ -245,7 +245,6 @@ module FindReferences =
         if foundReferences.Count <> 1 then
             failwith $"Expected 1 reference but found {foundReferences.Count}"
 
-    /// The `<param>` tag of a parameter is for Rename and highlighting, not a reference to list.
     [<Fact>]
     let ``Find references does not list the param tag of a parameter`` () =
 
@@ -274,6 +273,5 @@ module FindReferences =
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
 
-        // The use in the body only; the `<param>` tag stays out
         if foundReferences.Count <> 1 then
             failwith $"Expected 1 reference but found {foundReferences.Count}"

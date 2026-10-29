@@ -33,8 +33,7 @@ type internal InlineRenameLocationSet
 
     inherit FSharpInlineRenameLocationSet()
 
-    // `<param name="…">` and its kin hold the bare name: no type-parameter tick, no backticks
-    static let docAttributeText (replacementText: string) =
+    static let docTagName (replacementText: string) =
         if
             replacementText.StartsWith("'", StringComparison.Ordinal)
             || replacementText.StartsWith("^", StringComparison.Ordinal)
@@ -45,7 +44,6 @@ type internal InlineRenameLocationSet
         else
             replacementText
 
-    // A name inside a `///` comment is the only use the checker reports on such a line
     static let isXmlDocLine (sourceText: SourceText) (span: TextSpan) =
         let line = sourceText.Lines.GetLineFromPosition(span.Start)
         let mutable i = line.Start
@@ -70,7 +68,7 @@ type internal InlineRenameLocationSet
             | [] -> return solution
             | (document, locations) :: rest ->
                 let! oldSource = document.GetTextAsync(cancellationToken)
-                let docText = docAttributeText replacementText
+                let docName = docTagName replacementText
 
                 let newSource =
                     oldSource.WithChanges(
@@ -78,7 +76,7 @@ type internal InlineRenameLocationSet
                         |> List.map (fun l ->
                             let text =
                                 if isXmlDocLine oldSource l.TextSpan then
-                                    docText
+                                    docName
                                 else
                                     replacementText
 
@@ -133,7 +131,6 @@ type internal InlineRenameInfo
                 return! document.GetTextAsync(cancellationToken)
             }
 
-    // Rename follows a parameter into its `<param>`/`<typeparam>` tags, which Find All References leaves out
     let symbolUses =
         SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document, RelatedSymbolUseKind.AllInCodeAndDocs) ct
 

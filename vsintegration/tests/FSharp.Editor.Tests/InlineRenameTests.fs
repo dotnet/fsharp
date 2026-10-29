@@ -709,7 +709,7 @@ type RecordRename() =
                     check.GetUsesOfSymbolInFile(use'.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
 
                 let! shared =
-                    SymbolHelpers.getSymbolUses use' document check
+                    SymbolHelpers.getSymbolUses use' document check RelatedSymbolUseKind.AllInCode
                     |> CancellableTask.start CancellationToken.None
 
                 Assert.Equal<(int * int * int * int) array>(
@@ -869,7 +869,10 @@ type RecordRename() =
                 ordinary |> Array.map (fun use' -> coordinates use'.Range) |> Array.sort
             )
 
-            let! shared = SymbolHelpers.getSymbolUses symbolUse document check |> CancellableTask.start ct
+            let! shared =
+                SymbolHelpers.getSymbolUses symbolUse document check RelatedSymbolUseKind.AllInCode
+                |> CancellableTask.start ct
+
             let! snapshot = document.Project.GetFSharpProjectSnapshot() |> CancellableTask.start ct
 
             let! checker, _, _, options =

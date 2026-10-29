@@ -102,8 +102,6 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
-    /// The project-wide index behind `getSymbolUsesInProjects` leaves out names inside `///` comments, and only
-    /// a declaration carries them, so they are read from the check results of the files that declare the symbol.
     let private findXmlDocUsesInDeclaringFiles
         (symbol: FSharpSymbol)
         (currentDocument: Document)
@@ -144,7 +142,7 @@ module internal SymbolHelpers =
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses =
-                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
+                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = relatedSymbolKinds)
 
                 do!
                     symbolUses
@@ -166,7 +164,7 @@ module internal SymbolHelpers =
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults
                     |> Seq.collect (fun (checkFileResults, doc) ->
-                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
+                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = relatedSymbolKinds)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
                 do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll
