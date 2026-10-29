@@ -27,6 +27,7 @@ open System.Buffers.Binary
 open Xunit.Sdk
 open FSharp.Test
 open FSharp.Compiler.HotReload.SymbolMatcher
+open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.TypedTreeDiff
 open FSharp.Compiler.ComponentTests.HotReload.TestHelpers
 
@@ -917,6 +918,34 @@ module DeltaEmitterTests =
         match FSharpSymbolMatcher.tryGetMethodDef matcher key with
         | Some(_, _, methodDef) -> Assert.Equal("GetValue", methodDef.Name)
         | None -> Assert.True(false, "Expected method to be located by symbol matcher.")
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``symbol matcher expands only reconstructed synthesized aliases`` usesRecordedSnapshot =
+        let moduleDef = createModuleWithSpuriousAddedType 1
+        let emittedName = "Noise@hotreload#g1_o0"
+        let aliasName = "Noise@hotreload#g1_o1"
+        let names = FSharpSynthesizedTypeMaps()
+        let snapshot = [| struct ("Noise", [| emittedName; aliasName |]) |]
+
+        if usesRecordedSnapshot then
+            names.LoadRecordedSnapshot snapshot
+        else
+            names.LoadSnapshot snapshot
+
+        let matcher = FSharpSymbolMatcher.createWithSynthesizedNames moduleDef names
+        let emittedMatch = FSharpSymbolMatcher.tryGetTypeDef matcher emittedName
+        Assert.True(emittedMatch.IsSome)
+
+        match FSharpSymbolMatcher.tryGetTypeDef matcher aliasName with
+        | Some(_, typeDef) ->
+            Assert.False(usesRecordedSnapshot)
+            Assert.Equal(emittedName, typeDef.Name)
+        | None -> Assert.True(usesRecordedSnapshot)
+
+        let methodMatch = Assert.Single(matcher.MethodMatches.Values)
+        Assert.Equal("GetValue", methodMatch.MethodDef.Name)
 
     [<Fact>]
     let ``synthesized type matching rejects ambiguous recorded candidates`` () =
