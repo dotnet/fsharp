@@ -45,6 +45,7 @@ module UnifiedSettingsTests =
         let assembly =
             match resource.Substring(separator + 1) with
             | "FSharp.Editor.dll" -> typeof<EditorOptions>.Assembly
+            | "{871d2a70-12a2-4e42-9440-425dd92a4116}" -> typeof<EditorOptions>.Assembly
             | "FSharp.VS.FSI.dll" -> typeof<FSharpCompilerSettings>.Assembly
             | "FSharp.UIResources.dll" -> Assembly.Load("FSharp.UIResources")
             | name -> invalidOp $"Unexpected settings resource assembly: {name}."
@@ -234,14 +235,17 @@ module UnifiedSettingsTests =
                     match legacy.TryGetValue name with
                     | true, value -> ValueSome value
                     | _ -> ValueNone)
-                (fun name ->
+                (fun () ->
                     if failCheckpoint then
                         Task.FromException(IOException("Checkpoint failed for test"))
                     else
-                        legacy[name] <- true
-                        checkpoints.Add name
+                        legacy[UnifiedSettingsMigration.CompletionKey] <- true
+                        checkpoints.Add UnifiedSettingsMigration.CompletionKey
                         Task.CompletedTask)
-                (fun name -> native.Values.ContainsKey name || legacy.ContainsKey("UnifiedSettings." + name))
+                (fun () ->
+                    native.Values.Count > 0
+                    || legacy.Keys
+                       |> Seq.exists (fun name -> name.StartsWith("UnifiedSettings.languages.fsharp.", StringComparison.Ordinal)))
                 errors.Add
                 (defaultArg cancellationToken CancellationToken.None)
 
@@ -744,7 +748,8 @@ module UnifiedSettingsTests =
             do! fixture.Run()
             Assert.Empty fixture.Errors
             Assert.Equal(42, fixture.Native.Values.Count)
-            Assert.Equal(12, fixture.Checkpoints.Count)
+            Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
+            Assert.Equal(1, fixture.Native.CommitCount)
 
             for name, defaults, property in editorSettings () do
                 if property.PropertyType = typeof<int option> then
@@ -777,7 +782,7 @@ module UnifiedSettingsTests =
             do! fixture.Run()
             Assert.Equal(commits, fixture.Native.CommitCount)
             Assert.False(fixture.Native.Values.ContainsKey "languages.fsharp.quickInfo.showRemarks")
-            Assert.Equal(12, fixture.Checkpoints.Count)
+            Assert.Single(fixture.Checkpoints) |> ignore
         }
 
     [<Theory>]
@@ -830,25 +835,85 @@ module UnifiedSettingsTests =
         }
 
     [<Theory>]
+    [<InlineData("intelliSense.showAfterCharIsTyped")>]
+    [<InlineData("quickInfo.showRemarks")>]
+    [<InlineData("codeFixes.simplifyName")>]
+    [<InlineData("performance.enableInMemoryCrossProjectReferences")>]
+    [<InlineData("advanced.solutionBackgroundAnalysis")>]
+    [<InlineData("formatting.formatOnPaste")>]
+    [<InlineData("interactive.debugMode")>]
+    let ``Any saved FSharp customization completes migration without importing any legacy values`` suffix =
+        task {
+            for roamed in [ false; true ] do
+                let fixture = ImportFixture()
+                let moniker = $"languages.fsharp.{suffix}"
+
+                if roamed then
+                    fixture.Legacy["UnifiedSettings." + moniker] <- false
+                else
+                    fixture.Native.Set(moniker, false)
+
+                fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"DisplayLinks\":false}"
+                fixture.Legacy[UnifiedSettingsMigration.interactiveKey "FsiCommandLineArgs"] <- "--warn:5"
+                do! fixture.Run()
+                Assert.Empty fixture.Errors
+                Assert.Equal(0, fixture.Native.CommitCount)
+                Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
+                Assert.False(fixture.Native.Values.ContainsKey "languages.fsharp.quickInfo.displayLinks")
+                Assert.False(fixture.Native.Values.ContainsKey "languages.fsharp.interactive.commandLineArgs")
+
+                if roamed then
+                    Assert.Empty fixture.Native.Values
+                else
+                    Assert.Single(fixture.Native.Values) |> ignore
+                    Assert.Equal(box false, fixture.Native.Values[moniker])
+        }
+
+    [<Fact>]
+    let ``Unrelated saved settings do not prevent the FSharp import`` () =
+        task {
+            let fixture = ImportFixture()
+            fixture.Legacy["UnifiedSettings.languages.csharp.formatting.formatOnPaste"] <- true
+            fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
+            do! fixture.Run()
+            Assert.Empty fixture.Errors
+            Assert.Equal(box true, fixture.Native.Values["languages.fsharp.formatting.formatOnPaste"])
+            Assert.Single(fixture.Checkpoints) |> ignore
+        }
+
+    [<Fact>]
+    let ``A legacy record with no fields still completes migration`` () =
+        task {
+            let fixture = ImportFixture()
+            fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{}"
+            do! fixture.Run()
+            Assert.Empty fixture.Errors
+            Assert.Empty fixture.Native.Values
+            Assert.Equal(0, fixture.Native.CommitCount)
+            Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
+        }
+
+    [<Theory>]
     [<InlineData("not json")>]
     [<InlineData("{\"DescriptionWidth\":{\"Case\":\"Some\",\"Fields\":[19]}}")>]
     [<InlineData("{\"DescriptionWidth\":{\"Case\":\"Some\",\"Fields\":[2147483648]}}")>]
     [<InlineData("{\"UnderlineStyle\":{\"Case\":\"Unknown\"}}")>]
     [<InlineData("{\"ShowRemarks\":\"false\"}")>]
     [<InlineData("{\"ShowRemarks\":true,\"ShowRemarks\":false}")>]
-    let ``Invalid groups are reported while independent groups still import`` json =
+    let ``Invalid legacy values prevent the single import from committing`` json =
         task {
             let fixture = ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- json
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             do! fixture.Run()
             Assert.Single(fixture.Errors) |> ignore
-            Assert.Equal(box true, fixture.Native.Values["languages.fsharp.formatting.formatOnPaste"])
-            Assert.False(fixture.Legacy.ContainsKey(UnifiedSettingsMigration.checkpointKey "quickInfo"))
+            Assert.Empty fixture.Native.Values
+            Assert.Empty fixture.Checkpoints
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":false}"
             do! fixture.Run()
             Assert.Equal(box false, fixture.Native.Values["languages.fsharp.quickInfo.showRemarks"])
-            Assert.Equal(2, fixture.Checkpoints.Count)
+            Assert.Equal(box true, fixture.Native.Values["languages.fsharp.formatting.formatOnPaste"])
+            Assert.Single(fixture.Checkpoints) |> ignore
         }
 
     [<Theory>]
@@ -916,6 +981,58 @@ module UnifiedSettingsTests =
                 unbox<string> fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"]
             )
         }
+
+    [<Fact>]
+    let ``Compiler provider registration is asynchronously queryable with package qualified resources`` () =
+        let package =
+            typeof<EditorOptions>.Assembly.GetType("Microsoft.VisualStudio.FSharp.Editor.FSharpPackage", true)
+
+        let setting = (registrations ()).["languages.fsharp.compiler.settings"]
+        let category = (manifest ()).["categories"].["languages.fsharp.compiler"]
+        Assert.Equal(category["title"].Value<string>(), setting["title"].Value<string>())
+
+        let compilerChildren =
+            (registrations ()).Properties()
+            |> Seq.filter (fun property -> property.Name.StartsWith("languages.fsharp.compiler.", StringComparison.Ordinal))
+
+        Assert.Equal("languages.fsharp.compiler.settings", (Assert.Single compilerChildren).Name)
+        let packageId = setting.SelectToken("callback.packageId").Value<string>()
+        Assert.Equal(Guid packageId, package.GUID)
+        Assert.Equal(Guid(setting.SelectToken("callback.serviceId").Value<string>()), typeof<FSharpSettingsProvider>.GUID)
+
+        let registration =
+            package.CustomAttributes
+            |> Seq.find (fun attribute -> attribute.AttributeType.FullName = "Microsoft.VisualStudio.Shell.ProvideServiceAttribute")
+
+        Assert.Equal(box typeof<FSharpSettingsProvider>, registration.ConstructorArguments[0].Value)
+
+        let asyncQueryable =
+            registration.NamedArguments
+            |> Seq.find (fun argument -> argument.MemberName = "IsAsyncQueryable")
+
+        Assert.True(Assert.IsType<bool>(asyncQueryable.TypedValue.Value))
+
+        for resource in
+            [|
+                setting["backingStoreDescription"].Value<string>()
+                setting.SelectToken("properties.UseNetSdkCompiler.title").Value<string>()
+                setting.SelectToken("properties.UseNetSdkCompiler.description").Value<string>()
+            |] do
+            Assert.EndsWith($";{{{packageId}}}", resource)
+            Assert.False(String.IsNullOrEmpty(localizedString resource))
+
+        let legacyResources =
+            ResourceManager("Properties", typeof<FSharpCompilerSettings>.Assembly)
+
+        Assert.Equal(
+            legacyResources.GetString("FSharpCompilerUseNetSdk"),
+            localizedString (setting.SelectToken("properties.UseNetSdkCompiler.title").Value<string>())
+        )
+
+        Assert.Equal(
+            legacyResources.GetString("FSharpCompilerUseNetSdkDescr"),
+            localizedString (setting.SelectToken("properties.UseNetSdkCompiler.description").Value<string>())
+        )
 
     [<Fact>]
     let ``Compiler provider reads writes notifies and rejects migrated settings`` () =

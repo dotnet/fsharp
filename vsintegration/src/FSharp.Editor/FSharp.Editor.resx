@@ -389,6 +389,12 @@ Use live (unsaved) buffers for analysis</value>
     <value>This compiler setting uses the user-wide F# compiler configuration.</value>
     <comment>Description of the storage for the F# compiler option in Unified Settings. User-wide means shared by Visual Studio instances for the same Windows user.</comment>
   </data>
+  <data name="UnifiedSettingsCompilerUseNetSdkTitle" xml:space="preserve">
+    <value>Use the .NET SDK F# compiler for builds</value>
+  </data>
+  <data name="UnifiedSettingsCompilerUseNetSdkDescription" xml:space="preserve">
+    <value>When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</value>
+  </data>
   <data name="UnifiedSettingsShowCompletionAfterTypingTitle" xml:space="preserve">
     <value>Show completion list after a character is typed</value>
   </data>

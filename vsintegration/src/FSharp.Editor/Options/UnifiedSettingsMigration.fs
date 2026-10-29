@@ -81,8 +81,8 @@ module internal UnifiedSettingsMigration =
     let interactiveKey name =
         $"Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage.{name}"
 
-    let checkpointKey name =
-        $"FSharp.UnifiedSettingsMigration.v1.{name}"
+    [<Literal>]
+    let CompletionKey = "FSharp.UnifiedSettingsMigration.v1.Completed"
 
     let private enqueue (writer: ISettingsWriter) moniker (value: JToken) =
         let options = SettingWriteOptions.CustomizeUnconditionally
@@ -97,7 +97,7 @@ module internal UnifiedSettingsMigration =
         if result.Outcome <> SettingChangeOutcome.PendingCommit then
             invalidOp $"Cannot import {moniker}: {result.Outcome}. {result.Message}"
 
-    let importEditor (writer: ISettingsWriter) isProtected category (fields: string[]) (json: string) =
+    let importEditor (writer: ISettingsWriter) category (fields: string[]) (json: string) =
         let source =
             JObject.Parse(json, JsonLoadSettings(DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error))
 
@@ -107,26 +107,25 @@ module internal UnifiedSettingsMigration =
 
             let value = source.GetValue(field, StringComparison.Ordinal)
 
-            if not (isNull value) && not (isProtected moniker) then
+            if not (isNull value) then
                 if category = "quickInfo" && field = "DescriptionWidth" then
                     let widthMoniker = moniker + "InCharacters"
 
-                    if not (isProtected widthMoniker) then
-                        match value.Type with
-                        | JTokenType.Null -> enqueue writer moniker (JValue(false))
-                        | JTokenType.Object when value["Case"].Value<string>() = "Some" ->
-                            let values = value["Fields"] :?> JArray
+                    match value.Type with
+                    | JTokenType.Null -> enqueue writer moniker (JValue(false))
+                    | JTokenType.Object when value["Case"].Value<string>() = "Some" ->
+                        let values = value["Fields"] :?> JArray
 
-                            if
-                                values.Count <> 1
-                                || values[0].Type <> JTokenType.Integer
-                                || values[0].Value<int>() < 20
-                            then
-                                invalidOp "Invalid legacy F# description width."
+                        if
+                            values.Count <> 1
+                            || values[0].Type <> JTokenType.Integer
+                            || values[0].Value<int>() < 20
+                        then
+                            invalidOp "Invalid legacy F# description width."
 
-                            enqueue writer widthMoniker values[0]
-                            enqueue writer moniker (JValue(true))
-                        | _ -> invalidOp "Invalid legacy F# description width."
+                        enqueue writer widthMoniker values[0]
+                        enqueue writer moniker (JValue(true))
+                    | _ -> invalidOp "Invalid legacy F# description width."
                 else
                     let value =
                         if value.Type = JTokenType.Object then
@@ -139,52 +138,49 @@ module internal UnifiedSettingsMigration =
     let runAsync
         (manager: Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager)
         (tryRead: string -> obj voption)
-        (saveCheckpoint: string -> Task)
-        isProtected
+        (saveCompleted: unit -> Task)
+        (hasNativeCustomizations: unit -> bool)
         (logError: exn -> unit)
         (cancellationToken: CancellationToken)
         : Task =
         task {
-            let migrate name sourceKey import =
-                task {
-                    cancellationToken.ThrowIfCancellationRequested()
+            cancellationToken.ThrowIfCancellationRequested()
 
-                    try
-                        match tryRead (checkpointKey name) with
-                        | ValueSome(:? bool as completed) when completed -> ()
-                        | _ ->
-                            match tryRead sourceKey with
-                            | ValueNone -> ()
-                            | ValueSome source ->
-                                let writer = manager.GetWriter("F# settings migration")
-                                import writer source
-                                cancellationToken.ThrowIfCancellationRequested()
-                                let result = writer.RequestCommit(SR.UnifiedSettingsMigrationDescription())
+            try
+                match tryRead CompletionKey with
+                | ValueSome(:? bool as completed) when completed -> ()
+                | _ when hasNativeCustomizations () -> do! saveCompleted ()
+                | _ ->
+                    let writer = manager.GetWriter("F# settings migration")
+                    let mutable hasLegacyValues = false
 
-                                match result.Outcome with
-                                | SettingCommitOutcome.Success
-                                | SettingCommitOutcome.NoChangesQueued -> do! saveCheckpoint (checkpointKey name)
-                                | _ -> invalidOp $"Cannot complete F# settings import: {result.Outcome}. {result.Message}"
-                    with
-                    | :? OperationCanceledException as error when cancellationToken.IsCancellationRequested ->
-                        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
-                    | error -> logError error
-                }
+                    for category, legacyType, fields in editorGroups do
+                        match tryRead (editorKey legacyType) with
+                        | ValueNone -> ()
+                        | ValueSome(:? string as json) ->
+                            hasLegacyValues <- true
+                            importEditor writer category fields json
+                        | _ -> invalidOp $"Invalid legacy F# settings record: {legacyType}."
 
-            for category, legacyType, fields in editorGroups do
-                do!
-                    migrate category (editorKey legacyType) (fun writer value ->
-                        match value with
-                        | :? string as json -> importEditor writer isProtected category fields json
-                        | _ -> invalidOp $"Invalid legacy F# settings record: {legacyType}.")
+                    for suffix, legacyName in interactiveSettings do
+                        match tryRead (interactiveKey legacyName) with
+                        | ValueNone -> ()
+                        | ValueSome value ->
+                            hasLegacyValues <- true
+                            enqueue writer $"languages.fsharp.interactive.{suffix}" (JToken.FromObject value)
 
-            for suffix, legacyName in interactiveSettings do
-                do!
-                    migrate ($"interactive.{suffix}") (interactiveKey legacyName) (fun writer value ->
-                        let moniker = $"languages.fsharp.interactive.{suffix}"
+                    if hasLegacyValues then
+                        cancellationToken.ThrowIfCancellationRequested()
+                        let result = writer.RequestCommit(SR.UnifiedSettingsMigrationDescription())
 
-                        if not (isProtected moniker) then
-                            enqueue writer moniker (JToken.FromObject value))
+                        match result.Outcome with
+                        | SettingCommitOutcome.Success
+                        | SettingCommitOutcome.NoChangesQueued -> do! saveCompleted ()
+                        | _ -> invalidOp $"Cannot complete F# settings import: {result.Outcome}. {result.Message}"
+            with
+            | :? OperationCanceledException as error when cancellationToken.IsCancellationRequested ->
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
+            | error -> logError error
         }
 
     #nowarn "57"
@@ -208,10 +204,10 @@ module internal UnifiedSettingsMigration =
                 | GetValueResult.Missing, _ -> ValueNone
                 | result, _ -> invalidOp $"Cannot read legacy F# setting {name}: {result}."
 
-            let isProtected moniker =
-                metadata.GetProvenance(moniker).IsCustomizedInDefaultScope
-                || legacyBase.NamesStartingWith("UnifiedSettings." + moniker)
-                   |> Array.exists (fun name -> String.Equals(name, "UnifiedSettings." + moniker, StringComparison.OrdinalIgnoreCase))
+            let hasNativeCustomizations () =
+                legacyBase.NamesStartingWith("UnifiedSettings.languages.fsharp.").Length > 0
+                || metadata.GetMonikersMatchingPattern("languages.fsharp.*")
+                   |> Seq.exists (fun moniker -> metadata.GetProvenance(moniker).Source = SettingValueSource.UserCustomization)
 
             let run () : Task =
                 task {
@@ -225,8 +221,8 @@ module internal UnifiedSettingsMigration =
                                 runAsync
                                     manager
                                     tryRead
-                                    (fun name -> legacyBase.SetValueAsync(name, true, true))
-                                    isProtected
+                                    (fun () -> legacyBase.SetValueAsync(CompletionKey, true, true))
+                                    hasNativeCustomizations
                                     logError
                                     cancellationToken
                         finally

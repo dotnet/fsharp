@@ -320,6 +320,16 @@ Mostra i commenti in Informazioni rapide</target>
         <target state="new">Enter an integer from 1 to 10000. Higher numbers use more memory for caching. Changing the value wipes the cache.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnifiedSettingsCompilerUseNetSdkDescription">
+        <source>When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</source>
+        <target state="new">When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsCompilerUseNetSdkTitle">
+        <source>Use the .NET SDK F# compiler for builds</source>
+        <target state="new">Use the .NET SDK F# compiler for builds</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnifiedSettingsDashUnderlineLabel">
         <source>Dash underline</source>
         <target state="new">Dash underline</target>

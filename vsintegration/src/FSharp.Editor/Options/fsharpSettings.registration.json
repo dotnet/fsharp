@@ -557,7 +557,8 @@
     },
     "languages.fsharp.compiler.settings": {
       "type": "external",
-      "backingStoreDescription": "@FSharp.Editor:UnifiedSettingsBackingStoreDescription;FSharp.Editor.dll",
+      "title": "@Properties:FSharpCompilerMisc;FSharp.VS.FSI.dll",
+      "backingStoreDescription": "@FSharp.Editor:UnifiedSettingsBackingStoreDescription;{871d2a70-12a2-4e42-9440-425dd92a4116}",
       "callback": {
         "packageId": "871d2a70-12a2-4e42-9440-425dd92a4116",
         "serviceId": "9c45f9ae-6c72-4b44-bf59-65d102a33d11"
@@ -566,8 +567,8 @@
       "properties": {
         "UseNetSdkCompiler": {
           "type": "boolean",
-          "title": "@Properties:FSharpCompilerUseNetSdk;FSharp.VS.FSI.dll",
-          "description": "@Properties:FSharpCompilerUseNetSdkDescr;FSharp.VS.FSI.dll"
+          "title": "@FSharp.Editor:UnifiedSettingsCompilerUseNetSdkTitle;{871d2a70-12a2-4e42-9440-425dd92a4116}",
+          "description": "@FSharp.Editor:UnifiedSettingsCompilerUseNetSdkDescription;{871d2a70-12a2-4e42-9440-425dd92a4116}"
         }
       }
     }

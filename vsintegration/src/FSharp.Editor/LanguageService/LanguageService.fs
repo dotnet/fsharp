@@ -262,7 +262,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideSettingsManifest(PackageRelativeManifestFile = "fsharpSettings.registration.json")>]
-[<ProvideService(typeof<FSharpSettingsProvider>)>]
+[<ProvideService(typeof<FSharpSettingsProvider>, IsAsyncQueryable = true)>]
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
@@ -356,19 +356,20 @@ type internal FSharpPackage() as this =
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
     do
-        (this :> IServiceContainer)
-            .AddService(
-                typeof<FSharpSettingsProvider>,
-                ServiceCreatorCallback(fun _ _ ->
-                    ThreadHelper.ThrowIfNotOnUIThread()
+        this.AddService(
+            typeof<FSharpSettingsProvider>,
+            AsyncServiceCreatorCallback(fun _ cancellationToken _ ->
+                cancellationToken.ThrowIfCancellationRequested()
 
+                Task.FromResult<obj>(
                     new FSharpSettingsProvider(
                         (fun () -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler),
                         (fun value -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler <- value),
                         (fun error -> ActivityLog.LogError("F# Unified Settings", error.ToString()))
-                    )),
-                true
-            )
+                    )
+                )),
+            true
+        )
 
 #if DEBUG
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
