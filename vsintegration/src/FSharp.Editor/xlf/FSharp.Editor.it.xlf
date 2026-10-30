@@ -440,6 +440,16 @@ Mostra i commenti in Informazioni rapide</target>
         <target state="translated">Racchiudere l'espressione tra parentesi</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

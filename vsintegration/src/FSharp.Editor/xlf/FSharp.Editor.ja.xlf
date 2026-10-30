@@ -440,6 +440,16 @@ F# 構文規則に準拠した改行を追加して、署名を指定された�
         <target state="translated">式をかっこで囲む</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
