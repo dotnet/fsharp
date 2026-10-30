@@ -2434,11 +2434,22 @@ module ParsedInput =
             Kind: ScopeKind
         }
 
-    let tryFindNearestPointAndModules currentLine (ast: ParsedInput) (insertionPoint: OpenStatementInsertionPoint) =
+    let tryFindNearestPointAndModules (currentPos: pos) (ast: ParsedInput) (insertionPoint: OpenStatementInsertionPoint) =
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new DiagnosticsScope(false)
+
+        let currentLine = currentPos.Line
+
+        let blockComments =
+            match ast with
+            | ParsedInput.ImplFile input ->
+                input.Trivia.CodeComments
+                |> List.choose (function
+                    | CommentTrivia.BlockComment range -> Some range
+                    | CommentTrivia.LineComment _ -> None)
+            | ParsedInput.SigFile _ -> []
 
         let mutable result = None
         let mutable ns = None
@@ -2487,9 +2498,9 @@ module ParsedInput =
                             )
                     | _ -> ()
 
-        let getMinColumn decls =
+        let tryGetFirstDeclStart decls =
             match decls with
-            | [] -> None
+            | [] -> ValueNone
             | firstDecl :: _ ->
                 match firstDecl with
                 | SynModuleDecl.NestedModule(range = r)
@@ -2498,9 +2509,33 @@ module ParsedInput =
                 | SynModuleDecl.Types(range = r)
                 | SynModuleDecl.Exception(range = r)
                 | SynModuleDecl.Open(range = r)
-                | SynModuleDecl.HashDirective(range = r) -> Some r
-                | _ -> None
-                |> Option.map (fun r -> r.StartColumn)
+                | SynModuleDecl.HashDirective(range = r) -> ValueSome r.Start
+                | _ -> ValueNone
+
+        let rec skipTrailingBlockComments (firstDeclStart: pos voption) line =
+            match
+                blockComments
+                |> List.tryFind (fun comment ->
+                    comment.StartLine <= line
+                    && comment.EndLine > line
+                    && firstDeclStart |> ValueOption.forall (posLt comment.Start))
+            with
+            | Some comment -> skipTrailingBlockComments firstDeclStart comment.EndLine
+            | None -> line
+
+        let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) firstDeclStart =
+            let nameEndLine =
+                ident
+                |> List.fold (fun line part -> max line part.idRange.EndLine) keyword.EndLine
+
+            equals
+            |> Option.fold (fun line equalsSign -> max line equalsSign.EndLine) nameEndLine
+            |> skipTrailingBlockComments firstDeclStart
+
+        let bodyAnchor headerLine (firstDeclStart: pos voption) defaultColumn =
+            match firstDeclStart with
+            | ValueSome start when start.Line = headerLine -> struct (headerLine - 1, start.Column)
+            | _ -> struct (headerLine, defaultColumn)
 
         let rec walkImplFileInput (file: ParsedImplFileInput) =
             List.iter (walkSynModuleOrNamespace []) file.Contents
@@ -2522,14 +2557,16 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
-                // Use trivia to get the actual module/namespace keyword line, which excludes attributes
-                let startLine =
+                let firstDeclStart = tryGetFirstDeclStart decls
+
+                let headerLine =
                     match trivia.LeadingKeyword with
-                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange -> moduleRange.StartLine
-                    | SynModuleOrNamespaceLeadingKeyword.Namespace namespaceRange -> namespaceRange.StartLine - 1
-                    | SynModuleOrNamespaceLeadingKeyword.None ->
-                        // No keyword (implicit module), use range.StartLine
-                        if isModule then range.StartLine else range.StartLine - 1
+                    | SynModuleOrNamespaceLeadingKeyword.Module keyword
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace keyword -> headerEndLine keyword ident None firstDeclStart
+                    | SynModuleOrNamespaceLeadingKeyword.None -> range.StartLine - 1
+
+                let struct (lineAboveBody, column) =
+                    bodyAnchor headerLine firstDeclStart range.StartColumn
 
                 let scopeKind =
                     match isModule, parent with
@@ -2537,7 +2574,7 @@ module ParsedInput =
                     | true, _ -> NestedModule
                     | _ -> Namespace
 
-                doRange scopeKind fullIdent startLine range.StartColumn
+                doRange scopeKind fullIdent lineAboveBody column
                 addModule (fullIdent, range)
                 List.iter (walkSynModuleDecl fullIdent) decls
 
@@ -2545,22 +2582,36 @@ module ParsedInput =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
             | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls; range = range; trivia = trivia) ->
+                let (SynComponentInfo(attributes = attributes)) = compInfo
                 let ident = compInfo.LongIdent
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
 
                 if range.EndLine >= currentLine then
-                    // Use trivia to get the actual module keyword line, which excludes attributes
-                    let moduleKeywordLine =
+                    let firstDeclStart = tryGetFirstDeclStart decls
+
+                    let headerLine =
                         match trivia.ModuleKeyword with
-                        | Some moduleKeywordRange -> moduleKeywordRange.StartLine
+                        | Some moduleKeyword -> headerEndLine moduleKeyword ident trivia.EqualsRange firstDeclStart
                         | None -> range.StartLine // Fallback if trivia unavailable
 
                     let moduleBodyIndentation =
-                        getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
+                        firstDeclStart
+                        |> ValueOption.map _.Column
+                        |> ValueOption.defaultValue (range.StartColumn + 4)
 
-                    doRange NestedModule fullIdent moduleKeywordLine moduleBodyIndentation
-                    List.iter (walkSynModuleDecl fullIdent) decls
+                    let struct (lineAboveBody, bodyColumn) =
+                        bodyAnchor headerLine firstDeclStart moduleBodyIndentation
+
+                    let useMayBeInModuleAttribute =
+                        firstDeclStart
+                        |> ValueOption.exists (fun start -> start.Line = headerLine && posLt currentPos start)
+                        && attributes
+                           |> List.exists (fun attributeList -> attributeList.Range.EndLine = headerLine)
+
+                    if headerLine <= currentLine && not useMayBeInModuleAttribute then
+                        doRange NestedModule fullIdent lineAboveBody bodyColumn
+                        List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
             | _ -> ()
@@ -2604,14 +2655,14 @@ module ParsedInput =
                         Pos = mkPos (Line.fromZ m.Range.EndLine) m.Range.StartColumn
                     })
 
-    let TryFindInsertionContext
-        (currentLine: int)
+    let TryFindInsertionContextAt
+        (currentPos: pos)
         (parsedInput: ParsedInput)
         (partiallyQualifiedName: MaybeUnresolvedIdent[])
         (insertionPoint: OpenStatementInsertionPoint)
         =
         let res, modules =
-            tryFindNearestPointAndModules currentLine parsedInput insertionPoint
+            tryFindNearestPointAndModules currentPos parsedInput insertionPoint
 
         let res =
             res
@@ -2658,59 +2709,29 @@ module ParsedInput =
                     match find () with
                     | struct (_, context) -> e, context)
 
-    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
-    let AdjustInsertionPoint (getLineStr: int -> string) ctx =
-        let line =
-            match ctx.ScopeKind with
-            | ScopeKind.TopModule ->
-                if ctx.Pos.Line > 1 then
-                    // it's an implicit module without any open declarations
-                    let line = getLineStr (ctx.Pos.Line - 2)
-
-                    let isImplicitTopLevelModule =
-                        not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
-
-                    if isImplicitTopLevelModule then 1 else ctx.Pos.Line
-                else
-                    1
-
-            | ScopeKind.Namespace ->
-                // For namespaces the start line is start line of the first nested entity
-                // If we are not on the first line, try to find opening namespace, and return line after it (in F# format)
-                if ctx.Pos.Line > 1 then
-                    [ 0 .. ctx.Pos.Line - 1 ]
-                    |> List.mapi (fun i line -> i, getLineStr line)
-                    |> List.tryPick (fun (i, lineStr) ->
-                        if lineStr.StartsWithOrdinal("namespace") then
-                            Some i
-                        else
-                            None)
-                    |> function
-                        // move to the next line below "namespace" and convert it to F# 1-based line number
-                        | Some line -> line + 2
-                        | None -> ctx.Pos.Line
-                // If we are on 1st line in the namespace ctx, this line _should_ be the namespace declaration, check it and return next line.
-                // Otherwise, return first line (which theoretically should not happen).
-                else
-                    let lineStr = getLineStr (ctx.Pos.Line - 1)
-
-                    if lineStr.StartsWithOrdinal("namespace") then
-                        ctx.Pos.Line + 1
-                    else
-                        ctx.Pos.Line
-
-            | _ -> ctx.Pos.Line
-
-        mkPos line ctx.Pos.Column
-
-    let FindNearestPointToInsertOpenDeclaration
+    let TryFindInsertionContext
         (currentLine: int)
+        (parsedInput: ParsedInput)
+        (partiallyQualifiedName: MaybeUnresolvedIdent[])
+        (insertionPoint: OpenStatementInsertionPoint)
+        =
+        TryFindInsertionContextAt (mkPos currentLine 0) parsedInput partiallyQualifiedName insertionPoint
+
+    let AdjustInsertionPoint (getLineStr: int -> string) ctx =
+        match ctx.ScopeKind with
+        | ScopeKind.TopModule
+        | ScopeKind.Namespace
+        | ScopeKind.NestedModule when getLineStr (Line.toZ ctx.Pos.Line) = "" -> mkPos (ctx.Pos.Line + 1) ctx.Pos.Column
+        | _ -> ctx.Pos
+
+    let FindNearestPointToInsertOpenDeclarationAt
+        (currentPos: pos)
         (parsedInput: ParsedInput)
         (entity: ShortIdents)
         (insertionPoint: OpenStatementInsertionPoint)
         =
         let ctx =
-            match tryFindNearestPointAndModules currentLine parsedInput insertionPoint with
+            match tryFindNearestPointAndModules currentPos parsedInput insertionPoint with
             | Some(scope, _, point), modules ->
                 let struct (_, context) =
                     findBestPositionToInsertOpenDeclaration modules scope point entity
@@ -2748,8 +2769,7 @@ module ParsedInput =
                 | _ -> 0
 
             if lastReferenceLine > 0 then
-                // `AdjustInsertionPoint` snaps a `TopModule` position up to line 1, above the directives;
-                // remap it to `HashDirective`, which (like the other scopes) it passes through unchanged.
+                // AdjustInsertionPoint would move a TopModule position below the blank line under the directives.
                 let scopeKind =
                     if ctx.ScopeKind = ScopeKind.TopModule then
                         ScopeKind.HashDirective
@@ -2763,3 +2783,11 @@ module ParsedInput =
             else
                 ctx
         | _ -> ctx
+
+    let FindNearestPointToInsertOpenDeclaration
+        (currentLine: int)
+        (parsedInput: ParsedInput)
+        (entity: ShortIdents)
+        (insertionPoint: OpenStatementInsertionPoint)
+        =
+        FindNearestPointToInsertOpenDeclarationAt (mkPos currentLine 0) parsedInput entity insertionPoint
