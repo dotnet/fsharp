@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Text
 
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.EditAndContinue
@@ -362,10 +363,10 @@ let private tryGetDeclaringEntityCompiledName (vref: ValRef) =
     | Parent parent ->
         try
             Some(parent.CompiledRepresentationForNamedType.FullName)
-        with _ ->
+        with RecoverableException _ ->
             try
                 Some(parent.CompiledName)
-            with _ ->
+            with RecoverableException _ ->
                 None
     | ParentNone -> None
 
@@ -373,7 +374,7 @@ let private tryStableValReferenceIdentity (vref: ValRef) =
     let compiledName =
         try
             vref.CompiledName None
-        with _ ->
+        with RecoverableException _ ->
             vref.LogicalName
 
     let totalArgCount =
@@ -426,7 +427,7 @@ let private normalizeTypeString (text: string) =
 let private compiledTyconName (tcref: TyconRef) =
     try
         tcref.CompiledRepresentationForNamedType.FullName
-    with _ ->
+    with RecoverableException _ ->
         tcref.CompiledName
 
 /// Renders types with their compiled identities so equal display names from different
@@ -523,7 +524,7 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
             let fullName =
                 try
                     tcref.CompiledRepresentationForNamedType.FullName
-                with _ ->
+                with RecoverableException _ ->
                     tcref.CompiledName
 
             tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
@@ -547,7 +548,7 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         let fullName =
             try
                 ucref.TyconRef.CompiledRepresentationForNamedType.FullName
-            with _ ->
+            with RecoverableException _ ->
                 ucref.TyconRef.CompiledName
 
         tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
@@ -869,7 +870,7 @@ let private isResumableCodeAppTy g ty =
                 "Microsoft.FSharp.Core.CompilerServices.ResumableCode`2",
                 StringComparison.Ordinal
             )
-         with _ ->
+         with RecoverableException _ ->
              false)
     | _ -> false
 
@@ -2348,7 +2349,7 @@ let private snapshotModuleEntity denv (moduleEntity: ModuleOrNamespace) path : E
     let compiledFullName =
         try
             Some moduleEntity.CompiledRepresentationForNamedType.FullName
-        with _ ->
+        with RecoverableException _ ->
             None
 
     {
@@ -2431,7 +2432,7 @@ and private tryGetContainingEntityFullName (var: Val) =
 
             let ilTypeRef = tyconRef.CompiledRepresentationForNamedType
             Some(ilTypeRef.FullName)
-        with _ ->
+        with RecoverableException _ ->
             None
     | None -> None
 
@@ -2461,7 +2462,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
     let compiledName =
         try
             Some(vref.CompiledName None)
-        with _ ->
+        with RecoverableException _ ->
             None
 
     let isInstanceMember = ValRefIsCompiledAsInstanceMember g vref
@@ -2576,7 +2577,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
         let isExplicitInterfaceImplementation =
             try
                 ValRefIsExplicitImpl g vref
-            with _ ->
+            with RecoverableException _ ->
                 false
 
         let isConstructor = var.IsConstructor || var.IsClassConstructor
@@ -2588,7 +2589,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
             | Some memberInfo ->
                 try
                     memberInfo.ApparentEnclosingEntity.IsFSharpInterfaceTycon
-                with _ ->
+                with RecoverableException _ ->
                     false
             | None -> false
         // A field is a module-level mutable value or a non-method member
@@ -2835,7 +2836,7 @@ and private snapshotTycon g denv path (tycon: Tycon) =
     let compiledFullName =
         try
             Some tycon.CompiledRepresentationForNamedType.FullName
-        with _ ->
+        with RecoverableException _ ->
             None
 
     let supportsAddition =

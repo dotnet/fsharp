@@ -10,6 +10,8 @@ module internal FSharp.Compiler.HotReload.TrackedInputs
 open System
 open System.Collections.Generic
 open System.IO
+open Internal.Utilities.Library
+
 open FSharp.Compiler.IO
 
 /// One non-source on-disk input of a compilation, with the timestamp observed when the
@@ -37,7 +39,7 @@ let private tryNormalizeTrackedInputPath (projectDirectory: string) (path: strin
         let fullPath =
             try
                 Path.GetFullPath candidatePath
-            with _ ->
+            with RecoverableException _ ->
                 candidatePath
 
         if FileSystem.FileExistsShim fullPath then

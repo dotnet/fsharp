@@ -27,6 +27,7 @@ open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTreeDiff
 open Internal.Utilities
+open Internal.Utilities.Library
 open FSharp.Compiler.EnvironmentHelpers
 
 module MetadataWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
@@ -5351,7 +5352,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             File.WriteAllBytes(tempDll, assemblyBytes)
             printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
-        with ex ->
+        with RecoverableException ex ->
             printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
 
     use peStream = new MemoryStream(assemblyBytes, writable = false)

@@ -281,7 +281,7 @@ type FSharpChecker
                 use stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
                 use sha = System.Security.Cryptography.SHA256.Create()
                 Some(sha.ComputeHash stream)
-            with _ ->
+            with RecoverableException _ ->
                 None
         else
             None
@@ -441,7 +441,7 @@ type FSharpChecker
     let normalizeOutputPathForEmissionTargets (path: string) =
         try
             Path.GetFullPath(path)
-        with _ ->
+        with RecoverableException _ ->
             path
 
     let registerHotReloadEmissionTarget
