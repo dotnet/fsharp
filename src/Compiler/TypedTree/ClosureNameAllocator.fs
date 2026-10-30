@@ -111,7 +111,7 @@ type MemberClosureNameAllocation =
 /// use <c>EncMethodDebugInformation.decodeOccurrenceKey</c>.
 /// </summary>
 let occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
-    [ yield! List.rev occurrence.Id.ParentChain; yield occurrence.Id.Ordinal ]
+    List.rev (occurrence.Id.Ordinal :: occurrence.Id.ParentChain)
 
 /// <summary>
 /// Renders a root-first occurrence ordinal chain into the name-suffix key:
@@ -164,7 +164,7 @@ let isGenerationSuffixedClosureName (name: string) =
 /// (the first delta after the baseline is generation 1).</param>
 let allocateMemberClosureNames
     (baselineOccurrences: LambdaOccurrence list)
-    (baselineNamesByOccurrenceChain: Map<int list, string>)
+    (baselineNamesByOccurrenceChain: IReadOnlyDictionary<int list, string>)
     (freshOccurrences: LambdaOccurrence list)
     (freshNameBase: string)
     (generation: int)
@@ -188,6 +188,9 @@ let allocateMemberClosureNames
         baselineOccurrences
         |> Seq.map occurrenceOrdinalChain
         |> ImmutableHashSet.CreateRange
+
+    let refreshedNames =
+        ImmutableDictionary.CreateBuilder<int list, string>(HashIdentity.Structural)
 
     let assignments =
         news
@@ -220,31 +223,15 @@ let allocateMemberClosureNames
             let assignment =
                 match reusableBaselineName with
                 | ValueSome name -> ClosureNameAssignment.Reused name
-                | ValueNone ->
-                    ClosureNameAssignment.Fresh(
-                        formatGenerationSuffixedClosureName freshNameBase generation (occurrenceOrdinalChain freshOcc)
-                    )
+                | ValueNone -> ClosureNameAssignment.Fresh(formatGenerationSuffixedClosureName freshNameBase generation freshChain)
 
+            refreshedNames[freshChain] <- assignment.Name
             struct (freshOcc, assignment))
         |> ImmutableArray.CreateRange
 
-    // Chain-forward table: every FRESH occurrence's chain maps to its assigned name.
-    // Baseline occurrences without a fresh counterpart contribute nothing — their
-    // names fall out of the chain and are never reused by construction (later
-    // generations can only allocate generation-suffixed names, and the generation
-    // counter never repeats within a session).
-    let refreshedNames =
-        let names =
-            ImmutableDictionary.CreateBuilder<int list, string>(HashIdentity.Structural)
-
-        for struct (occ, assignment) in assignments do
-            names[occurrenceOrdinalChain occ] <- assignment.Name
-
-        names.ToImmutable()
-
     {
         Assignments = assignments
-        RefreshedNamesByOccurrenceChain = refreshedNames
+        RefreshedNamesByOccurrenceChain = refreshedNames.ToImmutable()
     }
 
 /// <summary>

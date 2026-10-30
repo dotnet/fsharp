@@ -979,6 +979,21 @@ module DeltaEmitterTests =
         Assert.Equal("persisted1", allocation.RefreshedNamesByOccurrenceChain[List.ofArray [| 0; 1 |]])
         Assert.Equal("member@hotreload#g2_o0_2", allocation.RefreshedNamesByOccurrenceChain[[ 0; 2 ]])
 
+        let nextAllocation =
+            FSharp.Compiler.ClosureNameAllocator.allocateMemberClosureNames
+                [ occurrence 3; occurrence 1; occurrence 2 ]
+                allocation.RefreshedNamesByOccurrenceChain
+                [ occurrence 3; occurrence 1; occurrence 2 ]
+                "member"
+                3
+
+        let nextNames = nextAllocation.Assignments |> Seq.map (fun struct (_, assignment) -> assignment.Name) |> Seq.toArray
+        Assert.Equal<string array>(names, nextNames)
+        Assert.All(nextAllocation.Assignments, fun struct (_, assignment) ->
+            match assignment with
+            | FSharp.Compiler.ClosureNameAllocator.ClosureNameAssignment.Reused _ -> ()
+            | FSharp.Compiler.ClosureNameAllocator.ClosureNameAssignment.Fresh _ -> failwith "Expected the previous generation's closure name.")
+
     [<Fact>]
     let ``symbol matcher locates existing methods`` () =
         let moduleDef, baseline = createBaseline ()
