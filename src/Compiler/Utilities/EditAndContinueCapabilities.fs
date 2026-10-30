@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.EditAndContinue
 
+open System.Collections.Immutable
+
 /// <summary>
 /// Identifies a single edit-and-continue capability advertised by the runtime.
 /// Mirrors Roslyn's <c>EditAndContinueCapabilities</c> flags enum
@@ -57,10 +59,10 @@ type internal EditAndContinueCapability =
 /// checks are never string-based.
 /// </summary>
 [<Sealed>]
-type internal EditAndContinueCapabilities private (capabilities: Set<EditAndContinueCapability>) =
+type internal EditAndContinueCapabilities private (capabilities: ImmutableHashSet<EditAndContinueCapability>) =
 
     static let baselineOnly =
-        EditAndContinueCapabilities(Set.singleton EditAndContinueCapability.Baseline)
+        EditAndContinueCapabilities(ImmutableHashSet.Create EditAndContinueCapability.Baseline)
 
     // The full set, listed once here next to the cases. This is the single source of truth that
     // replaces the capability lists previously hand-copied across the hot reload test suites; keep
@@ -68,7 +70,7 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
     // are the other two places a new case must be added).
     static let all =
         EditAndContinueCapabilities(
-            Set.ofList
+            ImmutableHashSet.CreateRange
                 [
                     EditAndContinueCapability.Baseline
                     EditAndContinueCapability.AddMethodToExistingType
@@ -85,21 +87,22 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
                 ]
         )
 
-    static let allNames = all.CapabilityNames
+    static let allNames = all.CapabilityNames |> Seq.toList
 
     /// <summary>Returns <c>true</c> when the runtime advertised the given capability.</summary>
-    member _.Supports(capability: EditAndContinueCapability) = Set.contains capability capabilities
+    member _.Supports(capability: EditAndContinueCapability) = capabilities.Contains capability
 
     /// <summary>
     /// Returns <c>true</c> when the session carries no capabilities beyond <see cref="EditAndContinueCapability.Baseline"/>,
     /// i.e. only method-body updates of non-generic methods can be applied.
     /// </summary>
     member _.IsBaselineOnly =
-        Set.isEmpty (Set.remove EditAndContinueCapability.Baseline capabilities)
+        capabilities.Count = 1
+        && capabilities.Contains EditAndContinueCapability.Baseline
 
     /// <summary>The names of the negotiated capabilities, in stable order, for tracing and diagnostics.</summary>
     member _.CapabilityNames =
-        capabilities |> Set.toList |> List.map (fun capability -> capability.Name)
+        capabilities |> Seq.sort |> Seq.map _.Name |> ImmutableArray.CreateRange
 
     /// <summary>Renders the negotiated capability names for tracing output.</summary>
     override this.ToString() = String.concat " " this.CapabilityNames
@@ -107,11 +110,12 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
     /// <summary>Structural equality over the underlying capability set.</summary>
     override _.Equals(other: obj) =
         match other with
-        | :? EditAndContinueCapabilities as other -> capabilities = other.Capabilities
+        | :? EditAndContinueCapabilities as other -> capabilities.SetEquals other.Capabilities
         | _ -> false
 
     /// <summary>Hash code consistent with structural equality.</summary>
-    override _.GetHashCode() = hash capabilities
+    override _.GetHashCode() =
+        capabilities |> Seq.fold (fun acc capability -> acc ^^^ hash capability) 0
 
     member private _.Capabilities = capabilities
 
@@ -139,31 +143,31 @@ type internal EditAndContinueCapabilities private (capabilities: Set<EditAndCont
     /// </summary>
     static member Parse(capabilityNames: string seq) =
         let parsed =
-            (Set.empty, capabilityNames)
-            ||> Seq.fold (fun acc name ->
+            (ImmutableHashSet<EditAndContinueCapability>.Empty, capabilityNames)
+            ||> Seq.fold (fun (acc: ImmutableHashSet<EditAndContinueCapability>) name ->
                 match name with
-                | "Baseline" -> Set.add EditAndContinueCapability.Baseline acc
-                | "AddMethodToExistingType" -> Set.add EditAndContinueCapability.AddMethodToExistingType acc
-                | "AddStaticFieldToExistingType" -> Set.add EditAndContinueCapability.AddStaticFieldToExistingType acc
-                | "AddInstanceFieldToExistingType" -> Set.add EditAndContinueCapability.AddInstanceFieldToExistingType acc
-                | "NewTypeDefinition" -> Set.add EditAndContinueCapability.NewTypeDefinition acc
-                | "ChangeCustomAttributes" -> Set.add EditAndContinueCapability.ChangeCustomAttributes acc
-                | "UpdateParameters" -> Set.add EditAndContinueCapability.UpdateParameters acc
-                | "GenericAddMethodToExistingType" -> Set.add EditAndContinueCapability.GenericAddMethodToExistingType acc
-                | "GenericUpdateMethod" -> Set.add EditAndContinueCapability.GenericUpdateMethod acc
-                | "GenericAddFieldToExistingType" -> Set.add EditAndContinueCapability.GenericAddFieldToExistingType acc
-                | "AddExplicitInterfaceImplementation" -> Set.add EditAndContinueCapability.AddExplicitInterfaceImplementation acc
-                | "AddFieldRva" -> Set.add EditAndContinueCapability.AddFieldRva acc
+                | "Baseline" -> acc.Add EditAndContinueCapability.Baseline
+                | "AddMethodToExistingType" -> acc.Add EditAndContinueCapability.AddMethodToExistingType
+                | "AddStaticFieldToExistingType" -> acc.Add EditAndContinueCapability.AddStaticFieldToExistingType
+                | "AddInstanceFieldToExistingType" -> acc.Add EditAndContinueCapability.AddInstanceFieldToExistingType
+                | "NewTypeDefinition" -> acc.Add EditAndContinueCapability.NewTypeDefinition
+                | "ChangeCustomAttributes" -> acc.Add EditAndContinueCapability.ChangeCustomAttributes
+                | "UpdateParameters" -> acc.Add EditAndContinueCapability.UpdateParameters
+                | "GenericAddMethodToExistingType" -> acc.Add EditAndContinueCapability.GenericAddMethodToExistingType
+                | "GenericUpdateMethod" -> acc.Add EditAndContinueCapability.GenericUpdateMethod
+                | "GenericAddFieldToExistingType" -> acc.Add EditAndContinueCapability.GenericAddFieldToExistingType
+                | "AddExplicitInterfaceImplementation" -> acc.Add EditAndContinueCapability.AddExplicitInterfaceImplementation
+                | "AddFieldRva" -> acc.Add EditAndContinueCapability.AddFieldRva
                 // Aggregate name accepted by Roslyn so runtimes can advertise broader capabilities with one word.
                 | "AddDefinitionToExistingType" ->
                     acc
-                    |> Set.add EditAndContinueCapability.AddMethodToExistingType
-                    |> Set.add EditAndContinueCapability.AddStaticFieldToExistingType
-                    |> Set.add EditAndContinueCapability.AddInstanceFieldToExistingType
+                        .Add(EditAndContinueCapability.AddMethodToExistingType)
+                        .Add(EditAndContinueCapability.AddStaticFieldToExistingType)
+                        .Add(EditAndContinueCapability.AddInstanceFieldToExistingType)
                 // Unknown capability words are ignored so newer runtimes keep working with older compilers.
                 | _ -> acc)
 
-        if Set.isEmpty parsed then
+        if parsed.IsEmpty then
             baselineOnly
         else
-            EditAndContinueCapabilities(Set.add EditAndContinueCapability.Baseline parsed)
+            EditAndContinueCapabilities(parsed.Add EditAndContinueCapability.Baseline)

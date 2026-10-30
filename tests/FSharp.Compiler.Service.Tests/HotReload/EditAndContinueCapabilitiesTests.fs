@@ -23,7 +23,7 @@ module EditAndContinueCapabilitiesTests =
 
     [<Fact>]
     let ``parse recognizes every known capability name`` () =
-        let names = allCapabilityCases |> List.map (fun capability -> capability.Name)
+        let names = allCapabilityCases |> List.map _.Name
         let capabilities = EditAndContinueCapabilities.Parse names
 
         for capability in allCapabilityCases do
@@ -87,4 +87,15 @@ module EditAndContinueCapabilitiesTests =
         let names = [ "AddMethodToExistingType"; "Baseline" ]
         let capabilities = EditAndContinueCapabilities.Parse names
 
-        Assert.Equal<string list>([ "Baseline"; "AddMethodToExistingType" ], capabilities.CapabilityNames)
+        Assert.Equal<string list>([ "Baseline"; "AddMethodToExistingType" ], capabilities.CapabilityNames |> Seq.toList)
+
+    [<Fact>]
+    let ``capability equality and name order ignore input order and duplicates`` () =
+        let names = allCapabilityCases |> List.map _.Name
+        let forward = EditAndContinueCapabilities.Parse names
+        let reversed = EditAndContinueCapabilities.Parse (seq { yield! List.rev names; yield! names })
+
+        Assert.Equal<EditAndContinueCapabilities>(forward, reversed)
+        Assert.Equal(forward.GetHashCode(), reversed.GetHashCode())
+        Assert.Equal<string list>(names, reversed.CapabilityNames |> Seq.toList)
+        Assert.Equal(String.concat " " names, reversed.ToString())
