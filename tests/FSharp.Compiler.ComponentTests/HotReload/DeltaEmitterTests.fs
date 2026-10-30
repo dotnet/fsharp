@@ -916,8 +916,8 @@ module DeltaEmitterTests =
         let matcher = FSharpSymbolMatcher.create moduleDef
         let key = methodKey baseline "GetValue"
         match FSharpSymbolMatcher.tryGetMethodDef matcher key with
-        | Some(_, _, methodDef) -> Assert.Equal("GetValue", methodDef.Name)
-        | None -> Assert.True(false, "Expected method to be located by symbol matcher.")
+        | ValueSome methodMatch -> Assert.Equal("GetValue", methodMatch.MethodDef.Name)
+        | ValueNone -> Assert.True(false, "Expected method to be located by symbol matcher.")
 
     [<Theory>]
     [<InlineData(false)>]
@@ -939,10 +939,10 @@ module DeltaEmitterTests =
         Assert.True(emittedMatch.IsSome)
 
         match FSharpSymbolMatcher.tryGetTypeDef matcher aliasName with
-        | Some(_, typeDef) ->
+        | ValueSome typeMatch ->
             Assert.False(usesRecordedSnapshot)
-            Assert.Equal(emittedName, typeDef.Name)
-        | None -> Assert.True(usesRecordedSnapshot)
+            Assert.Equal(emittedName, typeMatch.TypeDef.Name)
+        | ValueNone -> Assert.True(usesRecordedSnapshot)
 
         let methodMatch = Assert.Single(matcher.MethodMatches.Values)
         Assert.Equal("GetValue", methodMatch.MethodDef.Name)
