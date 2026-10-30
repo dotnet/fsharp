@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 
+/// Classifies declaration and body differences between checked implementation files.
 module internal FSharp.Compiler.TypedTreeDiff
 
 open System
@@ -15,11 +16,13 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
+/// Separates value declarations from type and module declarations.
 [<RequireQualifiedAccess>]
 type SymbolKind =
     | Value
     | Entity
 
+/// Identifies the emitted method or accessor represented by a value.
 [<RequireQualifiedAccess>]
 type SymbolMemberKind =
     | Method
@@ -51,6 +54,7 @@ let internal canonicalQualifiedName (path: string list) (logicalName: string) =
         }
         |> String.concat "."
 
+/// Identifies a declaration across snapshots and records its emitted member shape.
 type SymbolId =
     {
         Path: string list
@@ -66,6 +70,7 @@ type SymbolId =
 
     member x.QualifiedName = canonicalQualifiedName x.Path x.LogicalName
 
+/// Describes the operation that a downstream delta emitter applies.
 [<RequireQualifiedAccess>]
 type SemanticEditKind =
     | MethodBody
@@ -73,6 +78,7 @@ type SemanticEditKind =
     | Delete
     | TypeDefinition
 
+/// Identifies the reason that a change requires a restart.
 [<RequireQualifiedAccess>]
 type RudeEditKind =
     | SignatureChange
@@ -82,6 +88,7 @@ type RudeEditKind =
     | DeclarationRemoved
     | Unsupported
 
+/// Describes an accepted edit and its diagnostic snapshot hashes.
 type SemanticEdit =
     {
         Symbol: SymbolId
@@ -92,6 +99,7 @@ type SemanticEdit =
         ContainingEntity: string option
     }
 
+/// Associates a restart reason and message with an optional declaration.
 type RudeEdit =
     {
         Symbol: SymbolId option
@@ -99,6 +107,7 @@ type RudeEdit =
         Message: string
     }
 
+/// Keeps accepted edits and restart diagnostics in deterministic comparison order.
 type TypedTreeDiffResult =
     {
         SemanticEdits: SemanticEdit list
@@ -226,6 +235,7 @@ let private compiledTyconName (tcref: TyconRef) =
 
 /// Renders types with their compiled identities so equal display names from different
 /// namespaces or enclosing types cannot collapse to the same hot reload signature.
+/// Preserves abbreviation names that type normalization expands.
 let private tyToString (_: DisplayEnv) (ty: TType) =
     let rec render ty =
         let renderArgs tys =
@@ -1477,6 +1487,7 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
 
     rude
 
+/// Compares checked files without code emission. Identity resolution propagates cancellation.
 let diffImplementationFile (g: TcGlobals) (baseline: CheckedImplFile) (updated: CheckedImplFile) : TypedTreeDiffResult =
     if obj.ReferenceEquals(baseline, updated) then
         emptyDiff
