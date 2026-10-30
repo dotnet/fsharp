@@ -405,10 +405,12 @@ type internal FSharpCompletionProvider
             | true, keywordDescription -> Task.FromResult(CompletionDescription.FromText(keywordDescription))
             | false, _ -> Task.FromResult(CompletionDescription.Empty)
 
-    override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
+    static member GetChangeAsyncAux(document: Document, item: Completion.CompletionItem, insertionPoint: OpenStatementInsertionPoint) =
         cancellableTask {
             use _logBlock =
                 Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetChangeAsync
+
+            let! cancellationToken = CancellableTask.getCancellationToken ()
 
             let fullName =
                 match item.Properties.TryGetValue FullNamePropName with
@@ -469,15 +471,9 @@ type internal FSharpCompletionProvider
                         |> ValueOption.map (fun x -> x.Split '.')
                         |> ValueOption.defaultValue [||]
 
-                    let insertionPoint =
-                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
-                            OpenStatementInsertionPoint.TopLevel
-                        else
-                            OpenStatementInsertionPoint.Nearest
-
                     let ctx =
-                        ParsedInput.FindNearestPointToInsertOpenDeclaration
-                            (Line.fromZ line.LineNumber)
+                        ParsedInput.FindNearestPointToInsertOpenDeclarationAt
+                            (Position.fromZ line.LineNumber (item.Span.Start - line.Start))
                             parseResults.ParseTree
                             fullNameIdents
                             insertionPoint
@@ -494,4 +490,13 @@ type internal FSharpCompletionProvider
 
                     return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable(changedSpan.End))
         }
+
+    override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
+        let insertionPoint =
+            if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
+                OpenStatementInsertionPoint.TopLevel
+            else
+                OpenStatementInsertionPoint.Nearest
+
+        FSharpCompletionProvider.GetChangeAsyncAux(document, item, insertionPoint)
         |> CancellableTask.start cancellationToken
