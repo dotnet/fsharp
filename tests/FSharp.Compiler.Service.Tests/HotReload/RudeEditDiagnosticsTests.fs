@@ -86,3 +86,17 @@ module RudeEditDiagnosticsTests =
         let diag = RudeEditDiagnostics.ofRudeEdit (rude RudeEditKind.Unsupported "custom")
         Assert.Equal("FSHRDL099", diag.Id)
         Assert.Equal("custom", diag.Message)
+
+    [<Theory>]
+    [<InlineData(0)>]
+    [<InlineData(1)>]
+    [<InlineData(3)>]
+    let ``diagnostic formatting preserves line separators without a trailing newline`` count =
+        let diagnostics =
+            [ for index in 1 .. count -> RudeEditDiagnostics.unsupported $"Reason {index}" ]
+
+        let expected =
+            [ for index in 1 .. count -> $"FSHRDL099: Reason {index}" ]
+            |> String.concat Environment.NewLine
+
+        Assert.Equal(expected, RudeEditDiagnostics.format diagnostics)
