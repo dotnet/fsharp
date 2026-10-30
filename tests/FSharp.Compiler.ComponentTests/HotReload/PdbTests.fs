@@ -414,112 +414,64 @@ module PdbTests =
         use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
         let reader = provider.GetMetadataReader()
 
-        // Only the updated method should appear in MethodDebugInformation (when present)
-        if reader.MethodDebugInformation.Count = 0 then
-            printfn "[hotreload-pdb] no MethodDebugInformation rows emitted; skipping method-count assertion"
-        else
-            Assert.Equal(1, reader.MethodDebugInformation.Count)
+        Assert.Equal(1, reader.MethodDebugInformation.Count)
+        let documentHandle = Assert.Single reader.Documents
+        let document = reader.GetDocument documentHandle
+        Assert.Equal("Sample.fs", reader.GetString document.Name)
 
-        // No new Document rows should be emitted (same source file)
-        Assert.Equal(0, reader.GetTableRowCount(TableIndex.Document))
+        let methodHandle = Assert.Single reader.MethodDebugInformation
+        let info = reader.GetMethodDebugInformation methodHandle
+        let point = info.GetSequencePoints() |> Seq.toArray |> Assert.Single
+        Assert.Equal(documentHandle, point.Document)
+        Assert.Equal(1, point.StartLine)
+        Assert.Equal(20, point.EndColumn)
 
-        // Sequence points may be absent; log if missing
-        if reader.MethodDebugInformation.Count > 0 then
-            let handle = reader.MethodDebugInformation |> Seq.head
-            let info = reader.GetMethodDebugInformation handle
-            let points = info.GetSequencePoints() |> Seq.toArray
-            if points.Length = 0 then
-                printfn "[hotreload-pdb] no sequence points in delta MethodDebugInformation; skipping sequence-point assertion"
-            else
-                Assert.NotEmpty(points)
+        let _, encMap = readEncTablesFromPdb pdbBytes
+        let expectedRow = baseline.MethodTokens[methodBKey] &&& 0x00FFFFFF
+        Assert.Equal<(TableIndex * int)>([| TableIndex.MethodDebugInformation, expectedRow |], encMap)
 
     [<Fact>]
-    let ``PDB heap offsets start at baseline sizes`` () =
-        // Baseline with real Portable PDB (sequence points)
+    let ``PDB delta documents and sequence points use independent heaps`` () =
         let baselineArtifacts = TestHelpers.createBaselineFromModule (createModuleWithSeqPoints 10)
-        let methodKey = TestHelpers.methodKeyByName baselineArtifacts.Baseline "Sample.Type" "GetValue"
 
-        let baselinePdbBytes =
+        try
+            let methodKey = TestHelpers.methodKeyByName baselineArtifacts.Baseline "Sample.Type" "GetValue"
+
+            let request : IlxDeltaRequest =
+                { Baseline = baselineArtifacts.Baseline
+                  UpdatedTypes = [ "Sample.Type" ]
+                  UpdatedMethods = [ methodKey ]
+                  UpdatedAccessors = []
+                  Module = createModuleWithSeqPoints 42
+                  SymbolChanges = None
+                  CurrentGeneration = 1
+                  PreviousGenerationId = None
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
+
+            let delta = emitDelta request
+            let pdbBytes = delta.Pdb |> Option.defaultWith (fun () -> failwith "Expected portable PDB delta")
+            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
+            let reader = provider.GetMetadataReader()
+            let documentHandle = Assert.Single reader.Documents
+            let document = reader.GetDocument documentHandle
+            Assert.Equal("Sample.fs", reader.GetString document.Name)
+            Assert.InRange(MetadataTokens.GetHeapOffset document.Name, 1, reader.GetHeapSize(HeapIndex.Blob) - 1)
+
+            let methodHandle = Assert.Single reader.MethodDebugInformation
+            let info = reader.GetMethodDebugInformation methodHandle
+            Assert.InRange(MetadataTokens.GetHeapOffset info.SequencePointsBlob, 1, reader.GetHeapSize(HeapIndex.Blob) - 1)
+            Assert.NotEmpty(reader.GetBlobBytes info.SequencePointsBlob)
+            let point = info.GetSequencePoints() |> Seq.toArray |> Assert.Single
+            Assert.Equal(documentHandle, point.Document)
+            Assert.Equal(1, point.StartLine)
+            Assert.Equal(20, point.EndColumn)
+        finally
+            if File.Exists baselineArtifacts.AssemblyPath then
+                File.Delete baselineArtifacts.AssemblyPath
             match baselineArtifacts.PdbPath with
-            | Some path -> File.ReadAllBytes path
-            | None -> failwith "Baseline PDB path missing."
-
-        use baselineProvider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange baselinePdbBytes)
-        let baselineReader = baselineProvider.GetMetadataReader()
-        let baselineStringSize = baselineReader.GetHeapSize HeapIndex.String
-        let baselineBlobSize = baselineReader.GetHeapSize HeapIndex.Blob
-        let baselineGuidSize = baselineReader.GetHeapSize HeapIndex.Guid
-
-        let updatedModule = createModuleWithSeqPoints 42
-
-        let request : IlxDeltaRequest =
-            { Baseline = baselineArtifacts.Baseline
-              UpdatedTypes = [ "Sample.Type" ]
-              UpdatedMethods = [ methodKey ]
-              UpdatedAccessors = []
-              Module = updatedModule
-              SymbolChanges = None
-              CurrentGeneration = 1
-              PreviousGenerationId = None
-              SynthesizedNames = None
-              EmittedArtifacts = None }
-
-        let delta = emitDelta request
-        let pdbBytes =
-            match delta.Pdb with
-            | Some bytes -> bytes
-            | None -> failwith "Expected portable PDB delta"
-
-        use deltaProvider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdbBytes)
-        let deltaReader = deltaProvider.GetMetadataReader()
-
-        // Blob heap: sequence points blob offsets must be >= baseline blob size
-        let blobOffsets =
-            seq {
-                // Document name/hash blobs
-                for docHandle in deltaReader.Documents do
-                    let doc = deltaReader.GetDocument docHandle
-                    if not doc.Name.IsNil then
-                        yield MetadataTokens.GetHeapOffset doc.Name
-                    if not doc.Hash.IsNil then
-                        yield MetadataTokens.GetHeapOffset doc.Hash
-                // Sequence points blobs (if present)
-                for handle in deltaReader.MethodDebugInformation do
-                    let info = deltaReader.GetMethodDebugInformation handle
-                    if not info.SequencePointsBlob.IsNil then
-                        yield MetadataTokens.GetHeapOffset info.SequencePointsBlob
-            }
-            |> Seq.toArray
-
-        if blobOffsets.Length = 0 then
-            printfn "[hotreload-pdb] no document or sequence point blobs emitted; skipping heap-offset assertion"
-        else
-            Assert.True(blobOffsets |> Array.forall (fun off -> off >= baselineBlobSize), "Blob offsets must start after baseline blob size.")
-
-        // Guid heap: hash algorithm and language guids offsets should be >= baseline guid size (or 0 for nil)
-        let guidOffsets =
-            deltaReader.Documents
-            |> Seq.collect (fun handle ->
-                let doc = deltaReader.GetDocument handle
-                [ doc.HashAlgorithm; doc.Language ])
-            |> Seq.filter (fun h -> not h.IsNil)
-            |> Seq.map (fun h -> MetadataTokens.GetHeapOffset h)
-            |> Seq.toArray
-
-        if guidOffsets.Length > 0 then
-            Assert.True(guidOffsets |> Array.forall (fun off -> off >= baselineGuidSize), "Guid offsets must start after baseline guid size.")
-
-        // String heap: if any strings are present, their offsets must be >= baseline string size
-        let stringOffsets =
-            deltaReader.CustomDebugInformation
-            |> Seq.map (fun h -> deltaReader.GetCustomDebugInformation h)
-            |> Seq.collect (fun info ->
-                if info.Kind.IsNil then Seq.empty
-                else seq { MetadataTokens.GetHeapOffset info.Kind })
-            |> Seq.toArray
-
-        if stringOffsets.Length > 0 then
-            Assert.True(stringOffsets |> Array.forall (fun off -> off >= baselineStringSize), "String offsets must start after baseline string size.")
+            | Some path when File.Exists path -> File.Delete path
+            | _ -> ()
 
     [<Fact>]
     let ``emitDelta emits portable PDB delta for property accessor edits`` () =
