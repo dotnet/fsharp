@@ -1145,16 +1145,16 @@ let private memberOccurrencesByUniqueNameInFiles
 
     let ambiguousNames =
         allMembers
-        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
-        |> List.countBy id
-        |> List.filter (fun (_, count) -> count > 1)
-        |> List.map fst
-        |> Set.ofList
+        |> Seq.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> Seq.countBy id
+        |> Seq.filter (fun (_, count) -> count > 1)
+        |> Seq.map fst
+        |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
     (Map.empty, allMembers)
     ||> List.fold (fun acc (symbol: TypedTreeDiff.SymbolId, occurrences) ->
         match symbol.CompiledName with
-        | Some methName when not (Set.contains methName ambiguousNames) -> Map.add methName occurrences acc
+        | Some methName when not (ambiguousNames.Contains methName) -> Map.add methName occurrences acc
         | _ -> acc)
 
 let private memberOccurrencesByUniqueName
@@ -1279,7 +1279,7 @@ let computeOccurrenceKeyedClosureNamesWithScope
 
                 let replayAssignments =
                     allocation.Assignments
-                    |> List.choose (fun (occurrence, assignment) ->
+                    |> Seq.choose (fun struct (occurrence, assignment) ->
                         let occurrenceChain = ClosureNameAllocator.occurrenceOrdinalChain occurrence
 
                         match assignment with
@@ -1302,6 +1302,7 @@ let computeOccurrenceKeyedClosureNamesWithScope
                                 | _ -> None
                         | ClosureNameAllocator.ClosureNameAssignment.Fresh _ when baselineTableIsComplete -> Some(occurrence, assignment)
                         | ClosureNameAllocator.ClosureNameAssignment.Fresh _ -> None)
+                    |> Seq.toList
 
                 let assignedNames =
                     (assignedNames, replayAssignments)
@@ -1315,8 +1316,8 @@ let computeOccurrenceKeyedClosureNamesWithScope
 
                 let refreshedNames =
                     replayAssignments
-                    |> List.map (fun (occurrence, assignment) -> ClosureNameAllocator.occurrenceOrdinalChain occurrence, assignment.Name)
-                    |> Map.ofList
+                    |> Seq.map (fun (occurrence, assignment) -> ClosureNameAllocator.occurrenceOrdinalChain occurrence, assignment.Name)
+                    |> Map.ofSeq
 
                 assignedNames, Map.add methodToken refreshedNames refreshedRows
             | _ -> assignedNames, refreshedRows)

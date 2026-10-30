@@ -328,7 +328,7 @@ type cenv =
         /// Hot reload side-channel state (closure naming and state machine resume point
         /// recording), resolved once per GenerateCode run. None when no hook installed any
         /// state, so the per-closure/per-state-machine call sites skip weak-table probes.
-        hotReloadNameState: ClosureNameAllocationState.ClosureNameStateHolder option
+        hotReloadNameState: ClosureNameAllocationState.ClosureNameStateHolder voption
 
     }
 
@@ -3315,8 +3315,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                 // (the EnC State Machine State Map); skip collecting them otherwise.
                 let collectResumptionPoints =
                     match cenv.hotReloadNameState with
-                    | Some hotReloadNameState -> hotReloadNameState.IsResumePointRecordingActive
-                    | None -> false
+                    | ValueSome hotReloadNameState -> hotReloadNameState.IsResumePointRecordingActive
+                    | ValueNone -> false
 
                 let smResult =
                     LowerStateMachineExpr cenv.g eenv.resumableCodeDefinitions collectResumptionPoints expr
@@ -6722,8 +6722,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     // compiles) -> strict no-op, byte-identical output, no weak-table probe.
     do
         match cenv.hotReloadNameState with
-        | Some hotReloadNameState -> hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map fst)
-        | None -> ()
+        | ValueSome hotReloadNameState ->
+            hotReloadNameState.RecordResumePoints(ilCloTypeRef.FullName, resumptionPoints |> List.map (fun struct (state, _) -> state))
+        | ValueNone -> ()
 
     // The closure implements what ever interfaces the template implements.
     let interfaceTys =
@@ -7863,12 +7864,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             // members) -> existing sequence-replay behavior, byte-identical, and no
             // side-channel traffic (the holder was resolved once per codegen run).
             match cenv.hotReloadNameState with
-            | None -> replayName
-            | Some hotReloadNameState ->
+            | ValueNone -> replayName
+            | ValueSome hotReloadNameState ->
                 let cloName =
                     match hotReloadNameState.TryGetAssignedName uniq with
-                    | Some assignedName -> assignedName
-                    | None -> replayName
+                    | ValueSome assignedName -> assignedName
+                    | ValueNone -> replayName
 
                 // Baseline capture: record the lambda stamp -> emitted closure type name so the
                 // fsc emit path can join it with the typed-tree lambda occurrence extraction of
@@ -13754,8 +13755,9 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let cenv =
         { cenv with
             hotReloadNameState =
-                g.CompilerGlobalState
-                |> Option.bind (fun compilerGlobalState -> ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj))
+                match g.CompilerGlobalState with
+                | Some compilerGlobalState -> ClosureNameAllocationState.tryGetClosureNameState (compilerGlobalState :> obj)
+                | None -> ValueNone
         }
 
     // Generate the implementations into the mgbuf
@@ -13814,7 +13816,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         // ordinary compiles must not retain valsInScope/witness maps past codegen.
         ilxGenEnvSnapshot =
             match cenv.hotReloadNameState with
-            | Some hotReloadNameState when hotReloadNameState.IsClosureNameRecordingActive -> Some(snapshotIlxGenEnv eenv)
+            | ValueSome hotReloadNameState when hotReloadNameState.IsClosureNameRecordingActive -> Some(snapshotIlxGenEnv eenv)
             | _ -> None
     }
 
@@ -13966,7 +13968,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
             optimizeDuringCodeGen = (fun _flag expr -> expr)
             stackGuard = getEmptyStackGuard ()
             delayedGenMethods = Queue()
-            hotReloadNameState = None
+            hotReloadNameState = ValueNone
         }
 
     /// Register a set of referenced assemblies with the ILX code generator

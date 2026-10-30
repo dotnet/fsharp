@@ -53,6 +53,10 @@
 /// </summary>
 module internal FSharp.Compiler.ClosureNameAllocator
 
+open System
+open System.Collections.Generic
+open System.Collections.Immutable
+
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -88,14 +92,14 @@ type MemberClosureNameAllocation =
     {
         /// One assignment per fresh-compile occurrence, in occurrence (pre-order
         /// ordinal) order — the order in which lowering encounters the closures.
-        Assignments: (LambdaOccurrence * ClosureNameAssignment) list
+        Assignments: ImmutableArray<struct (LambdaOccurrence * ClosureNameAssignment)>
 
         /// Root-first occurrence ordinal chain → assigned closure class name, for every
         /// fresh-compile occurrence. This is the table to chain forward: baseline names
         /// whose occurrences were removed are deliberately absent (never reused), and
         /// freshly allocated generation-suffixed names are present so the NEXT
         /// generation can reuse them for surviving occurrences.
-        RefreshedNamesByOccurrenceChain: Map<int list, string>
+        RefreshedNamesByOccurrenceChain: ImmutableDictionary<int list, string>
     }
 
 /// <summary>
@@ -107,7 +111,7 @@ type MemberClosureNameAllocation =
 /// use <c>EncMethodDebugInformation.decodeOccurrenceKey</c>.
 /// </summary>
 let occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
-    List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
+    List.rev (occurrence.Id.Ordinal :: occurrence.Id.ParentChain)
 
 /// <summary>
 /// Renders a root-first occurrence ordinal chain into the name-suffix key:
@@ -116,7 +120,7 @@ let occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
 /// is unambiguous.
 /// </summary>
 let formatOccurrenceChainKey (ordinalChain: int list) =
-    ordinalChain |> List.map string |> String.concat "_"
+    ordinalChain |> Seq.map string |> String.concat "_"
 
 /// <summary>
 /// Formats the generation-suffixed closure class name for an occurrence first
@@ -160,7 +164,7 @@ let isGenerationSuffixedClosureName (name: string) =
 /// (the first delta after the baseline is generation 1).</param>
 let allocateMemberClosureNames
     (baselineOccurrences: LambdaOccurrence list)
-    (baselineNamesByOccurrenceChain: Map<int list, string>)
+    (baselineNamesByOccurrenceChain: IReadOnlyDictionary<int list, string>)
     (freshOccurrences: LambdaOccurrence list)
     (freshNameBase: string)
     (generation: int)
@@ -172,64 +176,58 @@ let allocateMemberClosureNames
     // Same alignment as the lambda-edit classification: pass 1 on the full
     // structural digest, pass 2 (shape-only) pairing reordered survivors and
     // capture-incompatible occurrences.
-    let baselineIndexByFreshIndex =
-        alignLambdaOccurrenceIndexPairs olds news
-        |> List.map (fun (i, j) -> j, i)
-        |> Map.ofList
+    let baselineIndexByFreshIndex = Dictionary<int, int>()
+
+    for i, j in alignLambdaOccurrenceIndexPairs olds news do
+        baselineIndexByFreshIndex[j] <- i
 
     let baselineOccurrenceChains =
-        baselineOccurrences |> List.map occurrenceOrdinalChain |> Set.ofList
+        baselineOccurrences
+        |> Seq.map occurrenceOrdinalChain
+        |> ImmutableHashSet.CreateRange
+
+    let refreshedNames = ImmutableDictionary.CreateBuilder<int list, string>()
 
     let assignments =
         news
-        |> Array.mapi (fun j freshOcc ->
+        |> Seq.mapi (fun j freshOcc ->
             let freshChain = occurrenceOrdinalChain freshOcc
+            let mutable baselineIndex = 0
+            let mutable baselineName = Unchecked.defaultof<string>
 
             let reusableBaselineName =
-                match Map.tryFind j baselineIndexByFreshIndex, Map.tryFind freshChain baselineNamesByOccurrenceChain with
-                // Disk-started sessions can have CDI+TypeDef evidence for a closure whose
-                // occurrence is absent from the in-memory baseline tree. Reuse only the
-                // exact persisted chain; normal capture compatibility still gates pairs
-                // where both baseline and fresh occurrences are available.
-                | _, Some name when not (Set.contains freshChain baselineOccurrenceChains) -> Some name
-                | Some i, _ ->
-                    let baselineOcc = olds[i]
+                // Persisted CDI can describe a closure absent from the in-memory tree.
+                if
+                    baselineNamesByOccurrenceChain.TryGetValue(freshChain, &baselineName)
+                    && not (baselineOccurrenceChains.Contains freshChain)
+                then
+                    ValueSome baselineName
+                elif baselineIndexByFreshIndex.TryGetValue(j, &baselineIndex) then
+                    let baselineOcc = olds[baselineIndex]
 
-                    // A shape-only (pass 2) pair with a different capture set is NOT
-                    // compatible: per Roslyn semantics the previous closure member is
-                    // stubbed and a new one is synthesized fresh, so the baseline name
-                    // must not be reused. Capture lists are deterministically ordered,
-                    // so structural list equality is the set comparison.
-                    if baselineOcc.Captures = freshOcc.Captures then
-                        Map.tryFind (occurrenceOrdinalChain baselineOcc) baselineNamesByOccurrenceChain
+                    // Capture changes require a fresh closure even when occurrence shapes align.
+                    if
+                        baselineOcc.Captures = freshOcc.Captures
+                        && baselineNamesByOccurrenceChain.TryGetValue(occurrenceOrdinalChain baselineOcc, &baselineName)
+                    then
+                        ValueSome baselineName
                     else
-                        None
-                | None, _ -> None
+                        ValueNone
+                else
+                    ValueNone
 
             let assignment =
                 match reusableBaselineName with
-                | Some name -> ClosureNameAssignment.Reused name
-                | None ->
-                    ClosureNameAssignment.Fresh(
-                        formatGenerationSuffixedClosureName freshNameBase generation (occurrenceOrdinalChain freshOcc)
-                    )
+                | ValueSome name -> ClosureNameAssignment.Reused name
+                | ValueNone -> ClosureNameAssignment.Fresh(formatGenerationSuffixedClosureName freshNameBase generation freshChain)
 
-            freshOcc, assignment)
-        |> List.ofArray
-
-    // Chain-forward table: every FRESH occurrence's chain maps to its assigned name.
-    // Baseline occurrences without a fresh counterpart contribute nothing — their
-    // names fall out of the chain and are never reused by construction (later
-    // generations can only allocate generation-suffixed names, and the generation
-    // counter never repeats within a session).
-    let refreshedNames =
-        assignments
-        |> List.map (fun (occ, assignment) -> occurrenceOrdinalChain occ, assignment.Name)
-        |> Map.ofList
+            refreshedNames[freshChain] <- assignment.Name
+            struct (freshOcc, assignment))
+        |> ImmutableArray.CreateRange
 
     {
         Assignments = assignments
-        RefreshedNamesByOccurrenceChain = refreshedNames
+        RefreshedNamesByOccurrenceChain = refreshedNames.ToImmutable()
     }
 
 /// <summary>
@@ -261,24 +259,28 @@ let computeBaselineClosureNameRows
 
         let ambiguousNames =
             allMembers
-            |> List.choose (fun (symbol, _) -> symbol.CompiledName)
-            |> List.countBy id
-            |> List.filter (fun (_, count) -> count > 1)
-            |> List.map fst
-            |> Set.ofList
+            |> Seq.choose (fun (symbol, _) -> symbol.CompiledName)
+            |> Seq.countBy id
+            |> Seq.filter (fun (_, count) -> count > 1)
+            |> Seq.map fst
+            |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
         (Map.empty, allMembers)
         ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
             match symbol.CompiledName, occurrences with
-            | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+            | Some methName, _ :: _ when not (ambiguousNames.Contains methName) ->
                 let entries =
-                    occurrences
-                    |> List.choose (fun occ ->
-                        Map.tryFind occ.RootExprStamp closureNamesByStamp
-                        |> Option.map (fun name -> occurrenceOrdinalChain occ, name))
+                    (Map.empty, occurrences)
+                    ||> List.fold (fun entries occurrence ->
+                        let mutable name = Unchecked.defaultof<string>
 
-                if not (List.isEmpty entries) then
-                    Map.add methName (entries |> Map.ofList) acc
-                else
+                        if closureNamesByStamp.TryGetValue(occurrence.RootExprStamp, &name) then
+                            Map.add (occurrenceOrdinalChain occurrence) name entries
+                        else
+                            entries)
+
+                if Map.isEmpty entries then
                     acc
+                else
+                    Map.add methName entries acc
             | _ -> acc)
