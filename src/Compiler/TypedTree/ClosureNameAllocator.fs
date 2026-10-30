@@ -1,56 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-/// <summary>
-/// Occurrence-keyed closure name allocation for hot reload delta compiles.
-///
-/// The replayable name map (<c>FSharpSynthesizedTypeMaps</c> behind
-/// <c>ICompilerGeneratedNameMap</c>) keys synthesized names by basic-name SEQUENCE: the
-/// i-th request for basic name <c>f</c> replays the i-th recorded name. That keeps
-/// closure class names stable for pure body edits, but any change to the lambda SET
-/// shifts every subsequent allocation, which is why edits that add or remove lambdas
-/// must currently be rejected as rude.
-///
-/// This module re-keys closure identity by OCCURRENCE instead (the Roslyn
-/// <c>EncVariableSlotAllocator.TryGetPreviousLambda/TryGetPreviousClosure</c> analogue,
-/// expressed over the typed-tree lambda occurrence model):
-///
-///  - a fresh-compile occurrence that ALIGNS with a baseline occurrence (same two-pass
-///    LCS as the typed-tree diff, with equal capture sets) reuses the baseline closure class
-///    name VERBATIM;
-///  - an occurrence with no baseline counterpart — or whose baseline counterpart has an
-///    incompatible capture set, or whose baseline name is unknown — gets a FRESH name
-///    suffixed with the session generation (the Roslyn <c>DebugId(ordinal, generation)</c>
-///    analogue);
-///  - a baseline occurrence with no fresh counterpart leaves its name unused forever
-///    (removed names never re-enter the chained table, so they can never be reused).
-///
-/// Generation-suffixed name format (documented in docs/hot-reload-closure-mapping.md):
-///
-///     {baseName}@hotreload#g{generation}_o{occurrenceChain}
-///
-/// where the occurrence chain renders the root-first ordinal chain with underscore
-/// separators: <c>f@hotreload#g2_o3</c> for the top-level occurrence with ordinal 3
-/// first allocated in generation 2 of a session, <c>f@hotreload#g2_o0_3</c> for the
-/// nested occurrence with ordinal 3 inside occurrence 0. Generation 0 is reserved for
-/// the BASELINE compile: under the flag, baseline closure names are derived
-/// from the same chain (<c>f@hotreload#g0_o3</c>), so they are a pure function of
-/// occurrence identity and can be reconstructed from the persisted EnC CDI occurrence
-/// keys by a session started from disk in another process. The format extends the
-/// replay naming (<c>f@hotreload</c>, <c>f@hotreload-1</c>, ...) produced by
-/// FSharpSynthesizedTypeMaps: it shares the <c>@hotreload</c> marker so the names
-/// remain recognizably hot-reload managed, while <c>#g…_o…</c> can never collide with
-/// the replay <c>-{ordinal}</c> suffix space (and never parses as a replay ordinal).
-/// Occurrence chains are unique within a member and generations strictly increase
-/// within a session (with 0 minted only at baseline), so a (baseName, generation,
-/// chain) triple is allocated at most once. Chains are bounded by the CDI occurrence
-/// key encoding (depth &lt;= 2, ordinals &lt;= 0xFFFF — deeper chains fail closed before any
-/// name is derived), so the rendered suffix is bounded too; names are never truncated.
-///
-/// This is a pure data transformation: it consumes the per-method occurrence data the
-/// session already chains (baseline EnC CDI occurrence keys + the occurrence extraction of the
-/// fresh compile) and produces name assignments plus the refreshed occurrence→name
-/// table to chain into the next generation.
-/// </summary>
+/// Assigns stable closure names from typed-tree occurrence chains.
+/// Compatible surviving occurrences retain their baseline names. New occurrences receive
+/// names of the form {baseName}@hotreload#g{generation}_o{rootFirstOrdinalChain}.
+/// Generation zero names identify baseline closures. Later generations never reuse removed names.
+/// The replay-map marker remains shared, but the generation suffix cannot collide with replay ordinals.
 module internal FSharp.Compiler.ClosureNameAllocator
 
 open System
