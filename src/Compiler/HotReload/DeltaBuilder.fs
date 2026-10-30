@@ -453,7 +453,7 @@ let mapSymbolChangesToDelta
             if not (List.isEmpty ambiguousCandidates) then
                 let ambiguityDetails =
                     ambiguousCandidates
-                    |> List.map (fun (candidate, matches) -> $"{candidate} -> {matches}")
+                    |> Seq.map (fun (candidate, matches) -> $"{candidate} -> {matches}")
                     |> String.concat "; "
 
                 Error(
