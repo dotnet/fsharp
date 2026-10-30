@@ -547,8 +547,8 @@ type internal FSharpHotReloadService
             editAndContinueService.CommitAllPendingUpdates() |> ignore
 
             // Only the separate committed dictionary changes during enumeration.
-            for entry in pendingOutputFingerprints do
-                committedOutputFingerprints[entry.Key] <- entry.Value
+            for KeyValue(projectKey, value) in pendingOutputFingerprints do
+                committedOutputFingerprints[projectKey] <- value
 
             pendingOutputFingerprints.Clear())
 
@@ -775,8 +775,8 @@ type FSharpHotReloadSession
 
         lock trackedInputsGate (fun () ->
             // Only the separate committed dictionary changes during enumeration.
-            for entry in pendingTrackedInputs do
-                committedTrackedInputs[entry.Key] <- entry.Value
+            for KeyValue(projectKey, value) in pendingTrackedInputs do
+                committedTrackedInputs[projectKey] <- value
 
             pendingTrackedInputs.Clear())
 

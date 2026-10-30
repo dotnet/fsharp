@@ -72,6 +72,7 @@ type public FSharpChecker =
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
 
+    /// Gets the hot reload features supported by this compiler and runtime.
     member HotReloadCapabilities: FSharpHotReloadCapabilities
 
     [<Experimental("This FCS API is experimental and subject to change.")>]

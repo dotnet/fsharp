@@ -288,16 +288,10 @@ let mapSymbolChangesToDelta
 
     if traceMethodResolution then
         let formatSymbol (symbol: SymbolId) =
-            sprintf
-                "name=%s path=%A kind=%A memberKind=%A synthesized=%b"
-                symbol.LogicalName
-                symbol.Path
-                symbol.Kind
-                symbol.MemberKind
-                symbol.IsSynthesized
+            $"name=%s{symbol.LogicalName} path=%A{symbol.Path} kind=%A{symbol.Kind} memberKind=%A{symbol.MemberKind} synthesized=%b{symbol.IsSynthesized}"
 
         let formatUpdated (change: UpdatedSymbolChange) =
-            sprintf "%s semanticEdit=%A containingEntity=%A" (formatSymbol change.Symbol) change.Kind change.ContainingEntity
+            $"{formatSymbol change.Symbol} semanticEdit=%A{change.Kind} containingEntity=%A{change.ContainingEntity}"
 
         let addedText = changes.Added |> Seq.map formatSymbol |> String.concat " | "
 

@@ -171,7 +171,7 @@ type FSharpSynthesizedTypeMaps() =
                     // name intentionally differs from the allocation bucket key.
                     names
                     |> Array.iteri (fun i name ->
-                        if isNull (box name) then
+                        if isNull (withNull name) then
                             invalidArg "snapshot" $"Name at index {i} in snapshot key '{mapKey}' is null"
                         elif not (isHotReloadManagedName name) then
                             validateName mapKey name i)
@@ -182,7 +182,7 @@ type FSharpSynthesizedTypeMaps() =
                     // derived key, so only null validation applies here.
                     names
                     |> Array.iteri (fun i name ->
-                        if isNull (box name) then
+                        if isNull (withNull name) then
                             invalidArg "snapshot" $"Name at index {i} in snapshot key '{mapKey}' is null")
 
                 let namesToLoad =

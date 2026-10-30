@@ -409,7 +409,10 @@ let private normalizeTypeString (text: string) =
             while j < text.Length && Char.IsDigit text[j] do
                 j <- j + 1
 
-            if j < text.Length && text.AsSpan(j).StartsWith(solvedMarker.AsSpan()) then
+            if
+                j < text.Length
+                && text.AsSpan(j).StartsWith(solvedMarker.AsSpan(), StringComparison.Ordinal)
+            then
                 i <- j + solvedMarker.Length
                 skipParen <- skipParen + 1
             else
@@ -864,7 +867,7 @@ let private formatResumableShapeDigest (calls: ResizeArray<string>) =
 /// resolved nonlocal entity references only compare equal within one TcImports.
 let private isResumableCodeAppTy g ty =
     match stripTyEqns g ty with
-    | TType_app(tcref, _, _) when tcref.LogicalName.Equals("ResumableCode`2", StringComparison.Ordinal) ->
+    | AppTy g (tcref, _) when tcref.LogicalName.Equals("ResumableCode`2", StringComparison.Ordinal) ->
         (try
             tcref.CompiledRepresentationForNamedType.FullName.Equals(
                 "Microsoft.FSharp.Core.CompilerServices.ResumableCode`2",

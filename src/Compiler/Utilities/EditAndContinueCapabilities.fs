@@ -64,10 +64,7 @@ type internal EditAndContinueCapabilities private (capabilities: ImmutableHashSe
     static let baselineOnly =
         EditAndContinueCapabilities(ImmutableHashSet.Create EditAndContinueCapability.Baseline)
 
-    // The full set, listed once here next to the cases. This is the single source of truth that
-    // replaces the capability lists previously hand-copied across the hot reload test suites; keep
-    // it in step with the EditAndContinueCapability cases above (the .Name match and Parse below
-    // are the other two places a new case must be added).
+    // Keep this set, Name, and Parse aligned with the capability cases.
     static let all =
         EditAndContinueCapabilities(
             ImmutableHashSet.CreateRange
