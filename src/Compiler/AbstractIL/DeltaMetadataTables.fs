@@ -1,5 +1,6 @@
 module internal FSharp.Compiler.AbstractIL.DeltaMetadataTables
 
+open FSharp.Compiler.EnvironmentHelpers
 open System
 open System.Collections.Generic
 open System.IO
@@ -15,11 +16,7 @@ open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 module Encoding = FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
 
 let traceHeapOffsets =
-    lazy
-        (match Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_HEAP_OFFSETS") with
-         | null
-         | "" -> false
-         | value -> value = "1" || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
+    lazy (isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceHeapOffsets)
 
 /// Mirrors the AbstractIL metadata tables for the subset of rows emitted by
 /// hot reload deltas. The tables are populated alongside the SRM metadata
@@ -494,7 +491,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             else
                 invalidArg "entry" "GUID entries must be 16 bytes."
 
-        if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_TRACE_METADATA") = "1" then
+        if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceMetadata) = "1" then
             let dumpGuid (bytes: byte[]) =
                 if bytes.Length >= 16 then
                     BitConverter.ToString(bytes, 0, 16)
@@ -645,7 +642,8 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
                 rowElementUShort (uint16 row.Attributes)
                 stringElement nameToken
                 blobElement signatureToken
-                rowElementSimpleIndex TableNames.Param (row.FirstParameterRowId |> Option.defaultValue 0)
+                // Roslyn suppresses ParamList in deltas. EncLog owns parameter associations.
+                rowElementSimpleIndex TableNames.Param 0
             |]
 
         methodRows.Add rowElements
