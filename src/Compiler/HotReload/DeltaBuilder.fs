@@ -385,8 +385,8 @@ let mapSymbolChangesToDelta
     let addedEntityStamps =
         changes
         |> FSharpSymbolChanges.addedEntitySymbols
-        |> List.map (fun symbol -> symbol.Stamp)
-        |> Set.ofList
+        |> Seq.map _.Stamp
+        |> Set.ofSeq
 
     let updatedTypes, typeResolutionErrors =
         changes
