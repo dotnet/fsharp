@@ -121,42 +121,42 @@ let private propertyDisplayName (vref: ValRef) =
 
 let private tryEventMemberKind (compiledName: string) =
     if String.IsNullOrEmpty compiledName then
-        None
+        ValueNone
     elif compiledName.StartsWith("add_", StringComparison.Ordinal) then
-        Some(SymbolMemberKind.EventAdd(compiledName.Substring(4)))
+        ValueSome(SymbolMemberKind.EventAdd(compiledName.Substring(4)))
     elif compiledName.StartsWith("remove_", StringComparison.Ordinal) then
-        Some(SymbolMemberKind.EventRemove(compiledName.Substring(7)))
+        ValueSome(SymbolMemberKind.EventRemove(compiledName.Substring(7)))
     elif compiledName.StartsWith("raise_", StringComparison.Ordinal) then
-        Some(SymbolMemberKind.EventInvoke(compiledName.Substring(6)))
+        ValueSome(SymbolMemberKind.EventInvoke(compiledName.Substring(6)))
     else
-        None
+        ValueNone
 
 let private memberKindOfVal (var: Val) =
     let vref = mkLocalValRef var
 
     if vref.IsPropertyGetterMethod then
-        Some(SymbolMemberKind.PropertyGet(propertyDisplayName vref))
+        ValueSome(SymbolMemberKind.PropertyGet(propertyDisplayName vref))
     elif vref.IsPropertySetterMethod then
-        Some(SymbolMemberKind.PropertySet(propertyDisplayName vref))
+        ValueSome(SymbolMemberKind.PropertySet(propertyDisplayName vref))
     else
         let compiledName = vref.CompiledName None
 
         match tryEventMemberKind compiledName with
-        | Some accessor -> Some accessor
-        | None when vref.MemberInfo.IsSome -> Some SymbolMemberKind.Method
-        | _ -> None
+        | ValueSome accessor -> ValueSome accessor
+        | ValueNone when vref.MemberInfo.IsSome -> ValueSome SymbolMemberKind.Method
+        | ValueNone -> ValueNone
 
 let private tryGetDeclaringEntityCompiledName (vref: ValRef) =
     match vref.TryDeclaringEntity with
     | Parent parent ->
         try
-            Some parent.CompiledRepresentationForNamedType.FullName
+            ValueSome parent.CompiledRepresentationForNamedType.FullName
         with _ ->
             try
-                Some parent.CompiledName
+                ValueSome parent.CompiledName
             with _ ->
-                None
-    | ParentNone -> None
+                ValueNone
+    | ParentNone -> ValueNone
 
 let private tryStableValReferenceIdentity (vref: ValRef) =
     let compiledName =
@@ -174,9 +174,9 @@ let private tryStableValReferenceIdentity (vref: ValRef) =
     let baseIdentity = $"{compiledName}|args={totalArgCount}|gen={genericArity}"
 
     match tryGetDeclaringEntityCompiledName vref with
-    | Some declaringType -> Some($"{declaringType}::{baseIdentity}")
-    | None when vref.IsCompiledAsTopLevel -> Some baseIdentity
-    | _ -> None
+    | ValueSome declaringType -> ValueSome($"{declaringType}::{baseIdentity}")
+    | ValueNone when vref.IsCompiledAsTopLevel -> ValueSome baseIdentity
+    | ValueNone -> ValueNone
 
 let private normalizeTypeString (text: string) =
     let sb = StringBuilder(text.Length)
@@ -311,8 +311,8 @@ let private identityNode (tag: string) (fields: string seq) =
 let private valIdentity denv (vref: ValRef) =
     let stableName =
         match tryStableValReferenceIdentity vref with
-        | Some identity -> identity
-        | None -> $"local:{vref.LogicalName}"
+        | ValueSome identity -> identity
+        | ValueNone -> $"local:{vref.LogicalName}"
 
     identityNode "val" [ stableName; tyToString denv vref.Type ]
 
@@ -816,7 +816,7 @@ type private BindingSnapshot =
         BodyIdentity: string
         IsSynthesized: bool
         IsFieldBackedModuleValue: bool
-        ContainingEntity: string option
+        ContainingEntity: string voption
     }
 
 type private EntitySnapshot =
@@ -824,7 +824,15 @@ type private EntitySnapshot =
         Symbol: SymbolId
         RepresentationHash: int
         RepresentationText: string
-        CompiledFullName: string option
+        CompiledFullName: string voption
+    }
+
+/// Holds the ordered declarations captured from one implementation file.
+[<Struct>]
+type private FileSnapshot =
+    {
+        Bindings: Map<string, BindingSnapshot list>
+        Entities: Map<string, EntitySnapshot>
     }
 
 let private symbolId path logicalName stamp kind memberKind isSynthesized compiledName totalArgCount genericArity =
@@ -841,7 +849,7 @@ let private symbolId path logicalName stamp kind memberKind isSynthesized compil
     }
 
 let private bindingKey (snapshot: BindingSnapshot) =
-    let entityKey = snapshot.ContainingEntity |> Option.defaultValue ""
+    let entityKey = snapshot.ContainingEntity |> ValueOption.defaultValue ""
 
     let memberKind =
         snapshot.Symbol.MemberKind |> Option.map string |> Option.defaultValue ""
@@ -946,36 +954,47 @@ let private tryExtensionReceiverName (var: Val) expr =
             match stripDebugPoints expr with
             | Expr.TyLambda(_, _, body, _, _)
             | Expr.TyChoose(_, body, _) -> receiverName body
-            | Expr.Lambda(_, _, _, receiver :: _, _, _, _) -> Some receiver.LogicalName
-            | _ -> None
+            | Expr.Lambda(_, _, _, receiver :: _, _, _, _) -> ValueSome receiver.LogicalName
+            | _ -> ValueNone
 
         receiverName expr
-    | _ -> None
+    | _ -> ValueNone
 
-let rec private snapshotModuleBinding g denv (path: string list) (bindings, entities) binding =
+let rec private snapshotModuleBinding g denv (path: string list) (snapshots: FileSnapshot) binding =
     match binding with
     | ModuleOrNamespaceBinding.Binding b ->
         let snapshot = snapshotBinding g denv path b
-        (addBinding snapshot bindings, entities)
-    | ModuleOrNamespaceBinding.Module(moduleEntity, contents) ->
-        snapshotModuleContents g denv (path @ [ moduleEntity.LogicalName ]) (bindings, entities) contents
 
-and private snapshotModuleContents g denv path (bindings, entities) contents =
+        { snapshots with
+            Bindings = addBinding snapshot snapshots.Bindings
+        }
+    | ModuleOrNamespaceBinding.Module(moduleEntity, contents) ->
+        snapshotModuleContents g denv [ yield! path; moduleEntity.LogicalName ] snapshots contents
+
+and private snapshotModuleContents g denv path snapshots contents =
     match contents with
-    | ModuleOrNamespaceContents.TMDefs defs -> ((bindings, entities), defs) ||> List.fold (snapshotModuleContents g denv path)
+    | ModuleOrNamespaceContents.TMDefs defs -> (snapshots, defs) ||> List.fold (snapshotModuleContents g denv path)
     | ModuleOrNamespaceContents.TMDefLet(binding, _) ->
         let snapshot = snapshotBinding g denv path binding
-        (addBinding snapshot bindings, entities)
+
+        { snapshots with
+            Bindings = addBinding snapshot snapshots.Bindings
+        }
     | ModuleOrNamespaceContents.TMDefRec(_, _, tycons, moduleBindings, _) ->
         let entitiesWithTypes =
-            (entities, tycons)
+            (snapshots.Entities, tycons)
             ||> List.fold (fun acc tycon ->
                 let snapshot = snapshotTycon denv path tycon
                 Map.add (entityKey snapshot) snapshot acc)
 
-        List.fold (snapshotModuleBinding g denv path) (bindings, entitiesWithTypes) moduleBindings
+        List.fold
+            (snapshotModuleBinding g denv path)
+            { snapshots with
+                Entities = entitiesWithTypes
+            }
+            moduleBindings
     | ModuleOrNamespaceContents.TMDefDo _
-    | ModuleOrNamespaceContents.TMDefOpens _ -> (bindings, entities)
+    | ModuleOrNamespaceContents.TMDefOpens _ -> snapshots
 
 and private tryGetContainingEntityFullName (var: Val) =
     match var.MemberInfo with
@@ -987,10 +1006,10 @@ and private tryGetContainingEntityFullName (var: Val) =
                 else
                     memberInfo.ApparentEnclosingEntity
 
-            Some owner.CompiledRepresentationForNamedType.FullName
+            ValueSome owner.CompiledRepresentationForNamedType.FullName
         with _ ->
-            None
-    | None -> None
+            ValueNone
+    | None -> ValueNone
 
 and private snapshotBinding g denv path (TBind(var, expr, _)) =
     let signature = tyToString denv var.Type
@@ -1020,7 +1039,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
 
     let isFieldBackedModuleValue =
         var.IsCompiledAsTopLevel
-        && memberKind.IsNone
+        && ValueOption.isNone memberKind
         && totalArgCount = Some 0
         && not (isFunTy g var.Type)
 
@@ -1031,7 +1050,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
                 var.LogicalName
                 var.Stamp
                 SymbolKind.Value
-                memberKind
+                (ValueOption.toOption memberKind)
                 var.IsCompilerGenerated
                 compiledName
                 totalArgCount
@@ -1044,7 +1063,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
                 "binding-metadata"
                 [
                     bindingMetadataIdentity denv var
-                    tryExtensionReceiverName var expr |> Option.defaultValue "none"
+                    tryExtensionReceiverName var expr |> ValueOption.defaultValue "none"
                 ]
         BodyIdentity = bodyIdentity
         IsSynthesized = var.IsCompilerGenerated
@@ -1186,9 +1205,9 @@ and private snapshotTycon denv path (tycon: Tycon) =
 
     let compiledFullName =
         try
-            Some tycon.CompiledRepresentationForNamedType.FullName
+            ValueSome tycon.CompiledRepresentationForNamedType.FullName
         with _ ->
-            None
+            ValueNone
 
     {
         Symbol = symbolId path tycon.LogicalName tycon.Stamp SymbolKind.Entity None false None None None
@@ -1204,9 +1223,16 @@ and private addBinding (snapshot: BindingSnapshot) (bindings: Map<string, Bindin
 
 let private collectSnapshots g denv (CheckedImplFile(qualifiedNameOfFile = qual; contents = contents)) =
     let initialPath = [ qual.Text ]
-    let initialBindings: Map<string, BindingSnapshot list> = Map.empty
-    let initialEntities: Map<string, EntitySnapshot> = Map.empty
-    snapshotModuleContents g denv initialPath (initialBindings, initialEntities) contents
+
+    snapshotModuleContents
+        g
+        denv
+        initialPath
+        {
+            Bindings = Map.empty
+            Entities = Map.empty
+        }
+        contents
 
 let private semanticEdit (snapshot: BindingSnapshot) kind baselineHash updatedHash : SemanticEdit =
     {
@@ -1215,10 +1241,10 @@ let private semanticEdit (snapshot: BindingSnapshot) kind baselineHash updatedHa
         BaselineHash = baselineHash
         UpdatedHash = updatedHash
         IsSynthesized = snapshot.IsSynthesized
-        ContainingEntity = snapshot.ContainingEntity
+        ContainingEntity = ValueOption.toOption snapshot.ContainingEntity
     }
 
-let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingSnapshot) : Choice<SemanticEdit option, RudeEdit> =
+let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingSnapshot) : Choice<SemanticEdit voption, RudeEdit> =
     if baseline.SignatureText <> updated.SignatureText then
         Choice2Of2
             {
@@ -1248,7 +1274,7 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
                 Message = "Inline annotation changed."
             }
     elif baseline.BodyIdentity = updated.BodyIdentity then
-        Choice1Of2 None
+        Choice1Of2 ValueNone
     elif baseline.IsFieldBackedModuleValue then
         Choice2Of2
             {
@@ -1260,7 +1286,7 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
         // Exact identities detect body changes. Only accepted body edits need hashes.
         let baselineHash = stableHash baseline.BodyIdentity
         let updatedHash = stableHash updated.BodyIdentity
-        Choice1Of2(Some(semanticEdit baseline SemanticEditKind.MethodBody (Some baselineHash) (Some updatedHash)))
+        Choice1Of2(ValueSome(semanticEdit baseline SemanticEditKind.MethodBody (Some baselineHash) (Some updatedHash)))
 
 let private compareBindingLists (baseline: BindingSnapshot list) (updated: BindingSnapshot list) =
     let edits = ResizeArray<SemanticEdit>()
@@ -1268,8 +1294,8 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
 
     let addComparison baselineSnapshot updatedSnapshot =
         match compareMatchedBinding baselineSnapshot updatedSnapshot with
-        | Choice1Of2(Some edit) -> edits.Add edit
-        | Choice1Of2 None -> ()
+        | Choice1Of2(ValueSome edit) -> edits.Add edit
+        | Choice1Of2 ValueNone -> ()
         | Choice2Of2 rudeEdit -> rude.Add rudeEdit
 
     let addRemoved (removed: BindingSnapshot) =
@@ -1290,29 +1316,50 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
 
     let rec tryTakeExact signature skipped candidates =
         match candidates with
-        | [] -> None
-        | candidate :: tail when candidate.SignatureText = signature -> Some(candidate, List.rev skipped @ tail)
+        | [] -> ValueNone
+        | candidate :: tail when candidate.SignatureText = signature ->
+            ValueSome(
+                struct {|
+                    Match = candidate
+                    Remaining = List.fold (fun rest item -> item :: rest) tail skipped
+                |}
+            )
         | candidate :: tail -> tryTakeExact signature (candidate :: skipped) tail
 
     // Exact signatures are stable identities within an overload set. Pair them first so
     // inserting or removing one overload cannot shift unrelated declarations by position.
-    let exactPairs, unmatchedBaseline, unmatchedUpdated =
-        (([], [], updated), baseline)
-        ||> List.fold (fun (pairs, unmatched, remainingUpdated) baselineSnapshot ->
-            match tryTakeExact baselineSnapshot.SignatureText [] remainingUpdated with
-            | Some(updatedSnapshot, remaining) -> ((baselineSnapshot, updatedSnapshot) :: pairs, unmatched, remaining)
-            | None -> (pairs, baselineSnapshot :: unmatched, remainingUpdated))
+    let matches =
+        (struct {|
+            Pairs = []
+            UnmatchedBaseline = []
+            UnmatchedUpdated = updated
+         |},
+         baseline)
+        ||> List.fold (fun state baselineSnapshot ->
+            match tryTakeExact baselineSnapshot.SignatureText [] state.UnmatchedUpdated with
+            | ValueSome matched ->
+                struct {|
+                    Pairs = struct (baselineSnapshot, matched.Match) :: state.Pairs
+                    UnmatchedBaseline = state.UnmatchedBaseline
+                    UnmatchedUpdated = matched.Remaining
+                |}
+            | ValueNone ->
+                struct {|
+                    Pairs = state.Pairs
+                    UnmatchedBaseline = baselineSnapshot :: state.UnmatchedBaseline
+                    UnmatchedUpdated = state.UnmatchedUpdated
+                |})
 
-    exactPairs
-    |> List.iter (fun (baselineSnapshot, updatedSnapshot) -> addComparison baselineSnapshot updatedSnapshot)
+    matches.Pairs
+    |> List.iter (fun (struct (baselineSnapshot, updatedSnapshot)) -> addComparison baselineSnapshot updatedSnapshot)
 
     let unmatchedBaseline =
-        unmatchedBaseline
-        |> List.sortBy (fun snapshot -> snapshot.SignatureText, snapshot.Symbol.LogicalName)
+        matches.UnmatchedBaseline
+        |> List.sortBy (fun snapshot -> struct (snapshot.SignatureText, snapshot.Symbol.LogicalName))
 
     let unmatchedUpdated =
-        unmatchedUpdated
-        |> List.sortBy (fun snapshot -> snapshot.SignatureText, snapshot.Symbol.LogicalName)
+        matches.UnmatchedUpdated
+        |> List.sortBy (fun snapshot -> struct (snapshot.SignatureText, snapshot.Symbol.LogicalName))
 
     if unmatchedBaseline.Length = unmatchedUpdated.Length then
         List.iter2 addComparison unmatchedBaseline unmatchedUpdated
@@ -1320,7 +1367,10 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
         unmatchedBaseline |> List.iter addRemoved
         unmatchedUpdated |> List.iter addAdded
 
-    List.ofSeq edits, List.ofSeq rude
+    struct {|
+        SemanticEdits = edits
+        RudeEdits = rude
+    |}
 
 let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updated: Map<string, BindingSnapshot list>) =
     let edits = ResizeArray<SemanticEdit>()
@@ -1331,9 +1381,9 @@ let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updat
         match Map.tryFind key updated with
         | Some updatedList ->
             matchedUpdatedKeys.Add key |> ignore
-            let semanticEdits, rudeEdits = compareBindingLists baselineList updatedList
-            edits.AddRange semanticEdits
-            rude.AddRange rudeEdits
+            let result = compareBindingLists baselineList updatedList
+            edits.AddRange result.SemanticEdits
+            rude.AddRange result.RudeEdits
         | None ->
             baselineList
             |> List.iter (fun removed ->
@@ -1355,10 +1405,12 @@ let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updat
                         Message = "Declaration addition is not classified by this foundational diff slice."
                     })
 
-    List.ofSeq edits, List.ofSeq rude
+    struct {|
+        SemanticEdits = edits
+        RudeEdits = rude
+    |}
 
 let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Map<string, EntitySnapshot>) =
-    let edits = ResizeArray<SemanticEdit>()
     let rude = ResizeArray<RudeEdit>()
 
     for KeyValue(key, baselineEntity) in baseline do
@@ -1389,7 +1441,7 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
                     Message = "Type addition is not classified by this foundational diff slice."
                 }
 
-    List.ofSeq edits, List.ofSeq rude
+    rude
 
 let diffImplementationFile (g: TcGlobals) (baseline: CheckedImplFile) (updated: CheckedImplFile) =
     if obj.ReferenceEquals(baseline, updated) then
@@ -1397,17 +1449,18 @@ let diffImplementationFile (g: TcGlobals) (baseline: CheckedImplFile) (updated: 
     else
         try
             let denv = DisplayEnv.Empty g
-            let baselineBindings, baselineEntities = collectSnapshots g denv baseline
-            let updatedBindings, updatedEntities = collectSnapshots g denv updated
+            let baselineSnapshots = collectSnapshots g denv baseline
+            let updatedSnapshots = collectSnapshots g denv updated
 
-            let semanticEdits, bindingRudeEdits =
-                compareBindings baselineBindings updatedBindings
+            let bindingDiff =
+                compareBindings baselineSnapshots.Bindings updatedSnapshots.Bindings
 
-            let entityEdits, entityRudeEdits = compareEntities baselineEntities updatedEntities
+            let entityRudeEdits =
+                compareEntities baselineSnapshots.Entities updatedSnapshots.Entities
 
             {
-                SemanticEdits = semanticEdits @ entityEdits
-                RudeEdits = bindingRudeEdits @ entityRudeEdits
+                SemanticEdits = List.ofSeq bindingDiff.SemanticEdits
+                RudeEdits = [ yield! bindingDiff.RudeEdits; yield! entityRudeEdits ]
             }
         with ExpressionIdentityTraversalFailed message ->
             {
