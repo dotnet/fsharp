@@ -557,18 +557,17 @@ let serializeStateMachineStates (info: EncMethodDebugInformation) : byte[] =
 
         // Unlike the other two blobs the baseline here is min(minOffset, 0)
         // (Roslyn line 372).
-        let syntaxOffsetBaseline =
-            min (states |> List.map (fun s -> s.SyntaxOffset) |> List.min) 0
+        let syntaxOffsetBaseline = min (states |> List.minBy _.SyntaxOffset).SyntaxOffset 0
 
         builder.WriteCompressedInteger(-syntaxOffsetBaseline)
 
         // Roslyn's reader rejects more than 256 entries sharing one syntax offset
         // (relative ordinal must fit a byte, line 344); fail closed at write time.
-        for _, group in states |> List.groupBy (fun s -> s.SyntaxOffset) do
+        for _, group in states |> List.groupBy _.SyntaxOffset do
             if group.Length > 256 then
                 invalidArg (nameof info) $"more than 256 state machine states share syntax offset %d{group.Head.SyntaxOffset}"
 
-        for state in states |> List.sortBy (fun s -> s.SyntaxOffset) do
+        for state in states |> List.sortBy _.SyntaxOffset do
             builder.WriteCompressedSignedInteger state.StateNumber
             builder.WriteCompressedInteger(state.SyntaxOffset - syntaxOffsetBaseline)
 

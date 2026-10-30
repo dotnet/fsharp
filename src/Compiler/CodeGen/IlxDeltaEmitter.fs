@@ -78,8 +78,8 @@ let private convertExceptionRegions (regions: ImmutableArray<ExceptionRegion>) :
     if regions.IsDefaultOrEmpty then
         [||]
     else
-        regions.ToArray()
-        |> Array.map (fun region ->
+        regions
+        |> Seq.map (fun region ->
             let kind =
                 match region.Kind with
                 | ExceptionRegionKind.Catch -> IlExceptionRegionKind.Catch
@@ -103,6 +103,7 @@ let private convertExceptionRegions (regions: ImmutableArray<ExceptionRegion>) :
                 CatchTypeToken = catchToken
                 FilterOffset = region.FilterOffset
             })
+        |> Seq.toArray
 
 /// Represents the emitted artifacts for a hot reload delta.
 /// This is the primary output from IlxDeltaEmitter, containing all deltas needed
@@ -1505,7 +1506,7 @@ let private buildMethodSpecificationRowsSnapshot
             referencedMethodSpecTokens.Length
             baselineMethodSpecRowCount
             (referencedMethodSpecTokens
-             |> List.map (fun token -> sprintf "0x%08X" token)
+             |> Seq.map (fun token -> $"0x%08X{token}")
              |> String.concat ",")
 
     referencedMethodSpecTokens
@@ -3384,10 +3385,11 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                             )
 
                             if traceMetadata then
-                                let hex (bytes: byte[]) =
-                                    bytes |> Array.map (sprintf "%02X") |> String.concat "-"
-
-                                printfn "[fsharp-hotreload][typespec-add] token=0x%08X rowId=%d blob=%s" token nextRowId (hex signature)
+                                printfn
+                                    "[fsharp-hotreload][typespec-add] token=0x%08X rowId=%d blob=%s"
+                                    token
+                                    nextRowId
+                                    (BitConverter.ToString signature)
 
                             0x1B000000 ||| nextRowId
 
@@ -4122,7 +4124,7 @@ let private collectDefinitionMappings
                             | Some shapeMatch -> Some shapeMatch
                             | None when isUpdatedMethodResumableCodeHelper typeDef -> markShapeChangedResumableHelperAdded ()
                             | None ->
-                                let matchedNames = matches |> Array.map fst |> String.concat "; "
+                                let matchedNames = matches |> Seq.map fst |> String.concat "; "
                                 let allCandidates = candidateNames |> String.concat "; "
 
                                 raise (
@@ -5327,7 +5329,7 @@ let private analyzeSequencePointChanges
     if traceMethodUpdates.Value && not (List.isEmpty triviaRecompileKeys) then
         let names =
             triviaRecompileKeys
-            |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
+            |> Seq.map (fun key -> $"{key.DeclaringType}::{key.Name}")
             |> String.concat ", "
 
         printfn "[fsharp-hotreload][sequence-points] trivia-edit recompiles: %s" names
@@ -5555,7 +5557,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
     // the owning member, so tolerate them (the historical drop behavior) and fail closed only
     // on genuinely-requested user methods that fail to resolve, which would otherwise advance
     // the baseline while the runtime keeps stale code.
-    let isCompilerGeneratedCompanion (key: MethodDefinitionKey) = key.DeclaringType.Contains "@"
+    let isCompilerGeneratedCompanion (key: MethodDefinitionKey) =
+        key.DeclaringType.IndexOf("@", StringComparison.Ordinal) >= 0
 
     let unresolvedUserMethods =
         unresolvedMethods |> List.filter (isCompilerGeneratedCompanion >> not)
@@ -5564,7 +5567,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
         let names =
             unresolvedUserMethods
             |> List.rev
-            |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
+            |> Seq.map (fun key -> $"{key.DeclaringType}::{key.Name}")
             |> String.concat ", "
 
         raise (HotReloadUnsupportedEditException($"Unable to resolve updated method(s) in the fresh compilation: {names}. Please rebuild."))
