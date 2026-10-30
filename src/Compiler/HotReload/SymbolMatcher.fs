@@ -57,7 +57,7 @@ module FSharpSymbolMatcher =
     let private MaxNestedTypeDepth = 100
 
     let rec private addTypeMatches
-        (synthesizedBuckets: Dictionary<string, string[]> option)
+        (synthesizedBuckets: Dictionary<string, string[]> voption)
         (enclosing: ILTypeDef list)
         (types: Dictionary<string, TypeMatch>)
         (methods: Dictionary<MethodDefinitionKey, MethodMatch>)
@@ -77,7 +77,7 @@ module FSharpSymbolMatcher =
             }
 
         match synthesizedBuckets with
-        | Some buckets when IsCompilerGeneratedName typeDef.Name ->
+        | ValueSome buckets when IsCompilerGeneratedName typeDef.Name ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName typeDef.Name
             let mapKey = SynthesizedNameMapKey basicName
 
@@ -113,10 +113,11 @@ module FSharpSymbolMatcher =
         |> List.iter (fun methodDef -> addMethodMatch typeRef enclosing typeDef methodDef methods)
 
         typeDef.NestedTypes.AsList()
-        |> List.iter (fun nested -> addTypeMatches synthesizedBuckets (enclosing @ [ typeDef ]) types methods (depth + 1) nested)
+        |> List.iter (fun nested ->
+            addTypeMatches synthesizedBuckets ([ yield! enclosing; yield typeDef ]) types methods (depth + 1) nested)
 
-    let private createInternal (moduleDef: ILModuleDef) (synthesized: Dictionary<string, string[]> option) : FSharpSymbolMatcher =
-        let typeMatches = Dictionary<string, TypeMatch>()
+    let private createInternal (moduleDef: ILModuleDef) (synthesized: Dictionary<string, string[]> voption) : FSharpSymbolMatcher =
+        let typeMatches = Dictionary<string, TypeMatch>(StringComparer.Ordinal)
         let methodMatches = Dictionary<MethodDefinitionKey, MethodMatch>()
 
         moduleDef.TypeDefs.AsList()
@@ -127,7 +128,7 @@ module FSharpSymbolMatcher =
             MethodMatches = methodMatches :> IReadOnlyDictionary<MethodDefinitionKey, MethodMatch>
         }
 
-    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher = createInternal moduleDef None
+    let create (moduleDef: ILModuleDef) : FSharpSymbolMatcher = createInternal moduleDef ValueNone
 
     let createWithSynthesizedNames (moduleDef: ILModuleDef) (synthesizedMap: FSharpSynthesizedTypeMaps) : FSharpSymbolMatcher =
         // Recorded names are exact identities, so this matcher does not expand aliases.
@@ -139,14 +140,14 @@ module FSharpSymbolMatcher =
             for struct (basic, names) in synthesizedMap.Snapshot do
                 buckets[basic] <- names
 
-            createInternal moduleDef (Some buckets)
+            createInternal moduleDef (ValueSome buckets)
 
     let tryGetTypeDef (matcher: FSharpSymbolMatcher) (fullName: string) =
         match matcher.TypeMatches.TryGetValue fullName with
-        | true, matchInfo -> Some(matchInfo.EnclosingTypes, matchInfo.TypeDef)
-        | _ -> None
+        | true, matchInfo -> ValueSome matchInfo
+        | _ -> ValueNone
 
     let tryGetMethodDef (matcher: FSharpSymbolMatcher) (key: MethodDefinitionKey) =
         match matcher.MethodMatches.TryGetValue key with
-        | true, matchInfo -> Some(matchInfo.EnclosingTypes, matchInfo.TypeDef, matchInfo.MethodDef)
-        | _ -> None
+        | true, matchInfo -> ValueSome matchInfo
+        | _ -> ValueNone

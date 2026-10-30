@@ -1083,4 +1083,4 @@ module internal TestHelpers =
         { AccessorUpdate.Symbol = symbol
           ContainingType = typeName
           MemberKind = memberKind
-          Method = Some methodKey }
+          Method = ValueSome methodKey }

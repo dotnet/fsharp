@@ -9,5 +9,5 @@ type internal AccessorUpdate =
         Symbol: SymbolId
         ContainingType: string
         MemberKind: SymbolMemberKind
-        Method: MethodDefinitionKey option
+        Method: MethodDefinitionKey voption
     }
