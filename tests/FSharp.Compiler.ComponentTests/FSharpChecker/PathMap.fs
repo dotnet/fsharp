@@ -135,7 +135,7 @@ let private checkAgainst (library: string) (source: string) =
 
 let private locate (source: string) (name: string) =
     let lines = source.Split '\n'
-    let index = lines |> Array.findIndex (fun line -> line.Contains(name, System.StringComparison.Ordinal))
+    let index = lines |> Array.findIndex (fun line -> line.IndexOf(name, System.StringComparison.Ordinal) >= 0)
     let line = lines[index]
     struct (index + 1, line.IndexOf(name, System.StringComparison.Ordinal) + name.Length, line, List.ofArray (name.Split '.'))
 
