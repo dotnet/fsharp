@@ -156,7 +156,7 @@ type LoweredStateMachine =
          // The state machine's resume points in state-number order: (state number
          // assigned by the conversion, source range of the resumable entry). Hot reload
          // compiles persist these as the EnC State Machine State Map.
-         resumptionPoints: (int * range) list
+         resumptionPoints: struct (int * range) list
 
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
@@ -186,7 +186,7 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
     // ordinary compiles pay nothing beyond the boolean check.
     // Allocate capture state only when hot reload requests resumption metadata.
     let resumptionPoints =
-        if collectResumptionPoints then Some(ResizeArray<int * range>()) else None
+        if collectResumptionPoints then ValueSome(ResizeArray<struct (int * range)>()) else ValueNone
 
     // Record definitions for any resumable code
     let rec BindResumableCodeDefinitions (env: env) finalizing expr =
@@ -455,8 +455,8 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
                         (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR),
                         (afterCodeThisVar, afterCodeBodyR),
                         (match resumptionPoints with
-                         | Some points -> points |> Seq.sortBy fst |> List.ofSeq
-                         | None -> []))
+                         | ValueSome points -> points |> Seq.sortBy (fun struct (state, _) -> state) |> Seq.toList
+                         | ValueNone -> []))
             ValueSome (env, remake2, moveNextBody)
         | _ ->
             ValueNone
@@ -592,8 +592,8 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
         let reenterPC = genPC()
 
         match resumptionPoints with
-        | Some points -> points.Add(reenterPC, someBranchExpr.Range)
-        | None -> ()
+        | ValueSome points -> points.Add(struct (reenterPC, someBranchExpr.Range))
+        | ValueNone -> ()
         let envSome = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add someVar (mkInt g someVar.Range reenterPC) }
         let resNone = ConvertResumableCode env pcValInfo noneBranchExpr
         let resSome = ConvertResumableCode envSome pcValInfo someBranchExpr

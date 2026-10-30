@@ -1353,7 +1353,7 @@ let computeOccurrenceKeyedClosureNamesWithScope
 
                 let replayAssignments =
                     allocation.Assignments
-                    |> List.choose (fun (occurrence, assignment) ->
+                    |> Seq.choose (fun struct (occurrence, assignment) ->
                         let occurrenceChain = ClosureNameAllocator.occurrenceOrdinalChain occurrence
 
                         match assignment with
@@ -1376,6 +1376,7 @@ let computeOccurrenceKeyedClosureNamesWithScope
                                 | _ -> None
                         | ClosureNameAllocator.ClosureNameAssignment.Fresh _ when baselineTableIsComplete -> Some(occurrence, assignment)
                         | ClosureNameAllocator.ClosureNameAssignment.Fresh _ -> None)
+                    |> Seq.toList
 
                 let assignedNames =
                     (assignedNames, replayAssignments)

@@ -22,11 +22,12 @@
 ///    the closure call site consults it FIRST and falls back to the replayable name
 ///    map when the stamp is absent.
 ///
-/// When no state is installed for an owner every operation is a no-op/None, so
+/// When no state is installed for an owner every operation is a no-op/ValueNone, so
 /// flag-off and non-session compiles are byte-identical to upstream behavior.
 /// </summary>
 module internal FSharp.Compiler.ClosureNameAllocationState
 
+open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
@@ -37,26 +38,26 @@ open System.Runtime.CompilerServices
 [<Sealed>]
 type ClosureNameStateHolder() =
     let syncRoot = obj ()
-    let mutable recordedNamesByStamp: Dictionary<int64, string> option = None
+    let mutable recordedNamesByStamp: Dictionary<int64, string> voption = ValueNone
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty
-    let synthesizedNameOverrides = Dictionary<string, string>()
+    let synthesizedNameOverrides = Dictionary<string, string>(StringComparer.Ordinal)
     // State machine resume points recorded by IlxGen lowering, keyed by the
     // emitted state machine struct's full type name. Shares the recording lifecycle of
     // recordedNamesByStamp: both begin/clear together, so flag-off compiles never pay.
-    let mutable recordedResumePointsByTypeName: Dictionary<string, int list> option =
-        None
+    let mutable recordedResumePointsByTypeName: Dictionary<string, int list> voption =
+        ValueNone
 
     member _.BeginRecording() =
         lock syncRoot (fun () ->
-            recordedNamesByStamp <- Some(Dictionary<int64, string>())
+            recordedNamesByStamp <- ValueSome(Dictionary<int64, string>())
             synthesizedNameOverrides.Clear()
-            recordedResumePointsByTypeName <- Some(Dictionary<string, int list>()))
+            recordedResumePointsByTypeName <- ValueSome(Dictionary<string, int list>(StringComparer.Ordinal)))
 
     member _.Record(stamp: int64, name: string) =
         lock syncRoot (fun () ->
             match recordedNamesByStamp with
-            | Some recorded -> recorded[stamp] <- name
-            | None -> ())
+            | ValueSome recorded -> recorded[stamp] <- name
+            | ValueNone -> ())
 
     member _.RecordSynthesizedNameOverride(replayName: string, emittedName: string) =
         lock syncRoot (fun () ->
@@ -66,8 +67,8 @@ type ClosureNameStateHolder() =
     member _.RecordedNames() =
         lock syncRoot (fun () ->
             match recordedNamesByStamp with
-            | Some recorded -> recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
-            | None -> Map.empty)
+            | ValueSome recorded -> recorded |> Seq.map (fun (KeyValue(key, value)) -> key, value) |> Map.ofSeq
+            | ValueNone -> Map.empty)
 
     member _.IsClosureNameRecordingActive =
         lock syncRoot (fun () -> recordedNamesByStamp.IsSome)
@@ -78,14 +79,14 @@ type ClosureNameStateHolder() =
     member _.RecordResumePoints(typeName: string, resumePoints: int list) =
         lock syncRoot (fun () ->
             match recordedResumePointsByTypeName with
-            | Some recorded -> recorded[typeName] <- resumePoints
-            | None -> ())
+            | ValueSome recorded -> recorded[typeName] <- resumePoints
+            | ValueNone -> ())
 
     member _.RecordedResumePoints() =
         lock syncRoot (fun () ->
             match recordedResumePointsByTypeName with
-            | Some recorded -> recorded |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
-            | None -> Map.empty)
+            | ValueSome recorded -> recorded |> Seq.map (fun (KeyValue(key, value)) -> key, value) |> Map.ofSeq
+            | ValueNone -> Map.empty)
 
     member _.SetAssignedNames(names: Map<int64, string>) =
         lock syncRoot (fun () ->
@@ -93,17 +94,23 @@ type ClosureNameStateHolder() =
             synthesizedNameOverrides.Clear())
 
     member _.TryGetAssignedName(stamp: int64) =
-        lock syncRoot (fun () -> Map.tryFind stamp assignedNamesByStamp)
+        lock syncRoot (fun () ->
+            match assignedNamesByStamp.TryGetValue stamp with
+            | true, name -> ValueSome name
+            | _ -> ValueNone)
 
     member _.SynthesizedNameOverrides() =
-        lock syncRoot (fun () -> synthesizedNameOverrides |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq)
+        lock syncRoot (fun () ->
+            synthesizedNameOverrides
+            |> Seq.map (fun (KeyValue(key, value)) -> key, value)
+            |> Map.ofSeq)
 
     member _.Clear() =
         lock syncRoot (fun () ->
-            recordedNamesByStamp <- None
+            recordedNamesByStamp <- ValueNone
             assignedNamesByStamp <- Map.empty
             synthesizedNameOverrides.Clear()
-            recordedResumePointsByTypeName <- None)
+            recordedResumePointsByTypeName <- ValueNone)
 
 let private holders = ConditionalWeakTable<obj, ClosureNameStateHolder>()
 
@@ -111,16 +118,16 @@ let private holders = ConditionalWeakTable<obj, ClosureNameStateHolder>()
 /// single failed weak-table lookup and stay behaviorally untouched.
 let private tryGetHolder (owner: obj) =
     match holders.TryGetValue owner with
-    | true, holder -> Some holder
-    | _ -> None
+    | true, holder -> ValueSome holder
+    | _ -> ValueNone
 
 let private getOrCreateHolder (owner: obj) =
     holders.GetValue(owner, fun _ -> ClosureNameStateHolder())
 
 /// The installed closure-name state of the owner, when any was ever installed for
-/// it; None on compiles that never installed state (flag-off, no emit hook).
+/// it; ValueNone on compiles that never installed state (flag-off, no emit hook).
 /// Resolve once per codegen run so the per-closure call sites bypass the weak table.
-let tryGetClosureNameState (owner: obj) : ClosureNameStateHolder option = tryGetHolder owner
+let tryGetClosureNameState (owner: obj) : ClosureNameStateHolder voption = tryGetHolder owner
 
 /// Starts (or restarts) stamp -> emitted-closure-name recording for the owner's
 /// compile. Installed by the emit hook for baseline-capture compiles only.
@@ -131,23 +138,23 @@ let beginClosureStampNameRecording (owner: obj) =
 /// was never begun.
 let getRecordedClosureStampNames (owner: obj) : Map<int64, string> =
     match tryGetHolder owner with
-    | Some holder -> holder.RecordedNames()
-    | None -> Map.empty
+    | ValueSome holder -> holder.RecordedNames()
+    | ValueNone -> Map.empty
 
 /// The state-machine-struct-name -> resume-point recording of the owner's compile;
 /// empty when recording was never begun.
 let getRecordedStateMachineResumePoints (owner: obj) : Map<string, int list> =
     match tryGetHolder owner with
-    | Some holder -> holder.RecordedResumePoints()
-    | None -> Map.empty
+    | ValueSome holder -> holder.RecordedResumePoints()
+    | ValueNone -> Map.empty
 
 /// The replay-name -> final-emitted-name overrides observed at the closure lowering
 /// call site during this compile. Applying these to FSharpSynthesizedTypeMaps.Snapshot
 /// preserves the allocation slots while recording the names that actually hit IL.
 let getSynthesizedNameOverrides (owner: obj) : Map<string, string> =
     match tryGetHolder owner with
-    | Some holder -> holder.SynthesizedNameOverrides()
-    | None -> Map.empty
+    | ValueSome holder -> holder.SynthesizedNameOverrides()
+    | ValueNone -> Map.empty
 
 let applySynthesizedNameOverrides
     (overrides: Map<string, string>)
@@ -159,9 +166,9 @@ let applySynthesizedNameOverrides
         let names =
             names
             |> Array.map (fun name ->
-                match Map.tryFind name overrides with
-                | Some emittedName -> emittedName
-                | None -> name)
+                match overrides.TryGetValue name with
+                | true, emittedName -> emittedName
+                | _ -> name)
 
         struct (key, names))
 
@@ -172,5 +179,5 @@ let setAssignedClosureNames (owner: obj) (names: Map<int64, string>) =
 /// Clears all closure-name state for the owner (recording and assigned names).
 let clearClosureNameState (owner: obj) =
     match tryGetHolder owner with
-    | Some holder -> holder.Clear()
-    | None -> ()
+    | ValueSome holder -> holder.Clear()
+    | ValueNone -> ()

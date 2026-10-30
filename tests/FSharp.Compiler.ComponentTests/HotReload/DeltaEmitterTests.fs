@@ -911,6 +911,44 @@ module DeltaEmitterTests =
         |> Seq.find (fun key -> key.Name = name)
 
     [<Fact>]
+    let ``closure allocation preserves persisted nested identities and assignment order`` () =
+        let symbol =
+            { Path = [ "Sample" ]
+              LogicalName = "member"
+              Stamp = 0L
+              Kind = SymbolKind.Value
+              MemberKind = Some SymbolMemberKind.Method
+              IsSynthesized = false
+              CompiledName = Some "member"
+              TotalArgCount = None
+              GenericArity = None
+              ParameterTypeIdentities = None
+              ReturnTypeIdentity = None }
+
+        let occurrence ordinal =
+            { Id = { MemberSymbol = symbol; Ordinal = ordinal; ParentChain = [ 0 ] }
+              CurriedArity = 1
+              ParameterTypes = []
+              Captures = []
+              ReturnTypeIdentity = RuntimeTypeIdentity.VoidType
+              BodyHash = ordinal
+              RootExprStamp = int64 ordinal
+              Range = FSharp.Compiler.Text.Range.range0 }
+
+        let allocation =
+            FSharp.Compiler.ClosureNameAllocator.allocateMemberClosureNames
+                []
+                (Map.ofList [ ([ 0; 1 ], "persisted1"); ([ 0; 3 ], "persisted3") ])
+                [ occurrence 3; occurrence 1; occurrence 2 ]
+                "member"
+                2
+
+        let names = allocation.Assignments |> Seq.map (fun struct (_, assignment) -> assignment.Name) |> Seq.toArray
+        Assert.Equal<string array>([| "persisted3"; "persisted1"; "member@hotreload#g2_o0_2" |], names)
+        Assert.Equal("persisted1", allocation.RefreshedNamesByOccurrenceChain[List.ofArray [| 0; 1 |]])
+        Assert.Equal("member@hotreload#g2_o0_2", allocation.RefreshedNamesByOccurrenceChain[[ 0; 2 ]])
+
+    [<Fact>]
     let ``symbol matcher locates existing methods`` () =
         let moduleDef, baseline = createBaseline ()
         let matcher = FSharpSymbolMatcher.create moduleDef
