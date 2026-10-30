@@ -2537,6 +2537,40 @@ let added () = 2
                 session.Commit()))
 
     [<Fact>]
+    let ``Cancelled session requests do not wait for the active operation`` () =
+        let checker = createChecker ()
+        use session = checker.CreateHotReloadSession()
+        let options = checker.GetProjectOptionsFromCommandLineArgs("Cancelled.fsproj", [||])
+        let snapshot = createProjectSnapshot options
+        use entered = new ManualResetEventSlim()
+        use release = new ManualResetEventSlim()
+        use cancellation = new CancellationTokenSource()
+
+        let active =
+            Task.Run(fun () ->
+                session.UpdateCapabilities(seq {
+                    entered.Set()
+                    release.Wait()
+                    yield "Baseline"
+                }))
+
+        try
+            Assert.True(entered.Wait(TimeSpan.FromSeconds 5.0), "The active operation did not acquire the session.")
+            let pending = Async.StartImmediateAsTask(session.AddProject snapshot, cancellationToken = cancellation.Token)
+            cancellation.Cancel()
+
+            let completed = Task.WhenAny(pending :> Task, Task.Delay(TimeSpan.FromSeconds 5.0)).GetAwaiter().GetResult()
+            Assert.Same(pending, completed)
+            Assert.ThrowsAny<OperationCanceledException>(fun () -> pending.GetAwaiter().GetResult() |> ignore)
+            |> ignore
+        finally
+            release.Set()
+            active.GetAwaiter().GetResult()
+
+        session.UpdateCapabilities [ "Baseline" ]
+        Assert.Empty(session.ProjectIdentifiers)
+
+    [<Fact>]
     let ``overlapping in-process emits serialize and preserve the first pending update`` () =
         withProjectDir "fcs-hotreload-inprocess-overlap" (fun projectDir ->
             let fsPath = Path.Combine(projectDir, "Library.fs")
