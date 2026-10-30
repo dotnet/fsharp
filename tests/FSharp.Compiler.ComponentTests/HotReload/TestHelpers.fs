@@ -221,7 +221,7 @@ module internal TestHelpers =
             Some(ILVersionInfo(0us, 0us, 0us, 0us)),
             None)
 
-    let private testIlGlobals =
+    let testIlGlobals =
         mkILGlobals(ILScopeRef.Assembly mscorlibRef, [], ILScopeRef.Assembly fsharpCoreRef)
 
     module ILWriter = FSharp.Compiler.AbstractIL.ILBinaryWriter

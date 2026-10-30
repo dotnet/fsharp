@@ -37,6 +37,37 @@ type internal EditAndContinueOperation = FSharp.Compiler.AbstractIL.ILDeltaHandl
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module DeltaEmitterTests =
 
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Metadata capture preserves deterministic in-memory DLL and PDB bytes`` useSha1 emitPdb =
+        let moduleDef = TestHelpers.createMethodModule "same bytes"
+        let options =
+            { defaultWriterOptionsForTests testIlGlobals with
+                checksumAlgorithm = if useSha1 then HashAlgorithm.Sha1 else HashAlgorithm.Sha256
+                pdbfile = if emitPdb then Some "Sample.pdb" else None }
+
+        let ordinaryAssembly, ordinaryPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        let capturedAssembly, capturedPdb, _, snapshot = WriteILBinaryInMemoryWithArtifacts(options, moduleDef, id)
+        let repeatedAssembly, repeatedPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        Assert.Equal<byte>(ordinaryAssembly, capturedAssembly)
+        Assert.Equal<byte>(ordinaryAssembly, repeatedAssembly)
+        Assert.True(snapshot.HeapSizes.StringHeapSize > 0)
+
+        match emitPdb, ordinaryPdb, capturedPdb, repeatedPdb with
+        | true, Some ordinary, Some captured, Some repeated ->
+            Assert.NotEmpty ordinary
+            Assert.Equal<byte>(ordinary, captured)
+            Assert.Equal<byte>(ordinary, repeated)
+            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange ordinary)
+            let reader = provider.GetMetadataReader()
+            Assert.Contains(reader.MethodDebugInformation, fun handle ->
+                reader.GetMethodDebugInformation(handle).GetSequencePoints() |> Seq.isEmpty |> not)
+        | false, None, None, None -> ()
+        | _ -> failwith "Unexpected portable PDB result from in-memory emission."
+
     // Helper to convert int table index to SRM TableIndex enum for boundary calls
     let inline private toTableIndex (table: TableName) : TableIndex =
         LanguagePrimitives.EnumOfValue<byte, TableIndex>(byte table.Index)
