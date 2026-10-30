@@ -112,9 +112,13 @@ module FSharpSymbolMatcher =
         typeDef.Methods.AsList()
         |> List.iter (fun methodDef -> addMethodMatch typeRef enclosing typeDef methodDef methods)
 
-        typeDef.NestedTypes.AsList()
-        |> List.iter (fun nested ->
-            addTypeMatches synthesizedBuckets ([ yield! enclosing; yield typeDef ]) types methods (depth + 1) nested)
+        match typeDef.NestedTypes.AsList() with
+        | [] -> ()
+        | nestedTypes ->
+            let nestedEnclosing = [ yield! enclosing; yield typeDef ]
+
+            nestedTypes
+            |> List.iter (addTypeMatches synthesizedBuckets nestedEnclosing types methods (depth + 1))
 
     let private createInternal (moduleDef: ILModuleDef) (synthesized: Dictionary<string, string[]> voption) : FSharpSymbolMatcher =
         let typeMatches = Dictionary<string, TypeMatch>(StringComparer.Ordinal)
