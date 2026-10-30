@@ -5,14 +5,7 @@ open System.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.TypedTreeDiff
 
-/// Represents a user-facing diagnostic generated for a rude edit.
-///
-/// The structured shape (Id + Severity + Message + SymbolName) is carried through the
-/// hot reload error channel rather than being flattened to a single string, so the host
-/// (dotnet-watch) can report the reason and distinguish warning-vs-error severity. The
-/// Id namespace is owned by `RudeEditDiagnostics.diagnosticId` alone; nothing else in the
-/// channel depends on its spelling, so aligning FSHRDL* with Roslyn's ENC* codes later is
-/// a change to that one function.
+/// Preserves diagnostic details across the F# host boundary.
 type internal RudeEditDiagnostic =
     {
         Id: string
@@ -56,17 +49,7 @@ module internal RudeEditDiagnostics =
             fallback
         | RudeEditKind.Unsupported -> fallback
 
-    // F#-owned FSHRDL* id namespace (deliberately NOT Roslyn's ENC*). This function is the single
-    // place the namespace is decided: the rude-edit channel carries whatever string this returns
-    // opaquely, so aligning with Roslyn's ENC codes later is a change to THIS function alone, with
-    // its callers untouched. Kept as FSHRDL because at the dotnet-watch seam F# rude edits flow
-    // through the F# bridge result, not Roslyn's diagnostic channel (F# projects are not in the
-    // Roslyn Solution), so the host neither special-cases nor displays these id strings and no
-    // external tooling consumes them; ENC is a Roslyn-owned, RudeEditKind-bound namespace, so
-    // reusing its numbers would be squatting with no offsetting UX or tooling benefit. Closest
-    // Roslyn analogs if ENC alignment is ever wanted: TypeLayoutChange ~ ENC0013/0014/0015 (enum
-    // underlying type / base type or interface / type kind), and a future non-blocking "might not
-    // take effect" edit ~ ENC0118 (Warning).
+    // FSHRDL identifiers belong to the F# host contract.
     let private diagnosticId kind =
         match kind with
         | RudeEditKind.SignatureChange -> "FSHRDL001"
@@ -87,17 +70,12 @@ module internal RudeEditDiagnostics =
         | RudeEditKind.NotSupportedByRuntime -> "FSHRDL016"
         | RudeEditKind.Unsupported -> "FSHRDL099"
 
-    /// Severity of a rude-edit kind. Every kind is blocking (Error) today; this is the single
-    /// place to mark a kind as a non-blocking Warning (e.g. a future "might not take effect"
-    /// edit that applies but needs a restart to be observed), mirroring Roslyn's ENC severities.
-    let private severityOf (_kind: RudeEditKind) = FSharpDiagnosticSeverity.Error
-
     let ofRudeEdit (edit: RudeEdit) : RudeEditDiagnostic =
         let symbolName = symbolDisplayName edit.Symbol
 
         {
             Id = diagnosticId edit.Kind
-            Severity = severityOf edit.Kind
+            Severity = FSharpDiagnosticSeverity.Error
             Message = formatMessage edit.Kind symbolName edit.Message
             Kind = edit.Kind
             SymbolName = symbolName
@@ -113,7 +91,7 @@ module internal RudeEditDiagnostics =
     let ofKindMessage (kind: RudeEditKind) (message: string) : RudeEditDiagnostic =
         {
             Id = diagnosticId kind
-            Severity = severityOf kind
+            Severity = FSharpDiagnosticSeverity.Error
             Message = message
             Kind = kind
             SymbolName = None

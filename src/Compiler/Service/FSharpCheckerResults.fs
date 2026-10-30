@@ -3960,7 +3960,6 @@ type FSharpCheckProjectResults
 
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
-    // TODO: Looks like we don't need this
     member internal _.TypedImplementationFiles: CheckedProjectImplementation =
         if not keepAssemblyContents then
             invalidOp
