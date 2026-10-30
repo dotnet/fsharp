@@ -10,6 +10,9 @@ open System.Reflection.Metadata.Ecma335
 open System.Reflection
 open System.Reflection.Emit
 open System.Reflection.PortableExecutable
+
+open Internal.Utilities.Library
+
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
@@ -5411,7 +5414,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             File.WriteAllBytes(tempDll, assemblyBytes)
             printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
-        with ex ->
+        with RecoverableException ex ->
             printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
 
     use peStream = new MemoryStream(assemblyBytes, writable = false)

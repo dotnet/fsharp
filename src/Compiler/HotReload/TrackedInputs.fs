@@ -37,8 +37,11 @@ let private tryNormalizeTrackedInputPath (projectDirectory: string) (path: strin
         let fullPath =
             try
                 Path.GetFullPath candidatePath
-            with _ ->
-                candidatePath
+            with
+            | :? ArgumentException
+            | :? NotSupportedException
+            | :? PathTooLongException
+            | :? System.Security.SecurityException -> candidatePath
 
         if FileSystem.FileExistsShim fullPath then
             ValueSome fullPath

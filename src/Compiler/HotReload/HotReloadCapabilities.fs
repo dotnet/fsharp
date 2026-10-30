@@ -1,10 +1,13 @@
 namespace FSharp.Compiler.HotReload
 
 open System
-open FSharp.Compiler.EnvironmentHelpers
 #if NET5_0_OR_GREATER
 open System.Reflection.Metadata
 #endif
+
+open Internal.Utilities.Library
+
+open FSharp.Compiler.EnvironmentHelpers
 
 [<Flags>]
 type internal HotReloadCapabilityFlags =
@@ -27,7 +30,7 @@ module internal HotReloadCapability =
 #if NET5_0_OR_GREATER
         try
             MetadataUpdater.IsSupported
-        with _ ->
+        with RecoverableException _ ->
             false
 #else
         false
