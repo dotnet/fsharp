@@ -25,8 +25,6 @@
 /// caveat documented in docs/hot-reload-closure-mapping.md).
 module internal FSharp.Compiler.EncMethodDebugInformation
 
-#nowarn "9" // NativePtr: BlobReader only exposes a byte*-based constructor
-
 open System
 open System.Collections.Generic
 open System.Collections.Immutable
@@ -35,6 +33,7 @@ open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Runtime.InteropServices
 open System.Text
+
 open Microsoft.FSharp.NativeInterop
 
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -220,9 +219,18 @@ let decodeOccurrenceKey (key: int) : int list =
 let private invalidData (blobName: string) (offset: int) =
     raise (InvalidDataException $"invalid EnC %s{blobName} blob: unexpected data at offset %d{offset}")
 
-// Absent CDI rows arrive as null at runtime even though the parameter is non-null in the
-// nullness model, so guard with box (FS3261-safe) rather than dropping the check.
-let private isEmpty (blob: byte[]) = isNull (box blob) || blob.Length = 0
+let private isEmpty (blob: byte[]) =
+    match withNull blob with
+    | null -> true
+    | blob -> blob.Length = 0
+
+// The caller keeps the buffer pinned until the reader leaves scope.
+#nowarn "9"
+
+let private createBlobReader (handle: GCHandle) length =
+    BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), length)
+
+#warnon "9"
 
 // ---------------------------------------------------------------------------
 // F# hot reload module CDI: synthesized-name allocation snapshot
@@ -237,7 +245,7 @@ let private isEmpty (blob: byte[]) = isNull (box blob) || blob.Length = 0
 let private SynthesizedNameSnapshotBlobVersion = 1
 
 let private writeUtf8String (builder: BlobBuilder) (value: string) =
-    if isNull (box value) then
+    if isNull (withNull value) then
         invalidArg (nameof value) "snapshot strings must be non-null"
 
     let bytes = Encoding.UTF8.GetBytes value
@@ -256,10 +264,10 @@ let private readUtf8String (blobName: string) (reader: byref<BlobReader>) =
 let private materializeSynthesizedNameSnapshot (snapshot: seq<struct (string * string[])>) =
     snapshot
     |> Seq.map (fun struct (key, names) ->
-        if isNull (box key) then
+        if isNull (withNull key) then
             invalidArg (nameof snapshot) "snapshot keys must be non-null"
 
-        if isNull (box names) then
+        if isNull (withNull names) then
             invalidArg (nameof snapshot) $"snapshot bucket '{key}' must be non-null"
 
         key, Array.copy names)
@@ -296,8 +304,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
         let handle = GCHandle.Alloc(blob, GCHandleType.Pinned)
 
         try
-            let mutable reader =
-                BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), blob.Length)
+            let mutable reader = createBlobReader handle blob.Length
 
             try
                 let version = reader.ReadCompressedInteger()
@@ -331,7 +338,7 @@ let deserializeSynthesizedNameSnapshot (blob: byte[]) : Map<string, string[]> =
                 if reader.RemainingBytes <> 0 then
                     invalidData "synthesized name snapshot" reader.Offset
 
-                buckets |> Seq.map id |> Map.ofSeq
+                buckets |> Map.ofSeq
             with :? BadImageFormatException ->
                 invalidData "synthesized name snapshot" reader.Offset
         finally
@@ -414,8 +421,7 @@ let deserializeLocalSlots (blob: byte[]) : EncLocalSlotInfo list =
         let handle = GCHandle.Alloc(blob, GCHandleType.Pinned)
 
         try
-            let mutable reader =
-                BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), blob.Length)
+            let mutable reader = createBlobReader handle blob.Length
 
             let slots = ResizeArray<EncLocalSlotInfo>()
             let mutable syntaxOffsetBaseline = -1
@@ -501,8 +507,7 @@ let deserializeLambdaMap (blob: byte[]) : int * EncClosureInfo list * EncLambdaI
         let handle = GCHandle.Alloc(blob, GCHandleType.Pinned)
 
         try
-            let mutable reader =
-                BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), blob.Length)
+            let mutable reader = createBlobReader handle blob.Length
 
             let closures = ResizeArray<EncClosureInfo>()
             let lambdas = ResizeArray<EncLambdaInfo>()
@@ -584,8 +589,7 @@ let deserializeStateMachineStates (blob: byte[]) : EncStateMachineStateInfo list
         let handle = GCHandle.Alloc(blob, GCHandleType.Pinned)
 
         try
-            let mutable reader =
-                BlobReader(NativePtr.ofNativeInt<byte> (handle.AddrOfPinnedObject()), blob.Length)
+            let mutable reader = createBlobReader handle blob.Length
 
             let states = ResizeArray<EncStateMachineStateInfo>()
 
