@@ -554,6 +554,7 @@ type FSharpChecker
         ResizeArray<string * FSharp.Compiler.HotReloadState.HotReloadSessionStore * FSharp.Compiler.HotReloadState.HotReloadProjectKey>()
 
     let liveHotReloadEmissionTargetsGate = obj ()
+    let mutable hasLiveHotReloadEmissionTargets = false
 
     let normalizeOutputPathForEmissionTargets (path: string) =
         try
@@ -583,12 +584,15 @@ type FSharpChecker
                 obj.ReferenceEquals(existingStore, store) && existingKey = projectKey)
             |> ignore
 
-            liveHotReloadEmissionTargets.Insert(0, (normalized, store, projectKey)))
+            liveHotReloadEmissionTargets.Insert(0, (normalized, store, projectKey))
+            Volatile.Write(&hasLiveHotReloadEmissionTargets, true))
 
     let unregisterHotReloadEmissionTargets (store: FSharp.Compiler.HotReloadState.HotReloadSessionStore) =
         lock liveHotReloadEmissionTargetsGate (fun () ->
             liveHotReloadEmissionTargets.RemoveAll(fun (_, existingStore, _) -> obj.ReferenceEquals(existingStore, store))
-            |> ignore)
+            |> ignore
+
+            Volatile.Write(&hasLiveHotReloadEmissionTargets, liveHotReloadEmissionTargets.Count > 0))
 
     // Resolves the session entity (and tracked project) an in-process compile belongs to by
     // the compile's output path. The most recently baselined project wins when several live
@@ -822,7 +826,10 @@ type FSharpChecker
         // synthesized-name state into this compile. Capture compiles stay session-independent
         // (they publish to the process-local capture slot, never to a session's store).
         let emissionContext =
-            if hasTestArgument "HotReloadDeltas" argv then
+            if
+                not (Volatile.Read(&hasLiveHotReloadEmissionTargets))
+                || hasTestArgument "HotReloadDeltas" argv
+            then
                 None
             else
                 tryResolveHotReloadEmissionContext (tryGetOutputPathFromCommandLineOptions "" argv)
