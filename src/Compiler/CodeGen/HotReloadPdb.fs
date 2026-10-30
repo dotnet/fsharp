@@ -2,16 +2,16 @@
 /// ILBaselineReader; emitDelta serializes the Portable PDB delta through SRM's PortablePdbBuilder.
 module internal FSharp.Compiler.HotReloadPdb
 
-open FSharp.Compiler.EnvironmentHelpers
 open System
-open System.Collections.Immutable
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Security.Cryptography
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.EnvironmentHelpers
 open FSharp.Compiler.HotReloadBaseline
 
 module ILBaselineReader = FSharp.Compiler.AbstractIL.ILBaselineReader
@@ -20,16 +20,15 @@ let private shouldTracePdb () =
     isEnvVarTruthy EnvironmentVariableNames.HotReloadTracePdb
     || isEnvVarTruthy EnvironmentVariableNames.HotReloadTraceMetadata
 
-/// Create a PDB snapshot from Portable PDB bytes.
-/// Uses pure F# parsing instead of SRM for the reading path.
+/// Computes a deterministic content ID for each portable PDB.
 let private createPortablePdbContentIdProvider (checksumAlgorithm: HashAlgorithm) : Func<IEnumerable<Blob>, BlobContentId> =
-    let algorithm =
-        match checksumAlgorithm with
-        | HashAlgorithm.Sha1 -> SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-        | HashAlgorithm.Sha256 -> SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
-
     Func<IEnumerable<Blob>, BlobContentId>(fun content ->
-        let contentBytes = content |> Seq.collect (fun c -> c.GetBytes()) |> Array.ofSeq
+        use algorithm =
+            match checksumAlgorithm with
+            | HashAlgorithm.Sha1 -> SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha256 -> SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+
+        let contentBytes = content |> Seq.collect _.GetBytes() |> Seq.toArray
         let hash = algorithm.ComputeHash contentBytes
         BlobContentId.FromHash hash)
 
