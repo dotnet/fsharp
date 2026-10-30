@@ -26,7 +26,6 @@ open FSharp.Compiler.CodeAnalysis.TransparentCompiler
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGeneratedNameMapState
-open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.Diagnostics

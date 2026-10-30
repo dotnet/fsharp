@@ -252,13 +252,7 @@
     <Compile Include="AbstractIL\EncMethodDebugInformation.fs" />
     <Compile Include="AbstractIL\ilwrite.fsi" />
     <Compile Include="AbstractIL\ilwrite.fs" />
-    <!-- ECMA-335 Edit-and-Continue metadata delta writer. -->
-    <!-- ECMA-335 Edit-and-Continue metadata delta writer. See PR #TBD.
-         Placed after ilwrite.fs/.fsi (not immediately after ilwritepdb) because
-         IlxDeltaStreams.fs and DeltaMetadataTables.fs reuse ilwrite.fs's
-         markerForUnicodeBytes helper for #US heap encoding.
-         ILDeltaHandles.fs and ILMetadataHeaps.fs moved earlier (before ilread) in this
-         branch because baseline reading depends on them. -->
+    <!-- Delta streams and tables require ilwrite's markerForUnicodeBytes for #US encoding. -->
     <Compile Include="AbstractIL\IlxDeltaStreams.fs" />
     <Compile Include="AbstractIL\DeltaMetadataEncoding.fs" />
     <Compile Include="AbstractIL\DeltaMetadataTypes.fs" />

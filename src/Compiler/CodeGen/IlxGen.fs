@@ -6666,12 +6666,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let g = cenv.g
     let amap = cenv.amap
 
-    // Hot reload: optionally emit the resumable state machine as a reference type (class)
-    // instead of a struct, so that adding a suspension point becomes an
-    // AddInstanceFieldToExistingType runtime edit rather than a forbidden value-type
-    // re-layout. This generalizes Roslyn's struct->class flip under EnC to the
-    // resumable-code substrate (task / taskSeq / user resumable CEs). Gated for now by an
-    // env var; wired to the hot-reload codegen flag once the class path is validated.
+    // Reference-type state machines permit resume-point additions through AddInstanceFieldToExistingType.
     let emitStateMachineAsClass =
         g.emitHotReloadClassStateMachines
         || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy EnvironmentVariableNames.HotReloadClassStateMachines

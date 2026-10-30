@@ -65,8 +65,8 @@ type internal DeltaEmissionRequest =
         /// </summary>
         RefreshedClosureNameRows: Map<int, Map<int list, string>>
         /// <summary>
-        /// Optional bytes and token mappings from the fresh compile's real module write. External
-        /// build callers pass None so the emitter rewrites the module exactly as before.
+        /// Bytes and token mappings from the updated assembly. The emitter rewrites the module
+        /// only when the caller supplies no artifacts.
         /// </summary>
         EmittedArtifacts: HotReloadEmittedArtifacts option
     }
