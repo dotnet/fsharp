@@ -72,7 +72,7 @@ echo "Hot Reload verification started."
 echo "root: ${ROOT}"
 echo "logs: ${LOG_DIR}"
 
-run_step "build" "${DOTNET}" build FSharp.slnx -c Debug -v minimal
+run_step "build" "${DOTNET}" build FSharp.slnx -c Debug -m:2 -v minimal
 assert_contains "build" "Build succeeded"
 
 run_step "main-fsi-drift" bash tests/scripts/check-main-fsi-drift.sh origin/main

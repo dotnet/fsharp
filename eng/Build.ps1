@@ -202,7 +202,7 @@ function Invoke-HotReloadDemoSmokeTest([string] $dotnetExe) {
         throw "Hot reload demo smoke test failed with exit code $exitCode"
     }
 
-    if ($output -notmatch "Scripted run succeeded: delta emitted") {
+    if (-not ($output -match "Scripted run succeeded: emitted")) {
         throw "Hot reload demo smoke test did not report success marker"
     }
 
