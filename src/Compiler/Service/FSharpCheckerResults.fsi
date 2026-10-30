@@ -531,6 +531,26 @@ and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
     /// Success
     | Succeeded of FSharpCheckFileResults
 
+/// Typed implementation data retained for compiler-internal analysis.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectImplementation =
+    { TcGlobals: TcGlobals
+      ThisCcu: CcuThunk
+      TcImports: TcImports
+      ImplementationFiles: CheckedImplFile list }
+
+/// Cached project data required for compilation without another typecheck.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectCompilation =
+    { TcConfig: TcConfig
+      TcGlobals: TcGlobals
+      TcImports: TcImports
+      ThisCcu: CcuThunk
+      Signature: ModuleOrNamespaceType
+      TopAttributes: TopAttribs option
+      AssemblyReference: ILAssemblyRef
+      ImplementationFiles: CheckedImplFile list option }
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckProjectResults =
@@ -543,7 +563,7 @@ type public FSharpCheckProjectResults =
 
     /// Get the unoptimized typed implementation files of the assembly, for compiler-internal use
     /// (e.g. hot-reload symbol diffing). Only valid when 'keepAssemblyContents' is set.
-    member internal TypedImplementationFiles: TcGlobals * CcuThunk * TcImports * CheckedImplFile list
+    member internal TypedImplementationFiles: CheckedProjectImplementation
 
     /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblyContents: FSharpAssemblyContents
@@ -553,15 +573,7 @@ type public FSharpCheckProjectResults =
 
     /// Get the internal compilation data needed for CompileFromCheckedProject.
     /// Requires keepAssemblyContents=true.
-    member internal CompilationData:
-        TcConfig *
-        TcGlobals *
-        TcImports *
-        CcuThunk *
-        ModuleOrNamespaceType *
-        TopAttribs option *
-        ILAssemblyRef *
-        CheckedImplFile list option
+    member internal CompilationData: CheckedProjectCompilation
 
     /// Get the resolution of the ProjectOptions
     member ProjectContext: FSharpProjectContext

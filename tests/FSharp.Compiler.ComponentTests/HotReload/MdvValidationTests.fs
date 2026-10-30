@@ -604,23 +604,10 @@ module MdvValidationTests =
         let baselineCore = HotReloadBaseline.create ilModule tokenMappings metadataSnapshot moduleId portablePdbSnapshot
         HotReloadBaseline.attachMetadataHandlesFromBytes assemblyBytes baselineCore
 
-    let private reflectionFlags =
-        Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.NonPublic ||| Reflection.BindingFlags.Public
-
-    let private getTypedImplementationFilesTuple (projectResults: FSharpCheckProjectResults) =
-        let resultsType = typeof<FSharpCheckProjectResults>
-
-        match resultsType.GetProperty("TypedImplementationFiles", reflectionFlags) with
-        | null ->
-            match resultsType.GetMethod("get_TypedImplementationFiles", reflectionFlags) with
-            | null -> invalidOp "Could not resolve TypedImplementationFiles reflection accessors."
-            | getter -> getter.Invoke(projectResults, [||])
-        | property -> property.GetValue(projectResults)
-
     let private getTypedAssembly (projectResults: FSharpCheckProjectResults) =
-        let tupleItems = getTypedImplementationFilesTuple projectResults |> Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields
-        let tcGlobals = tupleItems[0] :?> FSharp.Compiler.TcGlobals.TcGlobals
-        let implFiles = tupleItems[3] :?> FSharp.Compiler.TypedTree.CheckedImplFile list
+        let implementation = projectResults.TypedImplementationFiles
+        let tcGlobals = implementation.TcGlobals
+        let implFiles = implementation.ImplementationFiles
 
         tcGlobals,
         implFiles

@@ -1262,7 +1262,7 @@ let map values = values |> List.map (fun value -> value + 2)
                 }
 
             let results = checkProjectOrFail checker options
-            let tcConfig, _, _, _, _, _, _, _ = results.CompilationData
+            let tcConfig = results.CompilationData.TcConfig
             Assert.True(tcConfig.parallelIlxGen, "Expected the cached FCS configuration to retain parallel IlxGen.")
 
             let firstAssembly = compileFromCheckedProjectAndReadBytes checker results dllPath
