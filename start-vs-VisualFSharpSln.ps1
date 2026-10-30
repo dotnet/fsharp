@@ -5,18 +5,50 @@
 # into the hive stamps it 42.42.42.42 and redirects every reference to itself, so the hive wins. Only
 # when the hive has no Roslyn of its own does the installation's version apply. This picks whichever
 # of the two is in force and matches the package versions to it - or leaves the repo's flowed versions
-# alone when they already match, which is the common case for a hive built from this same source.
+# alone when a shipped Roslyn already matches them.
 #
 # -RoslynVersion forces a package version; any 5.Y.* binds identically within a minor.
+# -RoslynRepo is where a locally built Roslyn was packed (default: a sibling roslyn folder).
+# -InstalledRoslyn takes the version from the installed VS even when the hive has a Roslyn of its own.
 [CmdletBinding()]
 param(
     [string]$RoslynVersion,
     [string]$DevEnv,
     [string]$RootSuffix = 'RoslynDev',
     [string]$Solution = 'VisualFSharp.slnx',
+    [string]$RoslynRepo,
+    [switch]$InstalledRoslyn,
     [switch]$DryRun
 )
 Set-StrictMode -Version Latest; $ErrorActionPreference = 'Stop'; $root = $PSScriptRoot
+
+function ConvertTo-PropsPath([string]$path) {
+    [Security.SecurityElement]::Escape([regex]::Replace($path, '[%*?@$();'']', { '%{0:X2}' -f [int][char]$args[0].Value }))
+}
+
+function Get-StalePackageFolders([string[]]$feeds, [string]$version) {
+    $packages = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $env:USERPROFILE '.nuget\packages' }
+    foreach ($nupkg in Get-ChildItem -LiteralPath $feeds -Filter "*.$version.nupkg") {
+        $id = $nupkg.BaseName.Substring(0, $nupkg.BaseName.Length - $version.Length - 1)
+        $restored = Join-Path $packages "$id\$version\$($nupkg.Name)"
+        if ((Test-Path -LiteralPath $restored) -and (Get-FileHash -LiteralPath $restored).Hash -ne (Get-FileHash -LiteralPath $nupkg.FullName).Hash) { Split-Path $restored }
+    }
+}
+
+function Get-RoslynDevFeeds([string]$repo, [string]$version) {
+    if (-not $repo) { $repo = Join-Path (Split-Path $root) 'roslyn' }
+    $packed = Join-Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($repo) 'artifacts\packages\Release'
+    $feeds = @('Shipping', 'NonShipping' | ForEach-Object { Join-Path $packed $_ } | Where-Object { Test-Path -LiteralPath $_ })
+    $externalAccess = "Microsoft.VisualStudio.LanguageServices.ExternalAccess.$version.nupkg"
+    if (-not ($feeds | Where-Object { Test-Path -LiteralPath (Join-Path $_ $externalAccess) })) {
+        throw "No $externalAccess in $packed; check -RoslynRepo, pack that Roslyn (.\Build.cmd -restore -pack -c Release) or pass -RoslynVersion to build against a published one instead."
+    }
+
+    $stale = @(Get-StalePackageFolders $feeds $version)
+    if ($stale) { throw "Restore would reuse an earlier pack of Roslyn $version from the global packages folder; delete these once nothing uses them, or repack under a new version:`n$($stale -join "`n")" }
+
+    $feeds
+}
 
 if (-not $DevEnv) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -39,7 +71,7 @@ if (-not $RoslynVersion) {
     $hiveRoslyn = Get-ChildItem (Join-Path $hive 'Extensions') -Recurse -Filter 'Microsoft.CodeAnalysis.dll' -ErrorAction SilentlyContinue |
         Where-Object { $_.DirectoryName -like '*Roslyn Language Services*' } | Select-Object -First 1
 
-    if ($hiveRoslyn) {
+    if ($hiveRoslyn -and -not $InstalledRoslyn) {
         $target = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($hiveRoslyn.FullName).ProductVersion
         $source = "deployed in $RootSuffix"
     }
@@ -51,24 +83,22 @@ if (-not $RoslynVersion) {
     }
     Write-Host "Roslyn in force: $target ($source)."
 
-    # A dev build's "5.12.0-dev" is no package version, so only its minor is usable - and when that is
-    # the minor the repo already flows, the flowed packages are the match and no override belongs here.
+    # A local build carries API the flowed packages lack.
     $targetMinor = [version](($target -split '-')[0])
     $flowedMinor = [version](($flowed -split '-')[0])
-    if ($targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
+    if ($target -notmatch '-dev$' -and $targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
         Write-Host "Repo already flows Roslyn $flowed - building against it, no override."
-    }
-    elseif ($target -match '-dev$') {
-        throw "$RootSuffix has a locally built Roslyn $target but the repo flows $flowed; pass -RoslynVersion with a $($targetMinor.Major).$($targetMinor.Minor).* package version to build against that minor."
     }
     else { $RoslynVersion = $target }
 }
 
+$feeds = $null
 if ($RoslynVersion) {
     $minor = [version](($RoslynVersion -split '-')[0])
     if ($minor -lt [version]'5.10.0') {
         throw "Roslyn $RoslynVersion is older than the 5.10 the repo's sources expect (unified ExternalAccess, #20099). Update VS or deploy a local Roslyn."
     }
+    if ($RoslynVersion -match '-dev$') { $feeds = Get-RoslynDevFeeds $RoslynRepo $RoslynVersion }
     Write-Host "Building the F# extension against Roslyn $RoslynVersion ($DevEnv)."
 }
 
@@ -81,8 +111,10 @@ $names = 'MicrosoftCodeAnalysis', 'MicrosoftCodeAnalysisCompilers', 'MicrosoftCo
 # whichever ran last decides what a long-lived VS session restores against.
 $override = Join-Path $root 'artifacts\RoslynOverride.start-vs.props'
 if ($RoslynVersion) {
+    $feedPaths = ($feeds | ForEach-Object { ConvertTo-PropsPath $_ }) -join ';'
+    $sources = if ($feeds) { "<RestoreAdditionalProjectSources>`$(RestoreAdditionalProjectSources);$feedPaths</RestoreAdditionalProjectSources>" }
     New-Item -ItemType Directory -Force (Split-Path $override) | Out-Null
-    "<Project><PropertyGroup>$(-join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }))</PropertyGroup></Project>" |
+    "<Project><PropertyGroup>$(-join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }))$sources</PropertyGroup></Project>" |
         Set-Content -LiteralPath $override -Encoding UTF8
 }
 
