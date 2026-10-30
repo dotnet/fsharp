@@ -14,15 +14,15 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditAndContinue
+open FSharp.Compiler.EnvironmentHelpers
 open FSharp.Compiler.GeneratedNames
 open FSharp.Compiler.HotReload
-open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.HotReload.DeltaBuilder
+open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
 open FSharp.Compiler.SynthesizedTypeMaps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.EnvironmentHelpers
 
 /// A single structured rude-edit diagnostic surfaced when an edit cannot be applied.
 /// Carried (rather than flattened to a string) so the host can report the reason and act on
@@ -36,6 +36,7 @@ type FSharpHotReloadRudeEdit =
         SymbolName: string option
     }
 
+/// A failure from a hot reload session operation.
 [<RequireQualifiedAccess>]
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadError =
@@ -158,6 +159,7 @@ module internal FSharpHotReloadFileSystem =
         | :? System.Security.SecurityException
         | :? NotSupportedException -> None
 
+/// The kinds of updates that the compiler and runtime support.
 [<System.Flags>]
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadCapability =
@@ -168,6 +170,7 @@ type FSharpHotReloadCapability =
     | MultipleGenerations = 8
     | RuntimeApply = 16
 
+/// Reports the update kinds that the current environment supports.
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadCapabilities internal (flags: FSharpHotReloadCapability) =
     member _.Flags = flags
@@ -184,6 +187,7 @@ type FSharpHotReloadCapabilities internal (flags: FSharpHotReloadCapability) =
         let casted = enum<FSharpHotReloadCapability> (int flags)
         FSharpHotReloadCapabilities(casted)
 
+/// Identifies a method body and its local signature in an emitted delta.
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpAddedOrChangedMethodInfo =
     {
@@ -193,6 +197,7 @@ type FSharpAddedOrChangedMethodInfo =
         CodeLength: int
     }
 
+/// A pending update that a host can apply to a runtime module.
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpHotReloadDelta =
     {
@@ -927,11 +932,10 @@ type FSharpHotReloadSession
             operationGate.Release() |> ignore
 
     /// <summary>
-    /// Captures the baseline of one more project into the session (Roslyn analog: capturing the
-    /// per-module <c>EmitBaseline</c> when a module of the debugged process loads). The project's
-    /// built output must exist on disk; build it before adding. Adding a project the session
-    /// already tracks recaptures its baseline; other projects and the session-wide
-    /// capability/active-statement state are untouched.
+    /// Captures a project's baseline from its existing output on disk.
+    /// A project that the session already tracks receives a new baseline.
+    /// Other projects retain their baselines, and the session retains its capabilities and active statements.
+    /// The operation observes cancellation from its async computation, including waits for another operation or a stable output file.
     /// </summary>
     /// <param name="projectSnapshot">The snapshot describing the project to track.</param>
     /// <param name="outputPath">Overrides the output-assembly path derived from the snapshot's
@@ -988,13 +992,12 @@ type FSharpHotReloadSession
         runSerializedAsync operation
 
     /// <summary>
-    /// Emits a metadata/IL/PDB delta for the given project by diffing the snapshot's typed trees
-    /// and rebuilt output against the project's COMMITTED baseline. The emitted update is staged
-    /// as pending: after the host applies it (<c>MetadataUpdater.ApplyUpdate</c>), call
-    /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Commit"/> to advance the
-    /// committed view, or <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Discard"/>
-    /// to drop it (Roslyn's EmitSolutionUpdate/CommitSolutionUpdate/DiscardSolutionUpdate split).
+    /// Emits a metadata/IL/PDB delta from the snapshot's typed trees and rebuilt output against the project's committed baseline.
+    /// The emitted update remains pending until the host applies it and calls
+    /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Commit"/>.
+    /// <see cref="M:FSharp.Compiler.CodeAnalysis.FSharpHotReloadSession.Discard"/> drops the pending update.
     /// Returns <c>NoActiveSession</c> for projects the session does not track.
+    /// The operation observes cancellation from its async computation, including waits for another operation or a stable output file.
     /// </summary>
     /// <param name="projectSnapshot">The snapshot describing the edited project.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
