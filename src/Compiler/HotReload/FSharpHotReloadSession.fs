@@ -473,7 +473,7 @@ type internal FSharpHotReloadService
                         return Result.Error(FSharpHotReloadError.CompilationFailed errors)
                     else
                         let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
-                        let _, compileTcGlobals, _, _, _, _, _, _ = projectResults.CompilationData
+                        let compileTcGlobals = projectResults.CompilationData.TcGlobals
 
                         // Session-active validation must precede the experimental in-process compile
                         // below: an untracked project must surface NoActiveSession (the documented

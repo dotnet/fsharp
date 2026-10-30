@@ -3885,6 +3885,30 @@ type FSharpCheckFileResults
             return results
         }
 
+/// Typed implementation data retained for compiler-internal analysis.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectImplementation =
+    {
+        TcGlobals: TcGlobals
+        ThisCcu: CcuThunk
+        TcImports: TcImports
+        ImplementationFiles: CheckedImplFile list
+    }
+
+/// Cached project data required for compilation without another typecheck.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectCompilation =
+    {
+        TcConfig: TcConfig
+        TcGlobals: TcGlobals
+        TcImports: TcImports
+        ThisCcu: CcuThunk
+        Signature: ModuleOrNamespaceType
+        TopAttributes: TopAttribs option
+        AssemblyReference: ILAssemblyRef
+        ImplementationFiles: CheckedImplFile list option
+    }
+
 [<Sealed>]
 // 'details' is an option because the creation of the tcGlobals etc. for the project may have failed.
 type FSharpCheckProjectResults
@@ -3937,7 +3961,7 @@ type FSharpCheckProjectResults
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     // TODO: Looks like we don't need this
-    member internal _.TypedImplementationFiles =
+    member internal _.TypedImplementationFiles: CheckedProjectImplementation =
         if not keepAssemblyContents then
             invalidOp
                 "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
@@ -3950,7 +3974,12 @@ type FSharpCheckProjectResults
             | None -> []
             | Some mimpls -> mimpls
 
-        tcGlobals, thisCcu, tcImports, mimpls
+        {
+            TcGlobals = tcGlobals
+            ThisCcu = thisCcu
+            TcImports = tcImports
+            ImplementationFiles = mimpls
+        }
 
     member info.AssemblyContents =
         if not keepAssemblyContents then
@@ -3967,12 +3996,22 @@ type FSharpCheckProjectResults
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
-    member internal _.CompilationData =
+    member internal _.CompilationData: CheckedProjectCompilation =
         let tcGlobals, tcImports, thisCcu, ccuSig, _, topAttribs, _, ilAssemRef, _, tcAssemblyExpr, _, _ =
             getDetails ()
 
         let tcConfig = getTcConfig ()
-        (tcConfig, tcGlobals, tcImports, thisCcu, ccuSig, topAttribs, ilAssemRef, tcAssemblyExpr)
+
+        {
+            TcConfig = tcConfig
+            TcGlobals = tcGlobals
+            TcImports = tcImports
+            ThisCcu = thisCcu
+            Signature = ccuSig
+            TopAttributes = topAttribs
+            AssemblyReference = ilAssemRef
+            ImplementationFiles = tcAssemblyExpr
+        }
 
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then

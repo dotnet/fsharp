@@ -527,8 +527,8 @@ type FSharpChecker
     let getHotReloadDiffInputs (projectResults: FSharpCheckProjectResults) =
         // Use non-optimized typed implementation trees for symbol diffing so method-body edits
         // keep user-authored identities (Roslyn parity), while IL deltas still come from built output.
-        let tcGlobals, _thisCcu, _tcImports, typedImplFiles = projectResults.TypedImplementationFiles
-        tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
+        let implementation = projectResults.TypedImplementationFiles
+        implementation.TcGlobals, toHotReloadImplementationSnapshot implementation.ImplementationFiles
 
     let createHotReloadService sessionStore =
         FSharpHotReloadService(
@@ -1168,7 +1168,15 @@ type FSharpChecker
     /// parsed back from the written bytes.
     member internal _.CompileFromCheckedProject(results: FSharpCheckProjectResults, outfile: string, naming: HotReloadEmitNaming) =
         async {
-            let tcConfig, tcGlobals, tcImports, unfinalizedCcu, ccuSig, topAttrsOpt, _ilAssemRef, typedImplFilesOpt =
+            let {
+                    TcConfig = tcConfig
+                    TcGlobals = tcGlobals
+                    TcImports = tcImports
+                    ThisCcu = unfinalizedCcu
+                    Signature = ccuSig
+                    TopAttributes = topAttrsOpt
+                    ImplementationFiles = typedImplFilesOpt
+                } =
                 results.CompilationData
 
             // This fast path writes only the implementation assembly. Projects that request a
