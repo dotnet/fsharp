@@ -215,7 +215,7 @@ module internal HotReloadIncrementalEmit =
                         Steps = updatedSteps
                     }
 
-                if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceTiming) = "1" then
+                if isEnvVarSetToOne EnvironmentVariableNames.HotReloadTraceTiming then
                     printfn "[fsharp-hotreload][incremental-emit] reused-prefix=%d total=%d" reusablePrefixLength inputs.Length
 
                 // Preserve file order without an intermediate output array.
@@ -1353,7 +1353,7 @@ type FSharpChecker
                         optimizedImpls
                         replay.CurrentGeneration
 
-                if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceClosureNames) = "1" then
+                if isEnvVarSetToOne EnvironmentVariableNames.HotReloadTraceClosureNames then
                     printfn
                         "[fsharp-hotreload][closure-names] in-process install: tables=%d gen=%d assigned=%d names=%A"
                         (Map.count replay.Baseline.EncClosureNames)
@@ -1433,8 +1433,7 @@ type FSharpChecker
             let moduleCustomDebugInfoRows =
                 match naming with
                 | HotReloadEmitNaming.PreserveInstalledState _ when
-                    Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadDisableSynthesizedNameSnapshotCdi)
-                    <> "1"
+                    not (isEnvVarSetToOne EnvironmentVariableNames.HotReloadDisableSynthesizedNameSnapshotCdi)
                     ->
                     match tryGetCompilerGeneratedNameMap (tcGlobals.CompilerGlobalState.Value :> obj) with
                     | Some map ->

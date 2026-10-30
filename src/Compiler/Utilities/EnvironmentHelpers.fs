@@ -10,6 +10,10 @@ let isEnvVarTruthy (name: string) =
     | value when String.Equals(value, "true", StringComparison.OrdinalIgnoreCase) -> true
     | _ -> false
 
+/// Tests switches whose contract accepts only the value "1".
+let isEnvVarSetToOne (name: string) =
+    String.Equals(Environment.GetEnvironmentVariable name, "1", StringComparison.Ordinal)
+
 /// Shared names keep compiler configuration and diagnostic switches consistent.
 [<RequireQualifiedAccess>]
 module EnvironmentVariableNames =
