@@ -180,6 +180,15 @@ module M = let x = System.IO.File.ReadAllText "a"
     let pos = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
     Assert.Equal((3, 11), pos)
 
+[<Fact>]
+let ``Open ignores a block comment that starts inside the first declaration of a nested module`` () =
+    let source = """module Top
+module M = let x = (* body
+                     *) System.IO.File.ReadAllText "a"
+"""
+    let pos = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
+    Assert.Equal((2, 11), pos)
+
 [<Theory>]
 [<InlineData("module M = let y = 1", 2)>]
 [<InlineData("[<Obsolete>] module M = let y = 1", 2)>]
