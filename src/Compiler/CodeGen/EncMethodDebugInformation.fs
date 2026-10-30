@@ -642,12 +642,6 @@ let deserialize (slotMapBlob: byte[]) (lambdaMapBlob: byte[]) (stateMachineState
 // is on; the rows ride the IL writer options into ilwritepdb keyed by IL method name.
 // ---------------------------------------------------------------------------
 
-/// Root-first ordinal chain of an occurrence: the occurrence id stores enclosing
-/// ordinals nearest-enclosing-first, while the key packing wants root-first with the
-/// occurrence's own ordinal last.
-let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
-    List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
-
 /// Builds the EnC method debug information for one member from its lambda
 /// occurrence sequence:
 ///   - MethodOrdinal stays UndefinedMethodOrdinal: F# needs no Roslyn-style
@@ -665,7 +659,8 @@ let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
 /// occurrences, so the method then gets no lambda map at all.
 let tryCreateFromLambdaOccurrences (occurrences: LambdaOccurrence list) : EncMethodDebugInformation option =
     let keys =
-        occurrences |> List.map (occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
+        occurrences
+        |> List.map (ClosureNameAllocator.occurrenceOrdinalChain >> tryEncodeOccurrenceKey)
 
     if keys |> List.exists Option.isNone then
         None
