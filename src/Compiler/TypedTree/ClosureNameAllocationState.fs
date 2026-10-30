@@ -165,7 +165,10 @@ let applySynthesizedNameOverrides
     |> Seq.map (fun struct (key, names) ->
         let names =
             names
-            |> Array.map (fun name -> overrides |> Map.tryFind name |> Option.defaultValue name)
+            |> Array.map (fun name ->
+                match overrides.TryGetValue name with
+                | true, emittedName -> emittedName
+                | _ -> name)
 
         struct (key, names))
 
