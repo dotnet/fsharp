@@ -168,7 +168,7 @@ type FSharpSynthesizedTypeMaps() =
                     // derived key, so only null validation applies here.
                     names
                     |> Array.iteri (fun i name ->
-                        if isNull (withNull name) then
+                        if isNull (box name) then
                             invalidArg "snapshot" $"Name at index {i} in snapshot key '{mapKey}' is null")
 
                 let namesToLoad =
