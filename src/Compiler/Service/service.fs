@@ -409,8 +409,13 @@ type FSharpChecker
                 use stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
                 use sha = System.Security.Cryptography.SHA256.Create()
                 Some(sha.ComputeHash stream)
-            with _ ->
-                None
+            with
+            | :? IOException
+            | :? UnauthorizedAccessException
+            | :? System.Security.SecurityException
+            | :? ArgumentException
+            | :? NotSupportedException
+            | :? System.Security.Cryptography.CryptographicException -> None
         else
             None
 
@@ -553,8 +558,11 @@ type FSharpChecker
     let normalizeOutputPathForEmissionTargets (path: string) =
         try
             Path.GetFullPath(path)
-        with _ ->
-            path
+        with
+        | :? ArgumentException
+        | :? NotSupportedException
+        | :? PathTooLongException
+        | :? System.Security.SecurityException -> path
 
     let outputPathComparison =
         if Path.DirectorySeparatorChar = '\\' then
@@ -1396,7 +1404,7 @@ type FSharpChecker
                 | Some versionString ->
                     try
                         Some(parseILVersion versionString)
-                    with _ ->
+                    with RecoverableException _ ->
                         None
                 | _ ->
                     match tcConfig.version with

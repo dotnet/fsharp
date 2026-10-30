@@ -5405,7 +5405,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             File.WriteAllBytes(tempDll, assemblyBytes)
             printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
-        with ex ->
+        with (:? IOException | :? UnauthorizedAccessException | :? System.Security.SecurityException | :? ArgumentException | :? NotSupportedException) as ex ->
             printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
 
     use peStream = new MemoryStream(assemblyBytes, writable = false)

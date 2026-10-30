@@ -27,7 +27,7 @@ module internal HotReloadCapability =
 #if NET5_0_OR_GREATER
         try
             MetadataUpdater.IsSupported
-        with _ ->
+        with :? PlatformNotSupportedException ->
             false
 #else
         false
