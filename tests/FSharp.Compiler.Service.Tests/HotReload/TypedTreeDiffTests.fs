@@ -6,11 +6,15 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Xunit
 
+open Internal.Utilities.Library
+
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeDiff
+open FSharp.Compiler.TypedTreeOps
 
 open FSharp.Compiler.Service.Tests.Common
 
@@ -197,6 +201,37 @@ module private Sources =
         )
 
 type TypedTreeDiffTests() =
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    member _.``type identity fallback preserves cancellation`` (canceled: bool) =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.functionReturning "1")
+        let tcGlobals, baselineImpl = harness.Compile()
+        let failure: exn = if canceled then OperationCanceledException() else InvalidOperationException()
+
+        let typeRef =
+            match tcGlobals.obj_ty_noNulls with
+            | AppTy tcGlobals (typeRef, _) ->
+                { typeRef.Deref with
+                    entity_typars = LazyWithContext.Create((fun _ -> raise failure), id)
+                    entity_il_repr_cache = null }
+                |> mkLocalTyconRef
+            | _ -> failwith "Expected System.Object to have a named type."
+
+        let expression = Expr.Op(TOp.ExnConstr typeRef, [], [], Range.range0)
+        let updatedImpl = Sources.replaceBindingBodies expression baselineImpl
+        let diff () = harness.Diff (tcGlobals, baselineImpl) (tcGlobals, updatedImpl)
+
+        if canceled then
+            let thrown = Assert.Throws<OperationCanceledException>(fun () -> diff () |> ignore)
+            Assert.Same(failure, thrown)
+        else
+            let result = diff ()
+            Assert.Empty(result.RudeEdits)
+            let edit = Assert.Single(result.SemanticEdits)
+            Assert.Equal(SemanticEditKind.MethodBody, edit.Kind)
 
     [<Fact>]
     member _.``unchanged file produces no edits`` () =

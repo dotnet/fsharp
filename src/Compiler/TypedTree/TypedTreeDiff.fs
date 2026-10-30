@@ -6,6 +6,8 @@ open System
 open System.Collections.Generic
 open System.Text
 
+open Internal.Utilities.Library
+
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -156,10 +158,10 @@ let private tryGetDeclaringEntityCompiledName (vref: ValRef) =
     | Parent parent ->
         try
             ValueSome parent.CompiledRepresentationForNamedType.FullName
-        with _ ->
+        with RecoverableException _ ->
             try
                 ValueSome parent.CompiledName
-            with _ ->
+            with RecoverableException _ ->
                 ValueNone
     | ParentNone -> ValueNone
 
@@ -167,7 +169,7 @@ let private tryStableValReferenceIdentity (vref: ValRef) =
     let compiledName =
         try
             vref.CompiledName None
-        with _ ->
+        with RecoverableException _ ->
             vref.LogicalName
 
     let totalArgCount =
@@ -219,7 +221,7 @@ let private normalizeTypeString (text: string) =
 let private compiledTyconName (tcref: TyconRef) =
     try
         tcref.CompiledRepresentationForNamedType.FullName
-    with _ ->
+    with RecoverableException _ ->
         tcref.CompiledName
 
 /// Renders types with their compiled identities so equal display names from different
@@ -1015,7 +1017,7 @@ and private tryGetContainingEntityFullName (var: Val) =
                     memberInfo.ApparentEnclosingEntity
 
             ValueSome owner.CompiledRepresentationForNamedType.FullName
-        with _ ->
+        with RecoverableException _ ->
             ValueNone
     | None -> ValueNone
 
@@ -1029,7 +1031,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
     let compiledName =
         try
             Some(vref.CompiledName None)
-        with _ ->
+        with RecoverableException _ ->
             None
 
     let isInstanceMember = ValRefIsCompiledAsInstanceMember g vref
@@ -1214,7 +1216,7 @@ and private snapshotTycon denv path (tycon: Tycon) =
     let compiledFullName =
         try
             ValueSome tycon.CompiledRepresentationForNamedType.FullName
-        with _ ->
+        with RecoverableException _ ->
             ValueNone
 
     {
