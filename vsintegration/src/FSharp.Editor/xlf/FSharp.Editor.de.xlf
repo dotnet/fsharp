@@ -440,6 +440,16 @@ Hinweise in QuickInfo anzeigen</target>
         <target state="translated">Ausdruck in Klammern einschließen</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
