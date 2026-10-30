@@ -123,6 +123,9 @@
     <Compile Include="HotReload/ILBaselineReaderTests.fs" />
     <Compile Include="HotReload/PortablePdbReaderTests.fs" />
     <Compile Include="HotReload/SrmParityTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="EditorServiceAsserts.fs" />
     <Compile Include="GotoDefinition\GotoDefinitionTests.ActivePatterns.fs" />
     <Compile Include="GotoDefinition\GotoDefinitionTests.Classes.fs" />
