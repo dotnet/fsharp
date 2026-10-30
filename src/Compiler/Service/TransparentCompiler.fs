@@ -119,10 +119,20 @@ type internal BootstrapInfo =
 
 type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string
 
+/// Which files before a file are type checked when that file is checked.
+[<RequireQualifiedAccess>]
+type internal FileCheckScope =
+    | AllPriorFiles
+    /// The file's own typed tree is the same, but the project-wide state in the results only holds its dependencies.
+    | DependenciesOnly
+
 [<RequireQualifiedAccess>]
 type internal DependencyGraphType =
-    /// A dependency graph for a single file - it will be missing files which this file does not depend on
+    /// A dependency graph for a single file - it will contain this file and all files before it,
+    /// except the other implementation files backed by a signature
     | File
+    /// A dependency graph for a single file - it will be missing files which this file does not depend on
+    | FileDependencies
     /// A dependency graph for a project - it will contain all files in the project
     | Project
     /// A dependency graph for a project without the implementation files that have a signature file
@@ -1396,16 +1406,20 @@ type internal TransparentCompiler
         |> Seq.map (fun x -> x.Key, x.Value |> Array.filter (fun node -> not (removeIndexes.Contains node)))
         |> Graph.make
 
-    let ComputeDependencyGraphForFile (tcConfig: TcConfig) (priorSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
-        let key = priorSnapshot.SourceFiles.Key(DependencyGraphType.File)
-        //let lastFileIndex = (parsedInputs |> Array.length) - 1
-        //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (Graph.subGraphFor lastFileIndex))
+    let ComputeDependencyGraphForFile (scope: FileCheckScope) (tcConfig: TcConfig) (priorSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
+        let graphType, processGraph =
+            match scope with
+            | FileCheckScope.AllPriorFiles -> DependencyGraphType.File, removeImplFilesThatHaveSignatures true priorSnapshot
+            | FileCheckScope.DependenciesOnly ->
+                let lastFileIndex = priorSnapshot.SourceFiles.Length - 1
+
+                DependencyGraphType.FileDependencies,
+                removeImplFilesThatHaveSignatures true priorSnapshot
+                >> Graph.subGraphFor lastFileIndex
+
         caches.DependencyGraph.Get(
-            key,
-            computeDependencyGraph
-                tcConfig
-                (priorSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput))
-                (removeImplFilesThatHaveSignatures true priorSnapshot)
+            priorSnapshot.SourceFiles.Key(graphType),
+            computeDependencyGraph tcConfig (priorSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput)) processGraph
         )
 
     let ComputeDependencyGraphForProjectSignatures (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
@@ -1696,11 +1710,11 @@ type internal TransparentCompiler
         }
 
     // Type check file and all its dependencies
-    let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
+    let ComputeTcLastFile (scope: FileCheckScope) (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
 
         caches.TcLastFile.Get(
-            projectSnapshot.FileKey fileName,
+            projectSnapshot.FileKey(fileName).WithExtraVersion scope,
             async {
                 let file = projectSnapshot.SourceFiles |> List.last
 
@@ -1709,7 +1723,7 @@ type internal TransparentCompiler
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
-                let! graph, dependencyFiles = ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot
+                let! graph, dependencyFiles = ComputeDependencyGraphForFile scope bootstrapInfo.TcConfig projectSnapshot
 
                 let! results, tcInfo =
                     processTypeCheckingGraph
@@ -1755,9 +1769,8 @@ type internal TransparentCompiler
         let parseTree = EmptyParsedInput(fileName, (false, false))
         FSharpParseFileResults(diagnostics, parseTree, true, [||])
 
-    let ComputeParseAndCheckFileInProject (fileName: string) (projectSnapshot: ProjectSnapshot) =
-        caches.ParseAndCheckFileInProject.Get(
-            projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
+    let ComputeParseAndCheckFileInProject (scope: FileCheckScope) (fileName: string) (projectSnapshot: ProjectSnapshot) =
+        let computation =
             async {
                 use! _holder = Cancellable.UseToken()
 
@@ -1775,7 +1788,7 @@ type internal TransparentCompiler
 
                     let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
 
-                    let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
+                    let! result, tcInfo = ComputeTcLastFile scope bootstrapInfo snapshotWithSources
 
                     let tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile, ownSigForFile = result
 
@@ -1866,7 +1879,13 @@ type internal TransparentCompiler
 
                     return (parseResults, FSharpCheckFileAnswer.Succeeded typedResults)
             }
-        )
+
+        // Not cached: a later full ParseAndCheckFileInProject and TryGetRecentCheckResultsForFile share this cache key
+        // and must not be handed results that only hold the dependencies.
+        match scope with
+        | FileCheckScope.AllPriorFiles ->
+            caches.ParseAndCheckFileInProject.Get(projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName, computation)
+        | FileCheckScope.DependenciesOnly -> computation
 
     let ComputeParseAndCheckAllFilesInProject (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         caches.ParseAndCheckAllFilesInProject.Get(
@@ -2214,7 +2233,7 @@ type internal TransparentCompiler
 
                 let! snapshotWithSources = projectSnapshot.UpTo fileName |> LoadSources bootstrapInfo
 
-                let! _, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
+                let! _, tcInfo = ComputeTcLastFile FileCheckScope.AllPriorFiles bootstrapInfo snapshotWithSources
 
                 return tcInfo.sink |> List.tryHead |> Option.map (fun sink -> sink, bootstrapInfo)
         }
@@ -2370,7 +2389,7 @@ type internal TransparentCompiler
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: ProjectSnapshot, userOpName: string) =
         ignore userOpName
-        ComputeParseAndCheckFileInProject fileName projectSnapshot
+        ComputeParseAndCheckFileInProject FileCheckScope.AllPriorFiles fileName projectSnapshot
 
     member _.FindReferencesInFile(fileName: string, projectSnapshot: ProjectSnapshot, symbol: FSharpSymbol, userOpName: string) =
         ignore userOpName
@@ -2737,8 +2756,18 @@ type internal TransparentCompiler
                 return! this.ParseAndCheckFileInProject(fileName, snapshot.ProjectSnapshot, userOpName)
             }
 
-        member this.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
-            this.ParseAndCheckFileInProject(fileName, projectSnapshot.ProjectSnapshot, userOpName)
+        member _.ParseAndCheckFileInProject
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string, checkDependenciesOnly: bool)
+            =
+            ignore userOpName
+
+            let scope =
+                if checkDependenciesOnly then
+                    FileCheckScope.DependenciesOnly
+                else
+                    FileCheckScope.AllPriorFiles
+
+            ComputeParseAndCheckFileInProject scope fileName projectSnapshot.ProjectSnapshot
 
         member this.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : Async<FSharpCheckProjectResults> =
             async {

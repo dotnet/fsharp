@@ -39,3 +39,13 @@ let ``Reverse graph`` () =
     Assert.Equal<string array>([| "b" |], valueA)
     let valueB = reversed["b"]
     Assert.Equal<string array>(Array.empty, valueB)
+
+[<Fact>]
+let ``Subgraph for a node keeps only the node and its transitive dependencies`` () =
+    let graph =
+        Graph.make [ "a", Array.empty; "b", [| "a" |]; "c", [| "a" |]; "d", [| "c" |] ]
+
+    let subGraph = Graph.subGraphFor "d" graph
+    Assert.Equal<Set<string>>(set [ "a"; "c"; "d" ], subGraph.Keys |> Set.ofSeq)
+    Assert.Equal<string array>([| "c" |], subGraph["d"])
+    Assert.Equal<string array>([| "a" |], subGraph["c"])
