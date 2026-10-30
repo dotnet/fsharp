@@ -5200,7 +5200,8 @@ let private analyzeSequencePointChanges
         else
             let requestRecompiledBaselineTokens =
                 let accessorMethodKeys =
-                    request.UpdatedAccessors |> List.choose (fun accessor -> accessor.Method)
+                    request.UpdatedAccessors
+                    |> List.choose (fun accessor -> accessor.Method |> ValueOption.toOption)
 
                 request.UpdatedMethods @ accessorMethodKeys
                 |> List.choose (fun key -> request.Baseline.MethodTokens |> Map.tryFind key)
@@ -5420,7 +5421,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                 }
 
             match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher freshKey with
-            | Some(enclosing, typeDef, methodDef) ->
+            | ValueSome matchInfo ->
                 if traceMethodUpdates.Value then
                     printfn
                         "[fsharp-hotreload][method-update] resolved mapped helper: %s::%s -> %s::%s"
@@ -5429,9 +5430,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                         freshDeclaringType
                         key.Name
 
-                Some(enclosing, typeDef, methodDef)
-            | None -> None
-        | None -> None
+                ValueSome matchInfo
+            | ValueNone -> ValueNone
+        | None -> ValueNone
 
     let tryResolveResumableHelperMethodIgnoringReturnType (key: MethodDefinitionKey) =
         let declaringType =
@@ -5439,8 +5440,8 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
             |> Option.defaultValue key.DeclaringType
 
         match FSharpSymbolMatcher.tryGetTypeDef symbolMatcher declaringType with
-        | Some(enclosing, typeDef) when isUpdatedMethodResumableCodeHelper typeDef ->
-            typeDef.Methods.AsList()
+        | ValueSome matchInfo when isUpdatedMethodResumableCodeHelper matchInfo.TypeDef ->
+            matchInfo.TypeDef.Methods.AsList()
             |> List.filter (fun methodDef ->
                 String.Equals(methodDef.Name, key.Name, StringComparison.Ordinal)
                 && methodDef.GenericParams.Length = key.GenericArity
@@ -5453,22 +5454,36 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
                             key.DeclaringType
                             key.Name
 
-                    Some(enclosing, typeDef, methodDef)
-                | _ -> None
-        | _ -> None
+                    ValueSome
+                        {
+                            EnclosingTypes = matchInfo.EnclosingTypes
+                            TypeDef = matchInfo.TypeDef
+                            MethodDef = methodDef
+                        }
+                | _ -> ValueNone
+        | _ -> ValueNone
 
     let resolvedMethods, unresolvedMethods =
         (([], []), allUpdatedMethods)
         ||> List.fold (fun (resolved, unresolved) key ->
             match FSharpSymbolMatcher.tryGetMethodDef symbolMatcher key with
-            | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
-            | None ->
+            | ValueSome matchInfo ->
+                (matchInfo.EnclosingTypes, matchInfo.TypeDef, matchInfo.MethodDef, key)
+                :: resolved,
+                unresolved
+            | ValueNone ->
                 match tryResolveMethodThroughMappedDeclaringType key with
-                | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
-                | None ->
+                | ValueSome matchInfo ->
+                    (matchInfo.EnclosingTypes, matchInfo.TypeDef, matchInfo.MethodDef, key)
+                    :: resolved,
+                    unresolved
+                | ValueNone ->
                     match tryResolveResumableHelperMethodIgnoringReturnType key with
-                    | Some(enclosing, typeDef, methodDef) -> (enclosing, typeDef, methodDef, key) :: resolved, unresolved
-                    | None -> resolved, key :: unresolved)
+                    | ValueSome matchInfo ->
+                        (matchInfo.EnclosingTypes, matchInfo.TypeDef, matchInfo.MethodDef, key)
+                        :: resolved,
+                        unresolved
+                    | ValueNone -> resolved, key :: unresolved)
 
     // Compiler-generated closures and companions (declaring type contains '@', e.g.
     // `view@hotreload#g0_o0`) carry generation-specific names that do not exist under the
@@ -6112,9 +6127,9 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
     for accessor in request.UpdatedAccessors do
         let resolved =
-            accessor.Method
-            |> Option.bind tryGetMethodToken
-            |> Option.exists tryResolveAccessor
+            match accessor.Method with
+            | ValueSome methodKey -> tryGetMethodToken methodKey |> Option.exists tryResolveAccessor
+            | ValueNone -> false
 
         if not resolved then
             raise (
