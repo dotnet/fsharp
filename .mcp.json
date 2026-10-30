@@ -22,7 +22,7 @@
     "GitHub": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
-      "headersHelper": "pwsh -NoProfile -File .claude/scripts/github-mcp-headers.ps1"
+      "headersHelper": "pwsh -NoProfile -File .claude/scripts/github-mcp-gcm-headers.ps1"
     },
     "Microsoft Learn": {
       "type": "http",
