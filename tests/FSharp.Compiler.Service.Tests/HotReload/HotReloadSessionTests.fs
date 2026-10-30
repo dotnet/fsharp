@@ -56,7 +56,7 @@ module HotReloadSessionTests =
 
         try
             let outputPath = Path.Combine(projectDir, "Delayed.dll")
-            let waitTask = Task.Run(fun () -> FSharpHotReloadFileSystem.waitForStableFile outputPath)
+            let waitTask = FSharpHotReloadFileSystem.waitForStableFile outputPath |> Async.StartAsTask
 
             Thread.Sleep 150
             Assert.False(waitTask.IsCompleted, "A missing file must not satisfy the stability threshold.")
@@ -65,6 +65,20 @@ module HotReloadSessionTests =
             Assert.True(waitTask.Wait(TimeSpan.FromSeconds 2.0), "The wait did not observe the materialized stable file.")
         finally
             Directory.Delete(projectDir, true)
+
+    [<Fact>]
+    let ``Stable-file wait observes request cancellation`` () =
+        let outputPath = Path.Combine(Path.GetTempPath(), $"fcs-hotreload-missing-{Guid.NewGuid():N}.dll")
+        use cancellation = new CancellationTokenSource()
+        let pending =
+            Async.StartImmediateAsTask(
+                FSharpHotReloadFileSystem.waitForStableFile outputPath,
+                cancellationToken = cancellation.Token)
+
+        cancellation.Cancel()
+        let completed = Task.WhenAny(pending :> Task, Task.Delay(TimeSpan.FromSeconds 1.0)).GetAwaiter().GetResult()
+        Assert.Same(pending, completed)
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> pending.GetAwaiter().GetResult()) |> ignore
 
     [<Fact>]
     let ``Optional debug-data read degrades only for ordinary unreadable-file failures`` () =

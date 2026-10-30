@@ -110,39 +110,41 @@ module internal FSharpHotReloadFileSystem =
 
     /// Waits until an output file has the same timestamp and size on consecutive reads.
     let waitForStableFile path =
-        // Use exponential backoff: 25ms, 50ms, 100ms, 200ms, 200ms, ...
-        // Total max wait ~5 seconds for slow I/O scenarios.
-        let mutable totalWaited = 0
-        let mutable sleepMillis = StableFileInitialDelayMs
-        let mutable stableCount = 0
-        let mutable lastWrite = DateTime.MinValue
-        let mutable lastSize = -1L
+        async {
+            // Use exponential backoff: 25ms, 50ms, 100ms, 200ms, 200ms, ...
+            // Total max wait ~5 seconds for slow I/O scenarios.
+            let mutable totalWaited = 0
+            let mutable sleepMillis = StableFileInitialDelayMs
+            let mutable stableCount = 0
+            let mutable lastWrite = DateTime.MinValue
+            let mutable lastSize = -1L
 
-        while totalWaited < StableFileMaxTotalWaitMs
-              && stableCount < StableFileRequiredStableReads do
-            let exists = File.Exists path
+            while totalWaited < StableFileMaxTotalWaitMs
+                  && stableCount < StableFileRequiredStableReads do
+                let exists = File.Exists path
 
-            let currentWrite =
-                if exists then
-                    File.GetLastWriteTimeUtc path
+                let currentWrite =
+                    if exists then
+                        File.GetLastWriteTimeUtc path
+                    else
+                        DateTime.MinValue
+
+                let currentSize = if exists then FileInfo(path).Length else -1L
+
+                // A missing path uses the sentinel timestamp/size too, so existence must be
+                // part of the invariant or a file that has not materialized looks stable.
+                if exists && currentWrite = lastWrite && currentSize = lastSize then
+                    stableCount <- stableCount + 1
                 else
-                    DateTime.MinValue
+                    stableCount <- 0
+                    lastWrite <- currentWrite
+                    lastSize <- currentSize
 
-            let currentSize = if exists then FileInfo(path).Length else -1L
-
-            // A missing path uses the sentinel timestamp/size too, so existence must be
-            // part of the invariant or a file that has not materialized looks stable.
-            if exists && currentWrite = lastWrite && currentSize = lastSize then
-                stableCount <- stableCount + 1
-            else
-                stableCount <- 0
-                lastWrite <- currentWrite
-                lastSize <- currentSize
-
-            if stableCount < StableFileRequiredStableReads then
-                Thread.Sleep sleepMillis
-                totalWaited <- totalWaited + sleepMillis
-                sleepMillis <- min StableFileMaxBackoffMs (sleepMillis * 2)
+                if stableCount < StableFileRequiredStableReads then
+                    do! Async.Sleep sleepMillis
+                    totalWaited <- totalWaited + sleepMillis
+                    sleepMillis <- min StableFileMaxBackoffMs (sleepMillis * 2)
+        }
 
     /// Reads optional debug data, returning None for an ordinary unreadable-file failure.
     let tryReadAllBytes (readAllBytes: string -> byte[]) path =
@@ -219,7 +221,7 @@ type internal FSharpHotReloadService
         createBaseline: TcGlobals -> ILModuleDef -> string -> FSharpEmitBaseline,
         getHotReloadDiffInputs: FSharpCheckProjectResults -> TcGlobals * CheckedAssemblyAfterOptimization,
         getErrorDiagnostics: FSharpDiagnostic[] -> FSharpDiagnostic[],
-        waitForStableFile: string -> unit,
+        waitForStableFile: string -> Async<unit>,
         tryGetOutputFingerprint: string -> (DateTime * byte[] option) option,
         hasOutputFingerprintChanged: string -> (DateTime * byte[] option) option -> (DateTime * byte[] option) option -> bool,
         toPublicDelta: IlxDelta -> FSharpHotReloadDelta,
@@ -340,7 +342,7 @@ type internal FSharpHotReloadService
                         )
                 else
                     let tcGlobals, implementationFiles = getHotReloadDiffInputs projectResults
-                    waitForStableFile outputPath
+                    do! waitForStableFile outputPath
 
                     let baselineResult: Result<_, FSharpHotReloadError> =
                         try
@@ -580,7 +582,7 @@ type internal FSharpHotReloadService
                                     // The same process wrote and closed the output when the in-process
                                     // compile ran; only poll for stability when an external writer produced it.
                                     if inProcessCompileResult.IsNone then
-                                        waitForStableFile outputPath
+                                        do! waitForStableFile outputPath
 
                                     let outputFingerprint = tryGetOutputFingerprint outputPath
 
