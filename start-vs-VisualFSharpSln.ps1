@@ -9,6 +9,7 @@
 #
 # -RoslynVersion forces a package version; any 5.Y.* binds identically within a minor.
 # -RoslynRepo is where a locally built Roslyn was packed (default: a sibling roslyn folder).
+# -InstalledRoslyn takes the version from the installed VS even when the hive has a Roslyn of its own.
 [CmdletBinding()]
 param(
     [string]$RoslynVersion,
@@ -16,6 +17,7 @@ param(
     [string]$RootSuffix = 'RoslynDev',
     [string]$Solution = 'VisualFSharp.slnx',
     [string]$RoslynRepo,
+    [switch]$InstalledRoslyn,
     [switch]$DryRun
 )
 Set-StrictMode -Version Latest; $ErrorActionPreference = 'Stop'; $root = $PSScriptRoot
@@ -69,7 +71,7 @@ if (-not $RoslynVersion) {
     $hiveRoslyn = Get-ChildItem (Join-Path $hive 'Extensions') -Recurse -Filter 'Microsoft.CodeAnalysis.dll' -ErrorAction SilentlyContinue |
         Where-Object { $_.DirectoryName -like '*Roslyn Language Services*' } | Select-Object -First 1
 
-    if ($hiveRoslyn) {
+    if ($hiveRoslyn -and -not $InstalledRoslyn) {
         $target = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($hiveRoslyn.FullName).ProductVersion
         $source = "deployed in $RootSuffix"
     }
