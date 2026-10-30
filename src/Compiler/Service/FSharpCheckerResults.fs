@@ -3885,6 +3885,16 @@ type FSharpCheckFileResults
             return results
         }
 
+/// Typed implementation data retained for compiler-internal analysis.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectImplementation =
+    {
+        TcGlobals: TcGlobals
+        ThisCcu: CcuThunk
+        TcImports: TcImports
+        ImplementationFiles: CheckedImplFile list
+    }
+
 [<Sealed>]
 // 'details' is an option because the creation of the tcGlobals etc. for the project may have failed.
 type FSharpCheckProjectResults
@@ -3937,7 +3947,7 @@ type FSharpCheckProjectResults
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     // TODO: Looks like we don't need this
-    member internal _.TypedImplementationFiles =
+    member internal _.TypedImplementationFiles: CheckedProjectImplementation =
         if not keepAssemblyContents then
             invalidOp
                 "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
@@ -3950,7 +3960,12 @@ type FSharpCheckProjectResults
             | None -> []
             | Some mimpls -> mimpls
 
-        tcGlobals, thisCcu, tcImports, mimpls
+        {
+            TcGlobals = tcGlobals
+            ThisCcu = thisCcu
+            TcImports = tcImports
+            ImplementationFiles = mimpls
+        }
 
     member info.AssemblyContents =
         if not keepAssemblyContents then

@@ -44,26 +44,10 @@ module RuntimeIntegrationTests =
         FSharpProjectSnapshot.FromOptions(projectOptions, DocumentSource.FileSystem)
         |> Async.RunSynchronouslyImmediate
 
-    let private reflectionFlags =
-        BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public
-
-    let private getTypedImplementationFilesTuple (projectResults: FSharpCheckProjectResults) =
-        let resultsType = typeof<FSharpCheckProjectResults>
-
-        match resultsType.GetProperty("TypedImplementationFiles", reflectionFlags) with
-        | null ->
-            match resultsType.GetMethod("get_TypedImplementationFiles", reflectionFlags) with
-            | null -> invalidOp "Could not resolve TypedImplementationFiles reflection accessors."
-            | getter -> getter.Invoke(projectResults, [||])
-        | property -> property.GetValue(projectResults)
-
     let private getTypedAssembly (projectResults: FSharpCheckProjectResults) =
-        let tupleItems =
-            getTypedImplementationFilesTuple projectResults
-            |> FSharpValue.GetTupleFields
-
-        let tcGlobals = tupleItems[0] :?> FSharp.Compiler.TcGlobals.TcGlobals
-        let implFiles = tupleItems[3] :?> CheckedImplFile list
+        let implementation = projectResults.TypedImplementationFiles
+        let tcGlobals = implementation.TcGlobals
+        let implFiles = implementation.ImplementationFiles
 
         tcGlobals,
         implFiles

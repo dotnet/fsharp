@@ -531,6 +531,14 @@ and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
     /// Success
     | Succeeded of FSharpCheckFileResults
 
+/// Typed implementation data retained for compiler-internal analysis.
+[<Struct; NoEquality; NoComparison>]
+type internal CheckedProjectImplementation =
+    { TcGlobals: TcGlobals
+      ThisCcu: CcuThunk
+      TcImports: TcImports
+      ImplementationFiles: CheckedImplFile list }
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckProjectResults =
@@ -543,7 +551,7 @@ type public FSharpCheckProjectResults =
 
     /// Get the unoptimized typed implementation files of the assembly, for compiler-internal use
     /// (e.g. hot-reload symbol diffing). Only valid when 'keepAssemblyContents' is set.
-    member internal TypedImplementationFiles: TcGlobals * CcuThunk * TcImports * CheckedImplFile list
+    member internal TypedImplementationFiles: CheckedProjectImplementation
 
     /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblyContents: FSharpAssemblyContents

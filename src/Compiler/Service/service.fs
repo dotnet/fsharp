@@ -398,8 +398,8 @@ type FSharpChecker
     let getHotReloadDiffInputs (projectResults: FSharpCheckProjectResults) =
         // Use non-optimized typed implementation trees for symbol diffing so method-body edits
         // keep user-authored identities (Roslyn parity), while IL deltas still come from built output.
-        let tcGlobals, _thisCcu, _tcImports, typedImplFiles = projectResults.TypedImplementationFiles
-        tcGlobals, toHotReloadImplementationSnapshot typedImplFiles
+        let implementation = projectResults.TypedImplementationFiles
+        implementation.TcGlobals, toHotReloadImplementationSnapshot implementation.ImplementationFiles
 
     let createHotReloadService sessionStore =
         FSharpHotReloadService(
