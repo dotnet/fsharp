@@ -450,8 +450,6 @@ type FSharpChecker
         | None, None -> false
 
     let readIlModule path =
-        waitForStableFile path
-
         let options: ILReaderOptions =
             {
                 pdbDirPath = None
