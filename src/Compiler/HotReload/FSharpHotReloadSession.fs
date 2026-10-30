@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Threading
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerGeneratedNameMapState
@@ -346,7 +347,7 @@ type internal FSharpHotReloadService
                             let ilModule = readIlModule outputPath
                             let baseline = createBaseline tcGlobals ilModule outputPath
                             Ok(baseline, implementationFiles)
-                        with ex ->
+                        with RecoverableException ex ->
                             Result.Error(FSharpHotReloadError.DeltaEmissionFailed($"Failed to create hot reload baseline: {ex.Message}"))
 
                     match baselineResult with
@@ -651,7 +652,7 @@ type internal FSharpHotReloadService
                                                         let ilModule = readIlModule outputPath
                                                         let assemblyBytes = File.ReadAllBytes outputPath
                                                         Ok(ilModule, assemblyBytes))
-                                                with ex ->
+                                                with RecoverableException ex ->
                                                     Result.Error(
                                                         FSharpHotReloadError.DeltaEmissionFailed(
                                                             $"Failed to read updated assembly '{outputPath}': {ex.Message}"
@@ -752,8 +753,12 @@ type internal FSharpHotReloadService
                                                             ]
 
                                                         File.WriteAllLines(stem + ".tokens.txt", tokens)
-                                                    with _ ->
-                                                        ()
+                                                    with
+                                                    | :? IOException
+                                                    | :? UnauthorizedAccessException
+                                                    | :? System.Security.SecurityException
+                                                    | :? ArgumentException
+                                                    | :? NotSupportedException -> ()
 
                                                 return Result.Ok publicDelta
                                             | Error error -> return Result.Error(mapHotReloadError error)
