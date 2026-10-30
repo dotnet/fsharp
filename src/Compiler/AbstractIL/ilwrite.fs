@@ -4712,6 +4712,12 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     mappings
 
+[<Struct; NoEquality; NoComparison>]
+type private InMemoryWriteResult =
+    { AssemblyBytes: byte[]
+      PdbBytes: byte[] option
+      TokenMappings: ILTokenMappings }
+
 let private writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) metadataSnapshotSink =
 
     use stream = new MemoryStream()
@@ -4741,7 +4747,7 @@ let private writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs)
             debugDeterministicPdbChunk,
             textV2P)
 
-    struct {| AssemblyBytes = stream.ToArray(); PdbBytes = pdbBytes; TokenMappings = mappings |}
+    { AssemblyBytes = stream.ToArray(); PdbBytes = pdbBytes; TokenMappings = mappings }
 
 let WriteILBinaryFile (options: options, inputModule, normalizeAssemblyRefs) =
     writeBinaryFiles (options, inputModule, normalizeAssemblyRefs)
