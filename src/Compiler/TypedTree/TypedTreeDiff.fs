@@ -31,7 +31,7 @@ type SymbolMemberKind =
 let internal canonicalQualifiedName (path: string list) (logicalName: string) =
     let canonical =
         match path with
-        | head :: rest when head.Contains(".") ->
+        | head :: rest when head.IndexOf(".", StringComparison.Ordinal) >= 0 ->
             let segments = head.Split('.') |> Array.toList
 
             if List.truncate (List.length segments) rest = segments then
@@ -42,7 +42,12 @@ let internal canonicalQualifiedName (path: string list) (logicalName: string) =
 
     match canonical with
     | [] -> logicalName
-    | _ -> String.concat "." (canonical @ [ logicalName ])
+    | _ ->
+        seq {
+            yield! canonical
+            yield logicalName
+        }
+        |> String.concat "."
 
 type SymbolId =
     {
@@ -193,7 +198,10 @@ let private normalizeTypeString (text: string) =
             while j < text.Length && Char.IsDigit text[j] do
                 j <- j + 1
 
-            if j < text.Length && text.AsSpan(j).StartsWith(solvedMarker.AsSpan()) then
+            if
+                j < text.Length
+                && text.AsSpan(j).StartsWith(solvedMarker.AsSpan(), StringComparison.Ordinal)
+            then
                 i <- j + solvedMarker.Length
                 skipParen <- skipParen + 1
             else
@@ -1375,7 +1383,7 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
 let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updated: Map<string, BindingSnapshot list>) =
     let edits = ResizeArray<SemanticEdit>()
     let rude = ResizeArray<RudeEdit>()
-    let matchedUpdatedKeys = HashSet<string>()
+    let matchedUpdatedKeys = HashSet<string>(StringComparer.Ordinal)
 
     for KeyValue(key, baselineList) in baseline do
         match Map.tryFind key updated with
