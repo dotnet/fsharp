@@ -63,4 +63,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_URL: ${{ steps.queue.outputs.url }}
           HEAD_SHA: ${{ steps.request.outputs.head }}
+          PIPELINE_SHA: ${{ steps.request.outputs.pipeline }}
         run: .\.github\scripts\pr-validation.ps1 -Mode Report

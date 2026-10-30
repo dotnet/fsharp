@@ -123,7 +123,7 @@ try {
         'api-head-changed' = $null
         'api-base-changed' = $null
         'api-failure' = 'GitHub unavailable'
-        'wrong-reviewed-checkout' = 'reviewed PR checkout'
+        'missing-reviewed-commit' = 'git fetch'
         'invalid-input' = 'headSha'
     }
     foreach ($case in $cases.Keys) {
@@ -134,8 +134,6 @@ try {
         Push-Location $case
         try {
             Invoke-FixtureGit config "url.$remote.insteadOf" 'https://github.com/dotnet/fsharp.git'
-            Invoke-FixtureGit fetch -q --depth=1 $remote refs/pull/1/head
-            Invoke-FixtureGit checkout -q --detach $head
             $pr = @{
                 state = 'open'
                 head = @{ sha = $head }
@@ -174,10 +172,7 @@ try {
                 'foreign-target' { $pr.base.repo.full_name = 'other/fsharp' }
                 'api-head-changed' { $pr.head.sha = $later }
                 'api-base-changed' { $pr.base.sha = $later }
-                'wrong-reviewed-checkout' {
-                    Invoke-FixtureGit fetch -q --depth=1 $remote refs/heads/main
-                    Invoke-FixtureGit checkout -q --detach $base
-                }
+                'missing-reviewed-commit' { $expectedHead = 'e' * 40 }
                 'invalid-input' { $expectedHead = 'not-a-sha' }
             }
             $before = Invoke-FixtureGit rev-parse HEAD
@@ -208,7 +203,7 @@ try {
                 }
             }
             if ($case -in 'valid', 'head-ref-changed', 'base-ref-changed', 'merge-new-base') {
-                foreach ($expectedLog in "Requested snapshot: PR #1 reviewed=$head", "Initial checkout: $head", "GitHub PR: state=open target=dotnet/fsharp:main head=$head base=$base") {
+                foreach ($expectedLog in "Requested snapshot: PR #1 reviewed=$head", "Fetched reviewed commit: $head", "GitHub PR: state=open target=dotnet/fsharp:main head=$head base=$base") {
                     if ($logs -cnotcontains $expectedLog) { throw "Missing diagnostic: $expectedLog" }
                 }
                 $actualHead = if ($case -eq 'head-ref-changed') { $later } else { $head }
