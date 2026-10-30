@@ -2518,22 +2518,25 @@ module ParsedInput =
                 | SynModuleDecl.HashDirective(range = r) -> ValueSome r.Start
                 | _ -> ValueNone
 
-        let rec skipTrailingBlockComments line =
+        let rec skipTrailingBlockComments (firstDeclStart: pos voption) line =
             match
                 blockComments
-                |> List.tryFind (fun comment -> comment.StartLine <= line && comment.EndLine > line)
+                |> List.tryFind (fun comment ->
+                    comment.StartLine <= line
+                    && comment.EndLine > line
+                    && firstDeclStart |> ValueOption.forall (posLt comment.Start))
             with
-            | Some comment -> skipTrailingBlockComments comment.EndLine
+            | Some comment -> skipTrailingBlockComments firstDeclStart comment.EndLine
             | None -> line
 
-        let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) =
+        let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) firstDeclStart =
             let nameEndLine =
                 ident
                 |> List.fold (fun line part -> max line part.idRange.EndLine) keyword.EndLine
 
             equals
             |> Option.fold (fun line equalsSign -> max line equalsSign.EndLine) nameEndLine
-            |> skipTrailingBlockComments
+            |> skipTrailingBlockComments firstDeclStart
 
         let bodyAnchor headerLine (firstDeclStart: pos voption) defaultColumn =
             match firstDeclStart with
@@ -2560,14 +2563,16 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
+                let firstDeclStart = tryGetFirstDeclStart decls
+
                 let headerLine =
                     match trivia.LeadingKeyword with
                     | SynModuleOrNamespaceLeadingKeyword.Module keyword
-                    | SynModuleOrNamespaceLeadingKeyword.Namespace keyword -> headerEndLine keyword ident None
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace keyword -> headerEndLine keyword ident None firstDeclStart
                     | SynModuleOrNamespaceLeadingKeyword.None -> range.StartLine - 1
 
                 let struct (lineAboveBody, column) =
-                    bodyAnchor headerLine (tryGetFirstDeclStart decls) range.StartColumn
+                    bodyAnchor headerLine firstDeclStart range.StartColumn
 
                 let scopeKind =
                     match isModule, parent with
@@ -2589,12 +2594,12 @@ module ParsedInput =
                 addModule (fullIdent, range)
 
                 if range.EndLine >= currentLine then
+                    let firstDeclStart = tryGetFirstDeclStart decls
+
                     let headerLine =
                         match trivia.ModuleKeyword with
-                        | Some moduleKeyword -> headerEndLine moduleKeyword ident trivia.EqualsRange
+                        | Some moduleKeyword -> headerEndLine moduleKeyword ident trivia.EqualsRange firstDeclStart
                         | None -> range.StartLine // Fallback if trivia unavailable
-
-                    let firstDeclStart = tryGetFirstDeclStart decls
 
                     let moduleBodyIndentation =
                         firstDeclStart
