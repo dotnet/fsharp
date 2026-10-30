@@ -1,5 +1,7 @@
 namespace FSharp.Compiler.HotReload
 
+open System.Text
+
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.TypedTreeDiff
 
@@ -22,8 +24,7 @@ type internal RudeEditDiagnostic =
 
 module internal RudeEditDiagnostics =
 
-    let private symbolDisplayName (symbol: SymbolId option) =
-        symbol |> Option.map (fun s -> s.QualifiedName)
+    let private symbolDisplayName (symbol: SymbolId option) = symbol |> Option.map _.QualifiedName
 
     let private formatMessage (kind: RudeEditKind) (symbolName: string option) fallback =
         let name = symbolName |> Option.defaultValue "the declaration"
@@ -126,6 +127,12 @@ module internal RudeEditDiagnostics =
     /// Renders a structured rude-edit list to the historical one-line-per-edit text
     /// ("{Id}: {Message}"), for logs and callers that still want a flat string.
     let format (diagnostics: RudeEditDiagnostic list) =
-        diagnostics
-        |> List.map (fun d -> $"{d.Id}: {d.Message}")
-        |> String.concat System.Environment.NewLine
+        let text = StringBuilder()
+
+        for diagnostic in diagnostics do
+            if text.Length > 0 then
+                text.AppendLine() |> ignore
+
+            text.Append(diagnostic.Id).Append(": ").Append(diagnostic.Message) |> ignore
+
+        text.ToString()
