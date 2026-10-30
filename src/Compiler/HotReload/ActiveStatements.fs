@@ -297,7 +297,7 @@ module internal ActiveStatementAnalysis =
                     let sequencePoints = methodDebugInfo.GetSequencePoints() |> List.ofSeq
 
                     let documentName =
-                        let documents = sequencePoints |> List.map (fun sp -> sp.Document) |> List.distinct
+                        let documents = sequencePoints |> Seq.map _.Document |> Seq.distinct |> Seq.toList
 
                         match documents with
                         | [ single ] when not single.IsNil ->

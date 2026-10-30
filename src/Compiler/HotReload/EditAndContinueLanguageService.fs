@@ -119,7 +119,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
         if shouldTraceMethods () && not (List.isEmpty companions) then
             let names =
                 companions
-                |> List.map (fun key -> $"{key.DeclaringType}::{key.Name}")
+                |> Seq.map (fun key -> $"{key.DeclaringType}::{key.Name}")
                 |> String.concat ", "
 
             printfn "[fsharp-hotreload][service] compiler-generated companion methods selected: %s" names
@@ -334,9 +334,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                 // blocks the whole update, leaving the session at the previous generation.
                 let activeStatementRemap =
                     let recompiledTokens =
-                        delta.AddedOrChangedMethods
-                        |> List.map (fun info -> info.MethodToken)
-                        |> Set.ofList
+                        delta.AddedOrChangedMethods |> List.map _.MethodToken |> Set.ofList
 
                     ActiveStatementAnalysis.remapActiveStatements
                         session.Baseline.SequencePointSnapshots
@@ -370,8 +368,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                             // information with the data recomputed from the fresh typed tree.
                             // The delta PDB does not carry EnC CDI rows, so this in-memory chain
                             // is what the closure mapping consumes.
-                            let updatedMethodTokens =
-                                delta.AddedOrChangedMethods |> List.map (fun info -> info.MethodToken)
+                            let updatedMethodTokens = delta.AddedOrChangedMethods |> List.map _.MethodToken
 
                             let chainedBaseline =
                                 chainEncMethodDebugInfos updatedBaseline request.RefreshedEncDebugInfos updatedMethodTokens

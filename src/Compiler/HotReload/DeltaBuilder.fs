@@ -299,11 +299,11 @@ let mapSymbolChangesToDelta
         let formatUpdated (change: UpdatedSymbolChange) =
             sprintf "%s semanticEdit=%A containingEntity=%A" (formatSymbol change.Symbol) change.Kind change.ContainingEntity
 
-        let addedText = changes.Added |> List.map formatSymbol |> String.concat " | "
+        let addedText = changes.Added |> Seq.map formatSymbol |> String.concat " | "
 
-        let deletedText = changes.Deleted |> List.map formatSymbol |> String.concat " | "
+        let deletedText = changes.Deleted |> Seq.map formatSymbol |> String.concat " | "
 
-        let updatedText = changes.Updated |> List.map formatUpdated |> String.concat " | "
+        let updatedText = changes.Updated |> Seq.map formatUpdated |> String.concat " | "
 
         printfn "[fsharp-hotreload][delta-builder] changes summary: added=[%s] deleted=[%s] updated=[%s]" addedText deletedText updatedText
 
@@ -386,8 +386,8 @@ let mapSymbolChangesToDelta
     let addedEntityStamps =
         changes
         |> FSharpSymbolChanges.addedEntitySymbols
-        |> List.map (fun symbol -> symbol.Stamp)
-        |> Set.ofList
+        |> Seq.map _.Stamp
+        |> Set.ofSeq
 
     let updatedTypes, typeResolutionErrors =
         changes
@@ -454,7 +454,7 @@ let mapSymbolChangesToDelta
             if not (List.isEmpty ambiguousCandidates) then
                 let ambiguityDetails =
                     ambiguousCandidates
-                    |> List.map (fun (candidate, matches) -> $"{candidate} -> {matches}")
+                    |> Seq.map (fun (candidate, matches) -> $"{candidate} -> {matches}")
                     |> String.concat "; "
 
                 Error(
@@ -567,7 +567,7 @@ let mapSymbolChangesToDelta
 
                             resolvedMethods, errorMessage :: errors
                         | MethodAmbiguous ambiguous ->
-                            let ambiguousText = ambiguous |> List.map describeMethodKey |> String.concat "; "
+                            let ambiguousText = ambiguous |> Seq.map describeMethodKey |> String.concat "; "
 
                             let errorMessage =
                                 $"Ambiguous baseline method mapping for '{formatSymbolIdentity change.Symbol}' (containingTypeCandidates={candidates}, matches=[{ambiguousText}]); full rebuild required."
@@ -715,7 +715,7 @@ let mapSymbolChangesToDelta
 
                             ValueNone, errorMessage :: errors
                         | MethodAmbiguous ambiguous ->
-                            let ambiguousText = ambiguous |> List.map describeMethodKey |> String.concat "; "
+                            let ambiguousText = ambiguous |> Seq.map describeMethodKey |> String.concat "; "
 
                             let errorMessage =
                                 $"Ambiguous accessor method mapping for '{formatSymbolIdentity symbol}' (type={typeName}, matches=[{ambiguousText}]); full rebuild required."

@@ -53,7 +53,7 @@ type RuntimeTypeIdentity =
 let internal canonicalQualifiedName (path: string list) (logicalName: string) =
     let canonical =
         match path with
-        | head :: rest when head.Contains(".") ->
+        | head :: rest when head.IndexOf(".", StringComparison.Ordinal) >= 0 ->
             let segs = head.Split('.') |> Array.toList
 
             if List.truncate (List.length segs) rest = segs then
@@ -64,7 +64,13 @@ let internal canonicalQualifiedName (path: string list) (logicalName: string) =
 
     match canonical with
     | [] -> logicalName
-    | _ -> String.concat "." (canonical @ [ logicalName ])
+    | _ ->
+        String.concat
+            "."
+            (seq {
+                yield! canonical
+                yield logicalName
+            })
 
 /// Stable identity for values and entities tracked across baseline/hot reload sessions.
 type SymbolId =
@@ -428,11 +434,11 @@ let private compiledTyconName (tcref: TyconRef) =
 let private tyToString (_: DisplayEnv) (ty: TType) =
     let rec render ty =
         let renderArgs tys =
-            tys |> List.map render |> String.concat ","
+            tys |> Seq.map render |> String.concat ","
 
         match ty with
         | TType_forall(typars, bodyTy) ->
-            let names = typars |> List.map (fun typar -> typar.DisplayName) |> String.concat ","
+            let names = typars |> Seq.map _.DisplayName |> String.concat ","
             $"forall<{names}>.{render bodyTy}"
         | TType_app(tcref, typeArgs, _) ->
             let name = compiledTyconName tcref
@@ -555,7 +561,7 @@ let rec private formatRuntimeTypeIdentity (identity: RuntimeTypeIdentity) =
     match identity with
     | RuntimeTypeIdentity.NamedType(fullName, []) -> fullName
     | RuntimeTypeIdentity.NamedType(fullName, args) ->
-        let argText = args |> List.map formatRuntimeTypeIdentity |> String.concat ","
+        let argText = args |> Seq.map formatRuntimeTypeIdentity |> String.concat ","
         $"{fullName}<{argText}>"
     | RuntimeTypeIdentity.ArrayType(rank, elementType) ->
         let commas = String.replicate (max 0 (rank - 1)) ","
@@ -564,7 +570,7 @@ let rec private formatRuntimeTypeIdentity (identity: RuntimeTypeIdentity) =
     | RuntimeTypeIdentity.PointerType elementType -> $"{formatRuntimeTypeIdentity elementType}*"
     | RuntimeTypeIdentity.FunctionPointerType(returnType, argumentTypes) ->
         let argText =
-            argumentTypes |> List.map formatRuntimeTypeIdentity |> String.concat ","
+            argumentTypes |> Seq.map formatRuntimeTypeIdentity |> String.concat ","
 
         $"fnptr({argText})->{formatRuntimeTypeIdentity returnType}"
     | RuntimeTypeIdentity.TypeVariable ordinal -> $"!{ordinal}"
@@ -774,8 +780,8 @@ let private opDigest (denv: DisplayEnv) (op: TOp) =
         let kind = if isStruct then "struct" else "ref"
         "TupleFieldGet:" + kind + ":" + string idx
     | TOp.ILAsm(instrs, retTypes) ->
-        let instrsStr = instrs |> List.map (fun i -> i.ToString()) |> String.concat ";"
-        let retStr = retTypes |> List.map (tyToString denv) |> String.concat ","
+        let instrsStr = instrs |> Seq.map _.ToString() |> String.concat ";"
+        let retStr = retTypes |> Seq.map (tyToString denv) |> String.concat ","
         "ILAsm:" + instrsStr + ":" + retStr
     | TOp.RefAddrGet readonly -> "RefAddrGet:" + string readonly
     | TOp.Coerce -> "Coerce"
@@ -823,10 +829,10 @@ let private traitConstraintShapeDigest (g: TcGlobals) (typarOrdinals: Map<Stamp,
     // heuristic lists that are brittle across compiler/runtime changes.
     let render = renderTypeForShapeDigest g typarOrdinals denv
 
-    let supportTypes = traitInfo.SupportTypes |> List.map render |> String.concat ","
+    let supportTypes = traitInfo.SupportTypes |> Seq.map render |> String.concat ","
 
     let argumentTypes =
-        traitInfo.GetCompiledArgumentTypes() |> List.map render |> String.concat ","
+        traitInfo.GetCompiledArgumentTypes() |> Seq.map render |> String.concat ","
 
     let returnType =
         traitInfo.CompiledReturnType
@@ -905,7 +911,7 @@ let private collectLoweredShapeInfo (g: TcGlobals) (typarOrdinals: Map<Stamp, in
              | Expr.Val(vref, _, _) when isReturnsResumableCodeAppTy g vref.TauType ->
                  let instantiation =
                      tyargs
-                     |> List.map (renderTypeForShapeDigest g typarOrdinals denv)
+                     |> Seq.map (renderTypeForShapeDigest g typarOrdinals denv)
                      |> String.concat ","
 
                  collector.ResumableCodeCalls.Add $"{vref.LogicalName}<{instantiation}>({args.Length})"
@@ -1102,9 +1108,9 @@ let private traitIdentity denv (traitInfo: TraitConstraintInfo) =
             string traitInfo.MemberFlags.IsOverrideOrExplicitImpl
             string traitInfo.MemberFlags.IsFinal
             string traitInfo.MemberFlags.MemberKind
-            traitInfo.SupportTypes |> List.map (tyToString denv) |> String.concat ","
+            traitInfo.SupportTypes |> Seq.map (tyToString denv) |> String.concat ","
             traitInfo.CompiledObjectAndArgumentTypes
-            |> List.map (tyToString denv)
+            |> Seq.map (tyToString denv)
             |> String.concat ","
             traitInfo.CompiledReturnType
             |> Option.map (tyToString denv)
@@ -1226,7 +1232,7 @@ let private opIdentity denv (op: TOp) =
         $"{compiledTyconName caseRef.TyconRef}.{caseRef.CaseName}"
 
     let types tys =
-        tys |> List.map (tyToString denv) |> String.concat ","
+        tys |> Seq.map (tyToString denv) |> String.concat ","
 
     match op with
     | TOp.UnionCase caseRef -> identityNode "union-case" [ caseName caseRef ]
@@ -1237,7 +1243,7 @@ let private opIdentity denv (op: TOp) =
         identityNode "anon-record-get" [ info.ILTypeRef.FullName; String.concat "," info.SortedNames; string index ]
     | TOp.Array -> "array"
     | TOp.Bytes bytes -> identityNode "bytes" [ BitConverter.ToString bytes ]
-    | TOp.UInt16s values -> identityNode "uint16s" [ values |> Array.map string |> String.concat "," ]
+    | TOp.UInt16s values -> identityNode "uint16s" [ values |> Seq.map string |> String.concat "," ]
     | TOp.While(_, marker) -> identityNode "while" [ string marker ]
     | TOp.IntegerForLoop(_, _, style) -> identityNode "for" [ string style ]
     | TOp.TryWith _ -> "try-with"
@@ -1256,7 +1262,7 @@ let private opIdentity denv (op: TOp) =
     | TOp.ExnFieldGet(typeRef, index) -> identityNode "exn-field-get" [ compiledTyconName typeRef; string index ]
     | TOp.ExnFieldSet(typeRef, index) -> identityNode "exn-field-set" [ compiledTyconName typeRef; string index ]
     | TOp.TupleFieldGet(tupleInfo, index) -> identityNode "tuple-field-get" [ string (evalTupInfoIsStruct tupleInfo); string index ]
-    | TOp.ILAsm(instructions, returnTypes) -> identityNode "il" [ instructions |> List.map string |> String.concat ";"; types returnTypes ]
+    | TOp.ILAsm(instructions, returnTypes) -> identityNode "il" [ instructions |> Seq.map string |> String.concat ";"; types returnTypes ]
     | TOp.RefAddrGet isReadonly -> identityNode "ref-address" [ string isReadonly ]
     | TOp.Coerce -> "coerce"
     | TOp.Reraise -> "reraise"
@@ -2877,7 +2883,7 @@ let private collectSnapshots g denv (CheckedImplFile(qualifiedNameOfFile = qual;
 let private formatLambdaSetChangeMessage (symbol: SymbolId) (added: LambdaOccurrence list) (removed: LambdaOccurrence list) =
     let describe verb (occs: LambdaOccurrence list) =
         let ordinals =
-            occs |> List.map (fun occ -> string occ.Id.Ordinal) |> String.concat ", "
+            occs |> Seq.map (fun occ -> string occ.Id.Ordinal) |> String.concat ", "
 
         if occs.Length = 1 then
             $"1 lambda {verb} at ordinal {ordinals}"

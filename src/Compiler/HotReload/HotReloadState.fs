@@ -214,7 +214,7 @@ type internal HotReloadSessionStore() =
 
     /// Keys of the projects currently active in the session.
     member _.ProjectKeys =
-        lock sessionLock (fun () -> projects |> Map.toList |> List.map fst)
+        lock sessionLock (fun () -> projects |> Seq.map (fun (KeyValue(key, _)) -> key) |> Seq.toList)
 
     member _.TryGetBaseline(?key: HotReloadProjectKey) =
         lock sessionLock (fun () ->
