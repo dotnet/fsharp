@@ -701,26 +701,26 @@ let mapSymbolChangesToDelta
                 | Ok [ typeName ] ->
                     let method, updatedErrors =
                         match resolveMethodKey symbol [ typeName ] with
-                        | MethodResolved methodKey -> Some methodKey, errors
+                        | MethodResolved methodKey -> ValueSome methodKey, errors
                         | MethodIdentityMissing missingParts ->
                             let missingText = String.concat ", " missingParts
 
                             let errorMessage =
                                 $"Unable to resolve accessor symbol '{formatSymbolIdentity symbol}' because runtime signature identity is incomplete (missing: {missingText}); full rebuild required."
 
-                            None, errorMessage :: errors
+                            ValueNone, errorMessage :: errors
                         | MethodMissing ->
                             let errorMessage =
                                 $"Unable to resolve accessor symbol '{formatSymbolIdentity symbol}' to a unique baseline method token (type={typeName}); full rebuild required."
 
-                            None, errorMessage :: errors
+                            ValueNone, errorMessage :: errors
                         | MethodAmbiguous ambiguous ->
                             let ambiguousText = ambiguous |> List.map describeMethodKey |> String.concat "; "
 
                             let errorMessage =
                                 $"Ambiguous accessor method mapping for '{formatSymbolIdentity symbol}' (type={typeName}, matches=[{ambiguousText}]); full rebuild required."
 
-                            None, errorMessage :: errors
+                            ValueNone, errorMessage :: errors
 
                     {
                         AccessorUpdate.Symbol = symbol
