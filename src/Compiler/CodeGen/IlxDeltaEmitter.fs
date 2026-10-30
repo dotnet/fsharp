@@ -195,10 +195,7 @@ let internal classifyEntityTokenRemapKind (token: int) : EntityTokenRemapKind =
     | tableTag ->
         raise (
             HotReloadUnsupportedEditException(
-                sprintf
-                    "Unsupported metadata token table 0x%02X in method-body remap (token=0x%08X). Please rebuild."
-                    (tableTag >>> 24)
-                    token
+                $"Unsupported metadata token table 0x%02X{tableTag >>> 24} in method-body remap (token=0x%08X{token}). Please rebuild."
             )
         )
 
@@ -231,8 +228,7 @@ let private defaultWriterOptions (ilg: ILGlobals) (checksumAlgorithm: HashAlgori
     // unique, throwaway file name per invocation so parallel sessions never collide, and so we
     // leave a breadcrumb for debugging when traces mention the synthetic assembly.
     let scratchDll =
-        let fileName =
-            sprintf "fsharp-hotreload-%s.dll" (System.Guid.NewGuid().ToString("N"))
+        let fileName = $"""fsharp-hotreload-{System.Guid.NewGuid().ToString("N")}.dll"""
 
         Path.Combine(Path.GetTempPath(), fileName)
 
@@ -443,7 +439,7 @@ let private remapTypeDefOrRefCodedIndexWith (remapEntityToken: int -> int) (code
 /// Walks the signature grammar (II.23.2) and remaps every embedded coded index; fails closed on
 /// unknown element types.
 let private remapSignatureBlobCore (isTypeSpecBlob: bool) (remapTypeDefOrRefCodedIndex: int -> int) (signature: byte[]) : byte[] =
-    if isNull (box signature) || signature.Length = 0 then
+    if isNull (withNull signature) || signature.Length = 0 then
         signature
     else
         let builder = BlobBuilder()
@@ -452,7 +448,7 @@ let private remapSignatureBlobCore (isTypeSpecBlob: bool) (remapTypeDefOrRefCode
         let fail (message: string) : 'T =
             raise (
                 HotReloadUnsupportedEditException(
-                    sprintf "Unsupported signature blob during delta remap at offset %d: %s. Please rebuild." pos message
+                    $"Unsupported signature blob during delta remap at offset %d{pos}: %s{message}. Please rebuild."
                 )
             )
 
@@ -478,7 +474,7 @@ let private remapSignatureBlobCore (isTypeSpecBlob: bool) (remapTypeDefOrRefCode
             elif first &&& 0xE0 = 0xC0 then
                 4
             else
-                fail (sprintf "invalid compressed integer lead byte 0x%02X" first)
+                fail ($"invalid compressed integer lead byte 0x%02X{first}")
 
         let readCompressedUInt () =
             let first = readByteValue ()
@@ -566,12 +562,12 @@ let private remapSignatureBlobCore (isTypeSpecBlob: bool) (remapTypeDefOrRefCode
 
                     for _ in 1..argCount do
                         copyType ()
-                | kind -> fail (sprintf "unexpected GENERICINST kind 0x%02X" kind)
+                | kind -> fail ($"unexpected GENERICINST kind 0x%02X{kind}")
             // FNPTR wraps a full method signature
             | 0x1B ->
                 builder.WriteByte 0x1Buy
                 copyMethodSignature ()
-            | code -> fail (sprintf "unexpected signature element type 0x%02X" code)
+            | code -> fail ($"unexpected signature element type 0x%02X{code}")
 
         and copyMethodSignature () =
             let callingConvention = readByteValue ()
@@ -1154,7 +1150,7 @@ let private buildMethodUpdatesWithMetadata
         orderedMethodInputs
         |> List.map (fun struct (key, methodToken, methodHandle, methodDef, body) ->
             let bodyUpdate, referencedMethodSpecs =
-                if isNull (box body) then
+                if isNull (withNull body) then
                     // Bodiless added method (abstract slot of an added interface/class or
                     // runtime-implemented delegate member): no IL chunk enters the delta;
                     // the MethodDef row's RVA column stays 0 (Roslyn template parity —
@@ -3204,8 +3200,8 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
                     metadataReader.GetBlobBytes row.Signature |> remapSignature
 
             let signaturesEqual (a: byte[]) (b: byte[]) =
-                not (isNull (box a))
-                && not (isNull (box b))
+                not (isNull (withNull a))
+                && not (isNull (withNull b))
                 && System.MemoryExtensions.SequenceEqual(System.Span.op_Implicit (a.AsSpan()), System.Span.op_Implicit (b.AsSpan()))
 
             let matchesBaselineRow (baselineRow: HotReloadBaseline.BaselineMemberRefRow) =
@@ -5348,7 +5344,7 @@ let emitDeltaWithDebugData (freshDebugPdb: byte[] option) (request: IlxDeltaRequ
 
             File.WriteAllBytes(tempDll, assemblyBytes)
             printfn "[fsharp-hotreload][trace] wrote IL module snapshot to %s" tempDll
-        with ex ->
+        with (:? IOException | :? UnauthorizedAccessException) as ex ->
             printfn "[fsharp-hotreload][trace] failed to write IL module snapshot: %s" ex.Message
 
     use peStream = new MemoryStream(assemblyBytes, writable = false)

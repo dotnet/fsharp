@@ -18,6 +18,31 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.EncMethodDebugInformation
 open FSharp.Compiler.HotReloadBaseline
 
+module CodegenDebugInfo = FSharp.Compiler.EncMethodDebugInformation
+
+[<Fact>]
+let ``Codegen EnC codecs round-trip nonempty and absent blobs`` () =
+    let info: CodegenDebugInfo.EncMethodDebugInformation =
+        { MethodOrdinal = 0
+          LocalSlots = [ CodegenDebugInfo.EncLocalSlotInfo.Temp; CodegenDebugInfo.EncLocalSlotInfo.Slot(0, -2, 1) ]
+          Closures = [ { SyntaxOffset = 3 } ]
+          Lambdas = [ { SyntaxOffset = 4; ClosureOrdinal = 0 } ]
+          StateMachineStates = [ { StateNumber = 1; SyntaxOffset = 5 } ] }
+
+    let decoded =
+        CodegenDebugInfo.deserialize
+            (CodegenDebugInfo.serializeLocalSlots info)
+            (CodegenDebugInfo.serializeLambdaMap info)
+            (CodegenDebugInfo.serializeStateMachineStates info)
+    Assert.Equal<CodegenDebugInfo.EncMethodDebugInformation>(info, decoded)
+    Assert.Equal<CodegenDebugInfo.EncMethodDebugInformation>(CodegenDebugInfo.EncMethodDebugInformation.Empty, CodegenDebugInfo.deserialize null null null)
+
+    let names = [| "f@hotreload-1"; "f@hotreload" |]
+    let snapshot = CodegenDebugInfo.serializeSynthesizedNameSnapshot [ struct ("f", names) ]
+    Assert.Equal<string array>(names, (CodegenDebugInfo.deserializeSynthesizedNameSnapshot snapshot)["f"])
+    Assert.Empty(CodegenDebugInfo.deserializeSynthesizedNameSnapshot null)
+    Assert.Throws<InvalidDataException>(fun () -> CodegenDebugInfo.deserializeLocalSlots [| 0xFFuy |] |> ignore) |> ignore
+
 // -----------------------------------------------------------------------
 // Round-trip properties (pure codec)
 // -----------------------------------------------------------------------
@@ -876,11 +901,14 @@ let ``Baseline reader rejects pointer-table indirection in an uncompressed strea
     let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
     Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
-[<Fact>]
-let ``Baseline valid-mask reader does not sign-extend bit 31`` () =
-    let bytes = [| 0uy; 0uy; 0uy; 0x80uy; 0uy; 0uy; 0uy; 0uy |]
+[<Theory>]
+[<InlineData(31)>]
+[<InlineData(63)>]
+let ``Baseline valid-mask reader preserves unsigned bits`` bit =
+    let bytes = Array.zeroCreate<byte> 8
+    bytes[bit / 8] <- 0x80uy
 
-    Assert.Equal(0x0000000080000000UL, FSharp.Compiler.AbstractIL.ILBaselineReader.readUInt64 bytes 0)
+    Assert.Equal(1UL <<< bit, FSharp.Compiler.AbstractIL.ILBaselineReader.readUInt64 bytes 0)
 
 [<Fact>]
 let ``Baseline table data starts after valid tables with zero rows`` () =
