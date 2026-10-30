@@ -1298,7 +1298,32 @@ let private compareMatchedBinding (baseline: BindingSnapshot) (updated: BindingS
         let updatedHash = stableHash updated.BodyIdentity
         Choice1Of2(ValueSome(semanticEdit baseline SemanticEditKind.MethodBody (Some baselineHash) (Some updatedHash)))
 
-let private compareBindingLists (baseline: BindingSnapshot list) (updated: BindingSnapshot list) =
+/// Pairs one matched declaration with the remaining overload candidates.
+[<Struct>]
+type private ExactBindingMatch =
+    {
+        Match: BindingSnapshot
+        Remaining: BindingSnapshot list
+    }
+
+/// Retains exact overload pairs and candidates for deterministic fallback pairing.
+[<Struct>]
+type private BindingMatches =
+    {
+        Pairs: struct (BindingSnapshot * BindingSnapshot) list
+        UnmatchedBaseline: BindingSnapshot list
+        UnmatchedUpdated: BindingSnapshot list
+    }
+
+/// Buffers classifications until the file result materializes immutable lists.
+[<Struct>]
+type private BindingComparison =
+    {
+        SemanticEdits: ResizeArray<SemanticEdit>
+        RudeEdits: ResizeArray<RudeEdit>
+    }
+
+let private compareBindingLists (baseline: BindingSnapshot list) (updated: BindingSnapshot list) : BindingComparison =
     let edits = ResizeArray<SemanticEdit>()
     let rude = ResizeArray<RudeEdit>()
 
@@ -1328,37 +1353,36 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
         match candidates with
         | [] -> ValueNone
         | candidate :: tail when candidate.SignatureText = signature ->
-            ValueSome(
-                struct {|
+            ValueSome
+                {
                     Match = candidate
                     Remaining = List.fold (fun rest item -> item :: rest) tail skipped
-                |}
-            )
+                }
         | candidate :: tail -> tryTakeExact signature (candidate :: skipped) tail
 
     // Exact signatures are stable identities within an overload set. Pair them first so
     // inserting or removing one overload cannot shift unrelated declarations by position.
     let matches =
-        (struct {|
+        ({
             Pairs = []
             UnmatchedBaseline = []
             UnmatchedUpdated = updated
-         |},
+         },
          baseline)
         ||> List.fold (fun state baselineSnapshot ->
             match tryTakeExact baselineSnapshot.SignatureText [] state.UnmatchedUpdated with
             | ValueSome matched ->
-                struct {|
+                {
                     Pairs = struct (baselineSnapshot, matched.Match) :: state.Pairs
                     UnmatchedBaseline = state.UnmatchedBaseline
                     UnmatchedUpdated = matched.Remaining
-                |}
+                }
             | ValueNone ->
-                struct {|
+                {
                     Pairs = state.Pairs
                     UnmatchedBaseline = baselineSnapshot :: state.UnmatchedBaseline
                     UnmatchedUpdated = state.UnmatchedUpdated
-                |})
+                })
 
     matches.Pairs
     |> List.iter (fun (struct (baselineSnapshot, updatedSnapshot)) -> addComparison baselineSnapshot updatedSnapshot)
@@ -1377,12 +1401,12 @@ let private compareBindingLists (baseline: BindingSnapshot list) (updated: Bindi
         unmatchedBaseline |> List.iter addRemoved
         unmatchedUpdated |> List.iter addAdded
 
-    struct {|
+    {
         SemanticEdits = edits
         RudeEdits = rude
-    |}
+    }
 
-let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updated: Map<string, BindingSnapshot list>) =
+let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updated: Map<string, BindingSnapshot list>) : BindingComparison =
     let edits = ResizeArray<SemanticEdit>()
     let rude = ResizeArray<RudeEdit>()
     let matchedUpdatedKeys = HashSet<string>(StringComparer.Ordinal)
@@ -1415,10 +1439,10 @@ let private compareBindings (baseline: Map<string, BindingSnapshot list>) (updat
                         Message = "Declaration addition is not classified by this foundational diff slice."
                     })
 
-    struct {|
+    {
         SemanticEdits = edits
         RudeEdits = rude
-    |}
+    }
 
 let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Map<string, EntitySnapshot>) =
     let rude = ResizeArray<RudeEdit>()
@@ -1453,7 +1477,7 @@ let private compareEntities (baseline: Map<string, EntitySnapshot>) (updated: Ma
 
     rude
 
-let diffImplementationFile (g: TcGlobals) (baseline: CheckedImplFile) (updated: CheckedImplFile) =
+let diffImplementationFile (g: TcGlobals) (baseline: CheckedImplFile) (updated: CheckedImplFile) : TypedTreeDiffResult =
     if obj.ReferenceEquals(baseline, updated) then
         emptyDiff
     else
