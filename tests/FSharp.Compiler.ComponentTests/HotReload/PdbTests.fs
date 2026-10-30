@@ -10,6 +10,7 @@ open Xunit
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
@@ -38,7 +39,7 @@ module PdbTests =
                 [],
                 2,
                 nonBranchingInstrsToCode [ I_seqpoint debugPoint; AI_ldc(DT_I4, ILConst.I4 returnValue); I_ret ],
-                None,
+                Some debugPoint,
                 None
             )
 
@@ -75,6 +76,33 @@ module PdbTests =
             0
             (mkILExportedTypes [])
             "v4.0.30319"
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Metadata capture preserves deterministic in-memory DLL and PDB bytes`` useSha1 =
+        let moduleDef = createModuleWithSeqPoints 42
+        let options =
+            { defaultWriterOptionsForTests testIlGlobals with
+                checksumAlgorithm = if useSha1 then HashAlgorithm.Sha1 else HashAlgorithm.Sha256 }
+
+        let ordinaryAssembly, ordinaryPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        let capturedAssembly, capturedPdb, _, snapshot = WriteILBinaryInMemoryWithArtifacts(options, moduleDef, id)
+        let repeatedAssembly, repeatedPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        Assert.Equal<byte>(ordinaryAssembly, capturedAssembly)
+        Assert.Equal<byte>(ordinaryAssembly, repeatedAssembly)
+        Assert.True(snapshot.HeapSizes.StringHeapSize > 0)
+
+        match ordinaryPdb, capturedPdb, repeatedPdb with
+        | Some ordinary, Some captured, Some repeated ->
+            Assert.NotEmpty ordinary
+            Assert.Equal<byte>(ordinary, captured)
+            Assert.Equal<byte>(ordinary, repeated)
+            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange ordinary)
+            let reader = provider.GetMetadataReader()
+            Assert.Contains(reader.MethodDebugInformation, fun handle ->
+                reader.GetMethodDebugInformation(handle).GetSequencePoints() |> Seq.isEmpty |> not)
+        | _ -> failwith "Expected a portable PDB from every in-memory emission."
 
     let private createBaselineWithArtifacts returnValue =
         let moduleDef = createModuleWithSeqPoints returnValue
