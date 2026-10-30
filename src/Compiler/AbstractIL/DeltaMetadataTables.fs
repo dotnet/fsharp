@@ -491,7 +491,7 @@ type DeltaMetadataTables(?heapOffsets: MetadataHeapOffsets) =
             else
                 invalidArg "entry" "GUID entries must be 16 bytes."
 
-        if Environment.GetEnvironmentVariable(EnvironmentVariableNames.HotReloadTraceMetadata) = "1" then
+        if isEnvVarSetToOne EnvironmentVariableNames.HotReloadTraceMetadata then
             let dumpGuid (bytes: byte[]) =
                 if bytes.Length >= 16 then
                     BitConverter.ToString(bytes, 0, 16)
