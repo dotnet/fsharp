@@ -848,9 +848,11 @@ type Type =
         let dllPath = Path.Combine(projectDir, "Library.dll")
         let projectPath = Path.Combine(projectDir, "Library.fsproj")
         let resourcePath = Path.Combine(projectDir, "payload.xaml")
+        let secondResourcePath = Path.Combine(projectDir, "second.xaml")
 
         File.WriteAllText(resourcePath, "<Page><TextBlock Text=\"v1\" /></Page>")
         File.WriteAllBytes(dllPath, [| 0uy |])
+        File.WriteAllText(secondResourcePath, "second")
 
         try
             let options =
@@ -859,12 +861,19 @@ type Type =
                     outputSwitch
                     dllPath
                     $"--resource:{resourcePath},HotReloadPayload"
+                    $"--resource:{secondResourcePath},SecondPayload"
+                    $"--resource:{resourcePath},DuplicatePayload"
+                    "--out"
                 |]
 
             let pathEquals left right =
                 String.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.Ordinal)
 
             let baselineTrackedInputs = TrackedInputs.compute projectPath options
+
+            Assert.Equal<string list>(
+                [ resourcePath; secondResourcePath ],
+                baselineTrackedInputs |> List.map _.Path)
 
             let trackedResource =
                 baselineTrackedInputs
