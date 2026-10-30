@@ -4712,20 +4712,12 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     mappings
 
-let writeBinaryInMemoryWithArtifacts (options: options, modul, normalizeAssemblyRefs) =
+let private writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) metadataSnapshotSink =
 
-    let stream = new MemoryStream()
+    use stream = new MemoryStream()
     let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None; referenceAssemblySignatureHash = None }
-    // Capture exactly one metadata snapshot for the emitted module so callers can persist baseline information.
-    let metadataSnapshotRef = ref None
-    let capture snapshot = metadataSnapshotRef := Some snapshot
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
-        writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) (Some capture)
-
-    let metadataSnapshot =
-        match !metadataSnapshotRef with
-        | Some snapshot -> snapshot
-        | None -> failwith "Metadata snapshot not captured"
+        writeBinaryAuxWithSnapshotSink (stream, options, modul, normalizeAssemblyRefs) metadataSnapshotSink
 
     let reopenOutput () =
         stream.Seek(0, SeekOrigin.Begin) |> ignore
@@ -4749,17 +4741,21 @@ let writeBinaryInMemoryWithArtifacts (options: options, modul, normalizeAssembly
             debugDeterministicPdbChunk,
             textV2P)
 
-    stream.Close()
-
-    stream.ToArray(), pdbBytes, mappings, metadataSnapshot
+    struct {| AssemblyBytes = stream.ToArray(); PdbBytes = pdbBytes; TokenMappings = mappings |}
 
 let WriteILBinaryFile (options: options, inputModule, normalizeAssemblyRefs) =
     writeBinaryFiles (options, inputModule, normalizeAssemblyRefs)
     |> ignore
 
 let WriteILBinaryInMemoryWithArtifacts (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
-    writeBinaryInMemoryWithArtifacts (options, inputModule, normalizeAssemblyRefs)
+    let mutable metadataSnapshot = ValueNone
+    let capture snapshot = metadataSnapshot <- ValueSome snapshot
+    let result = writeBinaryInMemory (options, inputModule, normalizeAssemblyRefs) (Some capture)
+
+    match metadataSnapshot with
+    | ValueSome snapshot -> result.AssemblyBytes, result.PdbBytes, result.TokenMappings, snapshot
+    | ValueNone -> failwith "Metadata snapshot not captured"
 
 let WriteILBinaryInMemory (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
-    let assemblyBytes, pdbBytes, _, _ = writeBinaryInMemoryWithArtifacts (options, inputModule, normalizeAssemblyRefs)
-    assemblyBytes, pdbBytes
+    let result = writeBinaryInMemory (options, inputModule, normalizeAssemblyRefs) None
+    result.AssemblyBytes, result.PdbBytes

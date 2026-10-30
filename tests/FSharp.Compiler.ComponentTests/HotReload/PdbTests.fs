@@ -10,6 +10,7 @@ open Xunit
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.IlxDeltaEmitter
@@ -28,7 +29,7 @@ module PdbTests =
         | value when value.Equals("true", StringComparison.OrdinalIgnoreCase) -> true
         | _ -> false
 
-    let private createMethodWithSeqPoint (ilg: ILGlobals) name returnValue sourceFile =
+    let private createMethodWithDebugRange (ilg: ILGlobals) name returnValue sourceFile includeDebugRange =
         let document = ILSourceDocument.Create(None, None, None, sourceFile)
         let debugPoint = ILDebugPoint.Create(document, 1, 1, 1, 20)
 
@@ -38,15 +39,18 @@ module PdbTests =
                 [],
                 2,
                 nonBranchingInstrsToCode [ I_seqpoint debugPoint; AI_ldc(DT_I4, ILConst.I4 returnValue); I_ret ],
-                None,
+                (if includeDebugRange then Some debugPoint else None),
                 None
             )
 
         mkILNonGenericStaticMethod (name, ILMemberAccess.Public, [], mkILReturn ilg.typ_Int32, methodBody)
 
-    let private createModuleWithSeqPoints returnValue =
+    let private createMethodWithSeqPoint ilg name returnValue sourceFile =
+        createMethodWithDebugRange ilg name returnValue sourceFile false
+
+    let private createModuleWithDebugRange includeDebugRange returnValue =
         let ilg = PrimaryAssemblyILGlobals
-        let methodDef = createMethodWithSeqPoint ilg "GetValue" returnValue "Sample.fs"
+        let methodDef = createMethodWithDebugRange ilg "GetValue" returnValue "Sample.fs" includeDebugRange
 
         let typeDef =
             mkILSimpleClass
@@ -75,6 +79,35 @@ module PdbTests =
             0
             (mkILExportedTypes [])
             "v4.0.30319"
+
+    let private createModuleWithSeqPoints returnValue = createModuleWithDebugRange false returnValue
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Metadata capture preserves deterministic in-memory DLL and PDB bytes`` useSha1 =
+        let moduleDef = createModuleWithDebugRange true 42
+        let options =
+            { defaultWriterOptionsForTests testIlGlobals with
+                checksumAlgorithm = if useSha1 then HashAlgorithm.Sha1 else HashAlgorithm.Sha256 }
+
+        let ordinaryAssembly, ordinaryPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        let capturedAssembly, capturedPdb, _, snapshot = WriteILBinaryInMemoryWithArtifacts(options, moduleDef, id)
+        let repeatedAssembly, repeatedPdb = WriteILBinaryInMemory(options, moduleDef, id)
+        Assert.Equal<byte>(ordinaryAssembly, capturedAssembly)
+        Assert.Equal<byte>(ordinaryAssembly, repeatedAssembly)
+        Assert.True(snapshot.HeapSizes.StringHeapSize > 0)
+
+        match ordinaryPdb, capturedPdb, repeatedPdb with
+        | Some ordinary, Some captured, Some repeated ->
+            Assert.NotEmpty ordinary
+            Assert.Equal<byte>(ordinary, captured)
+            Assert.Equal<byte>(ordinary, repeated)
+            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange ordinary)
+            let reader = provider.GetMetadataReader()
+            Assert.Contains(reader.MethodDebugInformation, fun handle ->
+                reader.GetMethodDebugInformation(handle).GetSequencePoints() |> Seq.isEmpty |> not)
+        | _ -> failwith "Expected a portable PDB from every in-memory emission."
 
     let private createBaselineWithArtifacts returnValue =
         let moduleDef = createModuleWithSeqPoints returnValue
