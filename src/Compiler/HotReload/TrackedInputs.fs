@@ -8,6 +8,7 @@
 module internal FSharp.Compiler.HotReload.TrackedInputs
 
 open System
+open System.Collections.Generic
 open System.IO
 open FSharp.Compiler.IO
 
@@ -24,7 +25,7 @@ let private trimEnclosingQuotes (value: string) =
 
 let private tryNormalizeTrackedInputPath (projectDirectory: string) (path: string) =
     if String.IsNullOrWhiteSpace path then
-        None
+        ValueNone
     else
         let candidatePath =
             let path = trimEnclosingQuotes path
@@ -40,21 +41,22 @@ let private tryNormalizeTrackedInputPath (projectDirectory: string) (path: strin
                 candidatePath
 
         if FileSystem.FileExistsShim fullPath then
-            Some fullPath
+            ValueSome fullPath
         else
-            None
+            ValueNone
 
 let private tryGetTrackedInputPath (projectDirectory: string) (option: string) =
     let startsWith (prefix: string) =
         option.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
 
-    let valueFromPrefix prefixes =
-        prefixes
-        |> Seq.tryPick (fun (prefix: string) ->
+    let rec valueFromPrefix prefixes =
+        match prefixes with
+        | [] -> ValueNone
+        | (prefix: string) :: rest ->
             if startsWith prefix && option.Length > prefix.Length then
-                Some(option.Substring(prefix.Length))
+                ValueSome(option.Substring(prefix.Length))
             else
-                None)
+                valueFromPrefix rest
 
     let normalizeResourceOptionValue (value: string) =
         let normalized = trimEnclosingQuotes value
@@ -67,21 +69,22 @@ let private tryGetTrackedInputPath (projectDirectory: string) (option: string) =
 
     let tryPathFromPrefixedOption prefixes valueNormalizer =
         valueFromPrefix prefixes
-        |> Option.map valueNormalizer
-        |> Option.bind (tryNormalizeTrackedInputPath projectDirectory)
+        |> ValueOption.map valueNormalizer
+        |> ValueOption.bind (tryNormalizeTrackedInputPath projectDirectory)
 
     if String.IsNullOrWhiteSpace option then
-        None
+        ValueNone
     elif
         startsWith "-r:"
         || startsWith "--reference:"
         || startsWith "--out:"
         || startsWith "-o:"
     then
-        None
+        ValueNone
     elif option.StartsWith("-", StringComparison.Ordinal) then
         tryPathFromPrefixedOption [ "--resource:"; "-resource:"; "--res:"; "-res:" ] normalizeResourceOptionValue
-        |> Option.orElseWith (fun () -> tryPathFromPrefixedOption [ "--win32res:"; "--keyfile:"; "--load:"; "--use:" ] trimEnclosingQuotes)
+        |> ValueOption.orElseWith (fun () ->
+            tryPathFromPrefixedOption [ "--win32res:"; "--keyfile:"; "--load:"; "--use:" ] trimEnclosingQuotes)
     else
         tryNormalizeTrackedInputPath projectDirectory option
 
@@ -97,32 +100,26 @@ let compute (projectFileName: string) (otherOptions: string seq) : TrackedInput 
     let projectDirectory =
         projectFileName
         |> Path.GetDirectoryName
-        |> Option.ofObj
-        |> Option.defaultValue ""
+        |> ValueOption.ofObj
+        |> ValueOption.defaultValue ""
 
-    let rec collectTrackedInputs skipNextOutput tracked options =
-        match options with
-        | [] -> tracked
-        | _ :: tail when skipNextOutput -> collectTrackedInputs false tracked tail
-        | option :: tail when isSplitOutputOption option ->
-            // Split output flags are followed by an output path that should not be tracked as an input dependency.
-            collectTrackedInputs true tracked tail
-        | option :: tail ->
-            let updatedTracked =
+    let seen = HashSet<string>(StringComparer.Ordinal)
+    let mutable skipNextOutput = false
+
+    [
+        for option in otherOptions do
+            if skipNextOutput then
+                skipNextOutput <- false
+            elif isSplitOutputOption option then
+                skipNextOutput <- true
+            else
                 match tryGetTrackedInputPath projectDirectory option with
-                | Some path -> path :: tracked
-                | None -> tracked
-
-            collectTrackedInputs false updatedTracked tail
-
-    otherOptions
-    |> Seq.toList
-    |> collectTrackedInputs false []
-    |> List.rev
-    |> Seq.distinct
-    |> Seq.map (fun path ->
-        {
-            Path = path
-            LastModified = FileSystem.GetLastWriteTimeShim path
-        })
-    |> Seq.toList
+                | ValueSome path when seen.Add path ->
+                    yield
+                        {
+                            Path = path
+                            LastModified = FileSystem.GetLastWriteTimeShim path
+                        }
+                | ValueSome _
+                | ValueNone -> ()
+    ]
