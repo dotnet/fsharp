@@ -902,7 +902,8 @@ type FSharpHotReloadSession
     let runSerializedAsync (operation: unit -> Async<'T>) : Async<'T> =
         async {
             ensureNotDisposed ()
-            do! operationGate.WaitAsync() |> Async.AwaitTask
+            let! cancellationToken = Async.CancellationToken
+            do! operationGate.WaitAsync(cancellationToken) |> Async.AwaitTask
 
             try
                 ensureNotDisposed ()
