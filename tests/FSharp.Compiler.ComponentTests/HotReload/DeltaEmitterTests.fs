@@ -1124,9 +1124,6 @@ module DeltaEmitterTests =
             printfn "MethodBodies count = %d" delta.MethodBodies.Length
         Assert.NotEmpty(delta.Metadata)
         Assert.NotEmpty(delta.IL)
-        match delta.Pdb with
-        | Some _ -> ()
-        | None -> ()
         let bodyInfo = Assert.Single(delta.MethodBodies)
         Assert.Equal(0x06000001, bodyInfo.MethodToken)
         Assert.True(bodyInfo.CodeLength > 0)
@@ -1533,9 +1530,48 @@ module DeltaEmitterTests =
                 (TableNames.Method, 0x00000002)
             |]
         Assert.Equal<(TableName * int) seq>(expectedMap, delta.EncMap)
-        match delta.Pdb with
-        | Some pdb -> Assert.True(pdb.Length >= 0)
-        | None -> ()
+
+    [<Fact>]
+    let ``emitDelta preserves portable PDB documents and sequence points`` () =
+        let artifacts = TestHelpers.createBaselineFromModule (TestHelpers.createMethodModule "before")
+
+        try
+            let baseline = artifacts.Baseline
+            let key = methodKeyByName baseline "Sample.MethodDemo" "GetMessage"
+            let request =
+                { IlxDeltaRequest.Baseline = baseline
+                  UpdatedTypes = [ "Sample.MethodDemo" ]
+                  UpdatedMethods = [ key ]
+                  UpdatedAccessors = []
+                  Module = TestHelpers.createMethodModule "after" |> TestHelpers.withDebuggableAttribute
+                  SymbolChanges = None
+                  CurrentGeneration = 1
+                  PreviousGenerationId = None
+                  SynthesizedNames = None
+                  EmittedArtifacts = None }
+
+            let delta = emitDelta request
+            let pdb = delta.Pdb |> Option.defaultWith (fun () -> failwith "Expected a portable PDB delta.")
+            let repeated = (emitDelta request).Pdb |> Option.defaultWith (fun () -> failwith "Expected a repeated portable PDB delta.")
+            Assert.Equal<byte>(pdb, repeated)
+            use provider = MetadataReaderProvider.FromPortablePdbImage(ImmutableArray.CreateRange pdb)
+            let reader = provider.GetMetadataReader()
+            let documentHandle = Assert.Single reader.Documents
+            let document = reader.GetDocument documentHandle
+            Assert.Equal("MethodDemo.fs", reader.GetString document.Name)
+            Assert.InRange(MetadataTokens.GetHeapOffset document.Name, 1, reader.GetHeapSize(HeapIndex.Blob) - 1)
+
+            let info = reader.GetMethodDebugInformation(Assert.Single reader.MethodDebugInformation)
+            Assert.InRange(MetadataTokens.GetHeapOffset info.SequencePointsBlob, 1, reader.GetHeapSize(HeapIndex.Blob) - 1)
+            let point = info.GetSequencePoints() |> Seq.toArray |> Assert.Single
+            Assert.Equal(documentHandle, point.Document)
+            Assert.Equal(1, point.StartLine)
+            Assert.Equal(20, point.EndColumn)
+            let expectedToken = 0x31000000 ||| (baseline.MethodTokens[key] &&& 0x00FFFFFF)
+            Assert.Equal(expectedToken, MetadataTokens.GetToken(Assert.Single(reader.GetEditAndContinueMapEntries())))
+        finally
+            File.Delete artifacts.AssemblyPath
+            artifacts.PdbPath |> Option.iter File.Delete
 
     [<Fact>]
     let ``emitDelta adds method metadata rows for new method`` () =
