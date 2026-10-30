@@ -160,6 +160,8 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
     Assert.Equal(expected, actual)
 
 let private bodyMargin = String.replicate 37 " "
+let private declarationMargin = String.replicate 17 " "
+let private continuationMargin = String.replicate 21 " "
 
 let placements =
     scenarios
@@ -179,6 +181,10 @@ let placements =
             ("use in the body of a nested module declared on one line with an attribute",
              "module Module1\n[<System.Obsolete>] module Module2 = let y = Console.WriteLine 42\n",
              $"module Module1\n[<System.Obsolete>] module Module2 =\n{bodyMargin}open System\n\n{bodyMargin}let y = Console.WriteLine 42\n")
+
+            ("use after a block comment inside the body of a nested module declared on one line",
+             $"module Module1\nmodule Module2 = let y = (* body\n{continuationMargin}*) Console.WriteLine 42\n",
+             $"module Module1\nmodule Module2 =\n{declarationMargin}open System\n\n{declarationMargin}let y = (* body\n{continuationMargin}*) Console.WriteLine 42\n")
         ]
 
 [<Theory; MemberData(nameof placements)>]
