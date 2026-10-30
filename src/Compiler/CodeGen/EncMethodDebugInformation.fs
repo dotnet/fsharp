@@ -705,16 +705,16 @@ let computeMethodEncDebugInfo (g: TcGlobals) (implFiles: CheckedImplFile list) :
 
     let ambiguousNames =
         allMembers
-        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
-        |> List.countBy id
-        |> List.filter (fun (_, count) -> count > 1)
-        |> List.map fst
-        |> Set.ofList
+        |> Seq.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> Seq.countBy id
+        |> Seq.filter (fun (_, count) -> count > 1)
+        |> Seq.map fst
+        |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
     (Map.empty, allMembers)
     ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
         match symbol.CompiledName, occurrences with
-        | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+        | Some methName, _ :: _ when not (ambiguousNames.Contains methName) ->
             match tryCreateFromLambdaOccurrences occurrences with
             | Some info -> Map.add methName info acc
             | None -> acc
@@ -781,11 +781,11 @@ let computeMethodCustomDebugInfoRows
 
         let ambiguousNames =
             memberInputs
-            |> List.choose (fun input -> input.Symbol.CompiledName)
-            |> List.countBy id
-            |> List.filter (fun (_, count) -> count > 1)
-            |> List.map fst
-            |> Set.ofList
+            |> Seq.choose (fun input -> input.Symbol.CompiledName)
+            |> Seq.countBy id
+            |> Seq.filter (fun (_, count) -> count > 1)
+            |> Seq.map fst
+            |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
         let tryDeriveStatesFromContinuations (occurrences: LambdaOccurrence list) =
             let roots =
@@ -817,7 +817,7 @@ let computeMethodCustomDebugInfoRows
         (Map.empty, memberInputs)
         ||> List.fold (fun acc input ->
             match input.Symbol.CompiledName, input.HasResumableStateMachine with
-            | Some methName, true when not (Set.contains methName ambiguousNames) ->
+            | Some methName, true when not (ambiguousNames.Contains methName) ->
                 match tryDeriveStatesFromContinuations input.LambdaOccurrences with
                 | Some states -> Map.add methName states acc
                 | None -> acc

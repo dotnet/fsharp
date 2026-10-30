@@ -1,5 +1,7 @@
 namespace FSharp.Compiler.Service.Tests.HotReload
 
+open System.Collections.Generic
+
 open Xunit
 
 open FSharp.Compiler.ClosureNameAllocator
@@ -48,8 +50,13 @@ module ClosureNameAllocatorTests =
           RootExprStamp = 0L
           Range = Range.range0 }
 
+    let private refreshedNames (allocation: MemberClosureNameAllocation) =
+        allocation.RefreshedNamesByOccurrenceChain
+        |> Seq.map (fun (KeyValue(chain, name)) -> chain, name)
+        |> Map.ofSeq
+
     let private assignmentNames (allocation: MemberClosureNameAllocation) =
-        allocation.Assignments |> List.map (fun (_, assignment) -> assignment)
+        allocation.Assignments |> Seq.map (fun struct (_, assignment) -> assignment) |> Seq.toList
 
     [<Fact>]
     let ``generation-suffixed name format is baseName at hotreload hash g underscore o`` () =
@@ -99,7 +106,7 @@ module ClosureNameAllocatorTests =
         )
 
         // The chain-forward table is unchanged: same occurrences, same names.
-        Assert.Equal<Map<int list, string>>(baselineNames, allocation.RefreshedNamesByOccurrenceChain)
+        Assert.Equal<Map<int list, string>>(baselineNames, refreshedNames allocation)
 
     [<Fact>]
     let ``added occurrence gets generation-suffixed name while survivors keep theirs`` () =
@@ -132,7 +139,7 @@ module ClosureNameAllocatorTests =
                 [ [ 0 ], "f@hotreload"
                   [ 1 ], "f@hotreload#g2_o1"
                   [ 2 ], "f@hotreload-1" ],
-            allocation.RefreshedNamesByOccurrenceChain
+            refreshedNames allocation
         )
 
     [<Fact>]
@@ -155,11 +162,11 @@ module ClosureNameAllocatorTests =
 
         // The removed occurrence's name must not survive into the chained table.
         let chainedNames =
-            allocation.RefreshedNamesByOccurrenceChain |> Map.toList |> List.map snd
+            allocation.RefreshedNamesByOccurrenceChain.Values |> Seq.toList
 
         Assert.Equal<Map<int list, string>>(
             Map.ofList [ [ 0 ], "f@hotreload-1" ],
-            allocation.RefreshedNamesByOccurrenceChain
+            refreshedNames allocation
         )
 
         Assert.DoesNotContain("f@hotreload", chainedNames)
@@ -202,7 +209,7 @@ module ClosureNameAllocatorTests =
 
         Assert.DoesNotContain(
             "f@hotreload",
-            allocation.RefreshedNamesByOccurrenceChain |> Map.toList |> List.map snd
+            allocation.RefreshedNamesByOccurrenceChain.Values |> Seq.toList
         )
 
     [<Fact>]
@@ -348,7 +355,7 @@ let transform (input: int list) =
 
         let assignmentFor returnTy =
             gen2Allocation.Assignments
-            |> List.pick (fun (occ, assignment) ->
+            |> Seq.pick (fun struct (occ, assignment) ->
                 if occ.ReturnTypeIdentity = returnTy then Some assignment else None)
 
         // The surviving map lambda (int return) reuses the baseline name verbatim;
@@ -377,16 +384,52 @@ let transform (input: int list) =
 
         let reusedNames =
             gen3Allocation.Assignments
-            |> List.map (fun (_, assignment) ->
+            |> Seq.map (fun struct (_, assignment) ->
                 match assignment with
                 | ClosureNameAssignment.Reused name -> name
                 | ClosureNameAssignment.Fresh name ->
                     failwith $"Generation 3 must reuse every generation-2 name, but '{name}' was freshly allocated.")
-            |> Set.ofList
+            |> Set.ofSeq
 
         let gen2Names =
             gen2Allocation.Assignments
-            |> List.map (fun (_, assignment) -> assignment.Name)
-            |> Set.ofList
+            |> Seq.map (fun struct (_, assignment) -> assignment.Name)
+            |> Set.ofSeq
 
         Assert.Equal<Set<string>>(gen2Names, reusedNames)
+
+    [<Fact>]
+    let ``refreshed closure names use structural chains and keep the last duplicate`` () =
+        let baseline = [ mkOccurrence 0 [] [] 10; mkOccurrence 1 [] [] 20 ]
+        let baselineNames = Map.ofList [ [ 0 ], "first"; [ 1 ], "second" ]
+        let fresh = [ mkOccurrence 2 [] [] 10; mkOccurrence 2 [] [] 20 ]
+        let allocation = allocateMemberClosureNames baseline baselineNames fresh "f" 1
+        let separateChain = [ 1 + 1 ]
+
+        Assert.Equal(2, allocation.Assignments.Length)
+        Assert.Equal("second", allocation.RefreshedNamesByOccurrenceChain[separateChain])
+        Assert.Single(allocation.RefreshedNamesByOccurrenceChain) |> ignore
+
+    [<Fact>]
+    let ``closure capture snapshots remain independent after later writes and resets`` () =
+        let holder = FSharp.Compiler.ClosureNameAllocationState.ClosureNameStateHolder()
+        holder.BeginRecording()
+        holder.Record(1L, "first")
+        holder.RecordResumePoints("State", [ 1 ])
+        holder.RecordSynthesizedNameOverride("replay", "first")
+        let names = holder.RecordedNames()
+        let points = holder.RecordedResumePoints()
+        let overrides = holder.SynthesizedNameOverrides()
+
+        holder.Record(1L, "second")
+        holder.RecordResumePoints("State", [ 2 ])
+        holder.RecordSynthesizedNameOverride("replay", "second")
+        holder.Clear()
+        holder.BeginRecording()
+
+        Assert.Equal("first", names[1L])
+        Assert.Equal<int list>([ 1 ], points["State"])
+        Assert.Equal("first", overrides["replay"])
+        Assert.Empty(holder.RecordedNames())
+        Assert.Empty(holder.RecordedResumePoints())
+        Assert.Empty(holder.SynthesizedNameOverrides())

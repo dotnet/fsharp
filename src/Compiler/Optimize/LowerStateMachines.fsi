@@ -20,7 +20,7 @@ type LoweredStateMachine =
         /// assigned by the conversion, source range of the resumable entry). Hot reload
         /// compiles persist these as the EnC State Machine State Map; empty
         /// for state machines without suspension points.
-        resumptionPoints: (int * range) list
+        resumptionPoints: struct (int * range) list
 
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
