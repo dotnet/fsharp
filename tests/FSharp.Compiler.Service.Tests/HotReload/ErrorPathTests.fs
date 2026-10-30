@@ -4,6 +4,9 @@ open System
 open System.Collections.Immutable
 open Xunit
 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.HotReload
+open FSharp.Compiler.Service.Tests.DeltaMetadata
 open FSharp.Compiler.HotReloadState
 open FSharp.Compiler.HotReloadBaseline
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
@@ -83,6 +86,45 @@ module ErrorPathTests =
             EncClosureNames = Map.empty
             SequencePointSnapshots = Map.empty
         }
+
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Delta emission propagates cancellation and reports invalid metadata`` (cancel: bool) =
+        let failure: exn =
+            if cancel then OperationCanceledException "cancelled metadata read"
+            else BadImageFormatException "invalid metadata"
+
+        let ilModule =
+            { MetadataDeltaTestHelpers.createMethodModule () with
+                TypeDefs = mkILTypeDefsComputed (fun () -> raise failure) }
+
+        let store = HotReloadSessionStore()
+        let service = FSharpEditAndContinueLanguageService(store)
+        service.StartSession(createMinimalBaseline (), emptyCheckedAssembly) |> ignore
+
+        let request =
+            { IlModule = ilModule
+              UpdatedTypes = []
+              UpdatedMethods = []
+              UpdatedAccessors = []
+              SymbolChanges = None
+              RefreshedEncDebugInfos = Map.empty
+              RefreshedClosureNameRows = Map.empty }
+
+        if cancel then
+            let actual = Assert.Throws<OperationCanceledException>(fun () -> service.EmitDelta request |> ignore)
+            Assert.Same(failure, actual)
+        else
+            match service.EmitDelta request with
+            | Error(HotReloadError.DeltaEmissionException actual) -> Assert.Same(failure, actual)
+            | result -> failwithf "Expected the metadata error, got %A" result
+
+        match store.TryGetSession() with
+        | ValueSome session ->
+            Assert.Equal(1, session.CurrentGeneration)
+            Assert.True(session.PendingUpdate.IsNone)
+        | ValueNone -> failwith "The failed emit lost the active session."
 
     module ArgumentValidationTests =
 

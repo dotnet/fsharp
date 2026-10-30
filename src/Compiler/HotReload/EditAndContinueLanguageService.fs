@@ -2,6 +2,8 @@ namespace FSharp.Compiler.HotReload
 
 open System
 open System.IO
+
+open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
@@ -397,7 +399,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                     Ok { Delta = delta }
             with
             | HotReloadUnsupportedEditException message -> Error(HotReloadError.UnsupportedEdit [ RudeEditDiagnostics.unsupported message ])
-            | ex -> Error(HotReloadError.DeltaEmissionException ex)
+            | RecoverableException ex -> Error(HotReloadError.DeltaEmissionException ex)
 
     /// <summary>Returns <c>true</c> if a hot reload session is active.</summary>
     member _.IsSessionActive = sessionStore().TryGetSession().IsSome
