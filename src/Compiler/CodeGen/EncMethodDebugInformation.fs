@@ -21,8 +21,7 @@
 /// int packed from the occurrence ordinal chain of the lambda occurrence model
 /// (TypedTreeDiff.LambdaOccurrenceId). See tryEncodeOccurrenceKey/decodeOccurrenceKey.
 /// The blob format is identical either way, so mdv/Roslyn tooling can still decode our
-/// maps; only the *meaning* of the integers is F#-specific (debugger-interop
-/// caveat documented in docs/hot-reload-closure-mapping.md).
+/// maps. The occurrence keys identify typed-tree nodes rather than source offsets.
 module internal FSharp.Compiler.EncMethodDebugInformation
 
 open System
@@ -650,8 +649,7 @@ let private occurrenceOrdinalChain (occurrence: LambdaOccurrence) =
     List.rev occurrence.Id.ParentChain @ [ occurrence.Id.Ordinal ]
 
 /// Builds the EnC method debug information for one member from its lambda
-/// occurrence sequence. Modeling decisions (documented in
-/// docs/hot-reload-closure-mapping.md, "Baseline CDI emission as implemented"):
+/// occurrence sequence:
 ///   - MethodOrdinal stays UndefinedMethodOrdinal: F# needs no Roslyn-style
 ///     partial-method/ordinal disambiguation at baseline.
 ///   - One closure scope per occurrence, and lambda i references closure i: IlxGen

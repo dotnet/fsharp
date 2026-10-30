@@ -6666,12 +6666,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let g = cenv.g
     let amap = cenv.amap
 
-    // Hot reload: optionally emit the resumable state machine as a reference type (class)
-    // instead of a struct, so that adding a suspension point becomes an
-    // AddInstanceFieldToExistingType runtime edit rather than a forbidden value-type
-    // re-layout. This generalizes Roslyn's struct->class flip under EnC to the
-    // resumable-code substrate (task / taskSeq / user resumable CEs). Gated for now by an
-    // env var; wired to the hot-reload codegen flag once the class path is validated.
+    // Class state machines permit instance-field additions for new suspension points.
+    // The compiler flag or experimental environment switch enables this representation.
     let emitStateMachineAsClass =
         g.emitHotReloadClassStateMachines
         || FSharp.Compiler.EnvironmentHelpers.isEnvVarTruthy EnvironmentVariableNames.HotReloadClassStateMachines
@@ -7873,7 +7869,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
                 // Baseline capture: record the lambda stamp -> emitted closure type name so the
                 // fsc emit path can join it with the typed-tree lambda occurrence extraction of
-                // the same tree (the stamp bridge documented in docs/hot-reload-closure-mapping.md).
+                // the same tree through ClosureNameAllocator.computeBaselineClosureNameRows.
                 // No recorder begun -> strict no-op.
                 hotReloadNameState.RecordSynthesizedNameOverride(replayName, cloName)
                 hotReloadNameState.Record(uniq, cloName)

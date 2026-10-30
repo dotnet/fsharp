@@ -1,30 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-/// <summary>
-/// Side-channel state for occurrence-keyed closure naming in hot reload compiles
-/// (the lowering wiring described in docs/hot-reload-closure-mapping.md).
-///
-/// IlxGen names every closure class at a single call site
-/// (<c>GetIlxClosureFreeVars</c>), where the only identity shared with the typed-tree
-/// lambda occurrence model is the lambda expression's unique stamp
-/// (<c>Expr.Lambda(uniq, ...)</c>). This module carries two stamp-keyed tables across
-/// that seam, attached to the compilation's <c>CompilerGlobalState</c> with a
-/// <c>ConditionalWeakTable</c> exactly like <c>CompilerGeneratedNameMapState</c> so
-/// core compiler signatures stay stable:
-///
-///  - a <b>recorder</b> (baseline capture, flag-gated by the emit hook): the closure
-///    call site records stamp -> emitted closure type name, and the fsc emit path
-///    joins the recording with the occurrence extraction of the same typed tree to
-///    produce the baseline occurrence-chain -> name tables stored on the session
-///    baseline;
-///  - an <b>assigned-name table</b> (delta compiles): the emit hook runs the
-///    occurrence-keyed allocator before lowering and installs stamp -> assigned name;
-///    the closure call site consults it FIRST and falls back to the replayable name
-///    map when the stamp is absent.
-///
-/// When no state is installed for an owner every operation is a no-op/ValueNone, so
-/// flag-off and non-session compiles are byte-identical to upstream behavior.
-/// </summary>
+/// Connects typed-tree occurrence identities to closure names at the IlxGen stamp boundary.
+/// Each CompilerGlobalState owns its capture and assignment tables through a weak reference.
+/// IlxGen resolves the holder once per code generation run. No holder exists before capture or assignment.
 module internal FSharp.Compiler.ClosureNameAllocationState
 
 open System
@@ -37,6 +15,7 @@ open System.Runtime.CompilerServices
 /// every closure.
 [<Sealed>]
 type ClosureNameStateHolder() =
+    // The lock protects capture lifecycle, name assignment, and independent snapshots.
     let syncRoot = obj ()
     let mutable recordedNamesByStamp: Dictionary<int64, string> voption = ValueNone
     let mutable assignedNamesByStamp: Map<int64, string> = Map.empty

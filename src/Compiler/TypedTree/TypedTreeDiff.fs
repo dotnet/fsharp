@@ -1811,8 +1811,7 @@ let private extractLambdaOccurrences
         match expr with
         | Expr.Lambda _ -> visitLambda parentChain expr
         | Expr.TyLambda _ ->
-            // Local type functions lower through a different IlxGen path (erased or TyFunc
-            // closures); keep members containing them on the legacy digest path for now.
+            // Local type functions use erased or TyFunc lowering, outside the lambda occurrence model.
             markUnsupported "a local type function"
         | Expr.Const _ -> ()
         | Expr.Val _ -> ()

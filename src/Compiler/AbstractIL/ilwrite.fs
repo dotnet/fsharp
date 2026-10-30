@@ -220,7 +220,7 @@ module RowElementTags =
     let [<Literal>] ResolutionScopeMax = 178
 
 // Metadata layout changes also affect AbstractIL/DeltaMetadataSerializer.fs and ILBaselineReader.fs.
-// Run tests/scripts/check-hotreload-metadata-parity.sh after changes to shared row encodings.
+// DeltaMetadata tests verify shared row encodings against the metadata builder.
 [<Struct>]
 type RowElement(tag: int32, idx: int32) =
 
