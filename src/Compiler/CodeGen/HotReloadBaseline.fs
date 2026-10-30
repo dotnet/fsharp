@@ -220,7 +220,7 @@ let rec private ilTypeShapeName (ty: ILType) =
     | ILType.Ptr elementType -> ilTypeShapeName elementType + "*"
     | ILType.Byref elementType -> ilTypeShapeName elementType + "&"
     | ILType.FunctionPointer signature ->
-        let args = signature.ArgTypes |> List.map ilTypeShapeName |> String.concat ","
+        let args = signature.ArgTypes |> Seq.map ilTypeShapeName |> String.concat ","
         $"fnptr({args})->{ilTypeShapeName signature.ReturnType}"
     | ILType.Modified(required, modifier, modifiedType) ->
         let modifierKind = if required then "modreq" else "modopt"
@@ -230,7 +230,7 @@ and private ilTypeSpecShapeName (typeSpec: ILTypeSpec) =
     if List.isEmpty typeSpec.GenericArgs then
         typeSpec.TypeRef.QualifiedName
     else
-        let args = typeSpec.GenericArgs |> List.map ilTypeShapeName |> String.concat ","
+        let args = typeSpec.GenericArgs |> Seq.map ilTypeShapeName |> String.concat ","
         $"{typeSpec.TypeRef.QualifiedName}<{args}>"
 
 let internal shapeOfSynthesizedTypeDef (typeDef: ILTypeDef) : SynthesizedTypeShape =

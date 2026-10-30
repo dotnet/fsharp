@@ -84,10 +84,11 @@ let emitDelta
         // baseline rows no longer share an order.
         let distinctTokens =
             addedOrChangedMethods
-            |> List.map (fun info -> info.MethodToken)
-            |> List.distinct
-            |> List.filter (fun token -> token <> 0)
-            |> List.sortBy (fun token -> MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle token))
+            |> Seq.map _.MethodToken
+            |> Seq.distinct
+            |> Seq.filter (fun token -> token <> 0)
+            |> Seq.sortBy (fun token -> MetadataTokens.GetRowNumber(MetadataTokens.MethodDefinitionHandle token))
+            |> Seq.toList
 
         if List.isEmpty distinctTokens then
             if shouldTracePdb () then

@@ -549,18 +549,17 @@ let serializeStateMachineStates (info: EncMethodDebugInformation) : byte[] =
 
         // Unlike the other two blobs the baseline here is min(minOffset, 0)
         // (Roslyn line 372).
-        let syntaxOffsetBaseline =
-            min (states |> List.map (fun s -> s.SyntaxOffset) |> List.min) 0
+        let syntaxOffsetBaseline = min (states |> List.minBy _.SyntaxOffset).SyntaxOffset 0
 
         builder.WriteCompressedInteger(-syntaxOffsetBaseline)
 
         // Roslyn's reader rejects more than 256 entries sharing one syntax offset
         // (relative ordinal must fit a byte, line 344); fail closed at write time.
-        for _, group in states |> List.groupBy (fun s -> s.SyntaxOffset) do
+        for _, group in states |> List.groupBy _.SyntaxOffset do
             if group.Length > 256 then
                 invalidArg (nameof info) $"more than 256 state machine states share syntax offset %d{group.Head.SyntaxOffset}"
 
-        for state in states |> List.sortBy (fun s -> s.SyntaxOffset) do
+        for state in states |> List.sortBy _.SyntaxOffset do
             builder.WriteCompressedSignedInteger state.StateNumber
             builder.WriteCompressedInteger(state.SyntaxOffset - syntaxOffsetBaseline)
 
@@ -697,16 +696,15 @@ let computeMethodEncDebugInfo (g: TcGlobals) (implFiles: CheckedImplFile list) :
 
     let ambiguousNames =
         allMembers
-        |> List.choose (fun (symbol, _) -> symbol.CompiledName)
-        |> List.countBy id
-        |> List.filter (fun (_, count) -> count > 1)
-        |> List.map fst
-        |> Set.ofList
+        |> Seq.choose (fun (symbol, _) -> symbol.CompiledName)
+        |> Seq.countBy id
+        |> Seq.choose (fun (name, count) -> if count > 1 then Some name else None)
+        |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
     (Map.empty, allMembers)
     ||> List.fold (fun acc (symbol: SymbolId, occurrences) ->
         match symbol.CompiledName, occurrences with
-        | Some methName, _ :: _ when not (Set.contains methName ambiguousNames) ->
+        | Some methName, _ :: _ when not (ambiguousNames.Contains methName) ->
             match tryCreateFromLambdaOccurrences occurrences with
             | Some info -> Map.add methName info acc
             | None -> acc
@@ -773,11 +771,10 @@ let computeMethodCustomDebugInfoRows
 
         let ambiguousNames =
             memberInputs
-            |> List.choose (fun input -> input.Symbol.CompiledName)
-            |> List.countBy id
-            |> List.filter (fun (_, count) -> count > 1)
-            |> List.map fst
-            |> Set.ofList
+            |> Seq.choose _.Symbol.CompiledName
+            |> Seq.countBy id
+            |> Seq.choose (fun (name, count) -> if count > 1 then Some name else None)
+            |> fun names -> ImmutableHashSet.CreateRange(StringComparer.Ordinal, names)
 
         let tryDeriveStatesFromContinuations (occurrences: LambdaOccurrence list) =
             let roots =
@@ -809,7 +806,7 @@ let computeMethodCustomDebugInfoRows
         (Map.empty, memberInputs)
         ||> List.fold (fun acc input ->
             match input.Symbol.CompiledName, input.HasResumableStateMachine with
-            | Some methName, true when not (Set.contains methName ambiguousNames) ->
+            | Some methName, true when not (ambiguousNames.Contains methName) ->
                 match tryDeriveStatesFromContinuations input.LambdaOccurrences with
                 | Some states -> Map.add methName states acc
                 | None -> acc
