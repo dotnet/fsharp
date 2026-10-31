@@ -573,6 +573,7 @@ type FrameworkImportsCache(size) =
         let tcGlobals =
             if tcGlobals.langVersion <> tcConfig.langVersion
                 || tcGlobals.realsig <> tcConfig.realsig
+                || tcGlobals.emitHotReloadClassStateMachines <> tcConfig.emitHotReloadClassStateMachines
                 || tcGlobals.pathMap <> tcConfig.pathMap then
                     TcGlobals(
                         tcGlobals.compilingFSharpCore,
@@ -588,6 +589,7 @@ type FrameworkImportsCache(size) =
                         tcConfig.pathMap,
                         tcConfig.langVersion,
                         tcConfig.realsig,
+                        tcConfig.emitHotReloadClassStateMachines,
                         tcConfig.compilationMode
                     )
 

@@ -289,7 +289,7 @@ let ``active pattern catalogue preserves case identity and source names`` (caseN
     Assert.Equal(Some [| "Catalogue"; "Patterns" |], symbol.TopRequireQualifiedAccessParent)
     Assert.Equal(None, symbol.AutoOpenParent)
     Assert.Equal(symbol.FullName, symbol.UnresolvedSymbol.FullName)
-    Assert.Equal([| "Catalogue" |], symbol.UnresolvedSymbol.Namespace)
+    Assert.Equal<string array>([| "Catalogue" |], symbol.UnresolvedSymbol.Namespace)
     let sourceName = FSharp.Compiler.Syntax.PrettyNaming.NormalizeIdentifierBackticks caseName
     Assert.Equal($"Patterns.{sourceName}", symbol.UnresolvedSymbol.DisplayName)
     Assert.Equal(EntityKind.FunctionOrValue true, symbol.Kind LookupType.Precise)
