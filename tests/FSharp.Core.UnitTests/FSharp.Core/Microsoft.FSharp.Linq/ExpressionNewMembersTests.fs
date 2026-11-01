@@ -9,6 +9,9 @@ open Microsoft.FSharp.Linq.RuntimeHelpers
 
 type PrivateRepresentation = private { Hidden: int }
 
+type OnlyId(id: int) =
+    member _.Id = id
+
 let private construction (lambda: Expression<'T>) =
     match lambda.Body with
     | :? NewExpression as construction -> construction
@@ -63,3 +66,20 @@ let ``Anonymous record construction names the field each argument becomes`` () =
 let ``Record whose fields cannot be read publicly is built without members`` () =
     let record = construction (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int, _>(fun x -> { Hidden = x }) @>)
     Assert.Null record.Members
+
+[<Fact>]
+let ``Constructor marked as an anonymous object keeps the properties of its type`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, OnlyId>(fun x -> LeafExpressionConverter.NewAnonymousObjectHelper(OnlyId x)) @>
+
+    Assert.Equal<string list>([ "Id" ], memberNames (construction lambda))
+    Assert.Equal(3, lambda.Compile().Invoke(3).Id)
+
+[<Fact>]
+let ``Anonymous object of the query translation names its items`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, _>(fun x -> LeafExpressionConverter.NewAnonymousObjectHelper(AnonymousObject<int, string>(x, "a"))) @>
+
+    Assert.Equal<string list>([ "Item1"; "Item2" ], memberNames (construction lambda))
