@@ -34,6 +34,9 @@ let private matchingLinesOrNone (data: Data) =
 /// A record that is equal to itself only: two that are built alike are different.
 [<ReferenceEquality>]
 type PersonOnce = { NameOnce: string; AgeOnce: int }
+
+/// A record with a tuple in it
+type PairHolder = { Pair: string * int }
 let private rebuiltGroup =
     [ Violation.RuntimeHelperCall "RebuiltGroupings`2.Of" ]
 
@@ -317,6 +320,41 @@ let private groupings () =
                   select (g.Key, g.Count(fun p -> p = p))
               })
           (customers >> Seq.countBy _.City)
+
+      // A tuple or a record inside the element is one object as well, however often a lambda over the group reads it.
+      // The element is built again for the lambda, so it reads members of an object that has none named.
+      Scenario.rows
+          "groupValBy a record, a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy { Pair = (c.Name, c.Age) } c.City into g
+                  select (g.Key, g.Count(fun x -> obj.ReferenceEquals(x.Pair, x.Pair)))
+              })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "PairHolder" ]
+
+      Scenario.rows
+          "groupValBy a tuple, a record in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy (c.Id, { NameOnce = c.Name; AgeOnce = c.Age }) c.City into g
+                  select (g.Key, g.Count(fun (_, p) -> p = p))
+              })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.rows
+          "groupValBy a tuple, a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy (c.Id, (c.Name, c.Age)) c.City into g
+                  select (g.Key, g.Count(fun (_, inner) -> obj.ReferenceEquals(inner, inner)))
+              })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
 
       Scenario.rows
           "find among the groups of a nested query"
