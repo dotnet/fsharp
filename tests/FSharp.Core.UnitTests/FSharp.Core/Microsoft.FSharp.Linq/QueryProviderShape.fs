@@ -374,6 +374,20 @@ module ProviderShape =
         | :? ConstantExpression as root -> obj.ReferenceEquals(root.Value, query)
         | _ -> false
 
+    /// The lambda that a call gives when the provider computes it before it translates, as it does for a selector
+    /// that reads nothing of the tree: a nested lambda that the compiler turned into a call. Nothing, if the call
+    /// fails.
+    let private computedLambda (node: Expression) =
+        if typeof<LambdaExpression>.IsAssignableFrom node.Type && isComputedByProvider node then
+            try
+                match Expression.Lambda(node).Compile().DynamicInvoke() with
+                | :? LambdaExpression as lambda -> ValueSome lambda
+                | _ -> ValueNone
+            with _ ->
+                ValueNone
+        else
+            ValueNone
+
     /// Finds members read from elements that an earlier operator built without naming them: the provider has to
     /// take apart an object it was not told how to. Every chain of operators is followed, the ones inside lambdas
     /// and the ones of a query captured from earlier too, and each parameter of a lambda is tied to the sequence
@@ -390,6 +404,7 @@ module ProviderShape =
             if index < call.Arguments.Count then
                 match call.Arguments.[index] with
                 | Lambda lambda -> ValueSome lambda
+                | :? MethodCallExpression as computed -> computedLambda computed
                 | _ -> ValueNone
             else
                 ValueNone
@@ -532,6 +547,11 @@ module ProviderShape =
         override this.VisitMethodCall node =
             if isLinqOperator node then
                 this.Check node
+
+            // The lambda such a call gives is part of what the provider translates
+            match computedLambda node with
+            | ValueSome lambda -> this.Visit lambda |> ignore
+            | ValueNone -> ()
 
             base.VisitMethodCall node
 

@@ -438,6 +438,50 @@ let ``Record fields are not reordered next to a statement in a query over a quer
     Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
 
 [<Fact>]
+let ``Let read by a nested lambda that also reads the parameter is evaluated once for each outer element`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, Expression<Func<int, int>>>(fun x -> let n = counter.Next() in LinqExpr.FromFunc(fun y -> y + n + x)) @>
+
+    let add = lambda.Compile().Invoke(0).Compile()
+    Assert.Equal(3, add.Invoke 2)
+    Assert.Equal(4, add.Invoke 3)
+    Assert.Equal(1, counter.Calls)
+
+[<Fact>]
+let ``Lambda inside the value of a let does not make a nested lambda read the tree`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, Expression<Func<int, int>>>(fun _ -> let n = abs (counter.Next()) in LinqExpr.FromFunc(fun y -> y + n)) @>
+
+    match bodyOf lambda with
+    | :? MethodCallExpression as call -> Assert.Equal(ExpressionType.Call, call.Arguments.[0].NodeType)
+    | body -> Assert.Fail $"Expected a call of FromFunc, got {body}"
+
+    let add = lambda.Compile().Invoke(0).Compile()
+    Assert.Equal(3, add.Invoke 2)
+    Assert.Equal(4, add.Invoke 3)
+    Assert.Equal(1, counter.Calls)
+
+[<Fact>]
+let ``Nested lambda that cannot be converted fails only where it is reached`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@
+                Func<int, Expression<Func<int, bool>>>(fun x ->
+                    if x < 0 then
+                        LinqExpr.FromFunc(fun y -> (try y = x with _ -> false))
+                    else
+                        LinqExpr.FromFunc(fun y -> y = x))
+            @>
+
+    Assert.True(lambda.Compile().Invoke(1).Compile().Invoke 1)
+
+[<Fact>]
 let ``Let written by hand is evaluated before the fields that follow it`` () =
     let counter = Counter()
 
@@ -531,48 +575,30 @@ let ``Let of an arithmetic on a call keeps its block and runs the call once`` ()
     Assert.Equal(1, counter.Calls)
 
 [<Fact>]
-let ``Let read by a nested lambda that also reads the parameter is evaluated once for each outer element`` () =
-    let counter = Counter()
-
+let ``Lambda nested in an expression lambda is quoted when it reads a let of arithmetic on the parameter`` () =
     let lambda =
         LeafExpressionConverter.QuotationToLambdaExpression
-            <@ Func<int, Expression<Func<int, int>>>(fun x -> let n = counter.Next() in LinqExpr.FromFunc(fun y -> y + n + x)) @>
-
-    let add = lambda.Compile().Invoke(0).Compile()
-    Assert.Equal(3, add.Invoke 2)
-    Assert.Equal(4, add.Invoke 3)
-    Assert.Equal(1, counter.Calls)
-
-[<Fact>]
-let ``Lambda inside the value of a let does not make a nested lambda read the tree`` () =
-    let counter = Counter()
-
-    let lambda =
-        LeafExpressionConverter.QuotationToLambdaExpression
-            <@ Func<int, Expression<Func<int, int>>>(fun _ -> let n = abs (counter.Next()) in LinqExpr.FromFunc(fun y -> y + n)) @>
+            <@ Func<int, Expression<Func<int, int>>>(fun x -> let n = x + 1 in LinqExpr.FromFunc(fun y -> y + n)) @>
 
     match bodyOf lambda with
-    | :? MethodCallExpression as call -> Assert.Equal(ExpressionType.Call, call.Arguments.[0].NodeType)
+    | :? MethodCallExpression as call -> Assert.Equal(ExpressionType.Quote, call.Arguments.[0].NodeType)
     | body -> Assert.Fail $"Expected a call of FromFunc, got {body}"
 
-    let add = lambda.Compile().Invoke(0).Compile()
-    Assert.Equal(3, add.Invoke 2)
-    Assert.Equal(4, add.Invoke 3)
-    Assert.Equal(1, counter.Calls)
+    Assert.False(hasBlock lambda)
+    Assert.Equal(6, lambda.Compile().Invoke(2).Compile().Invoke 3)
 
 [<Fact>]
-let ``Nested lambda that cannot be converted fails only where it is reached`` () =
+let ``Let of an arithmetic on a call read by a nested lambda is evaluated once for each outer element`` () =
+    let counter = Counter()
+
     let lambda =
         LeafExpressionConverter.QuotationToLambdaExpression
-            <@
-                Func<int, Expression<Func<int, bool>>>(fun x ->
-                    if x < 0 then
-                        LinqExpr.FromFunc(fun y -> (try y = x with _ -> false))
-                    else
-                        LinqExpr.FromFunc(fun y -> y = x))
-            @>
+            <@ Func<int, Expression<Func<int, int>>>(fun x -> let n = counter.Next() + x in LinqExpr.FromFunc(fun y -> y + n)) @>
 
-    Assert.True(lambda.Compile().Invoke(1).Compile().Invoke 1)
+    let add = lambda.Compile().Invoke(10).Compile()
+    Assert.Equal(14, add.Invoke 3)
+    Assert.Equal(15, add.Invoke 4)
+    Assert.Equal(1, counter.Calls)
 
 [<Fact>]
 let ``Record fields written out of order are evaluated as written in an expression lambda`` () =

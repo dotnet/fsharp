@@ -8,6 +8,7 @@ open System.Linq
 open System.Linq.Expressions
 open System.Reflection
 open Xunit
+open Microsoft.FSharp.Linq.RuntimeHelpers
 
 type QueryShapeTests() =
 
@@ -34,6 +35,11 @@ type QueryShapeTests() =
 
     [<Theory; MemberData(nameof QueryShapeTests.MethodSyntax)>]
     member _.``Method syntax``(scenario: Scenario) = Scenario.check scenario
+
+/// Selectors that an expression gives when it is run, as the compiler turns a lambda nested in a lambda into a call
+type ComputedSelectors =
+    static member PositiveItem1() : Expression<Func<int * float, bool>> =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int * float, bool>(fun (a, _) -> a > 0) @>
 
 /// Trees built by hand, the way a C# compiler builds them, to check the validator itself. They do not depend on how
 /// FSharp.Core translates a query, so they mean the same in every branch.
@@ -71,6 +77,10 @@ module private ValidatorTrees =
         let body = pair orderPair [ Expression.Property(o, "Id"); Expression.Property(o, "Total") ] named
 
         call "Select" [ typeof<Order>; orderPair ] [ orders.Expression; quote (Expression.Lambda(body, o)) ]
+
+    /// source.Where(ComputedSelectors.PositiveItem1()), a call that gives t => t.Item1 > 0
+    let whereComputedItem1Positive (source: Expression) =
+        call "Where" [ orderPair ] [ source; Expression.Call(typeof<ComputedSelectors>.GetMethod "PositiveItem1") :> Expression ]
 
     /// source.Where(t => t.Item1 > 0)
     let whereItem1Positive (source: Expression) (tuple: Type) =
@@ -148,6 +158,13 @@ type ProviderShapeValidatorTests() =
 
         Assert.Equal<Violation list>(unnamedRead, reported (capturing false))
         Assert.Empty(reported (capturing true))
+
+    [<Fact>]
+    member _.``A selector that the provider computes is checked``() =
+        let computed named = ValidatorTrees.whereComputedItem1Positive (ValidatorTrees.orderPairs named)
+
+        Assert.Equal<Violation list>(unnamedRead, reported (computed false))
+        Assert.Empty(reported (computed true))
 
     [<Fact>]
     member _.``An identity Select keeps the elements unnamed``() =
