@@ -368,14 +368,50 @@ module internal Adapters =
         | RebuiltGrouping _ -> true
         | _ -> false
 
-    /// Whether the expression uses the variable as a value of its own, and not only for its members
-    let rec usesWhole (v: Var) (expr: Expr) =
+    /// The part of the rebuilt element that a chain of member reads takes from the variable: the element itself, an
+    /// item of a tuple or a field of a record in it, or an item or a field of one of those
+    let rec partRead (v: Var) (rebuilt: Expr) (expr: Expr) =
         match expr with
-        | Patterns.TupleGet(Patterns.Var _, _)
-        | Patterns.PropertyGet(Some(Patterns.Var _), _, []) -> false
-        | ExprShape.ShapeVar used -> used = v
-        | ExprShape.ShapeLambda(_, body) -> usesWhole v body
-        | ExprShape.ShapeCombination(_, args) -> List.exists (usesWhole v) args
+        | Patterns.Var used when used = v -> ValueSome rebuilt
+        | Patterns.TupleGet(inner, index) ->
+            match partRead v rebuilt inner with
+            | ValueSome(Patterns.NewTuple parts) when index < parts.Length -> ValueSome parts.[index]
+            | _ -> ValueNone
+        | Patterns.PropertyGet(Some inner, property, []) ->
+            match partRead v rebuilt inner with
+            | ValueSome(Patterns.NewRecord(recordType, parts)) ->
+                let fields = FSharpType.GetRecordFields recordType
+
+                match fields |> Array.tryFindIndex (fun field -> field.Name = property.Name) with
+                | Some index when index < parts.Length -> ValueSome parts.[index]
+                | _ -> ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
+
+    /// An object that the rebuilding makes anew each time it is evaluated, and that can be told from another by its
+    /// reference: a tuple or a record of a class
+    let makesObject (part: Expr) =
+        match part with
+        | Patterns.NewTuple _
+        | Patterns.NewRecord _ -> not part.Type.IsValueType
+        | _ -> false
+
+    /// Whether the expression uses the element, or a tuple or record that the rebuilding makes in it, as a value of
+    /// its own and not only for its members. Where the rebuilding takes the place of the variable, each such use
+    /// is an object of its own, and not the one object the element has.
+    let rec usesWhole (v: Var) (rebuilt: Expr) (expr: Expr) =
+        match expr with
+        | Patterns.Var used when used = v -> true
+        | _ ->
+            match partRead v rebuilt expr with
+            | ValueSome part -> makesObject part
+            | ValueNone ->
+                match expr with
+                | Patterns.TupleGet(Patterns.Var _, _)
+                | Patterns.PropertyGet(Some(Patterns.Var _), _, []) -> false
+                | ExprShape.ShapeVar _ -> false
+                | ExprShape.ShapeLambda(_, body) -> usesWhole v rebuilt body
+                | ExprShape.ShapeCombination(_, args) -> List.exists (usesWhole v rebuilt) args
 
     /// 'Enumerable.M(source.Select(element => rebuilt), f)' as 'Enumerable.M(source, element => f(rebuilt))', and
     /// 'source.Select(element => rebuilt).Count()' as 'source.Count()'. Only for a projection that rebuilds the
@@ -423,7 +459,7 @@ module internal Adapters =
                 | ("Count" | "LongCount" | "Any" | "All" | "Sum" | "Average" | "Min" | "Max" | "Select" | "SelectMany"),
                   [ Patterns.NewDelegate(_, [ consumed ], body) ] when
                     Type.op_Equality (consumed.Type, projection.Type)
-                    && (rebuildsOneObject projection || not (usesWhole consumed body))
+                    && (rebuildsOneObject projection || not (usesWhole consumed projection body))
                     ->
                     let fused = fuse ()
 
