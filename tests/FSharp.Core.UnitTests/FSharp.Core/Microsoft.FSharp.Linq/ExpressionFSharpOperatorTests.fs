@@ -114,3 +114,31 @@ let ``Compiled min and max treat NaN and signed zero as the F# functions do`` ()
     Assert.True(Double.IsNaN(max nan 0.0) = Double.IsNaN(maxWith.Invoke nan))
     Assert.Equal(BitConverter.DoubleToInt64Bits(min -0.0 0.0), BitConverter.DoubleToInt64Bits(minWith.Invoke -0.0))
     Assert.Equal(BitConverter.DoubleToInt64Bits(max -0.0 0.0), BitConverter.DoubleToInt64Bits(maxWith.Invoke -0.0))
+
+[<Fact>]
+let ``fst of a tuple written in a query evaluates the other item`` () =
+    let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
+
+    Assert.Throws<DivideByZeroException>(fun () ->
+        query {
+            for x in source do
+                select (x, "a") into t
+                select (fst (fst t, 1 / (fst t - fst t)))
+        }
+        |> Seq.toList
+        |> ignore)
+    |> ignore
+
+[<Fact>]
+let ``snd of a tuple written in a query evaluates the other item`` () =
+    let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
+
+    Assert.Throws<DivideByZeroException>(fun () ->
+        query {
+            for x in source do
+                select (x, "a") into t
+                select (snd (1 / (fst t - fst t), snd t))
+        }
+        |> Seq.toList
+        |> ignore)
+    |> ignore
