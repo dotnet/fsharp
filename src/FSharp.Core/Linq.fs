@@ -461,22 +461,35 @@ module LeafExpressionConverter =
         | ExprShape.ShapeLambda (_, body) -> countUses v body
         | ExprShape.ShapeCombination (_, args) -> List.sumBy (countUses v) args
 
-    /// The record that a chain of lets leads to
+    /// The record that a chain of lets leads to, with the arguments of its construction
     let rec (|NewRecordAfterLets|_|) (expr: Expr) =
         match expr with
-        | Let (_, _, NewRecordAfterLets args) -> Some args
-        | NewRecord (_, args) -> Some args
+        | Let (_, _, NewRecordAfterLets record) -> Some record
+        | NewRecord (recordType, args) -> Some (recordType, args)
         | _ -> None
 
     /// The compiler evaluates record fields in the order they are written, and binds the ones written before
-    /// their place to variables: 'let v = e in .. NewRecord (.., v, ..)'. This is such a 'let', and its body with
-    /// the value in the place of the variable, which evaluates the fields in the order they are declared.
+    /// their place to variables named after the field: 'let Second = e in .. NewRecord (.., Second, ..)'.
+    /// Whether the variable is such a one: the argument in the place of a field is the variable named like it.
+    /// A 'let' of the code with another name evaluates its value first, whatever the record that follows.
+    let isHoistedField (v: Var) (recordType: Type) (args: Expr list) =
+        let fields = FSharpType.GetRecordFields (recordType, showAll)
+
+        args
+        |> List.indexed
+        |> List.exists (fun (index, arg) ->
+            match arg with
+            | Var used -> used = v && index < fields.Length && String.Equals (fields.[index].Name, v.Name, StringComparison.Ordinal)
+            | _ -> false)
+
+    /// This is such a 'let', and its body with the value in the place of the variable, which evaluates the
+    /// fields in the order they are declared.
     let (|HoistedRecordField|_|) (enabled: bool) (expr: Expr) =
         match expr with
         | Let (v, e, body) when enabled && not v.IsMutable ->
             match body with
-            | NewRecordAfterLets args
-                when args |> List.exists (function Var arg -> arg = v | _ -> false)
+            | NewRecordAfterLets (recordType, args)
+                when isHoistedField v recordType args
                      && countUses v body = 1
                      && not (hasStatements expr) ->
                 Some (body.Substitute (fun used -> if used = v then Some e else None))
@@ -494,8 +507,8 @@ module LeafExpressionConverter =
         | _ -> false
 
     /// A type whose values cannot change and have no identity, so that its methods give an equal result for
-    /// equal arguments every time: a number, a string, a date and the like
-    let isPlainValueType (ty: Type) =
+    /// equal arguments every time: a number, a string, a date and the like, and a nullable of one of those
+    let rec isPlainValueType (ty: Type) =
         ty.IsPrimitive
         || ty.IsEnum
         || Type.op_Equality (ty, typeof<string>)
@@ -506,7 +519,7 @@ module LeafExpressionConverter =
         || Type.op_Equality (ty, typeof<Guid>)
         || (ty.IsGenericType
             && Type.op_Equality (ty.GetGenericTypeDefinition (), typedefof<Nullable<_>>)
-            && ty.GetGenericArguments().[0].IsValueType)
+            && isPlainValueType (ty.GetGenericArguments().[0]))
 
     /// A method of a plain value that gives a plain value, like 'ToUpper' of a string
     let isPlainValueMethod (call: MethodCallExpression) =
@@ -544,7 +557,11 @@ module LeafExpressionConverter =
         | :? MethodCallExpression as call ->
             isPlainValueMethod call
             && isRead letVariables call.Object
-            && call.Arguments |> Seq.forall (fun argument -> argument :? ConstantExpression || isElementRead letVariables argument)
+            // The method can run code of the user's on an argument that is no plain value, as often as it is made
+            && call.Arguments
+               |> Seq.forall (fun argument ->
+                   isPlainValueType argument.Type
+                   && (argument :? ConstantExpression || isElementRead letVariables argument))
         | _ -> isElementRead letVariables expr
 
     /// Whether the read of the variable is the first thing that evaluating the expression does, on every path:
@@ -988,11 +1005,12 @@ module LeafExpressionConverter =
             let isStructCopy = v.IsMutable && String.Equals (v.Name, "copyOfStruct", StringComparison.Ordinal)
 
             // A struct of the user's bound by a 'let' is a copy, and what is done to the copy must not reach
-            // the original, which the value would stand for.
+            // the original, which the value would stand for. The name the compiler gives to its copies makes no
+            // difference to that: only a copy of a plain value, which nothing is done to, gives way.
             let mayGiveWay =
                 env.substituteLets
                 && (not v.IsMutable || isStructCopy)
-                && (not v.Type.IsValueType || isPlainValueType v.Type || isStructCopy)
+                && (not v.Type.IsValueType || isPlainValueType v.Type)
                 && not (Type.op_Equality (eP.Type, typeof<Void>))
 
             // The Coerce case drops reference upcasts, and uses of the variable may need its own type.

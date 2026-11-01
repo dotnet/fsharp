@@ -78,6 +78,29 @@ type TallyHolder() =
 
 type Reading = { First: int; Second: int }
 
+let mutable private hashCalls = 0
+
+/// A struct whose hash is the number of times a hash was asked for
+[<Struct; CustomEquality; NoComparison>]
+type CountedHash(id: int) =
+    member _.Id = id
+
+    override _.GetHashCode() =
+        hashCalls <- hashCalls + 1
+        hashCalls
+
+    override _.Equals(_: obj) = false
+
+/// A formatting provider that counts how often it is asked for a format
+type CountingProvider() =
+    let mutable calls = 0
+    member _.Calls = calls
+
+    interface IFormatProvider with
+        member _.GetFormat(_: Type) =
+            calls <- calls + 1
+            null
+
 let private run (lambda: Expression<Func<int, 'T>>) (argument: int) = lambda.Compile().Invoke argument
 
 [<Fact>]
@@ -361,3 +384,68 @@ let ``Record fields are not reordered next to a statement in a query over a quer
         |> Seq.toList
 
     Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
+
+[<Fact>]
+let ``Let written by hand is evaluated before the fields that follow it`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, Reading>(fun _ -> let second = counter.Next() in { First = counter.Next(); Second = second }) @>
+
+    Assert.Equal({ First = 2; Second = 1 }, run lambda 0)
+
+[<Fact>]
+let ``Let written by hand is evaluated before the fields that follow it in a query over a queryable`` () =
+    let counter = Counter()
+    let source = System.Linq.Queryable.AsQueryable [ 1 ]
+
+    let rows =
+        query {
+            for _ in source do
+                select (
+                    let second = counter.Next()
+                    { First = counter.Next(); Second = second }
+                )
+        }
+        |> Seq.toList
+
+    Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
+
+[<Fact>]
+let ``Hash of a nullable struct of the user's is computed once however often it is read`` () =
+    hashCalls <- 0
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<Nullable<CountedHash>, int>(fun n -> let hash = n.GetHashCode() in hash + hash) @>
+
+    Assert.Equal(2, lambda.Compile().Invoke(Nullable(CountedHash 1)))
+    Assert.Equal(1, hashCalls)
+
+[<Fact>]
+let ``Text made with a formatting provider is made once however often it is read`` () =
+    let counting = CountingProvider()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<IFormatProvider, string>(fun provider -> let text = (-1).ToString provider in text + text) @>
+
+    // A negative number asks the provider for its sign
+    let once = (-1).ToString()
+    Assert.Equal(once + once, lambda.Compile().Invoke counting)
+    Assert.Equal(1, counting.Calls)
+
+[<Fact>]
+let ``Struct bound by a mutable let named like the copy the compiler makes is a copy`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@
+                Func<TallyHolder, int>(fun holder ->
+                    let mutable copyOfStruct = holder.Tally
+                    copyOfStruct.AddAndCount())
+            @>
+
+    let holder = TallyHolder()
+    Assert.Equal(1, lambda.Compile().Invoke holder)
+    Assert.Equal(0, holder.Tally.Count)
