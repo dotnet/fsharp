@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// Suppress FS3220: a scenario reads the items of a System.Tuple by name, as the queries it checks do
+#nowarn "3220"
+
 module FSharp.Core.UnitTests.Linq.QueryStructureScenarios
 
 open System.Linq
@@ -299,6 +302,28 @@ let private consumers () =
           "exists after a record select"
           (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (p.PersonAge > 30) })
           (fun _ -> true)
+
+      // A function that uses an element as a value of its own gets the one object the query produced
+      Scenario.value
+          "exists after a record select, the record compared with itself"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (obj.ReferenceEquals(p, p)) })
+          (fun _ -> true)
+
+      Scenario.value
+          "all after a tuple select, the tuple compared with itself"
+          (fun db -> query { for c in db.Customers do select (c.Name, c.Age) into t; all (obj.ReferenceEquals(t, t)) })
+          (fun _ -> true)
+
+      Scenario.value
+          "sumBy after a tuple select, a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select (c.Id, (c.Name, c.Age)) into t
+                  sumBy (if obj.ReferenceEquals(t.Item2, t.Item2) then 1 else 0)
+              })
+          (fun data -> data.Customers.Length)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
 
       Scenario.value
           "exists after a tuple select"
