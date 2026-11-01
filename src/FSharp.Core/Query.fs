@@ -1836,13 +1836,41 @@ module Query =
 
         result
 
+    /// A tuple or record of a class, which the translation builds anew from the elements it produces each time one
+    /// is asked for
+    let IsRebuiltObject (ty: Type) =
+        not ty.IsValueType
+        && (Microsoft.FSharp.Reflection.FSharpType.IsTuple ty || isPartiallyImmutableRecord ty)
+
+    /// Whether the expression uses the element, or a tuple or record in it, as a value of its own, and not only for
+    /// what it holds. Where the function is rewritten over the elements the translation produces, each such use
+    /// is an object of its own, and not the one object the element is.
+    let rec UsesWholeElement (element: Var) (expr: Expr) =
+        let rec readsPartOfElement (expr: Expr) =
+            match expr with
+            | Var used -> used = element
+            | TupleGet (inner, _)
+            | PropertyGet (Some inner, _, []) -> readsPartOfElement inner
+            | _ -> false
+
+        if readsPartOfElement expr then
+            IsRebuiltObject expr.Type
+        else
+            match expr with
+            | ExprShape.ShapeVar _ -> false
+            | ExprShape.ShapeLambda (_, body) -> UsesWholeElement element body
+            | ExprShape.ShapeCombination (_, args) -> List.exists (UsesWholeElement element) args
+
     /// Evaluate the inner core of a query whose elements a function consumes. The function is rewritten over the
     /// elements as the query translation produces them, so they are not converted back to immutable tuples and
-    /// records for it.
+    /// records for it. A function that uses an element as a value of its own gets the elements as they are.
     let EvalNonNestedInnerWithConsumer (queryProducingSequence: Expr) (immutConsumingVar: Var, immutConsumingExpr: Expr) =
-        let mutSource, _, mutConsumingVar, mutConsumingExpr =
-            TransInnerApplicativeAndCommit true queryProducingSequence (immutConsumingVar, immutConsumingExpr)
-        EvaluateQuotation (EliminateNestedQueries mutSource), mutConsumingVar, mutConsumingExpr
+        if UsesWholeElement immutConsumingVar immutConsumingExpr then
+            EvalNonNestedInner CanEliminate.Yes queryProducingSequence, immutConsumingVar, MacroExpand immutConsumingExpr
+        else
+            let mutSource, _, mutConsumingVar, mutConsumingExpr =
+                TransInnerApplicativeAndCommit true queryProducingSequence (immutConsumingVar, immutConsumingExpr)
+            EvaluateQuotation (EliminateNestedQueries mutSource), mutConsumingVar, mutConsumingExpr
 
     /// Evaluate the inner core of a query whose elements are only counted, with the type of the elements as the
     /// query translation produces them.
