@@ -294,35 +294,70 @@ module ProviderShape =
     let private yields (elementType: Type) (source: Expression) =
         typedefof<IEnumerable<_>>.MakeGenericType(elementType).IsAssignableFrom source.Type
 
-    /// Members read from elements that an earlier operator built without naming them:
-    /// the provider has to take apart an object it was not told how to.
-    let private unnamedMemberReads (expression: Expression) =
+    /// Whether the lambda gives its first parameter back as it is.
+    let private returnsParameter (lambda: LambdaExpression) =
+        lambda.Parameters.Count > 0 && obj.ReferenceEquals(lambda.Body, lambda.Parameters.[0])
+
+    /// A query that is its own root, as opposed to one built from another by operators.
+    let private isRoot (query: IQueryable) =
+        match query.Expression with
+        | :? ConstantExpression as root -> obj.ReferenceEquals(root.Value, query)
+        | _ -> false
+
+    /// Finds members read from elements that an earlier operator built without naming them: the provider has to
+    /// take apart an object it was not told how to. Every chain of operators is followed, the ones inside lambdas
+    /// and the ones of a query captured from earlier too, and each parameter of a lambda is tied to the sequence
+    /// it stands for, which is not always the first source of the operator.
+    type private UnnamedMemberFinder() =
+        inherit ExpressionVisitor()
+
         let found = ResizeArray<Violation>()
 
-        let rec producesUnnamed (expression: Expression) =
-            match expression with
+        // Whether the elements are unnamed, for the parameters that stand for a sequence: the group of a GroupJoin
+        let sequences = Dictionary<ParameterExpression, bool>(HashIdentity.Reference)
+
+        let lambdaAt (call: MethodCallExpression) index =
+            if index < call.Arguments.Count then
+                match call.Arguments.[index] with
+                | Lambda lambda -> ValueSome lambda
+                | _ -> ValueNone
+            else
+                ValueNone
+
+        // The parameter of the lambda stands for an element of the sequence, which was built without names
+        let report (lambda: LambdaExpression) index (sequence: Expression) (unnamed: bool) =
+            if unnamed && index < lambda.Parameters.Count then
+                let parameter = lambda.Parameters.[index]
+
+                if yields parameter.Type sequence && readsMemberOf parameter lambda.Body then
+                    found.Add(Violation.ReadsUnnamedMember parameter.Type.Name)
+
+        member _.Found = found |> Seq.distinct |> List.ofSeq
+
+        /// Whether the elements of the sequence were built without naming their members.
+        member this.Unnamed(sequence: Expression) : bool =
+            match sequence with
             | :? MethodCallExpression as call when isLinqOperator call ->
                 let source = call.Arguments.[0]
-                let sourceUnnamed = producesUnnamed source
 
                 let lambdas =
-                    [ for argument in Seq.skip 1 call.Arguments do
-                          match argument with
-                          | Lambda lambda -> lambda
-                          | _ -> () ]
-
-                if sourceUnnamed then
-                    for lambda in lambdas do
-                        let element = lambda.Parameters.[0]
-
-                        if yields element.Type source && readsMemberOf element lambda.Body then
-                            found.Add(Violation.ReadsUnnamedMember element.Type.Name)
+                    [ for index in 1 .. call.Arguments.Count - 1 do
+                          match lambdaAt call index with
+                          | ValueSome lambda -> lambda
+                          | ValueNone -> () ]
 
                 match call.Method.Name with
-                | "Select"
-                | "SelectMany"
+                | "Select" ->
+                    lambdas
+                    |> List.tryLast
+                    |> Option.exists (fun selector -> buildsUnnamed selector.Body || (returnsParameter selector && this.Unnamed source))
+                | "SelectMany" ->
+                    match lambdas with
+                    | [ collection ] -> this.Unnamed collection.Body
+                    | [ _; result ] -> buildsUnnamed result.Body
+                    | _ -> false
                 | "Join"
-                | "GroupJoin" -> lambdas |> List.last |> _.Body |> buildsUnnamed
+                | "GroupJoin" -> lambdas |> List.tryLast |> Option.exists (fun result -> buildsUnnamed result.Body)
                 | "Where"
                 | "OrderBy"
                 | "OrderByDescending"
@@ -333,17 +368,107 @@ module ProviderShape =
                 | "Take"
                 | "TakeWhile"
                 | "Distinct"
-                | "DefaultIfEmpty" -> sourceUnnamed
+                | "DefaultIfEmpty"
+                | "Reverse"
+                | "AsQueryable"
+                | "AsEnumerable" -> this.Unnamed source
+                | "Concat"
+                | "Union"
+                | "Intersect"
+                | "Except" -> this.Unnamed source || (call.Arguments.Count > 1 && this.Unnamed call.Arguments.[1])
                 | _ -> false
+            | :? ConstantExpression as constant ->
+                match constant.Value with
+                | :? IQueryable as query when not (isRoot query) -> this.Unnamed query.Expression
+                | _ -> false
+            | :? ParameterExpression as parameter ->
+                match sequences.TryGetValue parameter with
+                | true, unnamed -> unnamed
+                | _ -> false
+            | :? UnaryExpression as conversion when conversion.NodeType = ExpressionType.Convert -> this.Unnamed conversion.Operand
             | _ -> false
 
-        producesUnnamed expression |> ignore
-        List.ofSeq found
+        /// Reports the members that the lambdas of the operator read from elements built without names.
+        member this.Check(call: MethodCallExpression) =
+            let source = call.Arguments.[0]
+
+            match call.Method.Name with
+            | "Join"
+            | "GroupJoin" when call.Arguments.Count >= 5 ->
+                let outer, inner = call.Arguments.[0], call.Arguments.[1]
+                let outerUnnamed, innerUnnamed = this.Unnamed outer, this.Unnamed inner
+
+                lambdaAt call 2 |> ValueOption.iter (fun key -> report key 0 outer outerUnnamed)
+                lambdaAt call 3 |> ValueOption.iter (fun key -> report key 0 inner innerUnnamed)
+
+                lambdaAt call 4
+                |> ValueOption.iter (fun result ->
+                    report result 0 outer outerUnnamed
+
+                    if call.Method.Name = "Join" then
+                        report result 1 inner innerUnnamed
+                    elif result.Parameters.Count > 1 then
+                        // The second parameter is the group of the matching inner elements, not one of them
+                        sequences.[result.Parameters.[1]] <- innerUnnamed)
+            | "SelectMany" when call.Arguments.Count >= 3 ->
+                // A collection selector, then a result selector over the element and an element of the collection
+                let sourceUnnamed = this.Unnamed source
+                let collection = lambdaAt call 1
+                collection |> ValueOption.iter (fun selector -> report selector 0 source sourceUnnamed)
+
+                lambdaAt call 2
+                |> ValueOption.iter (fun result ->
+                    report result 0 source sourceUnnamed
+
+                    collection
+                    |> ValueOption.iter (fun selector -> report result 1 selector.Body (this.Unnamed selector.Body)))
+            | "Zip" when call.Arguments.Count = 3 ->
+                let second = call.Arguments.[1]
+
+                lambdaAt call 2
+                |> ValueOption.iter (fun result ->
+                    report result 0 source (this.Unnamed source)
+                    report result 1 second (this.Unnamed second))
+            // The first parameter of the function is the accumulated value
+            | "Aggregate" -> ()
+            | _ ->
+                let sourceUnnamed = this.Unnamed source
+
+                for index in 1 .. call.Arguments.Count - 1 do
+                    lambdaAt call index |> ValueOption.iter (fun lambda -> report lambda 0 source sourceUnnamed)
+
+        override this.VisitMethodCall node =
+            if isLinqOperator node then
+                this.Check node
+
+            base.VisitMethodCall node
+
+        // A query built earlier and used in this one is part of what the provider translates.
+        override this.VisitConstant node =
+            match node.Value with
+            | :? IQueryable as query when not (isRoot query) -> this.Visit query.Expression |> ignore
+            | _ -> ()
+
+            node
+
+    let private unnamedMemberReads (expression: Expression) =
+        let finder = UnnamedMemberFinder()
+        finder.Visit expression |> ignore
+        finder.Found
 
     let violations (expression: Expression) =
         let visitor = ShapeVisitor()
         visitor.Visit expression |> ignore
         visitor.Violations @ unnamedMemberReads expression |> List.distinct
+
+    /// Whether the expression calls a Queryable operator that gives a value and not a query, as a provider is asked
+    /// to execute when a query is counted, summed or searched.
+    let isTerminalOperator (expression: Expression) =
+        match expression with
+        | :? MethodCallExpression as call ->
+            call.Method.DeclaringType = typeof<Queryable>
+            && not (typeof<IQueryable>.IsAssignableFrom call.Type)
+        | _ -> false
 
     /// The LINQ operators along the source chain, outermost last.
     let spine (expression: Expression) =
