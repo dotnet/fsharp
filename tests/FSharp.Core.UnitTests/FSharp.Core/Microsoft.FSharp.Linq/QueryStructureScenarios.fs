@@ -207,6 +207,12 @@ let private subqueries () =
           (fun db -> query { for c in db.Customers do select (c.Name, db.Orders.Count(fun o -> o.CustomerId = c.Id)) })
           (fun data -> seq { for c in data.Customers -> c.Name, c.Orders.Count })
 
+      // The selector of the inner query reads nothing of the element, so it stays a call that the provider computes
+      Scenario.rows
+          "select of another source projected without reading the element"
+          (fun db -> query { for c in db.Customers do select (db.Orders.Select(fun o -> o.Id)) })
+          (fun data -> seq { for _ in data.Customers -> (seq { for o in data.Orders -> o.Id }).AsQueryable() })
+
       Scenario.rows
           "lambda over another source capturing a let"
           (fun db -> query { for c in db.Customers do where (let id = c.Id in db.Orders.Any(fun o -> o.CustomerId = id)); select c.Name })
