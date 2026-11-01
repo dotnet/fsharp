@@ -75,6 +75,8 @@ query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); g
 // Now: ...Join(..).GroupBy(..).Select(g => new AnonymousObject`2(Item1 = g.Key, Item2 = g.Count()))
 ```
 
+**Impact:** A group of tuples or records that a query uses as a value in the middle of a query, for example one that is passed on whole to a later `select` or `where`, is rebuilt from the provider's grouping by `RebuiltGroupings.Of`, so that it stays one object in every operator that mentions it. linq2db, which built such a group on the client, cannot be handed the grouping itself and no longer translates that call: such a query no longer translates with linq2db. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
+
 ---
 
 ## FCS API: Query Variables 🟢
