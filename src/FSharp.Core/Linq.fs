@@ -541,12 +541,39 @@ module LeafExpressionConverter =
         | :? UnaryExpression as conversion -> isUpcast conversion && isElementRead letVariables conversion.Operand
         | _ -> false
 
-    /// Whether the expression only reads: a constant, the data a lambda is given, or what a member or method of a
-    /// plain value makes of those. Where a 'let' gives such a read a name, the read can be made wherever the name
-    /// is used, and as often as it is used.
+    /// An operand of arithmetic that a 'let' may give way to: a constant or the data a lambda is given, as a number
+    /// of another type if it has to be. Not arithmetic itself, so that a value does not grow with every 'let' that
+    /// builds on it.
+    let isOperand (letVariables: ParameterExpression list) (expr: Expression) =
+        match expr with
+        | :? ConstantExpression -> true
+        | :? UnaryExpression as conversion when conversion.NodeType = ExpressionType.Convert ->
+            (match conversion.Method with
+             | null -> true
+             | _ -> false)
+            && conversion.Type.IsPrimitive
+            && conversion.Operand.Type.IsPrimitive
+            && (conversion.Operand :? ConstantExpression || isElementRead letVariables conversion.Operand)
+        | _ -> isElementRead letVariables expr
+
+    /// An addition, subtraction or multiplication of plain values: it runs no code of the user's
+    let isPlainArithmetic (operation: BinaryExpression) =
+        (operation.NodeType = ExpressionType.Add
+         || operation.NodeType = ExpressionType.Subtract
+         || operation.NodeType = ExpressionType.Multiply)
+        && isPlainValueType operation.Type
+        && (match operation.Method with
+            | null -> true
+            | meth -> isPlainValueType meth.DeclaringType)
+
+    /// Whether the expression only reads: a constant, the data a lambda is given, what a member or method of a
+    /// plain value makes of those, or plain arithmetic on those. Where a 'let' gives such a read a name, the read
+    /// can be made wherever the name is used, and as often as it is used.
     let rec isRead (letVariables: ParameterExpression list) (expr: Expression) =
         match expr with
         | :? ConstantExpression -> true
+        | :? BinaryExpression as arithmetic when isPlainArithmetic arithmetic ->
+            isOperand letVariables arithmetic.Left && isOperand letVariables arithmetic.Right
         | :? MemberExpression as read when isPlainValueType read.Member.DeclaringType ->
             match read.Expression with
             | null -> false
