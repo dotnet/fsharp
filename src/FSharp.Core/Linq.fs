@@ -85,6 +85,13 @@ module LeafExpressionConverter =
         [| for name in tupleMemberNames.[.. tupleTy.GetGenericArguments().Length - 1] ->
                if tupleTy.IsValueType then tupleTy.GetField name :> MemberInfo else tupleTy.GetProperty name :> MemberInfo |]
 
+    /// FSharp.Core's own AnonymousObject types, which the query translation builds, and which name their members
+    /// Item1, Item2 and so on
+    let isAnonymousObject (ty: Type) =
+        ty.IsGenericType
+        && obj.ReferenceEquals (ty.Assembly, typeof<unit>.Assembly)
+        && ty.Name.StartsWith ("AnonymousObject", StringComparison.Ordinal)
+
     let hasPublicGetter (property: PropertyInfo) =
         match property.GetGetMethod() with
         | null -> false
@@ -535,7 +542,14 @@ module LeafExpressionConverter =
             | NewAnonymousObjectQ(ctor, args) ->
                 let argsR = ConvExprsToLinq env args
                 let anonTy = ctor.DeclaringType
-                Expression.New(ctor, argsR, [| for i in 1 .. args.Length -> anonTy.GetProperty("Item" + string i) :> MemberInfo |]) |> asExpr
+                // The arguments become the items in the order of their numbers. The constructor of any other type, which
+                // NewAnonymousObjectHelper can mark as well, keeps the properties its type has.
+                let members =
+                    if isAnonymousObject anonTy then
+                        [| for i in 1 .. args.Length -> anonTy.GetProperty("Item" + string i) :> MemberInfo |]
+                    else
+                        [| for p in anonTy.GetProperties() -> p :> MemberInfo |]
+                Expression.New(ctor, argsR, members) |> asExpr
 
             // Do the same thing as C# compiler for string addition
             | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2])
