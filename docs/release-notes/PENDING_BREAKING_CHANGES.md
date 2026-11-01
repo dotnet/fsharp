@@ -40,7 +40,7 @@ a.Equals(b)  // Was: false, Now: true
 
 Inside a lambda handed to a LINQ provider (a query operator over `IQueryable`, or an F# lambda passed as `Expression<Func<..>>`) a let no longer makes a `Block` where leaving it out computes the same:
 
-- its value only reads: a constant, the lambda's parameter or a member of it (`let age = p.Age`), or what a member or method of a string, number or date makes of those (`let upper = p.Name.ToUpper()`);
+- its value only reads: a constant, the lambda's parameter or a member of it (`let age = p.Age`), what a member or method of a string, number or date makes of those (`let upper = p.Name.ToUpper()`), or an addition, subtraction or multiplication of those (`let next = p.Age + 1`);
 - or the variable is read once, as the first thing the rest of the lambda evaluates (`let orders = p.Orders.Count() in orders > 2`).
 
 This covers the lets the compiler introduces for tupled lambda parameters and struct copies. For record and anonymous record fields written out of order, the lets are left out as well:
@@ -51,7 +51,7 @@ db.People.Select(fun p -> {| Name = p.Name; Age = p.Age |})
 // Now: p => new <>f__AnonymousType(p.Age, p.Name)
 ```
 
-**Impact:** When such a lambda is compiled and run, the fields of a record written out of order are evaluated in declaration order instead of the order they are written in, which shows when they have side effects. A let that only reads, such as `let age = p.Age` or `let upper = p.Name.ToUpper()`, is computed where the variable is used: once for each use, at the moment of that use, and not at all on a path that does not use it.
+**Impact:** When such a lambda is compiled and run, the fields of a record written out of order are evaluated in declaration order instead of the order they are written in, which shows when they have side effects. A let that only reads, such as `let age = p.Age`, `let upper = p.Name.ToUpper()` or `let next = p.Age + 1`, is computed where the variable is used: once for each use, at the moment of that use, and not at all on a path that does not use it.
 
 Every other let keeps its `Block` and is evaluated once, where it is written: a value that is computed by a call and read more than once, by a nested lambda or after something else has run, a struct of your own or a boxed value, a `mutable` variable, and every let of a lambda that assigns, sets a property or field, or runs a statement. `EvaluateQuotation` and `QuotationToExpression` are not affected.
 

@@ -449,3 +449,31 @@ let ``Struct bound by a mutable let named like the copy the compiler makes is a 
     let holder = TallyHolder()
     Assert.Equal(1, lambda.Compile().Invoke holder)
     Assert.Equal(0, holder.Tally.Count)
+
+[<Fact>]
+let ``Let of an arithmetic on the parameter is replaced by its value`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int, int>(fun a -> let n = a + 1 in n * n) @>
+
+    Assert.False(hasBlock lambda)
+    Assert.Equal(16, run lambda 3)
+
+[<Fact>]
+let ``Let of an arithmetic on a converted member is replaced by its value`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<Customer, float>(fun c -> let total = float c.Age * 2.5 in total + total) @>
+
+    Assert.False(hasBlock lambda)
+    Assert.Equal(15.0, lambda.Compile().Invoke(Customer(Age = 3)))
+
+[<Fact>]
+let ``Let of an arithmetic on a call keeps its block and runs the call once`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int, int>(fun a -> let n = counter.Next() + a in n + n) @>
+
+    Assert.True(hasBlock lambda)
+    Assert.Equal(8, run lambda 3)
+    Assert.Equal(1, counter.Calls)
