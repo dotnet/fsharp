@@ -133,10 +133,18 @@ module Scenario =
                       Rows = [ for row in rows -> row ] }
                 // The value comes from the last execution; whatever ran before it went to the provider too.
                 | Outcome.Value value when provider.Executed.Count > 0 ->
+                    let last = provider.Executed.[provider.Executed.Count - 1]
                     let earlier = provider.Executed |> Seq.take (provider.Executed.Count - 1)
 
-                    { Expression = provider.Executed.[provider.Executed.Count - 1]
-                      Violations = [ for expression in earlier do yield! ProviderShape.violations expression ]
+                    { Expression = last
+                      Violations =
+                        [ for expression in earlier do
+                              yield! ProviderShape.violations expression
+
+                          // Enumerating the rows of a query is an execution too, so the last one has to be the
+                          // operator that gives the value: a count made over those rows is made by the client.
+                          if not (ProviderShape.isTerminalOperator last) then
+                              Violation.LeftProvider ]
                       Rows = [ value ] }
                 | Outcome.Value value ->
                     { Expression = Expression.Empty()
