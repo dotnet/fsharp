@@ -13351,40 +13351,34 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                 // realsig+ fix: register each closure's owner typars so TLR (InnerLambdasToTopLevelFuncs
                 // FlatEnvPacks.packEnv + createFHat) can subtract them from reqdTypars when re-hosting
-                // the closure as a nested method.
+                // the closure as a nested method of a class.
                 //
-                // Case 1: closure is inside a class-family (envNonRec.eFamilyType is Some) — the
-                // enclosing family's declared typars are the owner typars (the current behaviour).
+                // ONLY register when there is a genuine class owner (envNonRec.eFamilyType.IsSome). The
+                // re-hosted closure then lives as a nested method of that class, so the class supplies
+                // those typars via its own scope and the closure must not re-declare them.
                 //
-                // Case 2: closure is in module scope (envNonRec.eFamilyType is None) — the owner typars
-                // are the typars free in the closure's generalized type but not declared by the closure
-                // itself. These are the surrounding function's declared typars (e.g. 'T of outer<'T>) that
-                // the closure captures from the environment via mutual- or self-recursion. Binding-declared
-                // typars are subtracted because they are already bound by the closure's own signature and
-                // must not be re-required.
+                // Do NOT register for module-scope closures (envNonRec.eFamilyType = None, e.g. a
+                // closure inside a generic top-level function such as binaryChop<'T> capturing 'T). The
+                // re-hosted version (go@N / loop@N) is a STANDALONE generic method whose OWN signature
+                // declares the captured typar at index 0..k-1; treating it as an owner typar reserves a
+                // leading ambient slot in the body's type-env and shifts every own typar index up by
+                // |ownTypars|, so the body emits !!1 / !!2.. where the method only declared !!0 / !!1,
+                // an out-of-range token -> PEVerify fails. There is no class to supply the typar at the
+                // call site, so it must remain the method's own declared typar.
                 if g.realsig then
-                    let familyTypars =
-                        match envNonRec.eFamilyType with
-                        | Some tcref -> tcref.Typars
-                        | None ->
-                            let declaredTypars =
-                                newGeneralizableBindings
-                                |> List.collect (fun (b: PreGeneralizationRecursiveBinding) -> b.RecBindingInfo.DeclaredTypars)
-                            let allFree =
-                                newGeneralizableBindings
-                                |> List.collect (fun (b: PreGeneralizationRecursiveBinding) ->
-                                        (freeInType CollectAllNoCaching b.RecBindingInfo.Val.TauType).FreeTypars
-                                        |> Zset.elements)
-                            allFree
-                            |> List.filter (fun (t: Typar) ->
-                                   not (List.exists (fun (d: Typar) -> d.Name = t.Name && d.Range = t.Range) declaredTypars))
-                            |> List.distinctBy (fun (t: Typar) -> (t.Name, t.Range))
-                    if not (List.isEmpty familyTypars) then
-                        let hostTycon = envNonRec.eFamilyType
-                        List.iter (fun (pgrbind: PreGeneralizationRecursiveBinding) ->
-                            let rbinfo = pgrbind.RecBindingInfo
-                            if rbinfo.DeclKind = DeclKind.ExpressionBinding then
-                                g.AddRealsigClosureParent(rbinfo.Val, familyTypars, hostTycon)) newGeneralizableBindings
+                    match envNonRec.eFamilyType with
+                    | Some hostTycon ->
+                        let familyTypars = hostTycon.Typars
+                        if not (List.isEmpty familyTypars) then
+                            List.iter (fun (pgrbind: PreGeneralizationRecursiveBinding) ->
+                                let rbinfo = pgrbind.RecBindingInfo
+                                if rbinfo.DeclKind = DeclKind.ExpressionBinding then
+                                    g.AddRealsigClosureParent(rbinfo.Val, familyTypars, Some hostTycon)) newGeneralizableBindings
+                    | None ->
+                        // Module scope: no class owner. The captured typar, if any, is the closure's
+                        // own generalized typar (declared on the re-hosted method's signature); leave
+                        // it unregistered so the standalone method keeps it as its own declared typar.
+                        ()
 
                 // Generalize the bindings.
                 let newGeneralizedRecBinds = (generalizedTyparsL, newGeneralizableBindings) ||> List.map2 (TcLetrecGeneralizeBinding cenv denv )

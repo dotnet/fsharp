@@ -10401,17 +10401,17 @@ and GenMethodForBinding
                     (match cenv.g.RealsigClosureParentTryGet(v) with
                      | Some info -> info.ownerTypars
                      | None ->
-                         // Re-hosted TLR closures are compiled as top-level methods that are
-                         // not member/module bindings. Only those inherit the host class's
-                         // typars; ordinary module functions (e.g. MyCollections.IEnumerator.check)
-                         // must not, or a non-generic module gets spurious generic args.
-                         if
-                             (v.IsCompiledAsTopLevel || v.IsCompilerGenerated)
-                             && not (v.IsMember || v.IsMemberOrModuleBinding)
-                         then
-                             Zset.elements (eenv.tyenv.AsUserProvidedTypars())
-                         else
-                             [])
+                          // [realsig+] A TLR'd top-level method (IsCompiledAsTopLevel /
+                          // IsCompilerGenerated, NOT a member or module binding) carries its
+                          // own typars in methLambdaTypars. Returning eenv.tyenv's
+                          // user-provided typars as ambientTypars here would duplicate them
+                          // (ambient=own, methLambda=own), shifting the body's own typars by
+                          // |own| and making body (il-index |own|..2|own|-1) disagree with the
+                          // signature (il-index 0..|own|-1) -> out-of-range ldelem/callvirt
+                          // element types for loop@1[+T1,T2] / go@10412[+T]. An *unregistered*
+                          // top-level re-hosted closure's own typars are the full set and
+                          // must not be re-added as ambient.
+                          [])
 
                 | _ -> []
 
