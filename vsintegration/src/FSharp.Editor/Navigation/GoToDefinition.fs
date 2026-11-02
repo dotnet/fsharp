@@ -174,9 +174,6 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             && symbol1.DeclaringEntity.CompiledName = symbol2.DeclaringEntity.CompiledName
         | _ -> false
 
-    /// Find the textSpan and INavigableItem for the range inside the document holding its file: the caller
-    /// has already found that document for the range, which a name a path map left relative needs - it
-    /// reaches no document through the workspace's index of the paths on disk.
     let rangeToNavigableItem (range: range, document: Document) =
         cancellableTask {
             let! cancellationToken = Async.CancellationToken
@@ -343,8 +340,6 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! ct = Async.CancellationToken |> liftAsync
             let symbol = targetSymbolUse.Symbol
 
-            // A symbol with a signature declares itself there, so in its implementation file it is the
-            // implementation's location that lies in the document.
             let locationInDocument =
                 [
                     symbol.DeclarationLocation
@@ -457,26 +452,20 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                     | FindDeclResult.DeclFound targetRange ->
                         let declaringAssembly = targetSymbolUse.Symbol.Assembly.SimpleName
 
+                        let declarationDocument (range: range) =
+                            originDocument.Project.Solution.TryGetDocumentFromFSharpRange(range, declaringAssembly = declaringAssembly)
+
                         let externalDeclaration =
                             let metadataReferences = originDocument.Project.MetadataReferences
                             ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
 
-                        // A declaration with a mapped name was external before such a name reached a document,
-                        // and stays so wherever the source it reaches gives no location for it.
-                        let withoutLocation =
-                            if isRootedPath targetRange.FileName then
-                                ValueNone
-                            else
-                                externalDeclaration
+                        let externalIfMapped =
+                            match targetRange.FileName with
+                            | MappedFileName -> externalDeclaration
+                            | RootedFileName -> ValueNone
 
-                        // If the file is not associated with a document, it's considered external. A build that
-                        // maps its source paths leaves that name relative, so it is the solution's own paths it
-                        // is matched against, not the workspace's index of them - and only those of the projects
-                        // compiling the symbol's assembly: an unrelated file can end the same way.
-                        if
-                            originDocument.Project.Solution.GetDocumentIdsWithFSharpFileName(targetRange.FileName, declaringAssembly)
-                            |> List.isEmpty
-                        then
+                        // If the file is not associated with a document, it's considered external.
+                        if Option.isNone (declarationDocument targetRange) then
                             return externalDeclaration
                         else if
                             // if goto definition is called as we are already at the declaration location of a symbol in
@@ -524,11 +513,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
                                 match declarations with
                                 | FindDeclResult.DeclFound targetRange ->
-                                    let sigDocument =
-                                        originDocument.Project.Solution.TryGetDocumentFromFSharpRange(
-                                            targetRange,
-                                            declaringAssembly = declaringAssembly
-                                        )
+                                    let sigDocument = declarationDocument targetRange
 
                                     match sigDocument with
                                     | None -> return ValueNone
@@ -547,20 +532,16 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         // - gotoDefn origin = signature , gotoDefn destination = signature
                         // - gotoDefn origin = implementation, gotoDefn destination = implementation
                         else
-                            let sigDocument =
-                                originDocument.Project.Solution.TryGetDocumentFromFSharpRange(
-                                    targetRange,
-                                    declaringAssembly = declaringAssembly
-                                )
+                            let sigDocument = declarationDocument targetRange
 
                             match sigDocument with
-                            | None -> return withoutLocation
+                            | None -> return externalIfMapped
                             | Some sigDocument ->
                                 let! sigSourceText = sigDocument.GetTextAsync(cancellationToken)
                                 let sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sigSourceText, targetRange)
 
                                 match sigTextSpan with
-                                | ValueNone -> return withoutLocation
+                                | ValueNone -> return externalIfMapped
                                 | ValueSome sigTextSpan ->
                                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                                     if isSignatureFile targetRange.FileName && preferSignature then
@@ -579,12 +560,12 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                             originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
 
                                         match implDocument with
-                                        | ValueNone -> return withoutLocation
+                                        | ValueNone -> return externalIfMapped
                                         | ValueSome implDocument ->
                                             let! targetRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
 
                                             match targetRange with
-                                            | None -> return withoutLocation
+                                            | None -> return externalIfMapped
                                             | Some targetRange ->
                                                 let! implSourceText = implDocument.GetTextAsync(cancellationToken)
 
@@ -592,7 +573,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                                                     RoslynHelpers.TryFSharpRangeToTextSpan(implSourceText, targetRange)
 
                                                 match implTextSpan with
-                                                | ValueNone -> return withoutLocation
+                                                | ValueNone -> return externalIfMapped
                                                 | ValueSome implTextSpan ->
                                                     let navItem = FSharpGoToDefinitionNavigableItem(implDocument, implTextSpan)
                                                     return ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
