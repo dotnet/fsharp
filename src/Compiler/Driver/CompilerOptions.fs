@@ -267,7 +267,7 @@ module ResponseFile =
         | CompilerOptionSpec of string
         | Comment of string
 
-    let parseFile path : Choice<ResponseFileData, Exception> =
+    let parseFile path : Result<ResponseFileData, Exception> =
         let parseLine (l: string) =
             match l with
             | s when String.IsNullOrWhiteSpace s -> None
@@ -286,9 +286,31 @@ module ResponseFile =
                 |> Seq.choose parseLine
                 |> List.ofSeq
 
-            Choice1Of2 data
+            Ok data
         with e ->
-            Choice2Of2 e
+            Result.Error e
+
+let ReadResponseFileOptions (arg: string) : Result<string list, exn> =
+    let fullpath =
+        try
+            Some(arg.TrimStart('@') |> FileSystem.GetFullPathShim)
+        with _ ->
+            None
+
+    match fullpath with
+    | None -> Result.Error(Error(FSComp.SR.optsResponseFileNameInvalid arg, rangeCmdArgs))
+    | Some path when not (FileSystem.FileExistsShim path) ->
+        Result.Error(Error(FSComp.SR.optsResponseFileNotFound (arg, path), rangeCmdArgs))
+    | Some path ->
+        match ResponseFile.parseFile path with
+        | Result.Error _ -> Result.Error(Error(FSComp.SR.optsInvalidResponseFile (arg, path), rangeCmdArgs))
+        | Ok rspData ->
+            rspData
+            |> List.choose (fun line ->
+                match line with
+                | ResponseFile.ResponseFileLine.Comment _ -> None
+                | ResponseFile.ResponseFileLine.CompilerOptionSpec opt -> Some opt)
+            |> Ok
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
     use _ = UseBuildPhase BuildPhase.Parameter
@@ -332,31 +354,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         | [] -> ()
         | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
-                let fullpath =
-                    try
-                        Some(opt.TrimStart('@') |> FileSystem.GetFullPathShim)
-                    with _ ->
-                        None
-
-                match fullpath with
-                | None ->
-                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid opt, rangeCmdArgs))
+                match ReadResponseFileOptions opt with
+                | Ok options -> options
+                | Result.Error e ->
+                    errorR e
                     []
-                | Some path when not (FileSystem.FileExistsShim path) ->
-                    errorR (Error(FSComp.SR.optsResponseFileNotFound (opt, path), rangeCmdArgs))
-                    []
-                | Some path ->
-                    match ResponseFile.parseFile path with
-                    | Choice2Of2 _ ->
-                        errorR (Error(FSComp.SR.optsInvalidResponseFile (opt, path), rangeCmdArgs))
-                        []
-                    | Choice1Of2 rspData ->
-                        let onlyOptions l =
-                            match l with
-                            | ResponseFile.ResponseFileLine.Comment _ -> None
-                            | ResponseFile.ResponseFileLine.CompilerOptionSpec opt -> Some opt
-
-                        rspData |> List.choose onlyOptions
 
             processArg (responseFileOptions @ t)
         | opt :: t ->

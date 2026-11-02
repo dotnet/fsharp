@@ -18,7 +18,6 @@ open Internal.Utilities.Hashing
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 
 type internal ProjectIdentifier = string * string
@@ -66,14 +65,22 @@ module internal Helpers =
         |> Option.map (fun x -> x.Substring(3))
 
     /// Mirrors the TcConfigBuilder.conditionalDefines produced from the given options: implicit define first, then each define prepended.
-    let findConditionalDefines (isInteractive: bool) (options: string seq) =
-        let implicitDefine = if isInteractive then "INTERACTIVE" else "COMPILED"
+    /// Response files are expanded in place, as ParseCompilerOptions does; one that cannot be read contributes nothing.
+    let findConditionalDefines (isInteractive: bool) (options: string list) =
+        let rec loop defines options =
+            match options with
+            | [] -> defines
+            | (option: string) :: rest when option.StartsWithOrdinal("@") ->
+                match ReadResponseFileOptions option with
+                | Ok responseFileOptions -> loop defines (responseFileOptions @ rest)
+                | Result.Error _ -> loop defines rest
+            | option :: rest ->
+                match ParseCompilerOption option with
+                | _, ("define" | "d"), define when define <> "" -> loop (define :: defines) rest
+                | _ -> loop defines rest
 
-        ([ implicitDefine ], options)
-        ||> Seq.fold (fun defines option ->
-            match ParseCompilerOption option with
-            | _, ("define" | "d"), define when define <> "" -> define :: defines
-            | _ -> defines)
+        let implicitDefine = if isInteractive then "INTERACTIVE" else "COMPILED"
+        loop [ implicitDefine ] options
 
 /// A snapshot of an F# source file.
 [<Experimental("This FCS API is experimental and subject to change.")>]

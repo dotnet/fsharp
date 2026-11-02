@@ -1,7 +1,7 @@
 module FSharpChecker.ProjectSnapshot
 
 open Xunit
-open System
+open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
@@ -20,6 +20,25 @@ let ``ConditionalDefines matches FSharpParsingOptions`` (isInteractive: bool) =
     let parsingOptions, _ =
         FSharpChecker.Create().GetParsingOptionsFromCommandLineArgs(otherOptions, isInteractive = isInteractive)
 
+    Assert.Equal<string list>(parsingOptions.ConditionalDefines, projectConfig.ConditionalDefines)
+
+[<Fact>]
+let ``ConditionalDefines matches FSharpParsingOptions with response files`` () =
+    let directory = TestFramework.createTemporaryDirectory ()
+    let nestedResponseFile = Path.Combine(directory.FullName, "nested.rsp")
+    let responseFile = Path.Combine(directory.FullName, "defines.rsp")
+    File.WriteAllLines(nestedResponseFile, [ "-d:NESTED" ])
+    File.WriteAllLines(responseFile, [ "# comment"; "--define:FROM_RSP"; $"@{nestedResponseFile}"; "-d:AFTER_NESTED" ])
+
+    let otherOptions =
+        [ "-d:BEFORE"; $"@{responseFile}"; "@" + Path.Combine(directory.FullName, "missing.rsp"); "-d:LAST" ]
+
+    let projectConfig = ProjectConfig("Dummy.fsproj", None, [], otherOptions)
+
+    let parsingOptions, _ =
+        FSharpChecker.Create().GetParsingOptionsFromCommandLineArgs(otherOptions)
+
+    Assert.Equal<string list>([ "LAST"; "AFTER_NESTED"; "NESTED"; "FROM_RSP"; "BEFORE"; "COMPILED" ], parsingOptions.ConditionalDefines)
     Assert.Equal<string list>(parsingOptions.ConditionalDefines, projectConfig.ConditionalDefines)
 
 // TODO: restore tests
