@@ -91,5 +91,3 @@ module LeafExpressionConverter =
         RuntimeMethodHandle -> (Expr -> (Expr option * Reflection.MethodInfo * Expr list) option)
 
     val internal hasStatements: expr: Expr -> bool
-
-    val internal (|HoistedRecordField|_|): enabled: bool -> expr: Expr -> Expr option

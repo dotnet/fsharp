@@ -477,3 +477,149 @@ let ``Let of an arithmetic on a call keeps its block and runs the call once`` ()
     Assert.True(hasBlock lambda)
     Assert.Equal(8, run lambda 3)
     Assert.Equal(1, counter.Calls)
+
+[<Fact>]
+let ``Record fields written out of order are evaluated as written in an expression lambda`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, Reading>(fun _ -> { Second = counter.Next(); First = counter.Next() }) @>
+
+    Assert.Equal({ First = 2; Second = 1 }, run lambda 0)
+
+[<Fact>]
+let ``Record fields written out of order are evaluated as written in a query over a queryable`` () =
+    let counter = Counter()
+    let source = System.Linq.Queryable.AsQueryable [ 1 ]
+
+    let rows =
+        query {
+            for _ in source do
+                select { Second = counter.Next(); First = counter.Next() }
+        }
+        |> Seq.toList
+
+    Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
+
+[<Fact>]
+let ``Let named like the record field it feeds is evaluated before the fields that follow it`` () =
+    let counter = Counter()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<int, Reading>(fun _ -> let Second = counter.Next() in { First = counter.Next(); Second = Second }) @>
+
+    Assert.Equal({ First = 2; Second = 1 }, run lambda 0)
+
+[<Fact>]
+let ``Let named like the record field it feeds is evaluated before the fields that follow it in a query over a queryable`` () =
+    let counter = Counter()
+    let source = System.Linq.Queryable.AsQueryable [ 1 ]
+
+    let rows =
+        query {
+            for _ in source do
+                select (
+                    let Second = counter.Next()
+                    { First = counter.Next(); Second = Second }
+                )
+        }
+        |> Seq.toList
+
+    Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
+
+[<Fact>]
+let ``String made by a call is one string where a use can tell one from another`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s -> let upper = s.ToUpperInvariant() in obj.ReferenceEquals(upper, upper)) @>
+
+    Assert.True(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is made at each use that only looks at it`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s -> let upper = s.ToUpperInvariant() in upper.StartsWith "A" && upper.EndsWith "B") @>
+
+    Assert.False(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+/// A parameter whose name counts how often it is read
+type CountedPerson() =
+    let mutable nameReads = 0
+    member _.NameReads = nameReads
+
+    member _.Name =
+        nameReads <- nameReads + 1
+        "ab"
+
+[<Fact>]
+let ``Member of the parameter that a let names is read at each use`` () =
+    let person = CountedPerson()
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<CountedPerson, string>(fun p -> let n = p.Name in n + n) @>
+
+    Assert.Equal("abab", lambda.Compile().Invoke person)
+    Assert.Equal(2, person.NameReads)
+
+[<Fact>]
+let ``Member of the parameter that a nested lambda uses is read for each element of the nested lambda`` () =
+    let person = CountedPerson()
+    let names = Collections.Generic.List<string>([ "a"; "ab"; "b"; "ab" ])
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<CountedPerson, int>(fun p -> let n = p.Name in System.Linq.Enumerable.Count(names, Func<string, bool>(fun s -> s = n))) @>
+
+    Assert.Equal(2, lambda.Compile().Invoke person)
+    Assert.Equal(4, person.NameReads)
+
+[<Fact>]
+let ``Member of the parameter that a let names is read after a call that changes it`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<Collections.Generic.List<int>, int>(fun items -> let before = items.Count in addTo items 5 + before) @>
+
+    // The read is made where the variable is used, after the call
+    Assert.Equal(2, lambda.Compile().Invoke(Collections.Generic.List<int>()))
+
+[<Fact>]
+let ``Let whose value would throw is not evaluated on a path that does not use it`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, string>(fun name -> let s = name.Substring 5 in if name.Length > 5 then s else "") @>
+
+    Assert.Equal("", lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``EvaluateQuotation replaces a let inside a lambda that goes to a provider`` () =
+    let person = CountedPerson()
+    let people = System.Linq.Queryable.AsQueryable [ person ]
+
+    let names =
+        LeafExpressionConverter.EvaluateQuotation
+            <@ System.Linq.Enumerable.ToArray(System.Linq.Queryable.Select(people, fun x -> let n = x.Name in n + n)) @>
+        :?> string[]
+
+    Assert.Equal<string[]>([| "abab" |], names)
+    Assert.Equal(2, person.NameReads)
+
+[<Fact>]
+let ``Let of a division by a constant is replaced by its value`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int, int>(fun a -> let half = a / 2 in half + half) @>
+
+    Assert.False(hasBlock lambda)
+    Assert.Equal(6, run lambda 7)
+
+[<Fact>]
+let ``Let of a division by a parameter keeps its block so that its failure is not skipped`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<int, int>(fun a -> let quotient = 10 / a in if a > 100 then quotient else 0) @>
+
+    Assert.True(hasBlock lambda)
+    Assert.Throws<DivideByZeroException>(fun () -> run lambda 0 |> ignore) |> ignore
