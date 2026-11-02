@@ -347,8 +347,8 @@ let ``goto definition falls back to the assembly when the mapped source gives no
     | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly _, _) -> ()
     | result -> failwith $"expected the external assembly, got %A{result}"
 
-/// The spans Find All References reports the declaration of the library's value at.
-let private declarationSpans (solution: Solution) (binary: MappedBinary) =
+/// Where the consumer's use of the library's value says it is declared, and in which assembly.
+let private declarationOf (solution: Solution) (binary: MappedBinary) =
     cancellableTask {
         let consumer = documentAt solution (binary.Consumer.GetFilePath "App")
         let! cancellationToken = CancellableTask.getCancellationToken ()
@@ -364,10 +364,16 @@ let private declarationSpans (solution: Solution) (binary: MappedBinary) =
             |> Option.defaultWith (fun () -> failwith "the consumer does not use the library's value")
 
         match checkResults.GetDeclarationLocation(linePosition.Line + 1, linePosition.Character + 1, line, names, false) with
-        | FindDeclResult.DeclFound range ->
-            return! FSharpFindUsagesService.rangeToDocumentSpans (solution, range, "value", symbolUse.Symbol.Assembly.SimpleName)
+        | FindDeclResult.DeclFound range -> return struct (range, symbolUse.Symbol.Assembly.SimpleName)
         | result -> return failwith $"expected the declaration of the library's value, got %A{result}"
     }
+    |> CancellableTask.runSynchronouslyWithoutCancellation
+
+/// The spans Find All References reports the declaration of the library's value at.
+let private declarationSpans (solution: Solution) (binary: MappedBinary) =
+    let struct (range, assembly) = declarationOf solution binary
+
+    FSharpFindUsagesService.rangeToDocumentSpans (solution, range, "value", assembly)
     |> CancellableTask.runSynchronouslyWithoutCancellation
 
 [<Fact>]
@@ -379,11 +385,10 @@ let ``find all references reports a mapped declaration only in the source of its
     let span = declarationSpans binary.WithSource binary |> Array.exactlyOne
     Assert.Equal(binary.Library.GetFilePath "Library", span.Document.FilePath)
 
-[<Fact>]
-let ``find all references keeps the use of a mapped symbol when only an unrelated file ends as its name does`` () =
-    let binary = mappedBinary.Value
-
-    let consumer = documentAt binary.WithoutSource (binary.Consumer.GetFilePath "App")
+/// How many definitions and references Find All References reports for the library's value, asked from the consumer.
+/// What an item holds cannot be read from here, so they are counted.
+let private findReferences (solution: Solution) (binary: MappedBinary) =
+    let consumer = documentAt solution (binary.Consumer.GetFilePath "App")
 
     let definitions = ConcurrentBag()
     let references = ConcurrentBag()
@@ -407,6 +412,32 @@ let ``find all references keeps the use of a mapped symbol when only an unrelate
     FSharpFindUsagesService.findReferencedSymbolsAsync (consumer, positionOf consumer "ModuleLibrary.value", context, true, "test")
     |> CancellableTask.runSynchronouslyWithoutCancellation
 
-    // What an item holds cannot be read from here: the declaration is counted, and so is the consumer's one use.
-    Assert.Equal(1, definitions.Count)
-    Assert.Equal(1, references.Count)
+    struct (definitions.Count, references.Count)
+
+[<Fact>]
+let ``find all references keeps the use of a mapped symbol when only an unrelated file ends as its name does`` () =
+    let binary = mappedBinary.Value
+
+    // The declaration, and the consumer's one use.
+    Assert.Equal(struct (1, 1), findReferences binary.WithoutSource binary)
+
+/// The consumer reads the assembly as a file and has no reference to the project compiling it.
+[<Fact>]
+let ``find all references keeps the project that holds the assembly as a file when its source is loaded`` () =
+    let binary = mappedBinary.Value
+
+    // The declaration, the library's uses in its signature and its implementation, and the consumer's one use.
+    Assert.Equal(struct (1, 3), findReferences binary.WithSource binary)
+
+[<Fact>]
+let ``a quick info link reaches the mapped source of an assembly the project reads`` () =
+    let binary = mappedBinary.Value
+
+    let isLink (solution: Solution) =
+        let struct (range, _) = declarationOf solution binary
+        let consumer = documentAt solution (binary.Consumer.GetFilePath "App")
+
+        FSharpNavigation(FSharpMetadataAsSourceService(), consumer, Range.rangeStartup).IsTargetValid range
+
+    Assert.True(isLink binary.WithSource)
+    Assert.False(isLink binary.WithoutSource)
