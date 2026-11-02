@@ -59,6 +59,8 @@ db.People.Select(fun p -> {| Name = p.Name; Age = p.Age |})
 
 A record field written out of order whose value is more than a read, such as `{ Second = counter.Next(); First = counter.Next() }`, keeps its let, and the fields are evaluated in the order they are written, as they are in code.
 
+A record that a `query` selects with its fields written out of order is converted like one with its fields in order: the query selects an anonymous object in its place. `distinct` then compares the fields of the record, also for a record type with an `Equals` of its own, as it already did when the fields were written in order. With `[<CustomEquality>] type HeadOnly = { Head: int; Tail: int }` that is equal when `Head` is, `select { Tail = x + 1; Head = 0 }` followed by `distinct` gives one row for each value of `Tail`, where it gave one row.
+
 Every other let keeps its `Block` and is evaluated once, where it is written: a value that is computed by a call and read more than once, by a nested lambda or after something else has run, a struct of your own or a boxed value, a `mutable` variable, and every let of a lambda that assigns, sets a property or field, or runs a statement. A value that a call makes anew, like the `let upper = p.Name.ToUpper()` above, is kept as well when it is used more than once and a use can tell one object from another, as `obj.ReferenceEquals(upper, upper)` does. A let outside such a lambda keeps its `Block` in `EvaluateQuotation` and `QuotationToExpression`; inside a lambda that goes to a provider it is replaced the same way whichever of them converts it: `EvaluateQuotation <@ people.Select(fun x -> let n = x.Name in n + n).ToArray() @>` reads `Name` twice.
 
 ### Array access uses ArrayIndex
