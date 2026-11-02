@@ -191,7 +191,7 @@ let EditUndoCheckTest () =
             snapshot.ProjectFileName,
             snapshot.OutputFileName,
             snapshot.ProjectId,
-            [fileSnapshot],
+            [| fileSnapshot |],
             snapshot.ReferencesOnDisk,
             snapshot.OtherOptions,
             snapshot.ReferencedProjects,
