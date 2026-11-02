@@ -141,6 +141,11 @@ module internal SymbolHelpers =
                 do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll
 
             | scope ->
+                let projectsHoldingTheAssembly () =
+                    match symbolUse.Symbol.Assembly.FileName with
+                    | Some assemblyPath -> ProjectFiltering.getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
+                    | None -> []
+
                 let projectsToCheck =
                     match scope with
                     | Some(SymbolScope.CurrentDocument)
@@ -152,22 +157,17 @@ module internal SymbolHelpers =
                             for scopeProject in scopeProjects do
                                 yield scopeProject
                                 yield! scopeProject.GetDependentProjects()
+
+                            yield! projectsHoldingTheAssembly ()
                         ]
                         |> List.distinct
                     | Some(SymbolScope.Projects(scopeProjects, true)) -> scopeProjects
                     // The symbol is declared in .NET framework, an external assembly or in a C# project within the solution.
                     // Optimization: Only search projects that reference the specific assembly
                     | None ->
-                        match symbolUse.Symbol.Assembly.FileName with
-                        | Some assemblyPath ->
-                            let referencingProjects =
-                                ProjectFiltering.getProjectsReferencingAssembly assemblyPath currentDocument.Project.Solution
-
-                            if List.isEmpty referencingProjects then
-                                Seq.toList currentDocument.Project.Solution.Projects
-                            else
-                                referencingProjects
-                        | None -> Seq.toList currentDocument.Project.Solution.Projects
+                        match projectsHoldingTheAssembly () with
+                        | [] -> Seq.toList currentDocument.Project.Solution.Projects
+                        | referencingProjects -> referencingProjects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
         }
