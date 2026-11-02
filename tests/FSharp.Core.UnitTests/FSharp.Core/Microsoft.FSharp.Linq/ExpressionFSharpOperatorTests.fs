@@ -116,6 +116,19 @@ let ``Compiled min and max treat NaN and signed zero as the F# functions do`` ()
     Assert.Equal(BitConverter.DoubleToInt64Bits(max -0.0 0.0), BitConverter.DoubleToInt64Bits(maxWith.Invoke -0.0))
 
 [<Fact>]
+let ``Compiled min and max give NaN when the other argument is NaN, as the F# functions do`` () =
+    let maxOfOne = compiled <@ Func<float, float>(fun x -> max 1.0 x) @>
+    let minWithOne = compiled <@ Func<float, float>(fun x -> min x 1.0) @>
+    let maxOfOneSingle = compiled <@ Func<float32, float32>(fun x -> max 1.0f x) @>
+
+    Assert.True(Double.IsNaN(max 1.0 nan))
+    Assert.True(Double.IsNaN(maxOfOne.Invoke nan))
+    Assert.True(Double.IsNaN(min nan 1.0))
+    Assert.True(Double.IsNaN(minWithOne.Invoke nan))
+    Assert.True(Single.IsNaN(max 1.0f nanf))
+    Assert.True(Single.IsNaN(maxOfOneSingle.Invoke nanf))
+
+[<Fact>]
 let ``fst of a tuple written in a query evaluates the other item`` () =
     let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
 
