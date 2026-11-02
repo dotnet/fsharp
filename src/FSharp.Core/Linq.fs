@@ -455,47 +455,6 @@ module LeafExpressionConverter =
         | ExprShape.ShapeLambda (_, body) -> hasStatements body
         | ExprShape.ShapeCombination (_, args) -> List.exists hasStatements args
 
-    let rec countUses (v: Var) (expr: Expr) =
-        match expr with
-        | ExprShape.ShapeVar used -> if used = v then 1 else 0
-        | ExprShape.ShapeLambda (_, body) -> countUses v body
-        | ExprShape.ShapeCombination (_, args) -> List.sumBy (countUses v) args
-
-    /// The record that a chain of lets leads to, with the arguments of its construction
-    let rec (|NewRecordAfterLets|_|) (expr: Expr) =
-        match expr with
-        | Let (_, _, NewRecordAfterLets record) -> Some record
-        | NewRecord (recordType, args) -> Some (recordType, args)
-        | _ -> None
-
-    /// The compiler evaluates record fields in the order they are written, and binds the ones written before
-    /// their place to variables named after the field: 'let Second = e in .. NewRecord (.., Second, ..)'.
-    /// Whether the variable is such a one: the argument in the place of a field is the variable named like it.
-    /// A 'let' of the code with another name evaluates its value first, whatever the record that follows.
-    let isHoistedField (v: Var) (recordType: Type) (args: Expr list) =
-        let fields = FSharpType.GetRecordFields (recordType, showAll)
-
-        args
-        |> List.indexed
-        |> List.exists (fun (index, arg) ->
-            match arg with
-            | Var used -> used = v && index < fields.Length && String.Equals (fields.[index].Name, v.Name, StringComparison.Ordinal)
-            | _ -> false)
-
-    /// This is such a 'let', and its body with the value in the place of the variable, which evaluates the
-    /// fields in the order they are declared.
-    let (|HoistedRecordField|_|) (enabled: bool) (expr: Expr) =
-        match expr with
-        | Let (v, e, body) when enabled && not v.IsMutable ->
-            match body with
-            | NewRecordAfterLets (recordType, args)
-                when isHoistedField v recordType args
-                     && countUses v body = 1
-                     && not (hasStatements expr) ->
-                Some (body.Substitute (fun used -> if used = v then Some e else None))
-            | _ -> None
-        | _ -> None
-
     /// A conversion of a reference to a type its object already has, which runs no code, cannot fail and gives
     /// the same object. Boxing does not: each box is an object of its own.
     let isUpcast (conversion: UnaryExpression) =
@@ -556,11 +515,26 @@ module LeafExpressionConverter =
             && (conversion.Operand :? ConstantExpression || isElementRead letVariables conversion.Operand)
         | _ -> isElementRead letVariables expr
 
-    /// An addition, subtraction or multiplication of plain values: it runs no code of the user's
+    /// A division or remainder that cannot fail: one of floating point numbers, which give infinity or NaN, or one of
+    /// integers by a constant other than 0 and -1, which overflows for the smallest integer
+    let isSafeDivision (operation: BinaryExpression) =
+        (operation.NodeType = ExpressionType.Divide || operation.NodeType = ExpressionType.Modulo)
+        && operation.Type.IsPrimitive
+        && (Type.op_Equality (operation.Type, typeof<float>)
+            || Type.op_Equality (operation.Type, typeof<float32>)
+            || (match operation.Right with
+                | :? ConstantExpression as divisor when not (isNull divisor.Value) ->
+                    let value = Convert.ToDecimal divisor.Value
+                    value <> 0m && value <> -1m
+                | _ -> false))
+
+    /// An addition, subtraction or multiplication of plain values, or a division that cannot fail: it runs no code of
+    /// the user's
     let isPlainArithmetic (operation: BinaryExpression) =
         (operation.NodeType = ExpressionType.Add
          || operation.NodeType = ExpressionType.Subtract
-         || operation.NodeType = ExpressionType.Multiply)
+         || operation.NodeType = ExpressionType.Multiply
+         || isSafeDivision operation)
         && isPlainValueType operation.Type
         && (match operation.Method with
             | null -> true
@@ -659,6 +633,46 @@ module LeafExpressionConverter =
                 replacement
             else
                 node :> Expression
+
+    /// Whether evaluating the expression makes an object: a call or an addition with an object as its result, like the
+    /// upper case of a string. Evaluated twice, it gives two objects.
+    let makesNewObject (expr: Expression) =
+        not expr.Type.IsValueType && (expr :? MethodCallExpression || expr :? BinaryExpression)
+
+    /// Finds the uses of a variable that can tell one object from another of the same value: everything but the object
+    /// being called on, or passed to, a method of a string, number or date, and the operands of an operator of one.
+    type ObjectIdentityUses (variable: ParameterExpression) =
+        inherit ExpressionVisitor ()
+
+        member val Found = false with get, set
+
+        member private this.VisitOperands (operands: Expression list) =
+            for operand in operands do
+                match operand with
+                | null -> ()
+                | operand when obj.ReferenceEquals (operand, variable) -> ()
+                | operand -> this.Visit operand |> ignore
+
+        override this.VisitMethodCall (node: MethodCallExpression) : Expression =
+            if isPlainValueType node.Method.DeclaringType then
+                this.VisitOperands (node.Object :: List.ofSeq node.Arguments)
+                node :> Expression
+            else
+                base.VisitMethodCall node
+
+        override this.VisitBinary (node: BinaryExpression) : Expression =
+            match node.Method with
+            | null -> base.VisitBinary node
+            | operator when isPlainValueType operator.DeclaringType ->
+                this.VisitOperands [ node.Left; node.Right ]
+                node :> Expression
+            | _ -> base.VisitBinary node
+
+        override this.VisitParameter (node: ParameterExpression) : Expression =
+            if obj.ReferenceEquals (node, variable) then
+                this.Found <- true
+
+            node :> Expression
 
     /// Convert F# quotations to LINQ expression trees.
     /// A more polished LINQ-Quotation translator will be published
@@ -1015,9 +1029,6 @@ module LeafExpressionConverter =
                                (Expression.NewArrayInit(typeof<obj>, [| for fv in fvs -> Expression.Convert(env.varEnv.[fv], typeof<obj>) |> asExpr |]) |> asExpr) |])
                     |> asExpr
 
-        | HoistedRecordField env.substituteLets inlined ->
-            ConvExprToLinqInContext env inlined
-
         | Let (v, e, b) ->
             // Use Expression.Block to properly scope the variable. This:
             // 1. Evaluates the expression exactly once (preserving reference semantics)
@@ -1043,8 +1054,11 @@ module LeafExpressionConverter =
             // The Coerce case drops reference upcasts, and uses of the variable may need its own type.
             let value () = if Type.op_Equality (eP.Type, v.Type) then eP else Expression.Convert (eP, v.Type) |> asExpr
 
-            if mayGiveWay && isRead env.letVariables eP then
-                ConvExprToLinqInContext { env with varEnv = Map.add v (value ()) env.varEnv } b
+            let isReadValue = mayGiveWay && isRead env.letVariables eP
+            let substituteValue () = ConvExprToLinqInContext { env with varEnv = Map.add v (value ()) env.varEnv } b
+
+            if isReadValue && not (makesNewObject eP) then
+                substituteValue ()
             else
                 let envinner = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv; letVariables = vP :: env.letVariables }
                 let bodyP = ConvExprToLinqInContext envinner b
@@ -1054,7 +1068,17 @@ module LeafExpressionConverter =
                         let reads = VariableReads (vP, value ())
                         let replaced = reads.Visit bodyP
 
-                        if reads.Count = 1 && readsFirst vP bodyP then
+                        if isReadValue then
+                            // The object is made anew at every use: with more than one, it takes uses that look at what
+                            // it holds, and nothing that can tell one object from another
+                            let identity = ObjectIdentityUses vP
+                            identity.Visit bodyP |> ignore
+
+                            if reads.Count <= 1 || not identity.Found then
+                                ValueSome (substituteValue ())
+                            else
+                                ValueNone
+                        elif reads.Count = 1 && readsFirst vP bodyP then
                             ValueSome replaced
                         else
                             ValueNone

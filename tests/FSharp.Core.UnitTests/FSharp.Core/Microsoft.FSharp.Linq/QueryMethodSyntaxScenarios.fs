@@ -7,9 +7,6 @@ open System.Linq.Expressions
 
 let private block = [ Violation.Statement ExpressionType.Block ]
 
-/// A tree is pinned with every block it has: one that goes from three to two is a change as well
-let private blocks count =
-    List.replicate count (Violation.Statement ExpressionType.Block)
 
 let private reading typeName =
     [ Violation.ReadsUnnamedMember typeName ]
