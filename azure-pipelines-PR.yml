@@ -886,3 +886,16 @@ stages:
           buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl
           displayName: LinqExpressionOptimizer_Test_Release
           expectLocalCore: true
+        # Real LINQ providers (EF Core, Azure Cosmos DB, linq2db, SQLProvider) translating F# queries and lambdas (#20649).
+        # The test repository compares each outcome with a baseline it recorded: with a build other than the recorded one,
+        # only regressions fail. Two entries, so that a failure of one does not hide the results of the other.
+        - repo: fsprojects/FSharp.Linq.ProviderTests
+          commit: de99046a236bfc5771e85dc3a5b4dc319c9ec5bd
+          buildScript: dotnet test tests/ProviderTests/FSharp.Linq.ProviderTests.fsproj -c Release
+          displayName: FSharpLinqProviderTests
+          expectLocalCore: true
+        - repo: fsprojects/FSharp.Linq.ProviderTests
+          commit: de99046a236bfc5771e85dc3a5b4dc319c9ec5bd
+          buildScript: dotnet test tests/SQLProviderTests/FSharp.Linq.ProviderTests.SQLProvider.fsproj -c Release
+          displayName: FSharpLinqProviderTests_SQLProvider
+          expectLocalCore: true
