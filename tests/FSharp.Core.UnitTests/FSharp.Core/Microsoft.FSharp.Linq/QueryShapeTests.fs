@@ -247,6 +247,48 @@ type ProviderShapeValidatorTests() =
         Assert.Empty(reported tree)
 
     [<Fact>]
+    member _.``A block is reported once for each block``() =
+        let c = Expression.Parameter(typeof<Customer>, "c")
+
+        let block (name: string) =
+            let x = Expression.Variable(typeof<int>, name)
+            Expression.Block([| x |], Expression.Assign(x, Expression.Property(c, "Id")), Expression.GreaterThan(x, Expression.Constant 0)) :> Expression
+
+        let where (body: Expression) =
+            ValidatorTrees.call "Where" [ typeof<Customer> ] [ ValidatorTrees.customers.Expression; ValidatorTrees.quote (Expression.Lambda(body, c)) ]
+
+        let blockViolation = Violation.Statement ExpressionType.Block
+
+        Assert.Equal<Violation list>([ blockViolation ], reported (where (block "x")))
+        Assert.Equal<Violation list>([ blockViolation; blockViolation ], reported (where (Expression.AndAlso(block "x", block "y"))))
+
+    [<Fact>]
+    member _.``A lambda that is invoked is reported``() =
+        let c = Expression.Parameter(typeof<Customer>, "c")
+        let n = Expression.Parameter(typeof<int>, "n")
+        let positive = Expression.Lambda<Func<int, bool>>(Expression.GreaterThan(n, Expression.Constant 0), n)
+        let tree = Expression.Invoke(positive, Expression.Property(c, "Id"))
+
+        let where =
+            ValidatorTrees.call "Where" [ typeof<Customer> ] [ ValidatorTrees.customers.Expression; ValidatorTrees.quote (Expression.Lambda(tree, c)) ]
+
+        Assert.Equal<Violation list>([ Violation.LambdaInvocation ], reported where)
+
+    [<Fact>]
+    member _.``A parameter that no lambda binds is reported``() =
+        let c = Expression.Parameter(typeof<Customer>, "c")
+        let n = Expression.Parameter(typeof<int>, "n")
+
+        let where =
+            ValidatorTrees.call
+                "Where"
+                [ typeof<Customer> ]
+                [ ValidatorTrees.customers.Expression
+                  ValidatorTrees.quote (Expression.Lambda(Expression.GreaterThan(Expression.Property(c, "Id"), n), c)) ]
+
+        Assert.Equal<Violation list>([ Violation.UnboundParameter "n" ], reported where)
+
+    [<Fact>]
     member _.``A count made by the provider passes``() =
         Scenario.value "count by the provider" (fun db -> db.Customers.Where(fun c -> c.Age > 26).Count()) (fun _ -> 3)
         |> Scenario.check
@@ -258,5 +300,22 @@ type ProviderShapeValidatorTests() =
         |> Scenario.check
 
         Scenario.value "count by Enumerable" (fun db -> Enumerable.Count(db.Customers.Where(fun c -> c.Age > 26))) (fun _ -> 3)
+        |> Scenario.violating [ Violation.LeftProvider ]
+        |> Scenario.check
+
+    [<Fact>]
+    member _.``A count made by the client over counts made by the provider leaves it``() =
+        // The provider counts the orders once for each customer, and the client counts the customers
+        Scenario.value
+            "client count with a provider count in its projection"
+            (fun db -> db.Customers.Where(fun c -> c.Age > 26).AsEnumerable().Select(fun _ -> db.Orders.Count()).Count())
+            (fun _ -> 3)
+        |> Scenario.violating [ Violation.LeftProvider ]
+        |> Scenario.check
+
+        Scenario.value
+            "client count with an inner provider count"
+            (fun db -> Enumerable.Count(db.Customers.Select(fun _ -> db.Orders.Count())))
+            (fun data -> data.Customers.Length)
         |> Scenario.violating [ Violation.LeftProvider ]
         |> Scenario.check

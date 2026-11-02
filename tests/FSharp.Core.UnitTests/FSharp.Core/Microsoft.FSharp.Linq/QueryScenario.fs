@@ -131,19 +131,22 @@ module Scenario =
                     { Expression = rows.Expression
                       Violations = (if stayed then [] else [ Violation.LeftProvider ])
                       Rows = [ for row in rows -> row ] }
-                // The value comes from the last execution; whatever ran before it went to the provider too.
+                // A query that is counted, summed or searched is executed by the operator that gives the value.
+                // Enumerating the rows of a query is an execution too, and so is every query that a function on the
+                // client runs while it goes through those rows: the provider made the value only if every
+                // execution is such an operator. The last one is the expression that is checked as a whole; whatever
+                // ran before it went to the provider too.
                 | Outcome.Value value when provider.Executed.Count > 0 ->
-                    let last = provider.Executed.[provider.Executed.Count - 1]
-                    let earlier = provider.Executed |> Seq.take (provider.Executed.Count - 1)
+                    let executed = List.ofSeq provider.Executed
+                    let last = List.last executed
+                    let earlier = List.take (executed.Length - 1) executed
 
                     { Expression = last
                       Violations =
                         [ for expression in earlier do
                               yield! ProviderShape.violations expression
 
-                          // Enumerating the rows of a query is an execution too, so the last one has to be the
-                          // operator that gives the value: a count made over those rows is made by the client.
-                          if not (ProviderShape.isTerminalOperator last) then
+                          if not (List.forall ProviderShape.isTerminalOperator executed) then
                               Violation.LeftProvider ]
                       Rows = [ value ] }
                 | Outcome.Value value ->
@@ -165,9 +168,10 @@ module Scenario =
     let failures (scenario: Scenario) =
         let data, observed = observe scenario
 
+        // Every occurrence counts: a tree with two blocks is not a tree with one
         let violations =
             observed.Violations @ ProviderShape.violations observed.Expression
-            |> List.distinct
+            |> List.sort
 
         let threw =
             violations
@@ -175,8 +179,8 @@ module Scenario =
                 | Violation.Throws _ -> true
                 | _ -> false)
 
-        [ if set violations <> set scenario.Violations then
-              $"violations: expected %A{scenario.Violations}, got %A{violations}"
+        [ if violations <> List.sort scenario.Violations then
+              $"violations: expected %A{List.sort scenario.Violations}, got %A{violations}"
 
           if not threw then
               let expected = inOrder scenario.Ordered (scenario.Expected data)
