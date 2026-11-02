@@ -4,6 +4,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open System
+open System.Buffers
 open System.IO
 open System.Collections.Immutable
 open System.Collections.Generic
@@ -296,12 +297,21 @@ type SourceText with
     member this.ToFSharpSourceText() =
         SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback(SourceText.create))
 
-    member this.GetLinesAsMemory() =
-        let text = this.ToString()
+    /// The slices point into a pooled copy of the text and are valid only until the callback returns.
+    member this.WithLinesAsMemory(f: ReadOnlyMemory<char>[] -> 'T) =
+        let buffer = ArrayPool<char>.Shared.Rent this.Length
 
-        Array.init this.Lines.Count (fun i ->
-            let line = this.Lines[i]
-            text.AsMemory(line.Start, line.End - line.Start))
+        try
+            this.CopyTo(0, buffer, 0, this.Length)
+
+            let lines =
+                Array.init this.Lines.Count (fun i ->
+                    let line = this.Lines[i]
+                    ReadOnlyMemory<char>(buffer, line.Start, line.End - line.Start))
+
+            f lines
+        finally
+            ArrayPool<char>.Shared.Return buffer
 
 type NavigationItem with
 
