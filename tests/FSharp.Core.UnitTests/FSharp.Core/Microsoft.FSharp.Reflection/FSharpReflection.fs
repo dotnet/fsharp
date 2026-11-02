@@ -647,18 +647,106 @@ type FSharpValueTests() =
         // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTuplePropertyInfo(typeof<StructRecordType>, 0) |> ignore)
 
-    // This fails as no PropertyInfo's actually exist for struct tuple types.
-    //
-    //[<Fact>]
-    //member _.PreComputeStructTuplePropertyInfo() =
-    //
-    //    // Tuple
-    //    let (tuplePropInfo, _typeindex) = FSharpValue.PreComputeTuplePropertyInfo(typeof<struct (int * string)>, 0)
-    //    Assert.AreEqual(tuplePropInfo.PropertyType, typeof<int>)
-    //
-    //    // Nested
-    //    let (tupleNestedPropInfo, _typeindex) = FSharpValue.PreComputeTuplePropertyInfo(typeof<struct (int * struct (int * string))>, 1)
-    //    Assert.AreEqual(tupleNestedPropInfo.PropertyType, typeof<struct (int * string)>)
+    static member StructTupleValues : seq<obj * obj[]> =
+        seq {
+            yield box (struct (1, "tuple1")), [| box 1; box "tuple1" |]
+            yield box (struct (1, 2, 3, 4, 5, 6, 7)), [| for i in 1..7 -> box i |]
+            yield box (struct (1, 2, 3, 4, 5, 6, 7, 8)), [| for i in 1..8 -> box i |]
+            yield box (struct (1, 2, 3, 4, 5, 6, 7, 8, 9)), [| for i in 1..9 -> box i |]
+            yield box (struct (1, struct (2, "nested"))), [| box 1; box (struct (2, "nested")) |]
+            yield box (struct ([1; 2], Some "generic")), [| box [1; 2]; box (Some "generic") |]
+        }
+
+    static member StructTuplePropertyIndices : seq<obj[]> =
+        seq {
+            for value, expected in FSharpValueTests.StructTupleValues do
+                for index in 0..expected.Length - 1 do
+                    yield [| box (value.GetType()); box index |]
+        }
+
+    [<Theory; MemberData(nameof FSharpValueTests.StructTuplePropertyIndices)>]
+    member _.``Issue 20801 - struct tuple properties report unsupported type``(tupleType: Type, index: int) =
+        if tupleType = typeof<struct (int * string)> && index = 0 then
+            printfn "FSharp.Core: %s (%O)" typeof<FSharpValue>.Assembly.Location (typeof<FSharpValue>.Assembly.GetName().Version)
+
+        let error =
+            Assert.Throws<ArgumentException>(fun () ->
+                FSharpValue.PreComputeTuplePropertyInfo(tupleType, index) |> ignore)
+
+        Assert.Equal("tupleType", error.ParamName)
+        Assert.Contains("fields, not properties", error.Message)
+        Assert.Contains("FSharpValue.PreComputeTupleReader", error.Message)
+        Assert.Contains("FSharpValue.GetTupleField", error.Message)
+
+    static member StructTupleReaderCases : seq<obj[]> =
+        seq {
+            for value, expected in FSharpValueTests.StructTupleValues do
+                yield [| value; box expected |]
+        }
+
+    [<Theory; MemberData(nameof FSharpValueTests.StructTupleReaderCases)>]
+    member _.``Issue 20801 - recommended APIs read struct tuple fields``(value: obj, expected: obj[]) =
+        Assert.AreEqual(expected, FSharpValue.PreComputeTupleReader(value.GetType()) value)
+        expected |> Array.iteri (fun index item -> Assert.AreEqual(item, FSharpValue.GetTupleField(value, index)))
+
+    [<Theory; InlineData(0); InlineData(1)>]
+    member _.``Issue 20801 - reference tuple properties remain readable``(index: int) =
+        for value, expected in [
+            box tuple1, [| box 1; box "tuple1" |]
+            box (struct (1, "nested"), Some 2), [| box (struct (1, "nested")); box (Some 2) |]
+        ] do
+            let property, continuation = FSharpValue.PreComputeTuplePropertyInfo(value.GetType(), index)
+            Assert.Equal($"Item{index + 1}", property.Name)
+            Assert.Equal(value.GetType(), property.DeclaringType)
+            Assert.Equal(expected.[index].GetType(), property.PropertyType)
+            Assert.True(Option.isNone continuation)
+            Assert.AreEqual(expected.[index], property.GetValue(value, null))
+
+    [<Theory; InlineData(6); InlineData(7); InlineData(8)>]
+    member _.``Issue 20801 - long reference tuple continuations remain readable``(index: int) =
+        let value = box (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        let property, continuation = FSharpValue.PreComputeTuplePropertyInfo(value.GetType(), index)
+        Assert.Equal((if index = 6 then "Item7" else "Rest"), property.Name)
+        Assert.Equal(value.GetType(), property.DeclaringType)
+        Assert.Equal((if index = 6 then typeof<int> else typeof<int * int>), property.PropertyType)
+        let expectedContinuation = if index = 6 then None else Some(typeof<int * int>, index - 7)
+        Assert.Equal<(Type * int) option>(expectedContinuation, continuation)
+
+        let firstValue = property.GetValue(value, null)
+        let item =
+            match continuation with
+            | None -> firstValue
+            | Some(restType, restIndex) ->
+                Assert.Equal(restType, firstValue.GetType())
+                let restProperty, restContinuation = FSharpValue.PreComputeTuplePropertyInfo(restType, restIndex)
+                Assert.True(Option.isNone restContinuation)
+                restProperty.GetValue(firstValue, null)
+
+        Assert.AreEqual(box (index + 1), item)
+
+    [<Theory; InlineData(false, -1); InlineData(true, -1); InlineData(false, 2)>]
+    member _.``Issue 20801 - tuple property index errors retain their contract``(isStruct: bool, index: int) =
+        let tupleType = if isStruct then typeof<struct (int * string)> else typeof<int * string>
+        let error =
+            Assert.Throws<ArgumentException>(fun () ->
+                FSharpValue.PreComputeTuplePropertyInfo(tupleType, index) |> ignore)
+
+        Assert.Equal("index", error.ParamName)
+        Assert.Contains($"The tuple index '{index}' was out of range for tuple type '{tupleType.FullName}'.", error.Message)
+
+    [<Theory; InlineData(-1); InlineData(0)>]
+    member _.``Issue 20801 - tuple property type validation precedes index validation``(index: int) =
+        let nullError =
+            Assert.Throws<ArgumentNullException>(fun () ->
+                FSharpValue.PreComputeTuplePropertyInfo(null, index) |> ignore)
+
+        Assert.Equal("tupleType", nullError.ParamName)
+        for tupleType in [typeof<string>; typeof<int>; typeof<RecordType>; typeof<StructRecordType>] do
+            let error =
+                Assert.Throws<ArgumentException>(fun () ->
+                    FSharpValue.PreComputeTuplePropertyInfo(tupleType, index) |> ignore)
+
+            Assert.Equal("tupleType", error.ParamName)
 
     [<Fact>]
     member _.PreComputeTupleReader() =

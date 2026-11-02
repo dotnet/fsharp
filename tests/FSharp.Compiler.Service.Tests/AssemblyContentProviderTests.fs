@@ -1,19 +1,22 @@
 module FSharp.Compiler.Service.Tests.AssemblyContentProviderTests
 
 open System
+open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Symbols
 open FSharp.Test
+open Xunit
 
-let private filePath = "C:\\test.fs"
+let private filePath = Path.Combine(Path.GetTempPath(), "test.fs")
 
 let private projectOptions : FSharpProjectOptions =
-    { ProjectFileName = "C:\\test.fsproj"
+    { ProjectFileName = Path.ChangeExtension(filePath, ".fsproj")
       ProjectId = None
       SourceFiles =  [| filePath |]
       ReferencedProjects = [| |]
-      OtherOptions = [| |]
+      OtherOptions = mkProjectCommandLineArgsSilent ("test.dll", [])
       IsIncompleteTypeCheckEnvironment = true
       UseScriptResolutionRules = false
       LoadTime = DateTime.MaxValue
@@ -62,7 +65,7 @@ let private getSymbolMap (getSymbolProperty: AssemblySymbol -> 'a) (source: stri
     |> List.map (fun s -> getCleanedFullName s, getSymbolProperty s)
     |> Map.ofList
 
-[<FactForDESKTOP>]
+[<Fact>]
 let ``implicitly added Module suffix is removed``() =
     """
 type MyType = { F: int }
@@ -75,7 +78,7 @@ module MyType =
         "Test.MyType"
         "Test.MyType.func123"]
 
-[<FactForDESKTOP>]
+[<Fact>]
 let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -86,7 +89,7 @@ module MyType =
          "Test.MyType"
          "Test.MyType.func123" ]
 
-[<FactForDESKTOP>]
+[<Fact>]
 let ``Property getters and setters are removed``() =
     """
     type MyType() =
@@ -96,7 +99,7 @@ let ``Property getters and setters are removed``() =
          "Test.MyType"
          "Test.MyType.MyProperty" ]
 
-[<FactForDESKTOP>]
+[<Fact>]
 let ``TopRequireQualifiedAccessParent property should be valid``() =
     let source = """
         module M1 = 
@@ -143,7 +146,7 @@ let ``TopRequireQualifiedAccessParent property should be valid``() =
     assertAreEqual (expectedResult, actual)
 
 
-[<FactForDESKTOP>]
+[<Fact>]
 let ``Check Unresolved Symbols``() =
     let source = """
 namespace ``1 2 3``
@@ -206,6 +209,7 @@ module Test =
             "1 2 3.Test.M1.E", "open ``1 2 3`` - Test.M1.E";
             "1 2 3.Test.M1.F", "open ``1 2 3`` - Test.M1.F";
             "1 2 3.Test.M1.G", "open ``1 2 3`` - Test.M1.G";
+            "1 2 3.Test.M1.Is1", "open ``1 2 3``.Test.M1 - Is1";
             "1 2 3.Test.M1.M11", "open ``1 2 3`` - Test.M1.M11";
             "1 2 3.Test.M1.M11.M111", "open ``1 2 3`` - Test.M1.M11.M111";
             "1 2 3.Test.M1.M11.M111.v111", "open ``1 2 3`` - Test.M1.M11.M111.v111";
@@ -227,3 +231,129 @@ module Test =
         $"open {ns} - {i.UnresolvedSymbol.DisplayName}")
 
     assertAreEqual (expectedResult, actual)
+
+let private activePatternSource = """
+namespace Catalogue
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module Patterns =
+    let (|Even|Odd|) value = if value % 2 = 0 then Even else Odd
+    let (|Positive|_|) value = if value > 0 then Some value else None
+    let (|Above|_|) threshold value = if value > threshold then Some value else None
+    let (|Case|CASE|) value = if value then Case else CASE
+    let (|``Has space``|_|) value = if value > 0 then Some value else None
+    let private (|Private|_|) value = if value > 0 then Some value else None
+    let internal (|Internal|_|) value = if value > 0 then Some value else None
+
+    [<AutoOpen>]
+    module Nested =
+        let (|Even|_|) value = if value % 2 = 0 then Some value else None
+
+    module private Hidden =
+        let (|HiddenCase|_|) value = if value > 0 then Some value else None
+"""
+
+let private checkSources sources =
+    let options = createProjectOptionsFromNamedSources sources []
+    let filePath = Array.last options.SourceFiles
+    let _, results = parseAndCheckFile filePath (snd (List.last sources)) options
+    Assert.Empty results.Diagnostics
+    options, results
+
+let private activePatternCases symbols =
+    symbols
+    |> List.filter (fun symbol -> symbol.Symbol :? FSharpActivePatternCase)
+
+[<Theory>]
+[<InlineData("Even", 0)>]
+[<InlineData("Odd", 1)>]
+[<InlineData("Positive", 0)>]
+[<InlineData("Above", 0)>]
+[<InlineData("Case", 0)>]
+[<InlineData("CASE", 1)>]
+[<InlineData("Has space", 0)>]
+let ``active pattern catalogue preserves case identity and source names`` (caseName, index) =
+    let _, results = checkSources [ "Patterns.fs", activePatternSource ]
+    let symbols = AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full results.PartialAssemblySignature
+    let symbol =
+        activePatternCases symbols
+        |> List.find (fun symbol -> symbol.CleanedIdents = [| "Catalogue"; "Patterns"; caseName |])
+    let case = Assert.IsType<FSharpActivePatternCase> symbol.Symbol
+    Assert.Equal(caseName, case.Name)
+    Assert.Equal(index, case.Index)
+    Assert.Equal(case.FullName, symbol.FullName)
+    Assert.NotEqual(getCleanedFullName symbol, symbol.FullName)
+    Assert.Equal(Some [| "Catalogue" |], symbol.Namespace)
+    Assert.Equal(Some [| "Catalogue"; "Patterns" |], symbol.NearestRequireQualifiedAccessParent)
+    Assert.Equal(Some [| "Catalogue"; "Patterns" |], symbol.TopRequireQualifiedAccessParent)
+    Assert.Equal(None, symbol.AutoOpenParent)
+    Assert.Equal(symbol.FullName, symbol.UnresolvedSymbol.FullName)
+    Assert.Equal([| "Catalogue" |], symbol.UnresolvedSymbol.Namespace)
+    let sourceName = FSharp.Compiler.Syntax.PrettyNaming.NormalizeIdentifierBackticks caseName
+    Assert.Equal($"Patterns.{sourceName}", symbol.UnresolvedSymbol.DisplayName)
+    Assert.Equal(EntityKind.FunctionOrValue true, symbol.Kind LookupType.Precise)
+    Assert.Contains(symbols, fun symbol ->
+        match symbol.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as value -> value.IsActivePattern && case.Group.Name = Some value.LogicalName
+        | _ -> false)
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``active pattern catalogue respects defining value and container visibility`` publicOnly =
+    let project, results = checkSources [ "Patterns.fs", activePatternSource ]
+    let contentType = if publicOnly then AssemblyContentType.Public else AssemblyContentType.Full
+    let expected =
+        [ "Catalogue.Patterns.Above"; "Catalogue.Patterns.CASE"; "Catalogue.Patterns.Case"
+          "Catalogue.Patterns.Even"; "Catalogue.Patterns.Has space"; "Catalogue.Patterns.Nested.Even"
+          "Catalogue.Patterns.Odd"; "Catalogue.Patterns.Positive"
+          if not publicOnly then
+              "Catalogue.Patterns.Hidden.HiddenCase"
+              "Catalogue.Patterns.Internal"
+              "Catalogue.Patterns.Private" ]
+        |> List.sort
+    let output = Path.ChangeExtension(project.ProjectFileName, ".dll")
+    let source = """
+module Consumer
+let classified = match 2 with | Catalogue.Patterns.Even -> true | Catalogue.Patterns.Odd -> false
+"""
+    let options = createProjectOptionsFromNamedSources [ "Consumer.fs", source ] [ $"-r:{output}" ]
+    let options = { options with ReferencedProjects = [| FSharpReferencedProject.FSharpReference(output, project) |] }
+    let _, consumer = parseAndCheckFile options.SourceFiles[0] source options
+    Assert.Empty consumer.Diagnostics
+    let assemblies =
+        consumer.ProjectContext.GetReferencedAssemblies()
+        |> List.filter (fun assembly -> assembly.SimpleName = Path.GetFileNameWithoutExtension output)
+    Assert.Single assemblies |> ignore
+    let catalogue = AssemblyContent.GetAssemblySignatureContent contentType results.PartialAssemblySignature
+    let actual = activePatternCases catalogue |> List.map getCleanedFullName |> List.sort
+    Assert.Equal<string list>(expected, actual)
+    let nested = catalogue |> List.find (fun symbol -> getCleanedFullName symbol = "Catalogue.Patterns.Nested.Even")
+    Assert.Equal(Some [| "Catalogue"; "Patterns"; "Nested" |], nested.AutoOpenParent)
+    let cache = EntityCache()
+    let cacheKey = Some project.SourceFiles[0]
+    AssemblyContent.GetAssemblyContent cache.Locking AssemblyContentType.Full cacheKey assemblies |> ignore
+    let cached =
+        AssemblyContent.GetAssemblyContent cache.Locking contentType cacheKey assemblies
+        |> activePatternCases
+        |> List.map getCleanedFullName
+        |> List.sort
+    Assert.Equal<string list>(expected, cached)
+
+[<Fact>]
+let ``active pattern catalogue respects signature visibility`` () =
+    let signature = """
+namespace Catalogue
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module Patterns =
+    val (|Even|Odd|): int -> Choice<unit, unit>
+"""
+    let _, results = checkSources [ "Patterns.fsi", signature; "Patterns.fs", activePatternSource ]
+    let actual =
+        AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full results.PartialAssemblySignature
+        |> activePatternCases
+        |> List.map getCleanedFullName
+        |> List.sort
+    Assert.Equal<string list>([ "Catalogue.Patterns.Even"; "Catalogue.Patterns.Odd" ], actual)

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "round": "round-01",
+  "sprint": 3,
+  "status": "blocked",
+  "phase": "runner-preflight",
+  "retry_condition": "owner-launch-enrolled",
+  "repository": "dotnet/fsharp",
+  "branch": "idea/dm-943",
+  "required_ancestor": "8d21ff13acda3eff7b26cfdde8b2dbb4dbb40955a",
+  "preflight_head": "1babdc741346f19ec96e75c195c382daa3ec20af",
+  "implementer_session_id": "e941dc52-9c38-4525-bc93-7eea6313ca4a",
+  "reason": "No enrolled isolated runner or owner launch receipt is available to this session. The task launch interface does not expose enforceable input-context, filesystem or network allowlists, or a complete durable access/invocation receipt contract. Ordinary delegation cannot establish the required blind execution boundary.",
+  "required_owner_action": "Provision and enroll an isolated runner with separate custodian and per-case reviewer contexts, exact sanitized inputs, read-only packet access, denied feedback/network/skill access, and retained actual invocation, access, output and lifecycle receipts. Keep protected oracle and result bodies available only to the custodian.",
+  "preflight": {
+    "worktree_initially_clean": true,
+    "required_branch_and_ancestor_verified": true,
+    "scope": {
+      "exit_code": 0,
+      "inventory": 485,
+      "in_scope": 141,
+      "evaluation_acceptance": "blocked",
+      "final_corpus_complete": false
+    },
+    "existing_unit_tests": {
+      "normal": 27,
+      "optimized": 27,
+      "status": "passed"
+    },
+    "red": {
+      "exit_code": 1,
+      "status": "not-implemented"
+    },
+    "complete": {
+      "exit_code": 1,
+      "status": "not-implemented"
+    }
+  },
+  "this_attempt": {
+    "custody_accessed": false,
+    "holdout_membership_frozen": false,
+    "historical_expectations_sealed": false,
+    "reviewer_invocations": 0,
+    "reviewer_rule_changes": 0,
+    "red_seal_created": false,
+    "synthetic_results_counted_as_real": false
+  },
+  "remaining_requirements": "Holdout selection and freshness/strata audit, input and oracle freeze, protected validators and adversarial boundary tests, actual per-case RED executions, private scoring, and a locally committed RED seal are not complete. Required real-source gaps remain blockers.",
+  "final_corpus_complete": false,
+  "notice": "This is a public blocker record, not an owner enrollment, custody event, invocation receipt, freeze, RED seal or permission to resume."
+}

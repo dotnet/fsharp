@@ -66,12 +66,20 @@ switch ($Mode) {
         if (!$found) {
             throw 'The requested SHA was not found in the PR commit list (GitHub exposes at most 250 commits). Review a listed commit and request a new run.'
         }
+        $main = Invoke-Api "$repoApi/git/ref/heads/main" $env:GITHUB_TOKEN
+        if ($main -isnot [System.Management.Automation.PSCustomObject] -or
+            $main.ref -isnot [string] -or $main.ref -cne 'refs/heads/main' -or
+            $main.object.type -isnot [string] -or $main.object.type -cne 'commit' -or
+            $main.object.sha -isnot [string] -or $main.object.sha -cnotmatch '\A[0-9a-f]{40}\z') {
+            throw 'GitHub did not return a valid main orchestration commit.'
+        }
+        $pipelineSha = $main.object.sha
         $request = @{
-            resources = @{ repositories = @{ self = @{ refName = "refs/pull/$prNumber/head"; version = $requestedSha } } }
+            resources = @{ repositories = @{ self = @{ refName = 'refs/heads/main'; version = $pipelineSha } } }
             templateParameters = @{ prNumber = "$prNumber"; headSha = $requestedSha }
         }
         $json = ConvertTo-Json -InputObject $request -Depth 10 -Compress
-        Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8 -Value "body=$json", "head=$requestedSha"
+        Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8 -Value "body=$json", "head=$requestedSha", "pipeline=$pipelineSha"
     }
     'Membership' {
         $null = Invoke-Api "https://api.github.com/orgs/microsoft/members/$login" $env:GITHUB_TOKEN -ExpectedStatus 204
@@ -90,10 +98,10 @@ switch ($Mode) {
     'Report' {
         $workflowUrl = "$env:GITHUB_SERVER_URL/dotnet/fsharp/actions/runs/$env:GITHUB_RUN_ID"
         $body = if ($env:RUN_URL) {
-            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nReviewed commit and pipeline YAML: ``$env:HEAD_SHA```n`nThe run tests a PR merge containing this commit if it is still the PR head; otherwise it tests this commit directly. The setup log records the selected mode and tested SHA. New commits require review and a new ``/dart <sha>`` or ``/pr-val <sha>`` comment."
+            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nReviewed PR commit: ``$env:HEAD_SHA```nProtected-main pipeline and control scripts: ``$env:PIPELINE_SHA```n`nThe run tests a PR merge containing this commit if it is still the PR head; otherwise it tests this commit directly. The setup log records the selected mode and tested SHA. New commits require review and a new ``/dart <sha>`` or ``/pr-val <sha>`` comment."
         }
         else {
-            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart <sha>`` or ``/pr-val <sha>`` with a full commit SHA listed in the PR after reviewing code and pipeline YAML. The PR must target ``main`` and the requester needs repository write access and Microsoft-org membership."
+            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart <sha>`` or ``/pr-val <sha>`` with a full commit SHA listed in the PR after reviewing its code and build scripts. Pipeline provisioning uses protected main. The PR must target ``main`` and the requester needs repository write access and Microsoft-org membership."
         }
         $null = Invoke-Api "$repoApi/issues/$prNumber/comments" $env:GITHUB_TOKEN -Method POST -Body @{ body = $body } -ExpectedStatus 201
     }

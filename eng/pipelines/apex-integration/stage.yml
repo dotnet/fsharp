@@ -27,7 +27,8 @@ stages:
     testExecutableArguments: >-
       -NoProfile
       -ExecutionPolicy Bypass
-      -File C:\Test\FSharp\eng\pipelines\apex-integration\run-apex.ps1
+      -File C:\Test\FSharpControl\run-apex.ps1
+      -SourceRoot C:\Test\FSharp
       -Configuration Release
     testRunName: F# Apex integration tests
     testRunTimeout: 0:4:0:0
@@ -131,32 +132,43 @@ stages:
         & 'C:\Test\Git\cmd\git.exe' --version
         if ($LASTEXITCODE -ne 0) { throw 'The provisioned DartLab Git is not usable.' }
         $sourceRoot = 'C:\Test\FSharp'
+        $controlRoot = 'C:\Test\FSharpControl'
         if (Test-Path -LiteralPath $sourceRoot) {
             throw "$sourceRoot already exists; refusing to reuse an unverified checkout."
         }
+        if (Test-Path -LiteralPath $controlRoot) {
+            throw "$controlRoot already exists; refusing to reuse unverified control scripts."
+        }
+        if ($env:PIPELINE_SOURCE_REF -cne 'refs/heads/main' -or
+            $env:PIPELINE_SOURCE_SHA -cnotmatch '\A[0-9a-f]{40}\z' -or
+            $env:HEAD_SHA -cnotmatch '\A[0-9a-f]{40}\z') {
+            throw 'Expected pinned main orchestration and a full reviewed PR commit SHA.'
+        }
+        Write-Host "Orchestration: main=$env:PIPELINE_SOURCE_SHA reviewed=$env:HEAD_SHA"
         git init $sourceRoot
         if ($LASTEXITCODE -ne 0) { throw 'git init failed.' }
         git -C $sourceRoot remote add origin https://github.com/dotnet/fsharp.git
         if ($LASTEXITCODE -ne 0) { throw 'git remote add failed.' }
-        if ($env:PIPELINE_SOURCE_SHA -cne $env:HEAD_SHA) {
-            throw 'The pipeline YAML revision does not match the reviewed PR commit.'
-        }
         git -C $sourceRoot fetch --no-tags --depth=1 origin $env:PIPELINE_SOURCE_SHA
-        if ($LASTEXITCODE -ne 0) { throw 'Fetching the reviewed pipeline source revision failed.' }
+        if ($LASTEXITCODE -ne 0) { throw 'Fetching the pinned main orchestration revision failed.' }
         git -C $sourceRoot checkout --detach FETCH_HEAD
-        if ($LASTEXITCODE -ne 0) { throw 'Checking out the reviewed pipeline source revision failed.' }
+        if ($LASTEXITCODE -ne 0) { throw 'Checking out the pinned main orchestration revision failed.' }
         if ((git -C $sourceRoot rev-parse HEAD).Trim() -cne $env:PIPELINE_SOURCE_SHA) {
-            throw 'The reviewed source checkout does not match Build.SourceVersion.'
+            throw 'The orchestration checkout does not match Build.SourceVersion.'
         }
+        New-Item -ItemType Directory -Path $controlRoot | Out-Null
+        Copy-Item -LiteralPath "$sourceRoot\eng\setup-pr-validation.ps1" -Destination $controlRoot
+        Copy-Item -LiteralPath "$sourceRoot\eng\pipelines\apex-integration\run-apex.ps1" -Destination $controlRoot
         Push-Location $sourceRoot
         try {
-            & .\eng\setup-pr-validation.ps1 -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA
+            & "$controlRoot\setup-pr-validation.ps1" -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA
         }
         finally {
             Pop-Location
         }
       environmentVariables:
         PIPELINE_SOURCE_SHA: $(Build.SourceVersion)
+        PIPELINE_SOURCE_REF: $(Build.SourceBranch)
         PR_NUMBER: ${{ parameters.prNumber }}
         HEAD_SHA: ${{ parameters.headSha }}
       timeout: 0:0:10:0

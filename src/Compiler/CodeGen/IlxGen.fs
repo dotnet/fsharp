@@ -4630,7 +4630,10 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
     match (stripDebugPoints f, tyargs, curriedArgs) with
     // Look for tailcall to turn into branch
-    | Expr.Val(v, _, _), _, _ when IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel ->
+    | Expr.Val(v, _, _), _, _ when
+        (cenv.options.localOptimizationsEnabled || v.Deref.IsDecisionTreeJoin)
+        && IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel
+        ->
         let kind, mark = (TryFindBranchTarget g eenv v).Value // already checked above in when guard
 
         // Generate the arguments for the direct tail call.
@@ -4833,7 +4836,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 if isNil laterArgs && not isSelfInit then
                     let isDllImport = IsValRefIsDllImport g vref
                     let hasByrefArg = mspec.FormalArgTypes |> List.exists IsILTypeByref
-                    let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
+
+                    let makesNoCriticalTailcalls =
+                        vref.MakesNoCriticalTailcalls
+                        && not (IsBranchTailcall cenv eenv (vref, tyargs, curriedArgs) sequel)
+
                     let hasStructObjArg = (boxity = AsValue) && takesInstanceArg
 
                     CanTailcall(
@@ -5531,6 +5538,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     let inner = CG.GenerateDelayMark cgbuf "for_inner"
     let test = CG.GenerateDelayMark cgbuf "for_test"
     let stack, eenvinner = EmitSaveStack cenv cgbuf eenv m (start, finish)
+    let eenvstack = eenvinner
 
     let isUp =
         (match dir with
@@ -5564,7 +5572,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     | DebugPointAtFor.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
     | DebugPointAtFor.No -> ()
 
-    GenExpr cenv cgbuf eenv e1 Continue
+    GenExpr cenv cgbuf eenvstack e1 Continue
     GenStoreVal cgbuf eenvinner m v
 
     if isFSharpStyle then
@@ -5619,7 +5627,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
         CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
         GenSequel cenv eenv.cloc cgbuf e2Sequel
     else
-        GenExpr cenv cgbuf eenv e2 e2Sequel
+        GenExpr cenv cgbuf eenvinner e2 e2Sequel
 
     // .finish - loop-exit here
     CG.SetMarkToHere cgbuf finish

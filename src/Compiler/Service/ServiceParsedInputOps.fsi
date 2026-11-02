@@ -182,6 +182,8 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
+    val internal getScopeInfo: pos: pos * parsedInput: ParsedInput -> struct (ShortIdents * ShortIdents)
+
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
@@ -209,6 +211,16 @@ module public ParsedInput =
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module internal Entity =
+    val getRelativeNamespace: targetNs: ShortIdents -> sourceNs: ShortIdents -> ShortIdents
+
+    val getOpenableNamespace:
+        requiresQualifiedAccessParent: ShortIdents option ->
+        autoOpenParent: ShortIdents option ->
+        candidate: ShortIdents ->
+            struct (ShortIdents * ShortIdents * ShortIdents)
 
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =

@@ -6,8 +6,8 @@ open System
 open System.Collections.Generic
 open System.Threading
 open Xunit
+open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
@@ -19,13 +19,17 @@ type Worker() =
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let options =
-            { RoslynTestHelpers.DefaultProjectOptions with
-                SourceFiles = [| filePath |]
-            }
+        let projectId = ProjectId.CreateNewId()
+
+        let documentInfo =
+            RoslynTestHelpers.CreateDocumentInfo projectId filePath fileContents
+
+        let projectInfo =
+            RoslynTestHelpers.CreateProjectInfo projectId filePath [ documentInfo ]
+            |> fun project -> project.WithName(FSharpConstants.FSharpMiscellaneousFilesName)
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents, options = options)
+            RoslynTestHelpers.CreateSolution [ projectInfo ]
             |> RoslynTestHelpers.GetSingleDocument
 
         let expected = expected |> Seq.toList
@@ -60,7 +64,8 @@ module FsxCompletionProviderTests =
 #endif
     let fsiShouldTriggerCompletionInFsxFile () =
         let fileContents =
-            """
+            $"""
+    #r @"{TestFramework.initialConfig.FSharpCompilerInteractiveSettings}"
     fsi.
     """
 

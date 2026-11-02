@@ -477,10 +477,15 @@ type FSharpValue =
     static member PreComputeTupleReader:
         [<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)>] tupleType: Type -> (obj -> objnull array)
 
-    /// <summary>Gets information that indicates how to read a field of a tuple</summary>
+    /// <summary>Gets property information that indicates how to read an element of a reference tuple.</summary>
     ///
-    /// <param name="tupleType">The input tuple type.</param>
+    /// <remarks>Struct tuples store their elements in fields, not properties, and are not supported by this method.
+    /// Use <c>FSharpValue.PreComputeTupleReader</c> or <c>FSharpValue.GetTupleField</c> to read struct tuple elements.</remarks>
+    ///
+    /// <param name="tupleType">The input reference tuple type.</param>
     /// <param name="index">The index of the tuple element to describe.</param>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the given type is not a reference tuple type, including when it is a struct tuple type.</exception>
     ///
     /// <returns>The description of the tuple element and an optional type and index if the tuple is big.</returns>
     ///
