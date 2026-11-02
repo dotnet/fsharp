@@ -325,6 +325,17 @@ let private finalProjections () =
                   select (c.Name, query { for o in c.Orders do select {| Id = o.Id; Total = o.Total |} into p; sortByDescending p.Total })
               })
           (customers
-           >> Seq.map (fun c -> c.Name, c.Orders |> Seq.sortByDescending _.Total |> Seq.map (fun o -> {| Id = o.Id; Total = o.Total |}))) ]
+           >> Seq.map (fun c -> c.Name, c.Orders |> Seq.sortByDescending _.Total |> Seq.map (fun o -> {| Id = o.Id; Total = o.Total |})))
+
+      // The nested query ends in a sort, so it is an ordered sequence where the tuple wants a sequence
+      Scenario.rows
+          "sorted nested query over a sequence selected in a tuple"
+          (fun db -> query { for c in db.Customers do select (c.Id, query { for y in [| 20; 10 |] do sortBy y }) })
+          (customers >> Seq.map (fun c -> c.Id, [| 10; 20 |] :> seq<int>))
+
+      Scenario.rows
+          "sorted nested query over a sequence selected in a tuple, then take"
+          (fun db -> query { for c in db.Customers do select (c.Id, query { for y in [| 20; 10 |] do sortBy y }); take 2 })
+          (customers >> Seq.map (fun c -> c.Id, [| 10; 20 |] :> seq<int>) >> Seq.truncate 2) ]
 
 let cases () = loops () @ subqueries () @ leftJoins () @ finalProjections ()
