@@ -131,13 +131,13 @@ type internal DependencyGraphType =
 [<Extension>]
 type internal Extensions =
     [<Extension>]
-    static member Key<'T when 'T :> IFileSnapshot>(fileSnapshots: 'T list, ?extraKeyFlag) =
+    static member Key<'T when 'T :> IFileSnapshot>(fileSnapshots: 'T[], ?extraKeyFlag) =
 
         { new ICacheKey<_, _> with
             member _.GetLabel() =
                 let lastFile =
                     fileSnapshots
-                    |> List.tryLast
+                    |> Array.tryLast
                     |> Option.map (fun f -> f.FileName |> shortPath)
                     |> Option.defaultValue "[no file]"
 
@@ -841,16 +841,16 @@ type internal TransparentCompiler
                 getProjectReferences projectSnapshot "ComputeTcConfigBuilder"
 
             let getSwitchValue (switchString: string) =
-                match commandLineArgs |> List.tryFindIndex (fun s -> s.StartsWithOrdinal switchString) with
-                | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
-                | _ -> None
+                commandLineArgs
+                |> List.tryFind (fun s -> s.StartsWithOrdinal switchString)
+                |> Option.map _.Substring(switchString.Length)
 
             let useSimpleResolution =
                 (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
             let! (loadClosureOpt: LoadClosure option) =
                 let lastScriptFile =
-                    match List.tryLast projectSnapshot.SourceFiles with
+                    match Array.tryLast projectSnapshot.SourceFiles with
                     | None -> None
                     | Some file -> if IsScript file.FileName then Some file else None
 
@@ -1253,7 +1253,7 @@ type internal TransparentCompiler
                 |> Seq.map (fun f -> LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotWithSources(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, sources |> Array.toList)
+            return ProjectSnapshotWithSources(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, sources)
 
         }
 
@@ -1629,14 +1629,14 @@ type internal TransparentCompiler
                 |> Seq.map (ComputeParseFile projectSnapshot tcConfig)
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
+            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs)
         }
 
     /// Parse the files of a project, except the implementation files that have a signature file before them.
     /// These get an empty placeholder: a project that is type checked from its signatures does not need them.
     let parseSourceFilesExceptImplFilesWithSignatures (projectSnapshot: ProjectSnapshotWithSources) tcConfig =
         async {
-            let sourceFiles = projectSnapshot.SourceFiles |> List.toArray
+            let sourceFiles = projectSnapshot.SourceFiles
 
             let signatureIndexes =
                 sourceFiles
@@ -1692,17 +1692,17 @@ type internal TransparentCompiler
 
                         FSharpParsedFile(file.FileName, file.Version, file.Source, placeholder, [||]))
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedFiles |> Array.toList)
+            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedFiles)
         }
 
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
-        let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
+        let fileName = projectSnapshot.SourceFiles |> Array.last |> (fun f -> f.FileName)
 
         caches.TcLastFile.Get(
             projectSnapshot.FileKey fileName,
             async {
-                let file = projectSnapshot.SourceFiles |> List.last
+                let file = projectSnapshot.SourceFiles |> Array.last
 
                 use _ =
                     Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |> (!!) |]
@@ -1771,7 +1771,7 @@ type internal TransparentCompiler
 
                     let priorSnapshot = projectSnapshot.UpTo fileName
                     let! snapshotWithSources = LoadSources bootstrapInfo priorSnapshot
-                    let file = snapshotWithSources.SourceFiles |> List.last
+                    let file = snapshotWithSources.SourceFiles |> Array.last
 
                     let! parseResults = getParseResult projectSnapshot Seq.empty file bootstrapInfo.TcConfig
 
@@ -2304,10 +2304,10 @@ type internal TransparentCompiler
             | None, creationDiags -> return emptyParseResult fileName creationDiags
             | Some tcConfig, _ ->
                 let fileSnapshot =
-                    projectSnapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
+                    projectSnapshot.SourceFiles |> Array.find (fun f -> f.FileName = fileName)
 
                 let isExe = tcConfig.target.IsExe
-                let isLastCompiland = fileName = List.last projectSnapshot.SourceFileNames
+                let isLastCompiland = fileName = (Array.last projectSnapshot.SourceFiles).FileName
                 let! file = LoadSource fileSnapshot isExe isLastCompiland
                 let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
                 return parseResult
@@ -2678,10 +2678,10 @@ type internal TransparentCompiler
                         fileName + ".fsproj",
                         None,
                         None,
-                        List.ofArray sourceFiles,
+                        sourceFiles,
                         references,
                         otherFlags,
-                        List.empty,
+                        [||],
                         false,
                         true,
                         loadedTimeStamp,
