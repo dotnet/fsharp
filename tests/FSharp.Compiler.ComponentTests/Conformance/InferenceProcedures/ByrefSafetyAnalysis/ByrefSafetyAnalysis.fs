@@ -28,16 +28,40 @@ module ByrefSafetyAnalysis =
         |> shouldFail
         |> withDiagnostics diagnostics
 
-    [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
-    let ``Issue 20803 - constructed span partial application`` optimize =
+    [<TheoryForNETCOREAPP;
+      InlineData(false, "add");
+      InlineData(true, "add");
+      InlineData(false, "(ignore 0; add)");
+      InlineData(true, "(ignore 0; add)")>]
+    let ``Issue 20803 - constructed span partial application`` optimize (head: string) =
         FSharp
-            """module Consumer
+            $"""module Consumer
 open System
 let add (s: Span<int>) (x: int) = s.Length + x
-let bad = add (Span<int> [| 1; 2; 3 |])
+let bad = {head} (Span<int> [| 1; 2; 3 |])
 """
         |> asLibrary
-        |> verifyRejectedApplication optimize [ captureDiagnostic 4 16 39 ]
+        |> verifyRejectedApplication optimize [ captureDiagnostic 4 (13 + head.Length) (36 + head.Length) ]
+
+    [<TheoryForNETCOREAPP;
+      InlineData(false, "genericSpan<kg> ()");
+      InlineData(true, "genericSpan<kg> ()");
+      InlineData(false, "s");
+      InlineData(true, "s")>]
+    let ``Issue 20803 - non-dimensionless measured span captures`` optimize (argument: string) =
+        FSharp
+            $"""module Consumer
+open System
+[<Measure>] type kg
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
+let genericSpan<[<Measure>] 'u> () : TaggedSpan<'u> = Unchecked.defaultof<_>
+let add (s: TaggedSpan<'u>) (x: int) = x + 2
+let bad () =
+    let s = genericSpan<kg> ()
+    add ({argument})
+"""
+        |> verifyRejectedApplication optimize [ captureDiagnostic 10 10 (10 + argument.Length) ]
 
     [<TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
     let ``Issue 20803 - inferred curried arity`` optimize =

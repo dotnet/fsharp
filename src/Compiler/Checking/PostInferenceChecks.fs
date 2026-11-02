@@ -716,6 +716,7 @@ let rec mkArgsForAppliedExpr isBaseCall argsl x =
     | Expr.App (f, _fty, _tyargs, [], _) -> mkArgsForAppliedExpr isBaseCall argsl f
     // step through subsumption coercions
     | Expr.Op (TOp.Coerce, _, [f], _) -> mkArgsForAppliedExpr isBaseCall argsl f
+    | Expr.Sequential (_, f, NormalSeq, _) -> mkArgsForAppliedExpr isBaseCall argsl f
     | _  -> []
 
 /// Check if a type argument is an interface with unimplemented static abstract members
@@ -949,7 +950,7 @@ let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list)
     | Some e -> errorR(e)
 
 let rec tryNonSpanLikeRepresentationHead g m ty =
-    // Only a substitution-independent negative proof may bypass dimensionless-measure normalization.
+    // A negative proof must not depend on substituting type arguments.
     match stripTyparEqns ty with
     | TType_app(tcref, _, _) when not (isSpanLikeTyconRef g m tcref) ->
         match tcref.TypeAbbrev with
@@ -993,11 +994,7 @@ let rec private instantiatedResultHead g m (typars: Typars) tyargs (args: Expr l
             match tryNonSpanLikeRepresentationHead g m ty with
             | ValueSome headTy -> { Type = headTy; Args = args }
             | _ ->
-                let typars = NormalizeDeclaredTyparsForEquiRecursiveInference g typars
-                let actualTy = stripTyEqns g (instType (mkTyparInst typars tyargs) ty)
-
-                { Type = actualTy
-                  Args = args }
+                instantiatedResultHead g m typars tyargs args (reduceTyconRefMeasureableOrProvided g tcref tinst)
         | None -> { Type = ty; Args = args }
     | ty -> { Type = ty; Args = args }
 

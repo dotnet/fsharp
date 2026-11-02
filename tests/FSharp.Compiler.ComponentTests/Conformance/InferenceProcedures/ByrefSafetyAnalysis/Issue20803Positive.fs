@@ -11,6 +11,12 @@ type Small(value: int) =
 type Operations() =
     member _.Add(s: Span<int>, x) = s.Length + x
 
+[<Measure>] type kg
+[<MeasureAnnotatedAbbreviation>]
+type TaggedSpan<[<Measure>] 'u> = Span<int>
+let genericSpan<[<Measure>] 'u> () : TaggedSpan<'u> = Unchecked.defaultof<_>
+let measuredSpan (s: TaggedSpan<'u>) (x: int) = x + 2
+
 let add (s: Span<int>) x = s.Length + x
 let read (s: ReadOnlySpan<int>) x = s.Length + x
 let small (s: Small) x = s.Value + x
@@ -28,6 +34,16 @@ let run () =
     let good = add (Provider.make ()) 4
     if good <> 7 || add s 4 <> 7 || Provider.add s 4 <> 7 || Provider.f s () <> 3 then
         failwith "curried application"
+    let mutable headEvaluations = 0
+    if
+        (ignore 0; add) (Span<int>([| 1; 2 |])) 1 <> 3
+        || (headEvaluations <- headEvaluations + 1; add) s 1 <> 4
+        || headEvaluations <> 1
+    then
+        failwith "sequential application head"
+    let tagged = genericSpan<kg> ()
+    if measuredSpan (genericSpan<kg> ()) 1 <> 3 || measuredSpan tagged 1 <> 3 then
+        failwith "measured span application"
     if read (ReadOnlySpan<int>([| 1; 2; 3 |])) 4 <> 7 || small (Small(3)) 4 <> 7 then
         failwith "byref-like types"
     if tupled (Span<int>([| 1; 2; 3 |]), 1) 2 <> 6 || later 1 s 2 <> 6 then
