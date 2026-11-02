@@ -21,6 +21,16 @@ type StructHolder = { Wrapped: StructPair }
 
 let private pairOf (x: StructPair) = x.SPair
 
+/// A record that is changed through any copy of the struct that holds it
+type SharedChild = { SharedId: int; mutable State: int }
+
+[<Struct>]
+type SharedHolder = { Child: SharedChild }
+
+let private changeThenRead (x: SharedHolder) (y: SharedHolder) =
+    x.Child.State <- 99
+    y.Child.State
+
 /// A tree is pinned with every block it has: one that goes from three to two is a change as well
 let private blocks count =
     List.replicate count (Violation.Statement System.Linq.Expressions.ExpressionType.Block)
@@ -344,6 +354,29 @@ let private consumers () =
               })
           (fun _ -> true)
       |> Scenario.violating [ Violation.ReadsUnnamedMember "StructHolder" ]
+
+      // Copies of a struct hold the same objects
+      Scenario.value
+          "sumBy after a struct select, a record in it changed through the struct passed twice"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select { Child = { SharedId = c.Id; State = 0 } } into p
+                  sumBy (changeThenRead p p)
+              })
+          (fun data -> 99 * data.Customers.Length)
+
+      // A nested query that a function gets from the element is one sequence, however often it mentions it
+      Scenario.value
+          "exists with a nested query, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let orders = query { for o in db.Orders do where (o.CustomerId = c.Id); select (o.Id, o.Total) }
+                  exists (obj.ReferenceEquals(orders, orders))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
 
       Scenario.value
           "all after a tuple select, the tuple compared with itself"

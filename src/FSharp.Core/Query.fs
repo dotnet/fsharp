@@ -1837,7 +1837,7 @@ module Query =
         result
 
     /// A tuple or record of a class, which the translation builds anew from the elements it produces each time one
-    /// is asked for
+    /// is asked for, and a sequence of them, which it selects anew over those elements
     let rec IsRebuiltObject (ty: Type) =
         if ty.IsValueType then
             // A struct holds an object that is rebuilt when one of its parts is one
@@ -1847,7 +1847,9 @@ module Query =
                 && Microsoft.FSharp.Reflection.FSharpType.GetRecordFields ty
                    |> Array.exists (fun field -> IsRebuiltObject field.PropertyType))
         else
-            Microsoft.FSharp.Reflection.FSharpType.IsTuple ty || isPartiallyImmutableRecord ty
+            Microsoft.FSharp.Reflection.FSharpType.IsTuple ty
+            || isPartiallyImmutableRecord ty
+            || ((IsIEnumerableTy ty || IsIQueryableTy ty) && IsRebuiltObject (ty.GetGenericArguments().[0]))
 
     /// Whether the property is a part of the record or tuple it is read from, and not a member that computes something
     /// from it: such a member gets the object itself
