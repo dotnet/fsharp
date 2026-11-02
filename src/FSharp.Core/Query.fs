@@ -1700,7 +1700,13 @@ module Query =
                 IsIQueryableTy immutSourceTy
             match mutSource with
             | TransInnerResult.Select(selectCanElim, isQTy, selectSource, selectVar, selectBody) when isQTy = mustReturnIQueryable ->
-                MakeSelect(selectCanElim, isQTy, CommitTransInnerResult selectSource, selectVar, ConvMutableToImmutable sourceConv selectBody)
+                // The conversion reads the body once for each of its parts. The lets in front of the construction, which
+                // a record with fields written out of order has, stay in front of it, so that each is evaluated once.
+                let rec convertUnderLets body =
+                    match body with
+                    | Let(v, e, rest) -> Expr.Let(v, e, convertUnderLets rest)
+                    | _ -> ConvMutableToImmutable sourceConv body
+                MakeSelect(selectCanElim, isQTy, CommitTransInnerResult selectSource, selectVar, convertUnderLets selectBody)
             | _ ->
             let immutVar = Var("after", immutSourceElemTy)
             let mutVar, mutToImmutSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, Expr.Var immutVar)
