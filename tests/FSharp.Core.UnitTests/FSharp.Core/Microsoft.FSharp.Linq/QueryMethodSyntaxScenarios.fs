@@ -81,7 +81,7 @@ let cases () =
           (fun db -> db.Customers.Select(fun c -> (c.Name, c.Age)).OrderBy(fun (_, age) -> age).Select(fun (name, _) -> name))
           (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
       |> Scenario.ordered
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 4)
 
       Scenario.rows
           "OrderBy taking a struct tuple apart"
@@ -89,13 +89,13 @@ let cases () =
               db.Customers.Select(fun c -> struct (c.Name, c.Age)).OrderBy(fun (struct (_, age)) -> age).Select(fun (struct (name, _)) -> name))
           (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
       |> Scenario.ordered
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "GroupBy taking a tuple apart"
           (fun db -> db.Customers.Select(fun c -> (c.City, c.Age)).GroupBy(fun (city, _) -> city).Select(fun g -> (g.Key, g.Count())))
           (customers >> Seq.countBy _.City)
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "GroupBy taking a struct tuple apart"
