@@ -302,9 +302,9 @@ module ProviderShape =
     let private yields (elementType: Type) (source: Expression) =
         typedefof<IEnumerable<_>>.MakeGenericType(elementType).IsAssignableFrom source.Type
 
-    /// Whether the lambda gives its first parameter back as it is.
-    let private returnsParameter (lambda: LambdaExpression) =
-        lambda.Parameters.Count > 0 && obj.ReferenceEquals(lambda.Body, lambda.Parameters.[0])
+    /// Whether the lambda gives the parameter at the index back as it is.
+    let private returnsParameterAt index (lambda: LambdaExpression) =
+        index < lambda.Parameters.Count && obj.ReferenceEquals(lambda.Body, lambda.Parameters.[index])
 
     /// A query that is its own root, as opposed to one built from another by operators.
     let private isRoot (query: IQueryable) =
@@ -354,18 +354,30 @@ module ProviderShape =
                           | ValueSome lambda -> lambda
                           | ValueNone -> () ]
 
+                // A function of an element of each of two sequences gives unnamed elements when it builds them without
+                // names, and when it gives back one of its parameters of which the sequence has unnamed elements
+                let unnamedResult (result: LambdaExpression) (second: Expression) =
+                    buildsUnnamed result.Body
+                    || (returnsParameterAt 0 result && this.Unnamed source)
+                    || (returnsParameterAt 1 result && this.Unnamed second)
+
                 match call.Method.Name with
                 | "Select" ->
                     lambdas
                     |> List.tryLast
-                    |> Option.exists (fun selector -> buildsUnnamed selector.Body || (returnsParameter selector && this.Unnamed source))
+                    |> Option.exists (fun selector -> buildsUnnamed selector.Body || (returnsParameterAt 0 selector && this.Unnamed source))
                 | "SelectMany" ->
                     match lambdas with
                     | [ collection ] -> this.Unnamed collection.Body
-                    | [ _; result ] -> buildsUnnamed result.Body
+                    | [ collection; result ] -> unnamedResult result collection.Body
                     | _ -> false
                 | "Join"
-                | "GroupJoin" -> lambdas |> List.tryLast |> Option.exists (fun result -> buildsUnnamed result.Body)
+                | "Zip" -> lambdas |> List.tryLast |> Option.exists (fun result -> unnamedResult result call.Arguments.[1])
+                // The second parameter is the group of the matching inner elements, which no element is
+                | "GroupJoin" ->
+                    lambdas
+                    |> List.tryLast
+                    |> Option.exists (fun result -> buildsUnnamed result.Body || (returnsParameterAt 0 result && this.Unnamed source))
                 | "Where"
                 | "OrderBy"
                 | "OrderByDescending"
@@ -437,8 +449,18 @@ module ProviderShape =
                 |> ValueOption.iter (fun result ->
                     report result 0 source (this.Unnamed source)
                     report result 1 second (this.Unnamed second))
-            // The first parameter of the function is the accumulated value
-            | "Aggregate" -> ()
+            // The function takes the accumulated value, then an element. With no seed the accumulated value starts as
+            // an element, and a seed is of a type of its own, which is no element.
+            | "Aggregate" ->
+                let sourceUnnamed = this.Unnamed source
+                let seeded = call.Arguments.Count > 2
+
+                lambdaAt call (if seeded then 2 else 1)
+                |> ValueOption.iter (fun func ->
+                    if not seeded then
+                        report func 0 source sourceUnnamed
+
+                    report func 1 source sourceUnnamed)
             | _ ->
                 let sourceUnnamed = this.Unnamed source
 

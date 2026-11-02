@@ -60,6 +60,35 @@ module Scenario =
         else
             ValueNone
 
+    let rec private isPlain (ty: Type) =
+        ty.IsPrimitive
+        || ty.IsEnum
+        || ty = typeof<string>
+        || ty = typeof<decimal>
+        || ty = typeof<DateTime>
+        || ty = typeof<DateTimeOffset>
+        || ty = typeof<Guid>
+        || (match Nullable.GetUnderlyingType ty with
+            | null -> false
+            | underlying -> isPlain underlying)
+
+    /// An object of a class of the scenarios, with what it holds in the properties that give plain values. Its own
+    /// text says no more than the key of an entity, and a result that is wrong in any other property is not equal to
+    /// the right one.
+    [<return: Struct>]
+    let private (|Entity|_|) (value: obj) =
+        let ty = value.GetType()
+
+        if ty.IsClass && String.Equals(ty.Namespace, typeof<Customer>.Namespace, StringComparison.Ordinal) then
+            ValueSome(
+                ty.GetProperties(BindingFlags.Public ||| BindingFlags.Instance)
+                |> Seq.filter (fun property -> property.GetIndexParameters().Length = 0 && isPlain property.PropertyType)
+                |> Seq.map (fun property -> struct (property.Name, property.GetValue value))
+                |> Seq.toList
+            )
+        else
+            ValueNone
+
     /// Text that is equal for equal results, whichever provider materialized them.
     let rec render (value: obj) =
         let renderAll (values: seq<obj>) =
@@ -76,6 +105,9 @@ module Scenario =
             let rendered = fields |> Seq.map (fun (name, field) -> $"{name} = {render field}")
             $"""{{ {String.concat "; " rendered} }}"""
         | Union(case, fields) -> $"{case}({renderAll fields})"
+        | Entity properties ->
+            let rendered = properties |> Seq.map (fun (struct (name, property)) -> $"{name} = {render property}")
+            $"""{value.GetType().Name} {{ {String.concat "; " rendered} }}"""
         | value -> string value
 
     let rows name (run: Db -> IQueryable<'T>) (expected: Data -> seq<'T>) =
