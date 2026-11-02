@@ -10,6 +10,15 @@ open Microsoft.CodeAnalysis.Text
 module RoslynSourceTextTests =
 
     [<Fact>]
+    let ``GetLinesAsMemory slices the same lines as Lines`` () =
+        let sourceText = SourceText.From("test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n")
+
+        let slices = sourceText.GetLinesAsMemory() |> Array.map string
+        let lines = sourceText.Lines |> Seq.map string |> Seq.toArray
+
+        Assert.Equal<string>(lines, slices)
+
+    [<Fact>]
     let SourceText () =
         let text = "test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n"
         let sourceText = SourceText.From(text).ToFSharpSourceText()
