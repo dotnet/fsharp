@@ -895,8 +895,8 @@ module internal Rewriting =
                 rewriteLinearExpr env innerExpr (contf << (fun innerExprR -> Expr.DebugPoint(dpm, innerExprR)))
 
             | _ ->
-                // no longer linear, no tailcall
-                contf (RewriteExpr env expr)
+                // no longer linear, no tailcall; PreIntercept was tried above and PostTransform is already in contf
+                contf (rewriteExprStructure env expr)
 
     and rewriteExprs env exprs = List.mapq (RewriteExpr env) exprs
 
