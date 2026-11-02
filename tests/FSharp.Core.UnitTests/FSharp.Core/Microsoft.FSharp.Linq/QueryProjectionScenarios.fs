@@ -74,6 +74,17 @@ let cases () =
               })
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
 
+      // The provider has to know which column of the tuple is the city, or it applies DISTINCT to both
+      Scenario.rows
+          "distinct of an item of a tuple taken apart by the next for"
+          (fun db ->
+              query {
+                  for (city, _) in (query { for c in db.Customers do select (c.City, c.Id) }) do
+                  select city
+                  distinct
+              })
+          (customers >> Seq.map _.City >> Seq.distinct)
+
       Scenario.rows
           "struct tuple taken apart by the next for"
           (fun db ->
