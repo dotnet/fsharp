@@ -319,3 +319,149 @@ type ProviderShapeValidatorTests() =
             (fun data -> data.Customers.Length)
         |> Scenario.violating [ Violation.LeftProvider ]
         |> Scenario.check
+
+    [<Fact>]
+    member _.``A result selector that gives back an unnamed element keeps the elements unnamed``() =
+        let item = Expression.Parameter(typeof<int>, "item")
+
+        let flattened named =
+            let pair = Expression.Parameter(ValidatorTrees.customerPair, "pair")
+            let collectionType = typedefof<Func<_, _>>.MakeGenericType(ValidatorTrees.customerPair, typeof<IEnumerable<int>>)
+            let collection = Expression.Lambda(collectionType, Expression.NewArrayInit(typeof<int>, Expression.Constant 0), pair)
+            let first = Expression.Parameter(ValidatorTrees.customerPair, "pair")
+
+            ValidatorTrees.call
+                "SelectMany"
+                [ ValidatorTrees.customerPair; typeof<int>; ValidatorTrees.customerPair ]
+                [ ValidatorTrees.customerPairs named
+                  ValidatorTrees.quote collection
+                  ValidatorTrees.quote (Expression.Lambda(first, first, item)) ]
+
+        Assert.Equal<Violation list>(unnamedRead, reported (ValidatorTrees.whereItem1Positive (flattened false) ValidatorTrees.customerPair))
+        Assert.Empty(reported (ValidatorTrees.whereItem1Positive (flattened true) ValidatorTrees.customerPair))
+
+    [<Fact>]
+    member _.``The second parameter of a SelectMany result selector is an element of the collection``() =
+        let collected named =
+            let customer = Expression.Parameter(typeof<Customer>, "c")
+            let collectionType = typedefof<Func<_, _>>.MakeGenericType(typeof<Customer>, typeof<IEnumerable<Tuple<int, float>>>)
+            let collection = Expression.Lambda(collectionType, ValidatorTrees.orderPairs named, customer)
+            let owner = Expression.Parameter(typeof<Customer>, "c")
+            let order = Expression.Parameter(ValidatorTrees.orderPair, "o")
+
+            ValidatorTrees.call
+                "SelectMany"
+                [ typeof<Customer>; ValidatorTrees.orderPair; ValidatorTrees.orderPair ]
+                [ ValidatorTrees.customers.Expression
+                  ValidatorTrees.quote collection
+                  ValidatorTrees.quote (Expression.Lambda(order, owner, order)) ]
+
+        Assert.Equal<Violation list>(unnamedRead, reported (ValidatorTrees.whereItem1Positive (collected false) ValidatorTrees.orderPair))
+        Assert.Empty(reported (ValidatorTrees.whereItem1Positive (collected true) ValidatorTrees.orderPair))
+
+    [<Fact>]
+    member _.``A join or a zip that gives back an unnamed element keeps the elements unnamed``() =
+        let joined outerNamed innerNamed (result: ParameterExpression -> ParameterExpression -> Expression) =
+            ValidatorTrees.join
+                (ValidatorTrees.customerPairs outerNamed)
+                ValidatorTrees.customerPair
+                (ValidatorTrees.customerPairs innerNamed)
+                ValidatorTrees.customerPair
+                ValidatorTrees.zero
+                ValidatorTrees.zero
+                result
+
+        let check tree = reported (ValidatorTrees.whereItem1Positive tree ValidatorTrees.customerPair)
+
+        Assert.Equal<Violation list>(unnamedRead, check (joined false true (fun o _ -> o)))
+        Assert.Empty(check (joined true false (fun o _ -> o)))
+        Assert.Equal<Violation list>(unnamedRead, check (joined true false (fun _ i -> i)))
+        Assert.Empty(check (joined false true (fun _ i -> i)))
+
+    [<Fact>]
+    member _.``A zip that gives back an unnamed element keeps the elements unnamed``() =
+        let zipped firstNamed secondNamed =
+            let a = Expression.Parameter(ValidatorTrees.customerPair, "a")
+            let b = Expression.Parameter(ValidatorTrees.customerPair, "b")
+
+            ValidatorTrees.whereItem1Positive
+                (ValidatorTrees.call
+                    "Zip"
+                    [ ValidatorTrees.customerPair; ValidatorTrees.customerPair; ValidatorTrees.customerPair ]
+                    [ ValidatorTrees.customerPairs firstNamed
+                      ValidatorTrees.customerPairs secondNamed
+                      ValidatorTrees.quote (Expression.Lambda(a, a, b)) ])
+                ValidatorTrees.customerPair
+
+        Assert.Equal<Violation list>(unnamedRead, reported (zipped false true))
+        Assert.Empty(reported (zipped true false))
+
+    [<Fact>]
+    member _.``The element an Aggregate function takes is checked, and a seed that is accumulated is not``() =
+        // customers.Select(c => new Tuple<int, string>(c.Id, c.Name)).Aggregate(0, (acc, pair) => acc + pair.Item1)
+        let summed named =
+            let acc = Expression.Parameter(typeof<int>, "acc")
+            let pair = Expression.Parameter(ValidatorTrees.customerPair, "pair")
+            let func = Expression.Lambda(Expression.Add(acc, ValidatorTrees.item1 pair), acc, pair)
+
+            ValidatorTrees.call
+                "Aggregate"
+                [ ValidatorTrees.customerPair; typeof<int> ]
+                [ ValidatorTrees.customerPairs named; Expression.Constant 0; ValidatorTrees.quote func ]
+
+        Assert.Equal<Violation list>(unnamedRead, reported (summed false))
+        Assert.Empty(reported (summed true))
+
+        // The accumulated value has the type of the elements here, and a member read from it is no read from an element
+        let counted =
+            let acc = Expression.Parameter(ValidatorTrees.customerPair, "acc")
+            let pair = Expression.Parameter(ValidatorTrees.customerPair, "pair")
+            let seed = ValidatorTrees.pair ValidatorTrees.customerPair [ Expression.Constant 0; Expression.Constant "" ] true
+            let count = Expression.Add(ValidatorTrees.item1 acc, Expression.Constant 1)
+            let next = ValidatorTrees.pair ValidatorTrees.customerPair [ count; Expression.Constant "" ] true
+
+            ValidatorTrees.call
+                "Aggregate"
+                [ ValidatorTrees.customerPair; ValidatorTrees.customerPair ]
+                [ ValidatorTrees.customerPairs false; seed :> Expression; ValidatorTrees.quote (Expression.Lambda(next, acc, pair)) ]
+
+        Assert.Empty(reported counted)
+
+    [<Fact>]
+    member _.``Both parameters of an Aggregate function with no seed are elements``() =
+        // customers.Select(c => new Tuple<int, string>(c.Id, c.Name)).Aggregate((a, b) => new Tuple<int, string>(a.Item1 + b.Item1, a.Item2))
+        let combined named =
+            let a = Expression.Parameter(ValidatorTrees.customerPair, "a")
+            let b = Expression.Parameter(ValidatorTrees.customerPair, "b")
+            let sum = Expression.Add(ValidatorTrees.item1 a, ValidatorTrees.item1 b)
+            let body = ValidatorTrees.pair ValidatorTrees.customerPair [ sum; ValidatorTrees.item2 a ] true
+
+            ValidatorTrees.call
+                "Aggregate"
+                [ ValidatorTrees.customerPair ]
+                [ ValidatorTrees.customerPairs named; ValidatorTrees.quote (Expression.Lambda(body, a, b)) ]
+
+        Assert.Equal<Violation list>(unnamedRead @ unnamedRead, reported (combined false))
+        Assert.Empty(reported (combined true))
+
+    [<Fact>]
+    member _.``An entity that is wrong in a property other than its key does not pass``() =
+        let fails (build: Customer -> Customer) =
+            let scenario =
+                Scenario.value
+                    "payload"
+                    (fun db ->
+                        query {
+                            for c in db.Customers do
+                            select (build c) into p
+                            head
+                        })
+                    (fun data -> data.Customers.[0])
+
+            Scenario.failures scenario |> List.exists (fun failure -> failure.Contains("rows: expected", StringComparison.Ordinal))
+
+        let copy (c: Customer) = Customer(Id = c.Id, Name = c.Name, City = c.City, Age = c.Age, Registered = c.Registered)
+
+        Assert.True(fails (fun c -> Customer(Id = c.Id, Name = "CORRUPTED", City = c.City, Age = -1, Registered = c.Registered)))
+        Assert.True(fails (fun c -> Customer(Id = c.Id, Name = c.Name, City = c.City, Age = c.Age)))
+        Assert.False(fails copy)
