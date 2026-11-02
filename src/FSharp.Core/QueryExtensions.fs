@@ -300,12 +300,25 @@ module internal Adapters =
         | RecordFieldGetSimplification newExpr -> newExpr
         | _ -> e
 
+    /// Whether the expression builds a record, possibly after some lets
+    let rec constructsRecordAfterLets (expr: Expr) =
+        match expr with
+        | Patterns.Let(_, _, body) -> constructsRecordAfterLets body
+        | Patterns.NewRecord(typ, _) -> isPartiallyImmutableRecord typ
+        | _ -> false
+
     /// Given the expression part of a "yield" or "select" which produces a result in terms of immutable tuples or immutable records,
     /// generate an equivalent expression yielding anonymous objects. Also return the conversion for the immutable-to-mutable correspondence
     /// so we can reverse this later.
     let rec ProduceMoreMutables tipf expr =
 
         match expr with
+        // A record with fields written out of order comes after the lets that the compiler adds to keep the order they
+        // are written in. The lets stay where they are, in front of the construction.
+        | Patterns.Let(v, e, body) when constructsRecordAfterLets body ->
+            let body, conv = ProduceMoreMutables tipf body
+            Expr.Let(v, e, body), conv
+
         // Replace immutable tuples by anonymous objects
         | Patterns.NewTuple exprs ->
             let argExprsNow, argScripts =
