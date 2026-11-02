@@ -385,15 +385,19 @@ module internal Adapters =
                 match fields |> Array.tryFindIndex (fun field -> field.Name = property.Name) with
                 | Some index when index < parts.Length -> ValueSome parts.[index]
                 | _ -> ValueNone
+            | ValueSome(Patterns.NewTuple parts) when property.Name.StartsWith("Item", StringComparison.Ordinal) ->
+                match Int32.TryParse(property.Name.Substring 4) with
+                | true, number when number >= 1 && number <= 7 && number <= parts.Length -> ValueSome parts.[number - 1]
+                | _ -> ValueNone
             | _ -> ValueNone
         | _ -> ValueNone
 
     /// An object that the rebuilding makes anew each time it is evaluated, and that can be told from another by its
-    /// reference: a tuple or a record of a class
-    let makesObject (part: Expr) =
+    /// reference: a tuple or a record of a class, or a struct that holds one
+    let rec makesObject (part: Expr) =
         match part with
-        | Patterns.NewTuple _
-        | Patterns.NewRecord _ -> not part.Type.IsValueType
+        | Patterns.NewTuple parts
+        | Patterns.NewRecord(_, parts) -> not part.Type.IsValueType || List.exists makesObject parts
         | _ -> false
 
     /// Whether the expression uses the element, or a tuple or record that the rebuilding makes in it, as a value of
@@ -407,8 +411,6 @@ module internal Adapters =
             | ValueSome part -> makesObject part
             | ValueNone ->
                 match expr with
-                | Patterns.TupleGet(Patterns.Var _, _)
-                | Patterns.PropertyGet(Some(Patterns.Var _), _, []) -> false
                 | ExprShape.ShapeVar _ -> false
                 | ExprShape.ShapeLambda(_, body) -> usesWhole v rebuilt body
                 | ExprShape.ShapeCombination(_, args) -> List.exists (usesWhole v rebuilt) args
