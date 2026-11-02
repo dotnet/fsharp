@@ -82,9 +82,6 @@ module public Structure =
     /// Returns outlining ranges for given parsed input.
     val getOutliningRanges: sourceLines: string[] -> parsedInput: ParsedInput -> seq<ScopeRange>
 
-    /// <summary>
-    /// Returns outlining ranges for given parsed input, taking the source lines as slices of text the
-    /// caller already holds rather than as strings of their own.
-    /// </summary>
+    /// Like getOutliningRanges, with the source lines given as slices of text the caller already holds.
     val internal getOutliningRangesFromLineSlices:
         sourceLines: ReadOnlyMemory<char>[] -> parsedInput: ParsedInput -> seq<ScopeRange>
