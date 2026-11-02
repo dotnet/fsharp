@@ -28,13 +28,15 @@ a.Equals(b)  // Was: false, Now: true
 
 ```fsharp
 <@ fun (x: float) -> abs x @>
-// Was: Call(Operators.Abs, x)
+// Was: Call(Operators.Abs$W, ToFSharpFunc(..), x)
 // Now: Call(Math.Abs, x)
 ```
 
 The same holds for `sqrt`, `floor`, `ceil`, `round`, `truncate`, `sign`, `exp`, `log`, `log10`, the trigonometric functions, `min`, `max` and `**`; `fst` and `snd` read `Item1` and `Item2`, `isNull` compares with a null constant, and `box` is a conversion.
 
-**Impact:** A compiled tree gives what the F# function gives in code. For `min` and `max` on `float` and `float32` that differs from before when an argument is NaN or the arguments are zeros of different sign: the tree used to call the generic comparison, where code calls `Math.Min` and `Math.Max`. A provider that translates `Math.Round` rounds midpoints its own way; SQLite rounds them away from zero.
+**Impact:** A compiled tree gives what the F# function gives in code. For `min` and `max` on `float` and `float32` that differs from before when an argument is NaN or the arguments are zeros of different sign: the tree used to call the generic comparison, where code calls `Math.Min` and `Math.Max`. A provider that translates `Math.Round` rounds midpoints its own way; SQLite rounds them away from zero. `min` and `max` on `decimal` reach EF Core as `Math.Min` and `Math.Max`, which it translates, where it could not translate the generic comparison; SQLite stores decimals as text and compares them as text, so `Where(fun x -> max x.D 10m = 10m)` over `2.5m` and `-1.25m` returns one row instead of two, with the SQL that `Math.Max` gives in C#.
+
+Together with the change to tuples and records in #20897, a `leftOuterJoin` that follows two `for`s and a `join`, and tests the joined row with `isNull`, fails in EF Core 10 for SQL Server with "Nullable object must have a value": `for c in db.Customers do for o in c.Orders do join d in db.Customers on (c.City = d.City); leftOuterJoin p in db.Products on (d.Id = p.Id) into products; for p in products do select (c.Name, o.Id, d.Name, (if isNull p then "" else p.Name))`. EF Core translates it with either change alone.
 
 ### Let-bindings use Block instead of Lambda.Invoke
 
