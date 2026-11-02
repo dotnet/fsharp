@@ -687,16 +687,16 @@ let x = 4
     (8, 0, 10, 6), (8, 0, 10, 6)
 ]
 
-let private sliceLinesOfOneString (source: string) =
+let private sliceLinesOfOneBuffer (buffer: char[]) =
     [| let mutable start = 0
-       while start <= source.Length do
+       while start <= buffer.Length do
            let lineEnd =
-               match source.IndexOf('\n', start) with
-               | -1 -> source.Length
+               match System.Array.IndexOf(buffer, '\n', start) with
+               | -1 -> buffer.Length
                | lineBreak -> lineBreak
            let length =
-               if lineEnd > start && source[lineEnd - 1] = '\r' then lineEnd - start - 1 else lineEnd - start
-           yield System.MemoryExtensions.AsMemory(source, start, length)
+               if lineEnd > start && buffer[lineEnd - 1] = '\r' then lineEnd - start - 1 else lineEnd - start
+           yield System.ReadOnlyMemory<char>(buffer, start, length)
            start <- lineEnd + 1 |]
 
 [<Fact>]
@@ -724,7 +724,7 @@ let ``Line slices of one string give the same ranges as a string per line``() =
           "#endif\n" ]
         |> String.concat ""
 
-    let slices = sliceLinesOfOneString source
+    let slices = sliceLinesOfOneBuffer (source.ToCharArray())
     let ast = parseSourceCode(fileName, source)
 
     let describe (scopeRanges: seq<ScopeRange>) =
@@ -749,3 +749,22 @@ let ``Line slices of one string give the same ranges as a string per line``() =
           Scope.Comment, (6, 4, 7, 22)
           Scope.XmlDocComment, (9, 0, 10, 15) ],
         readOffTheText)
+
+[<Fact>]
+let ``Outlining ranges do not read the line slices once the call has returned``() =
+    let source = "module M\nopen A\nopen B\n// one\n// two\n#if X\nlet a = 1\n#else\nlet a = 2\n#endif\n"
+    let buffer = source.ToCharArray()
+    let ast = parseSourceCode(fileName, source)
+
+    let ranges = getOutliningRangesFromLineSlices (sliceLinesOfOneBuffer buffer) ast
+    Array.fill buffer 0 buffer.Length 'x'
+
+    Assert.Equal<(Scope * int * int) list>(
+        [ Scope.Open, 2, 3
+          Scope.HashDirective, 6, 7
+          Scope.HashDirective, 8, 10
+          Scope.Comment, 4, 5 ],
+        [ for r in ranges do
+            match r.Scope with
+            | Scope.Open | Scope.Comment | Scope.HashDirective -> yield r.Scope, r.Range.StartLine, r.Range.EndLine
+            | _ -> () ])
