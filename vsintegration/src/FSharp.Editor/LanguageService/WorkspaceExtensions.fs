@@ -289,7 +289,7 @@ module private CheckerExtensions =
                         changedDocuments
                         |> Seq.map (project.GetDocument >> documentToSnapshot)
                         |> CancellableTask.whenAll
-                        |> CancellableTask.map (Array.toList >> oldSnapshot.Replace)
+                        |> CancellableTask.map oldSnapshot.Replace
                         |> Some
 
                 | _ -> None
