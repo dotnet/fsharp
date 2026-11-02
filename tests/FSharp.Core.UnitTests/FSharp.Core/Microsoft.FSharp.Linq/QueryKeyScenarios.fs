@@ -37,8 +37,24 @@ type PersonOnce = { NameOnce: string; AgeOnce: int }
 
 /// A record with a tuple in it
 type PairHolder = { Pair: string * int }
-let private rebuiltGroup =
-    [ Violation.RuntimeHelperCall "RebuiltGroupings`2.Of" ]
+
+/// A record whose member gives the record itself
+type SelfHolder =
+    { SelfId: int }
+    member x.Identity: obj = x
+
+/// A struct with a tuple in it
+[<Struct>]
+type StructPair = { SPair: int * int }
+
+/// A record with a struct in it
+type StructHolder = { Wrapped: StructPair }
+
+let private pairOf (x: StructPair) = x.SPair
+let private rebuiltGroups count =
+    List.replicate count (Violation.RuntimeHelperCall "RebuiltGroupings`2.Of")
+
+let private rebuiltGroup = rebuiltGroups 1
 
 let private joins () =
     [ Scenario.rows
@@ -273,7 +289,7 @@ let private groupings () =
                   select (g.Key, obj.ReferenceEquals(g, g))
               })
           (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, true))
-      |> Scenario.violating rebuiltGroup
+      |> Scenario.violating (rebuiltGroups 4)
 
       Scenario.rows
           "groups of groups, a group found among the groups it is in"
@@ -285,7 +301,7 @@ let private groupings () =
                   select (byLength.Key, byLength.Contains(byLength.First()), obj.ReferenceEquals(byLength.First(), byLength.First()))
               })
           (customers >> Seq.map _.City.Length >> Seq.distinct >> Seq.map (fun length -> length, true, true))
-      |> Scenario.violating rebuiltGroup
+      |> Scenario.violating (rebuiltGroups 4)
 
       Scenario.rows
           "groupValBy a tuple of values, the group as a sequence is still the group"
@@ -308,7 +324,7 @@ let private groupings () =
                   select (byGroup.Key.Key, byGroup.Contains(byGroup.Key))
               })
           (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, true))
-      |> Scenario.violating rebuiltGroup
+      |> Scenario.violating (rebuiltGroups 2)
 
       // An element that a lambda over a group uses as a value of its own is one object in that lambda
       Scenario.rows
@@ -344,6 +360,117 @@ let private groupings () =
               })
           (customers >> Seq.countBy _.City)
       |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      // The group goes into the result beside another value: the provider is handed the grouping it made
+      Scenario.rows
+          "groupValBy a tuple of values, the group beside its count"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy (c.Name, c.Age) c.City into g
+                  let n = g.Count()
+                  select (g, n)
+              })
+          (fun data ->
+              customers data
+              |> Seq.groupBy _.City
+              |> Seq.map (fun (city, group) ->
+                  let elements = group |> Seq.map (fun c -> c.Name, c.Age) |> List.ofSeq
+                  Grouping(city, elements) :> IGrouping<_, _>, elements.Length))
+      |> Scenario.violating rebuiltGroup
+
+      Scenario.rows
+          "groupValBy a tuple of values after a join, the group beside its count"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  join o in db.Orders on (c.Id = o.CustomerId)
+                  groupValBy (c.Name, o.Id) c.City into g
+                  let n = g.Count()
+                  select (g, n)
+              })
+          (fun data ->
+              seq { for c in data.Customers do for o in c.Orders -> c, o }
+              |> Seq.groupBy (fun (c, _) -> c.City)
+              |> Seq.map (fun (city, pairs) ->
+                  let elements = pairs |> Seq.map (fun (c, o) -> c.Name, o.Id) |> List.ofSeq
+                  Grouping(city, elements) :> IGrouping<_, _>, elements.Length))
+      |> Scenario.violating rebuiltGroup
+
+      Scenario.rows
+          "groupValBy a tuple of values after two for, the group beside its count"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in c.Orders do
+                  groupValBy (c.Name, o.Id) c.City into g
+                  let n = g.Count()
+                  select (g, n)
+              })
+          (fun data ->
+              seq { for c in data.Customers do for o in c.Orders -> c, o }
+              |> Seq.groupBy (fun (c, _) -> c.City)
+              |> Seq.map (fun (city, pairs) ->
+                  let elements = pairs |> Seq.map (fun (c, o) -> c.Name, o.Id) |> List.ofSeq
+                  Grouping(city, elements) :> IGrouping<_, _>, elements.Length))
+      |> Scenario.violating rebuiltGroup
+
+      Scenario.rows
+          "groupValBy a record, the group beside its count"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy { PersonName = c.Name; PersonAge = c.Age } c.City into g
+                  let n = g.Count()
+                  select (g, n)
+              })
+          (fun data ->
+              customers data
+              |> Seq.groupBy _.City
+              |> Seq.map (fun (city, group) ->
+                  let elements = group |> Seq.map (fun c -> { PersonName = c.Name; PersonAge = c.Age }) |> List.ofSeq
+                  Grouping(city, elements) :> IGrouping<_, _>, elements.Length))
+      |> Scenario.violating rebuiltGroup
+
+      // The element found is what the query gives, so it is found among the elements as the query wrote them
+      Scenario.rows
+          "find in a nested query over two for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  where (c.Orders.Count > 1)
+                  select (c.Name, (fst (query { for o in c.Orders do for o2 in c.Orders do find (o.Id < o2.Id) })).Id)
+              })
+          (customers
+           >> Seq.filter (fun c -> c.Orders.Count > 1)
+           >> Seq.map (fun c ->
+               let found = seq { for o in c.Orders do for o2 in c.Orders -> o, o2 } |> Seq.find (fun (o, o2) -> o.Id < o2.Id)
+
+               c.Name, (fst found).Id))
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2"; Violation.RuntimeHelperCall "Operators.Fst" ]
+
+      // A member that is no field of the record gives the record the rebuilding made for it, so it is a use of the whole
+      Scenario.rows
+          "groupValBy a record, a member of it that gives the record itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy { SelfId = c.Id } c.City into g
+                  select (g.Key, g.Count(fun x -> obj.ReferenceEquals(x.Identity, x.Identity)))
+              })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "SelfHolder" ]
+
+      Scenario.rows
+          "groupValBy a record, a struct in it with a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupValBy { Wrapped = { SPair = (c.Id, c.Age) } } c.City into g
+                  select (g.Key, g.Count(fun x -> obj.ReferenceEquals(pairOf x.Wrapped, pairOf x.Wrapped)))
+              })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "StructHolder" ]
 
       Scenario.rows
           "groupValBy a tuple, a tuple in it compared with itself"
