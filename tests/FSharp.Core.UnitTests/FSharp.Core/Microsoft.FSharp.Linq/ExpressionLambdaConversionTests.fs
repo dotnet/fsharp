@@ -502,6 +502,31 @@ let ``Record fields written out of order are evaluated as written in a query ove
 
     Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
 
+/// A record that is equal to another when its first field is
+[<CustomEquality; NoComparison>]
+type HeadOnly =
+    { Head: int
+      Tail: int }
+
+    override x.Equals(other: obj) =
+        match other with
+        | :? HeadOnly as y -> x.Head = y.Head
+        | _ -> false
+
+    override x.GetHashCode() = x.Head.GetHashCode()
+
+[<Fact>]
+let ``Distinct tells apart the records of a query by their fields, written in order or not`` () =
+    let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
+
+    // The query makes anonymous objects of the records it selects, which are equal when their fields are. That holds
+    // for the records with an equality of their own too, and fields written out of order change nothing about it.
+    let inOrder = query { for x in source do select { Head = 0; Tail = x + 1 }; distinct } |> Seq.length
+    let outOfOrder = query { for x in source do select { Tail = x + 1; Head = 0 }; distinct } |> Seq.length
+
+    Assert.Equal(2, inOrder)
+    Assert.Equal(2, outOfOrder)
+
 [<Fact>]
 let ``Let named like the record field it feeds is evaluated before the fields that follow it`` () =
     let counter = Counter()
