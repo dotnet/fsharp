@@ -64,9 +64,6 @@ module FSharpFindUsagesService =
             CancellableTask.singleton [||]
         else
             cancellableTask {
-                // A name a path map left relative reaches no document through the workspace's index of the
-                // paths on disk, so a declaration imported from such an assembly is matched by its tail, in the
-                // projects that compile the assembly.
                 let documentIds =
                     solution.GetDocumentIdsWithFSharpFileName(range.FileName, declaringAssembly)
 
@@ -121,15 +118,11 @@ module FSharpFindUsagesService =
                         | FindDeclResult.DeclFound range -> Some range
                         | _ -> None
 
+                    let declaringAssembly = symbolUse.Symbol.Assembly.SimpleName
+
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range ->
-                            rangeToDocumentSpans (
-                                document.Project.Solution,
-                                range,
-                                symbol.Ident.idText,
-                                symbolUse.Symbol.Assembly.SimpleName
-                            )
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText, declaringAssembly)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =

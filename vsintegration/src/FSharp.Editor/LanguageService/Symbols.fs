@@ -63,17 +63,11 @@ type FSharpSymbolUse with
                     // should be treated as an individual project
                     Some(SymbolScope.Projects([ currentDocument.Project ], isSymbolLocalForProject))
                 else
-                    let solution = currentDocument.Project.Solution
-
-                    // A name a path map left relative is matched by its tail, which a file of an unrelated
-                    // project can share. Only a project that compiles the symbol's own assembly may narrow the
-                    // search; where none does, the search keeps the scope it would have had before the name
-                    // reached a document at all.
                     let projects =
-                        solution.GetDocumentIdsWithFSharpFileName(loc.FileName, this.Symbol.Assembly.SimpleName)
+                        currentDocument.Project.Solution.GetDocumentIdsWithFSharpFileName(loc.FileName, this.Symbol.Assembly.SimpleName)
                         |> Seq.map (fun x -> x.ProjectId)
                         |> Seq.distinct
-                        |> Seq.map solution.GetProject
+                        |> Seq.map currentDocument.Project.Solution.GetProject
                         |> Seq.toList
 
                     match projects with
