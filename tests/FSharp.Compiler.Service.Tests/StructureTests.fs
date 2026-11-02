@@ -687,8 +687,7 @@ let x = 4
     (8, 0, 10, 6), (8, 0, 10, 6)
 ]
 
-/// The lines of the source as the editor passes them: slices of the one string it holds, line breaks left out.
-let private lineSlices (source: string) =
+let private sliceLinesOfOneString (source: string) =
     [| let mutable start = 0
        while start <= source.Length do
            let lineEnd =
@@ -702,8 +701,6 @@ let private lineSlices (source: string) =
 
 [<Fact>]
 let ``Line slices of one string give the same ranges as a string per line``() =
-    // What the scan reads off the line text: the blank line between two opens, the indentation and the
-    // trailing whitespace of comment groups, and the length of the last line of a directive section.
     let source =
         [ "module M\r\n"
           "open System\n"
@@ -727,7 +724,7 @@ let ``Line slices of one string give the same ranges as a string per line``() =
           "#endif\n" ]
         |> String.concat ""
 
-    let slices = lineSlices source
+    let slices = sliceLinesOfOneString source
     let ast = parseSourceCode(fileName, source)
 
     let describe (scopeRanges: seq<ScopeRange>) =

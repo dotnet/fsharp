@@ -192,14 +192,6 @@ module Structure =
         | SingleLine
         | XmlDoc
 
-    /// <summary>
-    /// Determines if a line is a single line or xml documentation comment.
-    /// </summary>
-    /// <remarks>
-    /// Kept at module scope: a local recursive function capturing a <see cref="T:System.ReadOnlySpan`1"/>-typed
-    /// helper as a closure field would need to instantiate <see cref="T:Microsoft.FSharp.Core.FSharpFunc`2"/>
-    /// over it, which the CLR disallows for byref-like type arguments (FS0412).
-    /// </remarks>
     let commentTypeOf (line: ReadOnlySpan<char>) =
         if line.StartsWithOrdinal("///") then ValueSome XmlDoc
         elif line.StartsWithOrdinal("//") then ValueSome SingleLine
