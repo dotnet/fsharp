@@ -7,6 +7,10 @@ open System.Linq.Expressions
 
 let private block = [ Violation.Statement ExpressionType.Block ]
 
+/// A tree is pinned with every block it has: one that goes from three to two is a change as well
+let private blocks count =
+    List.replicate count (Violation.Statement ExpressionType.Block)
+
 let private reading typeName =
     [ Violation.ReadsUnnamedMember typeName ]
 
@@ -67,7 +71,7 @@ let cases () =
           "Where taking a tuple apart"
           (fun db -> db.Customers.Select(fun c -> (c.Id, c.Name)).Where(fun (id, _) -> id > 1))
           (customers >> Seq.map (fun c -> c.Id, c.Name) >> Seq.filter (fun (id, _) -> id > 1))
-      |> Scenario.violating (reading "Tuple`2" @ block)
+      |> Scenario.violating (reading "Tuple`2" @ blocks 2)
 
       Scenario.rows
           "Where taking a struct tuple apart"
@@ -83,7 +87,7 @@ let cases () =
                   .Where(fun (_, _, _, _, _, _, _, _, last) -> last > 1)
                   .Select(fun (_, name, _, _, _, _, _, _, _) -> name))
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
-      |> Scenario.violating (reading "Tuple`8" @ block)
+      |> Scenario.violating (reading "Tuple`8" @ reading "Tuple`8" @ blocks 18)
 
       Scenario.rows
           "Where taking the last of a struct nine apart"
@@ -93,19 +97,19 @@ let cases () =
                   .Where(fun (struct (_, _, _, _, _, _, _, _, last)) -> last > 1)
                   .Select(fun (struct (_, name, _, _, _, _, _, _, _)) -> name))
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
-      |> Scenario.violating (reading "ValueTuple`8" @ block)
+      |> Scenario.violating (reading "ValueTuple`8" @ reading "ValueTuple`8" @ blocks 2)
 
       Scenario.rows
           "Where over a query that selects a tuple"
           (fun db -> (query { for c in db.Customers do select (c.Id, c.Name) }).Where(fun (id, _) -> id > 1))
           (customers >> Seq.map (fun c -> c.Id, c.Name) >> Seq.filter (fun (id, _) -> id > 1))
-      |> Scenario.violating (reading "Tuple`2" @ block)
+      |> Scenario.violating (reading "Tuple`2" @ blocks 2)
 
       Scenario.rows
           "Where on a nullable property"
           (fun db -> db.Customers.Where(fun c -> c.Registered.HasValue && c.Registered.Value.Year > 2020))
           (customers >> Seq.filter (fun c -> c.Registered.HasValue && c.Registered.Value.Year > 2020))
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 3)
 
       Scenario.rows
           "Where with a lambda over another source"
