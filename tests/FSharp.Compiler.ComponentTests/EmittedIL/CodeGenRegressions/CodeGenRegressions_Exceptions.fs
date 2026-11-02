@@ -221,7 +221,7 @@ let main _ = test ()
             |> shouldSucceed
 
         compiled |> verifyPEFileWithSystemDlls |> shouldSucceed |> ignore
-        compiled |> run |> shouldSucceed |> ignore
+        compiled |> run |> shouldSucceed |> withExitCode 0 |> ignore
 
     // https://github.com/dotnet/fsharp/issues/20871
     [<Fact>]
