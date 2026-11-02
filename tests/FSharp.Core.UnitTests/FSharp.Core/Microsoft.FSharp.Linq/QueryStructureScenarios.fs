@@ -7,6 +7,24 @@ module FSharp.Core.UnitTests.Linq.QueryStructureScenarios
 
 open System.Linq
 
+/// A record whose member gives the record itself
+type SelfRecord =
+    { SelfN: int }
+    member x.Identity: obj = x
+
+/// A struct with a tuple in it
+[<Struct>]
+type StructPair = { SPair: int * int }
+
+/// A record with a struct in it
+type StructHolder = { Wrapped: StructPair }
+
+let private pairOf (x: StructPair) = x.SPair
+
+/// A tree is pinned with every block it has: one that goes from three to two is a change as well
+let private blocks count =
+    List.replicate count (Violation.Statement System.Linq.Expressions.ExpressionType.Block)
+
 let private quotedLambda =
     [ Violation.RuntimeHelperCall "LeafExpressionConverter.QuotationToLambdaExpression"
       Violation.RuntimeHelperCall "LeafExpressionConverter.SubstHelper" ]
@@ -309,6 +327,24 @@ let private consumers () =
           (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (obj.ReferenceEquals(p, p)) })
           (fun _ -> true)
 
+      // A member that is no field of the record gets the record itself
+      Scenario.value
+          "exists after a record select, a member of the record that gives the record itself"
+          (fun db -> query { for c in db.Customers do select { SelfN = c.Id } into p; exists (obj.ReferenceEquals(p.Identity, p.Identity)) })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "SelfRecord" ]
+
+      Scenario.value
+          "exists after a record select, a struct in it with a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select { Wrapped = { SPair = (c.Id, c.Age) } } into p
+                  exists (obj.ReferenceEquals(pairOf p.Wrapped, pairOf p.Wrapped))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "StructHolder" ]
+
       Scenario.value
           "all after a tuple select, the tuple compared with itself"
           (fun db -> query { for c in db.Customers do select (c.Name, c.Age) into t; all (obj.ReferenceEquals(t, t)) })
@@ -329,7 +365,7 @@ let private consumers () =
           "exists after a tuple select"
           (fun db -> query { for c in db.Customers do select (c.City, c.Age) into t; exists (match t with city, age -> city = "Paris" && age < 30) })
           (fun _ -> true)
-      |> Scenario.violating [ Violation.Statement System.Linq.Expressions.ExpressionType.Block ]
+      |> Scenario.violating (blocks 2)
 
       Scenario.value
           "count after a tuple select"

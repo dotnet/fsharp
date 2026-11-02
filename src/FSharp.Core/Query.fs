@@ -1838,9 +1838,26 @@ module Query =
 
     /// A tuple or record of a class, which the translation builds anew from the elements it produces each time one
     /// is asked for
-    let IsRebuiltObject (ty: Type) =
-        not ty.IsValueType
-        && (Microsoft.FSharp.Reflection.FSharpType.IsTuple ty || isPartiallyImmutableRecord ty)
+    let rec IsRebuiltObject (ty: Type) =
+        if ty.IsValueType then
+            // A struct holds an object that is rebuilt when one of its parts is one
+            (Microsoft.FSharp.Reflection.FSharpType.IsTuple ty
+             && Microsoft.FSharp.Reflection.FSharpType.GetTupleElements ty |> Array.exists IsRebuiltObject)
+            || (isPartiallyImmutableRecord ty
+                && Microsoft.FSharp.Reflection.FSharpType.GetRecordFields ty
+                   |> Array.exists (fun field -> IsRebuiltObject field.PropertyType))
+        else
+            Microsoft.FSharp.Reflection.FSharpType.IsTuple ty || isPartiallyImmutableRecord ty
+
+    /// Whether the property is a part of the record or tuple it is read from, and not a member that computes something
+    /// from it: such a member gets the object itself
+    let IsPartOf (owner: Type) (property: System.Reflection.PropertyInfo) =
+        if Microsoft.FSharp.Reflection.FSharpType.IsRecord owner then
+            Microsoft.FSharp.Reflection.FSharpType.GetRecordFields owner
+            |> Array.exists (fun field -> field.Name = property.Name)
+        else
+            Microsoft.FSharp.Reflection.FSharpType.IsTuple owner
+            && property.Name.StartsWith("Item", StringComparison.Ordinal)
 
     /// Whether the expression uses the element, or a tuple or record in it, as a value of its own, and not only for
     /// what it holds. Where the function is rewritten over the elements the translation produces, each such use
@@ -1849,8 +1866,8 @@ module Query =
         let rec readsPartOfElement (expr: Expr) =
             match expr with
             | Var used -> used = element
-            | TupleGet (inner, _)
-            | PropertyGet (Some inner, _, []) -> readsPartOfElement inner
+            | TupleGet (inner, _) -> readsPartOfElement inner
+            | PropertyGet (Some inner, property, []) when IsPartOf inner.Type property -> readsPartOfElement inner
             | _ -> false
 
         if readsPartOfElement expr then
