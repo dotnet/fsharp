@@ -25,12 +25,15 @@ type private InMemoryRewriter() =
 
 /// An in-memory query that stays on the provider that created it and prints its root by name.
 [<Sealed>]
-type CapturedQuery<'T>(provider: IQueryProvider, name: string, items: seq<'T>, derived: Expression voption) =
+type CapturedQuery<'T>(provider: IQueryProvider, name: string, items: seq<'T>, derived: Expression voption, scanned: Expression -> unit) =
 
-    let enumerate () =
+    let enumerate (self: Expression) =
         match derived with
         | ValueSome expression -> provider.Execute<IEnumerable<'T>>(expression).GetEnumerator()
-        | ValueNone -> items.GetEnumerator()
+        | ValueNone ->
+            // No operator runs at the provider here: whoever enumerates the source takes all of its rows
+            scanned self
+            items.GetEnumerator()
 
     override _.ToString() =
         match derived with
@@ -51,8 +54,8 @@ type CapturedQuery<'T>(provider: IQueryProvider, name: string, items: seq<'T>, d
 
         member _.ElementType = typeof<'T>
         member _.Provider = provider
-        member _.GetEnumerator() : IEnumerator<'T> = enumerate ()
-        member _.GetEnumerator() : IEnumerator = enumerate ()
+        member this.GetEnumerator() : IEnumerator<'T> = enumerate (Expression.Constant this)
+        member this.GetEnumerator() : IEnumerator = enumerate (Expression.Constant this)
 
 /// Executes in memory, and records what it was asked to execute.
 [<Sealed>]
@@ -74,14 +77,19 @@ type CapturingQueryProvider() =
         finally
             depth <- depth - 1
 
-    /// The expressions executed directly, not from inside another execution.
+    /// The expressions executed directly, not from inside another execution, and the sources that were enumerated.
     member _.Executed = executed :> IReadOnlyList<Expression>
 
+    /// A source that is enumerated as it is, without an operator
+    member _.Scanned(source: Expression) =
+        if depth = 0 then
+            executed.Add source
+
     member this.Source(name: string, items: seq<'T>) : IQueryable<'T> =
-        CapturedQuery<'T>(this, name, items, ValueNone)
+        CapturedQuery<'T>(this, name, items, ValueNone, this.Scanned)
 
     member this.Derived<'T>(expression: Expression) : IQueryable<'T> =
-        CapturedQuery<'T>(this, "", Seq.empty, ValueSome expression)
+        CapturedQuery<'T>(this, "", Seq.empty, ValueSome expression, this.Scanned)
 
     interface IQueryProvider with
         member this.CreateQuery<'T>(expression: Expression) : IQueryable<'T> = this.Derived<'T> expression
@@ -172,7 +180,7 @@ module ProviderShape =
                 | _ -> ValueNone
             | _ -> ValueNone
 
-        member _.Violations = found |> Seq.distinct |> List.ofSeq
+        member _.Violations = List.ofSeq found
 
         override _.VisitLambda<'T>(node: Expression<'T>) =
             let added = bind node.Parameters
@@ -332,7 +340,7 @@ module ProviderShape =
                 if yields parameter.Type sequence && readsMemberOf parameter lambda.Body then
                     found.Add(Violation.ReadsUnnamedMember parameter.Type.Name)
 
-        member _.Found = found |> Seq.distinct |> List.ofSeq
+        member _.Found = List.ofSeq found
 
         /// Whether the elements of the sequence were built without naming their members.
         member this.Unnamed(sequence: Expression) : bool =
@@ -459,7 +467,7 @@ module ProviderShape =
     let violations (expression: Expression) =
         let visitor = ShapeVisitor()
         visitor.Visit expression |> ignore
-        visitor.Violations @ unnamedMemberReads expression |> List.distinct
+        visitor.Violations @ unnamedMemberReads expression
 
     /// Whether the expression calls a Queryable operator that gives a value and not a query, as a provider is asked
     /// to execute when a query is counted, summed or searched.

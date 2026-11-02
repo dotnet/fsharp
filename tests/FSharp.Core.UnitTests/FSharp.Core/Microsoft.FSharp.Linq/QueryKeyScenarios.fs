@@ -8,6 +8,10 @@ open Microsoft.FSharp.Linq.RuntimeHelpers
 
 let private block = [ Violation.Statement ExpressionType.Block ]
 
+/// A tree is pinned with every block it has: one that goes from three to two is a change as well
+let private blocks count =
+    List.replicate count (Violation.Statement ExpressionType.Block)
+
 let private customers (data: Data) = Seq.ofList data.Customers
 
 /// Orders paired with the lines that share both the order number and, as quantity, the customer number.
@@ -68,7 +72,7 @@ let private joins () =
                   select (o.Id, l.Id)
               })
           matchingLines
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "join on an anonymous record, fields in alphabetical order"
@@ -89,7 +93,7 @@ let private joins () =
                   select (o.Id, l.Id)
               })
           matchingLines
-      |> Scenario.violating block
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "groupJoin on a tuple"
