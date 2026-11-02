@@ -286,6 +286,24 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
+#if NET
+    type RuntimeAsync.TaskBuilder with
+        member inline _.Using(resource: 'R :> IDisposable | null, [<InlineIfLambda>] body: 'R -> 'T) =
+            try
+                body resource
+            finally
+                if not (isNull (box resource)) then
+                    resource.Dispose()
+
+    type RuntimeAsync.TaskSeqBuilder with
+        member inline _.Using
+            (
+                resource: 'R :> IDisposable | null,
+                [<InlineIfLambda>] body: 'R -> System.Collections.Generic.IEnumerable<'T>
+            ) =
+            RuntimeHelpers.EnumerateUsing resource body
+#endif
+
     // Low priority extensions
     type TaskBuilderBase with
 

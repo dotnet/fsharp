@@ -29,7 +29,7 @@ exception LoadedSourceNotFoundIgnoring of fileName: string * range: range
 type IRawFSharpAssemblyData =
 
     /// The raw list AutoOpenAttribute attributes in the assembly
-    abstract GetAutoOpenAttributes: unit -> string list
+    abstract GetAutoOpenAttributes: unit -> AssemblyAutoOpen list
 
     /// The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: unit -> string list
@@ -263,6 +263,7 @@ type TcConfigBuilder =
         mutable implicitlyResolveAssemblies: bool
 
         mutable conditionalDefines: string list
+        mutable commandLineOptions: Set<string>
 
         /// Sources added into the build with #load
         mutable loadedSources: (range * string * string) list
@@ -549,6 +550,8 @@ type TcConfigBuilder =
 
     member DecideNames: string list -> string * string option * string
 
+    member RecordCommandLineOption: string -> unit
+
     member TurnWarningOff: range * string -> unit
 
     member TurnWarningOn: range * string -> unit
@@ -614,6 +617,8 @@ type TcConfig =
     member implicitlyResolveAssemblies: bool
 
     member conditionalDefines: string list
+
+    member commandLineOptions: Set<string>
 
     member subsystemVersion: int * int
 

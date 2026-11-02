@@ -128,6 +128,9 @@
                                          default)
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
+--features:<string>                      Accept opaque feature operands for
+                                         exact CLI-token matching by
+                                         conditional assembly auto-opens
 --always-inline[+|-]                     Always inline 'inline' functions
 
 

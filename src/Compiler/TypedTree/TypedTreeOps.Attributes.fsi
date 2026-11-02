@@ -264,7 +264,7 @@ module internal AttributeHelpers =
 
     val IsSignatureDataVersionAttr: ILAttribute -> bool
 
-    val TryFindAutoOpenAttr: ILAttribute -> string option
+    val TryFindAutoOpenAttr: string -> ILAttribute -> AssemblyAutoOpen option
 
     val TryFindInternalsVisibleToAttr: ILAttribute -> string option
 

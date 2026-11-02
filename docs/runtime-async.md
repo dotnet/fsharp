@@ -354,7 +354,7 @@ type RuntimeTaskBuilder() =
         continuation (AsyncHelpers.Await task)
 ```
 
-Sample builders for tasks (`runtimeTask`), cancellable computations (`async2`) and async sequences (`asyncSeq2`) live with the [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md). They are examples, not FSharp.Core APIs.
+FSharp.Core provides runtime-managed `task` and `taskSeq` builders in `Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions`. They require .NET 11 or later. The [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md) contain a separate `async2` sample for cold, cancellable computations.
 
 ### Unsupported positions for inline runtime-async code
 
@@ -400,7 +400,7 @@ Other behavior:
 * Early disposal keeps ordinary sequence precedence: an outer cleanup failure replaces an inner one.
 * Runtime-async inputs that are consumed immediately stay adjacent to their awaits, so the runtime can fuse the calls.
 * Opaque recipes are rejected.
-* The compiler does not hand off tail `yield!` calls; a builder can, as the sample `asyncSeq2` does.
+* The compiler does not hand off tail `yield!` calls.
 * Builder-generated `MoveNextAsync` methods can lose sequence points, so source stepping is not guaranteed.
 
 Run the async-sequence tests with:

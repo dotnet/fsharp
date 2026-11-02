@@ -1,34 +1,14 @@
 module Language.RuntimeAsyncSequenceTests
 
-open System.IO
 open System.Text.RegularExpressions
+open System
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
 #if NETCOREAPP
-open Language.RuntimeAsyncTests
-
-let private source name = Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", name)
 let private preview compilation = compilation |> withLangVersionPreview |> withFSharpCoreShippedNet
 let private optimize enabled compilation = if enabled then withOptimize compilation else withOptions ["--optimize-"] compilation
-
-[<Theory>]
-[<InlineData(false, false)>]
-[<InlineData(false, true)>]
-[<InlineData(true, false)>]
-[<InlineData(true, true)>]
-let ``runtime async sequence library executes`` (crossAssembly: bool, optimized: bool) =
-    let entry = FsSource "RuntimeAsyncSequence.run().Wait()"
-    (if crossAssembly then
-         let builders = withSampleBuilders [] |> optimize optimized |> asLibrary
-         FsFromPath(source "RuntimeAsyncSequence.fs") |> withAdditionalSourceFile entry |> withReferences [builders]
-     else
-         withSampleBuilders [ "RuntimeAsyncSequence.fs" ] |> withAdditionalSourceFile entry)
-    |> preview
-    |> optimize optimized
-    |> compileExeAndRun
-    |> shouldSucceed
 
 let private header = """
 module M
@@ -155,24 +135,28 @@ let main _ = if run().GetAwaiter().GetResult() = 42 then 0 else 1
 [<InlineData(true, "value + 1")>]
 [<InlineData(false, "value + value")>]
 [<InlineData(true, "value + value")>]
-let ``runtime async sequence keeps source calls adjacent to awaits`` (optimized, resultExpression) =
+let ``runtime async sequence keeps task inputs adjacent to their awaitable conversion`` (optimized, resultExpression) =
     let inputs =
         CSharp "public static class AwaitInputs { public static System.Threading.Tasks.Task<int> Next() => System.Threading.Tasks.Task.FromResult(42); }"
         |> withName "AwaitInputs"
-    let builders = withSampleBuilders [] |> asLibrary
     let result =
-        FSharp(header + "\nopen Microsoft.FSharp.Control\nlet values () = asyncSeq2 { let! value = AwaitInputs.Next() in yield " + resultExpression + " }")
-        |> withReferences [inputs; builders]
+        FSharp(header + "\nopen Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions\nlet values () = taskSeq { let! value = AwaitInputs.Next() in yield " + resultExpression + " }")
+        |> withReferences [inputs]
         |> preview
         |> optimize optimized
         |> compile
         |> shouldSucceed
+        |> verifyILContains [
+            "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter`1<int32>>(!!0)"
+            "ValueTaskAwaiter`1<int32>::GetResult()"
+        ]
     match result with
     | CompilationResult.Success output ->
         let _, _, il = ILChecker.verifyILAndReturnActual [] output.OutputPath.Value []
-        let start = il.IndexOf("AwaitInputs::Next()")
-        let finish = il.IndexOf("AsyncHelpers::Await", start)
-        Assert.True(start >= 0 && finish > start)
+        let start = il.IndexOf("AwaitInputs::Next()", StringComparison.Ordinal)
+        Assert.True(start >= 0)
+        let finish = il.IndexOf("System.Threading.Tasks.ValueTask`1<int32>::.ctor", start, StringComparison.Ordinal)
+        Assert.True(finish > start)
         Assert.DoesNotContain("stfld", il.Substring(start, finish - start))
         Assert.DoesNotContain("stloc", il.Substring(start, finish - start))
         Assert.DoesNotContain("ldloc", il.Substring(start, finish - start))

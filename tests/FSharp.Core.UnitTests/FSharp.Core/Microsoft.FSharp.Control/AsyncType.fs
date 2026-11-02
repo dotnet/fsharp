@@ -547,15 +547,14 @@ type AsyncType() =
             with _ -> res.TrySetResult false |> ignore
         }
 
-        Async.Start(a, cts.Token)
-        // NOTE we only cancel during the Await/AwaitTask - the initial check would throw if we canceled before the Start()
-        cts.CancelAfter 100
+        Async.StartImmediate(a, cts.Token)
+        cts.Cancel()
 
         // AwaitTask should NOT honor the ambient CT trigger
         let taskCompleted = res.Task.Wait 500
         Assert.False(taskCompleted, "Await/AwaitTask should not have responded to ambient CT cancellation")
         tcs.TrySetResult() |> ignore // clean up
-        res.Task.Wait()
+        Assert.True(res.Task.Wait(10000), "Await/AwaitTask did not resume after task completion")
 
     (* When an AggregateException has multiple inner exceptions, Await and AwaitTask behave identically *)
 

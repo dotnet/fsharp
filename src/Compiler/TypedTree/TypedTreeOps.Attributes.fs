@@ -423,8 +423,10 @@ module internal AttributeHelpers =
         let (Attrib(tcref, _, _, _, _, _, _)) = attrib
         let struct (bclPath, fsharpCorePath) = resolveAttribPath g tcref
 
-        match bclPath with
-        | ValueSome path ->
+        match tcref.CompiledRepresentationForNamedType.FullName, bclPath with
+        | "Microsoft.FSharp.Core.ConditionalAutoOpenAttribute", _ -> WellKnownAssemblyAttributes.ConditionalAutoOpenAttribute
+        | "Microsoft.FSharp.Core.RetractExistingAutoopenAttribute", _ -> WellKnownAssemblyAttributes.RetractExistingAutoopenAttribute
+        | _, ValueSome path ->
             match path with
             | [| "System"; "Runtime"; "CompilerServices"; name |] ->
                 match name with
@@ -436,7 +438,7 @@ module internal AttributeHelpers =
                 | "AssemblyVersionAttribute" -> WellKnownAssemblyAttributes.AssemblyVersionAttribute
                 | _ -> WellKnownAssemblyAttributes.None
             | _ -> WellKnownAssemblyAttributes.None
-        | ValueNone ->
+        | _, ValueNone ->
 
             match fsharpCorePath with
             | ValueSome path ->
@@ -1263,19 +1265,29 @@ module internal AttributeHelpers =
     let IsSignatureDataVersionAttr cattr =
         isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
 
-    let TryFindAutoOpenAttr (cattr: ILAttribute) =
-        if
-            classifyILAttrib cattr &&& WellKnownILAttributes.AutoOpenAttribute
-            <> WellKnownILAttributes.None
-        then
+    let TryFindAutoOpenAttr (assemblyName: string) (cattr: ILAttribute) =
+        match cattr.Method.DeclaringType.TypeSpec.Enclosing, cattr.Method.DeclaringType.TypeSpec.Name with
+        | [], "Microsoft.FSharp.Core.AutoOpenAttribute" ->
             match decodeILAttribData cattr with
-            | [ ILAttribElem.String s ], _ -> s
+            | [ AttribElemStringArg path ], _ -> Some(OrdinaryAutoOpen path)
+            | [ ILAttribElem.String None ], _
             | [], _ -> None
             | _ ->
                 warning (Failure(FSComp.SR.tastUnexpectedDecodeOfAutoOpenAttribute ()))
                 None
-        else
-            None
+        | [], ("Microsoft.FSharp.Core.ConditionalAutoOpenAttribute" | "Microsoft.FSharp.Core.RetractExistingAutoopenAttribute" as name) ->
+            match decodeILAttribData cattr with
+            | [ AttribElemStringArg path; AttribElemStringArg condition ], _ ->
+                Some(
+                    if name = "Microsoft.FSharp.Core.RetractExistingAutoopenAttribute" then
+                        RetractAutoOpen(path, condition)
+                    else
+                        ConditionalAutoOpen(path, condition)
+                )
+            | _ ->
+                warning (Error(FSComp.SR.tastInvalidConditionalAutoOpenAttribute assemblyName, rangeStartup))
+                None
+        | _ -> None
 
     let TryFindInternalsVisibleToAttr (cattr: ILAttribute) =
         if

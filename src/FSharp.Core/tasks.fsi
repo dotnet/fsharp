@@ -186,6 +186,17 @@ open Microsoft.FSharp.Core.CompilerServices
 // AutoOpen is by assembly attribute to get sequencing of AutoOpen correct and
 // so each gives different priority
 module LowPriority =
+#if NET
+    type RuntimeAsync.TaskBuilder with
+        member inline Using:
+            resource: 'R * [<InlineIfLambda>] body: ('R -> 'T) -> 'T when 'R :> System.IDisposable | null
+
+    type RuntimeAsync.TaskSeqBuilder with
+        member inline Using:
+            resource: 'R * [<InlineIfLambda>] body: ('R -> System.Collections.Generic.IEnumerable<'T>) ->
+                System.Collections.Generic.IEnumerable<'T>
+                when 'R :> System.IDisposable | null
+#endif
 
     type TaskBuilderBase with
 

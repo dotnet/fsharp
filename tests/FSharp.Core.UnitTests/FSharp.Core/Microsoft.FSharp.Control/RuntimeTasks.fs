@@ -1,12 +1,6 @@
-// Tests for the runtime-async RuntimeTaskBuilder, ported from the TaskBuilder tests in
-// tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Control/Tasks.fs
-// with `task {` replaced by `runtimeTask {`. Test names and bodies are kept as
-// close to the originals as possible.
-//
-// `backgroundTask` tests have no runtimeTask equivalent and are omitted.
+module FSharp.Core.UnitTests.Control.RuntimeTasks
 
-module RuntimeTasks
-
+#if NET11_0_OR_GREATER
 open System
 open System.Collections
 open System.Collections.Generic
@@ -16,7 +10,8 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
+open Xunit
 
 exception TestException of string
 
@@ -41,16 +36,18 @@ type GatedAwaitable(started: ResizeArray<string>, name: string, gate: Task) =
 // SmokeTestsForCompilation
 // ---------------------------------------------------------------------------
 
+[<Fact>]
 let tinyTask () =
-    runtimeTask { return 1 }
+    task { return 1 }
     |> fun t ->
         t.Wait()
 
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let tbind () =
-    runtimeTask {
+    task {
         let! x = Task.FromResult(1)
         return 1 + x
     }
@@ -60,9 +57,10 @@ let tbind () =
         if t.Result <> 2 then
             failwith "failed"
 
+[<Fact>]
 let tnested () =
-    runtimeTask {
-        let! x = runtimeTask { return 1 }
+    task {
+        let! x = task { return 1 }
         return x
     }
     |> fun t ->
@@ -71,8 +69,9 @@ let tnested () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let tcatch0 () =
-    runtimeTask {
+    task {
         try
             return 1
         with e ->
@@ -84,8 +83,9 @@ let tcatch0 () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let tcatch1 () =
-    runtimeTask {
+    task {
         try
             let! x = Task.FromResult 1
             return x
@@ -98,14 +98,15 @@ let tcatch1 () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let t3 () =
     let t2 () =
-        runtimeTask {
+        task {
             System.Console.WriteLine("hello")
             return 1
         }
 
-    runtimeTask {
+    task {
         System.Console.WriteLine("hello")
         let! x = t2 ()
         System.Console.WriteLine("world")
@@ -117,8 +118,9 @@ let t3 () =
         if t.Result <> 2 then
             failwith "failed"
 
+[<Fact>]
 let t3b () =
-    runtimeTask {
+    task {
         System.Console.WriteLine("hello")
         let! x = Task.FromResult(1)
         System.Console.WriteLine("world")
@@ -130,8 +132,9 @@ let t3b () =
         if t.Result <> 2 then
             failwith "failed"
 
+[<Fact>]
 let t3c () =
-    runtimeTask {
+    task {
         System.Console.WriteLine("hello")
         do! Task.Delay(100)
         System.Console.WriteLine("world")
@@ -144,8 +147,9 @@ let t3c () =
             failwith "failed"
 
 // This tests an exception match
+[<Fact>]
 let t67 () =
-    runtimeTask {
+    task {
         try
             do! Task.Delay(0)
         with
@@ -159,8 +163,9 @@ let t67 () =
             failwith "failed"
 
 // This tests compiling an incomplete exception match
+[<Fact>]
 let t68 () =
-    runtimeTask {
+    task {
         try
             do! Task.Delay(0)
         with :? ArgumentException ->
@@ -172,8 +177,9 @@ let t68 () =
         if t.Result <> () then
             failwith "failed"
 
+[<Fact>]
 let testCompileAsyncWhileLoop () =
-    runtimeTask {
+    task {
         let mutable i = 0
 
         while i < 5 do
@@ -188,8 +194,9 @@ let testCompileAsyncWhileLoop () =
         if t.Result <> 5 then
             failwith "failed"
 
+[<Fact>]
 let merge2tasks () =
-    runtimeTask {
+    task {
         let! x = Task.FromResult(1)
         and! y = Task.FromResult(2)
         return x + y
@@ -200,13 +207,14 @@ let merge2tasks () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let mergeSourcesOverlap () =
     let started = ResizeArray()
     let left = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
     let right = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
 
     let t =
-        runtimeTask {
+        task {
             let! _ = GatedAwaitable(started, "left", left.Task)
             and! _ = GatedAwaitable(started, "right", right.Task)
             return ()
@@ -217,8 +225,9 @@ let mergeSourcesOverlap () =
     left.SetResult()
     t.Wait()
 
+[<Fact>]
 let merge3tasks () =
-    runtimeTask {
+    task {
         let! x = Task.FromResult(1)
         and! y = Task.FromResult(2)
         and! z = Task.FromResult(3)
@@ -230,8 +239,9 @@ let merge3tasks () =
         if t.Result <> 6 then
             failwith "failed"
 
+[<Fact>]
 let mergeYieldAndTask () =
-    runtimeTask {
+    task {
         let! _ = Task.Yield()
         and! y = Task.FromResult(1)
         return y
@@ -242,8 +252,9 @@ let mergeYieldAndTask () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let mergeTaskAndYield () =
-    runtimeTask {
+    task {
         let! x = Task.FromResult(1)
         and! _ = Task.Yield()
         return x
@@ -254,8 +265,9 @@ let mergeTaskAndYield () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let merge2valueTasks () =
-    runtimeTask {
+    task {
         let! x = ValueTask<int>(Task.FromResult(1))
         and! y = ValueTask<int>(Task.FromResult(2))
         return x + y
@@ -266,8 +278,9 @@ let merge2valueTasks () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let merge2valueTasksAndYield () =
-    runtimeTask {
+    task {
         let! x = ValueTask<int>(Task.FromResult(1))
         and! y = ValueTask<int>(Task.FromResult(2))
         and! _ = Task.Yield()
@@ -279,8 +292,9 @@ let merge2valueTasksAndYield () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let mergeYieldAnd2tasks () =
-    runtimeTask {
+    task {
         let! _ = Task.Yield()
         and! x = Task.FromResult(1)
         and! y = Task.FromResult(2)
@@ -292,8 +306,9 @@ let mergeYieldAnd2tasks () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let merge2tasksAndValueTask () =
-    runtimeTask {
+    task {
         let! x = Task.FromResult(1)
         and! y = Task.FromResult(2)
         and! z = ValueTask<int>(Task.FromResult(3))
@@ -305,8 +320,9 @@ let merge2tasksAndValueTask () =
         if t.Result <> 6 then
             failwith "failed"
 
+[<Fact>]
 let merge2asyncs () =
-    runtimeTask {
+    task {
         let! x = async { return 1 }
         and! y = async { return 2 }
         return x + y
@@ -317,8 +333,9 @@ let merge2asyncs () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let merge3asyncs () =
-    runtimeTask {
+    task {
         let! x = async { return 1 }
         and! y = async { return 2 }
         and! z = async { return 3 }
@@ -330,8 +347,9 @@ let merge3asyncs () =
         if t.Result <> 6 then
             failwith "failed"
 
+[<Fact>]
 let mergeYieldAndAsync () =
-    runtimeTask {
+    task {
         let! _ = Task.Yield()
         and! y = async { return 1 }
         return y
@@ -342,8 +360,9 @@ let mergeYieldAndAsync () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let mergeAsyncAndYield () =
-    runtimeTask {
+    task {
         let! x = async { return 1 }
         and! _ = Task.Yield()
         return x
@@ -354,8 +373,9 @@ let mergeAsyncAndYield () =
         if t.Result <> 1 then
             failwith "failed"
 
+[<Fact>]
 let mergeYieldAnd2asyncs () =
-    runtimeTask {
+    task {
         let! _ = Task.Yield()
         and! x = async { return 1 }
         and! y = async { return 2 }
@@ -367,8 +387,9 @@ let mergeYieldAnd2asyncs () =
         if t.Result <> 3 then
             failwith "failed"
 
+[<Fact>]
 let merge2asyncsAndValueTask () =
-    runtimeTask {
+    task {
         let! x = async { return 1 }
         and! y = async { return 2 }
         and! z = ValueTask<int>(Task.FromResult(3))
@@ -384,9 +405,10 @@ let merge2asyncsAndValueTask () =
 // Basics
 // ---------------------------------------------------------------------------
 
+[<Fact>]
 let testShortCircuitResult () =
     let t =
-        runtimeTask {
+        task {
             let! x = Task.FromResult(1)
             let! y = Task.FromResult(2)
             return x + y
@@ -395,11 +417,12 @@ let testShortCircuitResult () =
     require t.IsCompleted "didn't short-circuit already completed tasks"
     require (t.Result = 3) "wrong result"
 
+[<Fact>]
 let testDelay () =
     let mutable x = 0
 
     let t =
-        runtimeTask {
+        task {
             do! Task.Delay(50)
             x <- x + 1
         }
@@ -407,13 +430,14 @@ let testDelay () =
     require (x = 0) "task already ran"
     t.Wait()
 
+[<Fact>]
 let testNonBlocking () =
     let allowContinue = new SemaphoreSlim(0)
     let continueToFinish = new ManualResetEventSlim(false)
     let finished = new ManualResetEventSlim()
 
     let t =
-        runtimeTask {
+        task {
             do! allowContinue.WaitAsync()
             continueToFinish.Wait()
             finished.Set()
@@ -426,12 +450,13 @@ let testNonBlocking () =
 
 // Exception-handling and disposal coverage.
 
+[<Fact>]
 let testCatching1 () =
     let mutable x = 0
     let mutable y = 0
 
     let t =
-        runtimeTask {
+        task {
             try
                 do! Task.Delay(0)
                 failtest "hello"
@@ -448,12 +473,13 @@ let testCatching1 () =
     require (y = 1) "bailed after exn"
     require (x = 0) "ran past failure"
 
+[<Fact>]
 let testCatching2 () =
     let mutable x = 0
     let mutable y = 0
 
     let t =
-        runtimeTask {
+        task {
             try
                 do! Task.Yield() // can't skip through this
                 failtest "hello"
@@ -470,20 +496,21 @@ let testCatching2 () =
     require (y = 1) "bailed after exn"
     require (x = 0) "ran past failure"
 
+[<Fact>]
 let testCatchingInApplicative () =
     let mutable x = 0
     let mutable y = 0
 
     let t =
-        runtimeTask {
+        task {
             try
                 let! _ =
-                    runtimeTask {
+                    task {
                         do! Task.Delay(100)
                         x <- 1
                     }
 
-                and! _ = runtimeTask { failtest "hello" }
+                and! _ = task { failtest "hello" }
                 ()
             with
             | TestException msg -> require (msg = "hello") "message tampered"
@@ -496,13 +523,14 @@ let testCatchingInApplicative () =
     require (y = 1) "bailed after exn"
     require (x = 1) "exit too early"
 
+[<Fact>]
 let testNestedCatching () =
     let mutable counter = 1
     let mutable caughtInner = 0
     let mutable caughtOuter = 0
 
     let t1 () =
-        runtimeTask {
+        task {
             try
                 do! Task.Yield()
                 failtest "hello"
@@ -513,7 +541,7 @@ let testNestedCatching () =
         }
 
     let t2 =
-        runtimeTask {
+        task {
             try
                 do! t1 ()
             with
@@ -532,9 +560,10 @@ let testNestedCatching () =
     require (caughtInner = 1) "didn't catch inner"
     require (caughtOuter = 2) "didn't catch outer"
 
+[<Fact>]
 let testWhileLoopSync () =
     let t =
-        runtimeTask {
+        task {
             let mutable i = 0
 
             while i < 10 do
@@ -546,10 +575,11 @@ let testWhileLoopSync () =
     require (t.IsCompleted) "didn't do sync while loop properly - not completed"
     require (t.Result = 10) "didn't do sync while loop properly - wrong result"
 
+[<Fact>]
 let testWhileLoopAsyncZeroIteration () =
     for i in 1..5 do
         let t =
-            runtimeTask {
+            task {
                 let mutable i = 0
 
                 while i < 0 do
@@ -562,10 +592,11 @@ let testWhileLoopAsyncZeroIteration () =
         t.Wait()
         require (t.Result = 0) "didn't do while loop properly"
 
+[<Fact>]
 let testWhileLoopAsyncOneIteration () =
     for i in 1..5 do
         let t =
-            runtimeTask {
+            task {
                 let mutable i = 0
 
                 while i < 1 do
@@ -578,10 +609,11 @@ let testWhileLoopAsyncOneIteration () =
         t.Wait()
         require (t.Result = 1) "didn't do while loop properly"
 
+[<Fact>]
 let testWhileLoopAsync () =
     for i in 1..5 do
         let t =
-            runtimeTask {
+            task {
                 let mutable i = 0
 
                 while i < 10 do
@@ -594,11 +626,12 @@ let testWhileLoopAsync () =
         t.Wait()
         require (t.Result = 10) "didn't do while loop properly"
 
+[<Fact>]
 let testForLoopA () =
     let list = [ "a"; "b"; "c" ] |> Seq.ofList
 
     let t =
-        runtimeTask {
+        task {
             let mutable x = Unchecked.defaultof<_>
             let e = list.GetEnumerator()
 
@@ -609,6 +642,7 @@ let testForLoopA () =
 
     t.Wait()
 
+[<Fact>]
 let testForLoopComplex () =
     let mutable disposed = false
 
@@ -647,7 +681,7 @@ let testForLoopComplex () =
         }
 
     let t =
-        runtimeTask {
+        task {
             let mutable index = 0
             do! Task.Yield()
 
@@ -673,12 +707,13 @@ let testForLoopComplex () =
     require disposed "never disposed D"
     require (t.Result = 1) "wrong result"
 
+[<Fact>]
 let testForLoopSadPath () =
     for i in 1..5 do
         let wrapList = [ "a"; "b"; "c" ]
 
         let t =
-            runtimeTask {
+            task {
                 let mutable index = 0
                 do! Task.Yield()
 
@@ -691,6 +726,7 @@ let testForLoopSadPath () =
 
         require (t.Result = 1) "wrong result"
 
+[<Fact>]
 let testForLoopSadPathComplex () =
     for i in 1..5 do
         let mutable disposed = false
@@ -732,7 +768,7 @@ let testForLoopSadPathComplex () =
         let mutable caught = false
 
         let t =
-            runtimeTask {
+            task {
                 try
                     let mutable index = 0
                     do! Task.Yield()
@@ -758,13 +794,14 @@ let testForLoopSadPathComplex () =
         require caught "didn't catch exception"
         require disposed "never disposed A"
 
+[<Fact>]
 let testExceptionAttachedToTaskWithoutAwait () =
     for i in 1..5 do
         let mutable ranA = false
         let mutable ranB = false
 
         let t =
-            runtimeTask {
+            task {
                 ranA <- true
                 failtest "uhoh"
                 ranB <- true
@@ -779,7 +816,7 @@ let testExceptionAttachedToTaskWithoutAwait () =
         let mutable ranCatcher = false
 
         let catcher =
-            runtimeTask {
+            task {
                 try
                     ranCatcher <- true
                     let! result = t
@@ -793,13 +830,14 @@ let testExceptionAttachedToTaskWithoutAwait () =
         require catcher.Result "didn't catch"
         require caught "didn't catch"
 
+[<Fact>]
 let testExceptionAttachedToTaskWithAwait () =
     for i in 1..5 do
         let mutable ranA = false
         let mutable ranB = false
 
         let t =
-            runtimeTask {
+            task {
                 ranA <- true
                 failtest "uhoh"
                 do! Task.Delay(100)
@@ -815,7 +853,7 @@ let testExceptionAttachedToTaskWithAwait () =
         let mutable ranCatcher = false
 
         let catcher =
-            runtimeTask {
+            task {
                 try
                     ranCatcher <- true
                     let! result = t
@@ -829,10 +867,11 @@ let testExceptionAttachedToTaskWithAwait () =
         require catcher.Result "didn't catch"
         require caught "didn't catch"
 
+[<Fact>]
 let testFixedStackWhileLoop () =
     for i in 1..100 do
         let t =
-            runtimeTask {
+            task {
                 let mutable maxDepth = Nullable()
                 let mutable i = 0
 
@@ -854,12 +893,13 @@ let testFixedStackWhileLoop () =
         t.Wait()
         require (t.Result = BIG) "didn't get to big number"
 
-let testFixedStackForLoop () = // needs investigation: code after a suspending for loop is not run
+[<Fact>]
+let testFixedStackForLoop () =
     for i in 1..100 do
         let mutable ran = false
 
         let t =
-            runtimeTask {
+            task {
                 let mutable maxDepth = Nullable()
 
                 for i in Seq.init BIG id do
@@ -880,22 +920,22 @@ let testFixedStackForLoop () = // needs investigation: code after a suspending f
         t.Wait()
         require ran "didn't run all"
 
+[<Fact>]
 let testTypeInference () =
-    let t1: string Task = runtimeTask { return "hello" }
+    let t1: string Task = task { return "hello" }
 
     let t2 =
-        runtimeTask {
-            // Divergence from task {}: the runtimeTask Bind overload set does not
-            // propagate the element type here, so the annotation is required.
+        task {
             let! (s: string) = t1
             return s.Length
         }
 
     t2.Wait()
 
+[<Fact>]
 let testNoStackOverflowWithImmediateResult () =
     let longLoop =
-        runtimeTask {
+        task {
             let mutable n = 0
 
             while n < BIG do
@@ -905,14 +945,15 @@ let testNoStackOverflowWithImmediateResult () =
 
     longLoop.Wait()
 
+[<Fact>]
 let testNoStackOverflowWithYieldResult () =
     let longLoop =
-        runtimeTask {
+        task {
             let mutable n = 0
 
             while n < BIG do
                 let! _ =
-                    runtimeTask {
+                    task {
                         do! Task.Yield()
                         let! _ = Task.FromResult(0)
                         n <- n + 1
@@ -923,9 +964,10 @@ let testNoStackOverflowWithYieldResult () =
 
     longLoop.Wait()
 
+[<Fact>]
 let testSmallTailRecursion () =
     let rec loop n =
-        runtimeTask {
+        task {
             if n < 100 then
                 do! Task.Yield()
                 let! _ = Task.FromResult(0)
@@ -934,19 +976,20 @@ let testSmallTailRecursion () =
                 return ()
         }
 
-    let shortLoop = runtimeTask { return! loop 0 }
+    let shortLoop = task { return! loop 0 }
     shortLoop.Wait()
 
+[<Fact>]
 let testTryOverReturnFrom () =
     let inner () =
-        runtimeTask {
+        task {
             do! Task.Yield()
             failtest "inner"
             return 1
         }
 
     let t =
-        runtimeTask {
+        task {
             try
                 do! Task.Yield()
                 return! inner ()
@@ -956,9 +999,10 @@ let testTryOverReturnFrom () =
 
     require (t.Result = 2) "didn't catch"
 
+[<Fact>]
 let testAsyncsMixedWithTasks () =
     let t =
-        runtimeTask {
+        task {
             do! Task.Delay(1)
             do! Async.Sleep(1)
 
@@ -974,9 +1018,10 @@ let testAsyncsMixedWithTasks () =
     let result = t.Result
     require (result = 8) "something weird happened"
 
+[<Fact>]
 let testAsyncsMixedWithTasks_ShouldNotSwitchContext () =
     let t =
-        runtimeTask {
+        task {
             let a = Thread.CurrentThread.ManagedThreadId
             let! b = async { return Thread.CurrentThread.ManagedThreadId }
             let c = Thread.CurrentThread.ManagedThreadId
@@ -990,23 +1035,23 @@ let testAsyncsMixedWithTasks_ShouldNotSwitchContext () =
 
 // no need to call this, we just want to check that it compiles w/o warnings
 let testTrivialReturnCompiles (x: 'a) : 'a Task =
-    runtimeTask {
+    task {
         do! Task.Yield()
         return x
     }
 
 // no need to call this, we just want to check that it compiles w/o warnings
 let testTrivialTransformedReturnCompiles (x: 'a) (f: 'a -> 'b) : 'b Task =
-    runtimeTask {
+    task {
         do! Task.Yield()
         return f x
     }
 
 // no need to call this, we just want to check that it compiles w/o warnings
 let testDefaultInferenceForReturnFrom () =
-    let t = runtimeTask { return Some "x" }
+    let t = task { return Some "x" }
 
-    runtimeTask {
+    task {
         let! r = t
 
         if r = None then
@@ -1020,13 +1065,13 @@ let testDefaultInferenceForReturnFrom () =
 
 // no need to call this, just check that it compiles
 let testCompilerInfersArgumentOfReturnFrom () =
-    runtimeTask { if true then return 1 else return! (failwith "": int Task) }
+    task { if true then return 1 else return! (failwith "": int Task) }
     |> ignore
 
 // Overload-resolution cases from the bottom of Tasks.fs (Issue12184*), compile-only.
 type Issue12184() =
     member this.TaskMethod() =
-        runtimeTask {
+        task {
             // The overload resolution for Bind commits to 'Async<int>' since the type annotation is present.
             let! result = this.AsyncMethod(21)
             return result
@@ -1036,7 +1081,7 @@ type Issue12184() =
 
 type Issue12184b() =
     member this.TaskMethod() =
-        runtimeTask {
+        task {
             // The overload resolution for Bind commits to 'YieldAwaitable' since the type annotation is present.
             let! result = this.AsyncMethod(21)
             return result
@@ -1046,25 +1091,25 @@ type Issue12184b() =
 
 // Issue12184c from Tasks.fs is omitted: it relies on task {}'s Bind overload
 // resolution committing to Task<_> for an unannotated argument, which the
-// runtimeTask builder's overload set does not support.
+// task builder's overload set does not support.
 
 module Issue12184d =
     let TaskMethod (t: ValueTask) =
-        runtimeTask {
+        task {
             let! result = t
             return result
         }
 
 module Issue12184e =
     let TaskMethod (t: ValueTask<int>) =
-        runtimeTask {
+        task {
             let! result = t
             return result
         }
 
 module Issue12184f =
     let TaskMethod (t: Task) =
-        runtimeTask {
+        task {
             let! result = t
             return result
         }
@@ -1073,11 +1118,12 @@ module Issue12184f =
 // Exception-handling and disposal coverage.
 // ---------------------------------------------------------------------------
 
+[<Fact>]
 let testNoDelay () =
     let mutable x = 0
 
     let t =
-        runtimeTask {
+        task {
             x <- x + 1
             do! Task.Delay(5)
             x <- x + 1
@@ -1086,12 +1132,13 @@ let testNoDelay () =
     require (x = 1) "first part didn't run yet"
     t.Wait()
 
+[<Fact>]
 let testTryFinallyHappyPath () =
     for i in 1..5 do
         let mutable ran = false
 
         let t =
-            runtimeTask {
+            task {
                 try
                     require (not ran) "ran way early"
                     do! Task.Delay(100)
@@ -1103,12 +1150,13 @@ let testTryFinallyHappyPath () =
         t.Wait()
         require ran "never ran"
 
+[<Fact>]
 let testTryFinallySadPath () =
     for i in 1..5 do
         let mutable ran = false
 
         let t =
-            runtimeTask {
+            task {
                 try
                     require (not ran) "ran way early"
                     do! Task.Delay(100)
@@ -1125,12 +1173,13 @@ let testTryFinallySadPath () =
 
         require ran "never ran"
 
+[<Fact>]
 let testTryFinallyCaught () =
     for i in 1..5 do
         let mutable ran = false
 
         let t =
-            runtimeTask {
+            task {
                 try
                     try
                         require (not ran) "ran way early"
@@ -1148,12 +1197,13 @@ let testTryFinallyCaught () =
         require (t.Result = 2) "wrong return"
         require ran "never ran"
 
+[<Fact>]
 let testUsing () =
     for i in 1..5 do
         let mutable disposed = false
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IDisposable with
                         member _.Dispose() = disposed <- true
@@ -1167,14 +1217,15 @@ let testUsing () =
         t.Wait()
         require disposed "never disposed B"
 
+[<Fact>]
 let testUsingFromTask () =
     let mutable disposedInner = false
     let mutable disposed = false
 
     let t =
-        runtimeTask {
+        task {
             use! d =
-                runtimeTask {
+                task {
                     do! Task.Delay(50)
 
                     use i =
@@ -1199,15 +1250,16 @@ let testUsingFromTask () =
     t.Wait()
     require disposed "never disposed C"
 
+[<Fact>]
 let testUsingSadPath () =
     let mutable disposedInner = false
     let mutable disposed = false
 
     let t =
-        runtimeTask {
+        task {
             try
                 use! d =
-                    runtimeTask {
+                    task {
                         do! Task.Delay(50)
 
                         use i =
@@ -1235,16 +1287,17 @@ let testUsingSadPath () =
     t.Wait()
     require (not disposed) "disposed thing that never should've existed"
 
+[<Fact>]
 let testUsingAsyncDisposableSync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IAsyncDisposable with
                         member _.DisposeAsync() =
-                            runtimeTask { disposed <- disposed + 1 } |> ValueTask
+                            task { disposed <- disposed + 1 } |> ValueTask
                     }
 
                 require (disposed = 0) "disposed way early"
@@ -1256,16 +1309,17 @@ let testUsingAsyncDisposableSync () =
         require (disposed >= 1) "never disposed B"
         require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testUsingAsyncDisposableAsync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IAsyncDisposable with
                         member _.DisposeAsync() =
-                            runtimeTask {
+                            task {
                                 do! Task.Delay(10)
                                 disposed <- disposed + 1
                             }
@@ -1281,16 +1335,17 @@ let testUsingAsyncDisposableAsync () =
         require (disposed >= 1) "never disposed B"
         require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testUsingAsyncDisposableExnAsync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IAsyncDisposable with
                         member _.DisposeAsync() =
-                            runtimeTask {
+                            task {
                                 do! Task.Delay(10)
                                 disposed <- disposed + 1
                             }
@@ -1307,16 +1362,17 @@ let testUsingAsyncDisposableExnAsync () =
             require (disposed >= 1) "never disposed B"
             require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testUsingAsyncDisposableExnSync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IAsyncDisposable with
                         member _.DisposeAsync() =
-                            runtimeTask {
+                            task {
                                 disposed <- disposed + 1
                                 do! Task.Delay(10)
                             }
@@ -1333,16 +1389,17 @@ let testUsingAsyncDisposableExnSync () =
             require (disposed >= 1) "never disposed B"
             require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testUsingAsyncDisposableDelayExnSync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use d =
                     { new IAsyncDisposable with
                         member _.DisposeAsync() =
-                            runtimeTask {
+                            task {
                                 disposed <- disposed + 1
                                 do! Task.Delay(10)
                             }
@@ -1361,20 +1418,21 @@ let testUsingAsyncDisposableDelayExnSync () =
             require (disposed >= 1) "never disposed B"
             require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testUsingBindAsyncDisposableSync () =
     for i in 1..5 do
         let mutable disposed = 0
 
         let t =
-            runtimeTask {
+            task {
                 use! d =
-                    runtimeTask {
+                    task {
                         do! Task.Delay(10)
 
                         return
                             { new IAsyncDisposable with
                                 member _.DisposeAsync() =
-                                    runtimeTask { disposed <- disposed + 1 } |> ValueTask
+                                    task { disposed <- disposed + 1 } |> ValueTask
                             }
                     }
 
@@ -1387,6 +1445,7 @@ let testUsingBindAsyncDisposableSync () =
         require (disposed >= 1) "never disposed B"
         require (disposed <= 1) "too many dispose on B"
 
+[<Fact>]
 let testExceptionThrownInFinally () =
     for i in 1..5 do
         use stepOutside = new SemaphoreSlim(0)
@@ -1395,7 +1454,7 @@ let testExceptionThrownInFinally () =
         let mutable ranFinally = 0
 
         let t =
-            runtimeTask {
+            task {
                 try
                     ranInitial.Set()
                     do! Task.Yield()
@@ -1419,6 +1478,7 @@ let testExceptionThrownInFinally () =
         require ranNext.IsSet "didn't run next"
         require (ranFinally = 1) "didn't run finally exactly once"
 
+[<Fact>]
 let test2ndExceptionThrownInFinally () =
     for i in 1..5 do
         use ranInitial = new ManualResetEventSlim()
@@ -1427,7 +1487,7 @@ let test2ndExceptionThrownInFinally () =
         let mutable ranFinally = 0
 
         let t =
-            runtimeTask {
+            task {
                 try
                     ranInitial.Set()
                     do! continueTask.WaitAsync()
@@ -1451,9 +1511,10 @@ let test2ndExceptionThrownInFinally () =
         require ranNext.IsSet "didn't run next"
         require (ranFinally = 1) "didn't run finally exactly once"
 
+[<Fact>]
 let testTryFinallyOverReturnFromWithException () =
     let inner () =
-        runtimeTask {
+        task {
             do! Task.Yield()
             failtest "inner"
             return 1
@@ -1462,7 +1523,7 @@ let testTryFinallyOverReturnFromWithException () =
     let mutable m = 0
 
     let t =
-        runtimeTask {
+        task {
             try
                 do! Task.Yield()
                 return! inner ()
@@ -1477,9 +1538,10 @@ let testTryFinallyOverReturnFromWithException () =
 
     require (m = 1) "didn't run finally"
 
+[<Fact>]
 let testTryFinallyOverReturnFromWithoutException () =
     let inner () =
-        runtimeTask {
+        task {
             do! Task.Yield()
             return 1
         }
@@ -1487,7 +1549,7 @@ let testTryFinallyOverReturnFromWithoutException () =
     let mutable m = 0
 
     let t =
-        runtimeTask {
+        task {
             try
                 do! Task.Yield()
                 return! inner ()
@@ -1507,9 +1569,10 @@ let testTryFinallyOverReturnFromWithoutException () =
 type CustomAwaitable(result: int) =
     member _.GetAwaiter() = (Task.FromResult result).GetAwaiter()
 
+[<Fact>]
 let testCustomAwaitable () =
     let t =
-        runtimeTask {
+        task {
             let! x = CustomAwaitable 20
             let! y = CustomAwaitable 20
             return x + y
@@ -1517,11 +1580,11 @@ let testCustomAwaitable () =
 
     require (t.Result = 40) "custom awaitable bind"
 
-    let t2 = runtimeTask { return! CustomAwaitable 42 }
+    let t2 = task { return! CustomAwaitable 42 }
     require (t2.Result = 42) "custom awaitable return from"
 
     let t3 =
-        runtimeTask {
+        task {
             let! x = CustomAwaitable 20
             and! y = CustomAwaitable 22
             return x + y
@@ -1529,7 +1592,8 @@ let testCustomAwaitable () =
 
     require (t3.Result = 42) "custom awaitable merge sources"
 
-let testTaskUsesSyncContext () = // task completes without the body observably running when a SynchronizationContext is installed
+[<Fact>]
+let testTaskUsesSyncContext () =
     for i in 1..5 do
         let mutable ran = false
         let mutable posted = false
@@ -1549,7 +1613,7 @@ let testTaskUsesSyncContext () = // task completes without the body observably r
             require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread A"
 
             let t =
-                runtimeTask {
+                task {
                     let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId
                     require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread B"
                     require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread B"
@@ -1565,76 +1629,37 @@ let testTaskUsesSyncContext () = // task completes without the body observably r
         finally
             SynchronizationContext.SetSynchronizationContext oldSyncContext
 
-let runAllTests () =
-    tinyTask ()
-    tbind ()
-    tnested ()
-    tcatch0 ()
-    tcatch1 ()
-    t3 ()
-    t3b ()
-    t3c ()
-    t67 ()
-    t68 ()
-    testCompileAsyncWhileLoop ()
-    merge2tasks ()
-    mergeSourcesOverlap ()
-    merge3tasks ()
-    mergeYieldAndTask ()
-    mergeTaskAndYield ()
-    merge2valueTasks ()
-    merge2valueTasksAndYield ()
-    mergeYieldAnd2tasks ()
-    merge2tasksAndValueTask ()
-    merge2asyncs ()
-    merge3asyncs ()
-    mergeYieldAndAsync ()
-    mergeAsyncAndYield ()
-    mergeYieldAnd2asyncs ()
-    merge2asyncsAndValueTask ()
-    testShortCircuitResult ()
-    testDelay ()
-    testNonBlocking ()
-    testCatching1 ()
-    testCatching2 ()
-    testCatchingInApplicative ()
-    testNestedCatching ()
-    testWhileLoopSync ()
-    testWhileLoopAsyncZeroIteration ()
-    testWhileLoopAsyncOneIteration ()
-    testWhileLoopAsync ()
-    testForLoopA ()
-    testForLoopComplex ()
-    testForLoopSadPath ()
-    testForLoopSadPathComplex ()
-    testFixedStackWhileLoop ()
-    testFixedStackForLoop ()
-    testTypeInference ()
-    testNoStackOverflowWithImmediateResult ()
-    testNoStackOverflowWithYieldResult ()
-    testSmallTailRecursion ()
-    testTryOverReturnFrom ()
-    testTryFinallyOverReturnFromWithException ()
-    testTryFinallyOverReturnFromWithoutException ()
-    testAsyncsMixedWithTasks ()
-    testAsyncsMixedWithTasks_ShouldNotSwitchContext ()
-    testCustomAwaitable ()
-    testUsingAsyncDisposableSync ()
-    testUsingAsyncDisposableAsync ()
-    testUsingAsyncDisposableExnAsync ()
-    testUsingAsyncDisposableExnSync ()
-    testUsingAsyncDisposableDelayExnSync ()
-    testUsingBindAsyncDisposableSync ()
-    testTryFinallyHappyPath ()
-    testTryFinallySadPath ()
-    testTryFinallyCaught ()
-    testNoDelay()
-    testUsing ()
-    testUsingFromTask ()
-    testUsingSadPath ()
-    testExceptionThrownInFinally ()
-    test2ndExceptionThrownInFinally ()
-    testTaskUsesSyncContext ()
-    testExceptionAttachedToTaskWithoutAwait ()
-    testExceptionAttachedToTaskWithAwait ()
-    0
+type private DualDisposable(syncDispose: unit -> unit, asyncDispose: unit -> ValueTask) =
+    interface IDisposable with member _.Dispose() = syncDispose()
+    interface IAsyncDisposable with member _.DisposeAsync() = asyncDispose()
+
+[<Fact>]
+let testCancellationIdentity () =
+    use cancellation = new CancellationTokenSource()
+    let input = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let output = task { let! value = input.Task in return value }
+    require (not output.IsCompleted) "cancellation input must suspend"
+    cancellation.Cancel()
+    input.SetCanceled(cancellation.Token)
+    try
+        resultOf output |> ignore
+        failwith "cancellation was lost"
+    with :? OperationCanceledException as error ->
+        require (error.CancellationToken = cancellation.Token) "cancellation token changed"
+    require output.IsCanceled "task cancellation status"
+
+[<Fact>]
+let testDualDisposalPriority () =
+    let cleanup = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let mutable synchronous = 0
+    let mutable asynchronous = 0
+    let resource =
+        new DualDisposable(
+            (fun () -> synchronous <- synchronous + 1),
+            (fun () -> asynchronous <- asynchronous + 1; ValueTask(cleanup.Task)))
+    let output = task { use resource = resource in return 42 }
+    require (not output.IsCompleted && asynchronous = 1 && synchronous = 0) "async disposal must take priority and suspend"
+    cleanup.SetResult()
+    require (resultOf output = 42 && asynchronous = 1 && synchronous = 0) "disposal must finish once"
+
+#endif

@@ -43,6 +43,7 @@ type public Fsc() as this =
     let mutable highEntropyVA: bool = false
     let mutable keyFile: string | null = null
     let mutable langVersion: string | null = null
+    let mutable features: ITaskItem[] = [||]
     let mutable disabledLanguageFeatures: ITaskItem[] = [||]
     let mutable noFramework = false
     let mutable noInterfaceData = false
@@ -147,6 +148,9 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
 
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
+
+        for item in features do
+            builder.AppendSwitchIfNotNull("--features:", item.ItemSpec)
 
         for item in disabledLanguageFeatures do
             builder.AppendSwitchIfNotNull("--disableLanguageFeature:", item.ItemSpec)
@@ -469,6 +473,10 @@ type public Fsc() as this =
     member _.LangVersion
         with get () = langVersion
         and set (s) = langVersion <- s
+
+    member _.Features
+        with get () = features
+        and set (s) = features <- s
 
     member _.DisabledLanguageFeatures
         with get () = disabledLanguageFeatures

@@ -879,28 +879,12 @@ let f () : Task<int> =
     let runtimeAsyncFixture name =
         Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", name)
 
-    let withSampleBuilders sources =
-        FsFromPath (runtimeAsyncFixture "Async2Builder.fs")
-        |> withAdditionalSourceFiles (
-            [ "RuntimeTaskBuilder.fs"; "AsyncSeq2Builder.fs" ] @ sources
-            |> List.map (runtimeAsyncFixture >> SourceFromPath)
-        )
-        |> withLangVersionPreview
-        |> withFSharpCoreShippedNet
-
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime task builder fixture executes through runtime async`` (optimize: bool) =
-        withSampleBuilders [ "RuntimeTasks.fs" ]
-        |> withAdditionalSourceFile (FsSource "RuntimeTasks.runAllTests () |> exit")
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
     [<Fact>]
     let ``runtime task AsyncLocal values propagate through runtime async`` () =
-        withSampleBuilders [ "RuntimeAsyncAsyncLocal.fs" ]
+        FsFromPath (runtimeAsyncFixture "Async2Builder.fs")
+        |> withAdditionalSourceFile (SourceFromPath (runtimeAsyncFixture "RuntimeAsyncAsyncLocal.fs"))
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -921,25 +905,6 @@ let f () : Task<int> =
         |> FsFromPath
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime async sequence builder fixture executes`` (optimize: bool) =
-        withSampleBuilders [ "EnumerableTests.fs" ]
-        |> withAdditionalSourceFile (FsSource "EnumerableTests.runTests().Result |> exit")
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
-        withSampleBuilders [ "RuntimeAsyncEnumerableTests.fs" ]
         |> withOptimization optimize
         |> compileExeAndRun
         |> shouldSucceed
@@ -1525,11 +1490,11 @@ module RuntimeAsyncConditionalFoldTest
 
 open System.Collections.Generic
 open System.Threading.Tasks
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 [<NoCompilerInlining>]
 let run deduplicate (ready: Task<int>) =
-    runtimeTask {{
+    task {{
         let! initial = ready
         return
             {if useList then "List.fold" else "Array.fold"}
@@ -1557,16 +1522,7 @@ let main _ =
     0
 """
 
-        let library =
-            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-            |> asLibrary
-            |> withName "RuntimeTaskLibrary"
-            |> withLangVersionPreview
-            |> withFSharpCoreShippedNet
-            |> withOptimization optimize
-
         FSharp source
-        |> withReferences [ library ]
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
         |> withOptimization optimize
@@ -2696,23 +2652,24 @@ module RuntimeAsyncDebugTests =
         let source =
             """module RuntimeAsyncSequenceDebug
 open System.Threading.Tasks
-open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 let first () =
-    asyncSeq2 {
+    taskSeq {
         do! Task.Delay 1
         yield 1
     }
 
 let second () =
-    asyncSeq2 {
+    taskSeq {
         do! Task.Delay 1
         yield 2
     }
 """
 
-        RuntimeAsyncTests.withSampleBuilders []
-        |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncSequenceDebug.fs" source)
+        FSharpWithFileName "RuntimeAsyncSequenceDebug.fs" source
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
         |> withPortablePdb
         |> withNoOptimize
         |> compile

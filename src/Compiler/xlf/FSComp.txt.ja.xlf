@@ -327,6 +327,11 @@
         <target state="translated">'TailCall' 属性が再帰関数以外で使用されている場合、警告が発せられます。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConditionalAutoOpen">
+        <source>conditional assembly auto-opens</source>
+        <target state="new">conditional assembly auto-opens</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -872,6 +877,11 @@
         <target state="new">Disable a specific language feature by name.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsFeatures">
+        <source>Accept opaque feature operands for exact CLI-token matching by conditional assembly auto-opens</source>
+        <target state="new">Accept opaque feature operands for exact CLI-token matching by conditional assembly auto-opens</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
         <target state="translated">言語バージョンで許可されている値を表示します。</target>
@@ -1200,6 +1210,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(推奨される名前)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastInvalidConditionalAutoOpenAttribute">
+        <source>The conditional auto-open attribute in assembly '{0}' must have a non-null path and CLI condition.</source>
+        <target state="new">The conditional auto-open attribute in assembly '{0}' must have a non-null path and CLI condition.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastNamespaceAndTypeWithSameNameInAssembly">

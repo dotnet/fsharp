@@ -1,13 +1,10 @@
-// Runtime-behavior edge cases for runtime-async, exercised through the runtimeTask CE builder
-// (RuntimeTaskBuilder.fs, treated here as a hypothetical library). Verified to run green on the
-// pinned net11 preview runtime. Referenced from RuntimeAsyncEdgeCaseTests.fs via compileExeAndRun.
 module RuntimeAsyncEdgeCases
 
 open System
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 let private delayed v =
     Task.Delay(1).ContinueWith(fun (_: Task) -> v)
@@ -16,7 +13,7 @@ let private resultOf (t: Task<'T>) = t.GetAwaiter().GetResult()
 
 // locals: a normal local is hoisted by the JIT and preserved across a suspension.
 let normalLocalAcross () : Task<int> =
-    runtimeTask {
+    task {
         let captured = 40
         let! delta = delayed 2
         return captured + delta
@@ -24,7 +21,7 @@ let normalLocalAcross () : Task<int> =
 
 // loops: await inside both a while body and a for body; results checked separately.
 let loopsAcrossAwait () : Task<int * int> =
-    runtimeTask {
+    task {
         let mutable whileAcc = 0
         let mutable i = 0
 
@@ -48,7 +45,7 @@ let loopsAcrossAwait () : Task<int * int> =
 type Pair = { A: int; B: int }
 
 let structAcross () : Task<int> =
-    runtimeTask {
+    task {
         let p = { A = 20; B = 22 }
         let! _ = delayed 0
         return p.A + p.B
@@ -56,14 +53,14 @@ let structAcross () : Task<int> =
 
 // operand: change a bound source from Task to ValueTask keeps working.
 let awaitValueTask () : Task<int> =
-    runtimeTask {
+    task {
         let! x = ValueTask<int>(41)
         return x + 1
     }
 
 // exception thrown after a suspension surfaces through the returned Task.
 let exnAfterAwait () : Task<int> =
-    runtimeTask {
+    task {
         let! _ = delayed 1
         return failwith "boom"
     }
@@ -77,7 +74,7 @@ type AsyncProbe(sink: int ref) =
             ValueTask(Task.Delay(1).ContinueWith(fun (_: Task) -> sink.Value <- 1))
 
 let useAsyncDisposable (sink: int ref) : Task<int> =
-    runtimeTask {
+    task {
         use _p = new AsyncProbe(sink)
         let! x = delayed 7
         return x
