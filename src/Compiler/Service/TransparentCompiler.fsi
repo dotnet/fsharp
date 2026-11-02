@@ -97,7 +97,7 @@ type internal Extensions =
 
     [<System.Runtime.CompilerServices.Extension>]
     static member Key:
-        fileSnapshots: #IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
+        fileSnapshots: #IFileSnapshot array * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<DependencyGraphType option * byte array, string>
 
 [<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]

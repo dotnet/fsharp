@@ -1168,7 +1168,7 @@ type internal BackgroundCompiler
 
     member _.TryGetRecentCheckResultsForFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
         projectSnapshot.ProjectSnapshot.SourceFiles
-        |> List.tryFind (fun f -> f.FileName = fileName)
+        |> Array.tryFind (fun f -> f.FileName = fileName)
         |> Option.bind (fun (f: FSharpFileSnapshot) ->
             let options = projectSnapshot.ToOptions()
             let sourceText = f.GetSource() |> Async.AwaitTask |> Async.RunSynchronously
