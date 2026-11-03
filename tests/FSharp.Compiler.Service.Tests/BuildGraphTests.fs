@@ -338,6 +338,22 @@ module BuildGraphTests =
 
         Parallel.Invoke(task1, task2)
 
+    [<Fact>]
+    let ``CapturingDiagnosticsLogger keeps every diagnostic reported concurrently`` () =
+        let count = 100_000
+        let logger = CapturingDiagnosticsLogger "concurrent writers"
+
+        do
+            use _ = UseDiagnosticsLogger logger
+            Parallel.For(0, count, fun _ -> errorR TestException) |> ignore
+
+        logger.ErrorCount |> Assert.shouldBe count
+        logger.Diagnostics.Length |> Assert.shouldBe count
+
+        let target = CapturingDiagnosticsLogger "commit target"
+        logger.CommitDelayedDiagnostics target
+        target.ErrorCount |> Assert.shouldBe count
+
 
     type internal DiagnosticsLoggerWithCallback(callback) =
         inherit CapturingDiagnosticsLogger("test")
