@@ -149,12 +149,10 @@ module Determinism
         let outDll = Path.Combine(workDir, "Out.dll")
         let outRef = Path.Combine(workDir, "Out.ref.dll")
         let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
-        let references = Path.Combine(workDir, "references.rsp")
-        File.WriteAllLines(references, defaultOpts)
         let result = runFscProcess [
             yield "--target:library"
             yield "--deterministic+"
-            yield $"@{references}"
+            yield! (defaultOpts |> Array.toList)
             yield $"--refout:{outRef}"
             yield $"-o:{outDll}"
             yield sourceFile
@@ -174,8 +172,6 @@ module Determinism
         let outDll = Path.Combine(workDir, "Out.dll")
         let outRef = Path.Combine(workDir, "Out.ref.dll")
         let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
-        let references = Path.Combine(workDir, "references.rsp")
-        File.WriteAllLines(references, defaultOpts)
         let result = runFscProcess [
             yield "--target:library"
             yield "--deterministic+"
@@ -184,7 +180,7 @@ module Determinism
             // resources, and not truncated - carries that into the MVID, masking the
             // truncated per-file signature hash below.
             yield "--optimize-"
-            yield $"@{references}"
+            yield! (defaultOpts |> Array.toList)
             yield $"--refout:{outRef}"
             yield $"-o:{outDll}"
             yield! sourceFiles
