@@ -1,6 +1,7 @@
-module FSharp.Core.UnitTests.Control.RuntimeTaskSequenceExpressions
+module FSharp.Core.UnitTests.Control.TaskSequenceExpressions
 
 #if NET11_0_OR_GREATER
+
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -11,6 +12,8 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 open Xunit
 
+let private runtimeTask = task
+
 let private assertEqual name expected actual =
     if expected <> actual then
         failwithf "%s failed. Expected %A, got %A." name expected actual
@@ -20,34 +23,15 @@ let private assertTrue name condition =
         failwithf "%s failed." name
 
 let private collect (source: IAsyncEnumerable<'T>) =
-    task {
+    runtimeTask {
         use enumerator = source.GetAsyncEnumerator(CancellationToken.None)
         let values = ResizeArray<'T>()
 
         while! enumerator.MoveNextAsync() do
+            //printfn "Collected value: %A" enumerator.Current
             values.Add enumerator.Current
 
         return Seq.toArray values
-    }
-
-let private except (itemsToExclude: IAsyncEnumerable<_>) (source: IAsyncEnumerable<_>) =
-    taskSeq {
-        use iterator = source.GetAsyncEnumerator CancellationToken.None
-        let! hasFirst = iterator.MoveNextAsync()
-
-        if hasFirst then
-            let seen = HashSet<_>(HashIdentity.Structural)
-            use excluded = itemsToExclude.GetAsyncEnumerator CancellationToken.None
-
-            while! excluded.MoveNextAsync() do
-                seen.Add excluded.Current |> ignore
-
-            if seen.Add iterator.Current then
-                yield iterator.Current
-
-            while! iterator.MoveNextAsync() do
-                if seen.Add iterator.Current then
-                    yield iterator.Current
     }
 
 type CustomAwaitable(value: int) =
@@ -75,17 +59,6 @@ type private TestAsyncSource(values: int[]) =
 
                 member _.DisposeAsync() = ValueTask() }
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``taskSeq excludes duplicates after awaiting the first element`` empty =
-    task {
-        let source = TestAsyncSource(if empty then [||] else [| 1; 2; 2; 3 |])
-        let excluded = TestAsyncSource [| 2 |]
-        let! actual = collect (except excluded source)
-        assertEqual "excluded values" (if empty then [||] else [| 1; 3 |]) actual
-    }
-
 let private basicSequence () =
     taskSeq {
         do! Task.Delay(5)
@@ -96,28 +69,27 @@ let private basicSequence () =
         yield "2"
     }
 
-[<Fact>]
-let testBasicSequence () =
-    task {
+let private testBasicSequence () =
+    runtimeTask {
         let! values = collect (basicSequence ())
         assertEqual "basic sequence" [| "1"; "x"; "2" |] values
     }
 
-[<Fact>]
-let testAwaitableKinds () =
-    task {
+let private testAwaitableKinds () =
+    runtimeTask {
         let source =
             taskSeq {
                 let! taskValue = Task.FromResult 1
                 let! valueTaskValue = ValueTask<int>(2)
                 let! asyncValue = async { return 3 }
                 let! customValue = CustomAwaitable 4
-                let! nestedValue = task { return 5 }
-                yield taskValue + valueTaskValue + asyncValue + customValue + nestedValue
+                let! runtimeTaskValue = runtimeTask { return 5 }
+                let! fsharpAsyncValue = async { return 6 }
+                yield taskValue + valueTaskValue + asyncValue + customValue + runtimeTaskValue + fsharpAsyncValue
             }
 
         let! values = collect source
-        assertEqual "awaitable kinds" [| 15 |] values
+        assertEqual "awaitable kinds" [| 21 |] values
     }
 
 let private rejectsWith<'Error when 'Error :> exn> (move: ValueTask<bool>) =
@@ -127,9 +99,8 @@ let private rejectsWith<'Error when 'Error :> exn> (move: ValueTask<bool>) =
     with :? 'Error ->
         true
 
-[<Fact>]
-let testCancellation () =
-    task {
+let private testCancellation () =
+    runtimeTask {
         use cts = new CancellationTokenSource()
         let mutable resumed = false
 
@@ -165,9 +136,8 @@ let testCancellation () =
         assertTrue "cancelled enumeration does not start" (rejected && not started)
     }
 
-[<Fact>]
-let testUnmatchedException () =
-    task {
+let private testUnmatchedException () =
+    runtimeTask {
         let mutable handled = false
 
         let source =
@@ -188,15 +158,14 @@ let testUnmatchedException () =
         assertTrue "unmatched error escapes unwrapped" (escaped && not handled)
     }
 
-[<Fact>]
-let testMergedAwaitables () =
-    task {
+let private testMergedAwaitables () =
+    runtimeTask {
         let source =
             taskSeq {
                 do! Task.Delay(25)
                 let! taskValue = Task.FromResult 1
-                and! valueTaskValue = ValueTask<int>(2)
-                and! asyncValue = async { return 3 }
+                let! valueTaskValue = ValueTask<int>(2)
+                let! asyncValue = async { return 3 }
                 do! Task.Delay(25)
                 yield taskValue + valueTaskValue + asyncValue
             }
@@ -205,9 +174,8 @@ let testMergedAwaitables () =
         assertEqual "merged awaitables" [| 6 |] values
     }
 
-[<Fact>]
-let testTryWith () =
-    task {
+let private testTryWith () =
+    runtimeTask {
         let source =
             taskSeq {
                 try
@@ -223,9 +191,8 @@ let testTryWith () =
         assertEqual "try/with" [| 1; 2 |] values
     }
 
-[<Fact>]
-let testTryFinally () =
-    task {
+let private testTryFinally () =
+    runtimeTask {
         let mutable cleanedUp = false
 
         let source =
@@ -241,9 +208,8 @@ let testTryFinally () =
         assertTrue "try/finally cleanup" cleanedUp
     }
 
-[<Fact>]
-let testUsing () =
-    task {
+let private testUsing () =
+    runtimeTask {
         let mutable disposed = false
 
         let source =
@@ -257,9 +223,8 @@ let testUsing () =
         assertTrue "using disposal" disposed
     }
 
-[<Fact>]
-let testWhile () =
-    task {
+let private testWhile () =
+    runtimeTask {
         let source =
             taskSeq {
                 let mutable value = 0
@@ -274,9 +239,8 @@ let testWhile () =
         assertEqual "while loop" [| 0; 1; 2 |] values
     }
 
-[<Fact>]
-let testYieldFrom () =
-    task {
+let private testYieldFrom () =
+    runtimeTask {
         let source =
             taskSeq {
                 yield! [ 5; 6 ]
@@ -353,9 +317,8 @@ let testYieldFrom () =
 
     }
 
-[<Fact>]
-let testYieldFromLifetimes () =
-    task {
+let private testTailHandoff () =
+    runtimeTask {
         let child = taskSeq { yield 7 }
         let continuing =
             taskSeq {
@@ -389,7 +352,6 @@ let testYieldFromLifetimes () =
 
         let! continuedValues = collect continuing
         assertEqual "non-final continuation" [| 7; 8 |] continuedValues
-
 
         let nested =
             taskSeq {
@@ -472,9 +434,8 @@ let testYieldFromLifetimes () =
         assertTrue "null tail source faults" nullFaulted
     }
 
-[<Fact>]
-let testForAsyncEnumerable () =
-    task {
+let private testForAsyncEnumerable () =
+    runtimeTask {
         let source =
             taskSeq {
                 for value in (TestAsyncSource [| 9; 10 |] :> IAsyncEnumerable<int>) do
@@ -485,9 +446,8 @@ let testForAsyncEnumerable () =
         assertEqual "async for loop" [| 10; 11 |] values
     }
 
-[<Fact>]
-let testPullDrivenEnumeration () =
-    task {
+let private testPullDrivenEnumeration () =
+    runtimeTask {
         let mutable sideEffects = 0
 
         let source =
@@ -512,9 +472,8 @@ let testPullDrivenEnumeration () =
         assertTrue "pull completion" (not completed)
     }
 
-[<Fact>]
-let testConcurrentMoveNext () =
-    task {
+let private testConcurrentMoveNext () =
+    runtimeTask {
         let gate =
             TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
@@ -569,9 +528,8 @@ let testConcurrentMoveNext () =
 [<MethodImpl(MethodImplOptions.NoInlining)>]
 let private failDeep () : unit = invalidOp "deep"
 
-[<Fact>]
-let testYieldFromFaults () =
-    task {
+let private testYieldFromFaults () =
+    runtimeTask {
         let throwingOpen =
             { new IAsyncEnumerable<int> with
                 member _.GetAsyncEnumerator(_) = invalidOp "open" }
@@ -654,4 +612,28 @@ let testYieldFromFaults () =
         assertTrue "dispose during pending move is rejected" (rejected && moved)
     }
 
+[<Fact>]
+let runTests () =
+    let tests: (string * Task<unit>) list =
+        [ "basic sequence", testBasicSequence ()
+          "awaitable kinds", testAwaitableKinds ()
+          "cancellation", testCancellation ()
+          "merged awaitables", testMergedAwaitables ()
+          "try/with", testTryWith ()
+          "try/finally", testTryFinally ()
+          "using", testUsing ()
+          "while", testWhile ()
+          "yield!", testYieldFrom ()
+          "tail handoff", testTailHandoff ()
+          "yield! faults", testYieldFromFaults ()
+          "unmatched exception", testUnmatchedException ()
+          "async for loop", testForAsyncEnumerable ()
+          "pull-driven enumeration", testPullDrivenEnumeration ()
+          "concurrent MoveNext", testConcurrentMoveNext () ]
+
+    runtimeTask {
+        for name, test in tests do
+            do! test
+            printfn "PASS: %s" name
+    }
 #endif

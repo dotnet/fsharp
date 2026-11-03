@@ -18,6 +18,29 @@ open Xunit
 
 let private embeddedTextDirectory = __SOURCE_DIRECTORY__ ++ "resources" ++ "EmbeddedText"
 
+let createSdkProjectDirectory () =
+    let output = createTemporaryDirectory().FullName
+    let buildDirectory = Path.GetDirectoryName(initialConfig.FSharpBuild)
+    File.WriteAllText(
+        output ++ "Directory.Build.props",
+        $"""<Project>
+  <PropertyGroup>
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+    <TargetFramework>{productTfm}</TargetFramework>
+    <FSharpTargetsShim>{buildDirectory ++ "Microsoft.FSharp.NetSdk.targets"}</FSharpTargetsShim>
+    <FSharpBuildAssemblyFile>{initialConfig.FSharpBuild}</FSharpBuildAssemblyFile>
+    <DotnetFscCompilerPath>"{initialConfig.DOTNETFSCCOMPILERPATH}"</DotnetFscCompilerPath>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FSharp.Core" HintPath="{typeof<unit>.Assembly.Location}" />
+  </ItemGroup>
+</Project>"""
+    )
+    File.WriteAllText(output ++ "Directory.Build.targets", "<Project />")
+    output
+
 [<Theory>]
 [<InlineData(false, ".fs")>]
 [<InlineData(false, ".fsi")>]

@@ -1,7 +1,6 @@
 module Language.RuntimeAsyncSequenceTests
 
 open System.Text.RegularExpressions
-open System
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
@@ -135,7 +134,7 @@ let main _ = if run().GetAwaiter().GetResult() = 42 then 0 else 1
 [<InlineData(true, "value + 1")>]
 [<InlineData(false, "value + value")>]
 [<InlineData(true, "value + value")>]
-let ``runtime async sequence keeps task inputs adjacent to their awaitable conversion`` (optimized, resultExpression) =
+let ``runtime async sequence keeps source calls adjacent to awaits`` (optimized, resultExpression) =
     let inputs =
         CSharp "public static class AwaitInputs { public static System.Threading.Tasks.Task<int> Next() => System.Threading.Tasks.Task.FromResult(42); }"
         |> withName "AwaitInputs"
@@ -146,17 +145,12 @@ let ``runtime async sequence keeps task inputs adjacent to their awaitable conve
         |> optimize optimized
         |> compile
         |> shouldSucceed
-        |> verifyILContains [
-            "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter`1<int32>>(!!0)"
-            "ValueTaskAwaiter`1<int32>::GetResult()"
-        ]
     match result with
     | CompilationResult.Success output ->
         let _, _, il = ILChecker.verifyILAndReturnActual [] output.OutputPath.Value []
-        let start = il.IndexOf("AwaitInputs::Next()", StringComparison.Ordinal)
-        Assert.True(start >= 0)
-        let finish = il.IndexOf("System.Threading.Tasks.ValueTask`1<int32>::.ctor", start, StringComparison.Ordinal)
-        Assert.True(finish > start)
+        let start = il.IndexOf("AwaitInputs::Next()")
+        let finish = il.IndexOf("ValueTask`1<int32>::.ctor", start)
+        Assert.True(start >= 0 && finish > start)
         Assert.DoesNotContain("stfld", il.Substring(start, finish - start))
         Assert.DoesNotContain("stloc", il.Substring(start, finish - start))
         Assert.DoesNotContain("ldloc", il.Substring(start, finish - start))

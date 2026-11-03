@@ -888,6 +888,25 @@ let f () : Task<int> =
         |> compileExeAndRun
         |> shouldSucceed
 
+    [<Theory>]
+    [<InlineData("on", 0x2000)>]
+    [<InlineData("off", 0)>]
+    let ``FSharp.Core task is runtime managed only with the runtime-async feature`` (mode: string, runtimeAsyncFlag: int) =
+        FSharp """
+module Consumer
+let work () = task { let! value = System.Threading.Tasks.Task.FromResult 40 in return value + 2 }
+[<EntryPoint>]
+let main _ = if work().Result = 42 then 0 else 1
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptions [ $"--features:runtime-async={mode}" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withMetadataReader (fun md ->
+            let work = md.MethodDefinitions |> Seq.map md.GetMethodDefinition |> Seq.find (fun m -> md.GetString m.Name = "work")
+            Assert.Equal(runtimeAsyncFlag, int work.ImplAttributes &&& 0x2000))
+
     [<Fact>]
     let ``runtime async direct intrinsic fixture executes`` () =
         Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncBasic.fs")

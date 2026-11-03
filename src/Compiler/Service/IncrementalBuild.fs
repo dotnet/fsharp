@@ -644,7 +644,7 @@ module Utilities =
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
 [<Sealed>]
-type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName: string, ilAssemRef) =
+type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
@@ -652,34 +652,33 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         GetResourceNameAndSignatureDataFuncs sigDataResources
 
-    let autoOpenAttrs, ivtAttrs, invalidAutoOpenAttrs =
+    let autoOpenAttrs, ivtAttrs =
         let mutable autoOpen = []
         let mutable ivt = []
-        let mutable invalidAutoOpen = 0
 
         for attr in topAttrs.assemblyAttrs do
-            match classifyAssemblyAttrib tcGlobals attr, attr with
-            | WellKnownAssemblyAttributes.AutoOpenAttribute, Attrib(_, _, [ AttribStringArg path ], _, _, _, _) ->
-                autoOpen <- OrdinaryAutoOpen path :: autoOpen
-            | WellKnownAssemblyAttributes.ConditionalAutoOpenAttribute,
-              Attrib(_, _, [ AttribStringArg path; AttribStringArg condition ], _, _, _, _) ->
-                autoOpen <- ConditionalAutoOpen(path, condition) :: autoOpen
-            | WellKnownAssemblyAttributes.RetractExistingAutoopenAttribute,
-              Attrib(_, _, [ AttribStringArg path; AttribStringArg condition ], _, _, _, _) ->
-                autoOpen <- RetractAutoOpen(path, condition) :: autoOpen
-            | (WellKnownAssemblyAttributes.ConditionalAutoOpenAttribute | WellKnownAssemblyAttributes.RetractExistingAutoopenAttribute), _ ->
-                invalidAutoOpen <- invalidAutoOpen + 1
-            | WellKnownAssemblyAttributes.InternalsVisibleToAttribute, Attrib(_, _, [ AttribStringArg s ], _, _, _, _) ->
-                ivt <- s :: ivt
+            let flag = classifyAssemblyAttrib tcGlobals attr
+
+            match attr with
+            | Attrib(tcref, _, [ AttribStringArg path; AttribStringArg condition ], _, _, _, _) ->
+                match tcref.CompiledRepresentationForNamedType.FullName with
+                | ConditionalAutoOpenAttribute create -> autoOpen <- create (path, condition) :: autoOpen
+                | _ -> ()
             | _ -> ()
 
-        List.rev autoOpen, List.rev ivt, invalidAutoOpen
+            if hasFlag flag WellKnownAssemblyAttributes.AutoOpenAttribute then
+                match attr with
+                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> autoOpen <- OrdinaryAutoOpen s :: autoOpen
+                | _ -> ()
+            elif hasFlag flag WellKnownAssemblyAttributes.InternalsVisibleToAttribute then
+                match attr with
+                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> ivt <- s :: ivt
+                | _ -> ()
+
+        List.rev autoOpen, List.rev ivt
 
     interface IRawFSharpAssemblyData with
-        member _.GetAutoOpenAttributes() =
-            for _ in 1 .. invalidAutoOpenAttrs do
-                warning(Error(FSComp.SR.tastInvalidConditionalAutoOpenAttribute assemblyName, rangeStartup))
-            autoOpenAttrs
+        member _.GetAutoOpenAttributes() = autoOpenAttrs
         member _.GetInternalsVisibleToAttributes() =  ivtAttrs
         member _.TryGetILModuleDef() = None
         member _.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData

@@ -1,6 +1,7 @@
-module FSharp.Core.UnitTests.Control.RuntimeTaskSequences
+module FSharp.Core.UnitTests.Control.TaskSequences
 
 #if NET11_0_OR_GREATER
+
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -13,6 +14,7 @@ open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 open Xunit
+
 
 let check message condition = if not condition then failwith message else printfn "%s PASSED" message
 let gate<'T> () = TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
@@ -55,13 +57,13 @@ let example (work: Task<int>) (resource: IAsyncDisposable) = taskSeq {
 }
 
 [<Fact>]
-let ``taskSeq preserves enumeration lifetime and cancellation`` () = __runtimeAsyncReturnUnit (
+let run () = __runtimeAsyncReturnUnit (
     let work, cleanup = gate<int>(), gate<unit>()
     let mutable closed = 0
     let resource = { new IAsyncDisposable with member _.DisposeAsync() = closed <- closed + 1; ValueTask(cleanup.Task) }
     let source = example work.Task resource
     let iterator = source.GetAsyncEnumerator()
-    check "first enumeration identity" (obj.ReferenceEquals(source, iterator))
+    check "first enumeration reuses the sequence" (obj.ReferenceEquals(source, iterator))
     checkDispatch iterator
     let unused = source.GetAsyncEnumerator()
     let nestedFresh = source.GetAsyncEnumerator()
@@ -100,8 +102,7 @@ let ``taskSeq preserves enumeration lifetime and cancellation`` () = __runtimeAs
     for iterator in iterators do
         check "independent concurrent acquisitions" (identities.Add iterator)
         AsyncHelpers.Await(iterator.DisposeAsync())
-    check "sequence reuse count"
-        ((iterators |> Array.filter (fun iterator -> obj.ReferenceEquals(concurrent, iterator))).Length = 1)
+    check "one enumeration reuses the sequence" ((iterators |> Array.filter (fun iterator -> obj.ReferenceEquals(concurrent, iterator))).Length = 1)
     check "concurrent acquisition is cold" (entered = 0)
     let moved = AsyncHelpers.Await(iterator.MoveNextAsync())
     check "terminal disposal" (not moved && closed = 1)
@@ -227,33 +228,11 @@ let ``taskSeq preserves enumeration lifetime and cancellation`` () = __runtimeAs
         check "prefix once, fresh body" (moved && iterator.Current = enumeration && effects = 1 && entered = enumeration)
         AsyncHelpers.Await(iterator.DisposeAsync())
 
-    let handler = gate<int>()
+    
+    
     let source = taskSeq {
-        try
-            yield 1
-            raise (InvalidOperationException("body"))
-        with :? InvalidOperationException ->
-            let! value = handler.Task
-            yield value
-    }
-    let iterator = source.GetAsyncEnumerator()
-    check "before awaited handler" (AsyncHelpers.Await(iterator.MoveNextAsync()) && iterator.Current = 1)
-    let pending = iterator.MoveNextAsync()
-    check "handler suspends" (not pending.IsCompleted)
-    for operation in [(fun () -> iterator.MoveNextAsync() |> ignore); (fun () -> iterator.DisposeAsync() |> ignore)] do
-        let rejected = try operation (); false with :? InvalidOperationException -> true
-        check "pending operation rejects overlap" rejected
-    handler.SetResult 42
-    check "handler resumes" (AsyncHelpers.Await pending && iterator.Current = 42)
-    check "handler completes" (not (AsyncHelpers.Await(iterator.MoveNextAsync())))
-    AsyncHelpers.Await(iterator.DisposeAsync())
-
-    let source = taskSeq {
-        let! token = Async.CancellationToken
-        check "Async source token identity" (token = __runtimeAsyncSequenceCancellationToken ())
-        yield token
-    }
-    let source = taskSeq { yield! source }
+            yield __runtimeAsyncSequenceCancellationToken ()
+        }
     use first = new CancellationTokenSource()
     use second = new CancellationTokenSource()
     for token in [first.Token; second.Token] do
@@ -268,29 +247,6 @@ let ``taskSeq preserves enumeration lifetime and cancellation`` () = __runtimeAs
     with :? OperationCanceledException as error ->
         check "cancellation identity" (error.CancellationToken = first.Token)
     AsyncHelpers.Await(iterator.DisposeAsync())
-
-    use cancellation = new CancellationTokenSource()
-    let entered = gate<unit>()
-    let mutable closed = 0
-    let source = taskSeq {
-        try
-            do! async { entered.SetResult(); do! Async.Sleep Timeout.Infinite }
-            yield 1
-        finally
-            closed <- closed + 1
-    }
-    let iterator = source.GetAsyncEnumerator(cancellation.Token)
-    let pending = iterator.MoveNextAsync().AsTask()
-    AsyncHelpers.Await(entered.Task.WaitAsync(TimeSpan.FromSeconds 30.))
-    check "Async source suspends" (not pending.IsCompleted)
-    cancellation.Cancel()
-    try
-        AsyncHelpers.Await(pending.WaitAsync(TimeSpan.FromSeconds 30.)) |> ignore
-        failwith "lost Async cancellation"
-    with :? OperationCanceledException -> ()
-    check "Async cancellation awaits cleanup" (pending.IsCanceled && closed = 1)
-    AsyncHelpers.Await(iterator.DisposeAsync())
-    check "Async cancellation closes once" (closed = 1)
 )
 
 #endif

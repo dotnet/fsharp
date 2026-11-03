@@ -12,6 +12,20 @@ open FSharp.Build
 open Xunit
 open BuildTaskTestHelpers
 
+type FauxHostObject(?executeCompiler: bool) =
+    let mutable flags: string[] = [||]
+    let mutable sources: string[] = [||]
+
+    member _.Compile(compile: Func<int>, flagsIn: string[], sourcesIn: string[]) =
+        flags <- flagsIn
+        sources <- sourcesIn
+        if defaultArg executeCompiler false then compile.Invoke() else 0
+
+    member _.Flags = flags
+    member _.Sources = sources
+
+    interface ITaskHost
+
 type MultiThreadedTaskTests() =
 
     static member MultiThreadableTaskTypes: obj[] seq =

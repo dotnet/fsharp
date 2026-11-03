@@ -231,6 +231,5 @@ val RequireReferences:
     tcImports: TcImports *
     tcEnv: TcEnv *
     thisAssemblyName: string *
-    resolutions: AssemblyResolution list *
-    tcConfig: TcConfig ->
+    resolutions: AssemblyResolution list ->
         TcEnv * ImportedAssembly list

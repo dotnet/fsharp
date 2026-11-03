@@ -68,14 +68,7 @@ type internal WellKnownAssemblyAttributes =
     | AssemblyCultureAttribute = (1uL <<< 2)
     | AssemblyVersionAttribute = (1uL <<< 3)
     | TypeProviderAssemblyAttribute = (1uL <<< 4)
-    | ConditionalAutoOpenAttribute = (1uL <<< 5)
-    | RetractExistingAutoopenAttribute = (1uL <<< 6)
     | NotComputed = (1uL <<< 63)
-
-type internal AssemblyAutoOpen =
-    | OrdinaryAutoOpen of path: string
-    | ConditionalAutoOpen of path: string * condition: string
-    | RetractAutoOpen of path: string * condition: string
 
 /// Flags enum for well-known attributes on Val (values and members).
 [<System.Flags>]

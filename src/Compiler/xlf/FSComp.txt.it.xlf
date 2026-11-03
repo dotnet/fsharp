@@ -878,8 +878,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsFeatures">
-        <source>Accept opaque feature operands for exact CLI-token matching by conditional assembly auto-opens</source>
-        <target state="new">Accept opaque feature operands for exact CLI-token matching by conditional assembly auto-opens</target>
+        <source>Enable an opt-in feature of referenced assemblies</source>
+        <target state="new">Enable an opt-in feature of referenced assemblies</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
@@ -1210,11 +1210,6 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(Nome consigliato)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tastInvalidConditionalAutoOpenAttribute">
-        <source>The conditional auto-open attribute in assembly '{0}' must have a non-null path and CLI condition.</source>
-        <target state="new">The conditional auto-open attribute in assembly '{0}' must have a non-null path and CLI condition.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastNamespaceAndTypeWithSameNameInAssembly">

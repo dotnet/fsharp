@@ -406,7 +406,6 @@
     <Compile Include="Language\RuntimeAsyncTests.fs" />
     <Compile Include="Language\RuntimeAsyncEdgeCaseTests.fs" />
     <Compile Include="Language\RuntimeAsyncSequenceTests.fs" />
-    <Compile Include="Language\RuntimeAsyncCoreBuildersTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />

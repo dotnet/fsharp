@@ -220,8 +220,7 @@ this file.
 
     <ItemGroup>
         <DocFileItem Include="$(DocumentationFile)" Condition="'$(DocumentationFile)'!=''"/>
-        <CoreCompileCache Include="Features:$([MSBuild]::Escape('$(Features)'))" />
-        <CoreCompileCache Include="OtherFlags:$([MSBuild]::Escape('$(OtherFlags)'))" />
+        <CoreCompileCache Include="$(Features)" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">

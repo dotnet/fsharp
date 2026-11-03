@@ -1805,5 +1805,4 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3925,optInlineMemberCannotUseBase,"An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined."
 featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expression handler"
 featureConditionalAutoOpen,"conditional assembly auto-opens"
-3926,tastInvalidConditionalAutoOpenAttribute,"The conditional auto-open attribute in assembly '%s' must have a non-null path and CLI condition."
-optsFeatures,"Accept opaque feature operands for exact CLI-token matching by conditional assembly auto-opens"
+optsFeatures,"Enable an opt-in feature of referenced assemblies"

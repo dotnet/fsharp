@@ -3,7 +3,6 @@
 namespace FSharp.Build.UnitTests
 
 open System
-open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.Build.Framework
@@ -53,44 +52,7 @@ type MockEngine() =
         member _.Yield() = ()
         member _.Reacquire() = ()
 
-type FauxHostObject(?executeCompiler: bool) =
-    let mutable flags: string[] = [||]
-    let mutable sources: string[] = [||]
-
-    member _.Compile(compile: Func<int>, flagsIn: string[], sourcesIn: string[]) =
-        flags <- flagsIn
-        sources <- sourcesIn
-        if defaultArg executeCompiler false then compile.Invoke() else 0
-
-    member _.Flags = flags
-    member _.Sources = sources
-
-    interface ITaskHost
-
 module BuildTaskTestHelpers =
-
-    let createSdkProjectDirectory () =
-        let output = TestFramework.createTemporaryDirectory().FullName
-        let buildDirectory = Path.GetDirectoryName(TestFramework.initialConfig.FSharpBuild)
-        File.WriteAllText(
-            Path.Combine(output, "Directory.Build.props"),
-            $"""<Project>
-  <PropertyGroup>
-    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
-    <TargetFramework>{TestFramework.productTfm}</TargetFramework>
-    <FSharpTargetsShim>{Path.Combine(buildDirectory, "Microsoft.FSharp.NetSdk.targets")}</FSharpTargetsShim>
-    <FSharpBuildAssemblyFile>{TestFramework.initialConfig.FSharpBuild}</FSharpBuildAssemblyFile>
-    <DotnetFscCompilerPath>"{TestFramework.initialConfig.DOTNETFSCCOMPILERPATH}"</DotnetFscCompilerPath>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <NuGetAudit>false</NuGetAudit>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="FSharp.Core" HintPath="{typeof<unit>.Assembly.Location}" />
-  </ItemGroup>
-</Project>"""
-        )
-        File.WriteAllText(Path.Combine(output, "Directory.Build.targets"), "<Project />")
-        output
 
     let createTaskEnvironmentInTemporaryDirectory () =
         let directory = TestFramework.createTemporaryDirectory ()

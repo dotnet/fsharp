@@ -4,12 +4,12 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
+let private runtimeTask = Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions.task
 
 let private context = AsyncLocal<string>()
 
 let private preservesValueAcrossAwait () =
-    task {
+    runtimeTask {
         context.Value <- "before"
         do! Task.Delay(1)
 
@@ -18,21 +18,21 @@ let private preservesValueAcrossAwait () =
     }
 
 let private propagatesValueToNestedRuntimeTask () =
-    task {
+    runtimeTask {
         context.Value <- "parent"
 
         let! nestedValue =
-            task {
+            runtimeTask {
                 do! Task.Delay(1)
                 return context.Value
             }
 
         if nestedValue <> "parent" then
-            failwith "AsyncLocal value was not propagated to nested task"
+            failwith "AsyncLocal value was not propagated to nested runtimeTask"
     }
 
 let private isolatesChildTaskChanges () =
-    task {
+    runtimeTask {
         context.Value <- "parent"
 
         let! childValue =
@@ -48,7 +48,7 @@ let private isolatesChildTaskChanges () =
     }
 
 let private queuedAsync2ChildSeesParentContext () =
-    task {
+    runtimeTask {
         let leaf = async2 { return context.Value }
 
         let middle =
@@ -67,7 +67,7 @@ let private queuedAsync2ChildSeesParentContext () =
     }
 
 let private queuedAsync2SiblingsUseTheirCapturedContexts () =
-    task {
+    runtimeTask {
         let overwrite =
             Async2<unit>(fun _ ->
                 context.Value <- "preceding child"

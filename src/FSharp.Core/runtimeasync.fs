@@ -36,6 +36,7 @@ type AwaitableBuilderBase() =
     member inline _.Source(source: Async<'T>) =
         ValueTask<'T>(Async.StartImmediateAsTask source)
 
+    /// <summary>Gets both source awaiters before waiting for either result.</summary>
     [<NoDynamicInvocation; NoEagerConstraintApplication>]
     member inline _.MergeSources(left: ^Left, right: ^Right) : ValueTask<struct ('T * 'U)> =
         __runtimeAsyncReturnValueTask (
@@ -53,6 +54,8 @@ type AwaitableBuilderBase() =
             struct (first, (^RightAwaiter: (member GetResult: unit -> 'U) right))
         )
 
+/// <summary>Builds tasks whose suspension and resumption are managed by .NET.</summary>
+/// <remarks>Requires .NET 11 or later.</remarks>
 type TaskBuilder() =
     inherit AwaitableBuilderBase()
 
@@ -71,7 +74,7 @@ type TaskBuilder() =
 
     [<NoDynamicInvocation>]
     member inline this.ReturnFrom(source: ^Awaitable) : 'T =
-        this.Bind(source, fun value -> value)
+        this.Bind< ^Awaitable, ^Awaiter, 'T, 'T>(source, id)
 
     member inline _.Combine(first: unit, [<InlineIfLambda>] rest: unit -> 'T) =
         ignore first
@@ -114,9 +117,12 @@ type TaskBuilder() =
                     body iterator.Current
         )
 
+/// <summary>Builds cold, pull-driven asynchronous sequences using the .NET runtime.</summary>
+/// <remarks>Requires .NET 11 or later.</remarks>
 type TaskSeqBuilder() =
     inherit AwaitableBuilderBase()
 
+    /// <summary>Starts an asynchronous computation with the enumeration cancellation token.</summary>
     [<NoDynamicInvocation>]
     member inline _.Source(source: Async<'T>) =
         ValueTask<'T>(Async.StartImmediateAsTask(source, __runtimeAsyncSequenceCancellationToken ()))
@@ -124,7 +130,7 @@ type TaskSeqBuilder() =
     member inline _.Zero() : seq<'T> =
         Seq.empty
 
-    member inline _.Return(_: unit) : seq<'T> =
+    member inline _.Return() : seq<'T> =
         Seq.empty
 
     member inline _.Yield(value: 'T) =
@@ -181,6 +187,8 @@ type TaskSeqBuilder() =
     member inline this.YieldFrom(source: IAsyncEnumerable<'T>) =
         this.For(source, fun value -> this.Yield value)
 
+/// <summary>Runtime-managed builders selected by --features:runtime-async=on in preview language mode.
+/// The builders can also be selected by qualified name.</summary>
 module TaskExpressions =
     let task = TaskBuilder()
     let taskSeq = TaskSeqBuilder()

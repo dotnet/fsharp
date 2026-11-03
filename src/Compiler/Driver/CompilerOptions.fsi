@@ -50,12 +50,7 @@ val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
 /// Parse and process a set of compiler options
-val ParseCompilerOptions:
-    collectOtherArgument: (string -> unit) *
-    blocks: CompilerOptionBlock list *
-    args: string list *
-    collectOption: (string -> unit) ->
-        unit
+val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list * (string -> unit) -> unit
 
 val GetBannerText: tcConfigB: TcConfigBuilder -> string
 

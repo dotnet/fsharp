@@ -24,6 +24,15 @@ exception FileNameNotResolved of searchedLocations: string * fileName: string * 
 
 exception LoadedSourceNotFoundIgnoring of fileName: string * range: range
 
+type AssemblyAutoOpen =
+    | OrdinaryAutoOpen of path: string
+    | ConditionalAutoOpen of path: string * condition: string
+    | RetractAutoOpen of path: string * condition: string
+
+/// Recognizes the full name of an assembly attribute that adds or retracts an assembly auto-open conditionally
+[<return: Struct>]
+val (|ConditionalAutoOpenAttribute|_|): typeName: string -> (string * string -> AssemblyAutoOpen) voption
+
 /// Represents a reference to an F# assembly. May be backed by a real assembly on disk (read by Abstract IL), or a cross-project
 /// reference in FSharp.Compiler.Service.
 type IRawFSharpAssemblyData =

@@ -2796,14 +2796,7 @@ type internal FsiDynamicCompiler
 
         let tcEnv, asms =
             try
-                RequireReferences(
-                    ctok,
-                    tcImports,
-                    tcState.TcEnvFromImpls,
-                    dynamicCcuName tcConfigB.fsiMultiAssemblyEmit,
-                    resolutions,
-                    TcConfig.Create(tcConfigB, validate = false)
-                )
+                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName tcConfigB.fsiMultiAssemblyEmit, resolutions)
             with _ ->
                 for path, _, _, m in refs do
                     tcConfigB.RemoveReferencedAssemblyByPath(m, path)

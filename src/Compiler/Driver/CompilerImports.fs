@@ -1137,7 +1137,13 @@ let GetCustomAttributesOfILModule (ilModule: ILModuleDef) =
 let GetAutoOpenAttributes ilModule =
     ilModule
     |> GetCustomAttributesOfILModule
-    |> List.choose (TryFindAutoOpenAttr(GetNameOfILModule ilModule))
+    |> List.choose (fun attr ->
+        match attr.Method.DeclaringType.TypeSpec.Name with
+        | ConditionalAutoOpenAttribute create ->
+            match decodeILAttribData attr with
+            | [ ILAttribElem.String(Some path); ILAttribElem.String(Some condition) ], _ -> Some(create (path, condition))
+            | _ -> None
+        | _ -> TryFindAutoOpenAttr attr |> Option.map OrdinaryAutoOpen)
 
 let SelectAssemblyAutoOpens (config: TcConfig) attributes =
     let matches condition =
@@ -1561,6 +1567,8 @@ and [<Sealed>] TcImports
     member _.Stamp = stamp
 
     member _.GetImportReuseKey ctok = (tcConfigP.Get ctok).importReuseKey
+
+    member _.GetTcConfig ctok = tcConfigP.Get ctok
 
     member tcImports.KeyPinnedLayer =
         match importsBase with
@@ -3120,7 +3128,7 @@ and [<Sealed>] TcImports
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, resolutions, tcConfig) =
+let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, resolutions) =
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
@@ -3145,7 +3153,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
                 tcEnv,
                 thisAssemblyName,
                 asm.FSharpViewOfMetadata,
-                SelectAssemblyAutoOpens tcConfig asm.AssemblyAutoOpenAttributes,
+                SelectAssemblyAutoOpens (tcImports.GetTcConfig ctok) asm.AssemblyAutoOpenAttributes,
                 asm.AssemblyInternalsVisibleToAttributes
             ))
 
