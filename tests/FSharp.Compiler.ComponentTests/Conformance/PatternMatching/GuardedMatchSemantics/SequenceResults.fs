@@ -4,11 +4,12 @@ let choose (xs: int array) =
     {{OPEN}}
         let (|Positive|_|) n = n > 0
         for n in xs do
-            {{MATCH_PREFIX}}match n with
-            {{CASE_INDENT}}| 0 | 1 -> {{EMPTY}}
-            {{CASE_INDENT}}| _ when n < 0 -> {{EMPTY}}
-            {{CASE_INDENT}}| 2 | 3 | Positive as value -> {{SUCCESS}}
-            {{CASE_INDENT}}| _ -> {{EMPTY}}
+            {{MATCH_PREFIX}}
+                match n with
+                | 0 | 1 -> {{EMPTY}}
+                | _ when n < 0 -> {{EMPTY}}
+                | 2 | 3 | Positive as value -> {{SUCCESS}}
+                | _ -> {{EMPTY}}
     {{CLOSE}}
 
 [<EntryPoint>]
