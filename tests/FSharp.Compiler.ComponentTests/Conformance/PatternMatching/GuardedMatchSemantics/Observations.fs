@@ -1,7 +1,5 @@
 module Test
 
-open System
-
 let trace = ResizeArray<int>()
 let guard n = trace.Add n; false
 type Cell = { mutable Value: int }

@@ -1034,7 +1034,6 @@ type private MemoJoin =
     | Target of int
     | Thunk of Expr * TType
 
-/// Hits counts visits to one state; the join is built only once it is visited past the threshold.
 [<NoEquality; NoComparison>]
 type private MemoEntry =
     { mutable Hits: int
@@ -1199,7 +1198,7 @@ let private CompilePatternBasic
     // The main recursive loop of the pattern match compiler.
 
     let stackGuard = StackGuard("InvestigateFrontiers")
-    let joinPromotionThreshold = 32
+    let joinPromotionThreshold = if preserveMatchShape then 32 else 1
     let isThunkableTy ty = not (isByrefLikeTy g mExpr ty) && not (isByrefTy g ty)
 
     let joinBindings = ResizeArray<Binding>()
@@ -1390,9 +1389,7 @@ let private CompilePatternBasic
         | Some whenExpr ->
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) (shareGuard i vs2 whenExpr)
-            let refuted = RefutedWhenClause :: refuted
-            let failureTree =
-                if memo.IsNone then InvestigateFrontiers refuted rest else investigateMemoized refuted rest
+            let failureTree = investigateMemoized (RefutedWhenClause :: refuted) rest
             mkBoolSwitch m whenExprWithBindings successTree failureTree
 
         | None -> successTree
@@ -1407,7 +1404,7 @@ let private CompilePatternBasic
             match frontierMemo.TryGetValue key with
             | true, state ->
                 state.Hits <- state.Hits + 1
-                if state.Hits > (if preserveMatchShape then joinPromotionThreshold else 1) && state.IsPromotable.Value then
+                if state.Hits > joinPromotionThreshold && state.IsPromotable.Value then
                     let target =
                         match state.Join.Value with
                         | MemoJoin.Target target -> target
@@ -1594,7 +1591,7 @@ let private CompilePatternBasic
 
                  let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation)
 
-                 let tree = if memo.IsNone then InvestigateFrontiers refuted frontiers else investigateMemoized refuted frontiers
+                 let tree = investigateMemoized refuted frontiers
 
                  // Bind the resVar for the union case, if we have one
                  let tree =
@@ -1633,7 +1630,7 @@ let private CompilePatternBasic
             | [] ->
                 None
             | _ ->
-                Some(if memo.IsNone then InvestigateFrontiers refuted fallthroughPathFrontiers else investigateMemoized refuted fallthroughPathFrontiers)
+                Some(investigateMemoized refuted fallthroughPathFrontiers)
 
     // Build a new frontier that represents the result of a successful investigation
     and GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation frontier =
@@ -1973,15 +1970,17 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused p
         // Partial and when clauses cause major code explosion if treated naively
         // Hence treat any pattern matches with any partial clauses clause-by-clause
         let rec atMostOneProblematicClauseAtATime clauses =
-            let group, rest =
-                match List.takeUntil isProblematicClause clauses with
-                | l, [] -> l, []
-                | l, h :: t -> l @ [h], t
-            if isNil rest then
-                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete preserveMatchShape JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) group inputTy resultTy
-            else atMostOneProblematicClauseAtATime rest |> compileWithRest group
+            match List.takeUntil isProblematicClause clauses with
+            | l, ([] | [ _ ] as last) ->
+                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete preserveMatchShape JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (l @ last) inputTy resultTy
+            | l, h :: t ->
+                // Add the problematic clause.
+                doGroupWithAtMostOneProblematic (l @ [h]) t
 
-        and compileWithRest group (decisionTree, targets, joins) =
+        and doGroupWithAtMostOneProblematic group rest =
+            // Compile the remaining clauses.
+            let decisionTree, targets, joins = atMostOneProblematicClauseAtATime rest
+
             // Make the expression that represents the remaining cases of the pattern match.
             let expr = mkLetsBind mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
 

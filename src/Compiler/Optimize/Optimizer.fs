@@ -1864,12 +1864,10 @@ let rec CallableExprMayHaveFrameLocalAllocation g expr exprTy =
         let _, _, body, _ = stripTopLambda (expr, exprTy)
         ExprMayHaveFrameLocalAllocation body
 
-let HasDecisionTreeJoins expr =
-    FoldExpr
-        { ExprFolder0 with
-            nonRecBindingsIntercept = fun found bind -> found || bind.Var.IsDecisionTreeJoin }
-        false
-        expr
+let HasDecisionTreeJoins =
+    ExistsExpr (function
+        | Expr.Let(TBind(v, _, _), _, _, _) -> v.IsDecisionTreeJoin
+        | _ -> false)
 
 let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g

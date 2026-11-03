@@ -5959,7 +5959,7 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
                 TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs ct
 
 
-and TcModuleOrNamespaceElements (cenv: cenv) parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
+and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
     let env =
         match parent with

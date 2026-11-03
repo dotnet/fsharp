@@ -154,7 +154,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
         | Expr.App(funcExpr, _, _, [], _) -> effectFree funcExpr
         | _ -> false
 
-    let rec apply (joins: ValMap<Expr>) f fty tyargs args m =
+    let rec apply joins f fty tyargs args m =
         stackGuard.Guard(fun () -> applyCore joins f fty tyargs args m)
 
     and applyCore joins f fty tyargs args m =
