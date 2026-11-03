@@ -1693,6 +1693,9 @@ type LexFilterImpl (
             delayToken(pool.UseLocation(tokenTup, ODUMMY token)) // make sure we queue a dummy token at this position to check if any closing rules apply
             returnToken tokenLexbufState OEND
 
+        | _ ->
+
+        match token, offsideStack with
         //  Transition rule. CtxtNamespaceHead ~~~> CtxtSeqBlock
         //  Applied when a token other then a long identifier is seen
         | _, CtxtNamespaceHead (namespaceTokenPos, prevToken) :: _ ->
