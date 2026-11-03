@@ -144,6 +144,18 @@ type internal FSharpParsedFile
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
+/// A file hashed by ProjectSnapshotBase: its key hash (the signature hash before it plus its name and version) and the fold
+/// state after it: the signature hash and the implementation files whose signature came before them, which add only their
+/// name to the signature hash. A named type rather than an anonymous record, which FCS metadata cannot carry.
+[<Struct; NoEquality; NoComparison>]
+type internal FileHashEntry<'T> =
+    {
+        File: 'T
+        KeyHash: byte array
+        SignatureHash: byte array
+        Signed: Set<string>
+    }
+
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot[], sourceFiles: 'T[]) =
@@ -199,9 +211,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                 member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
             }
 
-    // Each file up to the largest requested index, hashed once, with its key hash (the signature hash before it plus its
-    // name and version) and the fold state after it: the signature hash and the implementation files whose signature
-    // came before them, which add only their name to the signature hash.
+    // Each file up to the largest requested index, hashed once.
     let fileHashes = ResizeArray()
 
     let rec addFileHashes index sigHash (signed: Set<string>) =
@@ -218,14 +228,13 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                 else
                     keyHash, signed
 
-            fileHashes.Add(
-                struct {|
+            fileHashes.Add
+                {
                     File = file
                     KeyHash = keyHash
                     SignatureHash = sigHash
                     Signed = signed
-                |}
-            )
+                }
 
             addFileHashes index sigHash signed
 
