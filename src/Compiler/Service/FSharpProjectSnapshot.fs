@@ -148,9 +148,8 @@ type ReferenceOnDisk =
 /// state after it: the signature hash and the implementation files whose signature came before them, which add only their
 /// name to the signature hash. A named type rather than an anonymous record, which FCS metadata cannot carry.
 [<Struct; NoEquality; NoComparison>]
-type internal FileHashEntry<'T> =
+type internal FileHashEntry =
     {
-        File: 'T
         KeyHash: byte array
         SignatureHash: byte array
         Signed: Set<string>
@@ -230,7 +229,6 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
             fileHashes.Add
                 {
-                    File = file
                     KeyHash = keyHash
                     SignatureHash = sigHash
                     Signed = signed
@@ -260,14 +258,11 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     let fileKey index =
         let entry = fileHash index
+        let fileName = sourceFiles[index].FileName
 
         { new ICacheKey<_, _> with
-            member _.GetLabel() =
-                $"{entry.File.FileName} ({projectConfig.Label})"
-
-            member _.GetKey() =
-                entry.File.FileName, projectConfig.Identifier
-
+            member _.GetLabel() = $"{fileName} ({projectConfig.Label})"
+            member _.GetKey() = fileName, projectConfig.Identifier
             member _.GetVersion() = entry.KeyHash |> Md5Hasher.toString
         }
 
