@@ -126,6 +126,8 @@ extends:
             variables:
             - name: _SignType
               value: Real
+            - name: BclPackageVersion
+              value: '10.0.13'
             steps:
             - checkout: self
               clean: true
@@ -143,6 +145,11 @@ extends:
                       /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                       /p:VisualStudioDropName=$(VisualStudioDropName)
                       /p:GenerateSbom=true
+                      /p:SystemCollectionsImmutablePackageVersion=$(BclPackageVersion)
+                      /p:SystemCompositionPackageVersion=$(BclPackageVersion)
+                      /p:SystemDiagnosticsDiagnosticSourcePackageVersion=$(BclPackageVersion)
+                      /p:SystemReflectionMetadataPackageVersion=$(BclPackageVersion)
+                      /p:SystemSecurityCryptographyXmlPackageVersion=$(BclPackageVersion)
               env:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
