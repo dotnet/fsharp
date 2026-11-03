@@ -37,6 +37,8 @@
     <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
+    <Compile Include="Common\PersistentStorage.fs" />
+    <Compile Include="Common\FilePersistentStorage.fs" />
     <Compile Include="Common\Error.fs" />
     <Compile Include="Common\DebugHelpers.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
@@ -91,6 +93,7 @@
     <Compile Include="Navigation\NavigableSymbolsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
+    <Compile Include="Navigation\NavigableItemsIndex.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
