@@ -103,6 +103,7 @@ let rec private containsUndecodedTupleTy g ty =
         || tyconRefEq g tcref g.struct_tuple8_tcr
         || List.exists (containsUndecodedTupleTy g) tinst
     | TType_tuple (_, tys) -> List.exists (containsUndecodedTupleTy g) tys
+    | TType_fun (domainTy, rangeTy, _) -> containsUndecodedTupleTy g domainTy || containsUndecodedTupleTy g rangeTy
     | _ -> false
 
 /// The interfaces of an IL type definition imported once with its own type parameters, like

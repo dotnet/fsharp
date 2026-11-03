@@ -31,6 +31,34 @@ let cmp10 (x: T10) = x :> IComparable<T10>
     |> typecheck
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData("--checknulls-")>]
+[<InlineData("--checknulls+")>]
+let ``IL interface with a function over a tuple of more than seven elements is implemented after instantiation`` checkNulls =
+    let library =
+        CSharp """
+using System;
+using Microsoft.FSharp.Core;
+
+public interface I<T> {}
+public class C<R> : I<FSharpFunc<Tuple<int, int, int, int, int, int, int, R>, int>> {}
+"""
+        |> withName "FunctionOverTupleLibrary"
+
+    FSharp """
+module M
+
+open System
+
+type Eight = int * int * int * int * int * int * int * int
+
+let convert (x: C<Tuple<int>>) = x :> I<Eight -> int>
+"""
+    |> withOptions [ checkNulls ]
+    |> withReferences [ library ]
+    |> compile
+    |> shouldSucceed
+
 [<Fact>]
 let ``Interfaces from an assembly resolved by a later #r are reported on an entity obtained before it`` () =
     let missing =
