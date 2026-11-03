@@ -6,11 +6,11 @@ module FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery
 open System
 open System.Collections.Generic
 open FSharp.Compiler.Diagnostics
-open System.Threading
 
 open FSharp.Compiler.CodeAnalysis
 
 open Internal.Utilities.DependencyGraph
+open Internal.Utilities.Hashing
 open Internal.Utilities.Library.Extras
 open FSharpWorkspaceState
 open Internal.Utilities.Library
@@ -18,22 +18,15 @@ open Internal.Utilities.Library
 #nowarn "57"
 
 [<Experimental("This FCS API is experimental and subject to change.")>]
-type FSharpDiagnosticReport internal (diagnostics, resultId: int) =
+type FSharpDiagnosticReport internal (diagnostics, resultId: string) =
 
     member _.Diagnostics = diagnostics
 
     /// The result ID of the diagnostics. This needs to be unique for each version of the document in order to be able to clear old diagnostics.
-    member _.ResultId = resultId.ToString()
+    member _.ResultId = resultId
 
 [<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, checker: FSharpChecker) =
-
-    let mutable resultIdCounter = 0
-
-    // TODO: we might need something more sophisticated eventually
-    // for now it's important that the result id is unique every time
-    // in order to be able to clear previous diagnostics
-    let getDiagnosticResultId () = Interlocked.Increment(&resultIdCounter)
 
     member internal _.Checker = checker
 
@@ -86,6 +79,8 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         use _ =
             Activity.start "GetDiagnosticsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
+        let projectSnapshot = this.GetProjectSnapshotForFile file
+
         this.GetParseAndCheckResultsForFile file
         |> Async.map (fun results ->
             let diagnostics =
@@ -94,7 +89,12 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
                 | Some parseResult, _ -> parseResult.Diagnostics
                 | _ -> [||]
 
-            FSharpDiagnosticReport(diagnostics, getDiagnosticResultId ()))
+            let resultId =
+                projectSnapshot
+                |> Option.map (fun snapshot -> snapshot.ProjectSnapshot.FullVersion |> Md5Hasher.toString)
+                |> Option.defaultValue "empty"
+
+            FSharpDiagnosticReport(diagnostics, resultId))
 
     member this.GetSemanticClassification(file: Uri) =
         use _ =
