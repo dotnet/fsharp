@@ -75,7 +75,18 @@ query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); g
 // Now: ...Join(..).GroupBy(..).Select(g => new AnonymousObject`2(Item1 = g.Key, Item2 = g.Count()))
 ```
 
-**Impact:** A group of tuples or records that a query uses as a value in the middle of a query, for example one that is passed on whole to a later `select` or `where`, is rebuilt from the provider's grouping by `RebuiltGroupings.Of`, so that it stays one object in every operator that mentions it. linq2db, which built such a group on the client, cannot be handed the grouping itself and no longer translates that call: such a query no longer translates with linq2db. EF Core cannot translate the call either where the group goes into a `select` beside another value: `groupValBy (c.Name, c.Age) c.City into g; let n = g.Count(); select (g, n)` ran with the groups rebuilt in the middle of the query and now fails with "Translation of 'Select' which contains grouping parameter without composition is not supported". The same holds after a `join`, after two `for`s, and with a record as the element. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
+**Impact:** A group of tuples or records that a query uses as a value in the middle of a query, for example one that is passed on whole to a later `select` or `where`, is now built at each place where the query mentions it. FSharp.Core 10.1 built it once, in the `Select` right after the `GroupBy`, so every later operator saw one object; now two mentions are two objects. Over an in-memory `IQueryable`, such as `AsQueryable()` over a list, a query that compares a group with itself gives other rows:
+
+```fsharp
+query { for c in customers.AsQueryable() do
+        groupValBy (c.Name, c.Age) c.City into g
+        where (g.Equals g)
+        select (g.Key, obj.ReferenceEquals(g, g)) }
+// Was: every city, with true
+// Now: no rows (without the where: every city, with false)
+```
+
+In the same way, `Contains` no longer finds a group among the groups it is in, and a group used as the key of `groupBy` is no longer found among the elements of its own group. EF Core, linq2db and the Cosmos DB provider translate none of these queries, before or after. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
 
 ---
 
