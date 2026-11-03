@@ -17,9 +17,7 @@ val (|TyparsCloseOp|_|): txt: string -> struct ((bool -> token)[] * token voptio
 type LexFilter =
 
     /// Create a lex filter
-    new:
-        compilingFSharpCore: bool * lexer: (LexBuffer<char> -> token) * lexbuf: LexBuffer<char> * debug: bool ->
-            LexFilter
+    new: compilingFSharpCore: bool * lexer: (LexBuffer<char> -> token) * lexbuf: LexBuffer<char> -> LexFilter
 
     /// The LexBuffer associated with the filter
     member LexBuffer: LexBuffer<char>
