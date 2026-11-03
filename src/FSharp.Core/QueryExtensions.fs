@@ -31,17 +31,6 @@ type Grouping<'K, 'T>(key: 'K, values: seq<'T>) =
         member _.GetEnumerator() =
             values.GetEnumerator()
 
-/// The groupings rebuilt so far, by the grouping each was rebuilt from. A query that mentions a group in several
-/// places, or goes through a group of groups twice, gets one and the same object for a group every time.
-type internal RebuiltGroupings<'K, 'T> private () =
-    static let rebuilt =
-        System.Runtime.CompilerServices.ConditionalWeakTable<obj, Grouping<'K, 'T>>()
-
-    static member Of(source: obj, key: 'K, values: seq<'T>) : IGrouping<'K, 'T> =
-        match rebuilt.TryGetValue source with
-        | true, grouping -> grouping
-        | _ -> rebuilt.GetValue(source, fun _ -> Grouping<'K, 'T>(key, values))
-
 module internal Adapters =
 
     let memoize f =
@@ -296,17 +285,17 @@ module internal Adapters =
                 Expr.Call(methInfo, [ Expr.NewObject(ctor, args) ])
             | expr -> expr
 
-    /// A grouping rebuilt from the provider's grouping of converted elements, where a query mentions the group.
+    /// A grouping built from the provider's grouping of converted elements, where a query mentions the group.
     [<return: Struct>]
     let rec (|RebuiltGrouping|_|) (expr: Expr) =
         match expr with
         | Patterns.Coerce(RebuiltGrouping grouping, _) -> ValueSome grouping
-        | Patterns.Call(None, rebuild, [ _; key; elements ]) ->
-            match rebuild.DeclaringType with
+        | Patterns.NewObject(constructor, [ key; elements ]) ->
+            match constructor.DeclaringType with
             | null -> ValueNone
             | owner when
                 owner.IsGenericType
-                && owner.GetGenericTypeDefinition() = typedefof<RebuiltGroupings<_, _>>
+                && owner.GetGenericTypeDefinition() = typedefof<Grouping<_, _>>
                 ->
                 ValueSome struct (key, elements)
             | _ -> ValueNone
@@ -361,12 +350,6 @@ module internal Adapters =
 
     let rebuildsElement (element: Var) (expr: Expr) =
         rebuildsElementIn false element expr
-
-    /// A group is rebuilt into the same object each time
-    let rebuildsOneObject (projection: Expr) =
-        match projection with
-        | RebuiltGrouping _ -> true
-        | _ -> false
 
     /// The part of the rebuilt element that a chain of member reads takes from the variable: the element itself, an
     /// item of a tuple or a field of a record in it, or an item or a field of one of those
@@ -461,7 +444,7 @@ module internal Adapters =
                 | ("Count" | "LongCount" | "Any" | "All" | "Sum" | "Average" | "Min" | "Max" | "Select" | "SelectMany"),
                   [ Patterns.NewDelegate(_, [ consumed ], body) ] when
                     Type.op_Equality (consumed.Type, projection.Type)
-                    && (rebuildsOneObject projection || not (usesWhole consumed projection body))
+                    && (not (usesWhole consumed projection body))
                     ->
                     let fused = fuse ()
 
