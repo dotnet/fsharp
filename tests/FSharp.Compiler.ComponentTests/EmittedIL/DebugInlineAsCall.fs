@@ -1293,6 +1293,51 @@ let main _ =
         |> verifySequencePoints
 
     [<Fact>]
+    let ``SRTP 40 - Type argument only in constraint`` () =
+        FSharp """
+type A = static member Name = "A"
+type B = static member Name = "B"
+
+let inline name<'T when 'T: (static member Name: string)> () = 'T.Name
+
+[<EntryPoint>]
+let main _ =
+    if name<A> () = "A" && name<B> () = "B" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withLangVersion11
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 41 - Nullness of type argument`` () =
+        FSharp """
+type R =
+    { V: int }
+    static member Default = { V = 0 }
+
+let inline isDefault (x: ^T) = x = (^T: (static member Default: ^T) ())
+
+[<EntryPoint>]
+let main _ =
+    let r = { V = 1 }
+    let n: R | null = null
+    if not (isDefault r) && not (isDefault n) then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withCheckNulls
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
 type T() =

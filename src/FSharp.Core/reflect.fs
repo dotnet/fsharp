@@ -889,31 +889,21 @@ module internal Impl =
 
             invalidArg "index" msg
 
+        if typ.IsValueType then
+            invalidArg "tupleType" (SR.GetString(SR.structTupleNoProperties))
+
         let get index =
-            if typ.IsValueType then
-                let props =
-                    typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public)
-                    |> orderTupleProperties
+            let props =
+                typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public)
+                |> orderTupleProperties
 
-                if index >= props.Length then
-                    let msg =
-                        String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+            if index >= props.Length then
+                let msg =
+                    String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
 
-                    invalidArg "index" msg
+                invalidArg "index" msg
 
-                props.[index]
-            else
-                let props =
-                    typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public)
-                    |> orderTupleProperties
-
-                if index >= props.Length then
-                    let msg =
-                        String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
-
-                    invalidArg "index" msg
-
-                props.[index]
+            props.[index]
 
         if index < tupleEncField then
             get index, None

@@ -412,6 +412,11 @@
         <target state="translated">范围的跨距不能为零。</target>
         <note />
       </trans-unit>
+      <trans-unit id="structTupleNoProperties">
+        <source>Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</source>
+        <target state="new">Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
         <target state="translated">调用线程的 System.Threading.SynchronizationContext.Current 为 null。</target>

@@ -54,6 +54,7 @@ param (
     [switch][Alias('test')]$testDesktop,
     [string]$testDesktopBatch = "",
     [switch]$testCoreClr,
+    [switch]$testUsingModules,
     [switch]$testCambridge,
     [switch]$testCompiler,
     [switch]$testCompilerService,
@@ -129,6 +130,7 @@ function Print-Usage() {
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
     Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
+    Write-Host "  -testUsingModules             Run aggregate tests concurrently from already-built modules"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"
@@ -667,6 +669,39 @@ function TestFromManifest([string] $platform, [string] $selection = "--all") {
     if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
 }
 
+function TestUsingModules([string] $platform) {
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
+    $splitOutput = & $dotnetExe fsi $splitScript --all $platform
+    if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+    $targetFramework = if ($platform -eq "desktop") { $script:desktopTargetFramework } else { $script:coreclrTargetFramework }
+    $extension = if ($platform -eq "desktop") { "exe" } else { "dll" }
+    $moduleRoot = Join-Path $ArtifactsDir "bin"
+    $modules = @(foreach ($line in $splitOutput) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        if ($line -notmatch '^dotnet test (\S+) --no-build -c Release$') {
+            throw "Unexpected TestSplit.fsx output: $line"
+        }
+        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($Matches[1])
+        $module = "$projectName\$configuration\$targetFramework\$projectName.$extension"
+        if (-not (Test-Path -LiteralPath (Join-Path $moduleRoot $module) -PathType Leaf)) {
+            throw "Test module not found: $(Join-Path $moduleRoot $module)"
+        }
+        $module
+    })
+    if ($modules.Count -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
+
+    $testResultsDir = "$ArtifactsDir\TestResults\$configuration"
+    $jobName = if ($env:SYSTEM_JOBNAME) { $env:SYSTEM_JOBNAME } else { "local" }
+    $test_args = "test --test-modules ""$($modules -join ';')"" --root-directory ""$moduleRoot"""
+    $test_args += " --report-spekt-xunit --report-spekt-xunit-filename ""{assembly}.{framework}.${jobName}.xml"""
+    $test_args += " --results-directory ""$testResultsDir"" --hangdump --hangdump-timeout 5m --hangdump-type Full"
+
+    Write-Host $test_args
+    Exec-Console $dotnetExe $test_args
+}
+
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -862,12 +897,18 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestFromManifest -platform coreclr
+        if ($testUsingModules) {
+            TestUsingModules -platform coreclr
+        } else {
+            TestFromManifest -platform coreclr
+        }
     }
 
     if ($testDesktop) {
         if ($testDesktopBatch -ne "") {
             TestFromManifest -platform desktop -selection $testDesktopBatch
+        } elseif ($testUsingModules) {
+            TestUsingModules -platform desktop
         } else {
             TestFromManifest -platform desktop
         }
