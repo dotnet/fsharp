@@ -2561,7 +2561,7 @@ module ParsedInput =
 
                     doRange NestedModule fullIdent moduleKeywordLine moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
-            | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
+            | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine range.StartColumn
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
             | _ -> ()
 

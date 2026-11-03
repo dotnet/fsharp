@@ -186,3 +186,18 @@ module Outer =
 """
     let line, col = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fsx" source "FSharp.Data"
     Assert.Equal((4, 8), (line, col))
+
+[<Fact>]  // Nearest insertion next to an indented existing open keeps that open's indentation
+let ``Issue 10521 - Open under Nearest keeps indentation of existing open in nested module`` () =
+    let source = """module Foo =
+  open System
+
+  type DateTime with
+    member x.X() = ()
+
+  let a () =
+    let t = Task.Factory.StartNew(fun () -> 1)
+    ()
+"""
+    let line, col = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.Threading.Tasks"
+    Assert.Equal((3, 2), (line, col))
