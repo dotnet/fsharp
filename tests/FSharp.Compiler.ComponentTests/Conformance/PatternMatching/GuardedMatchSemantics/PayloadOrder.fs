@@ -2,7 +2,7 @@ module Test
 
 open System
 
-type Context = C0 of int[] | C1 | C2 | C3
+type Context = C0 of int[] | C1
 let trace = ResizeArray<string>()
 let expected = InvalidOperationException("guard")
 let mutable throwAt = -2
@@ -10,7 +10,7 @@ let guard n (values: int[]) =
     trace.Add($"g{n}:{values[0]}")
     values[0] <- values[0] + 1
     if n = throwAt then raise expected
-    n = 6 && throwAt = -2
+    n = 1 && throwAt = -2
 let (|Observe|) (values: int[]) =
     trace.Add($"a:{values[0]}")
     values
@@ -22,11 +22,9 @@ let run token stack =
         try
             match token, stack with
             | 0, C0 values :: tail when guard -1 values -> -100 + tail.Length
-{{GUARDS}}
-            | 1, _ :: tail -> 201 + tail.Length
-            | 2, _ :: tail -> 202 + tail.Length
-            | 3, _ :: tail -> 203 + tail.Length
-            | (4 | 5), _ :: tail when token >= 0 -> 204 + tail.Length
+            | _, C0 ({{PATTERN}}) :: (_ :: _) when guard 0 values -> 100 + values[0]
+            | _, C0 ({{PATTERN}}) :: (_ :: _) when guard 1 values -> 101 + values[0]
+            | (1 | 2), _ :: tail when token >= 0 -> 201 + tail.Length
             | _ -> -1
         with error when (trace.Add("filter"); obj.ReferenceEquals(error, expected)) -> -2
     finally trace.Add("finally")
@@ -34,7 +32,7 @@ let check stop length expectedResult expectedValue expectedTrace =
     let values = [|1|]
     throwAt <- stop
     trace.Clear()
-    let stack = if length = 1 then [C0 values] else [C0 values; C3]
+    let stack = if length = 1 then [C0 values] else [C0 values; C1]
     if run 2 stack <> expectedResult || values[0] <> expectedValue || List.ofSeq trace <> expectedTrace then
         failwith (String.concat "," trace)
 [<EntryPoint>]
@@ -47,10 +45,10 @@ let main _ =
           for n in 0..last do
               yield! observations (n + 1)
               yield $"g{n}:{n + 1}" ]
-    let shortTrace = if partialPattern then List.replicate 8 ["p0:1"; "a:1"] |> List.concat else ["a:1"]
-    check -2 1 202 1 (shortTrace @ ["finally"])
-    check -2 2 114 8 (traceThrough 6 @ ["finally"])
-    check -1 2 203 9 (traceThrough 7 @ ["finally"])
-    for stop in 0..7 do
+    let shortTrace = if partialPattern then ["p0:1"; "a:1"; "p0:1"; "a:1"] else ["a:1"]
+    check -2 1 201 1 (shortTrace @ ["finally"])
+    check -2 2 104 3 (traceThrough 1 @ ["finally"])
+    check -1 2 202 3 (traceThrough 1 @ ["finally"])
+    for stop in 0..1 do
         check stop 2 -2 (stop + 2) (traceThrough stop @ ["filter"; "finally"])
     0

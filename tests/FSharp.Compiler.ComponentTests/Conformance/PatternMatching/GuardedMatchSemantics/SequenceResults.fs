@@ -2,13 +2,10 @@ module Test
 
 let choose (xs: int array) =
     {{OPEN}}
-        let (|Positive|_|) n = n > 0
         for n in xs do
-            {{MATCH_PREFIX}}
-                match n with
-                | 0 | 1 -> {{EMPTY}}
-                | _ when n < 0 -> {{EMPTY}}
-                | 2 | 3 | Positive as value -> {{SUCCESS}}
+            {{PREFIX}}
+                match n % 2, n with
+                | (0 | 1), value when value >= 2 -> {{SUCCESS}}
                 | _ -> {{EMPTY}}
     {{CLOSE}}
 
@@ -16,5 +13,13 @@ let choose (xs: int array) =
 let main _ =
     let values = [|-1; 0; 1; 2; 3; 4|]
     if (choose values |> Seq.toArray) <> [|2; 3; 4|] then failwith "sequence result"
-{{ALLOCATION_CHECK}}
+    if {{ALLOCATION}} then
+        let input = [|0..999|]
+        let consume () =
+            for _ in 1..100 do
+                for _ in choose input do ()
+        consume ()
+        let before = System.GC.GetAllocatedBytesForCurrentThread()
+        consume ()
+        if System.GC.GetAllocatedBytesForCurrentThread() - before >= 5_000_000L then failwith "per-yield allocation"
     0
