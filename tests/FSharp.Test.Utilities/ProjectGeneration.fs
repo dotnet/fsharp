@@ -458,6 +458,7 @@ let private renderFsProj (p: SyntheticProject) =
         <PropertyGroup>
             <OutputType>Exe</OutputType>
             <TargetFramework>{productTfm}</TargetFramework>
+            <NETCoreAppMaximumVersion Condition="'$(TargetFramework)' == 'net12.0'">12.0</NETCoreAppMaximumVersion>
         </PropertyGroup>
 
         <ItemGroup>

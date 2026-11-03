@@ -146,6 +146,7 @@ module Utilities =
   <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
+        <NETCoreAppMaximumVersion Condition="'$(TargetFramework)' == 'net12.0'">12.0</NETCoreAppMaximumVersion>
         <UseFSharpPreview>true</UseFSharpPreview>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>

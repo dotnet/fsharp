@@ -27,6 +27,7 @@ let private createSdkProjectDirectory () =
   <PropertyGroup>
     <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
     <TargetFramework>{productTfm}</TargetFramework>
+    <NETCoreAppMaximumVersion Condition="'$(TargetFramework)' == 'net12.0'">12.0</NETCoreAppMaximumVersion>
     <FSharpTargetsShim>{buildDirectory ++ "Microsoft.FSharp.NetSdk.targets"}</FSharpTargetsShim>
     <FSharpBuildAssemblyFile>{initialConfig.FSharpBuild}</FSharpBuildAssemblyFile>
     <DotnetFscCompilerPath>"{initialConfig.DOTNETFSCCOMPILERPATH}"</DotnetFscCompilerPath>

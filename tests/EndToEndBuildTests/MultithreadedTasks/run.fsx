@@ -53,12 +53,17 @@ let succeed label arguments =
 
 let _, sdk = succeed "sdk" [ "--version" ]
 let _, msbuild = succeed "msbuild" [ "msbuild"; "-version"; "-nologo" ]
+let tfm =
+    let props = File.ReadAllText(Path.Combine(repo, "eng", "TargetFrameworks.props"))
+    let matched = Regex.Match(props, @"<FSharpNetCoreProductTargetFramework[^>]*>(net\d+\.\d+)</FSharpNetCoreProductTargetFramework>")
+    if not matched.Success then failwith "Could not determine FSharpNetCoreProductTargetFramework from eng/TargetFrameworks.props"
+    matched.Groups[1].Value
 let sdkPath = Path.Combine(repo, ".dotnet", "sdk", sdk.Trim())
-let product = Path.Combine(repo, "artifacts", "bin", "fsc", configuration, "net11.0")
+let product = Path.Combine(repo, "artifacts", "bin", "fsc", configuration, tfm)
 let taskProduct = Path.Combine(repo, "artifacts", "bin", "FSharp.Build", configuration, "netstandard2.0")
 let taskAssembly = Path.Combine(taskProduct, "FSharp.Build.dll")
 let compiler = Path.Combine(product, "fsc.dll")
-let localFsi = Path.Combine(repo, "artifacts", "bin", "fsi", configuration, "net11.0", "fsi.dll")
+let localFsi = Path.Combine(repo, "artifacts", "bin", "fsi", configuration, tfm, "fsi.dll")
 for path in [ taskAssembly; compiler; localFsi ] do
     if not (File.Exists path) then failwithf "Build local product bits first: missing %s" path
 let taskHash = hash taskAssembly
@@ -67,18 +72,18 @@ write (Path.Combine(root, "versions.txt")) $"SDK {sdk}MSBuild {msbuild}Tasks {ta
 
 // An ordinary SDK helper project uses only assemblies supplied by the running SDK, without NuGet packages.
 let helper = Path.Combine(root, "probe")
-write (Path.Combine(root, "Directory.Build.props")) "<Project><PropertyGroup><ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps></PropertyGroup></Project>"
+write (Path.Combine(root, "Directory.Build.props")) $"""<Project><Import Project="{xml repo}/eng/TargetFrameworks.props" /><PropertyGroup><ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps></PropertyGroup></Project>"""
 write (Path.Combine(root, "Directory.Build.targets")) "<Project />"
 write (Path.Combine(helper, "Probe.cs")) (File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "Probe.cs")))
 write (Path.Combine(helper, "Probe.csproj")) $"""<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net11.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
+  <PropertyGroup><TargetFramework>{tfm}</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
   <ItemGroup><Compile Include="Probe.cs" />
     <Reference Include="Microsoft.Build.Framework"><HintPath>{xml sdkPath}/Microsoft.Build.Framework.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Microsoft.Build.Utilities.Core"><HintPath>{xml sdkPath}/Microsoft.Build.Utilities.Core.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>"""
 succeed "probe-build" [ "build"; Path.Combine(helper, "Probe.csproj"); "-nologo"; "-v:minimal"; "-nr:false" ] |> ignore
-let probeAssembly = Path.Combine(helper, "bin", "Debug", "net11.0", "Probe.dll")
+let probeAssembly = Path.Combine(helper, "bin", "Debug", tfm, "Probe.dll")
 let graph = Path.Combine(root, "graph")
 let projects = [| for index in 1 .. projectCount -> sprintf "P%02d" index |]
 write (Path.Combine(graph, "Directory.Build.props")) $"""<Project>
@@ -192,10 +197,10 @@ let validateOutputs label =
               for file in [ "fsi.txt"; "obj/substituted/template.txt" ] do
                   if File.ReadAllText(Path.Combine(directory, file)) <> name then failwithf "%s: wrong %s" name file
               for file, marker in [ "Strings.fs", "RESX_" + name; "ILLink.Substitutions.xml", $"fullname=\"{name}\"" ] do
-                  if not (File.ReadAllText(Path.Combine(directory, "obj/Release/net11.0", file)).Contains marker) then
+                  if not (File.ReadAllText(Path.Combine(directory, $"obj/Release/{tfm}", file)).Contains marker) then
                       failwithf "%s: generated %s has the wrong marker" name file
-              succeed (label + "-" + name) [ Path.Combine(directory, "bin", "Release", "net11.0", name + ".dll") ] |> ignore
-              for child in [ "bin/Release/net11.0"; "obj/Release/net11.0" ] do
+              succeed (label + "-" + name) [ Path.Combine(directory, "bin", "Release", tfm, name + ".dll") ] |> ignore
+              for child in [ $"bin/Release/{tfm}"; $"obj/Release/{tfm}" ] do
                   for file in Directory.GetFiles(Path.Combine(directory, child), "*", SearchOption.AllDirectories) do
                       if [ ".dll"; ".pdb"; ".fs"; ".resx"; ".resources"; ".xml" ] |> List.contains (Path.GetExtension file) then
                           yield Path.GetRelativePath(graph, file), hash file ] |> Map.ofList
@@ -248,7 +253,7 @@ for mt in [ false; true ] do
             if failure = "resource" && errors.Length <> 1 then
                 failwithf "%s reported %d errors for one malformed resource" label errors.Length
             for name in projects |> Array.skip 1 do
-                let dll = Path.Combine(graph, name, "bin/Release/net11.0", name + ".dll")
+                let dll = Path.Combine(graph, name, $"bin/Release/{tfm}", name + ".dll")
                 succeed (label + "-" + name) [ dll ] |> ignore
                 if hash dll <> baseline[Path.GetRelativePath(graph, dll)] then failwithf "%s contaminated %s" label name
             printfn "%s: expected failure; %d unaffected executables match baseline" label (projectCount - 1)
@@ -263,7 +268,7 @@ let resourceNames file =
     [ for handle in metadata.ManifestResources -> metadata.GetString(metadata.GetManifestResource(handle).Name) ]
 let trimProject = Path.Combine(graph, projects[1])
 let metadata names = names |> List.filter (fun (name: string) -> name.StartsWith("FSharpSignature") || name.StartsWith("FSharpOptimization")) |> Set.ofList
-let untrimmed = Path.Combine(trimProject, "bin/Release/net11.0", projects[1] + ".dll")
+let untrimmed = Path.Combine(trimProject, $"bin/Release/{tfm}", projects[1] + ".dll")
 let originalMetadata = metadata (resourceNames untrimmed)
 if originalMetadata.IsEmpty then failwith "Trimming control has no F# metadata"
 let trimFailures = ResizeArray<string>()

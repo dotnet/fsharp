@@ -49,6 +49,7 @@ $(POUND_R)
 
   <PropertyGroup>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <NETCoreAppMaximumVersion Condition="'$(TargetFramework)' == 'net12.0'">12.0</NETCoreAppMaximumVersion>
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->

@@ -145,6 +145,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <NETCoreAppMaximumVersion Condition=""'$(TargetFramework)' == 'net12.0'"">12.0</NETCoreAppMaximumVersion>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <IsPackable>false</IsPackable>
     <DebugSymbols>$(DEBUG)</DebugSymbols>
