@@ -5,6 +5,8 @@ module Conformance.InferenceProcedures.ConditionalAutoOpen
 open Xunit
 open FSharp.Test.Compiler
 
+#if NETCOREAPP
+
 let private provider condition =
     FSharp $"""
 namespace Providers
@@ -68,3 +70,4 @@ if selected <> 2 then failwithf "Selected %%d" selected
     |> withOptions [ "--features:mode=on" ]
     |> runFsi
     |> shouldSucceed
+#endif

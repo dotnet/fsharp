@@ -2,7 +2,7 @@
 
 namespace Microsoft.FSharp.Control.RuntimeAsync
 
-#if NET
+#if NET && !BUILDING_WITH_LKG
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices

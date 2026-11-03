@@ -286,7 +286,7 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
-#if NET
+#if NET && !BUILDING_WITH_LKG
     type RuntimeAsync.TaskBuilder with
         member inline _.Using(resource: 'R :> IDisposable | null, [<InlineIfLambda>] body: 'R -> 'T) =
             try
