@@ -447,7 +447,7 @@ let ``nested ordinary completion keeps its existing namespace projection`` atTop
     Assert.Equal(Some "Patterns", entity.Namespace)
     Assert.Equal("Patterns.Thing", entity.Qualifier)
     Assert.Equal(Position.mkPos 5 4, context.Pos)
-    Assert.Equal([| "N" |], ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(test.Context.Pos, test.Parse.ParseTree))
+    Assert.Equal<string array>([| "N" |], ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(test.Context.Pos, test.Parse.ParseTree))
     let opened = test.Context.Source.Replace("    module Use =\n", "    open Patterns\n    module Use =\n")
     let results = test.CheckEdit opened
     assertNoUnusedOpens results opened
