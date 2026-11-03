@@ -279,8 +279,8 @@ let private groupings () =
               |> Seq.map (fun (city, group) -> Grouping(city, group) :> IGrouping<_, _>))
       |> Scenario.violating [ Violation.RuntimeHelperCall "new Grouping`2" ]
 
-      // A group the query uses as a value is built at each mention, so two mentions are two objects. LINQ to Objects
-      // and FSharp.Core 10.1 give one object; the rows are what the build at each mention gives (PENDING_BREAKING_CHANGES.md)
+      // A group the query uses as a value is built at each mention, so over the in-memory source two mentions are two
+      // objects, where LINQ to Objects and FSharp.Core 10.1 have one object (PENDING_BREAKING_CHANGES.md)
       Scenario.rows
           "groupValBy a tuple of values, the group compared with itself"
           (fun db ->
@@ -290,8 +290,9 @@ let private groupings () =
                   where (g.Equals g)
                   select (g.Key, obj.ReferenceEquals(g, g))
               })
-          (fun _ -> Seq.empty)
+          (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, true))
       |> Scenario.violating (newGroups 4)
+      |> Scenario.givingInMemory (fun _ -> Seq.empty<string * bool>)
 
       Scenario.rows
           "groups of groups, a group found among the groups it is in"
@@ -302,8 +303,9 @@ let private groupings () =
                   groupBy g.Key.Length into byLength
                   select (byLength.Key, byLength.Contains(byLength.First()), obj.ReferenceEquals(byLength.First(), byLength.First()))
               })
-          (customers >> Seq.map _.City.Length >> Seq.distinct >> Seq.map (fun length -> length, false, false))
+          (customers >> Seq.map _.City.Length >> Seq.distinct >> Seq.map (fun length -> length, true, true))
       |> Scenario.violating (newGroups 4)
+      |> Scenario.givingInMemory (customers >> Seq.map _.City.Length >> Seq.distinct >> Seq.map (fun length -> length, false, false))
 
       Scenario.rows
           "groupValBy a tuple of values, the group as a sequence is still the group"
@@ -325,8 +327,9 @@ let private groupings () =
                   groupBy g into byGroup
                   select (byGroup.Key.Key, byGroup.Contains(byGroup.Key))
               })
-          (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, false))
+          (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, true))
       |> Scenario.violating (newGroups 2)
+      |> Scenario.givingInMemory (customers >> Seq.map _.City >> Seq.distinct >> Seq.map (fun city -> city, false))
 
       // An element that a lambda over a group uses as a value of its own is one object in that lambda
       Scenario.rows
