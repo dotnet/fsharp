@@ -15,7 +15,7 @@ type Outcome =
     | Rows of IQueryable
     | Value of obj
 
-/// One query, what it must return, and what is known to be wrong with its expression tree today.
+/// One query, what it must return, and what is known to be wrong with its expression tree and its rows today.
 [<NoEquality; NoComparison>]
 type Scenario =
     { Name: string
@@ -23,7 +23,8 @@ type Scenario =
       Expected: Data -> obj list
       Ordered: bool
       Spine: string list voption
-      Violations: Violation list }
+      Violations: Violation list
+      InMemory: (Data -> obj list) voption }
 
     override this.ToString() = this.Name
 
@@ -118,7 +119,8 @@ module Scenario =
           Expected = fun data -> [ for row in expected data -> box row ]
           Ordered = false
           Spine = ValueNone
-          Violations = [] }
+          Violations = []
+          InMemory = ValueNone }
 
     let value name (run: Db -> 'T) (expected: Data -> 'T) =
         { Name = name
@@ -126,7 +128,8 @@ module Scenario =
           Expected = fun data -> [ box (expected data) ]
           Ordered = true
           Spine = ValueNone
-          Violations = [] }
+          Violations = []
+          InMemory = ValueNone }
 
     let ordered scenario = { scenario with Ordered = true }
 
@@ -139,6 +142,12 @@ module Scenario =
     let violating violations scenario =
         { scenario with
             Violations = violations }
+
+    /// The rows that the in-memory source gives today where they are not the expected ones, which LINQ to Objects gives
+    /// and a provider should give; the scenario fails once that stops being true.
+    let givingInMemory (rows: Data -> seq<'T>) scenario =
+        { scenario with
+            InMemory = ValueSome(fun data -> [ for row in rows data -> box row ]) }
 
     [<NoEquality; NoComparison>]
     type private Observed =
@@ -217,7 +226,12 @@ module Scenario =
               $"violations: expected %A{List.sort scenario.Violations}, got %A{violations}"
 
           if not threw then
-              let expected = inOrder scenario.Ordered (scenario.Expected data)
+              let expectedRows =
+                  match scenario.InMemory with
+                  | ValueSome inMemory -> inMemory
+                  | ValueNone -> scenario.Expected
+
+              let expected = inOrder scenario.Ordered (expectedRows data)
               let actual = inOrder scenario.Ordered observed.Rows
 
               if expected <> actual then
