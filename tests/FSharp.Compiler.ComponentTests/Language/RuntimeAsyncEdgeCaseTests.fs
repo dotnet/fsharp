@@ -257,6 +257,7 @@ let ``composed CE body: await inside try, hoisted disposal, async flag on the li
         "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter>(!!0)"
         "callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()"
         "call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)"
+        "call       class [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo::Capture(class [runtime]System.Exception)"
         "finally"
     ]
     |> verifyRuntimeAsyncExceptionRegions [ "outer@13::Invoke", true ]
