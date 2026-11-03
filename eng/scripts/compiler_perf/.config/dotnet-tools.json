@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotnet-dump": {
+      "version": "10.0.750501",
+      "commands": [
+        "dotnet-dump"
+      ],
+      "rollForward": true
+    }
+  }
+}

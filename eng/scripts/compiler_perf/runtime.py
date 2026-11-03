@@ -125,7 +125,8 @@ class Runtime:
                                                     "sdk": m.file_record(controller.repository / "global.json"),
                                                     "helpers": [m.file_record(p) for p in
                                                                 Path(__file__).resolve().parent.iterdir()
-                                                                if p.suffix in (".py", ".cjs")]}})
+                                                                if p.suffix in (".py", ".cjs")] +
+                                                               [m.file_record(c.DUMP_MANIFEST)]}})
         return result
 
     def arm(self):

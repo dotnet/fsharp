@@ -1210,8 +1210,14 @@ architecture, memory/disk budget and diagnostics ownership. Actual EventPipe
 startup and required trace events must also succeed; a help command alone is
 not a compatibility test.
 
-Tools are restored from `.config/dotnet-tools.json` only when missing, never
-globally upgraded. The checked v8 redirected-output startup marker is
+Trace and counter tools retain the repository's **8.0.547301** pin.
+Only this workflow uses **dotnet-dump 10.0.750501**, from
+`eng/scripts/compiler_perf/.config/dotnet-tools.json`, to analyze the actual
+.NET 11 compiler's CLR debugging interface. Collection and analysis run from
+that manifest's directory. The controller freezes its hash before preparation
+and records the executing version and manifest hash in diagnostic evidence.
+Tools are restored only when missing, without upgrading the shared tool manifest.
+The checked v8 redirected-output startup marker is
 `Output File`, emitted after `StartEventPipeSession`; its interactive
 `Recording trace` status is not emitted when stdout is redirected.
 Original `.nettrace`, pinned TraceEvent reductions, System.Runtime CSV,
@@ -1357,8 +1363,8 @@ coverage fixture caught the distinction between tool startup and runtime
 coverage. The final full helper run passes **all 53 tests** with
 `COMPILER_PERF_LIVE=1` (`suite-with-live-final.log`), including a real public .NET child trace, negative
 trace controls and a successfully captured/analyzed private .NET 8 Heap dump.
-The pinned dump analyzer cannot interpret .NET 11's debugging interface
-version 10; that requested dump analysis is an explicit compatibility blocker,
+The then-pinned 8.0.547301 dump analyzer could not interpret .NET 11's debugging
+interface version 10. That requested dump analysis was an explicit compatibility blocker,
 not evidence of a corrupt managed heap or a successful retention measurement.
 
 The actual compiler-source trial uses the retained Release build and frozen

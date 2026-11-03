@@ -658,6 +658,60 @@ class CollectionTests(unittest.TestCase):
                 self.assertFalse(result["published"])
                 self.assertIn("reason", result)
 
+    def test_dump_uses_its_compatible_local_manifest_without_upgrading_other_tools(self):
+        for missing in (False, True):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
+                calls, versions = [], []
+                dotnet = Path(directory) / "dotnet"
+                dotnet.write_bytes(b"fixture executable")
+
+                def run(arguments, cwd, *args, **kwargs):
+                    calls.append((arguments, cwd))
+                    text = "Architecture: x64"
+                    if "--version" in arguments:
+                        name = arguments[3]
+                        if name == "dotnet-dump":
+                            versions.append(name)
+                            if missing and len(versions) == 1:
+                                return c.classify_failure("probe", 1, "Run dotnet tool restore")
+                        text = ("10.0.750501" if name == "dotnet-dump" else "8.0.547301") + "+verified"
+                    elif "--help" in arguments:
+                        text = "--process-id --output --resume-runtime"
+                    return {"status": "collected", "stdout": text, "stderr": "", "logs": []}
+
+                with mock.patch.object(c, "run_tool", side_effect=run), \
+                        mock.patch.object(c.platform, "machine", return_value="x86_64"):
+                    tools = c.verify_tools(str(dotnet), Path(directory))
+                self.assertEqual(tools["dotnet-dump"]["manifest"],
+                                 c.m.file_record(HERE / ".config" / "dotnet-tools.json"))
+                for arguments, cwd in calls:
+                    self.assertEqual(cwd, HERE if "dotnet-dump" in arguments or "restore" in arguments else ROOT)
+                restores = [arguments for arguments, _ in calls if "restore" in arguments]
+                self.assertEqual(restores, [[str(dotnet), "tool", "restore", "--tool-manifest",
+                                             str(HERE / ".config" / "dotnet-tools.json")]] if missing else [])
+
+    def test_actual_unsupported_clr_debugging_layer_is_not_a_healthy_dump(self):
+        identity = profile()["process"]["start"]
+        document = {"identity": identity, "hypothesis": "Actual compiler heap compatibility",
+                    "profiling_replay": True}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "dump"
+
+            def run(arguments, *args, **kwargs):
+                (root / "heap.dmp").write_bytes(b"MDMP" + bytes(5000))
+                if "analyze" in arguments:
+                    return dict(c.classify_failure("dump-validate", 1, ""), stdout=
+                        "The CLR debugging layer reported a version of 10 which this build of ClrMD does not support.")
+                return {"status": "collected", "exit_status": 0, "stdout": "", "stderr": ""}
+
+            with mock.patch.object(c, "snapshot_process", return_value=identity), \
+                    mock.patch.object(c, "preflight", return_value={}), \
+                    mock.patch.object(c, "verify_tools", return_value={"dotnet-dump": {"command": ["dotnet-dump"]}}), \
+                    mock.patch.object(c, "run_tool", side_effect=run):
+                result = c.collect_dump(document, "retention", root)
+            self.assertEqual(result["reason"], "incompatible_runtime")
+            self.assertFalse((root / "heap.dmp").exists())
+
     def test_dump_tool_and_artifact_failures_preserve_evidence(self):
         identity = profile()["process"]["start"]
         document = {"identity": identity, "hypothesis": "RSS grows while managed heap remains stable",

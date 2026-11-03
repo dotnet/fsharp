@@ -402,6 +402,8 @@ class RuntimeTests(unittest.TestCase):
                     self.assertTrue((workspace / "source" / fixtures.SOURCE).is_file())
                     self.assertFalse((workspace / "source" / "eng").exists())
                     self.assertEqual(controller.load("runtime")["agent_home"], str(Path.home()))
+                    self.assertIn(w.m.file_record(w.c.DUMP_MANIFEST),
+                                  controller.load("runtime")["inputs"]["helpers"])
                     clock = controller.load("clocks")["setup"]
                     self.assertEqual(w.mem.timestamp(clock["start"]),
                                      controller.now() - timedelta(seconds=120))

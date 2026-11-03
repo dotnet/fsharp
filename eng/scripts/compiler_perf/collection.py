@@ -30,6 +30,8 @@ LIMITS = {"duration_seconds": 180, "artifact_bytes": 1024**3, "trace_bytes": 512
           "total_bytes": 2 * 1024**3, "log_bytes": 1024**2, "json_bytes": 16 * 1024**2,
           "minimum_memory_bytes": 512 * 1024**2, "collections": 1}
 TOOL_VERSION = "8.0.547301"
+DUMP_TOOL_VERSION = "10.0.750501"
+DUMP_MANIFEST = HERE / ".config" / "dotnet-tools.json"
 PROVIDERS = "Microsoft-DotNETCore-SampleProfiler:0x0:4,Microsoft-Windows-DotNETRuntime:0x1:5"
 IDENTITY = ("pid", "start_time", "parent_pid", "session_id", "executable", "command",
             "uid", "namespace", "binary_sha256")
@@ -644,7 +646,6 @@ def preflight(root, environment, identity=None, dump=False, *, target=None):
 
 
 def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet-dump"), monitor=None):
-    pinned = m.read_json(REPO / ".config" / "dotnet-tools.json")["tools"]
     host = run_tool([dotnet, "--info"], REPO, tool_environment(), root, "diagnostics-host", monitor=monitor)
     architecture = re.search(r"Architecture:\s+(x64|x86|arm64|arm)\b", host.get("stdout", ""))
     expected = {"amd64": "x64", "x86_64": "x64", "aarch64": "arm64",
@@ -653,25 +654,32 @@ def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet
               "Unsupported/mismatched diagnostics host architecture")
     records = {"host": {"executable": m.file_record(dotnet), "architecture": architecture[1], "info": host["logs"]}}
     for name in names:
-        m.require(pinned[name]["version"] == TOOL_VERSION and pinned[name]["rollForward"], "Unexpected tool pin")
+        cwd = HERE if name == "dotnet-dump" else REPO
+        manifest = cwd / ".config" / "dotnet-tools.json"
+        pinned = m.read_json(manifest)["tools"]
+        expected = DUMP_TOOL_VERSION if name == "dotnet-dump" else TOOL_VERSION
+        m.require(pinned[name] == {"version": expected, "commands": [name], "rollForward": True}
+                  and (name != "dotnet-dump" or set(pinned) == {name}), "Unexpected tool pin")
         prefix = [dotnet, "tool", "run", name, "--"]
-        version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version", monitor=monitor)
+        version = run_tool(prefix + ["--version"], cwd, tool_environment(), root, name + "-version", monitor=monitor)
         if version["status"] != "collected":
             m.require(re.search(r"(?i)dotnet tool restore|cannot find a tool|has not been restored",
                                 version.get("stdout", "") + version["stderr"]),
                       "Diagnostics tool probe failed: " + version["stderr"])
-            restore = run_tool([dotnet, "tool", "restore"], REPO, tool_environment(), root, "tool-restore", monitor=monitor)
+            restore = run_tool([dotnet, "tool", "restore", "--tool-manifest", str(manifest)],
+                               cwd, tool_environment(), root, "tool-restore", monitor=monitor)
             m.require(restore["status"] == "collected", "Pinned tool restore failed: " + restore["stderr"])
-            version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version", monitor=monitor)
-        m.require(version["status"] == "collected" and version["stdout"].strip().startswith(TOOL_VERSION + "+"),
+            version = run_tool(prefix + ["--version"], cwd, tool_environment(), root, name + "-version", monitor=monitor)
+        m.require(version["status"] == "collected" and version["stdout"].strip().startswith(expected + "+"),
                   "Incompatible diagnostics tool version")
-        help_result = run_tool(prefix + ["collect", "--help"], REPO, tool_environment(), root, name + "-help", monitor=monitor)
+        help_result = run_tool(prefix + ["collect", "--help"], cwd, tool_environment(), root, name + "-help", monitor=monitor)
         required = ["--process-id", "--output"]
         if name != "dotnet-dump":
             required += ["--resume-runtime"]
         m.require(help_result["status"] == "collected" and all(flag in help_result["stdout"] for flag in required),
                   "Unsupported pinned tool syntax")
-        records[name] = {"version": version["stdout"].strip(), "help": help_result["logs"], "command": prefix}
+        records[name] = {"version": version["stdout"].strip(), "help": help_result["logs"], "command": prefix,
+                         "manifest": m.file_record(manifest)}
     return records
 
 
@@ -701,7 +709,7 @@ def collect_dump(document, reason, output_dir, monitor=None):
         dump = root / "heap.dmp"
         command = run_tool(tools["dotnet-dump"]["command"] + [
             "collect", "--process-id", str(identity["pid"]), "--type", "Heap", "--output", str(dump)],
-            REPO, tool_environment(environment), root, phase, timeout=120, monitor=monitor)
+            HERE, tool_environment(environment), root, phase, timeout=120, monitor=monitor)
         result["command"] = command
         m.require(command["status"] == "collected", command["reason"] if "reason" in command else "tool_failure")
         select_compiler_process([snapshot_process(identity["pid"])], identity)
@@ -711,10 +719,11 @@ def collect_dump(document, reason, output_dir, monitor=None):
         phase = "dump-validate"
         validation = run_tool(tools["dotnet-dump"]["command"] + [
             "analyze", str(dump), "-c", "eeversion", "-c", "dumpheap -stat", "-c", "exit"],
-            REPO, tool_environment(), root, phase, timeout=120, monitor=monitor)
+            HERE, tool_environment(), root, phase, timeout=120, monitor=monitor)
         result["validation"] = validation
         text = validation["stdout"] + validation["stderr"]
-        m.require(not re.search(r"(?i)unsupported.*debugging interface|debugging interface.*not supported", text),
+        m.require(not re.search(r"(?i)unsupported.*debugging interface|debugging interface.*not supported"
+                               r"|CLR debugging layer reported.*does not support", text),
                   "incompatible_runtime")
         m.require(validation["status"] == "collected", validation.get("reason", "tool_failure"))
         m.require(re.search(r"Total\s+(?:\d{1,3}(?:,\d{3})+|\d+)\s+objects", text)

@@ -186,16 +186,21 @@ class TraceAdapterTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("COMPILER_PERF_LIVE") == "1",
                          "set COMPILER_PERF_LIVE=1 for private public-child dump collection")
     def test_live_public_child_dump(self):
+        for framework in ("net8.0", "net11.0"):
+            with self.subTest(framework=framework):
+                self.check_live_public_child_dump(framework)
+
+    def check_live_public_child_dump(self, framework):
         spec = importlib.util.spec_from_file_location("collection", ADAPTER.with_name("collection.py"))
         collection = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(collection)
-        child = self.build_child("net8.0")
+        child = self.build_child(framework)
         ipc = tempfile.TemporaryDirectory(prefix="compiler-perf-ipc-")
         self.addCleanup(ipc.cleanup)
         environment = collection.target_environment(Path(ipc.name))
         environment["DOTNET_DefaultDiagnosticPortSuspend"] = "0"
         dotnet = Path(shutil.which("dotnet"))
-        pid_file = self.work / "dump-child.pid"
+        pid_file = self.work / f"dump-child-{framework}.pid"
         process = subprocess.Popen(
             [str(dotnet), str(child), str(pid_file), "--wait"], cwd=ROOT, env=environment,
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
@@ -216,7 +221,7 @@ class TraceAdapterTests(unittest.TestCase):
                 "identity": identity, "profiling_replay": True, "environment": environment,
                 "hypothesis": "Public fixture allocation churn may leave objects in a heap snapshot",
             }
-            result = collection.collect_dump(document, "retention", self.work / "private-dump")
+            result = collection.collect_dump(document, "retention", self.work / f"private-dump-{framework}")
             self.assertEqual(result["status"], "collected", json.dumps(result, indent=2))
             self.assertEqual(result["identity"]["pid"], process.pid)
             self.assertFalse(result["published"])
