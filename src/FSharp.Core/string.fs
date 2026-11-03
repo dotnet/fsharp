@@ -8,7 +8,10 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.Operators.Checked
 open Microsoft.FSharp.Collections
+open Microsoft.FSharp.NativeInterop
 open Microsoft.FSharp.Primitives.Basics
+
+#nowarn "9" // Uses of this construct may result in the generation of unverifiable .NET IL code
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
@@ -18,6 +21,11 @@ module String =
     /// and is equal to 80_000 / sizeof<char>
     [<Literal>]
     let LOH_CHAR_THRESHOLD = 40_000
+
+#if NETSTANDARD2_1_OR_GREATER
+    [<Literal>]
+    let STACKALLOC_THRESHOLD = 512
+#endif
 
     [<CompiledName("Length")>]
     let length (str: string) =
@@ -54,19 +62,39 @@ module String =
             for i = 0 to str.Length - 1 do
                 f.Invoke(i, str.[i])
 
+#if NETSTANDARD2_1_OR_GREATER
+    // Cache SpanAction instance to avoid allocations
+    let private _mapAction =
+        System.Buffers.SpanAction<char, struct (string * (char -> char))>
+            (fun (result: Span<char>) (struct (str: string, mapping: char -> char)) ->
+                for i = 0 to result.Length - 1 do
+                    result[i] <- mapping str[i])
+#endif
+
     [<CompiledName("Map")>]
     let map (mapping: char -> char) (str: string) =
         if String.IsNullOrEmpty str then
             String.Empty
         else
+#if NETSTANDARD2_1_OR_GREATER
+            String.Create(str.Length, struct (str, mapping), _mapAction)
+#else
             let result = str.ToCharArray()
-            let mutable i = 0
 
-            for c in result do
-                result.[i] <- mapping c
-                i <- i + 1
+            for i = 0 to result.Length - 1 do
+                result[i] <- mapping result[i]
 
             String(result)
+#endif
+
+#if NETSTANDARD2_1_OR_GREATER
+    // Cache SpanAction instance to avoid allocations
+    let private _mapiAction =
+        System.Buffers.SpanAction<char, struct (string * OptimizedClosures.FSharpFunc<int, char, char>)>
+            (fun (result: Span<char>) (struct (str, mapping)) ->
+                for i = 0 to result.Length - 1 do
+                    result[i] <- mapping.Invoke(i, str[i]))
+#endif
 
     [<CompiledName("MapIndexed")>]
     let mapi (mapping: int -> char -> char) (str: string) =
@@ -75,19 +103,21 @@ module String =
         if len = 0 then
             String.Empty
         else
-            let result = str.ToCharArray()
             let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
+#if NETSTANDARD2_1_OR_GREATER
+            String.Create(len, struct (str, f), _mapiAction)
+#else
+            let result = str.ToCharArray()
 
-            let mutable i = 0
-
-            while i < len do
-                result.[i] <- f.Invoke(i, result.[i])
-                i <- i + 1
+            for i = 0 to result.Length - 1 do
+                result[i] <- f.Invoke(i, result[i])
 
             String(result)
+#endif
 
     [<CompiledName("Filter")>]
     let filter (predicate: char -> bool) (str: string) =
+
         let len = length str
 
         if len = 0 then
@@ -107,8 +137,18 @@ module String =
             res.ToString()
 
         else
-            // Must do it this way, since array.fs is not yet in scope, but this is safe
-            let target = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+
+            let target =
+#if NETSTANDARD2_1_OR_GREATER
+                if len <= STACKALLOC_THRESHOLD then
+                    Span<char>((NativePtr.toVoidPtr (NativePtr.stackalloc<char> STACKALLOC_THRESHOLD)), len)
+                else
+                    // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
+                    Span(Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len)
+#else
+                // same as above
+                Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+#endif
             let mutable i = 0
 
             for c in str do
@@ -116,7 +156,11 @@ module String =
                     target.[i] <- c
                     i <- i + 1
 
+#if NETSTANDARD2_1_OR_GREATER
+            String(target.Slice(0, i))
+#else
             String(target, 0, i)
+#endif
 
     [<CompiledName("Collect")>]
     let collect (mapping: char -> string) (str: string) =
@@ -139,6 +183,26 @@ module String =
 
         res.ToString()
 
+#if NETSTANDARD2_1_OR_GREATER
+    let _replicateAction =
+        System.Buffers.SpanAction<char, string>(fun (target: Span<char>) (str: string) ->
+            let len = str.Length
+            let source = str.AsSpan()
+
+            // O(log(n)) performance loop:
+            // Copy first string, then keep copying what we already copied
+            // (i.e., doubling it) until we reach or pass the halfway point
+            source.CopyTo(target)
+            let mutable i = len
+
+            while i * 2 < target.Length do
+                target.Slice(0, i).CopyTo(target.Slice(i, i))
+                i <- i * 2
+
+            // finally, copy the remaining half, or less-then half
+            target.Slice(0, target.Length - i).CopyTo(target.Slice(i, target.Length - i)))
+#endif
+
     [<CompiledName("Replicate")>]
     let replicate (count: int) (str: string) =
         if count < 0 then
@@ -160,6 +224,9 @@ module String =
             | _ -> String.Concat(str, str, str, str)
 
         else
+#if NETSTANDARD2_1_OR_GREATER
+            String.Create(len * count, str, _replicateAction)
+#else
             // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
             let target =
                 Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len * count)
@@ -176,9 +243,10 @@ module String =
                 Array.Copy(target, 0, target, i, i)
                 i <- i * 2
 
-            // finally, copy the remain half, or less-then half
+            // finally, copy the remaining half, or less-than half
             Array.Copy(target, 0, target, i, target.Length - i)
             String(target)
+#endif
 
     [<CompiledName("ForAll")>]
     let forall predicate (str: string) =
