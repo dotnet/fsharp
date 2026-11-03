@@ -204,9 +204,9 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     // came before them, which add only their name to the signature hash.
     let fileHashes = ResizeArray()
 
-    let rec addFileHashes index sigHash (signed: Set<string>) (files: 'T list) =
-        match files with
-        | file :: rest when fileHashes.Count <= index ->
+    let rec addFileHashes index sigHash (signed: Set<string>) =
+        if fileHashes.Count <= index then
+            let file = sourceFiles[fileHashes.Count]
             let nameHash = sigHash |> Md5Hasher.addString file.FileName
             let keyHash = nameHash |> Md5Hasher.addBytes file.Version
 
@@ -227,25 +227,24 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                 |}
             )
 
-            addFileHashes index sigHash signed rest
-        | _ -> ()
+            addFileHashes index sigHash signed
 
     let fileHash index =
         lock fileHashes (fun () ->
             match fileHashes.Count with
-            | count when count > index -> ()
-            | 0 -> addFileHashes index baseVersion.Value Set.empty sourceFiles
+            | 0 -> addFileHashes index baseVersion.Value Set.empty
             | count ->
                 let last = fileHashes[count - 1]
-                addFileHashes index last.SignatureHash last.Signed (List.skip count sourceFiles)
+                addFileHashes index last.SignatureHash last.Signed
 
             fileHashes[index])
 
     let signatureHash =
         lazy
-            (match sourceFiles with
-             | [] -> baseVersion.Value
-             | _ -> (fileHash (sourceFiles.Length - 1)).SignatureHash)
+            (if sourceFiles.Length = 0 then
+                 baseVersion.Value
+             else
+                 (fileHash (sourceFiles.Length - 1)).SignatureHash)
 
     let signatureKey =
         lazy (baseCacheKeyWith ("Signature", signatureHash.Value |> Md5Hasher.toString))
