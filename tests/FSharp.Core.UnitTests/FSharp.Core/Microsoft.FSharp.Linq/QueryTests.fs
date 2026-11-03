@@ -588,3 +588,29 @@ type DefensiveCopyTests() =
     [<Fact>]
     member _.``QuotationToLambdaExpression does not copy an F# struct record without mutable fields``() =
         Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Point, int>(fun p -> p.Twice()) @>))
+
+#if NETCOREAPP
+    [<Fact>]
+    member _.``EvaluateQuotation calls ToString on a struct whose attribute's assembly is missing``() =
+        let core = typeof<obj>.Assembly
+        let annotations = Reflection.Emit.PersistedAssemblyBuilder(Reflection.AssemblyName("MissingAnnotations"), core)
+        let marker = annotations.DefineDynamicModule("MissingAnnotations").DefineType("Marker", Reflection.TypeAttributes.Public, typeof<Attribute>)
+        let markerCtor = marker.DefineDefaultConstructor(Reflection.MethodAttributes.Public)
+        marker.CreateType() |> ignore
+
+        let model = Reflection.Emit.PersistedAssemblyBuilder(Reflection.AssemblyName("AnnotatedModel"), core)
+        let position =
+            model.DefineDynamicModule("AnnotatedModel").DefineType("Position", Reflection.TypeAttributes.Public ||| Reflection.TypeAttributes.Sealed, typeof<ValueType>)
+        position.SetCustomAttribute(Reflection.Emit.CustomAttributeBuilder(markerCtor, [||]))
+        position.CreateType() |> ignore
+        use image = new IO.MemoryStream()
+        model.Save(image)
+
+        // MissingAnnotations is never saved, so reading Position's attributes fails.
+        let ty = Reflection.Assembly.Load(image.ToArray()).GetType("Position")
+        Assert.Throws<IO.FileNotFoundException>(fun () -> ty.GetCustomAttributes(false) |> ignore) |> ignore
+        // F# quotes p.ToString() as a call to Object.ToString on the struct.
+        let p = Quotations.Var("p", ty)
+        let call = Quotations.Expr.Let(p, Quotations.Expr.DefaultValue ty, Quotations.Expr.Call(Quotations.Expr.Var p, typeof<obj>.GetMethod("ToString"), []))
+        Assert.Equal("Position", LeafExpressionConverter.EvaluateQuotation call :?> string)
+#endif

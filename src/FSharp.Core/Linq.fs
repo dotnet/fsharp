@@ -44,10 +44,18 @@ module LeafExpressionConverter =
             let flags = BindingFlags.Public ||| BindingFlags.NonPublic
             ty.IsValueType
             && not ty.IsEnum
-            && ty.IsDefined(typeof<CompilationMappingAttribute>, false)
-            && not (ty.CustomAttributes |> Seq.exists (fun a -> a.AttributeType.FullName = "System.Runtime.CompilerServices.IsReadOnlyAttribute"))
-            && not (FSharpType.IsUnion(ty, flags))
-            && not (FSharpType.IsRecord(ty, flags) && FSharpType.GetRecordFields(ty, flags) |> Array.forall (fun p -> not p.CanWrite))
+            // Reading attributes can load other assemblies; if one is missing, do not copy.
+            && (try
+                    ty.IsDefined(typeof<CompilationMappingAttribute>, false)
+                    && not (ty.CustomAttributes |> Seq.exists (fun a -> a.AttributeType.FullName = "System.Runtime.CompilerServices.IsReadOnlyAttribute"))
+                    && not (FSharpType.IsUnion(ty, flags))
+                    && not (FSharpType.IsRecord(ty, flags) && FSharpType.GetRecordFields(ty, flags) |> Array.forall (fun p -> not p.CanWrite))
+                with
+                | :? IO.FileNotFoundException
+                | :? IO.FileLoadException
+                | :? TypeLoadException
+                | :? BadImageFormatException
+                | :? CustomAttributeFormatException -> false)
         | _ -> false
 
     /// Determines if a property access on a derived union case type needs to be coerced to the declaring type.
