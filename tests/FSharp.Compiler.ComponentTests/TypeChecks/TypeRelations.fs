@@ -59,6 +59,40 @@ let convert (x: C<Tuple<int>>) = x :> I<Eight -> int>
     |> compile
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData("--checknulls-")>]
+[<InlineData("--checknulls+")>]
+let ``Upcast through an IL base type whose constraint is from an unreferenced assembly`` checkNulls =
+    let missing =
+        CSharp """namespace Missing { public interface IMarker {} }"""
+        |> withName "MissingConstraint"
+
+    let libraryPath =
+        CSharp """
+namespace Library
+{
+    public interface IFoo {}
+    public interface IBar {}
+    public class Impl : Missing.IMarker {}
+    public class Gen<T> : IFoo where T : Missing.IMarker {}
+    public class D : Gen<Impl>, IBar {}
+}"""
+        |> withName "LibraryConstraint"
+        |> withReferences [ missing ]
+        |> compile
+        |> shouldSucceed
+        |> _.OutputPath.Value
+
+    FSharp """
+module M
+
+let foo (d: Library.D) = d :> Library.IFoo
+let bar (d: Library.D) = d :> Library.IBar
+"""
+    |> withOptions [ $"-r:{libraryPath}"; checkNulls ]
+    |> compile
+    |> shouldSucceed
+
 [<Fact>]
 let ``Interfaces from an assembly resolved by a later #r are reported on an entity obtained before it`` () =
     let missing =

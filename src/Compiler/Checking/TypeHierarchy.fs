@@ -106,9 +106,10 @@ let rec private containsUndecodedTupleTy g ty =
     | TType_fun (domainTy, rangeTy, _) -> containsUndecodedTupleTy g domainTy || containsUndecodedTupleTy g rangeTy
     | _ -> false
 
-/// The interfaces of an IL type definition imported once with its own type parameters, like
+/// The interfaces of an IL type definition imported once with fresh type parameters, like
 /// ImmediateInterfaceTypesOfFSharpTycon for F# types. ValueNone when they must be imported per use.
 /// An unresolvable interface is not cached, so a later assembly load is seen on the next call.
+/// tcref.Typars is not used: forcing it imports the constraint types, which may be unresolvable.
 let private TryGetFormalInterfacesOfILTycon (amap: ImportMap) m scoref (tdef: ILTypeDef) (tcref: TyconRef) =
     match amap.ILInterfacesOfTyconCache.TryGetValue tcref.Stamp with
     | true, cached -> cached
@@ -118,12 +119,13 @@ let private TryGetFormalInterfacesOfILTycon (amap: ImportMap) m scoref (tdef: IL
         if not allImportable then
             ValueNone
         else
-            let formalInst = generalizeTypars tcref.Typars
+            let formalTypars = [ for gp in tdef.GenericParams -> Construct.NewRigidTypar gp.Name m ]
+            let formalInst = generalizeTypars formalTypars
             let intfTys =
                 [ for intf in tdef.Implements.Value -> RescopeAndImportILTypeSkipNullness scoref amap m formalInst intf.Type ]
             let cached =
                 if intfTys |> List.exists (containsUndecodedTupleTy amap.g) then ValueNone
-                else ValueSome intfTys
+                else ValueSome (struct (formalTypars, intfTys))
             amap.ILInterfacesOfTyconCache.TryAdd(tcref.Stamp, cached) |> ignore
             cached
 
@@ -146,13 +148,13 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             let checkNullness = g.langFeatureNullness && g.checkNullness
             // Name resolution can apply an enclosing type's arguments to a nested type that declares fewer
             // type parameters (see MakeNestedType), so the instantiation is not always well formed.
-            let tinstMatchesTypars = List.length tinst = List.length tcref.Typars
+            let tinstMatchesTypars = List.length tinst = List.length tdef.GenericParams
             let formalIntfTys =
                 if checkNullness || not tinstMatchesTypars then ValueNone
                 else TryGetFormalInterfacesOfILTycon amap m scoref tdef tcref
             match formalIntfTys with
-            | ValueSome formalIntfTys ->
-                yield! instTypes (mkTyconRefInst tcref tinst) formalIntfTys
+            | ValueSome (struct (formalTypars, formalIntfTys)) ->
+                yield! instTypes (mkTyparInst formalTypars tinst) formalIntfTys
             | ValueNone ->
                 for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
                     if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then

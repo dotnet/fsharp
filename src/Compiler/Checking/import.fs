@@ -59,7 +59,7 @@ type AssemblyLoader =
 [<Sealed>]
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
-    let ilInterfacesOfTyconCache = ConcurrentDictionary<Stamp, TType list voption>()
+    let ilInterfacesOfTyconCache = ConcurrentDictionary<Stamp, struct (Typars * TType list) voption>()
 
     member _.g = g
 
@@ -67,7 +67,7 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    /// Interfaces declared by an IL type definition, imported with the definition's own type parameters.
+    /// Interfaces declared by an IL type definition, imported with fresh type parameters, one per IL generic parameter.
     /// ValueNone marks a definition whose interfaces must be imported per use.
     member _.ILInterfacesOfTyconCache = ilInterfacesOfTyconCache
 
