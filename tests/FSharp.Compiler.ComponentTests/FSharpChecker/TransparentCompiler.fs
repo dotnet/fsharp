@@ -42,8 +42,9 @@ let internal recordAllEvents groupBy =
 
 let getFileNameKey (_l, (f: string, _p), _) = Path.GetFileName f
 
- // TODO: currently the label for DependecyGraph cache is $"%d{fileSnapshots.Length} files ending with {lastFile}"
-let getDependecyGraphKey (_l, _, _) = failwith "not implemented"
+/// The name of the last file of the graph: the label of a DependencyGraph cache entry is
+/// $"%d{fileSnapshots.Length} files ending with {lastFile}", where lastFile is the path with one directory above it
+let getDependecyGraphKey (label: string, _, _) = Path.GetFileName label
 
 let internal recordEvents groupBy =
     let observe, getEvents = recordAllEvents groupBy
@@ -505,6 +506,31 @@ let ``Files that are not depended on don't invalidate cache part 2`` () =
 
     checkTcIntermediateEvents "FileE.fs" [Weakened; Requested; Started; Finished]
     // checkGraphConstructionEvents "FileE.fs" [Weakened; Requested; Started; Finished]
+
+[<Fact>]
+let ``Dependency graph of the same files is taken from the cache`` () =
+    let project = SyntheticProject.Create(
+        sourceFile "A" [],
+        sourceFile "B" ["A"])
+
+    let observe, check = recordEvents getDependecyGraphKey
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        checkFile "B" expectOk
+        withChecker (observe _.DependencyGraph)
+        // Semantic classification type checks the file again (TcLastFile is not cached),
+        // which takes the dependency graph of the same files at the same versions
+        withProject (fun project checker ->
+            async {
+                let! classification =
+                    checker.GetBackgroundSemanticClassificationForFile(getFilePath project (project.Find "B"), project.GetProjectOptions checker)
+
+                Assert.True(classification.IsSome)
+            })
+    } |> ignore
+
+    // Requested and found, not built again
+    check (fileName "B") [ Requested ]
 
 [<Fact>]
 let ``Changing impl files doesn't invalidate cache when they have signatures`` () =
