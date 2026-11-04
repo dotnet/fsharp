@@ -83,6 +83,8 @@ module Scenario =
             ValueSome(
                 ty.GetProperties(BindingFlags.Public ||| BindingFlags.Instance)
                 |> Seq.filter (fun property -> property.GetIndexParameters().Length = 0 && isPlain property.PropertyType)
+                // Reflection promises no order of the properties, and on .NET Framework two calls for one class gave two orders
+                |> Seq.sortBy (fun property -> property.Name)
                 |> Seq.map (fun property -> struct (property.Name, property.GetValue value))
                 |> Seq.toList
             )
