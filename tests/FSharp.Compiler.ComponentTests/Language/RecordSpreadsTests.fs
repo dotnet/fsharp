@@ -867,7 +867,6 @@ but here has type
                 |> withDiagnostics [
                     Error 3901, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Warning 3897, Line 2, Col 41, Line 2, Col 45, "Spread field 'A: int' from type 'S' shadows an explicitly declared field with the same name."
                 ]
 
             [<Fact>]
@@ -890,7 +889,6 @@ but here has type
                     Error 3901, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Warning 3897, Line 2, Col 41, Line 2, Col 45, "Spread field 'A: int' from type 'S' shadows an explicitly declared field with the same name."
                 ]
 
             [<Fact>]
@@ -911,7 +909,6 @@ but here has type
                 |> withDiagnostics [
                     Error 3901, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
-                    Warning 3897, Line 4, Col 41, Line 4, Col 45, "Spread field 'A: int' from type 'S' shadows an explicitly declared field with the same name."
                 ]
 
             [<Fact>]
@@ -946,7 +943,6 @@ but here has type
                     Error 3901, Line 9, Col 34, Line 9, Col 35, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 11, Col 26, Line 11, Col 27, "This type definition involves a cyclic reference through a spread."
                     Error 3901, Line 17, Col 34, Line 17, Col 35, "This type definition involves a cyclic reference through a spread."
-                    Warning 3897, Line 6, Col 45, Line 6, Col 51, "Spread field 'A: int' from type 'O.S' shadows an explicitly declared field with the same name."
                 ]
 
             [<Fact>]
@@ -1063,8 +1059,8 @@ but here has type
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 37, Line 4, Col 56, Line 4, Col 57, "Duplicate definition of field 'δ'"
                     Warning 3897, Line 4, Col 41, Line 4, Col 45, "Spread field 'α: int' from type 'S' shadows an explicitly declared field with the same name."
+                    Error 37, Line 4, Col 56, Line 4, Col 57, "Duplicate definition of field 'δ'"
                 ]
 
         module Nullability =

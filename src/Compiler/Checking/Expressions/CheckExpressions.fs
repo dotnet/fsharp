@@ -1999,8 +1999,9 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: (Ident * ExplicitOrSpread
                 | [FieldResolution(rfinfo2, showDeprecated)] ->
 
                     // Record the precise resolution of the field for intellisense
-                    let item = Item.RecdField(rfinfo2)
-                    CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad)
+                    if fldExpr.IsExplicit then
+                        let item = Item.RecdField(rfinfo2)
+                        CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad)
 
                     let fref2 = rfinfo2.RecdFieldRef
 
@@ -8163,11 +8164,11 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
         // Check if the overall type is an anon record type and if so raise an copy-update syntax error
         // let f (r: {| A: int; C: int |}) = { r with A = 1; B = 2; C = 3 }
         if isAnonRecdTy cenv.g overallTy || isStructAnonRecdTy cenv.g overallTy then
-            for fldId, _ in flds do
+            for fldId, fld in flds do
                 match TryFindAnonRecdFieldOfType g overallTy fldId.idText with
-                | Some item ->
+                | Some item when fld.IsExplicit ->
                     CallNameResolutionSink cenv.tcSink (fldId.idRange, env.eNameResEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.eAccessRights)
-                | None -> ()
+                | _ -> ()
             let firstPartRange = withStartEnd mWholeExpr.Start (mkPos mWholeExpr.StartLine (mWholeExpr.StartColumn + 1)) mWholeExpr
             // Use the  left { in the expression
             errorR(Error(FSComp.SR.chkCopyUpdateSyntaxInAnonRecords(), firstPartRange))

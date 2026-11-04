@@ -1856,9 +1856,7 @@ let ``Test project 8 all symbols`` () =
 
     allUsesOfAllSymbols
       |> shouldEqual
-              [|("int", "int", "file1", ((4, 19), (4, 22)), ["type"], ["abbrev"]);
-                ("int", "int", "file1", ((4, 31), (4, 34)), ["type"], ["abbrev"]);
-                ("field xxx", "xxx", "file1", ((4, 14), (4, 17)), ["defn"], ["field"]);
+              [|("field xxx", "xxx", "file1", ((4, 14), (4, 17)), ["defn"], ["field"]);
                 ("int", "int", "file1", ((4, 19), (4, 22)), ["type"], ["abbrev"]);
                 ("field yyy", "yyy", "file1", ((4, 25), (4, 28)), ["defn"], ["field"]);
                 ("int", "int", "file1", ((4, 31), (4, 34)), ["type"], ["abbrev"]);
@@ -2393,7 +2391,6 @@ let ``Test Project14 all symbols`` () =
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
-            ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("S", "S", "file1", ((5, 5), (5, 6)), ["defn"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("val p", "p", "file1", ((5, 7), (5, 8)), ["defn"]);
@@ -2551,9 +2548,6 @@ let ``Test Project16 all symbols`` () =
             ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
             ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
             ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
             ("field Field1", "Field1", "sig1", ((16, 10), (16, 16)), ["defn"],
              ["field"]);
             ("field Field2", "Field2", "sig1", ((16, 24), (16, 30)), ["defn"],
@@ -2588,9 +2582,6 @@ let ``Test Project16 all symbols`` () =
             ("F", "F", "sig1", ((16, 4), (16, 5)), ["defn"], ["record"]);
             ("G", "G", "sig1", ((17, 4), (17, 5)), ["defn"], ["union"]);
             ("Impl", "Impl", "sig1", ((2, 7), (2, 11)), ["defn"], ["module"]);
-            ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((14, 25), (14, 28)), ["type"], ["abbrev"]);
             ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
             ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
             ("field Field1", "Field1", "file1", ((13, 10), (13, 16)), ["defn"],
@@ -3775,7 +3766,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
            ("ErasedWithConstructor.Provided.MyType", "file1", ((5, 8), (5, 9)), [ "member" ]) // line 5: let _ = >T<()  (ctor)
            ("ErasedWithConstructor.Provided.MyType.DoNothing", "file1", ((5, 8), (5, 21)), [ "member" ]) // line 5: let _ = >T().DoNothing<()
            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // line 7: type Record = { Field: >int< }
-           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), [ "abbrev" ]) // (repeated)
            ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), [ "field" ]) // line 7: type Record = { >Field<: int }
            ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), [ "record" ]) // line 7: type >Record< = ...
            ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), [ "record" ]) // line 8: let r = { >Record<.Field = 1 }
@@ -5213,7 +5203,6 @@ let ``Test Project40 all symbols`` () =
             ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
             ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
             ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
-            ("string", ((9, 11), (9, 17)), ["abbrev"]);
             ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
             ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
             ("IsItAnA", ((10, 13), (10, 20)), ["member"; "getter"; "funky"]);

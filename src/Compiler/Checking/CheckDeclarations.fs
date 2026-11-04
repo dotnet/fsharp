@@ -2641,6 +2641,7 @@ module EstablishTypeDefinitionCores =
     ///
     /// Used when determining if a structural type supports structural comparison.
     let private GetStructuralElementsOfTyconDefn (cenv: cenv) env tpenv (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) tycon =
+        let cenv = { cenv with tcSink = TcResultsSink.NoSink }
         let thisTyconRef = mkLocalTyconRef tycon
         let g = cenv.g
         let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars) env
@@ -2691,27 +2692,35 @@ module EstablishTypeDefinitionCores =
                       yield (ty, m)
 
           | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
-              let tcField (SynField (fieldType = ty; range = m)) =
-                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  (tyR, m), ignore, ignore
+              let fieldsAndSpreads =
+                  fieldsAndSpreads
+                  |> List.choose (fun fieldOrSpread ->
+                      match fieldOrSpread with
+                      | SynFieldOrSpread.Field (SynField (idOpt = Some fieldId; fieldType = ty; range = m)) ->
+                          let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                          Some (ExplicitOrSpread.Explicit (fieldId.idText, (tyR, m)))
 
-              let tcSpread (SynTypeSpread (ty = ty; range = m)) =
-                  let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                      | SynFieldOrSpread.Field (SynField (idOpt = None)) -> None
 
+                      | SynFieldOrSpread.Spread (SynTypeSpread (ty = ty; range = m)) ->
+                          let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                          Some (ExplicitOrSpread.Spread (spreadSrcTy, m)))
+
+              let fieldOfExplicit (fieldName, fieldTyAndRange) = fieldName, fieldTyAndRange, ignore, ignore
+
+              let fieldsOfSpread (spreadSrcTy, m) =
                   if isRecdTy g spreadSrcTy then
                       spreadSrcTys.Add spreadSrcTy
-                      ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
-                      |> List.choose (function
-                          | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore, ignore)
-                          | _ -> None)
-                  else
-                      match tryDestAnonRecdTy g spreadSrcTy with
-                      | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> (anonInfo.SortedNames[i], (ty, m), ignore, ignore))
-                      | ValueNone -> []
+
+                  Spreads.fieldItemsOfSpreadSrcTy cenv.nameResolver m ad spreadSrcTy
+                  |> List.choose (function
+                      | Item.RecdField field -> Some (field.RecdField.Id.idText, (field.FieldType, m), ignore, ignore)
+                      | Item.AnonRecdField (anonInfo, tys, i, _) -> Some (anonInfo.SortedNames[i], (tys[i], m), ignore, ignore)
+                      | _ -> None)
 
               // We must apply the spread shadowing logic here
               // to get the correct set of field types.
-              yield! fieldsAndSpreads |> Spreads.Types.Records.check ignore tcField tcSpread
+              yield! fieldsAndSpreads |> Spreads.Types.Records.check fieldOfExplicit fieldsOfSpread
 
           | _ ->
               () ], spreadSrcTys
@@ -3740,34 +3749,34 @@ module EstablishTypeDefinitionCores =
                     structLayoutAttributeCheck true  // these are allowed for records
                     recordExtendedLayoutAttributeCheck()
 
-                    let check pass =
-                        let firstPass = pass = FirstPass
-                        let recdFields =
-                            let tcField synField =
-                                let field = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv addFixup synField |> Option.get
-                                let errorAmbiguousShadowing () = if firstPass then errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
-                                let infoExplicitShadowing () =
-                                    if firstPass then
-                                        let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader thisTyconRef field
-                                        informationalWarning (Error (FSComp.SR.tcRecordExplicitFieldShadowsSpreadField fmtedSpreadField, field.Id.idRange))
+                    let checkedFieldsAndSpreads =
+                        fieldsAndSpreads
+                        |> List.choose (fun fieldOrSpread ->
+                            match fieldOrSpread with
+                            | SynFieldOrSpread.Field synField ->
+                                TcRecdUnionAndEnumDeclarations.TcNamedFieldDecl cenv envinner innerParent false tpenv addFixup synField
+                                |> Option.map ExplicitOrSpread.Explicit
 
-                                field, errorAmbiguousShadowing, infoExplicitShadowing
+                            | SynFieldOrSpread.Spread (SynTypeSpread (ty = ty; range = m)) ->
+                                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
 
-                            let tcSpread (SynTypeSpread (ty = ty; range = m)) =
-                                let mTy = ty.Range
-                                let (spreadSrcTy, _tpenv), error =
-                                    try TcType cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv ty, false with
+                                let spreadSrcTy =
+                                    try
+                                        let spreadSrcTy, _ = TcType cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
+                                        ValueSome spreadSrcTy
+                                    with
                                     | RecoverableException e ->
-                                        if firstPass then
-                                            errorRecovery e ty.Range
-                                        (g.obj_ty_ambivalent, tpenv), true
+                                        errorRecovery e ty.Range
+                                        ValueNone
+
+                                match spreadSrcTy with
+                                | ValueNone -> None
+                                | ValueSome spreadSrcTy ->
 
                                 let spreadSrcTyIsNullable = g.checkNullness && (nullnessOfTy g spreadSrcTy).Evaluate() = NullnessInfo.WithNull
-                                let spreadSrcTyIsRecd = error || isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy
+                                let spreadSrcTyIsRecd = isRecdTy g spreadSrcTy || isAnonRecdTy g spreadSrcTy
 
-                                let isValidSpreadSrcTy = not spreadSrcTyIsNullable && spreadSrcTyIsRecd
-
-                                if isValidSpreadSrcTy then
+                                if spreadSrcTyIsRecd && not spreadSrcTyIsNullable then
                                     let spreadSrcTy =
                                         tryAppTy g spreadSrcTy
                                         |> ValueOption.map (fun (tcref, tinst) ->
@@ -3776,99 +3785,63 @@ module EstablishTypeDefinitionCores =
                                             TType_app (tcref, newTinst, g.knownWithoutNull))
                                         |> ValueOption.defaultValue spreadSrcTy
 
-                                    let recordFieldsFromSpread =
-                                        if isRecdTy g spreadSrcTy then
-                                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
-                                        else
-                                            tryDestAnonRecdTy g spreadSrcTy
-                                            |> ValueOption.map (fun (anonInfo, tys) ->
-                                                anonInfo.SortedIds
-                                                |> List.ofArray
-                                                |> List.mapi (fun i id -> Item.AnonRecdField (anonInfo, tys, i, id.idRange)))
-                                            |> ValueOption.defaultValue []
-
-                                    recordFieldsFromSpread
-                                    |> List.choose (fun field ->
-                                        match field with
-                                        | Item.RecdField fieldInfo ->
-                                            // Update the field ID's range to be that of the spread.
-                                            let syntheticId = ident (fieldInfo.RecdField.Id.idText, mTy)
-                                            let fieldTy = fieldInfo.FieldType
-                                            let vis =
-                                                let vis, _ = ComputeAccessAndCompPath g envinner None mTy None None innerParent
-                                                combineAccess vis thisTyconRef.TypeReprAccessibility
-
-                                            let recdField =
-                                                { fieldInfo.RecdField with
-                                                    rfield_id = syntheticId
-                                                    rfield_type = fieldTy
-                                                    rfield_access = vis }
-
-                                            let warnAmbiguousShadowing () =
-                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
-                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
-                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
-
-                                            let infoSpreadShadowing () =
-                                                let fmtedSpreadField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader fieldInfo.TyconRef recdField
-                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
-                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
-
-                                            Some (fieldInfo.RecdField.Id.idText, recdField, warnAmbiguousShadowing, infoSpreadShadowing)
-
-                                        | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
-                                            let fieldId =
-                                                let orig = anonInfo.SortedIds[fieldIndex]
-                                                ident (orig.idText, m)
-
-                                            let ty = tys[fieldIndex]
-
-                                            let field =
-                                                let stat = false
-                                                let konst = None
-                                                let generated = false
-                                                let mut = false
-                                                let volatile = false
-                                                let pattribs = []
-                                                let fattribs = []
-                                                let vis = None
-                                                TcRecdUnionAndEnumDeclarations.MakeRecdFieldSpec g envinner innerParent (stat, konst, ty, pattribs, fattribs, fieldId, generated, mut, volatile, XmlDoc.Empty, vis, mTy)
-
-                                            let warnAmbiguousShadowing () =
-                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
-                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
-                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
-                                                warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (fmtedSpreadField, fmtedSpreadSrcTy), m))
-
-                                            let infoSpreadShadowing () =
-                                                let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
-                                                let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig envinner.DisplayEnv ([], fieldId.idText, typars, [], ty))
-                                                let fmtedSpreadSrcTy = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
-                                                informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (fmtedSpreadField, fmtedSpreadSrcTy), m))
-
-                                            Some (fieldId.idText, field, warnAmbiguousShadowing, infoSpreadShadowing)
-
-                                        | _ -> None)
-                                elif not firstPass then
-                                    []
+                                    Some (ExplicitOrSpread.Spread (spreadSrcTy, m))
                                 else
                                     if not ty.IsFromParseError then
                                         if not spreadSrcTyIsRecd then
                                             errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceMustBeRecord (), m))
                                         elif spreadSrcTyIsNullable then
                                             errorR (Error (FSComp.SR.tcRecordTypeDefinitionSpreadSourceCannotBeNullable (), m))
-                                    []
 
-                            let checkSpreadsLanguageFeature m =
-                                if firstPass then
-                                    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
+                                    None)
 
-                            fieldsAndSpreads |> Spreads.Types.Records.check checkSpreadsLanguageFeature tcField tcSpread
+                    let hasSpreads = checkedFieldsAndSpreads |> List.exists _.IsSpread
 
-                        writeFakeRecordFieldsToSink recdFields
-                        CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
+                    let expandFields pass =
+                        let isFinalPass = pass = SecondPass || not hasSpreads
+                        let stringOfField = NicePrint.stringOfRecdField envinner.DisplayEnv cenv.infoReader thisTyconRef
 
-                        let data =
+                        let fieldOfExplicit (field: RecdField) =
+                            let errorAmbiguousShadowing () =
+                                if isFinalPass then
+                                    errorR (Duplicate ("field", field.Id.idText, field.Id.idRange))
+
+                            let infoExplicitShadowing () =
+                                if isFinalPass then
+                                    informationalWarning (Error (FSComp.SR.tcRecordExplicitFieldShadowsSpreadField (stringOfField field), field.Id.idRange))
+
+                            field.Id.idText, field, errorAmbiguousShadowing, infoExplicitShadowing
+
+                        let fieldsOfSpread (spreadSrcTy, m) =
+                            let fmtedSpreadSrcTy () = NicePrint.stringOfTy envinner.DisplayEnv spreadSrcTy
+
+                            let mkSpreadField (fieldId: Ident) ty isMutable pattribs fattribs xmldoc =
+                                TcRecdUnionAndEnumDeclarations.MakeRecdFieldSpec g envinner innerParent (false, None, ty, pattribs, fattribs, fieldId.MakeSynthetic(), false, isMutable, false, xmldoc, None, m)
+
+                            Spreads.fieldItemsOfSpreadSrcTy cenv.nameResolver m ad spreadSrcTy
+                            |> List.choose (fun fieldItem ->
+                                match fieldItem with
+                                | Item.RecdField fieldInfo ->
+                                    let field = fieldInfo.RecdField
+                                    Some (mkSpreadField field.Id fieldInfo.FieldType field.IsMutable field.PropertyAttribs field.FieldAttribs field.XmlDoc)
+                                | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) ->
+                                    Some (mkSpreadField anonInfo.SortedIds[fieldIndex] tys[fieldIndex] false [] [] XmlDoc.Empty)
+                                | _ -> None)
+                            |> List.map (fun field ->
+                                let warnAmbiguousShadowing () =
+                                    if isFinalPass then
+                                        warning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsExplicitField (stringOfField field, fmtedSpreadSrcTy ()), m))
+
+                                let infoSpreadShadowing () =
+                                    if isFinalPass then
+                                        informationalWarning (Error (FSComp.SR.tcRecordTypeDefinitionSpreadFieldShadowsSpreadField (stringOfField field, fmtedSpreadSrcTy ()), m))
+
+                                field.Id.idText, field, warnAmbiguousShadowing, infoSpreadShadowing)
+
+                        checkedFieldsAndSpreads |> Spreads.Types.Records.check fieldOfExplicit fieldsOfSpread
+
+                    let mkRepr recdFields =
+                        TFSharpTyconRepr
                             {
                                 fsobjmodel_cases = Construct.MakeUnionCases []
                                 fsobjmodel_kind = TFSharpRecord
@@ -3876,19 +3849,17 @@ module EstablishTypeDefinitionCores =
                                 fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
                             }
 
-                        let repr = TFSharpTyconRepr data
-                        repr, None, NoSafeInitInfo
+                    let recdFields = expandFields FirstPass
+                    writeFakeRecordFieldsToSink recdFields
+                    CallEnvSink cenv.tcSink (mRepr, envinner.NameEnv, ad)
 
                     let recheck =
-                        if fieldsAndSpreads |> List.exists (function SynFieldOrSpread.Spread _ -> true | SynFieldOrSpread.Field _ -> false) then
-                            fun () ->
-                                let repr, _, _ = check SecondPass
-                                tycon.entity_tycon_repr <- repr
+                        if hasSpreads then
+                            fun () -> tycon.entity_tycon_repr <- mkRepr (expandFields SecondPass)
                         else
                             ignore
 
-
-                    check FirstPass, recheck
+                    (mkRepr recdFields, None, NoSafeInitInfo), recheck
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) ->
                     let s = (s :?> ILType)
@@ -4443,6 +4414,8 @@ module EstablishTypeDefinitionCores =
             ]
 
         // Check for cyclic spreads.
+        let tyconsInSpreadCycles = HashSet<Stamp> ()
+
         do
             if cenv.g.langVersion.SupportsFeature LanguageFeature.RecordSpreads then
                 let (|PotentiallyRecursiveTycon|_|) ty =
@@ -4469,7 +4442,11 @@ module EstablishTypeDefinitionCores =
                     ]
 
                 let graph = Graph<Tycon, Stamp> (_.Stamp, tycons, edges)
-                graph.IterateCycles (fun path -> errorR (Error (FSComp.SR.tcTypeDefinitionIsCyclicThroughSpreads (), (List.head path).Range)))
+                graph.IterateCycles (fun path ->
+                    errorR (Error (FSComp.SR.tcTypeDefinitionIsCyclicThroughSpreads (), (List.head path).Range))
+
+                    for tycon in path do
+                        tyconsInSpreadCycles.Add tycon.Stamp |> ignore)
 
         let scSet = TyconConstraintInference.InferSetOfTyconsSupportingComparable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
         let seSet = TyconConstraintInference.InferSetOfTyconsSupportingEquatable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
@@ -4532,8 +4509,8 @@ module EstablishTypeDefinitionCores =
                 [
                     for _, tyconOpt, _, (_, _, recheck) in passOne |> MutRecShapes.collectTycons do
                         match tyconOpt with
-                        | Some tycon -> tycon.Stamp, recheck
-                        | None -> ()
+                        | Some tycon when not (tyconsInSpreadCycles.Contains tycon.Stamp) -> tycon.Stamp, recheck
+                        | _ -> ()
                 ]
 
             let spreadDependencies =
