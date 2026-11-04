@@ -1836,8 +1836,20 @@ module Query =
 
         result
 
+    /// Whether the translation turns the elements of this type into anonymous objects, and builds them again from those:
+    /// tuples and records, of a class or of a struct, groups of such elements, and sequences of any of these. Only the
+    /// type arguments of the sequences and groups are followed, so that a type which holds a sequence of itself ends
+    /// the search at once.
+    let rec IsConvertedElement (ty: Type) =
+        Microsoft.FSharp.Reflection.FSharpType.IsTuple ty
+        || isPartiallyImmutableRecord ty
+        || ((IsIEnumerableTy ty || IsIQueryableTy ty) && IsConvertedElement (ty.GetGenericArguments().[0]))
+        || (ty.IsGenericType
+            && ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>
+            && IsConvertedElement (ty.GetGenericArguments().[1]))
+
     /// A tuple or record of a class, which the translation builds anew from the elements it produces each time one
-    /// is asked for, and a sequence of them, which it selects anew over those elements
+    /// is asked for, and a sequence of converted elements, which it selects anew over those elements
     let rec IsRebuiltObject (ty: Type) =
         if ty.IsValueType then
             // A struct holds an object that is rebuilt when one of its parts is one
@@ -1849,7 +1861,7 @@ module Query =
         else
             Microsoft.FSharp.Reflection.FSharpType.IsTuple ty
             || isPartiallyImmutableRecord ty
-            || ((IsIEnumerableTy ty || IsIQueryableTy ty) && IsRebuiltObject (ty.GetGenericArguments().[0]))
+            || ((IsIEnumerableTy ty || IsIQueryableTy ty) && IsConvertedElement (ty.GetGenericArguments().[0]))
 
     /// Whether the property is a part of the record or tuple it is read from, and not a member that computes something
     /// from it: such a member gets the object itself

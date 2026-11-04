@@ -378,6 +378,29 @@ let private consumers () =
           (fun _ -> true)
       |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
 
+      // The groups of a nested query are built anew from the groups of the provider, like its tuples
+      Scenario.value
+          "exists with a nested query of groups, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let groups = query { for o in db.Orders do where (o.CustomerId = c.Id); groupValBy (o.Id, o.Total) o.CustomerId }
+                  exists (obj.ReferenceEquals(groups, groups))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.RuntimeHelperCall "new Grouping`2"; Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.value
+          "exists with a nested query of struct tuples, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let orders = query { for o in db.Orders do where (o.CustomerId = c.Id); select (struct (o.Id, o.Total)) }
+                  exists (obj.ReferenceEquals(orders, orders))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
       Scenario.value
           "all after a tuple select, the tuple compared with itself"
           (fun db -> query { for c in db.Customers do select (c.Name, c.Age) into t; all (obj.ReferenceEquals(t, t)) })
