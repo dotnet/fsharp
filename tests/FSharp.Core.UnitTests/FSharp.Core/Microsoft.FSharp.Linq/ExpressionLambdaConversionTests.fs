@@ -572,6 +572,90 @@ let ``String made by a call is made at each use that only looks at it`` () =
     Assert.False(hasBlock lambda)
     Assert.True(lambda.Compile().Invoke "ab")
 
+[<Fact>]
+let ``String made by a call is one string where a method of the string hands it on`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s ->
+                let upper = s.ToUpperInvariant()
+                obj.ReferenceEquals(upper.Substring(0), upper.Substring(0))) @>
+
+    // Substring 0 gives the string it is called on
+    Assert.True(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is one string where Clone hands it on`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s ->
+                let upper = s.ToUpperInvariant()
+                obj.ReferenceEquals(upper.Clone(), upper.Clone())) @>
+
+    Assert.True(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is one string for every element of a nested lambda that hands it on`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, Collections.Generic.IEnumerable<string>>(fun s ->
+                let upper = s.ToUpperInvariant()
+                System.Linq.Enumerable.Select([| 1; 2 |], Func<int, string>(fun _ -> upper))) @>
+
+    let items = Seq.toArray (lambda.Compile().Invoke "ab")
+
+    Assert.True(hasBlock lambda)
+    Assert.True(obj.ReferenceEquals(items.[0], items.[1]))
+
+[<Fact>]
+let ``String made by a call is made for every element of a nested lambda that only looks at it`` () =
+    let names = Collections.Generic.List<string>([ "a"; "AB"; "b"; "AB" ])
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, int>(fun s ->
+                let upper = s.ToUpperInvariant()
+                System.Linq.Enumerable.Count(names, Func<string, bool>(fun n -> n.StartsWith(upper)))) @>
+
+    Assert.False(hasBlock lambda)
+    Assert.Equal(2, lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is one string where an operator hands it on`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s ->
+                let upper = s.ToUpperInvariant()
+                obj.ReferenceEquals(upper + "", upper + "")) @>
+
+    // Adding an empty string gives the string it is added to
+    Assert.True(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is made at each use where a method gives only a number or a boolean of a string made from it`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, bool>(fun s ->
+                let upper = s.ToUpperInvariant()
+                upper.Trim().Length > 1 && upper.Substring(1).Length < 9 && upper.StartsWith "A") @>
+
+    Assert.False(hasBlock lambda)
+    Assert.True(lambda.Compile().Invoke "ab")
+
+[<Fact>]
+let ``String made by a call is one string where one use hands it on and another only looks at it`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<string, string * bool>(fun s ->
+                let upper = s.ToUpperInvariant()
+                upper, upper.StartsWith "A") @>
+
+    // Only one place can tell one object from another
+    Assert.False(hasBlock lambda)
+    Assert.Equal(("AB", true), lambda.Compile().Invoke "ab")
+
 /// A parameter whose name counts how often it is read
 type CountedPerson() =
     let mutable nameReads = 0
