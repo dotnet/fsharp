@@ -1322,6 +1322,22 @@ module PrintTypes =
              sepListL emptyL (layoutConstraintWithInfo denv env cx)
         | [] -> emptyL
 
+    let prettyLayoutOfTyparConstraint denv (tp: Typar, tpc) =
+        // Attach the constraint to a copy of the typar so inference variables in it get pretty names.
+        // A member constraint only prints the typar if it is in the support, otherwise its copy must not claim a name.
+        let fakeId, fakeIsCompGen =
+            match tpc with
+            | TyparConstraint.MayResolveMember(traitInfo, _) when not (traitInfo.SupportTypes |> List.exists (typeEquiv denv.g (mkTyparTy tp))) ->
+                SyntaxTreeOps.mkSynId tp.Range unassignedTyparName, false
+            | _ -> tp.typar_id, tp.IsCompilerGenerated
+        let fakeTypar = Construct.NewTypar (tp.Kind, tp.Rigidity, SynTypar(fakeId, tp.StaticReq, fakeIsCompGen), false, TyparDynamicReq.No, [], false, false)
+        fakeTypar.SetConstraints (instTyparConstraints [tp, mkTyparTy fakeTypar] [tpc])
+        let ty, cxs = PrettyTypes.PrettifyType denv.g (mkTyparTy fakeTypar)
+        let prettyTp = destTyparTy denv.g ty
+        cxs
+        |> List.filter (fun (tp, _) -> typarEq tp prettyTp)
+        |> layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0
+
     let prettyLayoutOfTypeNoConstraints denv ty =
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
         layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
@@ -2968,9 +2984,9 @@ let isGeneratedUnionCaseField pos f = TastDefinitionPrinting.isGeneratedUnionCas
 
 let isGeneratedExceptionField pos f = TastDefinitionPrinting.isGeneratedExceptionField pos f
 
-let richTextOfTyparConstraint denv tpc = richTextOfTyparConstraints denv [tpc]
+let richTextOfTyparConstraint denv tpc = tpc |> PrintTypes.prettyLayoutOfTyparConstraint denv |> toRichText
 
-let stringOfTyparConstraint denv tpc = stringOfTyparConstraints denv [tpc]
+let stringOfTyparConstraint denv tpc = (richTextOfTyparConstraint denv tpc).Text
 
 let richTextOfTy denv x = x |> PrintTypes.layoutType denv |> toRichText
 
