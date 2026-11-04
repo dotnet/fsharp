@@ -30,10 +30,9 @@
     <PackageVersion Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="$(MicrosoftCommonLanguageServerProtocolFrameworkVersion)" />
     <PackageVersion Include="Microsoft.DiaSymReader.PortablePdb" Version="1.6.0" />
     <PackageVersion Include="Microsoft.DotNet.NuGetRepack.Tasks" Version="$(MicrosoftDotNetNuGetRepackTasksVersion)" />
-    <!-- Raised from 8.0.0 to 10.0.0: OpenTelemetry (in test/VS projects) pulls Microsoft.Extensions.Logging 10.0.0,
-         which requires Microsoft.Extensions.DependencyInjection >= 10.0.0. FSharp.Compiler.LanguageServer (net8)
+    <!-- Match VisualStudio.Extensibility.Sdk's minimum dependency. FSharp.Compiler.LanguageServer (net8)
          keeps 8.0.0 via a VersionOverride. -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.9.317" />
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
@@ -58,8 +57,8 @@
     <PackageVersion Include="Microsoft.VisualStudio.Copilot" Version="18.11.573" />
     <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.Editor" Version="$(VisualStudioEditorPackagesVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40313" />
-    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.14.40313" />
+    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Build" Version="18.5.38846-Preview" />
+    <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="18.5.38846-Preview" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.SourceGenerator" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(VisualStudioEditorPackagesVersion)" />
@@ -78,7 +77,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
-    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
+    <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="18.5.23" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />

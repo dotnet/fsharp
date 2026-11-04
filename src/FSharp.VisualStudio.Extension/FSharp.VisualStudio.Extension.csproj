@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net8.0-windows</TargetFramework>
-		<!-- Main reason for this is to be able to build on ubuntu - for testing purposes -->
-		<!-- Not sure if VS Extensibility actually works on non-Windows platforms, but we mostly care about building it here -->
-		<TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0</TargetFramework>
+		<TargetFramework>net10.0-windows8.0</TargetFramework>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<Nullable>enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
@@ -18,8 +16,7 @@
 		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" />
 		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" />
-		<!-- Pinned below the central version to match this VS extension's 17.13 tooling baseline. -->
-		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.13.2" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" />
 		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" Version="0.1.718-beta" />
 		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" Version="0.1.718-beta" />
 		<PackageReference Include="OpenTelemetry" Version="1.11.2" />

@@ -9,7 +9,7 @@
     <MoreInfo>https://learn.microsoft.com/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
   <Installation Experimental="true" ExtensionType="VSSDK+VisualStudio.Extensibility">
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[|%CurrentProject%;GetVSGeneralVersion|,)">
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.5,)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
   </Installation>
@@ -62,7 +62,6 @@
 
   </Assets>
   <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" DisplayName="Visual Studio core editor" />
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[18.5,)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
 </PackageManifest>
-
