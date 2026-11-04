@@ -639,40 +639,89 @@ module LeafExpressionConverter =
     let makesNewObject (expr: Expression) =
         not expr.Type.IsValueType && (expr :? MethodCallExpression || expr :? BinaryExpression)
 
-    /// Finds the uses of a variable that can tell one object from another of the same value: everything but the object
-    /// being called on, or passed to, a method of a string, number or date, and the operands of an operator of one.
+    /// Whether the expression may give the object that the variable holds: the variable, a method or an operator of a
+    /// string, number or date that gives an object, which can be the one it got ('Substring 0', 'Trim' and '+ ""' do give
+    /// it back), and a choice or a block of those
+    let rec mayGiveObjectOf (variable: ParameterExpression) (expr: Expression) =
+        match expr with
+        | null -> false
+        | :? ParameterExpression as parameter -> obj.ReferenceEquals (parameter, variable)
+        | :? MethodCallExpression as call when isPlainValueType call.Method.DeclaringType && not call.Type.IsValueType ->
+            mayGiveObjectOf variable call.Object || call.Arguments |> Seq.exists (mayGiveObjectOf variable)
+        | :? BinaryExpression as operation when
+            not operation.Type.IsValueType
+            && (match operation.Method with
+                | null -> false
+                | operator -> isPlainValueType operator.DeclaringType)
+            ->
+            mayGiveObjectOf variable operation.Left || mayGiveObjectOf variable operation.Right
+        | :? UnaryExpression as conversion when isUpcast conversion -> mayGiveObjectOf variable conversion.Operand
+        | :? ConditionalExpression as choice -> mayGiveObjectOf variable choice.IfTrue || mayGiveObjectOf variable choice.IfFalse
+        | :? BlockExpression as block -> mayGiveObjectOf variable block.Result
+        | _ -> false
+
+    /// Finds where the object of a variable goes to a place that can tell one object from another of the same value, and
+    /// counts those places. A method, an operator or a member of a string, number or date only looks at what the object
+    /// holds when it gives a number or a boolean; when it gives an object, that can be the one it got, and then the
+    /// place is where that object goes in turn. Every other place can tell: a method of the user's, a constructor, an
+    /// argument of 'ReferenceEquals', the result of a lambda, a variable.
     type ObjectIdentityUses (variable: ParameterExpression) =
         inherit ExpressionVisitor ()
 
-        member val Found = false with get, set
+        let parents = Stack<Expression> ()
+        let mutable lambdas = 0
 
-        member private this.VisitOperands (operands: Expression list) =
-            for operand in operands do
-                match operand with
-                | null -> ()
-                | operand when obj.ReferenceEquals (operand, variable) -> ()
-                | operand -> this.Visit operand |> ignore
+        /// The number of places that can tell one object from another
+        member val Places = 0 with get, set
+        /// One of them is in a lambda inside the scope of the variable, which runs as often as it is called
+        member val PlaceInLambda = false with get, set
 
-        override this.VisitMethodCall (node: MethodCallExpression) : Expression =
-            if isPlainValueType node.Method.DeclaringType then
-                this.VisitOperands (node.Object :: List.ofSeq node.Arguments)
-                node :> Expression
-            else
-                base.VisitMethodCall node
+        member private this.Place (count: int) =
+            this.Places <- this.Places + count
 
-        override this.VisitBinary (node: BinaryExpression) : Expression =
-            match node.Method with
-            | null -> base.VisitBinary node
-            | operator when isPlainValueType operator.DeclaringType ->
-                this.VisitOperands [ node.Left; node.Right ]
-                node :> Expression
-            | _ -> base.VisitBinary node
+            if lambdas > 0 then
+                this.PlaceInLambda <- true
 
-        override this.VisitParameter (node: ParameterExpression) : Expression =
-            if obj.ReferenceEquals (node, variable) then
-                this.Found <- true
+        /// Whether the object only goes on to the parent, or is only looked at there
+        member private this.GoesOn (parent: Expression) (child: Expression) =
+            match parent with
+            | :? MethodCallExpression as call -> isPlainValueType call.Method.DeclaringType
+            | :? BinaryExpression as operation ->
+                match operation.Method with
+                | null -> false
+                | operator -> isPlainValueType operator.DeclaringType
+            | :? MemberExpression as read -> isPlainValueType read.Member.DeclaringType
+            | :? UnaryExpression as conversion -> isUpcast conversion
+            | :? ConditionalExpression as choice -> not (obj.ReferenceEquals (choice.Test, child))
+            | :? BlockExpression -> true
+            | _ -> false
 
-            node :> Expression
+        override this.Visit (node: Expression) : Expression =
+            match node with
+            | null -> null
+            | _ ->
+                if mayGiveObjectOf variable node then
+                    if parents.Count = 0 then
+                        this.Place 1
+                    else
+                        let parent = parents.Peek ()
+
+                        if not (this.GoesOn parent node) then
+                            match parent with
+                            // The object is kept in a variable, which can be used any number of times
+                            | :? BinaryExpression as assignment when assignment.NodeType = ExpressionType.Assign -> this.Place 2
+                            | _ -> this.Place 1
+
+                parents.Push node
+                let visited = base.Visit node
+                parents.Pop () |> ignore
+                visited
+
+        override this.VisitLambda<'T> (node: Expression<'T>) : Expression =
+            lambdas <- lambdas + 1
+            let visited = base.VisitLambda node
+            lambdas <- lambdas - 1
+            visited
 
     /// Convert F# quotations to LINQ expression trees.
     /// A more polished LINQ-Quotation translator will be published
@@ -1069,12 +1118,13 @@ module LeafExpressionConverter =
                         let replaced = reads.Visit bodyP
 
                         if isReadValue then
-                            // The object is made anew at every use: with more than one, it takes uses that look at what
-                            // it holds, and nothing that can tell one object from another
+                            // The object is made anew at every use, and a lambda inside the scope makes it as often as it
+                            // runs: it can go to one place that tells one object from another, outside a lambda, and
+                            // to any number of places that only look at what it holds
                             let identity = ObjectIdentityUses vP
                             identity.Visit bodyP |> ignore
 
-                            if reads.Count <= 1 || not identity.Found then
+                            if identity.Places = 0 || (identity.Places = 1 && not identity.PlaceInLambda) then
                                 ValueSome (substituteValue ())
                             else
                                 ValueNone
