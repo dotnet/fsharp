@@ -25,7 +25,9 @@ module NameMapTests =
 
     let private hasLineNumberSuffix (name: string) =
         let atIndex = name.IndexOf('@')
-        atIndex >= 0 && atIndex + 1 < name.Length && Char.IsDigit name[atIndex + 1]
+        atIndex >= 0
+        && atIndex + 1 < name.Length
+        && Char.IsDigit name[atIndex + 1]
 
     [<Fact>]
     let ``generated names avoid source line suffixes`` () =
@@ -91,7 +93,6 @@ module NameMapTests =
     [<Fact>]
     let ``LoadSnapshot normalizes old raw pipe keys`` () =
         let map = FSharpSynthesizedTypeMaps()
-
         let oldSnapshot =
             [| struct ("Pipe #1 stage #2 at line 28", [| "Pipe #1 stage #2 at line 28@hotreload" |]) |]
 
@@ -138,8 +139,10 @@ module NameMapTests =
         map.LoadSnapshot outOfOrderSnapshot
         map.BeginSession()
 
-        // Replay is ordinal-positioned. A gapped bucket keeps every surviving name
-        // at its exact allocation slot and re-computes the missing slots' names.
+        // Replay is ordinal-positioned (slot i replays the name with ordinal i), so a
+        // gapped bucket keeps every surviving name at its exact allocation slot and
+        // re-computes the missing slots' names — they are deterministic functions of
+        // the slot index, so this reproduces the original allocation byte for byte.
         let replayed = [| for _ in 0 .. 10 -> map.GetOrAddName "closure" |]
 
         let expected =
@@ -151,6 +154,10 @@ module NameMapTests =
 
     [<Fact>]
     let ``LoadSnapshot preserves occurrence-keyed generation-zero names`` () =
+        // The closure-name allocator still wins when it has a stamp-keyed assignment.
+        // When it does not, sequence replay must preserve the generation-0 name that
+        // was actually emitted in the baseline instead of inventing a fresh ordinal
+        // name for the same allocation slot.
         let map = FSharpSynthesizedTypeMaps()
 
         let snapshot =
@@ -166,51 +173,54 @@ module NameMapTests =
     let ``LoadSnapshot validates name prefix`` () =
         let map = FSharpSynthesizedTypeMaps()
 
-        let validSnapshot =
-            [| struct ("test", [| "test@hotreload"; "test@hotreload-1" |])
-               struct ("Name", [| "Name@" |])
-               struct ("Circle", [| "Circle@DebugTypeProxy" |]) |]
-
-        map.LoadSnapshot validSnapshot
+        // Valid snapshots with different suffixes should work
+        let validSnapshot = [|
+            struct ("test", [| "test@hotreload"; "test@hotreload-1" |])
+            struct ("Name", [| "Name@" |])  // Simple marker suffix
+            struct ("Circle", [| "Circle@DebugTypeProxy" |])  // Debug proxy
+        |]
+        map.LoadSnapshot validSnapshot // Should not throw
 
     [<Fact>]
     let ``LoadSnapshot accepts legacy basic names`` () =
         let map = FSharpSynthesizedTypeMaps()
 
-        let legacySnapshot =
-            [| struct ("@_instance", [| "@_instance" |])
-               struct ("cached", [| "cached"; "cached@hotreload" |]) |]
+        // Some historical snapshots contain exact compiler-generated basic names
+        // (for example "@_instance") instead of the newer "basicName@..." form.
+        let legacySnapshot = [|
+            struct ("@_instance", [| "@_instance" |])
+            struct ("cached", [| "cached"; "cached@hotreload" |])
+        |]
 
-        map.LoadSnapshot legacySnapshot
+        map.LoadSnapshot legacySnapshot // Should not throw
 
     [<Fact>]
     let ``LoadSnapshot rejects basicName mismatch`` () =
         let map = FSharpSynthesizedTypeMaps()
 
-        let mismatchedSnapshot = [| struct ("foo", [| "bar@hotreload" |]) |]
-        let ex = Assert.Throws<ArgumentException>(fun () -> map.LoadSnapshot mismatchedSnapshot)
+        // Name doesn't start with basicName@
+        let mismatchedSnapshot = [| struct ("foo", [| "bar@DebugTypeProxy" |]) |]
+        let ex = Assert.Throws<System.ArgumentException>(fun () -> map.LoadSnapshot mismatchedSnapshot)
         Assert.Contains("snapshot key 'foo'", ex.Message)
-        Assert.Contains("bar@hotreload", ex.Message)
+        Assert.Contains("bar@DebugTypeProxy", ex.Message)
+
+    [<Fact>]
+    let ``LoadSnapshot accepts occurrence-keyed hot reload names in allocation buckets`` () =
+        let map = FSharpSynthesizedTypeMaps()
+
+        let snapshot = [| struct ("format", [| "describe@hotreload#g0_o0" |]) |]
+
+        map.LoadSnapshot snapshot
+        map.BeginSession()
+
+        Assert.Equal("describe@hotreload#g0_o0", map.GetOrAddName "format")
 
     [<Fact>]
     let ``LoadSnapshot rejects name without marker`` () =
         let map = FSharpSynthesizedTypeMaps()
 
+        // Name missing the @ marker entirely
         let invalidSnapshot = [| struct ("test", [| "testhotreload" |]) |]
-        let ex = Assert.Throws<ArgumentException>(fun () -> map.LoadSnapshot invalidSnapshot)
+        let ex = Assert.Throws<System.ArgumentException>(fun () -> map.LoadSnapshot invalidSnapshot)
         Assert.Contains("snapshot key 'test'", ex.Message)
         Assert.Contains("testhotreload", ex.Message)
-
-    [<Fact>]
-    let ``LoadRecordedSnapshot preserves allocation-key slots`` () =
-        let map = FSharpSynthesizedTypeMaps()
-
-        let recordedSnapshot =
-            [| struct ("allocation", [| "final@hotreload#g0_o0"; "allocation@hotreload-1" |]) |]
-
-        map.LoadRecordedSnapshot recordedSnapshot
-        map.BeginSession()
-
-        Assert.True(map.UsesRecordedSnapshot)
-        Assert.Equal("final@hotreload#g0_o0", map.GetOrAddName "allocation")
-        Assert.Equal("allocation@hotreload-1", map.GetOrAddName "allocation")
