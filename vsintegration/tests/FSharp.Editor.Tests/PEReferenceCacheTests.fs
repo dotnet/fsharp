@@ -33,7 +33,7 @@ type private Fixture =
         Library: ProjectInfo
     }
 
-    member this.LibraryDocumentId = (this.Library.Documents |> Seq.exactlyOne).Id
+    member this.LibraryDocumentId = this.Library.Documents |> Seq.exactlyOne |> _.Id
 
 let private referenceLibrary (fixture: Fixture) =
     let workspace = fixture.Workspace
@@ -70,7 +70,7 @@ let private createFixture (analyzerReferences: AnalyzerReference list) =
     let fixture =
         {
             Workspace = workspace
-            FSharpProjectId = (solution.Projects |> Seq.exactlyOne).Id
+            FSharpProjectId = solution.Projects |> Seq.exactlyOne |> _.Id
             Library = library
         }
 
