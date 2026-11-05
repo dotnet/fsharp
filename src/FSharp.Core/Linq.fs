@@ -31,7 +31,15 @@ module LeafExpressionConverter =
 
     [<NoEquality; NoComparison>]
     type ConvEnv =
-        {   varEnv : Map<Var, Expression> }
+        {   varEnv : Map<Var, Expression>
+            /// Inside a lambda that a LINQ provider receives as an expression tree, which, like a C# expression
+            /// lambda, must not contain statements.
+            inExpressionLambda : bool
+            /// That lambda neither assigns nor runs a statement. Only then can a 'let' in it give way to its
+            /// value: nothing is written between the place of the 'let' and the place of a read.
+            substituteLets : bool
+            /// The variables of the lets around, as opposed to the parameters of the lambdas around
+            letVariables : ParameterExpression list }
     let asExpr x = (x :> Expression)
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
@@ -431,6 +439,290 @@ module LeafExpressionConverter =
       | NewObject(c, [arg]) when equivHeadTypes c.DeclaringType typeof<Nullable<int>> -> Some arg
       | _ -> None
 
+    /// Whether the expression assigns or runs statements, which no provider translates
+    let rec hasStatements (expr: Expr) =
+        match expr with
+        | VarSet _
+        | PropertySet _
+        | FieldSet _
+        | AddressSet _
+        | Sequential _
+        | WhileLoop _
+        | ForIntegerRangeLoop _
+        | TryWith _
+        | TryFinally _ -> true
+        | ExprShape.ShapeVar _ -> false
+        | ExprShape.ShapeLambda (_, body) -> hasStatements body
+        | ExprShape.ShapeCombination (_, args) -> List.exists hasStatements args
+
+    /// A conversion of a reference to a type its object already has, which runs no code, cannot fail and gives
+    /// the same object. Boxing does not: each box is an object of its own.
+    let isUpcast (conversion: UnaryExpression) =
+        match conversion.Method with
+        | null ->
+            (conversion.NodeType = ExpressionType.Convert || conversion.NodeType = ExpressionType.TypeAs)
+            && not conversion.Operand.Type.IsValueType
+            && conversion.Type.IsAssignableFrom conversion.Operand.Type
+        | _ -> false
+
+    /// A type whose values cannot change and have no identity, so that its methods give an equal result for
+    /// equal arguments every time: a number, a string, a date and the like, and a nullable of one of those
+    let rec isPlainValueType (ty: Type) =
+        ty.IsPrimitive
+        || ty.IsEnum
+        || Type.op_Equality (ty, typeof<string>)
+        || Type.op_Equality (ty, typeof<decimal>)
+        || Type.op_Equality (ty, typeof<DateTime>)
+        || Type.op_Equality (ty, typeof<DateTimeOffset>)
+        || Type.op_Equality (ty, typeof<TimeSpan>)
+        || Type.op_Equality (ty, typeof<Guid>)
+        || (ty.IsGenericType
+            && Type.op_Equality (ty.GetGenericTypeDefinition (), typedefof<Nullable<_>>)
+            && isPlainValueType (ty.GetGenericArguments().[0]))
+
+    /// A method of a plain value that gives a plain value, like 'ToUpper' of a string
+    let isPlainValueMethod (call: MethodCallExpression) =
+        match call.Object with
+        | null -> false
+        | _ -> isPlainValueType call.Method.DeclaringType && isPlainValueType call.Type
+
+    /// Whether the expression reads the data a lambda is given: a parameter of a lambda in the tree, or a member
+    /// of one. The variable of a 'let' is no such parameter.
+    let rec isElementRead (letVariables: ParameterExpression list) (expr: Expression) =
+        match expr with
+        | :? ParameterExpression as parameter ->
+            not (letVariables |> List.exists (fun variable -> obj.ReferenceEquals (variable, parameter)))
+        | :? MemberExpression as read ->
+            match read.Expression with
+            | null -> false
+            // A struct can be changed in place by a call on it: its members are no stable reads
+            | source -> (not source.Type.IsValueType || isPlainValueType source.Type) && isElementRead letVariables source
+        | :? UnaryExpression as conversion -> isUpcast conversion && isElementRead letVariables conversion.Operand
+        | _ -> false
+
+    /// An operand of arithmetic that a 'let' may give way to: a constant or the data a lambda is given, as a number
+    /// of another type if it has to be. Not arithmetic itself, so that a value does not grow with every 'let' that
+    /// builds on it.
+    let isOperand (letVariables: ParameterExpression list) (expr: Expression) =
+        match expr with
+        | :? ConstantExpression -> true
+        | :? UnaryExpression as conversion when conversion.NodeType = ExpressionType.Convert ->
+            (match conversion.Method with
+             | null -> true
+             | _ -> false)
+            && conversion.Type.IsPrimitive
+            && conversion.Operand.Type.IsPrimitive
+            && (conversion.Operand :? ConstantExpression || isElementRead letVariables conversion.Operand)
+        | _ -> isElementRead letVariables expr
+
+    /// A division or remainder that cannot fail: one of floating point numbers, which give infinity or NaN, or one of
+    /// integers by a constant other than 0 and -1, which overflows for the smallest integer
+    let isSafeDivision (operation: BinaryExpression) =
+        (operation.NodeType = ExpressionType.Divide || operation.NodeType = ExpressionType.Modulo)
+        && operation.Type.IsPrimitive
+        && (Type.op_Equality (operation.Type, typeof<float>)
+            || Type.op_Equality (operation.Type, typeof<float32>)
+            || (match operation.Right with
+                | :? ConstantExpression as divisor when not (isNull divisor.Value) ->
+                    let value = Convert.ToDecimal divisor.Value
+                    value <> 0m && value <> -1m
+                | _ -> false))
+
+    /// An addition, subtraction or multiplication of plain values, or a division that cannot fail: it runs no code of
+    /// the user's
+    let isPlainArithmetic (operation: BinaryExpression) =
+        (operation.NodeType = ExpressionType.Add
+         || operation.NodeType = ExpressionType.Subtract
+         || operation.NodeType = ExpressionType.Multiply
+         || isSafeDivision operation)
+        && isPlainValueType operation.Type
+        && (match operation.Method with
+            | null -> true
+            | meth -> isPlainValueType meth.DeclaringType)
+
+    /// Whether the expression only reads: a constant, the data a lambda is given, what a member or method of a
+    /// plain value makes of those, or plain arithmetic on those. Where a 'let' gives such a read a name, the read
+    /// can be made wherever the name is used, and as often as it is used.
+    let rec isRead (letVariables: ParameterExpression list) (expr: Expression) =
+        match expr with
+        | :? ConstantExpression -> true
+        | :? BinaryExpression as arithmetic when isPlainArithmetic arithmetic ->
+            isOperand letVariables arithmetic.Left && isOperand letVariables arithmetic.Right
+        | :? MemberExpression as read when isPlainValueType read.Member.DeclaringType ->
+            match read.Expression with
+            | null -> false
+            | source -> isRead letVariables source
+        | :? UnaryExpression as conversion when isUpcast conversion -> isRead letVariables conversion.Operand
+        // The arguments are no calls themselves: a value that mentions another one several times would
+        // otherwise grow with every 'let' that builds on it.
+        | :? MethodCallExpression as call ->
+            isPlainValueMethod call
+            && isRead letVariables call.Object
+            // The method can run code of the user's on an argument that is no plain value, as often as it is made
+            && call.Arguments
+               |> Seq.forall (fun argument ->
+                   isPlainValueType argument.Type
+                   && (argument :? ConstantExpression || isElementRead letVariables argument))
+        | _ -> isElementRead letVariables expr
+
+    /// Whether the read of the variable is the first thing that evaluating the expression does, on every path:
+    /// before it come only constants and reads of other variables. The value of the variable can then be
+    /// computed at that read instead of before the expression, and nothing can tell the difference.
+    let readsFirst (variable: ParameterExpression) (expr: Expression) =
+        // ValueSome true: the variable is read. ValueSome false: nothing ran so far, what comes next may read
+        // it. ValueNone: something else ran, or may not run at all.
+        let rec walk (node: Expression) =
+            match node with
+            | null -> ValueSome false
+            | :? ParameterExpression as other ->
+                if obj.ReferenceEquals (other, variable) then ValueSome true
+                // What computes the value can change a struct in place, so the struct has to be read after it
+                elif other.Type.IsValueType && not (isPlainValueType other.Type) then ValueNone
+                else ValueSome false
+            | :? ConstantExpression
+            | :? DefaultExpression
+            // A lambda only runs later, any number of times
+            | :? LambdaExpression -> ValueSome false
+            | :? UnaryExpression as unary ->
+                if unary.NodeType = ExpressionType.Quote then ValueSome false
+                elif isUpcast unary then walk unary.Operand
+                else thenRuns [ unary.Operand ]
+            | :? BinaryExpression as binary ->
+                match binary.NodeType with
+                | ExpressionType.Assign -> walk binary.Right
+                // The right side runs on some paths only
+                | ExpressionType.AndAlso
+                | ExpressionType.OrElse
+                | ExpressionType.Coalesce -> thenRuns [ binary.Left ]
+                | _ -> thenRuns [ binary.Left; binary.Right ]
+            | :? ConditionalExpression as choice -> thenRuns [ choice.Test ]
+            | :? MemberExpression as read -> thenRuns [ read.Expression ]
+            | :? TypeBinaryExpression as test -> thenRuns [ test.Expression ]
+            | :? MethodCallExpression as call -> thenRuns (call.Object :: List.ofSeq call.Arguments)
+            | :? NewExpression as construction -> thenRuns (List.ofSeq construction.Arguments)
+            | :? InvocationExpression as invocation -> thenRuns (invocation.Expression :: List.ofSeq invocation.Arguments)
+            | :? NewArrayExpression as array when array.NodeType = ExpressionType.NewArrayInit -> inOrder (List.ofSeq array.Expressions)
+            | :? BlockExpression as block -> inOrder (List.ofSeq block.Expressions)
+            | _ -> ValueNone
+
+        // The parts run one after another
+        and inOrder (parts: Expression list) =
+            match parts with
+            | [] -> ValueSome false
+            | part :: rest ->
+                match walk part with
+                | ValueSome false -> inOrder rest
+                | reached -> reached
+
+        // The parts run one after another, and then the node itself runs
+        and thenRuns (parts: Expression list) =
+            match inOrder parts with
+            | ValueSome false -> ValueNone
+            | reached -> reached
+
+        walk expr = ValueSome true
+    /// Counts the reads of a variable and puts an expression in their place
+    type VariableReads (variable: ParameterExpression, replacement: Expression) =
+        inherit ExpressionVisitor ()
+
+        member val Count = 0 with get, set
+
+        override this.VisitParameter (node: ParameterExpression) : Expression =
+            if obj.ReferenceEquals (node, variable) then
+                this.Count <- this.Count + 1
+                replacement
+            else
+                node :> Expression
+
+    /// Whether evaluating the expression makes an object: a call or an addition with an object as its result, like the
+    /// upper case of a string. Evaluated twice, it gives two objects.
+    let makesNewObject (expr: Expression) =
+        not expr.Type.IsValueType && (expr :? MethodCallExpression || expr :? BinaryExpression)
+
+    /// Whether the expression may give the object that the variable holds: the variable, a method or an operator of a
+    /// string, number or date that gives an object, which can be the one it got ('Substring 0', 'Trim' and '+ ""' do give
+    /// it back), and a choice or a block of those
+    let rec mayGiveObjectOf (variable: ParameterExpression) (expr: Expression) =
+        match expr with
+        | null -> false
+        | :? ParameterExpression as parameter -> obj.ReferenceEquals (parameter, variable)
+        | :? MethodCallExpression as call when isPlainValueType call.Method.DeclaringType && not call.Type.IsValueType ->
+            mayGiveObjectOf variable call.Object || call.Arguments |> Seq.exists (mayGiveObjectOf variable)
+        | :? BinaryExpression as operation when
+            not operation.Type.IsValueType
+            && (match operation.Method with
+                | null -> false
+                | operator -> isPlainValueType operator.DeclaringType)
+            ->
+            mayGiveObjectOf variable operation.Left || mayGiveObjectOf variable operation.Right
+        | :? UnaryExpression as conversion when isUpcast conversion -> mayGiveObjectOf variable conversion.Operand
+        | :? ConditionalExpression as choice -> mayGiveObjectOf variable choice.IfTrue || mayGiveObjectOf variable choice.IfFalse
+        | :? BlockExpression as block -> mayGiveObjectOf variable block.Result
+        | _ -> false
+
+    /// Finds where the object of a variable goes to a place that can tell one object from another of the same value, and
+    /// counts those places. A method, an operator or a member of a string, number or date only looks at what the object
+    /// holds when it gives a number or a boolean; when it gives an object, that can be the one it got, and then the
+    /// place is where that object goes in turn. Every other place can tell: a method of the user's, a constructor, an
+    /// argument of 'ReferenceEquals', the result of a lambda, a variable.
+    type ObjectIdentityUses (variable: ParameterExpression) =
+        inherit ExpressionVisitor ()
+
+        let parents = Stack<Expression> ()
+        let mutable lambdas = 0
+
+        /// The number of places that can tell one object from another
+        member val Places = 0 with get, set
+        /// One of them is in a lambda inside the scope of the variable, which runs as often as it is called
+        member val PlaceInLambda = false with get, set
+
+        member private this.Place (count: int) =
+            this.Places <- this.Places + count
+
+            if lambdas > 0 then
+                this.PlaceInLambda <- true
+
+        /// Whether the object only goes on to the parent, or is only looked at there
+        member private this.GoesOn (parent: Expression) (child: Expression) =
+            match parent with
+            | :? MethodCallExpression as call -> isPlainValueType call.Method.DeclaringType
+            | :? BinaryExpression as operation ->
+                match operation.Method with
+                | null -> false
+                | operator -> isPlainValueType operator.DeclaringType
+            | :? MemberExpression as read -> isPlainValueType read.Member.DeclaringType
+            | :? UnaryExpression as conversion -> isUpcast conversion
+            | :? ConditionalExpression as choice -> not (obj.ReferenceEquals (choice.Test, child))
+            | :? BlockExpression -> true
+            | _ -> false
+
+        override this.Visit (node: Expression) : Expression =
+            match node with
+            | null -> null
+            | _ ->
+                if mayGiveObjectOf variable node then
+                    if parents.Count = 0 then
+                        this.Place 1
+                    else
+                        let parent = parents.Peek ()
+
+                        if not (this.GoesOn parent node) then
+                            match parent with
+                            // The object is kept in a variable, which can be used any number of times
+                            | :? BinaryExpression as assignment when assignment.NodeType = ExpressionType.Assign -> this.Place 2
+                            | _ -> this.Place 1
+
+                parents.Push node
+                let visited = base.Visit node
+                parents.Pop () |> ignore
+                visited
+
+        override this.VisitLambda<'T> (node: Expression<'T>) : Expression =
+            lambdas <- lambdas + 1
+            let visited = base.VisitLambda node
+            lambdas <- lambdas - 1
+            visited
+
     /// Convert F# quotations to LINQ expression trees.
     /// A more polished LINQ-Quotation translator will be published
     /// concert with later versions of LINQ.
@@ -475,7 +767,14 @@ module LeafExpressionConverter =
 
         | TupleGet(arg, n) ->
              let argP = ConvExprToLinqInContext env arg
-             let rec build ty argP n =
+             let rec build (ty: Type) argP n =
+                 // A struct tuple holds its elements in fields, which PreComputeTuplePropertyInfo cannot return
+                 if ty.IsValueType then
+                     if n < 7 then
+                         Expression.Field(argP, ty.GetField("Item" + string (n + 1))) |> asExpr
+                     else
+                         build (ty.GetGenericArguments().[7]) (Expression.Field(argP, ty.GetField "Rest") |> asExpr) (n - 7)
+                 else
                  match FSharpValue.PreComputeTuplePropertyInfo(ty, n) with
                  | propInfo, None ->
                      Expression.Property(argP, propInfo) |> asExpr
@@ -636,7 +935,9 @@ module LeafExpressionConverter =
 
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
             // or type T to an argument expecting Expression<T>.
-            | ImplicitExpressionConversionHelperQ (_, GenericArgs [|_|], [x1]) -> ConvExprToLinqInContext env x1
+            | ImplicitExpressionConversionHelperQ (_, GenericArgs [|_|], [x1]) ->
+                let substituteLets = (env.substituteLets || not env.inExpressionLambda) && not (hasStatements x1)
+                ConvExprToLinqInContext { env with inExpressionLambda = true; substituteLets = substituteLets } x1
 
             // Use witnesses if they are available
             | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) ->
@@ -736,7 +1037,7 @@ module LeafExpressionConverter =
 
         | NewDelegate(delegateTy, vs, b) ->
             let vsP = List.map ConvVarToLinq vs
-            let env = { varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
+            let env = { env with varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
             let bodyP = ConvExprToLinqInContext env b
             Expression.Lambda(delegateTy, bodyP, vsP) |> asExpr
 
@@ -784,14 +1085,65 @@ module LeafExpressionConverter =
             // 3. Works for both mutable and immutable variables
             let vP = ConvVarToLinq v
             let eP = ConvExprToLinqInContext env e
-            let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
-            let bodyP = ConvExprToLinqInContext envinner b
-            // Create a block with the variable declaration, initial assignment, and body
-            Expression.Block([| vP |], Expression.Assign(vP, eP), bodyP) |> asExpr
+
+            // No provider translates a block. In a lambda that goes to one, the value takes the place of the
+            // variable where that computes the same: the value is a mere read, which can be made at every use,
+            // or the variable is read once, before anything else happens.
+            let isStructCopy = v.IsMutable && String.Equals (v.Name, "copyOfStruct", StringComparison.Ordinal)
+
+            // A struct of the user's bound by a 'let' is a copy, and what is done to the copy must not reach
+            // the original, which the value would stand for. The name the compiler gives to its copies makes no
+            // difference to that: only a copy of a plain value, which nothing is done to, gives way.
+            let mayGiveWay =
+                env.substituteLets
+                && (not v.IsMutable || isStructCopy)
+                && (not v.Type.IsValueType || isPlainValueType v.Type)
+                && not (Type.op_Equality (eP.Type, typeof<Void>))
+
+            // The Coerce case drops reference upcasts, and uses of the variable may need its own type.
+            let value () = if Type.op_Equality (eP.Type, v.Type) then eP else Expression.Convert (eP, v.Type) |> asExpr
+
+            let isReadValue = mayGiveWay && isRead env.letVariables eP
+            let substituteValue () = ConvExprToLinqInContext { env with varEnv = Map.add v (value ()) env.varEnv } b
+
+            if isReadValue && not (makesNewObject eP) then
+                substituteValue ()
+            else
+                let envinner = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv; letVariables = vP :: env.letVariables }
+                let bodyP = ConvExprToLinqInContext envinner b
+
+                let withoutVariable =
+                    if mayGiveWay then
+                        let reads = VariableReads (vP, value ())
+                        let replaced = reads.Visit bodyP
+
+                        if isReadValue then
+                            // The object is made anew at every use, and a lambda inside the scope makes it as often as it
+                            // runs: it can go to one place that tells one object from another, outside a lambda, and
+                            // to any number of places that only look at what it holds
+                            let identity = ObjectIdentityUses vP
+                            identity.Visit bodyP |> ignore
+
+                            if identity.Places = 0 || (identity.Places = 1 && not identity.PlaceInLambda) then
+                                ValueSome (substituteValue ())
+                            else
+                                ValueNone
+                        elif reads.Count = 1 && readsFirst vP bodyP then
+                            ValueSome replaced
+                        else
+                            ValueNone
+                    else
+                        ValueNone
+
+                match withoutVariable with
+                | ValueSome replaced -> replaced
+                | ValueNone ->
+                    // Create a block with the variable declaration, initial assignment, and body
+                    Expression.Block([| vP |], Expression.Assign(vP, eP), bodyP) |> asExpr
 
         | Lambda(v, body) ->
             let vP = ConvVarToLinq v
-            let env = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
+            let env = { env with varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext env body
             let lambdaTy, tyargs =
                 if bodyP.Type = typeof<Void> then
@@ -939,10 +1291,12 @@ module LeafExpressionConverter =
         //printf "** Expression .Parameter(%a, %a)\n" output_any ty output_any nm
         Expression.Parameter(v.Type, v.Name)
 
-    let ConvExprToLinq (e: Expr) = ConvExprToLinqInContext { varEnv = Map.empty } e
+    let ConvExprToLinq (e: Expr) =
+        ConvExprToLinqInContext { varEnv = Map.empty; inExpressionLambda = false; substituteLets = false; letVariables = [] } e
 
     let QuotationToExpression (e: Expr) = ConvExprToLinq e
-    let QuotationToLambdaExpression (e: Microsoft.FSharp.Quotations.Expr<'T>) =  (ConvExprToLinq e) :?> Expression<'T>
+    let QuotationToLambdaExpression (e: Microsoft.FSharp.Quotations.Expr<'T>) =
+        ConvExprToLinqInContext { varEnv = Map.empty; inExpressionLambda = true; substituteLets = not (hasStatements e); letVariables = [] } e :?> Expression<'T>
 
     // This contorted compilation is used because LINQ's "Compile" is only allowed on lambda expressions, and LINQ
     // provides no other way to evaluate the expression.
