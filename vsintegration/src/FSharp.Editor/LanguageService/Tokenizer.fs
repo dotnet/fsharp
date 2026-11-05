@@ -459,11 +459,25 @@ module internal Tokenizer =
             && let lineContents = textLine.Text.ToString(textLine.Span) in
                data.HashCode = lineContents.GetHashCode()
 
+    let private linesResumableAfterEdits (older: SourceText) (newer: SourceText) =
+        let firstEdit =
+            newer.GetChangeRanges older
+            |> Seq.fold (fun first change -> min first change.Span.Start) Int32.MaxValue
+
+        if firstEdit = Int32.MaxValue then
+            older.Lines.Count
+        else
+            older.Lines.GetLineFromPosition(firstEdit).LineNumber + 1
+
     type private SourceTextData(approxLines: int) =
         let writeLock = obj ()
 
         [<VolatileField>]
         let mutable data: SourceLineData option array = Array.zeroCreate (max approxLines 1)
+
+        let lastScannedText = WeakReference<SourceText>(null)
+        let mutable currentGeneration = 0
+        let mutable resumableLines = 0
 
         let extendTo i =
             if i >= data.Length then
@@ -479,10 +493,41 @@ module internal Tokenizer =
                     ValueOption.ofOption snapshot.[i]
                 else
                     ValueNone
-            and set (i: int) (v: SourceLineData voption) =
-                lock writeLock (fun () ->
-                    extendTo i
-                    data.[i] <- ValueOption.toOption v)
+
+        member x.BeginScan(text: SourceText) =
+            lock writeLock (fun () ->
+                match lastScannedText.TryGetTarget() with
+                | true, scanned when obj.ReferenceEquals(scanned, text) -> ()
+                | isKnown, scanned ->
+                    resumableLines <-
+                        if isKnown then
+                            min resumableLines (linesResumableAfterEdits scanned text)
+                        else
+                            0
+
+                    lastScannedText.SetTarget text
+                    currentGeneration <- currentGeneration + 1
+
+                struct (currentGeneration, resumableLines))
+
+        member x.CanResumeFrom(line, entry: SourceLineData, generation) =
+            lock writeLock (fun () ->
+                generation = currentGeneration
+                && line < data.Length
+                && (match data.[line] with
+                    | Some cached -> obj.ReferenceEquals(cached, entry)
+                    | None -> false))
+
+        member x.StoreIfCurrent(line, entry, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    extendTo line
+                    data.[line] <- Some entry)
+
+        member x.ConfirmResumableLines(count, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    resumableLines <- max resumableLines count)
 
         member x.ClearFrom(n) =
             lock writeLock (fun () ->
@@ -629,7 +674,7 @@ module internal Tokenizer =
 
     let private getFromRefreshedTokenCache
         (
-            lines: TextLineCollection,
+            sourceText: SourceText,
             startLine: int,
             endLine: int,
             sourceTokenizer: FSharpSourceTokenizer,
@@ -637,17 +682,23 @@ module internal Tokenizer =
             ct: CancellationToken
         ) =
         [
+            let lines = sourceText.Lines
+            let struct (generation, resumableLines) = sourceTextDataCache.BeginScan sourceText
             // Go backwards to find the last cached scanned line that is valid
             let struct (scanStartLine, validStart) =
-                let mutable i = startLine
+                let mutable i = min startLine (resumableLines - 1)
                 let mutable found = ValueNone
 
                 while i > 0 && found.IsNone do
                     match sourceTextDataCache.[i] with
-                    | ValueSome data when data.IsValid(lines.[i]) -> found <- ValueSome data
+                    | ValueSome data when
+                        data.IsValid(lines.[i])
+                        && sourceTextDataCache.CanResumeFrom(i, data, generation)
+                        ->
+                        found <- ValueSome data
                     | _ -> i <- i - 1
 
-                struct (i, found)
+                struct (max i 0, found)
             // Rescan the lines if necessary and report the information
             let mutable lexState =
                 match validStart with
@@ -669,13 +720,15 @@ module internal Tokenizer =
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextDataCache.[i] <- ValueSome newData
+                        sourceTextDataCache.StoreIfCurrent(i, newData, generation)
                         newData
 
                 lexState <- lineData.LexStateAtEndOfLine
 
                 if i >= startLine then
                     yield lineData, lineContents
+
+            sourceTextDataCache.ConfirmResumableLines(endLine + 1, generation)
 
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then
@@ -709,7 +762,7 @@ module internal Tokenizer =
             let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
             let lineDataResults =
-                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
+                getFromRefreshedTokenCache (sourceText, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
                 for token in lineData.ClassifiedSpans do
@@ -919,7 +972,7 @@ module internal Tokenizer =
         let lineNo = textLinePos.Line
 
         let lineData, contents =
-            getFromRefreshedTokenCache (sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
+            getFromRefreshedTokenCache (sourceText, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
             |> List.exactlyOne
 
         lineData, textLinePos, contents
