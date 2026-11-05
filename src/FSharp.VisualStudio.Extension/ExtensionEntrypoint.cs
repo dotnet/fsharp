@@ -24,7 +24,7 @@ internal class ExtensionEntrypoint : Extension
                 displayName: "FSharp.VisualStudio.Extension",
                 description: "Extension description")
         {
-            InstallationTargetVersion = "[18.5, 19.0)",
+            InstallationTargetVersion = "[18.14, 19.0)",
         },
     };
 
