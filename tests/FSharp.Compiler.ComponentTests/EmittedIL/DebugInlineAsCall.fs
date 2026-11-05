@@ -1859,6 +1859,153 @@ let main _ =
         |> withExitCode 0
         |> verifySequencePoints
 
+    let private resumableBuilder run =
+        $"""
+#nowarn "3513"
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+[<Struct; NoEquality; NoComparison>]
+type D<'T> = {{ mutable Result: 'T }}
+
+type B() =
+    member inline _.Delay([<InlineIfLambda>] f: unit -> ResumableCode<'D, 'T>) =
+        ResumableCode<'D, 'T>(fun sm -> (f ()).Invoke(&sm))
+
+    member inline _.Return(v: 'T) =
+        ResumableCode<D<'T>, 'T>(fun sm -> sm.Data.Result <- v; true)
+
+{run}
+
+[<EntryPoint>]
+let main _ =
+    let b = B()
+    let result = b {{ return [ 3 ] |> List.sum }}
+    ignore result
+    0
+"""
+
+    let private runWithBindingsAroundTheMachine =
+        """    member inline _.Run(code: ResumableCode<D<'T>, 'T>, [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int) : 'T =
+        if __useResumableCode then
+            let tag = 1
+            __stateMachine<D<'T>, 'T>
+                (MoveNextMethodImpl<D<'T>>(fun sm -> __resumeAt sm.ResumptionPoint; code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<D<'T>>(fun _ _ -> ignore line; ignore tag))
+                (AfterCode<D<'T>, 'T>(fun sm -> sm.Data.Result))
+        else
+            let mutable sm = ResumableStateMachine<D<'T>>()
+            code.Invoke(&sm) |> ignore
+            ignore line
+            sm.Data.Result"""
+
+    let private runInvokingTwice =
+        """    member inline _.Run(code: ResumableCode<D<'T>, 'T>) : 'T =
+        if __useResumableCode then
+            __stateMachine<D<'T>, 'T>
+                (MoveNextMethodImpl<D<'T>>(fun sm -> __resumeAt sm.ResumptionPoint; code.Invoke(&sm) |> ignore; code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<D<'T>>(fun _ _ -> ()))
+                (AfterCode<D<'T>, 'T>(fun sm -> sm.Data.Result))
+        else
+            let mutable sm = ResumableStateMachine<D<'T>>()
+            code.Invoke(&sm) |> ignore
+            sm.Data.Result"""
+
+    [<Fact>]
+    let ``Resumable 05 - Bindings around the machine`` () =
+        FSharp (resumableBuilder runWithBindingsAroundTheMachine)
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 06 - Resumable code invoked twice`` optimize =
+        let result =
+            FSharp (resumableBuilder runInvokingTwice)
+            |> withDebug
+            |> withOptimization optimize
+            |> asExe
+            |> compileAndRun
+            |> shouldSucceed
+            |> withExitCode 0
+
+        if not optimize then
+            verifySequencePoints result |> ignore
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 07 - Builder expression runs once`` optimize =
+        FSharp """
+open System.Threading.Tasks
+
+let mutable evaluations = 0
+
+let builder () =
+    evaluations <- evaluations + 1
+    task
+
+[<EntryPoint>]
+let main _ =
+    let result = (builder ()) { let! x = Task.FromResult 1 in return x + 1 }
+    if evaluations = 1 && result.Result = 2 then 0 else 1
+"""
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 08 - Inlined Run inside an enclosing machine`` optimize =
+        FSharp """
+#nowarn "3513"
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type Inner(offset: int) =
+    member _.Offset = offset
+
+    member inline this.Run(value: int) =
+        if __useResumableCode then
+            __stateMachine<unit, int>
+                (MoveNextMethodImpl<_>(fun _ -> ()))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun _ -> value + this.Offset))
+        else
+            value + this.Offset
+
+let inline run () =
+    if __useResumableCode then
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun _ -> ()))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun sm ->
+                sm.Data <- 41
+                Inner(1).Run(sm.Data)))
+    else
+        42
+
+[<EntryPoint>]
+let main _ =
+    if run () = 42 then 0 else 1
+"""
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+
     [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
         FSharp """
