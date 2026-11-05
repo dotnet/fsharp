@@ -764,10 +764,39 @@ type NavigableItem =
         IsSignature: bool
         Kind: NavigableItemKind
         Container: NavigableContainer
+        ParameterCount: int
+        TypeParameterCount: int
     }
 
 [<RequireQualifiedAccess>]
 module NavigateTo =
+    let private typeParameterCountOf (typars: SynTyparDecls option) =
+        match typars with
+        | Some typars -> typars.TyparDecls.Length
+        | None -> 0
+
+    let rec private isUnitType synType =
+        match synType with
+        | SynType.LongIdent(SynLongIdent([ id ], _, _)) -> id.idText = "unit"
+        | SynType.Paren(innerType, _)
+        | SynType.WithGlobalConstraints(innerType, _, _)
+        // `val f: u: unit -> int` names the argument the compiler drops, so the name must not hide it.
+        | SynType.SignatureParameter(usedType = innerType) -> isUnitType innerType
+        | _ -> false
+
+    /// The parameters of the compiled method: the parser leaves a solitary unit argument of a signature in its arity,
+    /// where a binding has already dropped it.
+    let private parameterCountOfSignature (SynValInfo(curriedArgInfos, _)) (synType: SynType) =
+        match curriedArgInfos, synType with
+        | [ [ _ ] ], SynType.Fun(argType = argType) when isUnitType argType -> 0
+        | [ [ _ ] ], SynType.WithGlobalConstraints(SynType.Fun(argType = argType), _, _) when isUnitType argType -> 0
+        | _ -> List.sumBy List.length curriedArgInfos
+
+    let private parameterCountOfBinding (SynValData(memberFlags = memberFlags; valInfo = SynValInfo(curriedArgInfos, _))) =
+        match memberFlags, curriedArgInfos with
+        | Some memberFlags, _self :: argInfos when memberFlags.IsInstance -> List.sumBy List.length argInfos
+        | _ -> List.sumBy List.length curriedArgInfos
+
     let GetNavigableItems (parsedInput: ParsedInput) : NavigableItem[] =
 
         let convertToDisplayName name =
@@ -778,7 +807,7 @@ module NavigateTo =
 
         let result = ResizeArray()
 
-        let addLongIdent kind (lid: LongIdent) (isSignature: bool) (container: NavigableContainer) =
+        let addLongIdent kind (lid: LongIdent) (isSignature: bool) (container: NavigableContainer) typeParameterCount =
             if not lid.IsEmpty then
                 let name = textOfLid lid
 
@@ -789,10 +818,12 @@ module NavigateTo =
                     IsSignature = isSignature
                     Kind = kind
                     Container = container
+                    ParameterCount = 0
+                    TypeParameterCount = typeParameterCount
                 }
                 |> result.Add
 
-        let addIdent kind (id: Ident) (isSignature: bool) (container: NavigableContainer) =
+        let addIdentWithArity kind (id: Ident) (isSignature: bool) (container: NavigableContainer) parameterCount typeParameterCount =
             if not (String.IsNullOrEmpty id.idText) then
                 let name = convertToDisplayName id.idText
 
@@ -803,11 +834,16 @@ module NavigateTo =
                     IsSignature = isSignature
                     Kind = kind
                     Container = container
+                    ParameterCount = parameterCount
+                    TypeParameterCount = typeParameterCount
                 }
                 |> result.Add
 
+        let addIdent kind id isSignature container =
+            addIdentWithArity kind id isSignature container 0 0
+
         let addModule lid isSig container =
-            addLongIdent NavigableItemKind.Module lid isSig container
+            addLongIdent NavigableItemKind.Module lid isSig container 0
 
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
@@ -818,14 +854,17 @@ module NavigateTo =
             NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
 
         let addComponentInfo containerType kind (info: SynComponentInfo) isSig container =
+            let (SynComponentInfo(typeParams = typeParams)) = info
             let lid = info.LongIdent
-            addLongIdent kind lid isSig container
+            addLongIdent kind lid isSig container (typeParameterCountOf typeParams)
 
             NavigableContainer.Container(containerType, pathOfLid lid, container)
 
         let addValSig kind synValSig isSig container =
-            let (SynValSig(ident = SynIdent(id, _))) = synValSig
-            addIdent kind id isSig container
+            let (SynValSig(ident = SynIdent(id, _); explicitTypeParams = SynValTyparDecls(typars, _); synType = synType; arity = arity)) =
+                synValSig
+
+            addIdentWithArity kind id isSig container (parameterCountOfSignature arity synType) (typeParameterCountOf typars)
 
         let addField synField isSig container =
             let (SynField(idOpt = id)) = synField
@@ -863,17 +902,25 @@ module NavigateTo =
                     | Some mf -> mapMemberKind mf.MemberKind
                     | _ -> NavigableItemKind.ModuleValue
 
+            let typeParameterCount =
+                match headPat with
+                | SynPat.LongIdent(typarDecls = Some(SynValTyparDecls(typars, _))) -> typeParameterCountOf typars
+                | _ -> 0
+
+            let addBindingIdent id =
+                addIdentWithArity kind id false container (parameterCountOfBinding valData) typeParameterCount
+
             match headPat with
             | SynPat.LongIdent(longDotId = SynLongIdent([ _; id ], _, _)) ->
                 // instance members
-                addIdent kind id false container
+                addBindingIdent id
             | SynPat.LongIdent(longDotId = SynLongIdent([ id ], _, _)) ->
                 // functions
-                addIdent kind id false container
+                addBindingIdent id
             | SynPat.Named(SynIdent(id, _), _, _, _)
             | SynPat.As(_, SynPat.Named(SynIdent(id, _), _, _, _), _) ->
                 // values
-                addIdent kind id false container
+                addBindingIdent id
             | _ -> ()
 
         let addMember valSig (memberFlags: SynMemberFlags) isSig container =
