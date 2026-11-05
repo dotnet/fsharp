@@ -269,7 +269,7 @@ module internal OpenDeclarationHelper =
         let textBeforeDeclaration =
             sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
 
-        let openLine = margin + "open " + ns + lineBreak
+        let openLine = $"{margin}open {ns}{lineBreak}"
 
         if textBeforeDeclaration.Length > 0 then
             TextChange(

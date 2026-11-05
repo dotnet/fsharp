@@ -2446,9 +2446,9 @@ module ParsedInput =
             match ast with
             | ParsedInput.ImplFile input ->
                 input.Trivia.CodeComments
-                |> List.choose (function
-                    | CommentTrivia.BlockComment range -> Some range
-                    | CommentTrivia.LineComment _ -> None)
+                |> List.chooseV (function
+                    | CommentTrivia.BlockComment range -> ValueSome range
+                    | CommentTrivia.LineComment _ -> ValueNone)
             | ParsedInput.SigFile _ -> []
 
         let mutable result = None
@@ -2515,13 +2515,13 @@ module ParsedInput =
         let rec skipTrailingBlockComments (firstDeclStart: pos voption) line =
             match
                 blockComments
-                |> List.tryFind (fun comment ->
+                |> List.tryFindV (fun comment ->
                     comment.StartLine <= line
                     && comment.EndLine > line
                     && firstDeclStart |> ValueOption.forall (posLt comment.Start))
             with
-            | Some comment -> skipTrailingBlockComments firstDeclStart comment.EndLine
-            | None -> line
+            | ValueSome comment -> skipTrailingBlockComments firstDeclStart comment.EndLine
+            | ValueNone -> line
 
         let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) firstDeclStart =
             let nameEndLine =
