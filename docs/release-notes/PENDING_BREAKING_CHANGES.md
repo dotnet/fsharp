@@ -52,6 +52,24 @@ a.Equals(b)  // Was: false, Now: true
 // New: if (node.NodeType == ExpressionType.ArrayIndex)
 ```
 
+### Tuple and record constructions name their members
+
+Constructing a tuple, struct tuple, record or anonymous record now gives a `NewExpression` whose `Members` say which property (or `ValueTuple` field) each argument becomes, as C# anonymous types do, so providers can bind a later read such as `t.Item1` or `r.Name` to the argument.
+
+```fsharp
+<@ fun (c: Customer) -> (c.Id, c.Name) @>
+// Was: new Tuple`2(c.Id, c.Name)
+// Now: new Tuple`2(Item1 = c.Id, Item2 = c.Name)
+```
+
+A record whose fields have no public getter is still built without `Members`.
+
+The SQL that a provider writes names its columns after the members (`SELECT "b"."Id" AS "Item1", ...`), which shows in tests that compare SQL text.
+
+A `groupBy` on an item of a tuple that an earlier operator selected, `for (city, id) in (select (b.Address.City, b.Id)) do groupBy city into g; select (g.Key, g.Count())`, failed in EF Core with "could not be translated" and now fails inside EF Core with `KeyNotFoundException: The given key 'Item1' was not present in the dictionary`. It translates together with the change to groupings in #20899.
+
+Together with the change to F# operators in #20900, a `leftOuterJoin` that follows two `for`s and a `join`, and tests the joined row with `isNull`, fails in EF Core 10 for SQL Server with "Nullable object must have a value": `for c in db.Customers do for o in c.Orders do join d in db.Customers on (c.City = d.City); leftOuterJoin p in db.Products on (d.Id = p.Id) into products; for p in products do select (c.Name, o.Id, d.Name, (if isNull p then "" else p.Name))`. EF Core translates it with either change alone.
+
 ---
 
 ## IQueryable Type Preservation 🟡
