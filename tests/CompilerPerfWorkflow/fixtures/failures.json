@@ -1,0 +1,15 @@
+[
+  ["trace", 1, "trace failed", null],
+  ["counters", 2, "counter failed", null],
+  ["dump", 3, "dump failed", null],
+  ["dump", null, "Access denied", "permission_denied"],
+  ["dump", null, "", "early_exit"],
+  ["dump", null, "", "timeout"],
+  ["dump", 0, "", "empty_artifact"],
+  ["dump", 0, "", "corrupt_artifact"],
+  ["select", null, "", "ambiguous_process"],
+  ["select", null, "", "pid_reuse"],
+  ["trace", 0, "", "dropped_events"],
+  ["preflight", null, "", "namespace_unavailable"],
+  ["preflight", null, "", "budget_exceeded"]
+]

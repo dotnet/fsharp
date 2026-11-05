@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Validation keywords from github/gh-aw-mcpg a74a1c1525e1e3871370e22801ef4476de00cdfa, internal/config/schema/mcp-gateway-config.schema.json#/definitions/gatewayConfig. Descriptions and defaults omitted.",
+  "type": "object",
+  "properties": {
+    "port": {
+      "oneOf": [
+        {"type": "integer", "minimum": 1, "maximum": 65535},
+        {"type": "string", "pattern": "^\\$\\{[A-Z_][A-Z0-9_]*\\}$"}
+      ]
+    },
+    "apiKey": {"type": "string", "minLength": 1},
+    "domain": {
+      "oneOf": [
+        {"type": "string", "enum": ["localhost", "host.docker.internal"]},
+        {"type": "string", "pattern": "^\\$\\{[A-Z_][A-Z0-9_]*\\}$"}
+      ]
+    },
+    "startupTimeout": {"type": "integer", "minimum": 1},
+    "toolTimeout": {"type": "integer", "minimum": 10},
+    "payloadDir": {"type": "string", "minLength": 1, "pattern": "^(/|[A-Za-z]:\\\\)"},
+    "payloadSizeThreshold": {"type": "integer", "minimum": 1},
+    "payloadPathPrefix": {"type": "string", "minLength": 1},
+    "trustedBots": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "opentelemetry": {
+      "type": "object",
+      "properties": {
+        "endpoint": {"type": "string", "minLength": 1, "pattern": "^(https://.+|\\$\\{[A-Za-z_][A-Za-z0-9_]*\\})$"},
+        "headers": {"type": "string", "pattern": "^(\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}|\\s*[^=\\s,][^=,]*=.*?(\\s*,\\s*[^=\\s,][^=,]*=.*?)*)\\s*$"},
+        "traceId": {"type": "string", "pattern": "^([0-9a-f]{32}|\\$\\{[A-Za-z_][A-Za-z0-9_]*\\})$"},
+        "spanId": {"type": "string", "pattern": "^([0-9a-f]{16}|\\$\\{[A-Za-z_][A-Za-z0-9_]*\\})$"},
+        "serviceName": {"type": "string", "minLength": 1}
+      },
+      "required": ["endpoint"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["port", "domain", "apiKey"],
+  "additionalProperties": false
+}
