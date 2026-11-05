@@ -127,3 +127,16 @@ let invert (dict: IDictionary<'k,#seq<'k>>): Map<'k,Set<'k>> =
         """
     |> typecheck
     |> shouldSucceed
+
+// https://github.com/dotnet/fsharp/issues/6725
+[<Fact>]
+let ``Issue 6725 - missing constraint message does not show unnamed inference variables`` () =
+    FSharp
+        """
+type C() =
+    static member M<'a,'b>(a: 'a, b: 'b) = a + b
+        """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnosticMessage "A type parameter is missing a constraint 'when (^a or ^b) : (static member (+) : ^a * ^b -> 'c)'"
+    |> withDiagnosticMessageDoesntMatch @"\?"
