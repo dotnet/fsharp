@@ -59,12 +59,13 @@ module FSharpFindUsagesService =
         }
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range, symbolName: string) =
+    let rangeToDocumentSpans (solution: Solution, range: range, symbolName: string, declaringAssembly: string) =
         if range.Start = range.End then
             CancellableTask.singleton [||]
         else
             cancellableTask {
-                let documentIds = solution.GetDocumentIdsWithFilePath(range.FileName)
+                let documentIds =
+                    solution.GetDocumentIdsWithFSharpFileName(range.FileName, declaringAssembly)
 
                 let! spans =
                     seq {
@@ -117,9 +118,11 @@ module FSharpFindUsagesService =
                         | FindDeclResult.DeclFound range -> Some range
                         | _ -> None
 
+                    let declaringAssembly = symbolUse.Symbol.Assembly.SimpleName
+
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText)
+                        | Some range -> rangeToDocumentSpans (document.Project.Solution, range, symbol.Ident.idText, declaringAssembly)
                         | None -> CancellableTask.singleton [||]
 
                     let declarationSpans =
