@@ -19,6 +19,9 @@ module TelemetryEvents =
     let CodefixActivated = "codefixactivated"
 
     [<Literal>]
+    let RefactoringActivated = "refactoringactivated"
+
+    [<Literal>]
     let Hints = "hints"
 
     [<Literal>]

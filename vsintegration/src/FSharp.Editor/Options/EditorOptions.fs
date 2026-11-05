@@ -16,6 +16,12 @@ type EnterKeySetting =
     | NewlineOnCompleteWord
     | AlwaysNewline
 
+[<RequireQualifiedAccess>]
+type ParameterAnnotationSetting =
+    | Always
+    | WhenNeeded
+    | Never
+
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
@@ -68,6 +74,7 @@ type CodeFixesOptions =
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
         RemoveParens: bool
+        ExtractFunctionParameterAnnotations: ParameterAnnotationSetting
     }
 
     static member Default =
@@ -79,6 +86,7 @@ type CodeFixesOptions =
             UnusedDeclarations = true
             SuggestNamesForErrors = true
             RemoveParens = false
+            ExtractFunctionParameterAnnotations = ParameterAnnotationSetting.Always
         }
 
 [<CLIMutable>]
@@ -213,7 +221,14 @@ module internal OptionsUI =
     [<Guid(Guids.codeFixesOptionPageIdString)>]
     type internal CodeFixesOptionPage() =
         inherit AbstractOptionPage<CodeFixesOptions>()
-        override this.CreateView() = upcast CodeFixesOptionControl()
+
+        override this.CreateView() =
+            let view = CodeFixesOptionControl()
+            let path = nameof CodeFixesOptions.Default.ExtractFunctionParameterAnnotations
+            bindRadioButton view.annotateAlways path ParameterAnnotationSetting.Always
+            bindRadioButton view.annotateWhenNeeded path ParameterAnnotationSetting.WhenNeeded
+            bindRadioButton view.annotateNever path ParameterAnnotationSetting.Never
+            upcast view
 
     [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
     type internal LanguageServicePerformanceOptionPage() =
@@ -262,6 +277,9 @@ module EditorOptionsExtensions =
             this.EditorOptions.CodeFixes.UnusedOpens
 
         member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
+
+        member this.FSharpExtractFunctionParameterAnnotations =
+            this.EditorOptions.CodeFixes.ExtractFunctionParameterAnnotations
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors
