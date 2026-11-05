@@ -13,6 +13,7 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
+open Microsoft.CodeAnalysis.VisualBasic
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.VisualStudio.Composition
@@ -35,6 +36,7 @@ module MefHelpers =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
                 "Microsoft.CodeAnalysis.CSharp.Workspaces.dll"
+                "Microsoft.CodeAnalysis.VisualBasic.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
                 "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
@@ -242,7 +244,8 @@ type RoslynTestHelpers private () =
         match extension with
         | ".fsx" -> SourceCodeKind.Script
         | ".fsi"
-        | ".cs" -> SourceCodeKind.Regular
+        | ".cs"
+        | ".vb" -> SourceCodeKind.Regular
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
@@ -361,13 +364,25 @@ type RoslynTestHelpers private () =
         | [||] -> syntheticProject.OutputFilename
         | errors -> invalidOp $"Compilation of {syntheticProject.Name} failed: %A{errors}"
 
-    /// Adds a C# library that references the framework of `options` and the given assemblies, the way
-    /// VS references an F# project from C# through its built assembly.
-    static member AddCSharpProject
-        (solution: Solution, name: string, source: string, options: FSharpProjectOptions, referencedAssemblies: ImmutableArray<string>)
-        =
+    /// Adds a C# or VB library that references the framework of `options` and the given assemblies, the way
+    /// VS references an F# project from C# or VB through its built assembly.
+    static member AddProject
+        (
+            solution: Solution,
+            language: string,
+            name: string,
+            source: string,
+            options: FSharpProjectOptions,
+            referencedAssemblies: ImmutableArray<string>
+        ) =
         let projectId = ProjectId.CreateNewId()
         let projectDir = $"C:\\{name}"
+
+        let extension, compilationOptions =
+            if language = LanguageNames.VisualBasic then
+                "vb", VisualBasicCompilationOptions OutputKind.DynamicallyLinkedLibrary :> CompilationOptions
+            else
+                "cs", CSharpCompilationOptions OutputKind.DynamicallyLinkedLibrary
 
         let projectInfo =
             ProjectInfo.Create(
@@ -375,12 +390,12 @@ type RoslynTestHelpers private () =
                 VersionStamp.Create(DateTime.UtcNow),
                 name,
                 name,
-                LanguageNames.CSharp,
-                filePath = Path.Combine(projectDir, $"{name}.csproj"),
-                compilationOptions = CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+                language,
+                filePath = Path.Combine(projectDir, $"{name}.{extension}proj"),
+                compilationOptions = compilationOptions,
                 documents =
                     [
-                        RoslynTestHelpers.CreateDocumentInfo projectId (Path.Combine(projectDir, "Program.cs")) source
+                        RoslynTestHelpers.CreateDocumentInfo projectId (Path.Combine(projectDir, $"Program.{extension}")) source
                     ],
                 metadataReferences = RoslynTestHelpers.MetadataReferencesOf(options, [])
             )
