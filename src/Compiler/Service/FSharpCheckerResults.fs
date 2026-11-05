@@ -2889,7 +2889,9 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() =
         sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind) : SemanticClassificationItem[] =
+    member _.GetSemanticClassification
+        (range: range option, [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind)
+        : SemanticClassificationItem[] =
         sResolutions.GetSemanticClassification(
             g,
             amap,
@@ -3617,10 +3619,17 @@ type FSharpCheckFileResults
         | None -> [||]
         | Some(scope, _builderOpt) -> scope.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option, ?relatedSymbolKinds: RelatedSymbolUseKind) =
+    member _.GetSemanticClassification
+        (range: range option, [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind)
+        : SemanticClassificationItem[] =
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) -> scope.GetSemanticClassification(range, ?relatedSymbolKinds = relatedSymbolKinds)
+
+    member this.GetSemanticClassification
+        (range: range option, relatedSymbolKinds: RelatedSymbolUseKind option)
+        : SemanticClassificationItem[] =
+        this.GetSemanticClassification(range, ?relatedSymbolKinds = Option.toValueOption relatedSymbolKinds)
 
     member _.PartialAssemblySignature =
         match details with
@@ -3670,7 +3679,9 @@ type FSharpCheckFileResults
                             FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             }
 
-    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken) =
+    member _.GetUsesOfSymbolInFile
+        (symbol: FSharpSymbol, [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken)
+        : FSharpSymbolUse[] =
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) ->
@@ -3684,6 +3695,15 @@ type FSharpCheckFileResults
                         let inst = symbolUse.ItemWithInst.TyparInstantiation
                         FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             |]
+
+    member this.GetUsesOfSymbolInFile
+        (symbol: FSharpSymbol, relatedSymbolKinds: RelatedSymbolUseKind option, ?cancellationToken: CancellationToken)
+        : FSharpSymbolUse[] =
+        this.GetUsesOfSymbolInFile(
+            symbol,
+            ?relatedSymbolKinds = Option.toValueOption relatedSymbolKinds,
+            ?cancellationToken = cancellationToken
+        )
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         match details with

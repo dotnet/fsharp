@@ -2,13 +2,36 @@
 
 namespace FSharp.Compiler.Xml
 
+open System.Collections.Immutable
+
 open FSharp.Compiler.Text
+
+/// The tag an XmlDocRef comes from
+[<RequireQualifiedAccess>]
+type XmlDocRefKind =
+    | Param
+    | ParamRef
+    | TypeParam
+    | TypeParamRef
+
+/// A `name` attribute value of an XML doc and its source range
+[<Struct>]
+type XmlDocRef =
+    {
+        Kind: XmlDocRefKind
+        Text: string
+        /// The source range of the value, without its quotes
+        Range: range
+    }
 
 /// Represents collected XmlDoc lines
 [<Class>]
 type public XmlDoc =
 
     new: unprocessedLines: string[] * range: range -> XmlDoc
+
+    /// One range per line, or none when the doc did not come from source
+    new: unprocessedLines: string[] * lineRanges: ImmutableArray<range> * range: range -> XmlDoc
 
     /// Merge two XML documentation
     static member Merge: doc1: XmlDoc -> doc2: XmlDoc -> XmlDoc
@@ -36,6 +59,13 @@ type public XmlDoc =
 
     /// Indicates the overall original source range of the XmlDoc
     member Range: range
+
+    /// The source range of each unprocessed line; empty when the doc did not come from source
+    member LineRanges: ImmutableArray<range>
+
+    /// The `name` values of the `param`, `paramref`, `typeparam` and `typeparamref` elements, with their source ranges;
+    /// empty for a doc without line ranges, of plain text, or badly formed
+    member GetRefs: unit -> ImmutableArray<XmlDocRef>
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member UnprocessedLines: string[]
