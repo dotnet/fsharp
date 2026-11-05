@@ -1144,7 +1144,7 @@ module XmlDocParameters =
     let private legacyAll = enum<RelatedSymbolUseKind> 0x7FFFFFFF
 
     let private expectDocUses (markedSource: string) =
-        let lines, refs = extractRefs markedSource
+        let struct (lines, refs) = extractRefs markedSource
         let rangeOf (r: MarkedRef) = lineAfterModuleHeader + r.Line, r.Column, r.Column + r.Text.Length
         let isInDoc (r: MarkedRef) = lines[r.Line].TrimStart().StartsWith("///", StringComparison.Ordinal)
         let codeRanges = refs |> List.filter (isInDoc >> not) |> List.map rangeOf |> List.sort |> List.toArray

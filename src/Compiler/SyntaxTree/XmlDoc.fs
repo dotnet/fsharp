@@ -53,9 +53,9 @@ module private XmlDocRefs =
     let private isBlank (line: string) = line.AsSpan().TrimStart(' ').IsEmpty
 
     let private tryFindFirstXmlLine (lines: string[]) =
-        match Array.tryFindIndex (isBlank >> not) lines with
-        | Some i when lines[i].AsSpan().TrimStart(' ').StartsWith("<".AsSpan(), StringComparison.Ordinal) -> ValueSome i
-        | _ -> ValueNone
+        lines
+        |> Array.tryFindIndexV (not << isBlank)
+        |> ValueOption.filter (fun i -> lines[i].AsSpan().TrimStart(' ').StartsWith("<".AsSpan(), StringComparison.Ordinal))
 
     let private skipWhiteSpace (text: string) i =
         let mutable i = i
@@ -92,7 +92,7 @@ module private XmlDocRefs =
             let xml =
                 if text.AsSpan().Contains(nameAttribute.LocalName.AsSpan(), StringComparison.Ordinal) then
                     try
-                        ValueSome(XDocument.Parse("<doc>\n" + text + "\n</doc>", LoadOptions.SetLineInfo))
+                        ValueSome(XDocument.Parse($"<doc>\n{text}</doc>", LoadOptions.SetLineInfo))
                     with :? XmlException ->
                         ValueNone
                 else
@@ -154,16 +154,18 @@ type XmlDoc(unprocessedLines: string[], lineRanges: ImmutableArray<range>, range
         match lines with
         | [] -> []
         | lineA :: rest as lines ->
-            let lineAT = lineA.TrimStart([| ' ' |])
+            let lineAT = lineA.AsSpan().TrimStart(' ')
 
-            if String.IsNullOrEmpty(lineAT) then
+            if lineAT.IsEmpty then
                 processLines rest
-            elif lineAT.StartsWithOrdinal("<") then
+            elif lineAT.StartsWith("<".AsSpan(), StringComparison.Ordinal) then
                 lines
             else
-                [ "<summary>" ]
-                @ (lines |> List.map Internal.Utilities.XmlAdapters.escape)
-                @ [ "</summary>" ]
+                [
+                    yield "<summary>"
+                    yield! lines |> Seq.map Internal.Utilities.XmlAdapters.escape
+                    yield "</summary>"
+                ]
 
     new(unprocessedLines: string[], range: range) = XmlDoc(unprocessedLines, ImmutableArray.empty, range)
 

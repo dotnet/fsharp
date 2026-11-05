@@ -462,7 +462,7 @@ type TcSymbolUseData =
 type internal TcSymbolUses =
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol: item: Item * ?relatedSymbolKinds: RelatedSymbolUseKind -> TcSymbolUseData[]
+    member GetUsesOfSymbol: item: Item * [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
     member AllUsesOfSymbols: TcSymbolUseData[][]
@@ -658,7 +658,7 @@ val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: ra
 /// Report a related symbol use at a source range (does not affect colorization or symbol info)
 val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
 
-val internal XmlDocTyparCandidates: typars: Typars -> ImmutableArray<struct (string * Item)>
+val internal XmlDocTyparCandidates: typars: seq<Typar> -> ImmutableArray<struct (string * Item)>
 
 val internal ReportXmlDocRefs:
     currentSink: ITypecheckResultsSink ->

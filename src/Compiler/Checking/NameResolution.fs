@@ -2384,12 +2384,12 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     let capturedRelatedSymbolUses = ()
     do capturedRelatedSymbolUses // don't capture this!
 
-    member _.GetUsesOfSymbol(item, ?relatedSymbolKinds: RelatedSymbolUseKind) =
+    member _.GetUsesOfSymbol(item, [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind) =
         let kinds =
             match relatedSymbolKinds with
-            | Some kinds when kinds = allAsCompiledIntoOlderCallers -> RelatedSymbolUseKind.AllInCode
-            | Some kinds -> kinds
-            | None -> RelatedSymbolUseKind.None
+            | ValueSome kinds when kinds = allAsCompiledIntoOlderCallers -> RelatedSymbolUseKind.AllInCode
+            | ValueSome kinds -> kinds
+            | ValueNone -> RelatedSymbolUseKind.None
 
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
@@ -2663,13 +2663,10 @@ let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: Rel
     | None -> ()
     | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
 
-let XmlDocTyparCandidates (typars: Typars) =
-    let candidates = ImmutableArrayBuilder.create typars.Length
-
-    for tp in typars do
-        candidates.Add(struct (tp.Name, Item.TypeVar(tp.Name, tp)))
-
-    candidates.MoveToImmutable()
+let XmlDocTyparCandidates (typars: seq<Typar>) =
+    typars
+    |> Seq.map (fun tp -> struct (tp.Name, Item.TypeVar(tp.Name, tp)))
+    |> ImmutableArray.ofSeq
 
 let ReportXmlDocRefs
     (currentSink: ITypecheckResultsSink)
