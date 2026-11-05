@@ -1154,13 +1154,14 @@ module XmlDocParameters =
             let symbol =
                 (allUses |> Seq.find (fun su -> (su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn) = codeRanges[0])).Symbol
 
-            let usesOf kinds = result.GetUsesOfSymbolInFile(symbol, ?relatedSymbolKinds = kinds) |> Seq.map _.Range
+            let usesOf (kinds: RelatedSymbolUseKind voption) =
+                result.GetUsesOfSymbolInFile(symbol, ?relatedSymbolKinds = kinds) |> Seq.map _.Range
 
-            usesOf None |> expectRanges codeRanges
-            usesOf (Some RelatedSymbolUseKind.AllInCode) |> expectRanges codeRanges
-            usesOf (Some legacyAll) |> expectRanges codeRanges
-            usesOf (Some RelatedSymbolUseKind.XmlDocParameter) |> expectRanges allRanges
-            usesOf (Some RelatedSymbolUseKind.AllInCodeAndDocs) |> expectRanges allRanges)
+            usesOf ValueNone |> expectRanges codeRanges
+            usesOf (ValueSome RelatedSymbolUseKind.AllInCode) |> expectRanges codeRanges
+            usesOf (ValueSome legacyAll) |> expectRanges codeRanges
+            usesOf (ValueSome RelatedSymbolUseKind.XmlDocParameter) |> expectRanges allRanges
+            usesOf (ValueSome RelatedSymbolUseKind.AllInCodeAndDocs) |> expectRanges allRanges)
 
     [<Theory>]
     [<InlineData("""
@@ -1235,6 +1236,28 @@ let f {ref}x{/ref} = {ref}x{/ref}
 """, Label = "a doc that starts with plain text is an escaped summary and names nothing")>]
     let ``every caller finds the uses in code, only one that asks for the names in docs finds those too`` markedSource =
         expectDocUses markedSource
+
+    [<Fact>]
+    let ``the obsolete option overload of GetUsesOfSymbolInFile hands the kinds on like the struct option one`` () =
+        let source = """
+/// <param name="x">The addend.</param>
+let addOne x = x + 1
+"""
+        checkAllSymbols source (fun result allUses ->
+            let symbol = (allUses |> Seq.find (fun su -> su.Symbol.DisplayName = "x")).Symbol
+
+            let current (kinds: RelatedSymbolUseKind voption) =
+                result.GetUsesOfSymbolInFile(symbol, ?relatedSymbolKinds = kinds) |> Array.map _.Range
+
+            #nowarn "44"
+            let obsolete (kinds: RelatedSymbolUseKind option) =
+                result.GetUsesOfSymbolInFile(symbol, kinds) |> Array.map _.Range
+            #warnon "44"
+
+            let docs = RelatedSymbolUseKind.AllInCodeAndDocs
+            Assert.Equal<range array>(current ValueNone, obsolete None)
+            Assert.Equal<range array>(current (ValueSome docs), obsolete (Some docs))
+            Assert.True((obsolete (Some docs)).Length > (obsolete None).Length))
 
     [<Fact>]
     let ``param of a signature file val is found in code but its doc stays out of find all references`` () =
