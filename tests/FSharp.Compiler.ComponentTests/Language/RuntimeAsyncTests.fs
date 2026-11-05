@@ -225,11 +225,7 @@ let main _ =
                     Assert.Equal(System.Reflection.Metadata.SignatureTypeCode.Void, signature.ReadSignatureTypeCode())
             for name in ["child"; "run"] do
                 let method = methods |> List.filter (fun method -> md.GetString method.Name = name) |> Assert.Single
-                Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000)
-            if optimize then
-                let liftedChild =
-                    methods |> List.filter (fun method -> md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0)
-                Assert.Single(liftedChild) |> ignore)
+                Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000))
         let _, _, il = ILChecker.verifyILAndReturnActual [] result.OutputPath.Value []
         let methodBody name =
             Regex.Match(il, @"(?ms)^(?<indent>[ \t]*)\.method[^{}]*\b" + name + @"(?:<[^>]+>)?\([^{}]*\{.*?^\k<indent>\}").Value
@@ -237,11 +233,7 @@ let main _ =
         Assert.NotEmpty(moveNext)
         Assert.Contains("void", moveNext)
         Assert.DoesNotContain("AsyncHelpers::Await", moveNext)
-        if optimize then
-            Assert.Contains("AsyncHelpers::Await", methodBody "Invoke")
-            Assert.Contains("FSharpFunc`2", moveNext)
-        else
-            Assert.Contains("TaskComposition::child", moveNext)
+        Assert.Contains("TaskComposition::child", moveNext)
         for name in ["child"; "run"] do
             Assert.Contains("AsyncHelpers::Await", methodBody name)
 
@@ -879,30 +871,38 @@ let f () : Task<int> =
     let runtimeAsyncFixture name =
         Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", name)
 
-    let withSampleBuilders sources =
-        FsFromPath (runtimeAsyncFixture "Async2Builder.fs")
-        |> withAdditionalSourceFiles (
-            [ "RuntimeTaskBuilder.fs"; "AsyncSeq2Builder.fs" ] @ sources
-            |> List.map (runtimeAsyncFixture >> SourceFromPath)
-        )
-        |> withLangVersionPreview
-        |> withFSharpCoreShippedNet
-
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime task builder fixture executes through runtime async`` (optimize: bool) =
-        withSampleBuilders [ "RuntimeTasks.fs" ]
-        |> withAdditionalSourceFile (FsSource "RuntimeTasks.runAllTests () |> exit")
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
     [<Fact>]
     let ``runtime task AsyncLocal values propagate through runtime async`` () =
-        withSampleBuilders [ "RuntimeAsyncAsyncLocal.fs" ]
+        FsFromPath (runtimeAsyncFixture "Async2Builder.fs")
+        |> withAdditionalSourceFile (SourceFromPath (runtimeAsyncFixture "RuntimeAsyncAsyncLocal.fs"))
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("on", "helper work")>]
+    [<InlineData("off", "")>]
+    let ``FSharp.Core task is runtime managed only with the runtime-async feature`` (mode: string, runtimeAsyncMethods: string) =
+        FSharp """
+module Consumer
+let helper (value: int) = task { let! value = System.Threading.Tasks.Task.FromResult value in return value + 2 }
+let work () = task { let! value = helper 40 in return value }
+[<EntryPoint>]
+let main _ = if work().Result = 42 then 0 else 1
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimize
+        |> withOptions [ $"--features:runtime-async={mode}" ]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withMetadataReader (fun md ->
+            [ for h in md.MethodDefinitions do
+                let m = md.GetMethodDefinition h
+                if int m.ImplAttributes &&& 0x2000 <> 0 then md.GetString m.Name ]
+            |> String.concat " "
+            |> fun names -> Assert.Equal(runtimeAsyncMethods, names))
 
     [<Fact>]
     let ``runtime async direct intrinsic fixture executes`` () =
@@ -925,31 +925,151 @@ let f () : Task<int> =
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime async sequence builder fixture executes`` (optimize: bool) =
-        withSampleBuilders [ "EnumerableTests.fs" ]
-        |> withAdditionalSourceFile (FsSource "EnumerableTests.runTests().Result |> exit")
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    [<Theory>]
-    let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
-        withSampleBuilders [ "RuntimeAsyncEnumerableTests.fs" ]
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
     [<Fact>]
     let ``runtime async suspension in exception region executes`` () =
         runtimeAsyncFixture "RuntimeTasksAsyncDisposalException.fs"
         |> FsFromPath
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``runtime async rethrow after a suspending handler or compensation keeps the original stack trace`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncRethrowStackTraceTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let throwingFrame () : int = raise (InvalidOperationException "boom")
+
+let suspendingFinally () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        finally
+            AsyncHelpers.Await(Task.Delay 1))
+
+let reraiseAfterSuspension () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        with _ ->
+            AsyncHelpers.Await(Task.Delay 1)
+            reraise ())
+
+let unmatchedSuspendingHandler () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            throwingFrame ()
+        with :? TimeoutException ->
+            AsyncHelpers.Await(Task.Delay 1)
+            0)
+
+let failures = ResizeArray<string>()
+
+let check name (start: unit -> Task<int>) =
+    try
+        start().GetAwaiter().GetResult() |> ignore
+        failures.Add $"{name}: no exception"
+    with
+    | :? InvalidOperationException as error when error.Message = "boom" ->
+        if not ((string error.StackTrace).Contains "throwingFrame") then
+            failures.Add $"{name}: stack trace lost the original throw site:\n{error.StackTrace}"
+    | error -> failures.Add $"{name}: unexpected {error}"
+
+[<EntryPoint>]
+let main _ =
+    check "suspending finally" suspendingFinally
+    check "reraise after suspension" reraiseAfterSuspension
+    check "unmatched suspending handler" unmatchedSuspendingHandler
+
+    for failure in failures do
+        eprintfn "%s" failure
+
+    failures.Count
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``runtime async suspending handler or compensation does not allocate when the body succeeds`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncCaptureAllocationTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let compute (value: int) = value + 1000
+
+let plainHandler (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        with _ ->
+            0)
+
+let suspendingHandler (gate: Task) (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        with _ ->
+            AsyncHelpers.Await gate
+            0)
+
+let suspendingFinally (gate: Task) (value: int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            compute value
+        finally
+            AsyncHelpers.Await gate)
+
+let iterations = 10_000
+
+// Each call completes synchronously, so it allocates only its Task<int> unless the rewrite adds more.
+let bytesPerCall (start: int -> Task<int>) =
+    for i in 1..iterations do
+        start(i).Result |> ignore
+
+    let before = GC.GetAllocatedBytesForCurrentThread()
+
+    for i in 1..iterations do
+        start(i).Result |> ignore
+
+    float (GC.GetAllocatedBytesForCurrentThread() - before) / float iterations
+
+[<EntryPoint>]
+let main _ =
+    let gate = Task.CompletedTask
+    let baseline = bytesPerCall plainHandler
+    let mutable failed = 0
+
+    for name, start in [ "suspending handler", suspendingHandler gate; "suspending finally", suspendingFinally gate ] do
+        let extra = bytesPerCall start - baseline
+
+        if extra > 1.0 then
+            eprintfn "%s allocates %.1f extra bytes per successful call" name extra
+            failed <- failed + 1
+
+    failed
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -1525,11 +1645,11 @@ module RuntimeAsyncConditionalFoldTest
 
 open System.Collections.Generic
 open System.Threading.Tasks
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 [<NoCompilerInlining>]
 let run deduplicate (ready: Task<int>) =
-    runtimeTask {{
+    task {{
         let! initial = ready
         return
             {if useList then "List.fold" else "Array.fold"}
@@ -1557,16 +1677,7 @@ let main _ =
     0
 """
 
-        let library =
-            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
-            |> asLibrary
-            |> withName "RuntimeTaskLibrary"
-            |> withLangVersionPreview
-            |> withFSharpCoreShippedNet
-            |> withOptimization optimize
-
         FSharp source
-        |> withReferences [ library ]
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
         |> withOptimization optimize
@@ -2696,23 +2807,24 @@ module RuntimeAsyncDebugTests =
         let source =
             """module RuntimeAsyncSequenceDebug
 open System.Threading.Tasks
-open Microsoft.FSharp.Control
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 let first () =
-    asyncSeq2 {
+    taskSeq {
         do! Task.Delay 1
         yield 1
     }
 
 let second () =
-    asyncSeq2 {
+    taskSeq {
         do! Task.Delay 1
         yield 2
     }
 """
 
-        RuntimeAsyncTests.withSampleBuilders []
-        |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncSequenceDebug.fs" source)
+        FSharpWithFileName "RuntimeAsyncSequenceDebug.fs" source
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
         |> withPortablePdb
         |> withNoOptimize
         |> compile

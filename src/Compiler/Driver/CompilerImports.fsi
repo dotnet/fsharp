@@ -47,6 +47,8 @@ val IsOptimizationDataResourceB: ILResource -> bool
 
 val GetNameOfILModule: ILModuleDef -> string
 
+val SelectAssemblyAutoOpens: TcConfig -> AssemblyAutoOpen list -> string list
+
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 
@@ -124,7 +126,7 @@ type ImportedBinary =
 type ImportedAssembly =
     { ILScopeRef: ILScopeRef
       FSharpViewOfMetadata: CcuThunk
-      AssemblyAutoOpenAttributes: string list
+      AssemblyAutoOpenAttributes: AssemblyAutoOpen list
       AssemblyInternalsVisibleToAttributes: string list
 #if !NO_TYPEPROVIDERS
       IsProviderGenerated: bool

@@ -1,13 +1,11 @@
-// Runtime-behavior edge cases for runtime-async, exercised through the runtimeTask CE builder
-// (RuntimeTaskBuilder.fs, treated here as a hypothetical library). Verified to run green on the
-// pinned net11 preview runtime. Referenced from RuntimeAsyncEdgeCaseTests.fs via compileExeAndRun.
+// Runtime-behavior edge cases for runtime-async, exercised through the FSharp.Core runtime task builder. Referenced from RuntimeAsyncEdgeCaseTests.fs via compileExeAndRun.
 module RuntimeAsyncEdgeCases
 
 open System
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+let private runtimeTask = Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions.task
 
 let private delayed v =
     Task.Delay(1).ContinueWith(fun (_: Task) -> v)

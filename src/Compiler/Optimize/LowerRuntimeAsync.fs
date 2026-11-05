@@ -510,13 +510,13 @@ let private inlineCallbacks g implFile =
     RewriteImplFile (rewriter false) implFile
 
 /// Prepares each runtime-async body once its final shape is known, innermost first.
-let private prepareBodies g (reportedRanges: ConcurrentDictionary<range, unit>) implFile =
+let private prepareBodies g amap (reportedRanges: ConcurrentDictionary<range, unit>) implFile =
     let prepare body =
         for v in GetRuntimeAsyncNonPreservableUses g body do
             if reportedRanges.TryAdd(v.Range, ()) then
                 errorR (Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension (RichText.mkText v.DisplayName), v.Range))
 
-        RewriteRuntimeAsyncExceptionHandlers g body
+        RewriteRuntimeAsyncExceptionHandlers g amap body
 
     RewriteImplFile
         {
@@ -533,7 +533,7 @@ let private prepareBodies g (reportedRanges: ConcurrentDictionary<range, unit>) 
         }
         implFile
 
-let TransformImplFile (g: TcGlobals) reportedRanges (implFile: CheckedImplFile) =
+let TransformImplFile (g: TcGlobals) amap reportedRanges (implFile: CheckedImplFile) =
     if containsRuntimeAsyncMarker g implFile then
         // Bodies inlined from an assembly compiled with the feature are still prepared.
         let implFile =
@@ -542,6 +542,6 @@ let TransformImplFile (g: TcGlobals) reportedRanges (implFile: CheckedImplFile) 
             else
                 implFile
 
-        prepareBodies g reportedRanges implFile
+        prepareBodies g amap reportedRanges implFile
     else
         implFile

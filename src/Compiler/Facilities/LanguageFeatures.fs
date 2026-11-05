@@ -17,6 +17,7 @@ module internal FSharp.Compiler.Features
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | FromEndSlicing
+    | ConditionalAutoOpen
     | RuntimeAsync
     | NullnessChecking
     | UnionIsPropertiesVisible
@@ -162,6 +163,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExtensionConstraintSolutions, languageVersion112
 
                 // F# preview
+                LanguageFeature.ConditionalAutoOpen, previewVersion
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -255,6 +257,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static member GetFeatureString feature =
         match feature with
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
+        | LanguageFeature.ConditionalAutoOpen -> FSComp.SR.featureConditionalAutoOpen ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()

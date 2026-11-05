@@ -1,11 +1,13 @@
-// Tests for the runtime-async RuntimeTaskBuilder, ported from the TaskBuilder tests in
+// Tests for the FSharp.Core runtime-async `task` builder, ported from the TaskBuilder tests in
 // tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Control/Tasks.fs
 // with `task {` replaced by `runtimeTask {`. Test names and bodies are kept as
 // close to the originals as possible.
 //
 // `backgroundTask` tests have no runtimeTask equivalent and are omitted.
 
-module RuntimeTasks
+module FSharp.Core.UnitTests.Control.RuntimeTasks
+
+#if NET11_0_OR_GREATER
 
 open System
 open System.Collections
@@ -16,7 +18,9 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Xunit
+
+let runtimeTask = Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions.task
 
 exception TestException of string
 
@@ -885,9 +889,7 @@ let testTypeInference () =
 
     let t2 =
         runtimeTask {
-            // Divergence from task {}: the runtimeTask Bind overload set does not
-            // propagate the element type here, so the annotation is required.
-            let! (s: string) = t1
+            let! s = t1
             return s.Length
         }
 
@@ -1565,6 +1567,38 @@ let testTaskUsesSyncContext () = // task completes without the body observably r
         finally
             SynchronizationContext.SetSynchronizationContext oldSyncContext
 
+type private DualDisposable(syncDispose: unit -> unit, asyncDispose: unit -> ValueTask) =
+    interface IDisposable with member _.Dispose() = syncDispose()
+    interface IAsyncDisposable with member _.DisposeAsync() = asyncDispose()
+
+let testCancellationIdentity () =
+    use cancellation = new CancellationTokenSource()
+    let input = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let output = runtimeTask { let! value = input.Task in return value }
+    require (not output.IsCompleted) "cancellation input must suspend"
+    cancellation.Cancel()
+    input.SetCanceled(cancellation.Token)
+    try
+        resultOf output |> ignore
+        failwith "cancellation was lost"
+    with :? OperationCanceledException as error ->
+        require (error.CancellationToken = cancellation.Token) "cancellation token changed"
+    require output.IsCanceled "task cancellation status"
+
+let testDualDisposalPriority () =
+    let cleanup = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let mutable synchronous = 0
+    let mutable asynchronous = 0
+    let resource =
+        new DualDisposable(
+            (fun () -> synchronous <- synchronous + 1),
+            (fun () -> asynchronous <- asynchronous + 1; ValueTask(cleanup.Task)))
+    let output = runtimeTask { use resource = resource in return 42 }
+    require (not output.IsCompleted && asynchronous = 1 && synchronous = 0) "async disposal must take priority and suspend"
+    cleanup.SetResult()
+    require (resultOf output = 42 && asynchronous = 1 && synchronous = 0) "disposal must finish once"
+
+[<Fact>]
 let runAllTests () =
     tinyTask ()
     tbind ()
@@ -1637,4 +1671,6 @@ let runAllTests () =
     testTaskUsesSyncContext ()
     testExceptionAttachedToTaskWithoutAwait ()
     testExceptionAttachedToTaskWithAwait ()
-    0
+    testCancellationIdentity ()
+    testDualDisposalPriority ()
+#endif

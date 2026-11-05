@@ -4982,7 +4982,17 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             | UnknownValue | ConstValue _ | ConstExprValue _ -> ivalue
             | SizeValue(_, a) -> MakeSizedValueInfo (cut a)
 
-        let einfo = if vref.ShouldInline || vref.InlineIfLambda then einfo else {einfo with Info = cut einfo.Info }
+        let rec isRuntimeAsyncFunction expr =
+            match stripDebugPoints expr with
+            | Expr.Lambda(bodyExpr = body)
+            | Expr.TyLambda(bodyExpr = body) -> isRuntimeAsyncFunction body
+            | body -> TryGetRuntimeAsyncReturn g body |> Option.isSome
+
+        let einfo =
+            if vref.ShouldInline || vref.InlineIfLambda then einfo
+            // Inlining a runtime-async function nests its async body in the caller, which then needs its own method
+            elif isRuntimeAsyncFunction exprOptimized then { einfo with Info = UnknownValue }
+            else { einfo with Info = cut einfo.Info }
 
         let einfo =
             if (not vref.ShouldInline && not vref.InlineIfLambda && not cenv.settings.KeepOptimizationValues) ||

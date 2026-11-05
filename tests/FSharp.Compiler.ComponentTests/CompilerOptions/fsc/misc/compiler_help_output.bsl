@@ -83,6 +83,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --disableLanguageFeature:<string>        Disable a specific language feature by name.
 --checked[+|-]                           Generate overflow checks (off by default)
 --define:<string>                        Define conditional compilation symbols (Short form: -d)
+--features:<string>                      Enable an opt-in feature of referenced assemblies
 --always-inline[+|-]                     Always inline 'inline' functions
 
 

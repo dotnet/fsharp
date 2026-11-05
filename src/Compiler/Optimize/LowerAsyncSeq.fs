@@ -5,11 +5,8 @@ module internal FSharp.Compiler.LowerAsyncSeq
 open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.LowerSequenceExpressions
-open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.RuntimeAsyncAnalysis
 open FSharp.Compiler.RuntimeAsyncExceptionRewrite
@@ -58,34 +55,6 @@ let private rewriteCancellationToken (g: TcGlobals) tokenExpr =
             RewriteQuotations = false
             StackGuard = StackGuard("LowerAsyncSeqCancellationToken")
         }
-
-let private callEdi (g: TcGlobals) amap m name resultTy (objArgs: Expr list) (args: Expr list) =
-    let ediTy =
-        g.system_ExceptionDispatchInfo_ty
-        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
-
-    let signature = List.map (tyOfExpr g) args @ [ resultTy ]
-
-    let methodInfo =
-        TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessorDomain.AccessibleFromEverywhere name ediTy
-        |> List.tryFind (fun methodInfo ->
-            let methodSignature =
-                List.concat (methodInfo.GetParamTypes(amap, m, []))
-                @ [ methodInfo.GetFSharpReturnType(amap, m, []) ]
-
-            methodInfo.IsInstance = not objArgs.IsEmpty
-            && methodSignature.Length = signature.Length
-            && List.forall2 (typeEquiv g) methodSignature signature)
-        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
-
-    MakeMethInfoCall amap m methodInfo [] (objArgs @ args) None
-
-/// ExceptionDispatchInfo.Capture(exn).Throw()
-let private rethrow (g: TcGlobals) amap m exnExpr =
-    let edi =
-        callEdi g amap m "Capture" (Option.get g.system_ExceptionDispatchInfo_ty) [] [ exnExpr ]
-
-    callEdi g amap m "Throw" g.unit_ty [ edi ] []
 
 let private prepareMethods
     (g: TcGlobals)
@@ -176,7 +145,7 @@ let private prepareMethods
                 m
                 g.bool_ty
                 faultExpr
-                (mkCompGenSequential m (rethrow g amap m faultExpr) (mkFalse g m))
+                (mkCompGenSequential m (RethrowRuntimeAsyncException g amap m faultExpr) (mkFalse g m))
                 (mkILAsmCeq g m resultExpr (mkInt32 g m 1)))
 
     let body =
@@ -188,7 +157,7 @@ let private prepareMethods
     for value in GetRuntimeAsyncNonPreservableUses g body do
         error (Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension value.DisplayName, value.Range))
 
-    let body = RewriteRuntimeAsyncExceptionHandlers g body
+    let body = RewriteRuntimeAsyncExceptionHandlers g amap body
     let marker = g.cgh__runtimeAsyncReturnValueTask_vref
     primMkApp (exprForValRef m marker, marker.Type) [ g.bool_ty ] [ body ] m
 
@@ -229,7 +198,7 @@ let TryConvert g amap (expr: Expr) =
             {
                 Fault = mkLocalValRef faultVar
                 Disposing = mkLocalValRef disposingVar
-                Rethrow = rethrow g amap m
+                Rethrow = RethrowRuntimeAsyncException g amap m
             }
 
         match ConvertSequenceExprToObject g amap (Some unwind) root with

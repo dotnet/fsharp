@@ -1337,7 +1337,7 @@ type internal BackgroundCompiler
 
             let applyCompilerOptions tcConfigB =
                 let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfigB
-                ParseCompilerOptions(ignore, fsiCompilerOptions, Array.toList otherFlags)
+                ParseCompilerOptions(ignore, fsiCompilerOptions, Array.toList otherFlags, tcConfigB.RecordCommandLineOption)
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(

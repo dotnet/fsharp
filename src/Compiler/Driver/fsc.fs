@@ -266,7 +266,12 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
 
     // This is where flags are interpreted by the command line fsc.exe.
-    ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    ParseCompilerOptions(
+        collect,
+        GetCoreFscCompilerOptions tcConfigB,
+        List.tail (PostProcessCompilerArgs abbrevArgs argv),
+        tcConfigB.RecordCommandLineOption
+    )
 
     let inputFiles = List.rev inputFilesRef
 
