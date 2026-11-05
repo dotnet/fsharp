@@ -145,7 +145,7 @@ module TcResolutionsExtensions =
                 amap: ImportMap,
                 formatSpecifierLocations: (range * int)[],
                 range: range option,
-                ?relatedSymbolKinds: RelatedSymbolUseKind
+                [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind
             ) : SemanticClassificationItem[] =
             DiagnosticsScope.Protect
                 range0
@@ -453,14 +453,14 @@ module TcResolutionsExtensions =
                     // Classify related symbol uses (e.g., union case testers → UnionCase).
                     // These share ranges with the corresponding property classifications, so we intentionally add a second classification.
                     match relatedSymbolKinds with
-                    | Some kinds ->
+                    | ValueSome kinds ->
                         for struct (m, item, kind) in sResolutions.CapturedRelatedSymbolUsesInCode do
                             if kinds.HasFlag kind then
                                 match range, item with
                                 | Some r, _ when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()
                                 | _, Item.UnionCase _ -> results.Add(SemanticClassificationItem((m, SemanticClassificationType.UnionCase)))
                                 | _ -> ()
-                    | None -> ()
+                    | ValueNone -> ()
 
                     let locs =
                         formatSpecifierLocations

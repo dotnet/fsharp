@@ -94,6 +94,38 @@ let add x y = x + y
         Assert.Empty onDocLines
     }
 
+#nowarn "44"
+let private obsoleteClassificationsWith (checkResults: FSharpCheckFileResults) (relatedSymbolKinds: RelatedSymbolUseKind option) =
+    checkResults.GetSemanticClassification(None, relatedSymbolKinds)
+    |> Array.map (fun item -> item.Range, item.Type)
+#warnon "44"
+
+[<Fact>]
+let ``the obsolete option overload of GetSemanticClassification hands the kinds on like the struct option one`` () : Task =
+    task {
+        let source =
+            """
+module Test
+
+type Shape = Circle | Square
+let s = Circle
+let r1 = s.IsCircle
+"""
+
+        let! fileName, snapshot, checker = singleFileChecker source
+        let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
+        let checkResults = getTypeCheckResult results
+
+        let current (relatedSymbolKinds: RelatedSymbolUseKind voption) =
+            checkResults.GetSemanticClassification(None, ?relatedSymbolKinds = relatedSymbolKinds)
+            |> Array.map (fun item -> item.Range, item.Type)
+
+        let kinds = RelatedSymbolUseKind.AllInCode
+        Assert.Equal<(Range * SemanticClassificationType) array>(current ValueNone, obsoleteClassificationsWith checkResults None)
+        Assert.Equal<(Range * SemanticClassificationType) array>(current (ValueSome kinds), obsoleteClassificationsWith checkResults (Some kinds))
+        Assert.True((obsoleteClassificationsWith checkResults (Some kinds)).Length > (obsoleteClassificationsWith checkResults None).Length)
+    }
+
 /// (#16621) Helper: assert UnionCase classifications on expected lines.
 /// Each entry is (line, expectedCount, maxRangeWidth).
 /// maxRangeWidth guards against dot-coloring regressions (range including "x." prefix).
