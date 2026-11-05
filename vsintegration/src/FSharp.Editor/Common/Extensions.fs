@@ -615,6 +615,12 @@ module List =
         | [] -> ValueNone
         | h :: t -> if predicate h then ValueSome h else tryFindV predicate t
 
+    let rec tryLastV list =
+        match list with
+        | [] -> ValueNone
+        | [ last ] -> ValueSome last
+        | _ :: rest -> tryLastV rest
+
 [<RequireQualifiedAccess>]
 module Exception =
 
