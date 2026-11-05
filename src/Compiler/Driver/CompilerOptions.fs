@@ -224,6 +224,41 @@ let DumpCompilerOptionBlocks blocks =
 let isSlashOpt (opt: string) =
     opt[0] = '/' && (opt.Length = 1 || not (opt[1..].Contains "/"))
 
+// returns a tuple - the option minus switchchars, the option tokenand  the option argument string
+let ParseCompilerOption (option: string) =
+
+    // Get option arguments, I.e everything following first:
+    let opts = option.Split([| ':' |])
+    let optArgs = String.Join(":", opts[1..])
+
+    let opt =
+        if String.IsNullOrEmpty(option) then
+            ""
+        // if it doesn't start with a '-' or '/', reject outright
+        elif option[0] <> '-' && option[0] <> '/' then
+            ""
+        elif option <> "--" then
+            // is it an abbreviated or MSFT-style option?
+            // if so, strip the first character and move on with your life
+            // Weirdly a -- option can't have only a 1 character name
+            if option.Length = 2 || isSlashOpt option then
+                option[1..]
+            elif option.Length >= 3 && option[2] = ':' then
+                option[1..]
+            elif option.StartsWithOrdinal("--") then
+                match option.Length with
+                | l when l >= 4 && option[3] = ':' -> ""
+                | l when l > 3 -> option[2..]
+                | _ -> ""
+            else
+                ""
+        else
+            option
+
+    // grab the option token
+    let token = opt.Split([| ':' |])[0]
+    opt, token, optArgs
+
 module ResponseFile =
 
     type ResponseFileData = ResponseFileLine list
@@ -232,7 +267,7 @@ module ResponseFile =
         | CompilerOptionSpec of string
         | Comment of string
 
-    let parseFile path : Choice<ResponseFileData, Exception> =
+    let parseFile path : Result<ResponseFileData, Exception> =
         let parseLine (l: string) =
             match l with
             | s when String.IsNullOrWhiteSpace s -> None
@@ -251,49 +286,36 @@ module ResponseFile =
                 |> Seq.choose parseLine
                 |> List.ofSeq
 
-            Choice1Of2 data
+            Ok data
         with e ->
-            Choice2Of2 e
+            Result.Error e
+
+let ReadResponseFileOptions (arg: string) : Result<string list, exn> =
+    let fullpath =
+        try
+            Some(arg.TrimStart('@') |> FileSystem.GetFullPathShim)
+        with _ ->
+            None
+
+    match fullpath with
+    | None -> Result.Error(Error(FSComp.SR.optsResponseFileNameInvalid arg, rangeCmdArgs))
+    | Some path when not (FileSystem.FileExistsShim path) ->
+        Result.Error(Error(FSComp.SR.optsResponseFileNotFound (arg, path), rangeCmdArgs))
+    | Some path ->
+        match ResponseFile.parseFile path with
+        | Result.Error _ -> Result.Error(Error(FSComp.SR.optsInvalidResponseFile (arg, path), rangeCmdArgs))
+        | Ok rspData ->
+            rspData
+            |> List.choose (fun line ->
+                match line with
+                | ResponseFile.ResponseFileLine.Comment _ -> None
+                | ResponseFile.ResponseFileLine.CompilerOptionSpec opt -> Some opt)
+            |> Ok
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
     use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
-
-    // returns a tuple - the option minus switchchars, the option tokenand  the option argument string
-    let parseOption (option: string) =
-
-        // Get option arguments, I.e everything following first:
-        let opts = option.Split([| ':' |])
-        let optArgs = String.Join(":", opts[1..])
-
-        let opt =
-            if String.IsNullOrEmpty(option) then
-                ""
-            // if it doesn't start with a '-' or '/', reject outright
-            elif option[0] <> '-' && option[0] <> '/' then
-                ""
-            elif option <> "--" then
-                // is it an abbreviated or MSFT-style option?
-                // if so, strip the first character and move on with your life
-                // Weirdly a -- option can't have only a 1 character name
-                if option.Length = 2 || isSlashOpt option then
-                    option[1..]
-                elif option.Length >= 3 && option[2] = ':' then
-                    option[1..]
-                elif option.StartsWithOrdinal("--") then
-                    match option.Length with
-                    | l when l >= 4 && option[3] = ':' -> ""
-                    | l when l > 3 -> option[2..]
-                    | _ -> ""
-                else
-                    ""
-            else
-                option
-
-        // grab the option token
-        let token = opt.Split([| ':' |])[0]
-        opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if String.IsNullOrEmpty(argString) then
@@ -332,35 +354,15 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         | [] -> ()
         | opt: string :: t when opt.StartsWithOrdinal("@") ->
             let responseFileOptions =
-                let fullpath =
-                    try
-                        Some(opt.TrimStart('@') |> FileSystem.GetFullPathShim)
-                    with _ ->
-                        None
-
-                match fullpath with
-                | None ->
-                    errorR (Error(FSComp.SR.optsResponseFileNameInvalid opt, rangeCmdArgs))
+                match ReadResponseFileOptions opt with
+                | Ok options -> options
+                | Result.Error e ->
+                    errorR e
                     []
-                | Some path when not (FileSystem.FileExistsShim path) ->
-                    errorR (Error(FSComp.SR.optsResponseFileNotFound (opt, path), rangeCmdArgs))
-                    []
-                | Some path ->
-                    match ResponseFile.parseFile path with
-                    | Choice2Of2 _ ->
-                        errorR (Error(FSComp.SR.optsInvalidResponseFile (opt, path), rangeCmdArgs))
-                        []
-                    | Choice1Of2 rspData ->
-                        let onlyOptions l =
-                            match l with
-                            | ResponseFile.ResponseFileLine.Comment _ -> None
-                            | ResponseFile.ResponseFileLine.CompilerOptionSpec opt -> Some opt
-
-                        rspData |> List.choose onlyOptions
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let option, optToken, argString = parseOption opt
+            let option, optToken, argString = ParseCompilerOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
