@@ -3676,7 +3676,7 @@ type FSharpCheckFileResults
         | Some(scope, _builderOpt) ->
             [|
                 for symbolUse in
-                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = relatedSymbolKinds)
+                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = Option.toValueOption relatedSymbolKinds)
                     |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range) do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 

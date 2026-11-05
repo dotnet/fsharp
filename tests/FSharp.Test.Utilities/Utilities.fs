@@ -115,11 +115,13 @@ module Utilities =
         let lines = markedSource.Split([| "\r\n"; "\n" |], StringSplitOptions.None)
 
         let refs =
-            [ for line, text in Array.indexed lines do
-                  for i, m in refMarkers.Matches text |> Seq.cast<Match> |> Seq.indexed do
-                      { Line = line; Column = m.Index - i * refMarkersLength; Text = m.Groups[1].Value } ]
+            [ for line in 0 .. lines.Length - 1 do
+                  let matches = refMarkers.Matches lines[line]
 
-        lines |> Array.map (fun line -> refMarkers.Replace(line, "$1")), refs
+                  for i in 0 .. matches.Count - 1 do
+                      { Line = line; Column = matches[i].Index - i * refMarkersLength; Text = matches[i].Groups[1].Value } ]
+
+        struct (lines |> Array.map (fun line -> refMarkers.Replace(line, "$1")), refs)
 
     module private TestReferences =
         let testDirectory = lazy (

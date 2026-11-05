@@ -267,6 +267,14 @@ module Array =
 
         res
 
+    let inline tryFindIndexV ([<InlineIfLambda>] predicate: 'T -> bool) (arr: 'T[]) =
+        let mutable i = 0
+
+        while i < arr.Length && not (predicate arr[i]) do
+            i <- i + 1
+
+        if i < arr.Length then ValueSome i else ValueNone
+
     let lengthsEqAndForall2 p l1 l2 =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
