@@ -1156,8 +1156,9 @@ module Query =
     /// immutable-to-mutable conversion information, convert it back to an expression involving immutable tuples or records.
     let rec ConvMutableToImmutable conv mutExpr =
         match conv with
-        | TupleConv convs ->
-            Expr.NewTuple (convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
+        | TupleConv (isStruct, convs) ->
+            let elements = convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i)))
+            if isStruct then Expr.NewStructTuple elements else Expr.NewTuple elements
         | RecordConv (typ, convs) ->
             Expr.NewRecord (typ, convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
 
@@ -1632,7 +1633,14 @@ module Query =
                 if (IQueryableTySpec.IsAssignableFrom replNestedQuery.Type) && not (Type.op_Equality(IQueryableTySpec, replNestedQuery.Type)) then
                     Expr.Coerce (replNestedQuery, IQueryableTySpec)
                 else
-                    replNestedQuery
+                    // likewise over a sequence: a nested query that ends in a sort is an IOrderedEnumerable
+                    let IEnumerableTySpec = MakeIEnumerableTy tyArg
+                    if not (IQueryableTySpec.IsAssignableFrom replNestedQuery.Type)
+                       && IEnumerableTySpec.IsAssignableFrom replNestedQuery.Type
+                       && not (Type.op_Equality(IEnumerableTySpec, replNestedQuery.Type)) then
+                        Expr.Coerce (replNestedQuery, IEnumerableTySpec)
+                    else
+                        replNestedQuery
             replNestedQuery, MakeSeqConv conv
         | _ ->
             e, NoConv
@@ -1672,10 +1680,10 @@ module Query =
     /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postfix" in-memory transformation
     /// converting the data back to immutable tuples and records.
     let TransInnerWithFinalConsume canElim immutSource =
-        let mutSource, sourceConv = TransInnerAndCommit canElim true immutSource
+        let mutSource, sourceConv = TransInner canElim true immutSource
         match sourceConv with
         | NoConv ->
-            mutSource
+            CommitTransInnerResult mutSource
         | _ ->
             // This function is used with inputs of
             //     - QuerySource<_, _> (for operators like Min)
@@ -1686,14 +1694,24 @@ module Query =
                 assert immutSourceTy.IsGenericType
                 assert (IsQuerySourceTy immutSourceTy || IsIQueryableTy immutSourceTy || IsIEnumerableTy immutSourceTy)
                 immutSource.Type.GetGenericArguments().[0]
-            let immutVar = Var("after", immutSourceElemTy)
-            let mutVar, mutToImmutSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, Expr.Var immutVar)
             // Determine if we need to use IQueryable-preserving Select
             let mustReturnIQueryable =
                 IsQuerySourceTy immutSourceTy && qTyIsIQueryable (immutSourceTy.GetGenericArguments().[1]) ||
                 IsIQueryableTy immutSourceTy
+            match mutSource with
+            | TransInnerResult.Select(selectCanElim, isQTy, selectSource, selectVar, selectBody) when isQTy = mustReturnIQueryable ->
+                // The conversion reads the body once for each of its parts. The lets in front of the construction, which
+                // a record with fields written out of order has, stay in front of it, so that each is evaluated once.
+                let rec convertUnderLets body =
+                    match body with
+                    | Let(v, e, rest) -> Expr.Let(v, e, convertUnderLets rest)
+                    | _ -> ConvMutableToImmutable sourceConv body
+                MakeSelect(selectCanElim, isQTy, CommitTransInnerResult selectSource, selectVar, convertUnderLets selectBody)
+            | _ ->
+            let immutVar = Var("after", immutSourceElemTy)
+            let mutVar, mutToImmutSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, Expr.Var immutVar)
             // Use Queryable.Select when source should be IQueryable to preserve query composition
-            MakeSelect(CanEliminate.Yes, mustReturnIQueryable, mutSource, mutVar, mutToImmutSelector)
+            MakeSelect(CanEliminate.Yes, mustReturnIQueryable, CommitTransInnerResult mutSource, mutVar, mutToImmutSelector)
 
     /// Like TransInnerApplicativeAndCommit but (a) assumes the query is nested and (b) throws away the conversion information,
     /// i.e. assumes that the function "(fun immutConsumingVar -> immutConsumingExpr)" is the only consumption of the query.
