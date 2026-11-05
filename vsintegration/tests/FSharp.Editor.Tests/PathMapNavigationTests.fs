@@ -157,9 +157,9 @@ let ``a mapped name reaches the one file of the declaring assembly that ends wit
 
     let reached =
         solution.GetDocumentIdsWithFSharpFileName(name, "Lib")
-        |> List.map (fun documentId -> solution.GetDocument(documentId).FilePath)
+        |> Seq.map (fun documentId -> solution.GetDocument(documentId).FilePath)
 
-    Assert.Equal<string list>(expected.Split([| ';' |], StringSplitOptions.RemoveEmptyEntries) |> List.ofArray, reached)
+    Assert.Equal<string>(expected.Split([| ';' |], StringSplitOptions.RemoveEmptyEntries), reached)
 
 let private declarations = "type Kind =\n    | A\n    | B\n"
 
