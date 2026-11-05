@@ -66,6 +66,28 @@ query { for p in db.Products do select (p.Id, p.Name) }
 
 **Impact:** Code checking `is EnumerableQuery<_>` may need adjustment.
 
+After a `join`, a second `for` or a `groupBy` over tuples, the query no longer re-projects each element into a copy of itself, and a group used later in the query is read from the provider's grouping:
+
+```fsharp
+query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); groupBy c.City into g; select (g.Key, g.Count()) }
+// Was: ...Join(..).Select(_arg1 => new AnonymousObject`2(Item1 = _arg1.Item1, Item2 = _arg1.Item2)).GroupBy(..)
+//        .Select(_arg2 => new Grouping`2(_arg2.Key, _arg2.Select(v => new Tuple`2(v.Item1, v.Item2)))).Select(g => ..g.Key..g.Count()..)
+// Now: ...Join(..).GroupBy(..).Select(g => new AnonymousObject`2(Item1 = g.Key, Item2 = g.Count()))
+```
+
+**Impact:** A group of tuples or records that a query uses as a value in the middle of a query, for example one that is passed on whole to a later `select` or `where`, is now built at each place where the query mentions it. FSharp.Core 10.1 built it once, in the `Select` right after the `GroupBy`, so every later operator saw one object; now two mentions are two objects. Over an in-memory `IQueryable`, such as `AsQueryable()` over a list, a query that compares a group with itself gives other rows:
+
+```fsharp
+query { for c in customers.AsQueryable() do
+        groupValBy (c.Name, c.Age) c.City into g
+        where (g.Equals g)
+        select (g.Key, obj.ReferenceEquals(g, g)) }
+// Was: every city, with true
+// Now: no rows (without the where: every city, with false)
+```
+
+In the same way, `Contains` no longer finds a group among the groups it is in, and a group used as the key of `groupBy` is no longer found among the elements of its own group. EF Core, linq2db and the Cosmos DB provider translate none of these queries, before or after. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
+
 ---
 
 ## FCS API: Query Variables 🟢

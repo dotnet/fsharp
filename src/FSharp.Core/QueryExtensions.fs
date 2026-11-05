@@ -108,14 +108,6 @@ module internal Adapters =
 
     let anonObjectTypes = tupleTypes |> Array.map snd
 
-    let tupleToAnonTypeMap =
-        let t = Dictionary<Type, Type>()
-
-        for k, v in tupleTypes do
-            t.[k] <- v
-
-        t
-
     let anonToTupleTypeMap =
         let t = Dictionary<Type, Type>()
 
@@ -173,18 +165,13 @@ module internal Adapters =
 
         walk i e e.Type
 
+    /// Reference and struct tuples of the same arity share one anonymous object type.
     let RewriteTupleType (ty: Type) conv =
-        // Tuples are generic, so lookup only for generic types
-        assert ty.IsGenericType
-        let generic = ty.GetGenericTypeDefinition()
-
-        match tupleToAnonTypeMap.TryGetValue generic with
-        | true, mutableTupleType ->
-            // Recursively transform type arguments
-            mutableTupleType.MakeGenericType(ty.GetGenericArguments() |> Array.toList |> conv |> Array.ofList)
-        | _ ->
-            assert false
-            failwith "unreachable"
+        assert (FSharpType.IsTuple ty)
+        let elementTypes = ty.GetGenericArguments()
+        let mutableTupleType = anonObjectTypes.[elementTypes.Length - 1]
+        // Recursively transform type arguments
+        mutableTupleType.MakeGenericType(elementTypes |> Array.toList |> conv |> Array.ofList)
 
     let (|RecordFieldGetSimplification|_|) (expr: Expr) =
         match expr with
@@ -206,7 +193,7 @@ module internal Adapters =
     /// that we can invert the process in final query results.
     [<NoComparison; NoEquality>]
     type ConversionDescription =
-        | TupleConv of ConversionDescription list
+        | TupleConv of isStruct: bool * ConversionDescription list
         | RecordConv of Type * ConversionDescription list
         | GroupingConv (* origKeyType: *) of Type (* origElemType: *) * Type * ConversionDescription
         | SeqConv of ConversionDescription
@@ -216,18 +203,18 @@ module internal Adapters =
     /// "yield" or "select", convert it to a type involving anonymous objects according to the conversion data.
     let rec ConvImmutableTypeToMutableType conv ty =
         match conv with
-        | TupleConv convs ->
+        | TupleConv(isStruct, convs) ->
             assert (FSharpType.IsTuple ty)
 
             match convs with
             | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
-                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ]
+                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(isStruct, x8 :: tail) ]
                 RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType els)
             | _ -> RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
         | RecordConv(_, convs) ->
             assert (isPartiallyImmutableRecord ty)
             let types = [| for f in FSharpType.GetRecordFields ty -> f.PropertyType |]
-            ConvImmutableTypeToMutableType (TupleConv convs) (FSharpType.MakeTupleType types)
+            ConvImmutableTypeToMutableType (TupleConv(false, convs)) (FSharpType.MakeTupleType types)
         | GroupingConv(_keyTy, _elemTy, conv) ->
             assert ty.IsGenericType
             assert (ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
@@ -298,6 +285,211 @@ module internal Adapters =
                 Expr.Call(methInfo, [ Expr.NewObject(ctor, args) ])
             | expr -> expr
 
+    /// A grouping built from the provider's grouping of converted elements, where a query mentions the group.
+    [<return: Struct>]
+    let rec (|RebuiltGrouping|_|) (expr: Expr) =
+        match expr with
+        | Patterns.Coerce(RebuiltGrouping grouping, _) -> ValueSome grouping
+        | Patterns.NewObject(constructor, [ key; elements ]) ->
+            match constructor.DeclaringType with
+            | null -> ValueNone
+            | owner when
+                owner.IsGenericType
+                && owner.GetGenericTypeDefinition() = typedefof<Grouping<_, _>>
+                ->
+                ValueSome struct (key, elements)
+            | _ -> ValueNone
+        | _ -> ValueNone
+
+    let isEnumerableMethod (methodInfo: MethodInfo) =
+        Type.op_Equality (methodInfo.DeclaringType, typeof<Enumerable>)
+
+    let isSequenceType (ty: Type) =
+        ty.IsGenericType && ty.GetGenericTypeDefinition() = typedefof<seq<_>>
+
+    [<return: Struct>]
+    let (|EnumerableSelect|_|) (expr: Expr) =
+        match expr with
+        | Patterns.Call(None, select, [ source; Patterns.NewDelegate(_, [ element ], projection) ]) when
+            isEnumerableMethod select && select.Name = "Select"
+            ->
+            ValueSome struct (source, element, projection)
+        | _ -> ValueNone
+
+    /// A member of what the translation itself puts into a query: an item of an anonymous object, and under a
+    /// grouping it rebuilds also the key of the grouping it comes from. Reading one has no effect and cannot fail.
+    let isTranslationMember (ofGrouping: bool) (property: PropertyInfo) =
+        let owner = property.DeclaringType
+
+        owner.IsGenericType
+        && (let definition = owner.GetGenericTypeDefinition()
+
+            Array.contains definition anonObjectTypes
+            || (ofGrouping && definition = typedefof<IGrouping<_, _>>))
+
+    /// Whether the expression only takes apart what the translation put together and puts it together again:
+    /// reads of the items of an anonymous object, tuples and records of those, and the same for a sequence or a
+    /// grouping it holds. A projection the query itself wrote over its own types is never that.
+    let rec rebuildsElementIn (ofGrouping: bool) (element: Var) (expr: Expr) =
+        let rec readsElement (expr: Expr) =
+            match expr with
+            | Patterns.Var v -> v = element
+            | Patterns.PropertyGet(Some source, property, []) ->
+                isTranslationMember ofGrouping property && readsElement source
+            | Patterns.Coerce(source, _) -> readsElement source
+            | _ -> false
+
+        match expr with
+        | Patterns.NewTuple parts
+        | Patterns.NewRecord(_, parts) -> List.forall (rebuildsElementIn ofGrouping element) parts
+        | Patterns.Coerce(inner, _) -> rebuildsElementIn ofGrouping element inner
+        | EnumerableSelect(source, inner, projection) -> readsElement source && rebuildsElementIn false inner projection
+        | RebuiltGrouping(key, elements) ->
+            rebuildsElementIn true element key && rebuildsElementIn true element elements
+        | expr -> readsElement expr
+
+    let rebuildsElement (element: Var) (expr: Expr) =
+        rebuildsElementIn false element expr
+
+    /// The part of the rebuilt element that a chain of member reads takes from the variable: the element itself, an
+    /// item of a tuple or a field of a record in it, or an item or a field of one of those
+    let rec partRead (v: Var) (rebuilt: Expr) (expr: Expr) =
+        match expr with
+        | Patterns.Var used when used = v -> ValueSome rebuilt
+        | Patterns.TupleGet(inner, index) ->
+            match partRead v rebuilt inner with
+            | ValueSome(Patterns.NewTuple parts) when index < parts.Length -> ValueSome parts.[index]
+            | _ -> ValueNone
+        | Patterns.PropertyGet(Some inner, property, []) ->
+            match partRead v rebuilt inner with
+            | ValueSome(Patterns.NewRecord(recordType, parts)) ->
+                let fields = FSharpType.GetRecordFields recordType
+
+                match fields |> Array.tryFindIndex (fun field -> field.Name = property.Name) with
+                | Some index when index < parts.Length -> ValueSome parts.[index]
+                | _ -> ValueNone
+            | ValueSome(Patterns.NewTuple parts) when property.Name.StartsWith("Item", StringComparison.Ordinal) ->
+                match Int32.TryParse(property.Name.Substring 4) with
+                | true, number when number >= 1 && number <= 7 && number <= parts.Length -> ValueSome parts.[number - 1]
+                | _ -> ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
+
+    /// An object that the rebuilding makes anew each time it is evaluated, and that can be told from another by its
+    /// reference: a tuple or a record of a class, or a struct that holds one
+    let rec makesObject (part: Expr) =
+        match part with
+        | Patterns.NewTuple parts
+        | Patterns.NewRecord(_, parts) -> not part.Type.IsValueType || List.exists makesObject parts
+        | _ -> false
+
+    /// Whether the expression uses the element, or a tuple or record that the rebuilding makes in it, as a value of
+    /// its own and not only for its members. Where the rebuilding takes the place of the variable, each such use
+    /// is an object of its own, and not the one object the element has.
+    let rec usesWhole (v: Var) (rebuilt: Expr) (expr: Expr) =
+        match expr with
+        | Patterns.Var used when used = v -> true
+        | _ ->
+            match partRead v rebuilt expr with
+            | ValueSome part -> makesObject part
+            | ValueNone ->
+                match expr with
+                | ExprShape.ShapeVar _ -> false
+                | ExprShape.ShapeLambda(_, body) -> usesWhole v rebuilt body
+                | ExprShape.ShapeCombination(_, args) -> List.exists (usesWhole v rebuilt) args
+
+    /// 'Enumerable.M(source.Select(element => rebuilt), f)' as 'Enumerable.M(source, element => f(rebuilt))', and
+    /// 'source.Select(element => rebuilt).Count()' as 'source.Count()'. Only for a projection that rebuilds the
+    /// element, and an M whose result holds none of the elements: for anything else the projection has to run
+    /// where it is written.
+    [<return: Struct>]
+    let (|SelectFusedIntoConsumer|_|) (expr: Expr) =
+        match expr with
+        | Patterns.Call(None, consumer, EnumerableSelect(source, element, projection) :: rest) when
+            isEnumerableMethod consumer
+            && consumer.IsGenericMethod
+            && rebuildsElement element projection
+            ->
+            let definition = consumer.GetGenericMethodDefinition()
+            let sourceParameter = definition.GetParameters().[0].ParameterType
+
+            let fuse () =
+                let elementParameter = sourceParameter.GetGenericArguments().[0]
+
+                let typeArguments =
+                    Array.map2
+                        (fun (parameter: Type) argument ->
+                            if Type.op_Equality (parameter, elementParameter) then
+                                element.Type
+                            else
+                                argument)
+                        (definition.GetGenericArguments())
+                        (consumer.GetGenericArguments())
+
+                definition.MakeGenericMethod typeArguments
+
+            if not (isSequenceType sourceParameter) then
+                ValueNone
+            else
+                match consumer.Name, rest with
+                | ("Count" | "LongCount" | "Any"), [] ->
+                    let fused = fuse ()
+
+                    if Type.op_Equality (fused.ReturnType, consumer.ReturnType) then
+                        ValueSome(Expr.Call(fused, [ source ]))
+                    else
+                        ValueNone
+                // A lambda that uses the element as a value of its own gets it from the Select: there it is one
+                // object, however often the lambda mentions it.
+                | ("Count" | "LongCount" | "Any" | "All" | "Sum" | "Average" | "Min" | "Max" | "Select" | "SelectMany"),
+                  [ Patterns.NewDelegate(_, [ consumed ], body) ] when
+                    Type.op_Equality (consumed.Type, projection.Type)
+                    && (not (usesWhole consumed projection body))
+                    ->
+                    let fused = fuse ()
+
+                    if Type.op_Equality (fused.ReturnType, consumer.ReturnType) then
+                        // A variable of its own: the same rebuilding function can already be in 'body'
+                        let fresh = Var(consumed.Name, element.Type)
+
+                        let rebuilt =
+                            projection.Substitute(fun v ->
+                                if v = element then
+                                    Some(Expr.Var fresh)
+                                else
+                                    None)
+
+                        let body =
+                            body.Substitute(fun v ->
+                                if v = consumed then
+                                    Some rebuilt
+                                else
+                                    None)
+
+                        let delegateTy = fused.GetParameters().[1].ParameterType
+                        ValueSome(Expr.Call(fused, [ source; Expr.NewDelegate(delegateTy, [ fresh ], body) ]))
+                    else
+                        ValueNone
+                | _ -> ValueNone
+        | _ -> ValueNone
+
+    /// Reads of a rebuilt grouping, taken from what it was rebuilt from.
+    [<return: Struct>]
+    let (|GroupingSimplification|_|) (expr: Expr) =
+        match expr with
+        | Patterns.PropertyGet(Some(RebuiltGrouping(key, _)), property, []) when property.Name = "Key" -> ValueSome key
+        // 'AsEnumerable' and 'Cast' give back the grouping they are handed
+        | Patterns.Call(None, consumer, RebuiltGrouping(_, elements) :: rest) when
+            isEnumerableMethod consumer
+            && consumer.Name <> "AsEnumerable"
+            && consumer.Name <> "Cast"
+            && isSequenceType (consumer.GetParameters().[0].ParameterType)
+            && consumer.GetParameters().[0].ParameterType.IsAssignableFrom elements.Type
+            ->
+            ValueSome(Expr.Call(consumer, elements :: rest))
+        | SelectFusedIntoConsumer fused -> ValueSome fused
+        | _ -> ValueNone
+
     /// Simplify gets of tuples and gets of record fields.
     let rec SimplifyConsumingExpr e =
         // rewrite bottom-up
@@ -311,6 +503,7 @@ module internal Adapters =
         match e with
         | Patterns.TupleGet(Patterns.NewTuple els, i) -> els.[i]
         | RecordFieldGetSimplification newExpr -> newExpr
+        | GroupingSimplification simpler -> SimplifyConsumingExpr simpler
         | _ -> e
 
     /// Given the expression part of a "yield" or "select" which produces a result in terms of immutable tuples or immutable records,
@@ -324,7 +517,7 @@ module internal Adapters =
             let argExprsNow, argScripts =
                 exprs |> List.map (ProduceMoreMutables tipf) |> List.unzip
 
-            NewAnonymousObject argExprsNow, TupleConv argScripts
+            NewAnonymousObject argExprsNow, TupleConv(expr.Type.IsValueType, argScripts)
 
         // Replace immutable records by anonymous objects
         | Patterns.NewRecord(typ, args) when isPartiallyImmutableRecord typ ->
