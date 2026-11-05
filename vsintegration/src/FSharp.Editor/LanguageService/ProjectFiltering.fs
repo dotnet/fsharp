@@ -24,7 +24,10 @@ module internal ProjectFiltering =
             solution.Projects
             |> Seq.filter (fun project -> sameFileName project.OutputFilePath)
             |> Seq.groupBy _.FilePath
-            |> Seq.map (fun (_, targets) -> targets |> Seq.map _.OutputFilePath |> Seq.toArray)
+            |> Seq.map (fun (_, targets) ->
+                targets
+                |> Seq.collect (fun target -> [ target.OutputFilePath; target.OutputRefFilePath ])
+                |> Seq.toArray)
             |> Seq.toArray
 
         // Consumers reference copies of the assembly, so its file name identifies it unless several project files produce that name.
