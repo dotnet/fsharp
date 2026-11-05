@@ -309,11 +309,14 @@ type FSharpTokenInfo =
 /// values for each line of the edited code.
 [<Sealed>]
 type FSharpLineTokenizer =
-    /// Scan one token from the line. Prefer ScanTokenValue on hot paths: it does not allocate an option.
+    /// <summary>Scan one token from the line. Prefer <see cref="M:FSharp.Compiler.Tokenization.FSharpLineTokenizer.ScanTokenValue(FSharp.Compiler.Tokenization.FSharpTokenizerLexState)"/> on hot paths: it does not allocate an option for the result.</summary>
+    /// <param name="lexState">The lexer state to scan from.</param>
+    /// <returns>The scanned token, or <c>None</c> when no token is left on the line, and the lexer state after it.</returns>
     member ScanToken: lexState: FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
 
-    /// Scan one token from the line, without allocating an option for the result. Prefer this over
-    /// ScanToken on hot paths that tokenize every token of a file, such as classification or brace matching.
+    /// <summary>Scan one token from the line without allocating an option for the result. Prefer this over <see cref="M:FSharp.Compiler.Tokenization.FSharpLineTokenizer.ScanToken(FSharp.Compiler.Tokenization.FSharpTokenizerLexState)"/> on hot paths that tokenize every token of a file, such as classification or brace matching.</summary>
+    /// <param name="lexState">The lexer state to scan from.</param>
+    /// <returns>The scanned token, or <c>ValueNone</c> when no token is left on the line, and the lexer state after it.</returns>
     member ScanTokenValue:
         lexState: FSharpTokenizerLexState -> struct (FSharpTokenInfo voption * FSharpTokenizerLexState)
 
