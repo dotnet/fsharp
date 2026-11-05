@@ -2,7 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.Collections.Generic
+open System
 open System.Collections.Immutable
 open System.Composition
 open System.Threading.Tasks
@@ -12,13 +12,21 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 open Microsoft.CodeAnalysis.FindSymbols
-open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open CancellableTasks
 
 module FSharpFindUsagesService =
+
+    // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
+    let private reportReference (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task) definitionItem (document: Document) span =
+        cancellableTask {
+            try
+                do! onReferenceFoundAsync (FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(document, span)))
+            with _ ->
+                ()
+        }
 
     let onSymbolFound
         allReferences
@@ -51,13 +59,7 @@ module FSharpFindUsagesService =
                             |> ValueOption.map (fun struct (definitionItem, _) -> definitionItem)
                             |> ValueOption.defaultValue externalDefinitionItem
 
-                    let referenceItem =
-                        FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
-                    // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
-                    try
-                        do! onReferenceFoundAsync referenceItem
-                    with _ ->
-                        ()
+                    do! reportReference onReferenceFoundAsync definitionItem doc fixedSpan
                 | _ -> ()
         }
 
@@ -87,15 +89,7 @@ module FSharpFindUsagesService =
                 return spans |> Array.choose id
             }
 
-    let private referencingCompilationProjects (declaringProject: Project) =
-        match declaringProject.OutputFilePath with
-        | null -> []
-        | outputFilePath ->
-            ProjectFiltering.getProjectsReferencingAssembly outputFilePath declaringProject.Solution
-            |> List.filter (fun project -> not project.IsFSharp && project.SupportsCompilation)
-
-    /// A compilation's global namespace, where `DocumentationCommentId` looks, holds only the assemblies it
-    /// references without an alias, so the id is resolved from the namespace of the assembly itself.
+    // DocumentationCommentId alone searches only the unaliased references, and finds a consumer's namesake first.
     let private symbolOfId (docId: string) (assembly: IAssemblySymbol) =
         let names = docId.Substring(2).Split('(').[0].Split('.')
 
@@ -109,7 +103,6 @@ module FSharpFindUsagesService =
         |> Seq.collect _.GetMembers()
         |> Seq.tryFindV (fun candidate -> DocumentationCommentId.CreateDeclarationId(candidate).Split('~').[0] = docId)
 
-    /// Locations in a C# or VB project of the symbol with the given documentation comment id.
     let private findRoslynReferences (docId: string) (declaringAssembly: string) (project: Project) =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
@@ -119,8 +112,7 @@ module FSharpFindUsagesService =
             | compilation ->
                 let ofDeclaringAssembly =
                     compilation.SourceModule.ReferencedAssemblySymbols
-                    |> Seq.tryFindV (fun assembly ->
-                        System.String.Equals(assembly.Name, declaringAssembly, System.StringComparison.OrdinalIgnoreCase))
+                    |> Seq.tryFindV (fun assembly -> String.Equals(assembly.Name, declaringAssembly, StringComparison.OrdinalIgnoreCase))
                     |> ValueOption.bind (symbolOfId docId)
 
                 match ofDeclaringAssembly with
@@ -137,44 +129,26 @@ module FSharpFindUsagesService =
                     return referencedSymbols |> Seq.collect _.Locations
         }
 
-    // Every search may build a compilation, and those cost memory, not just a core.
     [<Literal>]
     let private ConcurrentCompilations = 4
 
-    /// The uses in the C# and VB projects that reference the assembly of a project declaring the symbol,
-    /// each with the definition item to report them under.
     let private findCrossLanguageReferences (docId: string) (definitionItems: struct (FSharpDefinitionItem * Project)[]) =
         seq {
             for struct (definitionItem, declaringProject) in definitionItems do
-                for project in referencingCompilationProjects declaringProject ->
-                    struct (definitionItem, declaringProject.AssemblyName, project)
+                for project in ProjectFiltering.getProjectsReferencingAssembly declaringProject.OutputFilePath declaringProject.Solution do
+                    if project.SupportsCompilation && not project.IsFSharp then
+                        struct (definitionItem, declaringProject.AssemblyName, project)
         }
         |> Seq.distinctBy (fun struct (_, _, project) -> project.Id)
         |> Seq.map (fun struct (definitionItem, declaringAssembly, project) ->
             findRoslynReferences docId declaringAssembly project
             |> CancellableTask.map (Seq.map (fun location -> struct (definitionItem, location))))
         |> CancellableTask.whenAllThrottled ConcurrentCompilations
-        |> CancellableTask.map Seq.concat
-
-    /// Reports each file span once: the target-framework instances of a consumer share their files.
-    let private reportCrossLanguageReferences
-        (found: struct (FSharpDefinitionItem * ReferenceLocation) seq)
-        (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
-        =
-        cancellableTask {
-            let reported = HashSet<struct (string * TextSpan)>()
-
-            for struct (definitionItem, location) in found do
-                let span = location.Location.SourceSpan
-
-                if reported.Add(struct (location.Document.FilePath, span)) then
-                    // Same as the F# path above: the window throws inside Roslyn on an item it will not take,
-                    // and one such item must not end the search that found the rest.
-                    try
-                        do! onReferenceFoundAsync (FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(location.Document, span)))
-                    with _ ->
-                        ()
-        }
+        // Each file span once: the target-framework instances of a consumer share their files.
+        |> CancellableTask.map (fun found ->
+            found
+            |> Seq.concat
+            |> Seq.distinctBy (fun struct (_, location) -> struct (location.Document.FilePath, location.Location.SourceSpan)))
 
     let findReferencedSymbolsAsync
         (document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOp: string)
@@ -251,16 +225,19 @@ module FSharpFindUsagesService =
                             symbol.Ident.idText
                             context.OnReferenceFoundAsync
 
-                    // Searched alongside the F# projects, reported after them.
                     let crossLanguageSearch =
                         match symbolUse.Symbol.DocumentationCommentId with
                         | ValueSome docId when allReferences && not isExternal && not symbolUse.Symbol.IsInternalToProject ->
-                            findCrossLanguageReferences docId definitionItems cancellationToken
-                        | _ -> Task.FromResult Seq.empty
+                            findCrossLanguageReferences docId definitionItems
+                        | _ -> CancellableTask.singleton Seq.empty
 
-                    do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound
-                    let! found = crossLanguageSearch
-                    do! reportCrossLanguageReferences found context.OnReferenceFoundAsync
+                    let! _, found =
+                        CancellableTask.parallelZip
+                            (SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound)
+                            crossLanguageSearch
+
+                    for struct (definitionItem, location) in found do
+                        do! reportReference context.OnReferenceFoundAsync definitionItem location.Document location.Location.SourceSpan
         }
 
 open FSharpFindUsagesService

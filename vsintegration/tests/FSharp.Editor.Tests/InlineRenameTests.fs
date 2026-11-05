@@ -65,7 +65,7 @@ let private getDocumentSpan (span: obj) =
     let textSpan = span.GetType().GetProperty("SourceSpan").GetValue(span) :?> TextSpan
     document, textSpan
 
-let private getReferenceSpan (reference: obj) =
+let getReferenceSpan (reference: obj) =
     let item =
         reference.GetType().GetProperty("RoslynSourceReferenceItem", BindingFlags.Instance ||| BindingFlags.NonPublic).GetValue(reference)
 

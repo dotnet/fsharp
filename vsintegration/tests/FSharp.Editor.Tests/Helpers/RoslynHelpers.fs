@@ -243,9 +243,9 @@ type RoslynTestHelpers private () =
 
         match extension with
         | ".fsx" -> SourceCodeKind.Script
-        | ".fsi"
+        | ".fsi" -> SourceCodeKind.Regular
         | ".cs"
-        | ".vb" -> SourceCodeKind.Regular
+        | ".vb"
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
@@ -340,7 +340,6 @@ type RoslynTestHelpers private () =
 
         context, foundDefinitions, foundReferences
 
-    /// Compiles the synthetic project to its OutputFilename with the options the checker sees.
     static member CompileToAssembly(syntheticProject: SyntheticProject, checker: FSharpChecker) =
         let options = syntheticProject.GetProjectOptions checker
 
@@ -364,17 +363,9 @@ type RoslynTestHelpers private () =
         | [||] -> syntheticProject.OutputFilename
         | errors -> invalidOp $"Compilation of {syntheticProject.Name} failed: %A{errors}"
 
-    /// Adds a C# or VB library that references the framework of `options` and the given assemblies, the way
-    /// VS references an F# project from C# or VB through its built assembly.
     static member AddProject
-        (
-            solution: Solution,
-            language: string,
-            name: string,
-            source: string,
-            options: FSharpProjectOptions,
-            referencedAssemblies: ImmutableArray<string>
-        ) =
+        (solution: Solution, language, name: string, source, options: FSharpProjectOptions, referencedAssemblies: ImmutableArray<string>)
+        =
         let projectId = ProjectId.CreateNewId()
         let projectDir = $"C:\\{name}"
 
@@ -403,8 +394,7 @@ type RoslynTestHelpers private () =
         let workspace = solution.Workspace :?> AdhocWorkspace
         let project = workspace.AddProject projectInfo
 
-        // AdhocWorkspace.AddProject turns a reference to another project's output into a project reference,
-        // whereas VS keeps a C# → F# reference as metadata; the assemblies are added afterwards.
+        // AdhocWorkspace.AddProject turns a reference to a project's output into a project reference; VS keeps C# → F# as metadata.
         let withAssemblies =
             referencedAssemblies
             |> Seq.fold (fun (project: Project) assembly -> project.AddMetadataReference(MetadataReference.CreateFromFile assembly)) project
