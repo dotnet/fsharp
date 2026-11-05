@@ -12257,6 +12257,49 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let tpenv = HideUnscopedTypars generalizedTypars tpenv
         let valSchemes = NameMap.map (UseCombinedValReprInfo g declKind rhsExpr) prelimValSchemes2
         let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
+
+        // [realsig+] Register every top-level (non-rec) let inside a class-body so re-hosting
+        // (GetValReprTypeInfoInCompiledForm / GenMethodForBinding / GetIlxClosureFreeVars)
+        // knows the host-type typars it inherits. The rec-binding site (TcLetrecGeneralizeBinding
+        // at ~line 13344) only fires for `let rec`; a lone `let` in a member body (e.g. `memoize`
+        // at tests/.../GenericClassConstrainedClosure.fs:6) goes through TcLetBinding and was
+        // previously left unregistered — RealsigClosureParentTryGet(closureVal.Stamp) then
+        // returned None and the whole re-hosting fix silently did not apply.
+        if g.realsig then
+            match env.eFamilyType with
+            | Some hostTycon ->
+                let hostTypars = hostTycon.Typars
+                if not (List.isEmpty hostTypars) then
+                    NameMap.iter (fun pair ->
+                        let (v: Val) = fst pair
+                        g.AddRealsigClosureParent(v, hostTypars, Some hostTycon)) values
+            | None ->
+                // [realsig+] Module-scope (no family type) non-rec closure: register any
+                // typars free in the closure's full type but not declared by its own
+                // signature (e.g. a surrounding function's inference typar the body
+                // captures via a bound local). These are the surrounding function's
+                // declared typars that the closure must NOT re-require as its own generic
+                // parameters. Mirrors the rec-binding site (TcLetrecGeneralizeBinding),
+                // which only fires for `let rec`; a lone `let` goes through here. Without
+                // this, RealsigClosureParentTryGet returns None, the TLR reqdTypars
+                // owner-typar filter (InnerLambdasToTopLevelFuncs packEnv) is skipped, and
+                // the re-hosted closure re-declares the typar it already captures, yielding
+                // a generic-parameter index out of bounds at its instantiation site.
+                // Guard on `values` being non-empty: a `let _ = ...` (wildcard) binding
+                // publishes no vals, so there is nothing to register and we skip.
+                if not (NameMap.isEmpty values) then
+                    let declaredTypars0 = allDeclaredTypars
+                    let (v0: Val) = NameMap.toList values |> List.head |> snd |> fst
+                    let allFreeTyvars = (freeInType CollectAllNoCaching (v0.TauType)).FreeTypars |> Zset.elements
+                    let familyTypars =
+                        allFreeTyvars
+                        |> List.filter (fun (t: Typar) ->
+                               not (List.exists (fun (d: Typar) -> d.Name = t.Name && d.Range = t.Range) declaredTypars0))
+                        |> List.distinctBy (fun (t: Typar) -> (t.Name, t.Range))
+                    if not (List.isEmpty familyTypars) then
+                        NameMap.iter (fun pair ->
+                            let (v: Val) = fst pair
+                            g.AddRealsigClosureParent(v, familyTypars, None)) values
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
         let prelimRecValues =
             let prelimRecValues = NameMap.map fst values
@@ -13306,11 +13349,41 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                 let generalizedTyparsL = newGeneralizableBindings |> List.map (TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv)
 
+                // realsig+ fix: register each closure's owner typars so TLR (InnerLambdasToTopLevelFuncs
+                // FlatEnvPacks.packEnv + createFHat) can subtract them from reqdTypars when re-hosting
+                // the closure as a nested method of a class.
+                //
+                // ONLY register when there is a genuine class owner (envNonRec.eFamilyType.IsSome). The
+                // re-hosted closure then lives as a nested method of that class, so the class supplies
+                // those typars via its own scope and the closure must not re-declare them.
+                //
+                // Do NOT register for module-scope closures (envNonRec.eFamilyType = None, e.g. a
+                // closure inside a generic top-level function such as binaryChop<'T> capturing 'T). The
+                // re-hosted version (go@N / loop@N) is a STANDALONE generic method whose OWN signature
+                // declares the captured typar at index 0..k-1; treating it as an owner typar reserves a
+                // leading ambient slot in the body's type-env and shifts every own typar index up by
+                // |ownTypars|, so the body emits !!1 / !!2.. where the method only declared !!0 / !!1,
+                // an out-of-range token -> PEVerify fails. There is no class to supply the typar at the
+                // call site, so it must remain the method's own declared typar.
+                if g.realsig then
+                    match envNonRec.eFamilyType with
+                    | Some hostTycon ->
+                        let familyTypars = hostTycon.Typars
+                        if not (List.isEmpty familyTypars) then
+                            List.iter (fun (pgrbind: PreGeneralizationRecursiveBinding) ->
+                                let rbinfo = pgrbind.RecBindingInfo
+                                if rbinfo.DeclKind = DeclKind.ExpressionBinding then
+                                    g.AddRealsigClosureParent(rbinfo.Val, familyTypars, Some hostTycon)) newGeneralizableBindings
+                    | None ->
+                        // Module scope: no class owner. The captured typar, if any, is the closure's
+                        // own generalized typar (declared on the re-hosted method's signature); leave
+                        // it unregistered so the standalone method keeps it as its own declared typar.
+                        ()
+
                 // Generalize the bindings.
                 let newGeneralizedRecBinds = (generalizedTyparsL, newGeneralizableBindings) ||> List.map2 (TcLetrecGeneralizeBinding cenv denv )
                 let tpenv = HideUnscopedTypars (List.concat generalizedTyparsL) tpenv
                 newGeneralizedRecBinds, tpenv
-
 
         newGeneralizedRecBinds, preGeneralizationRecBinds, tpenv
 
@@ -13353,6 +13426,7 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
 
     let canGeneralizeConstrained = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl rbinfo.DeclKind
     let generalizedTypars = GeneralizationHelpers.ComputeAndGeneralizeGenericTypars (cenv, denv, m, freeInEnv, canInferTypars, canGeneralizeConstrained, inlineFlag, Some expr, allDeclaredTypars, maxInferredTypars, tau, isCtor)
+
     generalizedTypars
 
 /// Compute the type variables which may have member constraints that need to be canonicalized prior to generalization
