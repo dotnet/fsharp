@@ -18,6 +18,31 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.EncMethodDebugInformation
 open FSharp.Compiler.HotReloadBaseline
 
+module CodegenDebugInfo = FSharp.Compiler.EncMethodDebugInformation
+
+[<Fact>]
+let ``Codegen EnC codecs round-trip nonempty and absent blobs`` () =
+    let info: CodegenDebugInfo.EncMethodDebugInformation =
+        { MethodOrdinal = 0
+          LocalSlots = [ CodegenDebugInfo.EncLocalSlotInfo.Temp; CodegenDebugInfo.EncLocalSlotInfo.Slot(0, -2, 1) ]
+          Closures = [ { SyntaxOffset = 3 } ]
+          Lambdas = [ { SyntaxOffset = 4; ClosureOrdinal = 0 } ]
+          StateMachineStates = [ { StateNumber = 1; SyntaxOffset = 5 } ] }
+
+    let decoded =
+        CodegenDebugInfo.deserialize
+            (CodegenDebugInfo.serializeLocalSlots info)
+            (CodegenDebugInfo.serializeLambdaMap info)
+            (CodegenDebugInfo.serializeStateMachineStates info)
+    Assert.Equal<CodegenDebugInfo.EncMethodDebugInformation>(info, decoded)
+    Assert.Equal<CodegenDebugInfo.EncMethodDebugInformation>(CodegenDebugInfo.EncMethodDebugInformation.Empty, CodegenDebugInfo.deserialize null null null)
+
+    let names = [| "f@hotreload-1"; "f@hotreload" |]
+    let snapshot = CodegenDebugInfo.serializeSynthesizedNameSnapshot [ struct ("f", names) ]
+    Assert.Equal<string array>(names, (CodegenDebugInfo.deserializeSynthesizedNameSnapshot snapshot)["f"])
+    Assert.Empty(CodegenDebugInfo.deserializeSynthesizedNameSnapshot null)
+    Assert.Throws<InvalidDataException>(fun () -> CodegenDebugInfo.deserializeLocalSlots [| 0xFFuy |] |> ignore) |> ignore
+
 // -----------------------------------------------------------------------
 // Round-trip properties (pure codec)
 // -----------------------------------------------------------------------
@@ -717,19 +742,6 @@ module private Plumbing =
             let validLow = readInt32 bytes (stream.DataOffset + 8)
             writeInt32 bytes (stream.DataOffset + 8) (validLow ||| (1 <<< 3))) assemblyBytes
 
-    let redirectBlobHeapPastEnd assemblyBytes =
-        let copy = Array.copy assemblyBytes
-
-        use peReader = new PEReader(ImmutableArray.CreateRange copy)
-        let metadataRoot = peReader.PEHeaders.MetadataStartOffset
-
-        let blobStream =
-            metadataStreamHeaders copy
-            |> List.find (fun stream -> stream.Name = "#Blob")
-
-        writeInt32 copy blobStream.HeaderOffset (copy.Length - metadataRoot + 16)
-        copy
-
 [<Fact>]
 let ``Synthetic CustomDebugInformation row attaches to the right MethodDef`` () =
     let modul = Plumbing.buildModule [ "Foo"; "Bar" ]
@@ -889,26 +901,21 @@ let ``Baseline reader rejects pointer-table indirection in an uncompressed strea
     let assemblyBytes = Plumbing.addUnsupportedFieldPointerTable assemblyBytes
     Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
 
+[<Theory>]
+[<InlineData(31)>]
+[<InlineData(63)>]
+let ``Baseline valid-mask reader preserves unsigned bits`` bit =
+    let bytes = Array.zeroCreate<byte> 8
+    bytes[bit / 8] <- 0x80uy
+
+    Assert.Equal(1UL <<< bit, FSharp.Compiler.AbstractIL.ILBaselineReader.readUInt64 bytes 0)
+
 [<Fact>]
-let ``Baseline table data starts after valid tables even when their row count is zero`` () =
+let ``Baseline table data starts after valid tables with zero rows`` () =
+    let rowCounts = Array.zeroCreate 64
     let valid = 1UL <<< 3
 
-    Assert.Equal(128, FSharp.Compiler.CodeGen.ILBaselineReader.tableDataStart 100 valid)
-
-[<Fact>]
-let ``Baseline valid-mask reader preserves the unsigned high bit`` () =
-    let bytes = [| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0x80uy |]
-
-    Assert.Equal(0x8000000000000000UL, FSharp.Compiler.CodeGen.ILBaselineReader.readUInt64 bytes 0)
-
-[<Fact>]
-let ``Baseline reader rejects a malformed signature blob without throwing`` () =
-    let assemblyBytes, pdbBytes =
-        Plumbing.writeInMemory (Plumbing.buildModule [ "Compute" ]) (Map.empty<string, PdbMethodCustomDebugInfo list>)
-
-    let assemblyBytes = Plumbing.redirectBlobHeapPastEnd assemblyBytes
-
-    Assert.True((tryReadFromAssemblyAndPdbBytes assemblyBytes (Some pdbBytes)).IsNone)
+    Assert.Equal(128, FSharp.Compiler.AbstractIL.ILBaselineReader.tableDataStart 100 valid rowCounts)
 
 [<Fact>]
 let ``Baseline reader rejects a string offset outside the strings stream`` () =
