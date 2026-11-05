@@ -31,3 +31,13 @@ val processOpenPath: trie: TrieNode -> path: LongIdentifier -> state: FileConten
 /// </para>
 /// </remarks>
 val mkGraph: filePairs: FilePairMap -> files: FileInProject array -> Graph<FileIndex> * TrieNode
+
+/// <summary>
+/// <c>mkGraph</c> with the content of each file taken from <c>getFileContent</c>, e.g. computed once per parsed file
+/// rather than for every graph the file is part of. The content depends only on the ParsedInput of the file.
+/// </summary>
+val mkGraphWith:
+    getFileContent: (FileInProject -> FileContentEntry list) ->
+    filePairs: FilePairMap ->
+    files: FileInProject array ->
+        Graph<FileIndex> * TrieNode

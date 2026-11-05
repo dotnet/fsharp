@@ -1,5 +1,6 @@
 module internal rec FSharp.Compiler.GraphChecking.FileContentMapping
 
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.DiagnosticsLogger
@@ -725,9 +726,12 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.ValField(field, _) -> visitSynField field
     | SynMemberSig.NestedType _ -> []
 
-let mkFileContent (f: FileInProject) : FileContentEntry list =
+let mkFileContent (input: ParsedInput) : FileContentEntry list =
+    use _ =
+        Activity.start "FileContentMapping.mkFileContent" [| Activity.Tags.fileName, input.FileName |]
+
     [
-        match f.ParsedInput with
+        match input with
         | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
             for SynModuleOrNamespaceSig(longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
                 yield! List.collect visitSynAttributeList attribs

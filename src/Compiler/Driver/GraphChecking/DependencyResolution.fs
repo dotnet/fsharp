@@ -181,7 +181,11 @@ let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: Fi
                         // We pick the lowest file index from the namespace to satisfy the type-checker for the open statement.
                         connectedFileIdx < fileIndex))
 
-let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> * TrieNode =
+let mkGraphWith
+    (getFileContent: FileInProject -> FileContentEntry list)
+    (filePairs: FilePairMap)
+    (files: FileInProject array)
+    : Graph<FileIndex> * TrieNode =
     // We know that implementation files backed by signatures cannot be depended upon.
     // Do not include them when building the Trie.
     let trieInput =
@@ -196,11 +200,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
 
     let fileContents =
         files
-        |> Array.Parallel.map (fun file ->
-            if file.Idx = 0 then
-                List.empty
-            else
-                FileContentMapping.mkFileContent file)
+        |> Array.Parallel.map (fun file -> if file.Idx = 0 then List.empty else getFileContent file)
 
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then
@@ -262,3 +262,6 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
     let trie = trie |> Array.last |> snd
 
     graph, trie
+
+let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIndex> * TrieNode =
+    mkGraphWith (fun file -> FileContentMapping.mkFileContent file.ParsedInput) filePairs files
