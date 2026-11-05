@@ -440,6 +440,16 @@ F# 構文規則に準拠した改行を追加して、署名を指定された�
         <target state="translated">式をかっこで囲む</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
