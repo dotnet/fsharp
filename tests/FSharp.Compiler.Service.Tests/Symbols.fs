@@ -694,7 +694,7 @@ type Foo =
         |> Seq.filter (fun su -> chooseMemberOrFunctionOrValue su |> Option.exists _.IsMemberThisValue)
         |> Seq.map (fun su -> getRangeCoords su.Range)
         |> Seq.sort
-        |> Seq.toList
+        |> Seq.toArray
 
     [<Theory>]
     [<InlineData "this">]
@@ -710,8 +710,10 @@ type Foo() =
 """
         let n = selfId.Length
 
-        selfIdentifierRanges checkResults
-        |> shouldEqual [ (5, 11), (5, 11 + n); (5, 18 + n), (5, 18 + 2 * n); (6, 11), (6, 11 + n) ]
+        Assert.Equal<((int * int) * (int * int)) array>(
+            [| (5, 11), (5, 11 + n); (5, 18 + n), (5, 18 + 2 * n); (6, 11), (6, 11 + n) |],
+            selfIdentifierRanges checkResults
+        )
 
     [<Fact>]
     let ``Synthesized auto-property self identifier does not shadow the property range`` () =
@@ -721,7 +723,7 @@ namespace Foo
 type Foo =
     member val AutoPropGetSet = 0 with get, set
 """
-        selfIdentifierRanges checkResults |> shouldEqual []
+        Assert.Empty(selfIdentifierRanges checkResults)
 
     [<Fact>]
     let ``Property symbol is resolved for property`` () =
