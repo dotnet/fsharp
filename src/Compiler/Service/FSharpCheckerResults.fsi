@@ -444,7 +444,15 @@ type public FSharpCheckFileResults =
 
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile:
-        symbol: FSharpSymbol * ?relatedSymbolKinds: RelatedSymbolUseKind * ?cancellationToken: CancellationToken ->
+        symbol: FSharpSymbol *
+        [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind *
+        ?cancellationToken: CancellationToken ->
+            FSharpSymbolUse[]
+
+    /// Get the textual usages that resolved to the given symbol throughout the file
+    [<Obsolete("This overload is kept for binary compatibility. Use the overload that takes relatedSymbolKinds as a struct option: relatedSymbolKinds = kinds, or ?relatedSymbolKinds = a voption.")>]
+    member GetUsesOfSymbolInFile:
+        symbol: FSharpSymbol * relatedSymbolKinds: RelatedSymbolUseKind option * ?cancellationToken: CancellationToken ->
             FSharpSymbolUse[]
 
     member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef[]

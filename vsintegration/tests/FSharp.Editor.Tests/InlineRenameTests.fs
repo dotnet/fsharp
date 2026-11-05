@@ -827,8 +827,7 @@ type RecordRename() =
                     ValueSome RelatedSymbolUseKind.CopyAndUpdateRecord
                     ValueSome RelatedSymbolUseKind.AllInCode
                 ] do
-                let uses =
-                    check.GetUsesOfSymbolInFile(entity, ?relatedSymbolKinds = ValueOption.toOption kinds)
+                let uses = check.GetUsesOfSymbolInFile(entity, ?relatedSymbolKinds = kinds)
 
                 let expectedRanges =
                     [|

@@ -3670,13 +3670,15 @@ type FSharpCheckFileResults
                             FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             }
 
-    member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken) =
+    member _.GetUsesOfSymbolInFile
+        (symbol: FSharpSymbol, [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind, ?cancellationToken: CancellationToken)
+        : FSharpSymbolUse[] =
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) ->
             [|
                 for symbolUse in
-                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = Option.toValueOption relatedSymbolKinds)
+                    scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item, ?relatedSymbolKinds = relatedSymbolKinds)
                     |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range) do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 
@@ -3684,6 +3686,15 @@ type FSharpCheckFileResults
                         let inst = symbolUse.ItemWithInst.TyparInstantiation
                         FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             |]
+
+    member this.GetUsesOfSymbolInFile
+        (symbol: FSharpSymbol, relatedSymbolKinds: RelatedSymbolUseKind option, ?cancellationToken: CancellationToken)
+        : FSharpSymbolUse[] =
+        this.GetUsesOfSymbolInFile(
+            symbol,
+            ?relatedSymbolKinds = Option.toValueOption relatedSymbolKinds,
+            ?cancellationToken = cancellationToken
+        )
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         match details with
