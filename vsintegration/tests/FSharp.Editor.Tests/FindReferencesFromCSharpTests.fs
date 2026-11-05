@@ -143,9 +143,12 @@ let ``Find Implementations on an F# function does not report C# call sites`` () 
     Assert.Empty references
 
 [<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Find All References on a multi-targeted F# library reports the C# consumers of every target`` (anotherProjectWritesTheName: bool) =
+[<InlineData(false, false)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``Find All References on a multi-targeted F# library reports the C# consumers of every target``
+    (anotherProjectWritesTheName: bool, consumersReferenceTheReferenceAssembly: bool)
+    =
     let consumers = [ "Consumer8"; "Consumer9" ]
 
     let struct (librarySolution, instances) =
@@ -159,7 +162,11 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
 
     let withOutputs =
         (withConsumers, List.zip instances outputs)
-        ||> List.fold (fun solution (instance, output) -> solution.WithProjectOutputFilePath(instance, output))
+        ||> List.fold (fun solution (instance, output) ->
+            if consumersReferenceTheReferenceAssembly then
+                solution.WithProjectOutputFilePath(instance, library.OutputFilename).WithProjectOutputRefFilePath(instance, output)
+            else
+                solution.WithProjectOutputFilePath(instance, output))
 
     let solution =
         if anotherProjectWritesTheName then
