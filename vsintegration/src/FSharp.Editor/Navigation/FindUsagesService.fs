@@ -94,6 +94,21 @@ module FSharpFindUsagesService =
             ProjectFiltering.getProjectsReferencingAssembly outputFilePath declaringProject.Solution
             |> List.filter (fun project -> not project.IsFSharp && project.SupportsCompilation)
 
+    /// A compilation's global namespace, where `DocumentationCommentId` looks, holds only the assemblies it
+    /// references without an alias, so the id is resolved from the namespace of the assembly itself.
+    let private symbolOfId (docId: string) (assembly: IAssemblySymbol) =
+        let names = docId.Substring(2).Split('(').[0].Split('.')
+
+        (Seq.singleton (assembly.GlobalNamespace :> INamespaceOrTypeSymbol), Array.take (names.Length - 1) names)
+        ||> Seq.fold (fun containers name ->
+            containers
+            |> Seq.collect _.GetMembers()
+            |> Seq.chooseV (function
+                | :? INamespaceOrTypeSymbol as container when container.MetadataName = name -> ValueSome container
+                | _ -> ValueNone))
+        |> Seq.collect _.GetMembers()
+        |> Seq.tryFindV (fun candidate -> DocumentationCommentId.CreateDeclarationId(candidate).Split('~').[0] = docId)
+
     /// Locations in a C# or VB project of the symbol with the given documentation comment id.
     let private findRoslynReferences (docId: string) (declaringAssembly: string) (project: Project) =
         cancellableTask {
@@ -102,14 +117,11 @@ module FSharpFindUsagesService =
             match! project.GetCompilationAsync cancellationToken with
             | null -> return Seq.empty
             | compilation ->
-                // The id names a symbol of the F# assembly. A consumer that declares the same name itself
-                // would answer a compilation-wide lookup first, and the search would report its uses.
                 let ofDeclaringAssembly =
-                    DocumentationCommentId.GetSymbolsForDeclarationId(docId, compilation)
-                    |> Seq.tryFindV (fun symbol ->
-                        match symbol.ContainingAssembly with
-                        | null -> false
-                        | assembly -> System.String.Equals(assembly.Name, declaringAssembly, System.StringComparison.OrdinalIgnoreCase))
+                    compilation.SourceModule.ReferencedAssemblySymbols
+                    |> Seq.tryFindV (fun assembly ->
+                        System.String.Equals(assembly.Name, declaringAssembly, System.StringComparison.OrdinalIgnoreCase))
+                    |> ValueOption.bind (symbolOfId docId)
 
                 match ofDeclaringAssembly with
                 | ValueNone -> return Seq.empty

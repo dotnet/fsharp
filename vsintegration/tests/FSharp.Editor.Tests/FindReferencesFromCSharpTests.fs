@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// An F# library and a C# project referencing its built assembly, as VS wires a C# → F# project reference.
+/// An F# library and C# and VB projects referencing its built assembly, as VS wires a C# or VB → F# project reference.
 module FSharp.Editor.Tests.FindReferencesFromCSharpTests
 
 open System
@@ -12,7 +12,6 @@ open Xunit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
-open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
@@ -36,32 +35,46 @@ type Color =
 /// The synthetic project puts its modules in a namespace named after the project.
 let private moduleName = $"{library.Name}.ModuleFirst"
 
+/// A consumer references the copy of the assembly in its own output, not the file the F# project writes.
+let private copiedTo (folder: string) =
+    let directory = Path.Combine(Path.GetDirectoryName library.OutputFilename, folder)
+    Directory.CreateDirectory directory |> ignore
+    let copy = Path.Combine(directory, Path.GetFileName library.OutputFilename)
+    File.Copy(library.OutputFilename, copy, true)
+    copy
+
 let private solution =
     let struct (librarySolution, checker) =
         RoslynTestHelpers.CreateMultiProjectSolution library
 
-    let assembly = RoslynTestHelpers.CompileToAssembly(library, checker)
+    RoslynTestHelpers.CompileToAssembly(library, checker) |> ignore
+    let options = library.GetProjectOptions checker
 
-    RoslynTestHelpers.AddCSharpProject(
-        librarySolution,
-        "Consumer",
-        $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; }}",
-        library.GetProjectOptions checker,
-        ImmutableArray.Create assembly
-    )
+    let csharp =
+        $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; int O() => (int){moduleName}.Color.Red; }}"
 
-let private consumer =
-    solution.Projects |> Seq.find (fun p -> p.Language = LanguageNames.CSharp)
+    let vb =
+        $"Class Consumer\n    Dim a = {moduleName}.twice(1)\n    Dim b = {moduleName}.answer\n    Dim c = {moduleName}.Color.Red\nEnd Class"
+
+    (librarySolution,
+     [
+         LanguageNames.CSharp, "CSharpConsumer", csharp
+         LanguageNames.VisualBasic, "VbConsumer", vb
+     ])
+    ||> List.fold (fun solution (language, name, source) ->
+        RoslynTestHelpers.AddProject(solution, language, name, source, options, ImmutableArray.Create(copiedTo name)))
 
 let private firstPath = library.GetFilePath "First"
 
-let private declarationPosition =
-    (File.ReadAllText firstPath).IndexOf("twice", StringComparison.Ordinal)
+let private positionOf (name: string) =
+    (File.ReadAllText firstPath).IndexOf(name, StringComparison.Ordinal)
 
-let private fsharpDocument =
+let private fsharpDocumentIn (solution: Solution) =
     solution.GetDocumentIdsWithFilePath firstPath
     |> Seq.exactlyOne
     |> solution.GetDocument
+
+let private fsharpDocument = fsharpDocumentIn solution
 
 let private findUsagesService =
     FSharpFindUsagesService() :> IFSharpFindUsagesService
@@ -78,32 +91,15 @@ let private documentSpanOf (reference: FSharpSourceReferenceItem) =
 
     property documentSpan "Document" :?> Document, property documentSpan "SourceSpan" :?> TextSpan
 
-[<Fact>]
-let ``the C# compilation resolves the doc comment id of an F# function`` () =
-    let compilation = consumer.GetCompilationAsync(CancellationToken.None).Result
-
-    let errors =
-        compilation.GetDiagnostics()
-        |> Seq.filter (fun d -> d.Severity = DiagnosticSeverity.Error)
-
-    Assert.Empty errors
-
-    let twice =
-        DocumentationCommentId.GetFirstSymbolForDeclarationId($"M:{moduleName}.twice(System.Int32)", compilation)
-
-    Assert.NotNull twice
-
-    let references =
-        SymbolFinder.FindReferencesAsync(twice, solution, ImmutableHashSet.CreateRange consumer.Documents, CancellationToken.None).Result
-
-    Assert.Single(references |> Seq.collect _.Locations) |> ignore
+let private textOf (document: Document) =
+    document.GetTextAsync(CancellationToken.None).Result
 
 [<Fact>]
-let ``the consumer is found as a project referencing the F# assembly`` () =
+let ``the consumers are found as projects referencing the F# assembly`` () =
     let referencing =
         ProjectFiltering.getProjectsReferencingAssembly fsharpDocument.Project.OutputFilePath solution
 
-    Assert.Equal<ProjectId list>([ consumer.Id ], referencing |> List.map _.Id)
+    Assert.Equal<string list>([ "CSharpConsumer"; "VbConsumer" ], referencing |> List.map _.Name)
 
 [<Theory>]
 [<InlineData("twice", "M:{0}.twice(System.Int32)")>]
@@ -128,40 +124,74 @@ let ``DocumentationCommentId is the compiled form Roslyn resolves`` (symbolName:
 
     Assert.Equal(expected, symbol.DocumentationCommentId)
 
-[<Fact>]
-let ``Find All References on an F# function reports its C# call site`` () =
+[<Theory>]
+[<InlineData("twice")>]
+[<InlineData("answer")>]
+[<InlineData("Red")>]
+let ``Find All References on an F# symbol reports its C# and VB uses`` (symbolName: string) =
     let context, foundDefinitions, foundReferences =
         RoslynTestHelpers.CreateFindUsagesContext()
 
-    findUsagesService.FindReferencesAsync(fsharpDocument, declarationPosition, context).Wait()
+    findUsagesService.FindReferencesAsync(fsharpDocument, positionOf symbolName, context).Wait()
 
-    Assert.Equal(1, foundDefinitions.Count)
-    let document, span = documentSpanOf (Assert.Single foundReferences)
-    Assert.Equal(LanguageNames.CSharp, document.Project.Language)
+    Assert.Single foundDefinitions |> ignore
 
-    let text = document.GetTextAsync(CancellationToken.None).Result
-    Assert.Equal("twice", text.ToString span)
+    let used =
+        foundReferences
+        |> Seq.map (fun reference ->
+            let document, span = documentSpanOf reference
+            document.Project.Language, (textOf document).ToString span)
+        |> Seq.sort
+        |> Seq.toList
+
+    Assert.Equal<(string * string) list>([ LanguageNames.CSharp, symbolName; LanguageNames.VisualBasic, symbolName ], used)
 
 [<Fact>]
-let ``Find All References on an F# literal reports its C# use`` () =
+let ``Find All References on an F# function reports a call through an extern alias, not the namesake in the consumer`` () =
+    let alias = "FSLib"
+    let assembly = copiedTo "AliasedConsumer"
+
+    let source =
+        $"extern alias {alias};\nnamespace {library.Name} {{ public static class ModuleFirst {{ public static int twice(int x) => x; }} }}\nclass Consumer {{\n    int Real() => {alias}::{moduleName}.twice(1);\n    int Other() => {moduleName}.twice(1);\n}}"
+
+    let options =
+        library.GetProjectOptions(solution.GetFSharpWorkspaceService().Checker)
+
+    let withConsumer =
+        RoslynTestHelpers.AddProject(solution, LanguageNames.CSharp, "AliasedConsumer", source, options, ImmutableArray.Create assembly)
+
+    let consumer =
+        withConsumer.Projects
+        |> Seq.find (fun project -> project.Name = "AliasedConsumer")
+
+    let aliasedReferences =
+        consumer.MetadataReferences
+        |> Seq.map (function
+            | :? PortableExecutableReference as reference when reference.FilePath = assembly ->
+                reference.WithAliases [ alias ] :> MetadataReference
+            | reference -> reference)
+
+    let aliased =
+        withConsumer.WithProjectMetadataReferences(consumer.Id, aliasedReferences)
+
     let context, _, foundReferences = RoslynTestHelpers.CreateFindUsagesContext()
 
-    let position =
-        (File.ReadAllText firstPath).IndexOf("answer", StringComparison.Ordinal)
+    findUsagesService.FindReferencesAsync(fsharpDocumentIn aliased, positionOf "twice", context).Wait()
 
-    findUsagesService.FindReferencesAsync(fsharpDocument, position, context).Wait()
+    let linesInConsumer =
+        foundReferences
+        |> Seq.map documentSpanOf
+        |> Seq.filter (fun (document, _) -> document.Project.Name = consumer.Name)
+        |> Seq.map (fun (document, span) -> (textOf document).Lines.GetLineFromPosition(span.Start).ToString())
+        |> Seq.toList
 
-    let document, span = documentSpanOf (Assert.Single foundReferences)
-    Assert.Equal(LanguageNames.CSharp, document.Project.Language)
-
-    let text = document.GetTextAsync(CancellationToken.None).Result
-    Assert.Equal("answer", text.ToString span)
+    Assert.Contains("Real", Assert.Single linesInConsumer)
 
 [<Fact>]
 let ``Find Implementations on an F# function does not report C# call sites`` () =
     let context, _, foundReferences = RoslynTestHelpers.CreateFindUsagesContext()
 
-    findUsagesService.FindImplementationsAsync(fsharpDocument, declarationPosition, context).Wait()
+    findUsagesService.FindImplementationsAsync(fsharpDocument, positionOf "twice", context).Wait()
 
     Assert.Empty foundReferences
 
@@ -176,15 +206,7 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
     let struct (librarySolution, instances) =
         RoslynTestHelpers.CreateMultiTargetSolution(library, [ for _ in consumers -> { Defines = []; ExcludedFileIds = [] } ])
 
-    let outputs =
-        [
-            for _, target in consumers ->
-                let directory = Path.Combine(Path.GetDirectoryName library.OutputFilename, target)
-                Directory.CreateDirectory directory |> ignore
-                let output = Path.Combine(directory, Path.GetFileName library.OutputFilename)
-                File.Copy(library.OutputFilename, output, true)
-                output
-        ]
+    let outputs = [ for _, target in consumers -> copiedTo target ]
 
     let options =
         library.GetProjectOptions(librarySolution.GetFSharpWorkspaceService().Checker)
@@ -192,8 +214,9 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
     let withConsumers =
         (librarySolution, List.zip consumers outputs)
         ||> List.fold (fun solution ((name, _), output) ->
-            RoslynTestHelpers.AddCSharpProject(
+            RoslynTestHelpers.AddProject(
                 solution,
+                LanguageNames.CSharp,
                 name,
                 $"class Consumer {{ int M() => {moduleName}.twice(1); }}",
                 options,
@@ -217,7 +240,7 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
 
     let context, _, foundReferences = RoslynTestHelpers.CreateFindUsagesContext()
 
-    findUsagesService.FindReferencesAsync(document, declarationPosition, context).Wait()
+    findUsagesService.FindReferencesAsync(document, positionOf "twice", context).Wait()
 
     let reportedIn =
         foundReferences
