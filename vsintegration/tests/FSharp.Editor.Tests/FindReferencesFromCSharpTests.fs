@@ -16,7 +16,9 @@ open FSharp.Test.ProjectGeneration
 let private library =
     SyntheticProject.Create(
         { sourceFile "First" [] with
-            ExtraSource = "let twice x = x * 2\n[<Literal>]\nlet answer = 42\ntype Color = Red = 0 | Blue = 1\n"
+            ExtraSource =
+                "let twice x = x * 2\n[<Literal>]\nlet answer = 42\ntype Color = Red = 0 | Blue = 1\n"
+                + "type Generic<'T>() =\n    static member (+) (a: Generic<'T>, _: Generic<'T>) = a\n"
         }
     )
 
@@ -37,10 +39,10 @@ let private withConsumer language name source (assemblies: string list) (solutio
     RoslynTestHelpers.AddProject(solution, language, name, source, options, ImmutableArray.CreateRange assemblies)
 
 let private csharpConsumer =
-    $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; int O() => (int){moduleName}.Color.Red; }}"
+    $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; int O() => (int){moduleName}.Color.Red; object P({moduleName}.Generic<int> a, {moduleName}.Generic<int> b) => a + b; }}"
 
 let private vbConsumer =
-    $"Class Consumer\n    Dim a = {moduleName}.twice(1)\n    Dim b = {moduleName}.answer\n    Dim c = {moduleName}.Color.Red\nEnd Class"
+    $"Class Consumer\n    Dim a = {moduleName}.twice(1)\n    Dim b = {moduleName}.answer\n    Dim c = {moduleName}.Color.Red\n    Function P(x As {moduleName}.Generic(Of Integer), y As {moduleName}.Generic(Of Integer)) As Object\n        Return x + y\n    End Function\nEnd Class"
 
 let private solution =
     let struct (librarySolution, checker) =
@@ -67,7 +69,28 @@ let ``the consumers are found as projects referencing the F# assembly`` () =
     let referencing =
         ProjectFiltering.getProjectsReferencingAssembly fsharpDocument.Project.OutputFilePath solution
 
-    Assert.Equal<string list>([ "CSharpConsumer"; "VbConsumer" ], referencing |> List.map _.Name)
+    Assert.Equal<string>([ "CSharpConsumer"; "VbConsumer" ], referencing |> Seq.map _.Name)
+
+[<Fact>]
+let ``a reference without a file path is not the F# assembly even when another project writes its name`` () =
+    let added =
+        solution
+        |> withConsumer LanguageNames.CSharp "ExactConsumer" csharpConsumer []
+        |> withConsumer LanguageNames.CSharp "InMemoryConsumer" csharpConsumer []
+
+    let idOf name =
+        (added.Projects |> Seq.find (fun project -> project.Name = name)).Id
+
+    let other = added.AddProject("Other", "Other", LanguageNames.CSharp)
+
+    let referencing =
+        other.Solution
+            .AddMetadataReference(idOf "ExactConsumer", MetadataReference.CreateFromFile library.OutputFilename)
+            .AddMetadataReference(idOf "InMemoryConsumer", MetadataReference.CreateFromImage(File.ReadAllBytes library.OutputFilename))
+            .WithProjectOutputFilePath(other.Id, Path.Combine("C:\\Other", Path.GetFileName library.OutputFilename))
+        |> ProjectFiltering.getProjectsReferencingAssembly fsharpDocument.Project.OutputFilePath
+
+    Assert.Equal<string>([ "ExactConsumer" ], referencing |> Seq.map _.Name)
 
 [<Theory>]
 [<InlineData("twice", "M:{0}.twice(System.Int32)")>]
@@ -92,24 +115,30 @@ let ``DocumentationCommentId is the compiled form Roslyn resolves`` (symbolName:
 
     Assert.Equal(expected, symbol.DocumentationCommentId)
 
+let private usesAt (position: int) =
+    let context, definitions, references = RoslynTestHelpers.CreateFindUsagesContext()
+    findUsagesService.FindReferencesAsync(fsharpDocument, position, context).Wait()
+    Assert.Single definitions |> ignore
+
+    references
+    |> Seq.map (fun reference ->
+        let document, span = InlineRenameTests.getReferenceSpan reference
+        document.Project.Language, document.GetTextAsync().Result.ToString span)
+    |> Seq.sort
+
 [<Theory>]
 [<InlineData("twice")>]
 [<InlineData("answer")>]
 [<InlineData("Red")>]
 let ``Find All References on an F# symbol reports its C# and VB uses`` (symbolName: string) =
-    let context, definitions, references = RoslynTestHelpers.CreateFindUsagesContext()
-    findUsagesService.FindReferencesAsync(fsharpDocument, positionOf symbolName, context).Wait()
-    Assert.Single definitions |> ignore
+    Assert.Equal<string * string>(
+        [ LanguageNames.CSharp, symbolName; LanguageNames.VisualBasic, symbolName ],
+        usesAt (positionOf symbolName)
+    )
 
-    let used =
-        [
-            for reference in references do
-                let document, span = InlineRenameTests.getReferenceSpan reference
-                document.Project.Language, document.GetTextAsync().Result.ToString span
-        ]
-        |> List.sort
-
-    Assert.Equal<(string * string) list>([ LanguageNames.CSharp, symbolName; LanguageNames.VisualBasic, symbolName ], used)
+[<Fact>]
+let ``Find All References on an operator of a generic F# type reports its C# and VB uses`` () =
+    Assert.Equal<string * string>([ LanguageNames.CSharp, "+"; LanguageNames.VisualBasic, "+" ], usesAt (positionOf "(+) (a" + 1))
 
 [<Fact>]
 let ``Find All References on an F# function reports a call through an extern alias, not the namesake in the consumer`` () =
@@ -180,9 +209,8 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
     findUsagesService.FindReferencesAsync(document, positionOf "twice", context).Wait()
 
     let reportedIn =
-        [
-            for reference in references -> (InlineRenameTests.getReferenceSpan reference |> fst).Project.Name
-        ]
-        |> List.sort
+        references
+        |> Seq.map (fun reference -> (InlineRenameTests.getReferenceSpan reference |> fst).Project.Name)
+        |> Seq.sort
 
-    Assert.Equal<string list>(consumers, reportedIn)
+    Assert.Equal<string>(consumers, reportedIn)
