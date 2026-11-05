@@ -47,8 +47,8 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                         else
                             definitionItems
-                            |> Array.tryFindV (fun (_, project: Project) -> project.FilePath = doc.Project.FilePath)
-                            |> ValueOption.map (fun (definitionItem, _) -> definitionItem)
+                            |> Array.tryFindV (fun struct (_, project: Project) -> project.FilePath = doc.Project.FilePath)
+                            |> ValueOption.map (fun struct (definitionItem, _) -> definitionItem)
                             |> ValueOption.defaultValue externalDefinitionItem
 
                     let referenceItem =
@@ -106,14 +106,14 @@ module FSharpFindUsagesService =
                 // would answer a compilation-wide lookup first, and the search would report its uses.
                 let ofDeclaringAssembly =
                     DocumentationCommentId.GetSymbolsForDeclarationId(docId, compilation)
-                    |> Seq.tryFind (fun symbol ->
+                    |> Seq.tryFindV (fun symbol ->
                         match symbol.ContainingAssembly with
                         | null -> false
                         | assembly -> System.String.Equals(assembly.Name, declaringAssembly, System.StringComparison.OrdinalIgnoreCase))
 
                 match ofDeclaringAssembly with
-                | None -> return Seq.empty
-                | Some symbol ->
+                | ValueNone -> return Seq.empty
+                | ValueSome symbol ->
                     let! referencedSymbols =
                         SymbolFinder.FindReferencesAsync(
                             symbol,
@@ -131,27 +131,28 @@ module FSharpFindUsagesService =
 
     /// The uses in the C# and VB projects that reference the assembly of a project declaring the symbol,
     /// each with the definition item to report them under.
-    let private findCrossLanguageReferences (docId: string) (definitionItems: (FSharpDefinitionItem * Project)[]) =
+    let private findCrossLanguageReferences (docId: string) (definitionItems: struct (FSharpDefinitionItem * Project)[]) =
         seq {
-            for definitionItem, declaringProject in definitionItems do
-                for project in referencingCompilationProjects declaringProject -> definitionItem, declaringProject.AssemblyName, project
+            for struct (definitionItem, declaringProject) in definitionItems do
+                for project in referencingCompilationProjects declaringProject ->
+                    struct (definitionItem, declaringProject.AssemblyName, project)
         }
-        |> Seq.distinctBy (fun (_, _, project) -> project.Id)
-        |> Seq.map (fun (definitionItem, declaringAssembly, project) ->
+        |> Seq.distinctBy (fun struct (_, _, project) -> project.Id)
+        |> Seq.map (fun struct (definitionItem, declaringAssembly, project) ->
             findRoslynReferences docId declaringAssembly project
-            |> CancellableTask.map (Seq.map (fun location -> definitionItem, location)))
+            |> CancellableTask.map (Seq.map (fun location -> struct (definitionItem, location))))
         |> CancellableTask.whenAllThrottled ConcurrentCompilations
         |> CancellableTask.map Seq.concat
 
     /// Reports each file span once: the target-framework instances of a consumer share their files.
     let private reportCrossLanguageReferences
-        (found: (FSharpDefinitionItem * ReferenceLocation) seq)
+        (found: struct (FSharpDefinitionItem * ReferenceLocation) seq)
         (onReferenceFoundAsync: FSharpSourceReferenceItem -> Task)
         =
         cancellableTask {
             let reported = HashSet<struct (string * TextSpan)>()
 
-            for definitionItem, location in found do
+            for struct (definitionItem, location) in found do
                 let span = location.Location.SourceSpan
 
                 if reported.Add(struct (location.Document.FilePath, span)) then
@@ -218,11 +219,11 @@ module FSharpFindUsagesService =
 
                     let definitionItems =
                         declarationSpans
-                        |> Array.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project)
+                        |> Array.map (fun span -> struct (FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Project))
 
                     do!
                         definitionItems
-                        |> Seq.map (fst >> context.OnDefinitionFoundAsync)
+                        |> Seq.map (fun struct (definitionItem, _) -> context.OnDefinitionFoundAsync definitionItem)
                         |> Task.WhenAll
 
                     if isExternal then
