@@ -149,7 +149,7 @@ let ``runtime async sequence keeps source calls adjacent to awaits`` (optimized,
     | CompilationResult.Success output ->
         let _, _, il = ILChecker.verifyILAndReturnActual [] output.OutputPath.Value []
         let start = il.IndexOf("AwaitInputs::Next()")
-        let finish = il.IndexOf("ValueTask`1<int32>::.ctor", start)
+        let finish = il.IndexOf("AsyncHelpers::Await", start)
         Assert.True(start >= 0 && finish > start)
         Assert.DoesNotContain("stfld", il.Substring(start, finish - start))
         Assert.DoesNotContain("stloc", il.Substring(start, finish - start))

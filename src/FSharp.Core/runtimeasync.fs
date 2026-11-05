@@ -2,7 +2,7 @@
 
 namespace Microsoft.FSharp.Control.RuntimeAsync
 
-#if NET && !BUILDING_WITH_LKG
+#if NET && BUILDING_WITH_REPO_COMPILER
 open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -14,45 +14,54 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Control
 
+/// <summary>A started asynchronous operation. Invoking it awaits the result.</summary>
+type Started<'T> = delegate of unit -> 'T
+
 type AwaitableBuilderBase() =
-    [<NoDynamicInvocation; NoEagerConstraintApplication>]
-    member inline _.Bind(source: ^Awaitable, [<InlineIfLambda>] continuation: 'T -> 'U) : 'U =
-        let awaiter = (^Awaitable: (member GetAwaiter: unit -> ^Awaiter) source)
-
-        if not (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
-            AsyncHelpers.UnsafeAwaitAwaiter awaiter
-
-        continuation (^Awaiter: (member GetResult: unit -> 'T) awaiter)
-
-    member inline _.Source(source: 'T) =
+    member inline _.Source(source: Task<'T>) =
         source
 
-    member inline _.Source(source: Task<'T>) =
-        ValueTask<'T>(source)
-
     member inline _.Source(source: Task) =
-        ValueTask(source)
+        Started(fun () -> AsyncHelpers.Await source)
+
+    member inline _.Source(source: ValueTask<'T>) =
+        Started(fun () -> AsyncHelpers.Await source)
+
+    member inline _.Source(source: ValueTask) =
+        Started(fun () -> AsyncHelpers.Await source)
 
     member inline _.Source(source: Async<'T>) =
-        ValueTask<'T>(Async.StartImmediateAsTask source)
+        Async.StartImmediateAsTask source
 
-    /// <summary>Gets both source awaiters before waiting for either result.</summary>
-    [<NoDynamicInvocation; NoEagerConstraintApplication>]
-    member inline _.MergeSources(left: ^Left, right: ^Right) : ValueTask<struct ('T * 'U)> =
-        __runtimeAsyncReturnValueTask (
-            let left = (^Left: (member GetAwaiter: unit -> ^LeftAwaiter) left)
-            let right = (^Right: (member GetAwaiter: unit -> ^RightAwaiter) right)
+    member inline _.Source(source: seq<'T>) =
+        source
 
-            if not (^LeftAwaiter: (member get_IsCompleted: unit -> bool) left) then
-                AsyncHelpers.UnsafeAwaitAwaiter left
+    member inline _.Source(source: IAsyncEnumerable<'T>) =
+        source
 
-            let first = (^LeftAwaiter: (member GetResult: unit -> 'T) left)
+    member inline _.Bind(source: Task<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
+        continuation (AsyncHelpers.Await source)
 
-            if not (^RightAwaiter: (member get_IsCompleted: unit -> bool) right) then
-                AsyncHelpers.UnsafeAwaitAwaiter right
+    member inline _.Bind([<InlineIfLambda>] source: Started<'T>, [<InlineIfLambda>] continuation: 'T -> 'U) =
+        continuation (source.Invoke())
 
-            struct (first, (^RightAwaiter: (member GetResult: unit -> 'U) right))
-        )
+    member inline _.ReturnFrom(source: Task<'T>) =
+        AsyncHelpers.Await source
+
+    member inline _.ReturnFrom([<InlineIfLambda>] source: Started<'T>) =
+        source.Invoke()
+
+    member inline _.MergeSources(left: Task<'T>, right: Task<'U>) =
+        Started(fun () -> struct (AsyncHelpers.Await left, AsyncHelpers.Await right))
+
+    member inline _.MergeSources(left: Task<'T>, [<InlineIfLambda>] right: Started<'U>) =
+        Started(fun () -> struct (AsyncHelpers.Await left, right.Invoke()))
+
+    member inline _.MergeSources([<InlineIfLambda>] left: Started<'T>, right: Task<'U>) =
+        Started(fun () -> struct (left.Invoke(), AsyncHelpers.Await right))
+
+    member inline _.MergeSources([<InlineIfLambda>] left: Started<'T>, [<InlineIfLambda>] right: Started<'U>) =
+        Started(fun () -> struct (left.Invoke(), right.Invoke()))
 
 /// <summary>Builds tasks whose suspension and resumption are managed by .NET.</summary>
 /// <remarks>Requires .NET 11 or later.</remarks>
@@ -71,10 +80,6 @@ type TaskBuilder() =
 
     member inline _.Return(value: 'T) =
         value
-
-    [<NoDynamicInvocation>]
-    member inline this.ReturnFrom(source: ^Awaitable) : 'T =
-        this.Bind< ^Awaitable, ^Awaiter, 'T, 'T>(source, id)
 
     member inline _.Combine(first: unit, [<InlineIfLambda>] rest: unit -> 'T) =
         ignore first
@@ -125,7 +130,7 @@ type TaskSeqBuilder() =
     /// <summary>Starts an asynchronous computation with the enumeration cancellation token.</summary>
     [<NoDynamicInvocation>]
     member inline _.Source(source: Async<'T>) =
-        ValueTask<'T>(Async.StartImmediateAsTask(source, __runtimeAsyncSequenceCancellationToken ()))
+        Async.StartImmediateAsTask(source, __runtimeAsyncSequenceCancellationToken ())
 
     member inline _.Zero() : seq<'T> =
         Seq.empty

@@ -186,7 +186,17 @@ open Microsoft.FSharp.Core.CompilerServices
 // AutoOpen is by assembly attribute to get sequencing of AutoOpen correct and
 // so each gives different priority
 module LowPriority =
-#if NET && !BUILDING_WITH_LKG
+#if NET && BUILDING_WITH_REPO_COMPILER
+    type RuntimeAsync.AwaitableBuilderBase with
+        /// <summary>Gets the awaiter of a custom awaitable immediately and awaits it when the result is needed.</summary>
+        [<NoEagerConstraintApplication>]
+        member inline Source:
+            source: ^Awaitable -> RuntimeAsync.Started<'T>
+                when ^Awaitable: (member GetAwaiter: unit -> ^Awaiter)
+                and ^Awaiter :> ICriticalNotifyCompletion
+                and ^Awaiter: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter: (member GetResult: unit -> 'T)
+
     type RuntimeAsync.TaskBuilder with
         member inline Using:
             resource: 'R * [<InlineIfLambda>] body: ('R -> 'T) -> 'T when 'R :> System.IDisposable | null

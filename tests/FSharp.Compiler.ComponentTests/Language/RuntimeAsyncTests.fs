@@ -225,11 +225,7 @@ let main _ =
                     Assert.Equal(System.Reflection.Metadata.SignatureTypeCode.Void, signature.ReadSignatureTypeCode())
             for name in ["child"; "run"] do
                 let method = methods |> List.filter (fun method -> md.GetString method.Name = name) |> Assert.Single
-                Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000)
-            if optimize then
-                let liftedChild =
-                    methods |> List.filter (fun method -> md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0)
-                Assert.Single(liftedChild) |> ignore)
+                Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000))
         let _, _, il = ILChecker.verifyILAndReturnActual [] result.OutputPath.Value []
         let methodBody name =
             Regex.Match(il, @"(?ms)^(?<indent>[ \t]*)\.method[^{}]*\b" + name + @"(?:<[^>]+>)?\([^{}]*\{.*?^\k<indent>\}").Value
@@ -237,11 +233,7 @@ let main _ =
         Assert.NotEmpty(moveNext)
         Assert.Contains("void", moveNext)
         Assert.DoesNotContain("AsyncHelpers::Await", moveNext)
-        if optimize then
-            Assert.Contains("AsyncHelpers::Await", methodBody "Invoke")
-            Assert.Contains("FSharpFunc`2", moveNext)
-        else
-            Assert.Contains("TaskComposition::child", moveNext)
+        Assert.Contains("TaskComposition::child", moveNext)
         for name in ["child"; "run"] do
             Assert.Contains("AsyncHelpers::Await", methodBody name)
 
@@ -889,23 +881,28 @@ let f () : Task<int> =
         |> shouldSucceed
 
     [<Theory>]
-    [<InlineData("on", 0x2000)>]
-    [<InlineData("off", 0)>]
-    let ``FSharp.Core task is runtime managed only with the runtime-async feature`` (mode: string, runtimeAsyncFlag: int) =
+    [<InlineData("on", "helper work")>]
+    [<InlineData("off", "")>]
+    let ``FSharp.Core task is runtime managed only with the runtime-async feature`` (mode: string, runtimeAsyncMethods: string) =
         FSharp """
 module Consumer
-let work () = task { let! value = System.Threading.Tasks.Task.FromResult 40 in return value + 2 }
+let helper (value: int) = task { let! value = System.Threading.Tasks.Task.FromResult value in return value + 2 }
+let work () = task { let! value = helper 40 in return value }
 [<EntryPoint>]
 let main _ = if work().Result = 42 then 0 else 1
 """
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
+        |> withOptimize
         |> withOptions [ $"--features:runtime-async={mode}" ]
         |> compileExeAndRun
         |> shouldSucceed
         |> withMetadataReader (fun md ->
-            let work = md.MethodDefinitions |> Seq.map md.GetMethodDefinition |> Seq.find (fun m -> md.GetString m.Name = "work")
-            Assert.Equal(runtimeAsyncFlag, int work.ImplAttributes &&& 0x2000))
+            [ for h in md.MethodDefinitions do
+                let m = md.GetMethodDefinition h
+                if int m.ImplAttributes &&& 0x2000 <> 0 then md.GetString m.Name ]
+            |> String.concat " "
+            |> fun names -> Assert.Equal(runtimeAsyncMethods, names))
 
     [<Fact>]
     let ``runtime async direct intrinsic fixture executes`` () =

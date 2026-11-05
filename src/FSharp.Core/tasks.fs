@@ -286,7 +286,18 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
-#if NET && !BUILDING_WITH_LKG
+#if NET && BUILDING_WITH_REPO_COMPILER
+    type RuntimeAsync.AwaitableBuilderBase with
+        [<NoEagerConstraintApplication>]
+        member inline _.Source(source: ^Awaitable) =
+            let awaiter = (^Awaitable: (member GetAwaiter: unit -> ^Awaiter) source)
+
+            RuntimeAsync.Started(fun () ->
+                if not (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
+                    AsyncHelpers.UnsafeAwaitAwaiter awaiter
+
+                (^Awaiter: (member GetResult: unit -> 'T) awaiter))
+
     type RuntimeAsync.TaskBuilder with
         member inline _.Using(resource: 'R :> IDisposable | null, [<InlineIfLambda>] body: 'R -> 'T) =
             try

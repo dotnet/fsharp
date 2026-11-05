@@ -159,7 +159,7 @@ let ``the CE builder lowers to Await with no state machine`` () =
     |> withFSharpCoreShippedNet
     |> withLangVersionPreview
     |> compile
-    |> verifyILContains [ "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter`1<int32>>(!!0)" ]
+    |> verifyILContains [ "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)" ]
     |> verifyILNotPresent [
         "AsyncTaskMethodBuilder"
         "IAsyncStateMachine"
@@ -253,8 +253,8 @@ let ``composed CE body: await inside try, hoisted disposal, async flag on the li
     |> compile
     |> shouldSucceed
     |> verifyILContains [
-        "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter`1<int32>>(!!0)"
-        "AsyncHelpers::UnsafeAwaitAwaiter<valuetype [runtime]System.Runtime.CompilerServices.ValueTaskAwaiter>(!!0)"
+        "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)"
+        "AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)"
         "callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()"
         "call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)"
         "call       class [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo::Capture(class [runtime]System.Exception)"
