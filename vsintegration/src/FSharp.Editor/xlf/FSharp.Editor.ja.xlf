@@ -90,9 +90,19 @@ Suggest names for unresolved identifiers;</source>
         <target state="translated">匿名レコードに変換</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToFunLambda">
+        <source>Convert to 'fun' lambda</source>
+        <target state="new">Convert to 'fun' lambda</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
         <target state="translated">非等値のチェックには '&lt;&gt;' を使用します</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToShorthandLambda">
+        <source>Convert to '_.' shorthand lambda</source>
+        <target state="new">Convert to '_.' shorthand lambda</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
