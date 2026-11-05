@@ -67,6 +67,12 @@ Runtime restrictions and their compiler handling:
   the pending exception. This makes `use` on an `IAsyncDisposable` work under
   runtime async.
 
+  The body's result and the pending exception are held in two locals, the
+  exception staying null when the body succeeds, so the rewrite allocates
+  nothing on the success path. A pending exception, and `reraise ()` in a
+  rewritten handler, are rethrown with `ExceptionDispatchInfo.Capture(exn).Throw()`
+  so the exception keeps the stack trace of its original throw.
+
 Byref, byref-like, and pinned locals that are used after a suspension are
 rejected with diagnostic FS3919 when their non-preservable provenance is
 tracked. Pinned provenance is not currently propagated through ref cells or
