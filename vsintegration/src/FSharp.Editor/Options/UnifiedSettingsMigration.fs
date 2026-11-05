@@ -135,53 +135,85 @@ module internal UnifiedSettingsMigration =
 
                     enqueue writer moniker value
 
-    let runAsync
-        (manager: Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager)
-        (tryRead: string -> obj voption)
-        (saveCompleted: unit -> Task)
-        (hasNativeCustomizations: unit -> bool)
-        (logError: exn -> unit)
-        (cancellationToken: CancellationToken)
-        : Task =
-        task {
-            cancellationToken.ThrowIfCancellationRequested()
+    type ImportSession
+        (
+            manager: Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager,
+            tryRead: string -> obj voption,
+            saveCompleted: unit -> Task,
+            hasNativeCustomizations: unit -> bool,
+            logError: exn -> unit
+        ) =
+        let eventSource = Guid.NewGuid()
+        let mutable nativeRevision = 0
+        let mutable importedRevision = 0
+        let mutable importedBeforeSync = false
 
-            try
-                match tryRead CompletionKey with
-                | ValueSome(:? bool as completed) when completed -> ()
-                | _ when hasNativeCustomizations () -> do! saveCompleted ()
-                | _ ->
-                    let writer = manager.GetWriter("F# settings migration")
-                    let mutable hasLegacyValues = false
+        let subscription =
+            manager
+                .GetReader()
+                .SubscribeToChanges(
+                    (fun update ->
+                        if update.EventSource <> eventSource then
+                            Interlocked.Increment(&nativeRevision) |> ignore),
+                    "languages.fsharp.*"
+                )
 
-                    for category, legacyType, fields in editorGroups do
-                        match tryRead (editorKey legacyType) with
-                        | ValueNone -> ()
-                        | ValueSome(:? string as json) ->
-                            hasLegacyValues <- true
-                            importEditor writer category fields json
-                        | _ -> invalidOp $"Invalid legacy F# settings record: {legacyType}."
+        member _.RunAsync(roamingSyncComplete, cancellationToken: CancellationToken) : Task =
+            task {
+                cancellationToken.ThrowIfCancellationRequested()
 
-                    for suffix, legacyName in interactiveSettings do
-                        match tryRead (interactiveKey legacyName) with
-                        | ValueNone -> ()
-                        | ValueSome value ->
-                            hasLegacyValues <- true
-                            enqueue writer $"languages.fsharp.interactive.{suffix}" (JToken.FromObject value)
+                try
+                    let revision = Volatile.Read(&nativeRevision)
 
-                    if hasLegacyValues then
-                        cancellationToken.ThrowIfCancellationRequested()
-                        let result = writer.RequestCommit(SR.UnifiedSettingsMigrationDescription())
+                    match tryRead CompletionKey with
+                    | ValueSome(:? bool as completed) when completed -> ()
+                    | _ when
+                        (importedBeforeSync && revision <> importedRevision)
+                        || (not importedBeforeSync && hasNativeCustomizations ())
+                        ->
+                        do! saveCompleted ()
+                    | _ ->
+                        let writer = manager.GetWriter("F# settings migration", eventSource)
+                        let mutable hasLegacyValues = false
 
-                        match result.Outcome with
-                        | SettingCommitOutcome.Success
-                        | SettingCommitOutcome.NoChangesQueued -> do! saveCompleted ()
-                        | _ -> invalidOp $"Cannot complete F# settings import: {result.Outcome}. {result.Message}"
-            with
-            | :? OperationCanceledException as error when cancellationToken.IsCancellationRequested ->
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
-            | error -> logError error
-        }
+                        for category, legacyType, fields in editorGroups do
+                            match tryRead (editorKey legacyType) with
+                            | ValueNone -> ()
+                            | ValueSome(:? string as json) ->
+                                hasLegacyValues <- true
+                                importEditor writer category fields json
+                            | _ -> invalidOp $"Invalid legacy F# settings record: {legacyType}."
+
+                        for suffix, legacyName in interactiveSettings do
+                            match tryRead (interactiveKey legacyName) with
+                            | ValueNone -> ()
+                            | ValueSome value ->
+                                hasLegacyValues <- true
+                                enqueue writer $"languages.fsharp.interactive.{suffix}" (JToken.FromObject value)
+
+                        if revision <> Volatile.Read(&nativeRevision) then
+                            do! saveCompleted ()
+                        elif hasLegacyValues then
+                            cancellationToken.ThrowIfCancellationRequested()
+                            let result = writer.RequestCommit(SR.UnifiedSettingsMigrationDescription())
+
+                            match result.Outcome with
+                            | SettingCommitOutcome.Success
+                            | SettingCommitOutcome.NoChangesQueued ->
+                                importedRevision <- revision
+                                importedBeforeSync <- not roamingSyncComplete
+
+                                if roamingSyncComplete then
+                                    do! saveCompleted ()
+                            | _ -> invalidOp $"Cannot complete F# settings import: {result.Outcome}. {result.Message}"
+                with
+                | :? OperationCanceledException as error when cancellationToken.IsCancellationRequested ->
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
+                | error -> logError error
+            }
+
+        interface IDisposable with
+            member _.Dispose() = subscription.Dispose()
 
     #nowarn "57"
 
@@ -209,7 +241,16 @@ module internal UnifiedSettingsMigration =
                 || metadata.GetMonikersMatchingPattern("languages.fsharp.*")
                    |> Seq.exists (fun moniker -> metadata.GetProvenance(moniker).Source = SettingValueSource.UserCustomization)
 
-            let run () : Task =
+            let migration =
+                new ImportSession(
+                    manager,
+                    tryRead,
+                    (fun () -> legacyBase.SetValueAsync(CompletionKey, true, true)),
+                    hasNativeCustomizations,
+                    logError
+                )
+
+            let run roamingSyncComplete : Task =
                 task {
                     try
                         do! gate.WaitAsync(cancellationToken)
@@ -217,14 +258,7 @@ module internal UnifiedSettingsMigration =
                         try
                             do! metadata.WaitForRefreshAsync(cancellationToken)
 
-                            do!
-                                runAsync
-                                    manager
-                                    tryRead
-                                    (fun () -> legacyBase.SetValueAsync(CompletionKey, true, true))
-                                    hasNativeCustomizations
-                                    logError
-                                    cancellationToken
+                            do! migration.RunAsync(roamingSyncComplete, cancellationToken)
                         finally
                             gate.Release() |> ignore
                     with
@@ -237,15 +271,16 @@ module internal UnifiedSettingsMigration =
             handler <-
                 EventHandler(fun _ _ ->
                     legacy.RoamingSyncComplete.RemoveHandler handler
-                    ThreadHelper.JoinableTaskFactory.RunAsync(fun () -> run ()) |> ignore)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(fun () -> run true) |> ignore)
 
             legacy.RoamingSyncComplete.AddHandler handler
-            do! run ()
+            do! run false
 
             return
                 { new IDisposable with
                     member _.Dispose() =
                         legacy.RoamingSyncComplete.RemoveHandler handler
+                        (migration :> IDisposable).Dispose()
                 }
         }
 

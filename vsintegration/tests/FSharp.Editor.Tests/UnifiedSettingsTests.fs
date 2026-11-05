@@ -93,9 +93,9 @@ module UnifiedSettingsTests =
             onRead name value
             value
 
-        let notify (names: seq<string>) =
+        let notify eventSource (names: seq<string>) =
             let update =
-                SettingsUpdate(Guid.Empty, HashSet<string>(names, StringComparer.Ordinal))
+                SettingsUpdate(eventSource, HashSet<string>(names, StringComparer.Ordinal))
 
             for callback, patterns in subscriptions.ToArray() do
                 if
@@ -110,7 +110,7 @@ module UnifiedSettingsTests =
                 then
                     callback.Invoke update
 
-        let writer () =
+        let writer eventSource =
             let pending = Dictionary<string, obj>(StringComparer.Ordinal)
 
             let enqueue name (value: obj) =
@@ -151,7 +151,7 @@ module UnifiedSettingsTests =
                         values[name] <- value
 
                     commits <- commits + 1
-                    notify pending.Keys
+                    notify eventSource pending.Keys
                     pending.Clear()
                     SettingCommitResult(SettingCommitOutcome.Success, null)
 
@@ -185,9 +185,9 @@ module UnifiedSettingsTests =
 
         let manager =
             { new ISettingsManager with
-                member _.GetReader() = writer () :> ISettingsReader
-                member _.GetWriter _ = writer ()
-                member _.GetWriter(_, _) = writer ()
+                member _.GetReader() = writer Guid.Empty :> ISettingsReader
+                member _.GetWriter _ = writer Guid.Empty
+                member _.GetWriter(_, eventSource) = writer eventSource
             }
 
         member _.Manager = manager
@@ -207,11 +207,11 @@ module UnifiedSettingsTests =
 
         member _.Set(name, value: obj) =
             values[name] <- value
-            notify [| name |]
+            notify Guid.Empty [| name |]
 
         member _.Reset name =
             values.Remove name |> ignore
-            notify [| name |]
+            notify Guid.Empty [| name |]
 
     type private ImportFixture() =
         let native = NativeHost()
@@ -219,6 +219,28 @@ module UnifiedSettingsTests =
         let errors = ResizeArray<exn>()
         let checkpoints = ResizeArray<string>()
         let mutable failCheckpoint = false
+
+        let migration =
+            new UnifiedSettingsMigration.ImportSession(
+                native.Manager,
+                (fun name ->
+                    match legacy.TryGetValue name with
+                    | true, value -> ValueSome value
+                    | _ -> ValueNone),
+                (fun () ->
+                    if failCheckpoint then
+                        Task.FromException(IOException("Checkpoint failed for test"))
+                    else
+                        legacy[UnifiedSettingsMigration.CompletionKey] <- true
+                        checkpoints.Add UnifiedSettingsMigration.CompletionKey
+                        Task.CompletedTask),
+                (fun () ->
+                    native.Values.Count > 0
+                    || legacy.Keys
+                       |> Seq.exists (fun name -> name.StartsWith("UnifiedSettings.languages.fsharp.", StringComparison.Ordinal))),
+                errors.Add
+            )
+
         member _.Native = native
         member _.Legacy = legacy
         member _.Errors = errors
@@ -228,26 +250,11 @@ module UnifiedSettingsTests =
             with get () = failCheckpoint
             and set value = failCheckpoint <- value
 
-        member _.Run(?cancellationToken) =
-            UnifiedSettingsMigration.runAsync
-                native.Manager
-                (fun name ->
-                    match legacy.TryGetValue name with
-                    | true, value -> ValueSome value
-                    | _ -> ValueNone)
-                (fun () ->
-                    if failCheckpoint then
-                        Task.FromException(IOException("Checkpoint failed for test"))
-                    else
-                        legacy[UnifiedSettingsMigration.CompletionKey] <- true
-                        checkpoints.Add UnifiedSettingsMigration.CompletionKey
-                        Task.CompletedTask)
-                (fun () ->
-                    native.Values.Count > 0
-                    || legacy.Keys
-                       |> Seq.exists (fun name -> name.StartsWith("UnifiedSettings.languages.fsharp.", StringComparison.Ordinal)))
-                errors.Add
-                (defaultArg cancellationToken CancellationToken.None)
+        member _.Run(?cancellationToken, ?roamingSyncComplete) =
+            migration.RunAsync(defaultArg roamingSyncComplete true, defaultArg cancellationToken CancellationToken.None)
+
+        interface IDisposable with
+            member _.Dispose() = (migration :> IDisposable).Dispose()
 
     [<Fact>]
     let ``All 43 native settings roam individually and only Compiler is external`` () =
@@ -690,7 +697,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Fresh profiles remain uncustomized and can import data arriving after startup`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             use options = new EditorOptions(fixture.Native.Reader)
             do! fixture.Run()
             Assert.Empty fixture.Native.Values
@@ -702,6 +709,80 @@ module UnifiedSettingsTests =
             Assert.Single(fixture.Checkpoints) |> ignore
             Assert.Empty fixture.Errors
         }
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Late roaming joins the startup import before the single completion flag is saved`` interactive =
+        task {
+            use fixture = new ImportFixture()
+
+            if interactive then
+                fixture.Legacy[UnifiedSettingsMigration.interactiveKey "FsiCommandLineArgs"] <- "--warn:5"
+            else
+                fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":false}"
+
+            do! fixture.Run(roamingSyncComplete = false)
+            Assert.Single(fixture.Native.Values) |> ignore
+            Assert.Empty fixture.Checkpoints
+
+            for KeyValue(name, value) in fixture.Native.Values do
+                fixture.Legacy["UnifiedSettings." + name] <- value
+
+            if not interactive then
+                fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":true}"
+
+            fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
+            do! fixture.Run(roamingSyncComplete = true)
+            Assert.Equal(box true, fixture.Native.Values["languages.fsharp.formatting.formatOnPaste"])
+
+            if interactive then
+                Assert.Equal(box "--warn:5", fixture.Native.Values["languages.fsharp.interactive.commandLineArgs"])
+            else
+                Assert.Equal(box true, fixture.Native.Values["languages.fsharp.quickInfo.showRemarks"])
+
+            Assert.Equal(2, fixture.Native.Values.Count)
+            Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
+            Assert.Empty fixture.Errors
+        }
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Native edits and resets between startup and roaming prevent reimport`` reset =
+        task {
+            use fixture = new ImportFixture()
+            let moniker = "languages.fsharp.quickInfo.showRemarks"
+            fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":false}"
+            do! fixture.Run(roamingSyncComplete = false)
+            Assert.Equal(box false, fixture.Native.Values[moniker])
+            Assert.Empty fixture.Checkpoints
+
+            if reset then
+                fixture.Native.Reset moniker
+            else
+                fixture.Native.Set(moniker, true)
+
+            fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
+            do! fixture.Run(roamingSyncComplete = true)
+            Assert.Equal(1, fixture.Native.CommitCount)
+            Assert.False(fixture.Native.Values.ContainsKey "languages.fsharp.formatting.formatOnPaste")
+
+            if reset then
+                Assert.False(fixture.Native.Values.ContainsKey moniker)
+            else
+                Assert.Equal(box true, fixture.Native.Values[moniker])
+
+            Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
+            Assert.Empty fixture.Errors
+        }
+
+    [<Fact>]
+    let ``Pending import releases its native change subscription on disposal`` () =
+        let fixture = new ImportFixture()
+        Assert.Equal(1, fixture.Native.SubscriptionCount)
+        (fixture :> IDisposable).Dispose()
+        Assert.Equal(0, fixture.Native.SubscriptionCount)
 
     [<Fact>]
     let ``Interactive sessions receive native changes and release their subscription`` () =
@@ -732,7 +813,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Every legacy editor and Interactive field imports once without rewriting its source`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
 
             for _, defaults in editorRecords do
                 fixture.Legacy[UnifiedSettingsMigration.editorKey (defaults.GetType().Name)] <- JsonConvert.SerializeObject defaults
@@ -792,7 +873,7 @@ module UnifiedSettingsTests =
     [<InlineData("{\"Case\":\"Some\",\"Fields\":[2147483647]}", true, Int32.MaxValue)>]
     let ``Optional width imports as a Boolean and integer`` value enabled width =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- $"{{\"DescriptionWidth\":{value}}}"
             do! fixture.Run()
             Assert.Empty fixture.Errors
@@ -809,7 +890,7 @@ module UnifiedSettingsTests =
     [<InlineData("languages.fsharp.quickInfo.descriptionWidthInCharacters", 80)>]
     let ``A customized width pair is not partially overwritten`` protectedName (value: obj) =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Native.Set(protectedName, value)
 
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <-
@@ -824,7 +905,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Existing native customizations including explicit defaults and roamed keys win`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Native.Set("languages.fsharp.quickInfo.showRemarks", true)
             fixture.Legacy["UnifiedSettings.languages.fsharp.quickInfo.displayLinks"] <- false
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":false,\"DisplayLinks\":true}"
@@ -845,7 +926,7 @@ module UnifiedSettingsTests =
     let ``Any saved FSharp customization completes migration without importing any legacy values`` suffix =
         task {
             for roamed in [ false; true ] do
-                let fixture = ImportFixture()
+                use fixture = new ImportFixture()
                 let moniker = $"languages.fsharp.{suffix}"
 
                 if roamed then
@@ -872,7 +953,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Unrelated saved settings do not prevent the FSharp import`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy["UnifiedSettings.languages.csharp.formatting.formatOnPaste"] <- true
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             do! fixture.Run()
@@ -884,7 +965,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``A legacy record with no fields still completes migration`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{}"
             do! fixture.Run()
             Assert.Empty fixture.Errors
@@ -902,7 +983,7 @@ module UnifiedSettingsTests =
     [<InlineData("{\"ShowRemarks\":true,\"ShowRemarks\":false}")>]
     let ``Invalid legacy values prevent the single import from committing`` json =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- json
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             do! fixture.Run()
@@ -921,7 +1002,7 @@ module UnifiedSettingsTests =
     [<InlineData(SettingCommitOutcome.PendingApproval)>]
     let ``Unsuccessful commits never mark migration complete and can be retried`` outcome =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             fixture.Native.CommitOutcome <- outcome
             do! fixture.Run()
@@ -937,7 +1018,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Denied writes and failed checkpoint persistence remain retryable`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             fixture.Native.RejectChanges <- true
             do! fixture.Run()
@@ -958,7 +1039,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Cancellation does not import or checkpoint values`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
             use cancellation = new CancellationTokenSource()
             cancellation.Cancel()
@@ -970,7 +1051,7 @@ module UnifiedSettingsTests =
     [<Fact>]
     let ``Native settings no longer share a legacy record writer`` () =
         task {
-            let fixture = ImportFixture()
+            use fixture = new ImportFixture()
             fixture.Legacy[UnifiedSettingsMigration.editorKey "QuickInfoOptions"] <- "{\"ShowRemarks\":false,\"DisplayLinks\":false}"
             do! fixture.Run()
             fixture.Native.Set("languages.fsharp.quickInfo.showRemarks", true)
