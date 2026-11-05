@@ -97,44 +97,52 @@ let private manager (fixture: Fixture) =
     fixture.Workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
 let private optionsOf (fixture: Fixture) =
-    let project = fixture.Workspace.CurrentSolution.GetProject fixture.FSharpProjectId
+    task {
+        let project = fixture.Workspace.CurrentSolution.GetProject fixture.FSharpProjectId
 
-    match
-        (manager fixture).TryGetOptionsByProject(project, CancellationToken.None)
-        |> Async.RunSynchronously
-    with
-    | ValueSome(_, options) -> options
-    | ValueNone -> failwith "The project options manager has no options for the F# project."
+        match! (manager fixture).TryGetOptionsByProject(project, CancellationToken.None) with
+        | ValueSome(_, options) -> return options
+        | ValueNone -> return failwith "The project options manager has no options for the F# project."
+    }
 
 let private peReferenceOf (options: FSharpProjectOptions) =
     options.ReferencedProjects
-    |> Array.filter (function
+    |> Seq.filter (function
         | FSharpReferencedProject.PEReference _ -> true
         | _ -> false)
-    |> Array.exactlyOne
+    |> Seq.exactlyOne
+
+let private referenceOf (fixture: Fixture) =
+    task {
+        let! options = optionsOf fixture
+        return peReferenceOf options
+    }
 
 let private versionOfLibrary (fixture: Fixture) =
     let library = fixture.Workspace.CurrentSolution.GetProject fixture.Library.Id
-    (PEReferenceVersion.getAsync library CancellationToken.None).Result
+    PEReferenceVersion.getAsync library CancellationToken.None
 
-/// Removes the C# project, and returns once Roslyn has raised the removal to the handlers added before the call.
+/// Removes the C# project, and completes once Roslyn has raised the removal to the handlers added before the call.
 /// The manager listens from the start, so by then it has been told to forget the project.
 let private removeLibrary (fixture: Fixture) =
-    let workspace = fixture.Workspace
-    let removed = TaskCompletionSource<bool>()
+    task {
+        let workspace = fixture.Workspace
+        let removed = TaskCompletionSource<bool>()
 
-    workspace.WorkspaceChanged.Add(fun args ->
-        if args.Kind = WorkspaceChangeKind.ProjectRemoved then
-            removed.TrySetResult true |> ignore)
+        workspace.WorkspaceChanged.Add(fun args ->
+            if args.Kind = WorkspaceChangeKind.ProjectRemoved then
+                removed.TrySetResult true |> ignore)
 
-    let libraryReference =
-        (workspace.CurrentSolution.GetProject fixture.FSharpProjectId).ProjectReferences
-        |> Seq.exactlyOne
+        let libraryReference =
+            (workspace.CurrentSolution.GetProject fixture.FSharpProjectId).ProjectReferences
+            |> Seq.exactlyOne
 
-    Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProjectReference(fixture.FSharpProjectId, libraryReference)))
+        Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProjectReference(fixture.FSharpProjectId, libraryReference)))
+        Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProject fixture.Library.Id))
 
-    Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProject fixture.Library.Id))
-    Assert.True(removed.Task.Wait(TimeSpan.FromSeconds 60.))
+        let! first = Task.WhenAny(removed.Task :> Task, Task.Delay(TimeSpan.FromSeconds 60.))
+        Assert.True(obj.ReferenceEquals(first, removed.Task), "Roslyn did not raise the removal of the project in time.")
+    }
 
 let private editLibrary (fixture: Fixture) (source: string) =
     let workspace = fixture.Workspace
@@ -146,65 +154,83 @@ let private editLibrary (fixture: Fixture) (source: string) =
 
 [<Fact>]
 let ``an edit that leaves the C# declarations alone keeps the PE reference`` () =
-    let fixture = createFixture []
-    let options = optionsOf fixture
-    let reference = peReferenceOf options
+    task {
+        let fixture = createFixture []
+        let! options = optionsOf fixture
+        let reference = peReferenceOf options
 
-    editLibrary fixture BodyEdit
+        editLibrary fixture BodyEdit
 
-    // The edit moves the C# project's dependent version, so the options are computed again ...
-    let recomputed = optionsOf fixture
-    Assert.NotSame(options, recomputed)
+        // The edit moves the C# project's dependent version, so the options are computed again ...
+        let! recomputed = optionsOf fixture
+        Assert.NotSame(options, recomputed)
 
-    // ... and since its dependent semantic version stands, they keep the reference they had:
-    // what FCS cached against the stamp of that reference stays valid.
-    Assert.Same(reference, peReferenceOf recomputed)
+        // ... and since its dependent semantic version stands, they keep the reference they had:
+        // what FCS cached against the stamp of that reference stays valid.
+        Assert.Same(reference, peReferenceOf recomputed)
+    }
 
 [<Fact>]
 let ``an edit of the C# declarations replaces the PE reference, and the replacement is kept`` () =
-    let fixture = createFixture []
-    let reference = optionsOf fixture |> peReferenceOf
+    task {
+        let fixture = createFixture []
+        let! reference = referenceOf fixture
 
-    editLibrary fixture DeclarationEdit
-    let replacement = optionsOf fixture |> peReferenceOf
+        editLibrary fixture DeclarationEdit
+        let! replacement = referenceOf fixture
 
-    Assert.NotSame(reference, replacement)
+        Assert.NotSame(reference, replacement)
 
-    editLibrary fixture BodyEditAfterDeclarationEdit
-    Assert.Same(replacement, optionsOf fixture |> peReferenceOf)
+        editLibrary fixture BodyEditAfterDeclarationEdit
+        let! kept = referenceOf fixture
+        Assert.Same(replacement, kept)
+    }
 
 [<Fact>]
 let ``a C# project with an analyzer reference gets a new PE reference on every edit`` () =
-    let fixture = createFixture [ analyzerReference ]
-    let reference = optionsOf fixture |> peReferenceOf
+    task {
+        let fixture = createFixture [ analyzerReference ]
+        let! reference = referenceOf fixture
 
-    editLibrary fixture BodyEdit
+        editLibrary fixture BodyEdit
 
-    Assert.NotSame(reference, optionsOf fixture |> peReferenceOf)
+        let! replacement = referenceOf fixture
+        Assert.NotSame(reference, replacement)
+    }
 
 [<Fact>]
 let ``removing the C# project drops its PE reference`` () =
-    let fixture = createFixture []
-    let reference = optionsOf fixture |> peReferenceOf
-    let version = versionOfLibrary fixture
+    task {
+        let fixture = createFixture []
+        let! reference = referenceOf fixture
+        let! version = versionOfLibrary fixture
 
-    removeLibrary fixture
+        do! removeLibrary fixture
 
-    // The very same project comes back in the very same state: the reference it had is not kept for it.
-    fixture.Workspace.AddProject fixture.Library |> ignore
-    referenceLibrary fixture
-    Assert.Equal(version, versionOfLibrary fixture)
+        // The very same project comes back in the very same state: the reference it had is not kept for it.
+        fixture.Workspace.AddProject fixture.Library |> ignore
+        referenceLibrary fixture
+        let! versionAfterReturn = versionOfLibrary fixture
+        Assert.Equal(version, versionAfterReturn)
 
-    Assert.NotSame(reference, optionsOf fixture |> peReferenceOf)
+        let! returned = referenceOf fixture
+        Assert.NotSame(reference, returned)
+    }
 
 [<Fact>]
 let ``clearing all caches drops the PE reference`` () =
-    let fixture = createFixture []
-    let reference = optionsOf fixture |> peReferenceOf
+    task {
+        let fixture = createFixture []
+        let! reference = referenceOf fixture
 
-    (manager fixture).ClearAllCaches()
+        (manager fixture).ClearAllCaches()
 
-    // The command line options go with the caches.
-    RoslynTestHelpers.SetProjectOptions fixture.FSharpProjectId fixture.Workspace.CurrentSolution RoslynTestHelpers.DefaultProjectOptions
+        // The command line options go with the caches.
+        RoslynTestHelpers.SetProjectOptions
+            fixture.FSharpProjectId
+            fixture.Workspace.CurrentSolution
+            RoslynTestHelpers.DefaultProjectOptions
 
-    Assert.NotSame(reference, optionsOf fixture |> peReferenceOf)
+        let! recomputed = referenceOf fixture
+        Assert.NotSame(reference, recomputed)
+    }

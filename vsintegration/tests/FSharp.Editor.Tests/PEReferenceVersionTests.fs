@@ -26,7 +26,7 @@ let private projectNamed (name: string) (solution: Solution) =
     solution.Projects |> Seq.find (fun project -> project.Name = name)
 
 let private version (projectName: string) (solution: Solution) =
-    (PEReferenceVersion.getAsync (projectNamed projectName solution) CancellationToken.None).Result
+    PEReferenceVersion.getAsync (projectNamed projectName solution) CancellationToken.None
 
 /// `Library` references `Dependency`, whose only document is the one edited.
 [<Theory>]
@@ -43,27 +43,26 @@ let ``only a declaration edit moves the version, unless a source generator may r
     (editedSource: string)
     (movesVersion: bool)
     =
-    use workspace = new AdhocWorkspace()
-    let dependencyId = ProjectId.CreateNewId()
-    let libraryId = ProjectId.CreateNewId()
-    let documentId = DocumentId.CreateNewId dependencyId
+    task {
+        use workspace = new AdhocWorkspace()
+        let dependencyId = ProjectId.CreateNewId()
+        let libraryId = ProjectId.CreateNewId()
+        let documentId = DocumentId.CreateNewId dependencyId
 
-    let solution =
-        workspace.CurrentSolution
-            .AddProject(dependencyId, "Dependency", "Dependency", LanguageNames.CSharp)
-            .AddDocument(documentId, "Input.cs", "public class Input { public int M() => 1; }")
-            .AddProject(libraryId, "Library", "Library", LanguageNames.CSharp)
-            .AddProjectReference(libraryId, ProjectReference dependencyId)
+        let solution =
+            workspace.CurrentSolution
+                .AddProject(dependencyId, "Dependency", "Dependency", LanguageNames.CSharp)
+                .AddDocument(documentId, "Input.cs", "public class Input { public int M() => 1; }")
+                .AddProject(libraryId, "Library", "Library", LanguageNames.CSharp)
+                .AddProjectReference(libraryId, ProjectReference dependencyId)
 
-    let solution =
-        match projectWithAnalyzerReference with
-        | "" -> solution
-        | name -> solution.AddAnalyzerReference((projectNamed name solution).Id, analyzerReference)
+        let solution =
+            match projectWithAnalyzerReference with
+            | "" -> solution
+            | name -> solution.AddAnalyzerReference((projectNamed name solution).Id, analyzerReference)
 
-    let before = version versionedProject solution
+        let! before = version versionedProject solution
+        let! after = version versionedProject (solution.WithDocumentText(documentId, SourceText.From editedSource))
 
-    let after =
-        solution.WithDocumentText(documentId, SourceText.From editedSource)
-        |> version versionedProject
-
-    Assert.Equal(movesVersion, before <> after)
+        Assert.Equal(movesVersion, before <> after)
+    }
