@@ -285,8 +285,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
         |> Array.tryFindIndex (fun x -> x.FileName = fileName)
         |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectConfig.ProjectFileName))
 
-    member private _.With(sourceFiles: 'T[]) =
-        ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
+    member private _.With(?newSourceFiles: 'T[], ?newReferencedProjects: FSharpReferencedProjectSnapshot[]) =
+        ProjectSnapshotBase(projectConfig, defaultArg newReferencedProjects referencedProjects, defaultArg newSourceFiles sourceFiles)
 
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member this.Replace(changedSourceFiles: 'T[]) =
@@ -299,10 +299,34 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                 | Some y -> y
                 | None -> x)
 
-        this.With sourceFiles
+        this.With(newSourceFiles = sourceFiles)
+
+    /// Create a new snapshot with given references replacing references in this snapshot with the same output file. Other references remain unchanged.
+    member this.Replace(changedReferencedProjects: FSharpReferencedProjectSnapshot[]) =
+        let mutable newReferencedProjects = Array.Empty()
+
+        for i in 0 .. referencedProjects.Length - 1 do
+            let outputFile = referencedProjects[i].OutputFile
+
+            match
+                changedReferencedProjects
+                |> Array.tryFind (fun x -> String.Equals(x.OutputFile, outputFile, StringComparison.Ordinal))
+            with
+            | Some reference ->
+                if newReferencedProjects.Length = 0 then
+                    newReferencedProjects <- Array.copy referencedProjects
+
+                newReferencedProjects[i] <- reference
+            | None -> ()
+
+        if newReferencedProjects.Length = 0 then
+            this
+        else
+            this.With(newReferencedProjects = newReferencedProjects)
 
     /// Create a new snapshot with source files only up to the given index (inclusive)
-    member this.UpTo fileIndex = this.With sourceFiles[..fileIndex]
+    member this.UpTo fileIndex =
+        this.With(newSourceFiles = sourceFiles[..fileIndex])
 
     /// Create a new snapshot with source files only up to the given file name (inclusive)
     member this.UpTo fileName = this.UpTo(this.IndexOf fileName)
@@ -310,9 +334,10 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     /// Create a new snapshot with only source files at the given indexes
     member this.OnlyWith fileIndexes =
         this.With(
-            fileIndexes
-            |> Seq.choose (fun x -> sourceFiles |> Array.tryItem x)
-            |> Seq.toArray
+            newSourceFiles =
+                (fileIndexes
+                 |> Seq.choose (fun x -> sourceFiles |> Array.tryItem x)
+                 |> Seq.toArray)
         )
 
     override this.ToString() =
@@ -587,6 +612,10 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member _.Replace(changedSourceFiles: FSharpFileSnapshot[]) =
         projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
+
+    /// Create a new snapshot with given references replacing references in this snapshot with the same output file. Other references remain unchanged.
+    member _.Replace(changedReferencedProjects: FSharpReferencedProjectSnapshot[]) =
+        projectSnapshot.Replace(changedReferencedProjects) |> FSharpProjectSnapshot
 
     member _.Label = projectSnapshot.Label
     member _.Identifier = projectSnapshot.ProjectConfig.Identifier
