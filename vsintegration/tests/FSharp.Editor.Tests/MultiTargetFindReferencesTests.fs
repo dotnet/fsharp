@@ -128,15 +128,15 @@ let ``rename gets every use once, from an instance that compiles its file`` (ins
         usesByDocument declarationPosition (documentIn (instanceOf instance) firstPath)
 
     let located =
-        [
+        [|
             for KeyValue(documentId, ranges) in uses do
                 for range in ranges -> solution.GetDocument(documentId).FilePath, range
-        ]
+        |]
 
     // A file several instances compile is searched in each of them; the same use must reach Rename once.
-    Assert.Equal<(string * range) list>(List.distinct located, located)
+    Assert.Equal<string * range>(Seq.distinct located, located)
 
-    let files = located |> List.map fst |> List.distinct
+    let files = located |> Seq.map fst |> Seq.distinct
 
     for fileId in [ "Second"; "Third"; "Fourth"; "Fifth" ] do
         Assert.Contains(project.GetFilePath fileId, files)
