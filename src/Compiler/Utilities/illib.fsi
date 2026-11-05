@@ -110,6 +110,8 @@ module internal Array =
 
     val inline tryPick: [<InlineIfLambda>] chooser: ('T -> 'U option) -> arr: 'T[] -> 'U option
 
+    val inline tryFindIndexV: [<InlineIfLambda>] predicate: ('T -> bool) -> arr: 'T[] -> int voption
+
     val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T array>
