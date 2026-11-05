@@ -122,10 +122,10 @@ let ``an unknown or malformed id yields no location`` (docId: string) =
 let ``the parsed declarations of an entity are recognised through compiled-name artifacts`` (entityPath: string, declaration: string) =
     let declaring =
         items
-        |> Array.filter (CrossLanguageSymbolNavigation.declaresEntity (List.ofArray (entityPath.Split '.')))
-        |> Array.map _.Name
+        |> Seq.filter (CrossLanguageSymbolNavigation.declaresEntity (List.ofArray (entityPath.Split '.')))
+        |> Seq.map _.Name
 
-    Assert.Equal<string list>([ declaration ], List.ofArray declaring |> List.distinct)
+    Assert.Equal<string>([ declaration ], declaring |> Seq.distinct)
 
 [<Fact>]
 let ``members and unknown entities never pass as declarations`` () =
@@ -149,9 +149,9 @@ let ``candidate documents come in compile order, signature first`` () =
     let candidates =
         CrossLanguageSymbolNavigation.candidateDocuments [ syntheticProject.Name; "ModuleSecond" ] project
         |> run
-        |> List.map _.FilePath
+        |> Seq.map _.FilePath
 
-    Assert.Equal<string list>(
+    Assert.Equal<string>(
         [
             syntheticProject.GetSignatureFilePath "Second"
             syntheticProject.GetFilePath "Second"
@@ -203,9 +203,9 @@ let ``candidate documents narrow to the file that declares the entity among seve
     let candidates =
         CrossLanguageSymbolNavigation.candidateDocuments [ syntheticProject.Name; "ModuleSecond" ] project
         |> run
-        |> List.map _.FilePath
+        |> Seq.map _.FilePath
 
-    Assert.Equal<string list>([ syntheticProject.GetFilePath "Second" ], candidates)
+    Assert.Equal<string>([ syntheticProject.GetFilePath "Second" ], candidates)
 
     let docId = $"M:{syntheticProject.Name}.ModuleSecond.onlyHere(System.Int32)"
     let path = CrossLanguageSymbolNavigation.docCommentIdToPath docId

@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
 open System.Composition
 open System.Threading
 open System.Threading.Tasks
@@ -264,10 +263,10 @@ module internal CrossLanguageSymbolNavigation =
             let! ct = CancellableTask.getCancellationToken ()
             let! _, _, _, options = project.GetFSharpCompilationOptionsAsync()
 
-            let compileOrder = Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
-
-            options.SourceFiles
-            |> Array.iteri (fun index path -> compileOrder[path] <- index)
+            let compileOrder (document: Document) =
+                options.SourceFiles
+                |> Seq.tryFindIndexV (fun path -> String.Equals(path, document.FilePath, StringComparison.OrdinalIgnoreCase))
+                |> ValueOption.defaultValue Int32.MaxValue
 
             let declaresIn (document: Document) =
                 cancellableTask {
@@ -290,14 +289,7 @@ module internal CrossLanguageSymbolNavigation =
                 // Throttle to avoid launching a parse per document in the project all at once.
                 |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
 
-            return
-                candidates
-                |> Array.chooseV id
-                |> Array.sortBy (fun document ->
-                    match compileOrder.TryGetValue document.FilePath with
-                    | true, index -> index
-                    | _ -> Int32.MaxValue)
-                |> List.ofArray
+            return candidates |> Array.chooseV id |> Array.sortBy compileOrder |> List.ofArray
         }
 
     let private tryLocateInDocument (byShape: bool) (documentationCommentId: string) (path: DocCommentId) (document: Document) =
@@ -322,9 +314,9 @@ module internal CrossLanguageSymbolNavigation =
             with
             | ValueSome range -> return ValueSome range
             | ValueNone ->
-                match List.tryLast candidates with
-                | Some last -> return! tryLocateInDocument true documentationCommentId path last
-                | None -> return ValueNone
+                match List.tryLastV candidates with
+                | ValueSome last -> return! tryLocateInDocument true documentationCommentId path last
+                | ValueNone -> return ValueNone
         }
 
     /// Checks the whole project.
@@ -351,14 +343,14 @@ module internal CrossLanguageSymbolNavigation =
                     |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
                     |> Seq.groupBy _.FilePath
                     |> Seq.map (snd >> List.ofSeq)
-                    |> List.ofSeq
+                    |> Seq.toArray
 
                 let ordered =
-                    [
+                    [|
                         for instance in instances -> instance.Head
                         for instance in instances do
                             yield! instance.Tail
-                    ]
+                    |]
 
                 let located (locate: Project -> CancellableTask<range voption>) (project: Project) =
                     locate project
