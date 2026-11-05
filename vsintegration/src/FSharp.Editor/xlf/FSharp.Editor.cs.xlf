@@ -90,9 +90,19 @@ Navrhnout názvy pro nerozpoznané identifikátory;</target>
         <target state="translated">Převést na anonymní záznam</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToNamespaceWithNestedModule">
+        <source>Convert to 'namespace {0}' with nested module '{1}'</source>
+        <target state="new">Convert to 'namespace {0}' with nested module '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
         <target state="translated">Pro kontrolu nerovnosti použijte &lt;&gt;.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToRootModule">
+        <source>Convert to 'module {0}'</source>
+        <target state="new">Convert to 'module {0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
