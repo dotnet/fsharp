@@ -46,10 +46,7 @@ module HeyHo =
         service.SearchProjectAsync(project, [] |> Seq.toImmutableArray, pattern, service.KindsProvided, CancellationToken.None).Result
 
     let exactNamesIn project pattern =
-        navigateToSearch project pattern
-        |> Seq.map _.Name
-        |> Seq.filter ((=) pattern)
-        |> Seq.toList
+        navigateToSearch project pattern |> Seq.map _.Name |> Seq.filter ((=) pattern)
 
     let countParseRequests (path: string) searches =
         let isParseOfPath (activity: Activity) =
@@ -124,7 +121,7 @@ module HeyHo =
         }
         |> RoslynTestHelpers.SetProjectOptions definesNothingId solution
 
-        Assert.Equal<string list>([ "always" ], exactNamesIn (solution.GetProject definesNothingId) "always")
+        Assert.Equal<string>([ "always" ], exactNamesIn (solution.GetProject definesNothingId) "always")
 
         let searching =
             Assert.ThrowsAny<exn>(fun () -> exactNamesIn (solution.GetProject noOptionsId) "always" |> ignore)
@@ -148,6 +145,6 @@ module HeyHo =
 
         let searchTwice () =
             for _ in 1..2 do
-                Assert.Equal<string list>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
+                Assert.Equal<string>([ "standaloneValue" ], exactNamesIn script "standaloneValue")
 
         Assert.Equal(1, countParseRequests path searchTwice)
