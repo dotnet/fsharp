@@ -36,7 +36,7 @@ let private searchServices () =
 
     service, service :?> IFSharpAdvancedNavigateToSearchService
 
-let private namesFound (results: ImmutableArray<FSharpNavigateToSearchResult>) = results |> Seq.map _.Name |> Seq.toList
+let private namesFound (results: ImmutableArray<FSharpNavigateToSearchResult>) = results |> Seq.map _.Name
 
 /// The loading search as the searcher drives it: results and project completions arrive through callbacks.
 /// Returns the names found and how many times a project was reported complete.
@@ -66,7 +66,7 @@ let private searchWhileLoading
                 CancellationToken.None
             )
 
-        return found |> Seq.map _.Name |> Seq.toList, completed.Value
+        return found |> Seq.map _.Name, completed.Value
     }
 
 [<Fact>]
@@ -85,7 +85,7 @@ let ``the loading search finds what the search that waits for the options cannot
 
         let! names, completed = searchWhileLoading services [ project ] "declaredWhileLoading"
 
-        Assert.Equal<string list>([ "declaredWhileLoading" ], names)
+        Assert.Equal<string>([ "declaredWhileLoading" ], names)
         Assert.Equal(1, completed)
 
         // What the loading search left in the cache must not be handed to the accurate search: it was
@@ -103,7 +103,7 @@ let ``the loading search reads a file under the wrong defines and does not keep 
         let (service, _) as services = searchServices ()
 
         let! namesWhileLoading, _ = searchWhileLoading services [ project ] "fooOnly"
-        Assert.Equal<string list>([], namesWhileLoading)
+        Assert.Empty namesWhileLoading
 
         { RoslynTestHelpers.DefaultProjectOptions with
             OtherOptions = [| "--define:FOO" |]
@@ -112,7 +112,7 @@ let ``the loading search reads a file under the wrong defines and does not keep 
 
         let! found = service.SearchProjectAsync(project, ImmutableArray.Empty, "fooOnly", service.KindsProvided, CancellationToken.None)
 
-        Assert.Equal<string list>([ "fooOnly" ], namesFound found)
+        Assert.Equal<string>([ "fooOnly" ], namesFound found)
     }
 
 [<Fact>]
@@ -127,6 +127,6 @@ let ``every project is reported complete once, whether or not anything is found 
 
         let! names, completed = searchWhileLoading (searchServices ()) (solution.Projects |> Seq.toList) "found"
 
-        Assert.Equal<string list>([ "found" ], names)
+        Assert.Equal<string>([ "found" ], names)
         Assert.Equal(2, completed)
     }
