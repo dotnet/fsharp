@@ -725,9 +725,9 @@ let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     | SynMemberSig.ValField(field, _) -> visitSynField field
     | SynMemberSig.NestedType _ -> []
 
-let mkFileContent (f: FileInProject) : FileContentEntry list =
+let mkFileContent (input: ParsedInput) : FileContentEntry list =
     [
-        match f.ParsedInput with
+        match input with
         | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
             for SynModuleOrNamespaceSig(longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
                 yield! List.collect visitSynAttributeList attribs
