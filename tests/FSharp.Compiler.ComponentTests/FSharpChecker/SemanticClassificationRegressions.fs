@@ -91,7 +91,7 @@ let add x y = x + y
 
         let! items = getClassificationsWith RelatedSymbolUseKind.AllInCodeAndDocs source
         let onDocLines = items |> Array.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
-        Assert.Empty(onDocLines |> Array.map (fun item -> item.Range, item.Type))
+        Assert.Empty onDocLines
     }
 
 /// (#16621) Helper: assert UnionCase classifications on expected lines.
