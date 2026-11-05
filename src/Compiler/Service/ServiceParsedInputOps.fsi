@@ -201,6 +201,8 @@ module public ParsedInput =
 
     /// Like `TryFindInsertionContext`, for a use at a position: on the line of a nested module declared in one line
     /// that carries an attribute, only a use after the start of the module's body is inside the module.
+    /// Each result also says how many leading idents of the entity's full name its `Namespace` covers, which tells
+    /// whether a plain `open` reaches it (a namespace or F# module) or only `open type` does (a type).
     val internal TryFindInsertionContextAt:
         currentPos: pos ->
         parsedInput: ParsedInput ->
@@ -210,7 +212,7 @@ module public ParsedInput =
             ShortIdents option (*  entityNamespace *) *
             ShortIdents option (* entity: *) *
             ShortIdents)
-                -> (InsertionContextEntity * InsertionContext)[])
+                -> struct (InsertionContextEntity * InsertionContext * (* namespaceIdentCount: *) int)[])
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:

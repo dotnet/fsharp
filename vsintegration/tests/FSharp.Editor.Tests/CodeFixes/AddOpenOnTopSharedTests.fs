@@ -2,6 +2,8 @@
 
 module FSharp.Editor.Tests.CodeFixes.AddOpenOnTopSharedTests
 
+open System
+
 open Microsoft.VisualStudio.FSharp.Editor
 open Xunit
 
@@ -9,9 +11,22 @@ open CodeFixTestFramework
 
 let private codeFix = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-let scenarios (cases: (string * string * string) list) : obj[] seq =
+let scenarios (cases: ('name * 'code * 'expected) list) : obj[] seq =
     cases
-    |> Seq.map (fun (name, code, fixedCode) -> [| box name; box code; box fixedCode |])
+    |> Seq.map (fun (name, code, expected) -> [| box name; box code; box expected |])
+
+let internal allFixes code mode (provider: AddOpenCodeFixProvider) =
+    provider |> multiFix code mode |> Seq.toList
+
+let internal openFixes code mode provider =
+    allFixes code mode provider
+    |> List.filter (fun fix -> fix.Message.StartsWith("open ", StringComparison.Ordinal))
+
+let internal tryFix code mode provider =
+    match openFixes code mode provider with
+    | [] -> None
+    | [ fix ] -> Some fix
+    | fixes -> failwith $"""Expected at most one open, got {String.Join("; ", fixes |> List.map _.Message)}"""
 
 let expectOpenSystem mode code fixedCode =
     let expected =

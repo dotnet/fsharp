@@ -266,12 +266,16 @@ module Entity =
                     | _ ->
                         let fullRelativeName = Array.append (getRelativeNs fullOpenableNs) restIdents
 
+                        let withoutQualifierWritten (idents: ShortIdents) =
+                            if identCount > 1 && relativeNs.Length >= identCount then
+                                idents[0 .. idents.Length - identCount]
+                            else
+                                idents
+
                         let ns =
                             match relativeNs with
                             | [||] -> None
-                            | _ when identCount > 1 && relativeNs.Length >= identCount ->
-                                Some(relativeNs[0 .. relativeNs.Length - identCount] |> formatIdents false)
-                            | _ -> Some(formatIdents false relativeNs)
+                            | _ -> Some(withoutQualifierWritten relativeNs |> formatIdents false)
 
                         let qualifier =
                             if fullRelativeName.Length > 1 && fullRelativeName.Length >= identCount then
@@ -279,7 +283,7 @@ module Entity =
                             else
                                 fullRelativeName
 
-                        Some
+                        let entity =
                             {
                                 FullRelativeName = formatIdents true fullRelativeName
                                 Qualifier = formatIdents (qualifier.Length = fullRelativeName.Length) qualifier
@@ -289,7 +293,9 @@ module Entity =
                                     | [| _ |] -> ""
                                     | _ -> formatIdents true restIdents
                                 LastIdent = Array.tryLast restIdents |> Option.defaultValue ""
-                            })
+                            }
+
+                        Some(struct (entity, (withoutQualifierWritten openableNs).Length)))
 
 module ParsedInput =
 
@@ -2705,9 +2711,9 @@ module ParsedInput =
                     )
 
                 entities
-                |> Array.map (fun e ->
+                |> Array.map (fun (struct (e, namespaceIdentCount)) ->
                     match find () with
-                    | struct (_, context) -> e, context)
+                    | struct (_, context) -> struct (e, context, namespaceIdentCount))
 
     let TryFindInsertionContext
         (currentLine: int)
@@ -2715,7 +2721,12 @@ module ParsedInput =
         (partiallyQualifiedName: MaybeUnresolvedIdent[])
         (insertionPoint: OpenStatementInsertionPoint)
         =
-        TryFindInsertionContextAt (mkPos currentLine 0) parsedInput partiallyQualifiedName insertionPoint
+        let findAt =
+            TryFindInsertionContextAt (mkPos currentLine 0) parsedInput partiallyQualifiedName insertionPoint
+
+        fun candidate ->
+            findAt candidate
+            |> Array.map (fun (struct (entity, context, _)) -> entity, context)
 
     let AdjustInsertionPoint (getLineStr: int -> string) ctx =
         match ctx.ScopeKind with
