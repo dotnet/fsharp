@@ -29,7 +29,10 @@ type internal FocusedCaret() =
 
     member _.Update(newPosition: Position option) =
         let hasLineChanged =
-            (position |> Option.map _.Line) <> (newPosition |> Option.map _.Line)
+            match position, newPosition with
+            | Some previous, Some current -> previous.Line <> current.Line
+            | None, None -> false
+            | _ -> true
 
         position <- newPosition
 
