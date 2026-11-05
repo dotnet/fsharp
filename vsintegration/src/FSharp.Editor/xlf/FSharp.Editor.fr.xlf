@@ -440,6 +440,16 @@ Afficher les notes dans Info express</target>
         <target state="translated">Mettre l'expression entre parenthèses</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
