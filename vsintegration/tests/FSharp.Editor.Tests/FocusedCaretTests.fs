@@ -1,8 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// What the project options reactor reads off the focused editor, and when it is told to read it again.
-/// Only the line matters: the caret decides which `#r "nuget: …"` line is still being typed, and a script's
-/// references are resolved again once it leaves that line or the editors lose focus.
 module FSharp.Editor.Tests.FocusedCaretTests
 
 open Xunit
@@ -27,14 +24,13 @@ let ``a caret that moves to another line is published as a line change`` () =
     Assert.Equal(8, caret.Position.Value.Line)
 
 [<Fact>]
-let ``a caret that moves along its line is not a line change`` () =
+let ``a caret that moves along its line is published without a line change`` () =
     let caret, changes = caretWithRecordedChanges ()
 
     caret.Update(Some(Position.mkPos 7 0))
     caret.Update(Some(Position.mkPos 7 12))
 
     Assert.Equal(1, changes.Count)
-    // The position is still published: the reactor reads the column of the line it skips.
     Assert.Equal(12, caret.Position.Value.Column)
 
 [<Fact>]
@@ -48,7 +44,7 @@ let ``editors losing focus is a line change, and the caret is gone`` () =
     Assert.True(caret.Position.IsNone)
 
 [<Fact>]
-let ``no editor has focus twice over is one line change`` () =
+let ``no editor has focus twice over is no line change`` () =
     let caret, changes = caretWithRecordedChanges ()
 
     caret.Update None
@@ -58,6 +54,5 @@ let ``no editor has focus twice over is one line change`` () =
     Assert.True(caret.Position.IsNone)
 
 [<Fact>]
-let ``a text with no editor behind it has no caret`` () =
-    // What the reactor sees for a document Visual Studio has not opened a view on.
+let ``a text no view is open on has no caret`` () =
     Assert.True((FocusedCaret.TryGet(SourceText.From "#r \"nuget: Newtonsoft.Json\"\n")).IsNone)
