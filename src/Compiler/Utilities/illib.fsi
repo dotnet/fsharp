@@ -182,6 +182,10 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
+    val chooseV: chooser: ('a -> 'b voption) -> xs: 'a list -> 'b list
+
+    val tryFindV: predicate: ('a -> bool) -> xs: 'a list -> 'a voption
+
     val inline lengthsEqAndForall2: [<InlineIfLambda>] p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
