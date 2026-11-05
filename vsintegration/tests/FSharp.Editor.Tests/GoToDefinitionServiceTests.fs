@@ -268,7 +268,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
             |> Option.defaultWith (fun () -> failwith "symbol not found")
 
         match symbolUse.GetSymbolScope StaleSnapshot.appDocument with
-        | Some(SymbolScope.Projects(projects, _)) -> Assert.Contains(StaleSnapshot.library.Name, projects |> List.map _.Name)
+        | Some(SymbolScope.Projects(projects, _)) -> Assert.Contains(StaleSnapshot.library.Name, projects |> Seq.map _.Name)
         | scope -> failwith $"expected a project scope, got %A{scope}"
 
     [<Theory>]
@@ -314,9 +314,8 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let changedDocuments =
             newSolution.GetChanges(snapshot).GetProjectChanges()
             |> Seq.collect _.GetChangedDocuments()
-            |> Seq.toList
 
-        Assert.Equal<DocumentId list>([ document.Id ], changedDocuments)
+        Assert.Equal<DocumentId>([ document.Id ], changedDocuments)
 
         let renamedText =
             newSolution.GetDocument(document.Id).GetTextAsync(CancellationToken.None).Result.ToString()
