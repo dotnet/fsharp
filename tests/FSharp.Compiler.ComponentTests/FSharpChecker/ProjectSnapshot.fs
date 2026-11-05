@@ -63,8 +63,8 @@ let private assertReferencesOnDisk (snapshot: FSharpProjectSnapshot) mainStamp l
         | [| FSharpReferencedProjectSnapshot.FSharpReference(_, lib) |] -> lib
         | other -> failwith $"Expected one referenced project, got %A{other}"
 
-    Assert.Equal<ReferenceOnDisk list>([ { Path = "MainRef.dll"; LastModified = mainStamp } ], snapshot.ReferencesOnDisk)
-    Assert.Equal<ReferenceOnDisk list>([ { Path = "LibRef.dll"; LastModified = libStamp } ], libSnapshot.ReferencesOnDisk)
+    Assert.Equal<ReferenceOnDisk>([| { Path = "MainRef.dll"; LastModified = mainStamp } |], List.toArray snapshot.ReferencesOnDisk)
+    Assert.Equal<ReferenceOnDisk>([| { Path = "LibRef.dll"; LastModified = libStamp } |], List.toArray libSnapshot.ReferencesOnDisk)
 
 [<Fact>]
 let ``Reference stamps come from the host when it gives them and from the file system current at build time when not`` () : Task =
