@@ -47,8 +47,8 @@ module private Fixture =
 let ``an instance reports a shared declaration on its own, and again once the parse is cached`` (instance: int) =
     let project = solution.GetProject instances[instance]
 
-    Assert.Equal<string list>([ "plainUse" ], exactNamesIn project "plainUse")
-    Assert.Equal<string list>([ "plainUse" ], exactNamesIn project "plainUse")
+    Assert.Equal<string>([ "plainUse" ], exactNamesIn project "plainUse")
+    Assert.Equal<string>([ "plainUse" ], exactNamesIn project "plainUse")
 
 [<Fact>]
 let ``an instance reuses the parse another instance made of the same text`` () =
@@ -57,20 +57,20 @@ let ``an instance reuses the parse another instance made of the same text`` () =
 
     let searchEveryInstance () =
         for instance in instances do
-            Assert.Equal<string list>([ "reusedUse" ], exactNamesIn (linked.GetProject instance) "reusedUse")
+            Assert.Equal<string>([ "reusedUse" ], exactNamesIn (linked.GetProject instance) "reusedUse")
 
     Assert.Equal(1, NavigateToSearchServiceTests.countParseRequests path searchEveryInstance)
 
 [<Fact>]
 let ``a declaration behind a directive is reported only by the instance that defines it`` () =
-    Assert.Equal<string list>([ "fooUse" ], exactNamesIn (solution.GetProject withFoo) "fooUse")
-    Assert.Equal<string list>([], exactNamesIn (solution.GetProject withoutFoo) "fooUse")
+    Assert.Equal<string>([ "fooUse" ], exactNamesIn (solution.GetProject withFoo) "fooUse")
+    Assert.Empty(exactNamesIn (solution.GetProject withoutFoo) "fooUse")
 
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
 let ``a declaration an edit puts behind a directive is reported by the instance that defines it`` (fooFirst: bool) =
-    Assert.Equal<string list>([ "plainUse" ], exactNamesIn (solution.GetProject withoutFoo) "plainUse")
+    Assert.Equal<string>([ "plainUse" ], exactNamesIn (solution.GetProject withoutFoo) "plainUse")
 
     let edited =
         solution.WithDocumentText(
@@ -81,4 +81,4 @@ let ``a declaration an edit puts behind a directive is reported by the instance 
     let searches = [ withoutFoo, []; withFoo, [ "addedFoo" ] ]
 
     for instance, expected in (if fooFirst then List.rev searches else searches) do
-        Assert.Equal<string list>(expected, exactNamesIn (edited.GetProject instance) "addedFoo")
+        Assert.Equal<string>(expected, exactNamesIn (edited.GetProject instance) "addedFoo")
