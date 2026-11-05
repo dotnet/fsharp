@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
@@ -64,10 +65,18 @@ type TokenizerCacheConcurrencyTests() =
             SingleThreadedClassificationPerLine = Array.init text.Lines.Count (fun i -> classify documentId text (lineSpan text i i))
         }
 
-    let closedComments = versionOf (SourceText.From sourceWithMultiLineTokens)
+    let closedCommentsText = SourceText.From sourceWithMultiLineTokens
 
-    let unclosedComments =
-        versionOf (SourceText.From(sourceWithMultiLineTokens.Replace(" *)", "")))
+    let unclosedCommentsText =
+        let rec blankedCommentEnds from =
+            match sourceWithMultiLineTokens.IndexOf(" *)", from, StringComparison.Ordinal) with
+            | -1 -> []
+            | at -> TextChange(TextSpan(at, 3), "   ") :: blankedCommentEnds (at + 3)
+
+        closedCommentsText.WithChanges(blankedCommentEnds 0)
+
+    let closedComments = versionOf closedCommentsText
+    let unclosedComments = versionOf unclosedCommentsText
 
     let bothVersions = [| closedComments; unclosedComments |]
 
@@ -135,6 +144,53 @@ type TokenizerCacheConcurrencyTests() =
                 |> ignore)
 
         expectNoDivergence failures
+
+    [<Fact>]
+    member _.``A line below an edit that kept it in place is not classified with its old lex state``() =
+        let documentId = newDocumentId ()
+        let lastLine = lineCount - 1
+
+        classify documentId closedCommentsText (lineSpan closedCommentsText 0 lastLine)
+        |> ignore
+
+        let actual =
+            classify documentId unclosedCommentsText (lineSpan unclosedCommentsText lastLine lastLine)
+
+        Assert.Equal<(string * TextSpan)[]>(unclosedComments.SingleThreadedClassificationPerLine.[lastLine], actual)
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member private ScanThenDeleteEverythingInAFrameOfItsOwn(scan: string list -> SourceText -> unit, defines: string list) =
+        let deleted = SourceText.From("let x = 1\n" + String(' ', 1 <<< 20))
+        scan defines deleted
+
+        struct (WeakReference deleted, deleted.WithChanges(TextChange(TextSpan(0, deleted.Length), "let z = 0")))
+
+    [<Fact>]
+    member _.``The cache of a define set no longer scanned does not keep its last text alive``() =
+        let documentId = newDocumentId ()
+
+        let scan defines (text: SourceText) =
+            Tokenizer.classifySpans (
+                documentId,
+                text,
+                lineSpan text 0 0,
+                Some fileName,
+                defines,
+                langVersion,
+                ResizeArray(),
+                CancellationToken.None
+            )
+
+        let struct (deleted, remaining) =
+            TokenizerCacheConcurrencyTests.ScanThenDeleteEverythingInAFrameOfItsOwn(scan, [ "OLD" ])
+
+        scan [ "NEW" ] remaining
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
+        GC.Collect()
+
+        Assert.False(deleted.IsAlive, "The cache of the abandoned define set still holds the deleted text.")
+        GC.KeepAlive remaining
 
     [<Fact>]
     member _.``Concurrent reads of two versions of a document keep invalidating the cache correctly``() =
