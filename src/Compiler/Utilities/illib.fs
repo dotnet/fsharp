@@ -112,6 +112,12 @@ module internal PervasiveAutoOpens =
         member inline x.IndexOfOrdinal(value: string, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
 
+    [<AbstractClass; Sealed>]
+    type ReadOnlySpanCharExtensions =
+
+        static member inline StartsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
+            str.StartsWith(value.AsSpan(), StringComparison.Ordinal)
+
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
