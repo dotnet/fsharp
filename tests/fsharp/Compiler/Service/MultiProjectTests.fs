@@ -211,10 +211,6 @@ let y = 1
 
 
 
-    // Focused counters for https://github.com/dotnet/fsharp/pull/20460#discussion_r3965947159:
-    // a referenced C# project's `Compilation` is recreated on every solution fork, but its
-    // in-memory PE reference is only re-emitted when the project's dependent semantic version
-    // (here, the reference's stamp) actually changes.
     let private mkCountedCSharpPEReference (stamp: DateTime) =
         let csSrc =
             """
@@ -275,26 +271,23 @@ let test() =
     [<Fact>]
     let ``Reusing a CSharp reference's stamp avoids re-emitting a recreated Compilation``() =
         let stamp = DateTime(2024, 1, 1)
-        let csRefProj1, emitCount1 = mkCountedCSharpPEReference stamp
-        let csRefProj2, emitCount2 = mkCountedCSharpPEReference stamp
+        let csRefProj, emitCount = mkCountedCSharpPEReference stamp
+        let recreatedRefProj, recreatedEmitCount = mkCountedCSharpPEReference stamp
 
-        let fsOptions = projectReferencing csRefProj1
+        let fsOptions = projectReferencing csRefProj
         checkUsesCSharpClass fsOptions
-        Assert.Equal(1, emitCount1())
+        Assert.Equal(1, emitCount())
 
-        // Same dependent semantic version (stamp unchanged): the checker must reuse its cached
-        // project build and never touch the recreated Compilation behind the new reference.
-        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|csRefProj2|] }
-        Assert.Equal(0, emitCount2())
+        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|recreatedRefProj|] }
+        Assert.Equal(0, recreatedEmitCount())
 
     [<Fact>]
     let ``Changing a CSharp reference's stamp does re-emit the new Compilation``() =
-        let csRefProj1, _ = mkCountedCSharpPEReference (DateTime(2024, 1, 1))
-        let csRefProj2, emitCount2 = mkCountedCSharpPEReference (DateTime(2024, 1, 2))
+        let csRefProj, _ = mkCountedCSharpPEReference (DateTime(2024, 1, 1))
+        let changedRefProj, changedEmitCount = mkCountedCSharpPEReference (DateTime(2024, 1, 2))
 
-        let fsOptions = projectReferencing csRefProj1
+        let fsOptions = projectReferencing csRefProj
         checkUsesCSharpClass fsOptions
 
-        // Different dependent semantic version (stamp changed): the checker must pick up the new reference.
-        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|csRefProj2|] }
-        Assert.True(emitCount2() >= 1)
+        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|changedRefProj|] }
+        Assert.True(changedEmitCount() >= 1)

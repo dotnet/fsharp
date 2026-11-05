@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The in-memory PE references <c>FSharpProjectOptionsManager</c> keeps for the C# projects an F# project
-/// references: kept while the C# project's version holds, replaced when it moves, dropped with the project.
 module FSharp.Editor.Tests.PEReferenceCacheTests
 
-// removeLibrary listens to Workspace.WorkspaceChanged, as the manager does: the handlers of that event run in the
-// order they were added, while those of its replacement run on another thread, in no order with them.
+// removeLibrary listens to the obsolete WorkspaceChanged like the manager: its handlers run in registration order.
 #nowarn "44"
 
 open System
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
@@ -21,25 +17,13 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
+open FSharp.Editor.Tests.PEReferenceVersionTests
 
 open Xunit
 
 [<Literal>]
-let private Original = "public class Library { public int Value() => 1; }"
-
-[<Literal>]
-let private BodyEdit = "public class Library { public int Value() => 2; }"
-
-[<Literal>]
-let private DeclarationEdit =
-    "public class Library { public int Value() => 1; public int Other() => 1; }"
-
-[<Literal>]
 let private BodyEditAfterDeclarationEdit =
-    "public class Library { public int Value() => 2; public int Other() => 1; }"
-
-let private analyzerReference =
-    AnalyzerImageReference(ImmutableArray<DiagnosticAnalyzer>.Empty) :> AnalyzerReference
+    "public class Input { public int M() => 2; public int N() => 1; }"
 
 /// An F# project that references the C# project <c>Library</c>.
 type private Fixture =
@@ -122,8 +106,7 @@ let private versionOfLibrary (fixture: Fixture) =
     let library = fixture.Workspace.CurrentSolution.GetProject fixture.Library.Id
     PEReferenceVersion.getAsync library CancellationToken.None
 
-/// Removes the C# project, and completes once Roslyn has raised the removal to the handlers added before the call.
-/// The manager listens from the start, so by then it has been told to forget the project.
+/// Removes the C# project, and completes once the manager, which listens from the start, has been told to forget it.
 let private removeLibrary (fixture: Fixture) =
     task {
         let workspace = fixture.Workspace
@@ -161,12 +144,9 @@ let ``an edit that leaves the C# declarations alone keeps the PE reference`` () 
 
         editLibrary fixture BodyEdit
 
-        // The edit moves the C# project's dependent version, so the options are computed again ...
+        // The dependent version moved, so the options are computed again, yet they keep the reference.
         let! recomputed = optionsOf fixture
         Assert.NotSame(options, recomputed)
-
-        // ... and since its dependent semantic version stands, they keep the reference they had:
-        // what FCS cached against the stamp of that reference stays valid.
         Assert.Same(reference, peReferenceOf recomputed)
     }
 

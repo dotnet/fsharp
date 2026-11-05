@@ -111,8 +111,8 @@ type private SingleFileCacheEntry =
 
 module internal PEReferenceVersion =
 
-    // Source generators come only from analyzer references. Which of those carry one is known to Roslyn's
-    // out-of-process host alone: asking here would load the generators into Visual Studio.
+    // A source generator can turn an edit below the declaration level into other declarations. Only Roslyn's
+    // out-of-process host knows which analyzer references carry one: asking here would load them into Visual Studio.
     let private mayRunSourceGenerators (project: Project) =
         let solution = project.Solution
 
@@ -125,8 +125,6 @@ module internal PEReferenceVersion =
         || solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(project.Id)
            |> Seq.exists hasAnalyzerReferences
 
-    /// The version a referenced project's in-memory PE reference is kept for. A source generator can turn an
-    /// edit that leaves the dependent semantic version standing into different declarations.
     let getAsync (referencedProject: Project) (ct: CancellationToken) =
         if mayRunSourceGenerators referencedProject then
             referencedProject.GetDependentVersionAsync(ct)
@@ -134,29 +132,26 @@ module internal PEReferenceVersion =
             referencedProject.GetDependentSemanticVersionAsync(ct)
 
 /// <summary>
-/// The in-memory PE reference of a referenced project, kept while the project's
-/// <c>PEReferenceVersion</c> is unchanged. Roslyn recreates
-/// <see cref="T:Microsoft.CodeAnalysis.Compilation"/> instances freely - on every solution fork,
-/// and under memory pressure because it holds the final compilation weakly - and a reference
-/// created per instance carries a fresh stamp that invalidates every FCS cache keyed on it.
+/// The in-memory PE reference of a referenced project, kept while its <c>PEReferenceVersion</c> is unchanged.
+/// Roslyn recreates a <see cref="T:Microsoft.CodeAnalysis.Compilation"/> on every solution fork, and a reference per
+/// instance has a fresh stamp, which invalidates every FCS cache keyed on it.
 /// </summary>
 [<Sealed>]
 type private PEReferenceCacheEntry(version: VersionStamp, compilation: Compilation) =
-    // Pinned until the first emit result, so the reader can always be materialised.
-    let mutable pinned = compilation
+    let mutable pinnedUntilEmitted = compilation
     let latest = WeakReference<Compilation>(compilation)
 
     member _.Version = version
 
     member _.TryGetCompilation() =
-        match pinned with
+        match pinnedUntilEmitted with
         | null ->
             match latest.TryGetTarget() with
             | true, compilation -> ValueSome compilation
             | _ -> ValueNone
         | pinned -> ValueSome pinned
 
-    member _.Emitted() = pinned <- null
+    member _.Emitted() = pinnedUntilEmitted <- null
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
@@ -198,8 +193,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         let projectId = referencedProject.Id
         let mutable stamp = DateTime.UtcNow
 
-        // Getting a C# reference assembly can fail if there are compilation errors that cannot be resolved.
-        // To mitigate this, we store the last successful compilation of a C# project and re-use it until we get a new successful compilation.
+        // Emitting can fail on unresolvable compilation errors: fall back to the project's last successful compilation.
         let getStream =
             fun ct ->
                 let tryStream (comp: Compilation) =
