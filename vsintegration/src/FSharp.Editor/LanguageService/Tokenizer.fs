@@ -459,30 +459,83 @@ module internal Tokenizer =
             && let lineContents = textLine.Text.ToString(textLine.Span) in
                data.HashCode = lineContents.GetHashCode()
 
+    let private linesResumableAfterEdits (older: SourceText) (newer: SourceText) =
+        let firstEdit =
+            newer.GetChangeRanges older
+            |> Seq.fold (fun first change -> min first change.Span.Start) Int32.MaxValue
+
+        if firstEdit = Int32.MaxValue then
+            older.Lines.Count
+        else
+            older.Lines.GetLineFromPosition(firstEdit).LineNumber + 1
+
     type private SourceTextData(approxLines: int) =
-        let data = ResizeArray<SourceLineData option>(approxLines)
+        let writeLock = obj ()
+
+        [<VolatileField>]
+        let mutable data: SourceLineData option array = Array.zeroCreate (max approxLines 1)
+
+        let lastScannedText = WeakReference<SourceText>(null)
+        let mutable currentGeneration = 0
+        let mutable resumableLines = 0
 
         let extendTo i =
-            if i >= data.Count then
-                data.Capacity <- i + 1
-
-                for j in data.Count .. i do
-                    data.Add(None)
+            if i >= data.Length then
+                let grown = Array.zeroCreate (max (i + 1) (data.Length * 2))
+                Array.blit data 0 grown 0 data.Length
+                data <- grown
 
         member x.Item
             with get (i: int) =
-                extendTo i
-                data.[i]
-            and set (i: int) v =
-                extendTo i
-                data.[i] <- v
+                let snapshot = data
+
+                if i < snapshot.Length then
+                    ValueOption.ofOption snapshot.[i]
+                else
+                    ValueNone
+
+        member x.BeginScan(text: SourceText) =
+            lock writeLock (fun () ->
+                match lastScannedText.TryGetTarget() with
+                | true, scanned when obj.ReferenceEquals(scanned, text) -> ()
+                | isKnown, scanned ->
+                    resumableLines <-
+                        if isKnown then
+                            min resumableLines (linesResumableAfterEdits scanned text)
+                        else
+                            0
+
+                    lastScannedText.SetTarget text
+                    currentGeneration <- currentGeneration + 1
+
+                struct (currentGeneration, resumableLines))
+
+        member x.CanResumeFrom(line, entry: SourceLineData, generation) =
+            lock writeLock (fun () ->
+                generation = currentGeneration
+                && line < data.Length
+                && (match data.[line] with
+                    | Some cached -> obj.ReferenceEquals(cached, entry)
+                    | None -> false))
+
+        member x.StoreIfCurrent(line, entry, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    extendTo line
+                    data.[line] <- Some entry)
+
+        member x.ConfirmResumableLines(count, generation) =
+            lock writeLock (fun () ->
+                if generation = currentGeneration then
+                    resumableLines <- max resumableLines count)
 
         member x.ClearFrom(n) =
-            let mutable i = n
+            lock writeLock (fun () ->
+                let mutable i = n
 
-            while i < data.Count && data.[i].IsSome do
-                data.[i] <- None
-                i <- i + 1
+                while i < data.Length && data.[i].IsSome do
+                    data.[i] <- None
+                    i <- i + 1)
 
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
     /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents
@@ -513,7 +566,7 @@ module internal Tokenizer =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray<SavedTokenInfo>()
-        let mutable tokenInfoOption = None
+        let mutable tokenInfoOption = ValueNone
         let mutable previousLexState = lexState
 
         let processToken () =
@@ -529,15 +582,15 @@ module internal Tokenizer =
             tokens.Add savedToken
 
         let scanAndColorNextToken () =
-            let info, nextLexState = lineTokenizer.ScanToken(previousLexState)
+            let struct (info, nextLexState) = lineTokenizer.ScanTokenValue(previousLexState)
             tokenInfoOption <- info
             previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
             match info with
-            | Some info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
+            | ValueSome info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
                 tokenInfoOption <-
-                    Some
+                    ValueSome
                         {
                             LeftColumn = info.LeftColumn
                             RightColumn = info.RightColumn - 2
@@ -552,7 +605,7 @@ module internal Tokenizer =
                 processToken ()
 
                 tokenInfoOption <-
-                    Some
+                    ValueSome
                         {
                             LeftColumn = info.RightColumn - 1
                             RightColumn = info.RightColumn
@@ -566,7 +619,7 @@ module internal Tokenizer =
 
                 processToken ()
 
-            | Some _ -> processToken ()
+            | ValueSome _ -> processToken ()
             | _ -> ()
 
         scanAndColorNextToken ()
@@ -621,7 +674,7 @@ module internal Tokenizer =
 
     let private getFromRefreshedTokenCache
         (
-            lines: TextLineCollection,
+            sourceText: SourceText,
             startLine: int,
             endLine: int,
             sourceTokenizer: FSharpSourceTokenizer,
@@ -629,23 +682,28 @@ module internal Tokenizer =
             ct: CancellationToken
         ) =
         [
+            let lines = sourceText.Lines
+            let struct (generation, resumableLines) = sourceTextDataCache.BeginScan sourceText
             // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine =
-                let mutable i = startLine
+            let struct (scanStartLine, validStart) =
+                let mutable i = min startLine (resumableLines - 1)
+                let mutable found = ValueNone
 
-                while i > 0
-                      && (match sourceTextDataCache.[i] with
-                          | Some data -> not (data.IsValid(lines.[i]))
-                          | None -> true) do
-                    i <- i - 1
+                while i > 0 && found.IsNone do
+                    match sourceTextDataCache.[i] with
+                    | ValueSome data when
+                        data.IsValid(lines.[i])
+                        && sourceTextDataCache.CanResumeFrom(i, data, generation)
+                        ->
+                        found <- ValueSome data
+                    | _ -> i <- i - 1
 
-                i
+                struct (max i 0, found)
             // Rescan the lines if necessary and report the information
             let mutable lexState =
-                if scanStartLine = 0 then
-                    FSharpTokenizerLexState.Initial
-                else
-                    sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
+                match validStart with
+                | ValueSome data -> data.LexStateAtStartOfLine
+                | ValueNone -> FSharpTokenizerLexState.Initial
 
             for i = scanStartLine to endLine do
                 ct.ThrowIfCancellationRequested()
@@ -658,11 +716,11 @@ module internal Tokenizer =
                     //   2. the hash codes match
                     //   3. the start-of-line lex states are the same
                     match sourceTextDataCache.[i] with
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
+                    | ValueSome data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextDataCache.[i] <- Some newData
+                        sourceTextDataCache.StoreIfCurrent(i, newData, generation)
                         newData
 
                 lexState <- lineData.LexStateAtEndOfLine
@@ -670,13 +728,15 @@ module internal Tokenizer =
                 if i >= startLine then
                     yield lineData, lineContents
 
+            sourceTextDataCache.ConfirmResumableLines(endLine + 1, generation)
+
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then
                 match sourceTextDataCache.[endLine + 1] with
-                | Some data ->
+                | ValueSome data ->
                     if not (data.LexStateAtStartOfLine.Equals(lexState)) then
                         sourceTextDataCache.ClearFrom(endLine + 1)
-                | None -> ()
+                | ValueNone -> ()
         ]
 
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
@@ -702,7 +762,7 @@ module internal Tokenizer =
             let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
             let lineDataResults =
-                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
+                getFromRefreshedTokenCache (sourceText, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
                 for token in lineData.ClassifiedSpans do
@@ -912,7 +972,7 @@ module internal Tokenizer =
         let lineNo = textLinePos.Line
 
         let lineData, contents =
-            getFromRefreshedTokenCache (sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
+            getFromRefreshedTokenCache (sourceText, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
             |> List.exactlyOne
 
         lineData, textLinePos, contents
