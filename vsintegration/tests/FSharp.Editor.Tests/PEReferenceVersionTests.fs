@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The version a referenced C# project's in-memory PE reference is kept for. Only the version is read, which
-/// needs neither an F# project nor the editor services: the projects live in a plain workspace.
+/// The version a referenced C# project's PE reference is kept for; a plain workspace, no F# project or editor services.
 module FSharp.Editor.Tests.PEReferenceVersionTests
 
 open System.Collections.Immutable
@@ -13,13 +12,16 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
 [<Literal>]
-let private BodyEdit = "public class Input { public int M() => 2; }"
+let Original = "public class Input { public int M() => 1; }"
 
 [<Literal>]
-let private DeclarationEdit =
+let BodyEdit = "public class Input { public int M() => 2; }"
+
+[<Literal>]
+let DeclarationEdit =
     "public class Input { public int M() => 1; public int N() => 1; }"
 
-let private analyzerReference =
+let analyzerReference =
     AnalyzerImageReference(ImmutableArray<DiagnosticAnalyzer>.Empty) :> AnalyzerReference
 
 let private projectNamed (name: string) (solution: Solution) =
@@ -52,7 +54,7 @@ let ``only a declaration edit moves the version, unless a source generator may r
         let solution =
             workspace.CurrentSolution
                 .AddProject(dependencyId, "Dependency", "Dependency", LanguageNames.CSharp)
-                .AddDocument(documentId, "Input.cs", "public class Input { public int M() => 1; }")
+                .AddDocument(documentId, "Input.cs", Original)
                 .AddProject(libraryId, "Library", "Library", LanguageNames.CSharp)
                 .AddProjectReference(libraryId, ProjectReference dependencyId)
 
