@@ -12,7 +12,6 @@ This file should be imported by eng/Versions.props
     <SystemCompositionPackageVersion>10.0.14</SystemCompositionPackageVersion>
     <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.14</SystemDiagnosticsDiagnosticSourcePackageVersion>
     <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.12.0-1.26468.2</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.12.0-1.26468.2</MicrosoftBuildFrameworkPackageVersion>
@@ -33,6 +32,8 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesPackageVersion>5.12.0-1.26428.6</MicrosoftCodeAnalysisFeaturesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesPackageVersion>5.12.0-1.26428.6</MicrosoftVisualStudioLanguageServicesPackageVersion>
     <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.12.0-1.26428.6</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
+    <!-- dotnet-runtime dependencies -->
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>
@@ -43,7 +44,6 @@ This file should be imported by eng/Versions.props
     <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
     <SystemDiagnosticsDiagnosticSourceVersion>$(SystemDiagnosticsDiagnosticSourcePackageVersion)</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionMetadataVersion>$(SystemReflectionMetadataPackageVersion)</SystemReflectionMetadataVersion>
-    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildVersion>$(MicrosoftBuildPackageVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildFrameworkPackageVersion)</MicrosoftBuildFrameworkVersion>
@@ -64,5 +64,7 @@ This file should be imported by eng/Versions.props
     <MicrosoftCodeAnalysisFeaturesVersion>$(MicrosoftCodeAnalysisFeaturesPackageVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(MicrosoftVisualStudioLanguageServicesPackageVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftVisualStudioLanguageServicesExternalAccessVersion>$(MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion)</MicrosoftVisualStudioLanguageServicesExternalAccessVersion>
+    <!-- dotnet-runtime dependencies -->
+    <SystemSecurityCryptographyXmlVersion>$(SystemSecurityCryptographyXmlPackageVersion)</SystemSecurityCryptographyXmlVersion>
   </PropertyGroup>
 </Project>
