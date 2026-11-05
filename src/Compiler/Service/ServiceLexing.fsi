@@ -309,7 +309,7 @@ type FSharpTokenInfo =
 /// values for each line of the edited code.
 [<Sealed>]
 type FSharpLineTokenizer =
-    /// Scan one token from the line
+    /// Scan one token from the line. Prefer ScanTokenValue on hot paths: it does not allocate an option.
     member ScanToken: lexState: FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
 
     /// Scan one token from the line, without allocating an option for the result. Prefer this over
