@@ -89,8 +89,7 @@ module FSharpFindUsagesService =
                 return spans |> Array.choose id
             }
 
-    // DocumentationCommentId alone searches only the unaliased references, and finds a consumer's namesake first.
-    let private symbolOfId (docId: string) (assembly: IAssemblySymbol) =
+    let private symbolInAssembly (docId: string) (assembly: IAssemblySymbol) =
         let names = docId.Substring(2).Split('(').[0].Split('.')
 
         (Seq.singleton (assembly.GlobalNamespace :> INamespaceOrTypeSymbol), Array.take (names.Length - 1) names)
@@ -103,6 +102,12 @@ module FSharpFindUsagesService =
         |> Seq.collect _.GetMembers()
         |> Seq.tryFindV (fun candidate -> DocumentationCommentId.CreateDeclarationId(candidate).Split('~').[0] = docId)
 
+    // Roslyn's parser reads the ids FCS writes, but sees only the references without an alias; walking the assembly covers the aliased ones.
+    let private symbolOfId (docId: string) (compilation: Compilation) (assembly: IAssemblySymbol) =
+        DocumentationCommentId.GetSymbolsForDeclarationId(docId, compilation)
+        |> Seq.tryFindV (fun symbol -> SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, assembly))
+        |> ValueOption.orElseWith (fun () -> symbolInAssembly docId assembly)
+
     let private findRoslynReferences (docId: string) (declaringAssembly: string) (project: Project) =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
@@ -113,7 +118,7 @@ module FSharpFindUsagesService =
                 let ofDeclaringAssembly =
                     compilation.SourceModule.ReferencedAssemblySymbols
                     |> Seq.tryFindV (fun assembly -> String.Equals(assembly.Name, declaringAssembly, StringComparison.OrdinalIgnoreCase))
-                    |> ValueOption.bind (symbolOfId docId)
+                    |> ValueOption.bind (symbolOfId docId compilation)
 
                 match ofDeclaringAssembly with
                 | ValueNone -> return Seq.empty

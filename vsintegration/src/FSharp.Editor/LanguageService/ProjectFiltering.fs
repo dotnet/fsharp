@@ -18,7 +18,8 @@ module internal ProjectFiltering =
             && String.Equals(Path.GetFileName path, assemblyFileName, StringComparison.OrdinalIgnoreCase)
 
         let samePath (path: string) (other: string) =
-            String.Equals(path, other, StringComparison.OrdinalIgnoreCase)
+            not (String.IsNullOrEmpty path)
+            && String.Equals(path, other, StringComparison.OrdinalIgnoreCase)
 
         let outputsPerProjectFile =
             solution.Projects
