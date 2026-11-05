@@ -47,7 +47,7 @@ let private solution =
         "Consumer",
         $"class Consumer {{ int M() => {moduleName}.twice(1); int N() => {moduleName}.answer; }}",
         library.GetProjectOptions checker,
-        [ assembly ]
+        ImmutableArray.Create assembly
     )
 
 let private consumer =
@@ -197,7 +197,7 @@ let ``Find All References on a multi-targeted F# library reports the C# consumer
                 name,
                 $"class Consumer {{ int M() => {moduleName}.twice(1); }}",
                 options,
-                [ output ]
+                ImmutableArray.Create output
             ))
 
     let withOutputs =

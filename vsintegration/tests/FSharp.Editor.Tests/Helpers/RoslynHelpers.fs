@@ -359,12 +359,12 @@ type RoslynTestHelpers private () =
             |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
         with
         | [||] -> syntheticProject.OutputFilename
-        | errors -> failwith $"Compilation of {syntheticProject.Name} failed: %A{errors}"
+        | errors -> invalidOp $"Compilation of {syntheticProject.Name} failed: %A{errors}"
 
     /// Adds a C# library that references the framework of `options` and the given assemblies, the way
     /// VS references an F# project from C# through its built assembly.
     static member AddCSharpProject
-        (solution: Solution, name: string, source: string, options: FSharpProjectOptions, referencedAssemblies: string list)
+        (solution: Solution, name: string, source: string, options: FSharpProjectOptions, referencedAssemblies: ImmutableArray<string>)
         =
         let projectId = ProjectId.CreateNewId()
         let projectDir = $"C:\\{name}"
@@ -392,12 +392,10 @@ type RoslynTestHelpers private () =
         // whereas VS keeps a C# → F# reference as metadata; the assemblies are added afterwards.
         let withAssemblies =
             referencedAssemblies
-            |> List.fold
-                (fun (project: Project) assembly -> project.AddMetadataReference(MetadataReference.CreateFromFile assembly))
-                project
+            |> Seq.fold (fun (project: Project) assembly -> project.AddMetadataReference(MetadataReference.CreateFromFile assembly)) project
 
         if not (workspace.TryApplyChanges withAssemblies.Solution) then
-            failwith $"Could not add the references of {name}"
+            invalidOp $"Could not add the references of {name}"
 
         workspace.CurrentSolution
 
