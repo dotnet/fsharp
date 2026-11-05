@@ -120,7 +120,7 @@ module internal BlockStructure =
 
     let createBlockSpans isBlockStructureEnabled (sourceText: SourceText) (parsedInput: ParsedInput) =
         sourceText.WithLinesAsMemory(fun lines -> Structure.getOutliningRangesFromLineSlices lines parsedInput)
-        |> Seq.distinctBy (fun x -> x.Range.StartLine)
+        |> Seq.distinctBy _.Range.StartLine
         |> Seq.chooseV (fun scopeRange ->
             // the range of text to collapse
             let textSpan =
