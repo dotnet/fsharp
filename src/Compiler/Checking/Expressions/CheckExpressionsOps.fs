@@ -18,6 +18,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTrivia
 
 let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
     match isFirst, g.checkNullness, GetTyparTyIfSupportsNull g ty with
@@ -181,6 +182,33 @@ let RewriteRangeExpr synExpr =
         Some otherExpr
     | _ -> None
 
+[<return: Struct>]
+let (|BareRangeExpr|_|) synExpr =
+    RewriteRangeExpr synExpr |> ValueOption.ofOption
+
+let (|RangeAsSingleValue|_|) (cenv: TcFileState) synExpr =
+    match synExpr with
+    | BareRangeExpr _ -> cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+    | _ -> false
+
+let mkRangeSplice (synRange: SynExpr) =
+    let m = synRange.Range
+    SynExpr.YieldOrReturnFrom((true, false), synRange, m, { YieldOrReturnFromKeyword = m })
+
+let rewriteYieldFromRange (cenv: TcFileState) synExpr =
+    match synExpr with
+    | BareRangeExpr rangeCall ->
+        checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions synExpr.Range
+        rangeCall
+    | _ -> synExpr
+
+let rejectRangeOperand (cenv: TcFileState) operand =
+    match operand with
+    | RangeAsSingleValue cenv ->
+        errorR (Error(FSComp.SR.tcRangeIsNotASingleValue (), operand.Range))
+        arbExpr ("rangeAsSingleValue", operand.Range)
+    | _ -> operand
+
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
 let YieldFree (_cenv: TcFileState) expr =
     let rec YieldFree expr =
@@ -223,7 +251,8 @@ let inline IsSimpleSemicolonSequenceElement expr cenv acceptDeprecated =
     | SynExpr.Do _
     | SynExpr.MatchBang _
     | SynExpr.While _
-    | SynExpr.WhileBang _ -> false
+    | SynExpr.WhileBang _
+    | BareRangeExpr _ -> false
     | _ -> true
 
 [<TailCall>]
@@ -246,6 +275,39 @@ let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc cenv acceptDepreca
 [<return: Struct>]
 let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
     TryGetSimpleSemicolonSequenceOfComprehension cexpr [] cenv acceptDeprecated
+
+[<return: Struct>]
+let (|SimpleSemicolonSequenceWithRanges|_|) cenv cexpr =
+    let isRange = RewriteRangeExpr >> Option.isSome
+
+    let yieldValue expr =
+        SynExpr.YieldOrReturn((true, false), expr, expr.Range, SynExprYieldOrReturnTrivia.Zero)
+
+    let sequential head tail =
+        SynExpr.Sequential(
+            DebugPointAtSequential.SuppressNeither,
+            true,
+            head,
+            tail,
+            unionRanges head.Range tail.Range,
+            SynExprSequentialTrivia.Zero
+        )
+
+    let rec elements acc expr =
+        match expr with
+        | SynExpr.Sequential(isTrueSeq = true; expr1 = head; expr2 = tail) -> elements (head :: acc) tail
+        | _ -> List.rev (expr :: acc)
+
+    match elements [] cexpr with
+    | elems when
+        List.exists isRange elems
+        && List.forall (fun e -> isRange e || IsSimpleSemicolonSequenceElement e cenv false) elems
+        ->
+        elems
+        |> List.map (fun e -> if isRange e then e else yieldValue e)
+        |> List.reduceBack sequential
+        |> ValueSome
+    | _ -> ValueNone
 
 let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
     let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()

@@ -379,6 +379,13 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
+
+            let synYieldExpr =
+                if isYield then
+                    rewriteYieldFromRange cenv synYieldExpr
+                else
+                    synYieldExpr
+
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
             if not isYield then
@@ -396,6 +403,14 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                     mkDebugPoint resultExpr.Range resultExpr
 
             Some(resultExpr, tpenv)
+
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = RangeAsSingleValue cenv as synRange; range = m) ->
+            if isYield then
+                rejectRangeOperand cenv synRange |> ignore
+            else
+                errorR (Error(FSComp.SR.tcSeqResultsUseYield (), m))
+
+            tryTcSequenceExprBody env genOuterTy tpenv (mkRangeSplice synRange)
 
         | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; range = m) ->
             let env = { env with eIsControlFlow = false }
@@ -417,6 +432,8 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                     mkDebugPoint m resultExpr
 
             Some(resultExpr, tpenv)
+
+        | BareRangeExpr _ -> tryTcSequenceExprBody env genOuterTy tpenv (mkRangeSplice comp)
 
         | _ -> None
 
