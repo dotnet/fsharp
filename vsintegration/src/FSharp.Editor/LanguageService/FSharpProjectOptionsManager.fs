@@ -216,7 +216,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
 
-                // FCS reads the caret only to skip resolving the `#r "nuget: …"` line being typed, and only scripts have those.
                 let focusedCaret =
                     if isScriptFile document.FilePath then
                         FocusedCaret.TryGet sourceText

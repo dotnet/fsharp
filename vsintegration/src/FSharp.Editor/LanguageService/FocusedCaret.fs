@@ -10,21 +10,18 @@ open Microsoft.VisualStudio.Utilities
 
 open FSharp.Compiler.Text
 
-/// The caret of the focused editor on a text buffer, published by the UI thread for the project options
-/// reactor: the UI thread can be blocked waiting for the reactor, so the reactor must never wait for it.
+/// The caret of the focused editor, published by the UI thread so the options reactor never has to wait for it.
 [<Sealed>]
 type internal FocusedCaret() =
 
-    // A reference, not an option: the reactor reads it while the UI thread writes, and must never see a torn struct.
+    // option, not voption: a struct read racing the UI thread's write could tear.
     [<VolatileField>]
     let mutable position: Position option = None
 
     let lineChanged = Event<unit>()
 
-    /// None while no editor on the buffer has focus.
     member _.Position = position
 
-    /// Raised on the UI thread when the caret moves to another line, or focus enters or leaves the buffer's editors.
     member _.LineChanged = lineChanged.Publish
 
     member _.Update(newPosition: Position option) =
@@ -70,7 +67,7 @@ type internal FocusedCaretTracker() =
                     textView.Caret.PositionChanged.Subscribe(fun _ ->
                         if textView.HasAggregateFocus then
                             publish ())
-                    // An edit that moves the caret raises no PositionChanged; the layout it causes is the only notice.
+                    // Edits move the caret without raising PositionChanged.
                     textView.LayoutChanged.Subscribe(fun args ->
                         if args.NewSnapshot <> args.OldSnapshot && textView.HasAggregateFocus then
                             publish ())
@@ -85,8 +82,6 @@ type internal FocusedCaretTracker() =
                 for subscription in subscriptions do
                     subscription.Dispose()
 
-                // The caret belongs to the buffer, which outlives the view. A view closed while it held focus
-                // would leave its line published, and the reactor would go on skipping the `#r` on a line no
-                // editor is on. A view that does not hold focus published nothing to clear.
+                // The caret belongs to the buffer, which outlives this view.
                 if textView.HasAggregateFocus then
                     focusedCaret.Update None)
