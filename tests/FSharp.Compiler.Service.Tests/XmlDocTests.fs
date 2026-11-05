@@ -226,7 +226,7 @@ module XmlDocRefs =
         XmlDoc(lines, lineRanges, Seq.reduce Range.unionRanges lineRanges)
 
     let private expectRefs (markedDoc: string) =
-        let lines, refs = extractRefs markedDoc
+        let struct (lines, refs) = extractRefs markedDoc
         let doc = docOf lines
 
         Assert.Equal<string * (int * int * int)>(

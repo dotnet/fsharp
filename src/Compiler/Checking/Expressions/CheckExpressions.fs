@@ -11779,12 +11779,12 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             let (UnscopedTyparEnv inner) = tpenv
 
             XmlDocTyparCandidates
-                [
+                (seq {
                     yield! declaredTypars
                     for KeyValue(name, typar) in inner do
                         if not (outer.ContainsKey name) then
                             yield typar
-                ]
+                })
 
         ReportXmlDocRefUses cenv.tcSink xmlDoc parameterCandidates typarCandidates
 
