@@ -34,7 +34,8 @@ type internal FSharpNavigableItemsCache
     let cache = ConcurrentDictionary<ParseKey, VersionStamp * NavigableItem array>()
 
     /// The items a document last got, under whatever options: for the reader that cannot await them.
-    let ofDocument = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    let ofDocument =
+        ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
 
     do
         if workspace <> null then
