@@ -66,7 +66,11 @@ internal partial class SolutionExplorerInProcess
         var dte = await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken);
         var solution = dte.Solution;
 
-        var project = solution.Projects.Cast<EnvDTE.Project>().First(x => x.Name == projectName);
+        var project = solution.Projects.Cast<EnvDTE.Project>().First(x =>
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return x.Name == projectName;
+        });
         var projectPath = Path.GetDirectoryName(project.FullName);
         return Path.Combine(projectPath, relativeFilePath);
     }
@@ -77,11 +81,19 @@ internal partial class SolutionExplorerInProcess
 
         var solution = (await GetRequiredGlobalServiceAsync<SDTE, EnvDTE.DTE>(cancellationToken)).Solution;
         var projects = solution.Projects.Cast<EnvDTE.Project>();
-        var project = projects.FirstOrDefault(x => x.Name == projectName);
+        var project = projects.FirstOrDefault(x =>
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return x.Name == projectName;
+        });
         var projectPath = Path.GetDirectoryName(project.FullName);
         var fullFilePath = Path.Combine(projectPath, relativeFilePath);
         var projectItems = project.ProjectItems.Cast<EnvDTE.ProjectItem>();
-        var document = projectItems.FirstOrDefault(d => d.get_FileNames(1).Equals(fullFilePath));
+        var document = projectItems.FirstOrDefault(d =>
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return d.get_FileNames(1).Equals(fullFilePath);
+        });
 
         return document;
     }

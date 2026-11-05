@@ -24,6 +24,20 @@
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\LexicalScanning.fs">
+      <Link>LexicalScanning.fs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Editor\Commands\InteractiveLexicalScanner.fs">
+      <Link>InteractiveLexicalScanner.fs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionAnalysis.fs">
+      <Link>SubmissionAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionOrigins.fs">
+      <Link>SubmissionOrigins.fs</Link>
+    </Compile>
+    <Compile Include="SubmissionAnalysisTests.fs" />
+    <Compile Include="SubmissionOriginsTests.fs" />
     <Compile Include="FsiServerHarness.fs" />
     <Compile Include="FsiJsonRpcServerTests.fs" />
   </ItemGroup>

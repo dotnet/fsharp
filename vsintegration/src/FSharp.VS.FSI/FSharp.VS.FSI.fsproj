@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.Interactive.Window" />
     <InternalsVisibleTo Include="FSharp.LanguageService" />
     <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
