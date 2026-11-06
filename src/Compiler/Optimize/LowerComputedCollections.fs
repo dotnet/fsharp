@@ -158,7 +158,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 Result.Ok(closed, exprR)
             | Result.Error msg -> Result.Error msg
 
-        | Expr.Let (bind, bodyExpr, m, _) ->
+        | Expr.Let (bind, bodyExpr, m, _) when not bind.Var.IsDecisionTreeJoin ->
             let resBody = ConvertSeqExprCode isUninteresting isTailcall bodyExpr
             match resBody with
             | Result.Ok (closed, bodyExprR) ->
@@ -581,10 +581,10 @@ let (|SeqSingleton|_|) g expr : Expr voption =
 let (|SingleYield|_|) g expr : Expr voption =
     let rec loop expr cont =
         match expr with
-        | Expr.Let (binding, DebugPoints (SeqSingleton g body, debug), m, frees) ->
+        | Expr.Let (binding, DebugPoints (SeqSingleton g body, debug), m, frees) when not binding.Var.IsDecisionTreeJoin ->
             ValueSome (cont (Expr.Let (binding, debug body, m, frees)))
 
-        | Expr.Let (binding, DebugPoints (body, debug), m, frees) ->
+        | Expr.Let (binding, DebugPoints (body, debug), m, frees) when not binding.Var.IsDecisionTreeJoin ->
             loop body (cont << fun body -> Expr.Let (binding, debug body, m, frees))
 
         | Expr.Sequential (expr1, DebugPoints (SeqSingleton g body, debug), kind, m) ->
@@ -620,7 +620,7 @@ let (|SingleYield|_|) g expr : Expr voption =
 let gatherPrelude ((|App|_|) : _ -> _ voption) expr =
     let rec loop expr cont =
         match expr with
-        | Expr.Let (binding, DebugPoints (body, debug), m, frees) ->
+        | Expr.Let (binding, DebugPoints (body, debug), m, frees) when not binding.Var.IsDecisionTreeJoin ->
             loop body (cont << fun body -> Expr.Let (binding, debug body, m, frees))
 
         | Expr.Sequential (expr1, DebugPoints (body, debug), kind, m) ->

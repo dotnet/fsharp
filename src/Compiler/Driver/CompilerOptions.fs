@@ -1630,14 +1630,6 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
-            "tokenize-debug",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Debug),
-            Some(InternalCommandLineOption("--tokenize-debug", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
             "tokenize-unfiltered",
             tagNone,
             OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Unfiltered),
