@@ -52,3 +52,12 @@ module FsiHelpTests =
         match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ 23 @> with
         | ValueSome h -> Assert.True(false, "No xml documentation expected")
         | ValueNone -> ()
+
+    /// <summary>Returns <see langword="true"/> for any input.</summary>
+    let returnsTrue (_: int) = true
+
+    [<Fact>]
+    let ``Help keeps the word of see langword`` () =
+        match FSharp.Compiler.Interactive.FsiHelp.Logic.Quoted.tryGetHelp <@ returnsTrue @> with
+        | ValueSome h -> h.Summary |> shouldBe "Returns true for any input."
+        | ValueNone -> Assert.True(false, "No xml documentation found")
