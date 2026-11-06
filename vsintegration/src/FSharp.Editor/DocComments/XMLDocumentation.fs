@@ -179,10 +179,10 @@ module internal XmlDocumentation =
     and WriteText (collector: ITaggedTextCollector) (n: XText) = collector.Add(tagText n.Value)
 
     and WriteAttribute (collector: ITaggedTextCollector) (attr: XAttribute) (taggedName: string) tagger =
-        if attr.Name.LocalName = taggedName then
-            tagger attr.Value
-        else
-            collector.Add(tagText attr.Value)
+        match attr.Name.LocalName with
+        | name when name = taggedName -> tagger attr.Value
+        | "langword" -> collector.Add(tagKeyword attr.Value)
+        | _ -> collector.Add(tagText attr.Value)
 
     and WriteTypeName (collector: ITaggedTextCollector) (typeName: string) =
         let typeName =
