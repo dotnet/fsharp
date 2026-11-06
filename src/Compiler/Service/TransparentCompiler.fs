@@ -1710,7 +1710,7 @@ type internal TransparentCompiler
         }
 
     // Type check file and all its dependencies
-    let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
+    let ComputeTcLastFile (scope: FileCheckScope) (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         let fileName = projectSnapshot.SourceFiles |> Array.last |> (fun f -> f.FileName)
 
         caches.TcLastFile.Get(
