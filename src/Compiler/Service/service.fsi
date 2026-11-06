@@ -198,9 +198,22 @@ type public FSharpChecker =
         ?userOpName: string ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
+    /// <summary>
+    /// <para>Parse and typecheck a source code file in a project snapshot.</para>
+    /// </summary>
+    ///
+    /// <param name="fileName">The name of the file in the project whose source is being checked.</param>
+    /// <param name="projectSnapshot">The snapshot of the project.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    /// <param name="checkDependenciesOnly">
+    /// Type check only the files this file depends on, instead of every file before it. Only the Transparent Compiler uses it.
+    /// The typed tree of the file is the same. The partial assembly signature and the dependency files
+    /// only hold this file and its dependencies, and the results are not cached for later requests.
+    /// When compiling FSharp.Core, every file before this file is still checked.
+    /// </param>
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member ParseAndCheckFileInProject:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string ->
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * ?userOpName: string * ?checkDependenciesOnly: bool ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>

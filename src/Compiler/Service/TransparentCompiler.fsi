@@ -83,8 +83,12 @@ type internal TcIntermediateResult = TcInfo * TcResultsSinkImpl * CheckedImplFil
 [<RequireQualifiedAccess>]
 type internal DependencyGraphType =
 
-    /// A dependency graph for a single file - it will be missing files which this file does not depend on
+    /// A dependency graph for a single file - it will contain this file and all files before it,
+    /// except the other implementation files backed by a signature
     | File
+
+    /// A dependency graph for a single file - it will be missing files which this file does not depend on
+    | FileDependencies
 
     /// A dependency graph for a project - it will contain all files in the project
     | Project
