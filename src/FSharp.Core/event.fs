@@ -42,6 +42,11 @@ type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null>
                 Atomic.setWith (fun value -> Delegate.Remove(value, d)) &multicast
         }
 
+    member x.HasSubscribers =
+        match multicast with
+        | null -> false
+        | _ -> true
+
 type EventDelegee<'Args>(observer: IObserver<'Args>) =
     static let makeTuple =
         if Microsoft.FSharp.Reflection.FSharpType.IsTuple(typeof<'Args>) then
@@ -162,6 +167,11 @@ type Event<'Delegate, 'Args
                   }
         }
 
+    member x.HasSubscribers =
+        match box multicast with
+        | null -> false
+        | _ -> true
+
 [<CompiledName("FSharpEvent`1")>]
 type Event<'T> =
     val mutable multicast: Handler<'T>
@@ -192,3 +202,8 @@ type Event<'T> =
                           (e :?> IEvent<_, _>).RemoveHandler(h)
                   }
         }
+
+    member x.HasSubscribers =
+        match x.multicast with
+        | null -> false
+        | _ -> true

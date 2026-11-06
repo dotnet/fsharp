@@ -46,6 +46,18 @@ type EventTypes() =
                 }
         } |> Async.Parallel |> Async.RunSynchronously |> ignore
 
+    let checkHasSubscribers (hasSubscribers: unit -> bool) (event: IDelegateEvent<_>) handlerInitializer =
+        let first = handlerInitializer()
+        let second = handlerInitializer()
+        Assert.False(hasSubscribers ())
+        event.AddHandler(first)
+        Assert.True(hasSubscribers ())
+        event.AddHandler(second)
+        event.RemoveHandler(first)
+        Assert.True(hasSubscribers ())
+        event.RemoveHandler(second)
+        Assert.False(hasSubscribers ())
+
     [<Fact>]
     member this.``Adding/removing handlers to published Event<'T> is thread-safe``() =
         let event = new Event<int>()
@@ -75,3 +87,34 @@ type EventTypes() =
 
         Assert.True(listenersBefore.IsNone)
         Assert.True(listenersAfter.IsNone)
+
+    [<Fact>]
+    member this.``HasSubscribers of Event<'T> follows its handlers``() =
+        let event = new Event<int>()
+        checkHasSubscribers (fun () -> event.HasSubscribers) event.Publish (fun _ -> new Handler<_>(fun sender args -> ()))
+
+    [<Fact>]
+    member this.``HasSubscribers of DelegateEvent follows its handlers``() =
+        let event = new DelegateEvent<EventTypes.MultiArgDelegate>()
+        checkHasSubscribers (fun () -> event.HasSubscribers) event.Publish (fun _ -> EventTypes.MultiArgDelegate(fun sender args -> ()))
+
+    [<Fact>]
+    member this.``HasSubscribers of Event<'D,'A> follows its handlers``() =
+        let event = new Event<EventTypes.MultiArgDelegate, obj[]>()
+        checkHasSubscribers (fun () -> event.HasSubscribers) event.Publish (fun _ -> EventTypes.MultiArgDelegate(fun sender args -> ()))
+
+    [<Fact>]
+    member this.``HasSubscribers of Event<'T> follows its subscriptions``() =
+        let event = new Event<int>()
+        let subscription = event.Publish.Subscribe(fun _ -> ())
+        Assert.True(event.HasSubscribers)
+        subscription.Dispose()
+        Assert.False(event.HasSubscribers)
+
+    [<Fact>]
+    member this.``HasSubscribers of Event<'D,'A> follows its subscriptions``() =
+        let event = new Event<EventTypes.MultiArgDelegate, obj[]>()
+        let subscription = event.Publish.Subscribe(fun _ -> ())
+        Assert.True(event.HasSubscribers)
+        subscription.Dispose()
+        Assert.False(event.HasSubscribers)
