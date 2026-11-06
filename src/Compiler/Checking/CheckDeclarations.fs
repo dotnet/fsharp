@@ -6055,6 +6055,7 @@ let emptyTcEnv g =
       eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
+      eInConstantContext = false
       eInObjectExpr = false
       eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
