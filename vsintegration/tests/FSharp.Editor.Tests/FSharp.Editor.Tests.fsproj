@@ -34,6 +34,7 @@
     <Compile Include="PathMapNavigationTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
+    <Compile Include="XmlDocumentationTests.fs" />
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="CopilotContextProviderTests.fs" />
