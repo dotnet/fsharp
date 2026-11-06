@@ -127,6 +127,8 @@
     <Compile Include="Utilities\Activity.fs" />
 	<Compile Include="Utilities\Caches.fsi" />
     <Compile Include="Utilities\Caches.fs" />
+    <Compile Include="Utilities\Strings.fsi" />
+    <Compile Include="Utilities\Strings.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\ResizeArray.fsi" />
