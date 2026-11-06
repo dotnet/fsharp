@@ -52,7 +52,7 @@ function Get-RoslynDevFeeds([string]$repo, [string]$version) {
 }
 
 # VS binds these to its own copies, so a package newer than they are loads in the build and fails in VS: System.* through the
-# redirects in devenv.exe.config (assembly 10.0.0.10 is package 10.0.10), MSBuild by the version it ships.
+# redirects in devenv.exe.config (assembly 10.0.0.10 is package 10.0.10), MSBuild by its DLL's version (its redirects stay at 15.1.0.0).
 function Get-InstalledLibraryPins([string]$ideDir) {
     $configPath = Join-Path $ideDir 'devenv.exe.config'
     $config = if (Test-Path -LiteralPath $configPath) { [xml](Get-Content -LiteralPath $configPath -Raw) }
@@ -70,7 +70,7 @@ function Get-InstalledLibraryPins([string]$ideDir) {
     }
     foreach ($property in $libraries.Keys) {
         $assembly = $libraries[$property]
-        $redirect = if ($config) { $config.SelectSingleNode("//*[local-name()='dependentAssembly'][*[local-name()='assemblyIdentity' and @name='$assembly']]/*[local-name()='bindingRedirect']") }
+        $redirect = if ($config -and $assembly -like 'System.*') { $config.SelectSingleNode("//*[local-name()='dependentAssembly'][*[local-name()='assemblyIdentity' and @name='$assembly']]/*[local-name()='bindingRedirect']") }
         $dll = Join-Path $msbuild "$assembly.dll"
         $installed = if ($redirect) { $v = [version]$redirect.GetAttribute('newVersion'); '{0}.{1}.{2}' -f $v.Major, $v.Minor, $v.Revision }
                      elseif (Test-Path -LiteralPath $dll) { ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).ProductVersion -split '\+')[0] }
