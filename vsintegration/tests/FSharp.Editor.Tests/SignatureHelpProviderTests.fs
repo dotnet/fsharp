@@ -57,7 +57,7 @@ module SignatureHelpProvider =
                     sourceText,
                     caretPosition,
                     triggerChar,
-                    EditorOptions()
+                    new EditorOptions()
                 )
                 |> Async.RunSynchronously
 
@@ -125,7 +125,7 @@ module SignatureHelpProvider =
                         sourceText,
                         caretPosition,
                         triggerChar,
-                        EditorOptions()
+                        new EditorOptions()
                     )
                     |> Async.RunSynchronously
 
@@ -182,7 +182,7 @@ module SignatureHelpProvider =
                 caretPosition,
                 adjustedColumnInSource,
                 filePath,
-                EditorOptions()
+                new EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -525,7 +525,7 @@ M.f
                 caretPosition,
                 adjustedColumnInSource,
                 filePath,
-                EditorOptions()
+                new EditorOptions()
             )
             |> Async.RunSynchronously
 
