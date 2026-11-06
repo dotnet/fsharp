@@ -708,14 +708,20 @@ Microsoft.FSharp.Control.FSharpAsyncBuilder: Microsoft.FSharp.Control.FSharpAsyn
 Microsoft.FSharp.Control.FSharpAsyncBuilder: Microsoft.FSharp.Control.FSharpAsync`1[T] TryFinally[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Control.FSharpAsyncBuilder: Microsoft.FSharp.Control.FSharpAsync`1[T] TryWith[T](Microsoft.FSharp.Control.FSharpAsync`1[T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.FSharpAsyncReplyChannel`1[TReply]: Void Reply(TReply)
+Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Boolean HasSubscribers
+Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Boolean get_HasSubscribers()
 Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Microsoft.FSharp.Control.IDelegateEvent`1[TDelegate] Publish
 Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Microsoft.FSharp.Control.IDelegateEvent`1[TDelegate] get_Publish()
 Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Void .ctor()
 Microsoft.FSharp.Control.FSharpDelegateEvent`1[TDelegate]: Void Trigger(System.Object[])
+Microsoft.FSharp.Control.FSharpEvent`1[T]: Boolean HasSubscribers
+Microsoft.FSharp.Control.FSharpEvent`1[T]: Boolean get_HasSubscribers()
 Microsoft.FSharp.Control.FSharpEvent`1[T]: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[T],T] Publish
 Microsoft.FSharp.Control.FSharpEvent`1[T]: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[T],T] get_Publish()
 Microsoft.FSharp.Control.FSharpEvent`1[T]: Void .ctor()
 Microsoft.FSharp.Control.FSharpEvent`1[T]: Void Trigger(T)
+Microsoft.FSharp.Control.FSharpEvent`2[TDelegate,TArgs]: Boolean HasSubscribers
+Microsoft.FSharp.Control.FSharpEvent`2[TDelegate,TArgs]: Boolean get_HasSubscribers()
 Microsoft.FSharp.Control.FSharpEvent`2[TDelegate,TArgs]: Microsoft.FSharp.Control.IEvent`2[TDelegate,TArgs] Publish
 Microsoft.FSharp.Control.FSharpEvent`2[TDelegate,TArgs]: Microsoft.FSharp.Control.IEvent`2[TDelegate,TArgs] get_Publish()
 Microsoft.FSharp.Control.FSharpEvent`2[TDelegate,TArgs]: Void .ctor()
