@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="ad6c34f9d44221a679a8b2452db6f27c27384695" BarId="339241" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="1f64ef47a8bab8b70faef698083e1d7a45dc4146" BarId="340151" />
   <ProductDependencies>
     <Dependency Name="Microsoft.Build" Version="18.12.0-1.26468.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
@@ -72,7 +72,7 @@
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
     <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.14">
-      <Uri>https://github.com/dotnet/dotnet</Uri>
+      <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>d7437ff14b570b50cce30b01edbf568a3d1ff933</Sha>
     </Dependency>
   </ProductDependencies>
