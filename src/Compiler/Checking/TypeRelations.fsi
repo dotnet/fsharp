@@ -43,6 +43,15 @@ val TypeFeasiblySubsumesType:
     ty2: TType ->
         bool
 
+/// Whether a runtime type test may have an overlapping source and target type.
+val TypeTestCanSucceedForRuntimeType:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    targetTy: TType ->
+    sourceTy: TType ->
+        bool
+
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
 /// by letrec nodes. Also used by the pattern match compiler to choose type
 /// variables when compiling patterns at generalized bindings.

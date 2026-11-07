@@ -3043,7 +3043,24 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
     if isSealedTy g srcTy then
         error(RuntimeCoercionSourceSealed(denv, srcTy, m))
 
-    if (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) && not (isAnonUnionTy g srcTy) then
+    if isAnonUnionTy g srcTy then
+        let constituents =
+            match stripTyEqns g srcTy with
+            | TType_anon_union(_, constituents, _) -> constituents
+            | _ -> []
+
+        if constituents |> List.forall (TypeTestCanSucceedForRuntimeType g cenv.amap m tgtTy >> not) then
+            error (
+                ConstraintSolverError(
+                    RichText.mkText (
+                        FSComp.SR.csAnonUnionTypeNotContained(
+                            NicePrint.minimalStringOfType denv tgtTy,
+                            NicePrint.minimalStringOfType denv srcTy)),
+                    m,
+                    m
+                )
+            )
+    elif (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) then
         let context = if isCast then ContextInfo.RuntimeTypeTest isOperator else ContextInfo.NoContext
         AddCxTypeMustSubsumeType context denv cenv.css m NoTrace srcTy tgtTy
 

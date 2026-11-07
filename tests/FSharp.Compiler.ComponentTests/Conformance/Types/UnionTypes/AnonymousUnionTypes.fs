@@ -478,7 +478,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 26, Line 6, Col 7, Line 6, Col 21, "This rule will never be matched")
+            (Error 193, Line 6, Col 7, Line 6, Col 21, "The type 'System.Guid' is not compatible with the anonymous union type '(int | string)'")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching2Columns.fs")>]

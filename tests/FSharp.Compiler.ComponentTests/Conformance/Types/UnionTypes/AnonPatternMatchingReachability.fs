@@ -64,6 +64,11 @@ let unknownNullness (x: (IResource|string|null)) =
     | null -> 1
     | _ -> 2
 
+let testArray (x: (string array|int)) =
+    match x with
+    | :? (obj array) -> true
+    | _ -> false
+
 if not (valueType 42 = 0) then failwith "Test failed"
 if not (valueType "hello" = 1) then failwith "Test failed"
 if not (partialValueType System.DayOfWeek.Monday = 0) then failwith "Test failed"
@@ -79,3 +84,4 @@ if not (unknownFlexible (Derived()) = 0) then failwith "Test failed"
 if not (unknownErased 42 = 0) then failwith "Test failed"
 if not (unknownErased (Derived()) = 1) then failwith "Test failed"
 if not (unknownNullness null = 1) then failwith "Test failed"
+if not (testArray [| "hello" |]) then failwith "Array test failed"

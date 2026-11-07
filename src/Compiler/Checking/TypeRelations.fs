@@ -190,6 +190,42 @@ and TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 =
     | None -> false
     | Some ty -> TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce ty
 
+let TypeTestCanSucceedForRuntimeType g amap m targetTy sourceTy =
+    let rec isSameTypeConstructor ty1 ty2 =
+        let ty1 = stripTyEqns g ty1
+        let ty2 = stripTyEqns g ty2
+
+        match ty1, ty2 with
+        | TType_var _, _
+        | _, TType_var _
+        | TType_measure _, TType_measure _ -> true
+        | AppTy g (tcref1, _), AppTy g (tcref2, _) -> tyconRefEq g tcref1 tcref2
+        | TType_tuple _, TType_tuple _
+        | TType_fun _, TType_fun _
+        | TType_anon _, TType_anon _ -> TypesFeasiblyEquiv 0 g amap m ty1 ty2
+        | _, TType_anon_union (_, _, _) -> true
+        | _ -> false
+
+    let rec isAncestorOrSame ndeep candidate ty =
+        if ndeep > 100 then
+            false
+        elif isSameTypeConstructor candidate ty then
+            true
+        elif isInterfaceTy g candidate && not (isSealedTy g ty) then
+            true
+        elif isInterfaceTy g ty && not (isSealedTy g candidate) then
+            true
+        else
+            let ty = stripTyEqns g ty
+
+            (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+             |> List.exists (isAncestorOrSame (ndeep + 1) candidate))
+            || (GetSuperTypeOfType g amap m ty
+                |> Option.exists (isAncestorOrSame (ndeep + 1) candidate))
+
+    isAncestorOrSame 0 targetTy sourceTy
+    || isAncestorOrSame 0 sourceTy targetTy
+
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
 /// by letrec nodes. Also used by the pattern match compiler to choose type
 /// variables when compiling patterns at generalized bindings.
