@@ -146,6 +146,7 @@ type internal Extensions =
             member _.GetKey() =
                 Md5Hasher.empty
                 |> Md5Hasher.addStrings (fileSnapshots |> Seq.map (fun f -> f.FileName))
+                |> Md5Hasher.toString
                 |> pair extraKeyFlag
 
             member _.GetVersion() =
