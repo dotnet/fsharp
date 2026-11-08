@@ -160,6 +160,22 @@ module private ActivePatternReturnConversion =
 
         casesResolve && attributeResolves
 
+    let writtenAnnotationIsNotRedefined (parseTree: ParsedInput) (target: Target) =
+        match target.Annotation with
+        | Annotation.Head head ->
+            let written = toggleValuePrefix target.IsStruct head.idText
+
+            (true, parseTree)
+            ||> ParsedInput.fold (fun isFree _ node ->
+                isFree
+                && match node with
+                   | SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = info)) ->
+                       info.LongIdent
+                       |> List.forall (fun ident -> not (String.Equals(ident.idText, written, StringComparison.Ordinal)))
+                   | _ -> true)
+        | Annotation.Absent
+        | Annotation.Unsupported -> true
+
     let isUsedAsFunctionValue
         (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
@@ -443,6 +459,7 @@ type internal FSharpConvertActivePatternReturnRefactoring [<ImportingConstructor
                         if
                             ActivePatternReturnConversion.existingNamesAreFSharpCore isFSharpCore target
                             && ActivePatternReturnConversion.writtenNamesAreFSharpCore checkResults target
+                            && ActivePatternReturnConversion.writtenAnnotationIsNotRedefined parseResults.ParseTree target
                             && not (ActivePatternReturnConversion.isUsedAsFunctionValue checkResults sourceText cancellationToken target)
                         then
                             let title =

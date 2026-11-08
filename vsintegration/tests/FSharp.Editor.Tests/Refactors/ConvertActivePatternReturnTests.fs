@@ -406,6 +406,21 @@ let result: int option = (|P|_|) 1
 printfn "%A" result
 """,
              "(|P")>]
+[<InlineData("""
+module M
+
+type voption<'T> = 'T list Microsoft.FSharp.Core.voption
+let (|P|_|) (x: int) : int option = Some x
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+type option<'T> = 'T list Microsoft.FSharp.Core.option
+[<return: Struct>]
+let (|P|_|) (x: int) : int voption = ValueSome x
+""",
+             "(|P")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
 
 [<Fact>]
