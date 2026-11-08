@@ -86,7 +86,7 @@ query { for c in customers.AsQueryable() do
 // Now: no rows (without the where: every city, with false)
 ```
 
-In the same way, `Contains` no longer finds a group among the groups it is in, and a group used as the key of `groupBy` is no longer found among the elements of its own group. EF Core, linq2db and the Cosmos DB provider translate none of these queries, before or after. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
+In the same way, `Contains` no longer finds a group among the groups it is in, and a group used as the key of `groupBy` is no longer found among the elements of its own group. EF Core and the Cosmos DB provider translate none of these queries, before or after. linq2db translated none of them before. After, it translates the `Contains` query and gives the rows of LINQ to Objects; it still translates neither of the other two. Reading the key of a group, or counting, summing, averaging or searching it, is not affected: those read the provider's grouping.
 
 ---
 
