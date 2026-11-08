@@ -155,7 +155,7 @@ let rec private tryParameterPosition (pat: SynPat) (path: SyntaxVisitorPath) =
 
 let rec private tryMatchedExpression (pat: SynPat) (path: SyntaxVisitorPath) =
     match path with
-    | SyntaxNode.SynPat(SynPat.Paren _ | SynPat.Typed _ as wrapper) :: rest -> tryMatchedExpression wrapper rest
+    | SyntaxNode.SynPat(SynPat.Paren _ | SynPat.Typed _ | SynPat.As _ as wrapper) :: rest -> tryMatchedExpression wrapper rest
     | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) :: _ when isSame headPat pat -> ValueSome(struct (body, path))
     | SyntaxNode.SynMatchClause(SynMatchClause(pat = clausePat)) :: SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee) as matchExpr) :: rest when
         isSame clausePat pat
@@ -175,6 +175,7 @@ let private tryWholeArgument (pat: SynPat) (path: SyntaxVisitorPath) =
         match path with
         | SyntaxNode.SynPat(SynPat.Paren(pat = inner) | SynPat.Typed(pat = inner) as wrapper) :: rest when isSame inner pat ->
             outermost wrapper rest
+        | SyntaxNode.SynPat(SynPat.As _ as wrapper) :: rest -> outermost wrapper rest
         | _ -> struct (pat, path)
 
     let struct (argument, headPath) = outermost pat path
@@ -468,6 +469,9 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | SynPat.Named(ident = SynIdent(ident, _))
         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ ident ]); argPats = SynArgPats.Pats []) -> this.EnqueueValue source ident
         | SynPat.Tuple _ when not (isParameterList pat path) -> this.AddOrFail source (tryPatChanges source.Text toStruct pat path)
+        | SynPat.As(lhsPat = lhs; rhsPat = rhs) ->
+            this.IntoPattern source lhs (SyntaxNode.SynPat pat :: path)
+            this.IntoPattern source rhs (SyntaxNode.SynPat pat :: path)
         | _ -> ()
 
     member this.FlowOut (source: Source) (node: SynExpr) (path: SyntaxVisitorPath) =
@@ -568,6 +572,10 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
     member this.RetargetValue (source: Source) (struct (value, path): struct (SynExpr * SyntaxVisitorPath)) =
         this.Retarget source value path
 
+    member this.FromMatched (source: Source) (struct (matched, matchedPath): struct (SynExpr * SyntaxVisitorPath)) =
+        this.Retarget source matched matchedPath
+        this.FlowOut source matched matchedPath
+
     member this.RetargetResults (source: Source) (clauses: SynMatchClause list) (path: SyntaxVisitorPath) =
         for SynMatchClause(resultExpr = result) as clause in clauses do
             this.Retarget source result (SyntaxNode.SynMatchClause clause :: path)
@@ -587,6 +595,11 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             |> List.exists (fun (SynMatchClause(pat = pat)) -> tryPatternIdent pat |> ValueOption.exists isDeclared)
             ->
             this.Retarget source scrutinee (node :: path)
+        | SyntaxNode.SynPat(SynPat.As(lhsPat = lhs; rhsPat = rhs) as pat) when
+            tryPatternIdent lhs |> ValueOption.exists isDeclared
+            || tryPatternIdent rhs |> ValueOption.exists isDeclared
+            ->
+            tryMatchedExpression pat path |> ValueOption.iter (this.FromMatched source)
         | SyntaxNode.SynPat(SynPat.Typed(pat = inner; targetType = annotation)) when tryPatternIdent inner |> ValueOption.exists isDeclared ->
             this.AddAnnotation source annotation
         | SyntaxNode.SynTypeDefn(SynTypeDefn(
@@ -685,7 +698,8 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when isParameterList parameter parameterPath -> false
         | ValueSome(struct (parameter, parameterPath)) ->
             match parameter with
-            | SynPat.Typed _ -> this.IntoPattern definition parameter parameterPath
+            | SynPat.Typed _
+            | SynPat.As _ -> this.IntoPattern definition parameter parameterPath
             | SynPat.Tuple _ -> this.AddOrFail definition (tryPatChanges definition.Text toStruct parameter parameterPath)
             | _ -> ()
 
@@ -735,7 +749,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                 this.AddAnnotation source annotation
 
             match tryMatchedExpression tuple path, tryWholeArgument tuple path with
-            | ValueSome(struct (matched, matchedPath)), _ -> this.Retarget source matched matchedPath
+            | ValueSome matched, _ -> this.FromMatched source matched
             | ValueNone, ValueSome(struct (name, group)) -> this.EnqueueParameter source name group ValueNone
             | ValueNone, ValueNone -> ()
         | CaretNode.Type(tuple, annotated, isWholeAnnotation) ->
