@@ -622,4 +622,16 @@ let pair =
     2
 """,
              "1,")>]
+[<InlineData("""
+type Pair = int * int
+let pair: Pair = (1, 2)
+let (a, b) = pair
+""",
+             "1, 2")>]
+[<InlineData("""
+type Pair = int * int
+let pair: Pair = (1, 2)
+let (a, b) = pair
+""",
+             "a, b")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
