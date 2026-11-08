@@ -336,12 +336,17 @@ module private FunctionExtraction =
     let private closureCannotCapture (captures: Captures) =
         captures.UsesBase || captures.UsesStructThis
 
+    let private returnTypeOf (extraction: Extraction) =
+        match tryFunctionTypeText extraction.CheckResults extraction.Target with
+        | ValueSome functionType -> $" : {functionType}"
+        | ValueNone -> ""
+
     let private curriedFunction (extraction: Extraction) (captures: Captures) (annotate: Parameter -> bool) =
         let name = uniqueName "extractedFunction" extraction.Names
         let application = $"{name} {curriedParameters never captures.Parameters}"
 
         struct {|
-            Header = $"{name} {curriedParameters annotate captures.Parameters}"
+            Header = $"{name} {curriedParameters annotate captures.Parameters}{returnTypeOf extraction}"
             Call =
                 if callNeedsParentheses extraction.Target then
                     $"({application})"
@@ -383,7 +388,7 @@ module private FunctionExtraction =
                 let name = uniqueName "ExtractedMethod" extraction.Names
 
                 let header =
-                    $"{callee.Declaration}{name}{tupledParameters annotate captures.Parameters}"
+                    $"{callee.Declaration}{name}{tupledParameters annotate captures.Parameters}{returnTypeOf extraction}"
 
                 let call = $"{callee.Receiver}.{name}{tupledParameters never captures.Parameters}"
                 tryDeclareAfterMember extraction memberRange header call)
