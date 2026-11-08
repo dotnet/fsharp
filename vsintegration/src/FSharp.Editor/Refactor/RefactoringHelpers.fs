@@ -125,17 +125,33 @@ let private isSkippedDirective (line: string) =
     || startsWithDirective code "#else"
     || startsWithDirective code "#endif"
 
-let private scanLine (tokenizer: FSharpSourceTokenizer) (line: string) (state: FSharpTokenizerLexState) =
+let private scanLine (tokenizer: FSharpSourceTokenizer) (onToken: FSharpTokenInfo -> unit) (line: string) (state: FSharpTokenizerLexState) =
     let lineTokenizer = tokenizer.CreateLineTokenizer line
 
     let rec loop state =
         match lineTokenizer.ScanToken state with
-        | Some _, next -> loop next
+        | Some token, next ->
+            onToken token
+            loop next
         | None, next -> next
 
     loop state
 
-let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
+let private identifierText (line: string) (token: FSharpTokenInfo) =
+    let text = line.AsSpan(token.LeftColumn, token.RightColumn - token.LeftColumn + 1)
+
+    if text.Length > 4 && text.StartsWith("``".AsSpan(), StringComparison.Ordinal) then
+        text.Slice(2, text.Length - 4).ToString()
+    else
+        text.ToString()
+
+let private scanInactiveBranches
+    (sourceText: SourceText)
+    (defines: string list)
+    (langVersion: string)
+    (literalLines: HashSet<int>)
+    (names: HashSet<string>)
+    =
     let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
     let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
     let mutable fileState = FSharpTokenizerLexState.Initial
@@ -146,42 +162,35 @@ let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: strin
         let inInactiveBranch = isSkipped fileState && not (isSkippedDirective text)
 
         if inInactiveBranch && startsInsideString branchState then
-            lines.Add line.LineNumber |> ignore
+            literalLines.Add line.LineNumber |> ignore
+
+        let addIdentifier (token: FSharpTokenInfo) =
+            if token.CharClass = FSharpTokenCharKind.Identifier then
+                names.Add(identifierText text token) |> ignore
 
         branchState <-
             if inInactiveBranch then
-                scanLine branchTokenizer text branchState
+                scanLine branchTokenizer addIdentifier text branchState
             else
                 FSharpTokenizerLexState.Initial
 
-        fileState <- scanLine fileTokenizer text fileState
+        fileState <- scanLine fileTokenizer ignore text fileState
 
 let private linesAfterFirst (m: range) =
     seq { for line in m.StartLine + 1 .. m.EndLine -> Line.toZ line }
 
-let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
-    let lines =
-        (HashSet<int>(), parseTree)
-        ||> ParsedInput.fold (fun lines _ node ->
-            match node with
-            | SyntaxNode.SynExpr(SynExpr.Const(range = m))
-            | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
-            | SyntaxNode.SynPat(SynPat.Const(range = m)) -> lines.UnionWith(linesAfterFirst m)
-            | _ -> ()
+let private linesInsideLiterals (parseTree: ParsedInput) =
+    (HashSet<int>(), parseTree)
+    ||> ParsedInput.fold (fun lines _ node ->
+        match node with
+        | SyntaxNode.SynExpr(SynExpr.Const(range = m))
+        | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
+        | SyntaxNode.SynPat(SynPat.Const(range = m)) -> lines.UnionWith(linesAfterFirst m)
+        | _ -> ()
 
-            lines)
+        lines)
 
-    let directives =
-        match parseTree with
-        | ParsedInput.ImplFile file -> file.Trivia.ConditionalDirectives
-        | ParsedInput.SigFile file -> file.Trivia.ConditionalDirectives
-
-    if not directives.IsEmpty then
-        linesInsideInactiveLiterals sourceText defines langVersion lines
-
-    lines
-
-let usedNames (parseTree: ParsedInput) =
+let private usedNames (parseTree: ParsedInput) =
     (HashSet<string>(StringComparer.Ordinal), parseTree)
     ||> ParsedInput.fold (fun names _ node ->
         match node with
@@ -194,6 +203,20 @@ let usedNames (parseTree: ParsedInput) =
         | _ -> ()
 
         names)
+
+let private literalLinesAndUsedNames (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
+    let literalLines = linesInsideLiterals parseTree
+    let names = usedNames parseTree
+
+    let directives =
+        match parseTree with
+        | ParsedInput.ImplFile file -> file.Trivia.ConditionalDirectives
+        | ParsedInput.SigFile file -> file.Trivia.ConditionalDirectives
+
+    if not directives.IsEmpty then
+        scanInactiveBranches sourceText defines langVersion literalLines names
+
+    struct (literalLines, names)
 
 let uniqueName (baseName: string) (used: HashSet<string>) =
     Seq.initInfinite (fun i -> if i = 0 then baseName else $"{baseName}{i}")
@@ -700,6 +723,9 @@ let prepareExtraction
         let! defines, langVersion = document.GetFsharpParsingOptionsAsync provider
         let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync provider
 
+        let struct (literalLines, names) =
+            literalLinesAndUsedNames sourceText parseTree defines langVersion
+
         return
             {
                 Context = context
@@ -708,9 +734,9 @@ let prepareExtraction
                 Target = target
                 CheckResults = checkResults
                 IndentSize = options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
-                LiteralLines = linesInsideLiterals sourceText parseTree defines langVersion
+                LiteralLines = literalLines
                 LineBreak = lineBreakOf sourceText
-                Names = usedNames parseTree
+                Names = names
             }
     }
 
