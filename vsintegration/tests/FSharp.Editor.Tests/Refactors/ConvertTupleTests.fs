@@ -351,6 +351,18 @@ let (struct (c, d) as alias) = struct (1, 2)
 let struct (a, b) = alias
 """)>]
 [<InlineData("""
+let mutable pair = (1, 2)
+let other: int * int = (3, 4)
+pair <- other
+let (a, b) = pair
+""",
+             """
+let mutable pair = struct (1, 2)
+let other: struct (int * int) = struct (3, 4)
+pair <- other
+let struct (a, b) = pair
+""")>]
+[<InlineData("""
 let sum ((a, b) as p) = let (c, d) = p in a + c
 let total = sum (1, 2)
 """,

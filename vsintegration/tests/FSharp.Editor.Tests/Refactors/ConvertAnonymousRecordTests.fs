@@ -267,6 +267,16 @@ let typed: {| A: int |} = alias
 let ((person: struct {| A: int |}) as alias) = struct {| A = 1 |}
 let typed: struct {| A: int |} = alias
 """)>]
+[<InlineData("""
+let mutable person = {| A = 1 |}
+let other: {| A: int |} = {| A = 2 |}
+person <- other
+""",
+             """
+let mutable person = struct {| A = 1 |}
+let other: struct {| A: int |} = struct {| A = 2 |}
+person <- other
+""")>]
 let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
     convertsBothWays [ "A = 1"; "A: int" ] reference structs
 

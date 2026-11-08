@@ -252,6 +252,16 @@ let private tryRecordFieldValue (tree: ParsedInput) (useRange: range) =
         | SyntaxNode.SynExpr(SynExpr.Record(recordFields = fields) as record) -> tryFieldValue path record fields
         | _ -> None)
 
+let private tryAssignedValue (tree: ParsedInput) (useRange: range) =
+    (useRange.Start, tree)
+    ||> ParsedInput.tryPickLast (fun path node ->
+        match node with
+        | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ids); expr = value) as assignment) when
+            List.tryLast ids |> Option.exists (endsAt useRange.End)
+            ->
+            Some(value, SyntaxNode.SynExpr assignment :: path)
+        | _ -> None)
+
 let private tryNamedBinding (tree: ParsedInput) (declaration: range) =
     (ValueNone, tree)
     ||> ParsedInput.fold (fun found path node ->
@@ -561,6 +571,8 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
             | ValueSome(struct (name, group)), Some index -> this.EnqueueParameter source name group (ValueSome index)
             | _ -> ()
         | SyntaxNode.SynExpr(SynExpr.Record(recordFields = fields)) :: _ -> this.FlowOutOfRecordField source node fields
+        | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ids); expr = value)) :: _ when isSame value node ->
+            List.tryLast ids |> Option.iter (this.EnqueueValue source)
         | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses) as matchExpr) :: rest when isSame scrutinee node ->
             for SynMatchClause(pat = pat) as clause in clauses do
                 this.IntoPattern source pat (SyntaxNode.SynMatchClause clause :: SyntaxNode.SynExpr matchExpr :: rest)
@@ -701,7 +713,10 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
         }
 
     member this.FlowOutOfValueUse (useSource: Source) (useRange: range) =
-        match tryRecordFieldValue useSource.Tree useRange with
+        match
+            tryRecordFieldValue useSource.Tree useRange
+            |> Option.orElseWith (fun () -> tryAssignedValue useSource.Tree useRange)
+        with
         | Some(value, path) -> this.Retarget useSource value path
         | None ->
             tryUseNode useSource.Tree useRange
