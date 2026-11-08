@@ -146,6 +146,7 @@ module private DotLambdaConversion =
                     && (identifiers |> List.filter (hasName parameter.idText) |> List.length) = 1
                     && not (List.exists canBeCapturedByGeneratedArgument identifiers)
                     && not (hasCommentIn comments (Range.withEnd root.idRange.End lambda.Range))
+                    && lastOffsideSensitiveLine body = root.idRange.StartLine
                     ->
                     Some
                         {
