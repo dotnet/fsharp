@@ -66,6 +66,25 @@ module Use =
     let constrained (x: {receiverType}) = x.Constrained()
 """
 
+let private unmanagedOnStructOf fieldType =
+    $"""namespace Lib
+
+open System.Runtime.CompilerServices
+
+[<Extension>]
+type ConstrainedExtensions =
+    [<Extension>]
+    static member Constrained<'T when 'T : unmanaged>(value: 'T) = value
+
+namespace App
+
+[<Struct>]
+type Record = {{ Field: {fieldType} }}
+
+module Use =
+    let constrained (x: Record) = x.Constrained()
+"""
+
 let extensionOpens =
     scenarios
         [
@@ -104,6 +123,14 @@ let extensionOpens =
             ("a C# extension on an enum type parameter does not extend a number", constrainedOn "enum<int>" "int", [||])
 
             ("a C# extension on a delegate type parameter does not extend a string", constrainedOn "delegate<unit, unit>" "string", [||])
+
+            ("a C# extension on an unmanaged type parameter extends a number", constrainedOn "unmanaged" "int", [| "open Lib" |])
+
+            ("a C# extension on an unmanaged type parameter extends a struct of numbers", unmanagedOnStructOf "int", [| "open Lib" |])
+
+            ("a C# extension on an unmanaged type parameter does not extend a struct with a managed field",
+             unmanagedOnStructOf "string",
+             [||])
 
             ("only the modules whose F# extension member extends the receiver",
              """module Module1

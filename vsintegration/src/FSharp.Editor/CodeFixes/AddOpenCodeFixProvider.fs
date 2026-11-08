@@ -210,10 +210,50 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             && candidate.Accessibility.IsPublic
             && candidate.CurriedParameterGroups |> Seq.forall (fun group -> group.Count = 0))
 
+    let unmanagedPrimitives =
+        HashSet<string>(
+            [
+                "System.Boolean"
+                "System.Byte"
+                "System.SByte"
+                "System.Int16"
+                "System.UInt16"
+                "System.Int32"
+                "System.UInt32"
+                "System.Int64"
+                "System.UInt64"
+                "System.IntPtr"
+                "System.UIntPtr"
+                "System.Char"
+                "System.Single"
+                "System.Double"
+                "System.Decimal"
+            ],
+            StringComparer.Ordinal
+        )
+
+    let rec isUnmanaged (visiting: string list) (definition: FSharpEntity) =
+        match definition.TryFullName with
+        | None -> false
+        | Some name when unmanagedPrimitives.Contains name -> true
+        | Some name when List.contains name visiting -> false
+        | Some name ->
+            let isUnmanagedField (field: FSharpField) =
+                field.IsStatic
+                || (let fieldType = field.FieldType.StripAbbreviations()
+
+                    fieldType.HasTypeDefinition
+                    && isUnmanaged (name :: visiting) fieldType.TypeDefinition)
+
+            definition.IsEnum
+            || (definition.IsValueType
+                && definition.GenericParameters.Count = 0
+                && Seq.forall isUnmanagedField definition.FSharpFields)
+
     let definitionMeetsKindConstraint (definition: FSharpEntity) (typeConstraint: FSharpGenericParameterConstraint) =
         (not typeConstraint.IsNonNullableValueTypeConstraint || definition.IsValueType)
         && (not typeConstraint.IsReferenceTypeConstraint || not definition.IsValueType)
-        && (not typeConstraint.IsUnmanagedConstraint || definition.IsValueType)
+        && (not typeConstraint.IsUnmanagedConstraint || isUnmanaged [] definition)
         && (not typeConstraint.IsEnumConstraint || definition.IsEnum)
         && (not typeConstraint.IsDelegateConstraint || definition.IsDelegate)
         && (not typeConstraint.IsRequiresDefaultConstructorConstraint
