@@ -327,6 +327,15 @@ let f (xs: string list) =
 """,
              "xs |> Seq.map _.Substring(n)",
              "")>]
+[<InlineData("Mutable local written by a closure the selection calls",
+             """
+let f () =
+    let mutable n = 0
+    let bump () = n <- n + 1
+    (bump (); n)
+""",
+             "(bump (); n)",
+             "")>]
 [<InlineData("Mutable local read at once becomes a parameter",
              """
 let f () =
