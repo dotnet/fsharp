@@ -253,6 +253,17 @@ let ``Shadowing default converts both ways`` (_scenario: string, fsharpForm: str
         x <- x + 1
         x""",
              "?x")>]
+[<InlineData("body after a multi-line comment",
+             """type C() =
+    static member M([<Optional; DefaultParameterValue(7)>] x: int) =
+        (* first
+           second *) x + 1""",
+             """type C() =
+    static member M(?x: int) =
+        (* first
+           second *) let x = defaultArg x 7
+                     x + 1""",
+             "x:")>]
 let ``Optional parameter converts between the F# and the .NET form`` (_scenario: string, before: string, after: string, marker: string) =
     assertRefactored moduleMWithInterop marker before after
 
@@ -283,6 +294,21 @@ type C() =
 
     type C() =
         static member M([<Optional; DefaultParameterValue(0)>] x: int) = x""")>]
+[<InlineData("own DefaultParameterValueAttribute hides the opened one",
+             """open System.Runtime.InteropServices
+
+type DefaultParameterValueAttribute(value: int) =
+    inherit System.Attribute()
+
+type C() =
+    static member M(?x: int) = defaultArg x 7""",
+             """open System.Runtime.InteropServices
+
+type DefaultParameterValueAttribute(value: int) =
+    inherit System.Attribute()
+
+type C() =
+    static member M([<System.Runtime.InteropServices.Optional; System.Runtime.InteropServices.DefaultParameterValue(7)>] x: int) = x""")>]
 let ``Attributes are qualified unless an enclosing module opens System.Runtime.InteropServices``
     (_scenario: string, before: string, after: string)
     =
@@ -390,6 +416,18 @@ type Shadow =
 
 let a = Counter.Next(?step = Microsoft.FSharp.Core.ValueOption.ValueSome 2)
 let b = Counter.Next(?step = Microsoft.FSharp.Core.ValueOption.ValueNone)""")>]
+[<InlineData("generic instance member",
+             """type Counter() =
+    member _.Next<'T>([<Optional; DefaultParameterValue(1)>] step: int) =
+        step + sizeof<'T>
+
+let a = Counter().Next<string>(?step = Some 2)""",
+             """type Counter() =
+    member _.Next<'T>([<Struct>] ?step: int) =
+        let step = defaultValueArg step 1
+        step + sizeof<'T>
+
+let a = Counter().Next<string>(?step = ValueSome 2)""")>]
 let ``Converting to a struct optional parameter`` (_scenario: string, before: string, after: string) =
     assertRefactoredWith structTitle moduleMWithInterop "step:" before after
 
