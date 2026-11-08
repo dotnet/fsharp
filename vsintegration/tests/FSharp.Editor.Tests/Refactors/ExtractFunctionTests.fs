@@ -1,6 +1,7 @@
 module FSharp.Editor.Tests.Refactors.ExtractFunctionTests
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
 
@@ -54,6 +55,21 @@ let private contextFor (setting: ParameterAnnotationSetting) (code: string) =
 let private extractedAtWith setting title code span =
     use context = contextFor setting code
     refactoredText (new FSharpExtractFunctionRefactoring()) context title code span
+
+let private extractedLocalFunction setting code span =
+    use context = contextFor setting code
+
+    let text =
+        refactoredText (new FSharpExtractFunctionRefactoring()) context extractToLocalFunction code span
+
+    if setting <> ParameterAnnotationSetting.Never then
+        let _, checkResults =
+            (RoslynTestHelpers.GetLastDocument context.Solution).GetFSharpParseAndCheckResultsAsync "test"
+            |> CancellableTask.runSynchronouslyWithoutCancellation
+
+        Assert.Empty(checkResults.Diagnostics)
+
+    text
 
 let private titlesAt code span =
     use context = contextFor ParameterAnnotationSetting.Always code
@@ -226,10 +242,21 @@ let f (x: int64) =
     let extractedFunction (x: int64) = System.Math.Abs x
     extractedFunction x
 """)>]
+[<InlineData("WhenNeeded",
+             """
+let f (xs: string list) =
+    xs |> List.map (fun x -> x.Length)
+""",
+             "fun x -> x.Length",
+             """
+let f (xs: string list) =
+    let extractedFunction () : string -> int = fun x -> x.Length
+    xs |> List.map (extractedFunction ())
+""")>]
 let ``Parameter annotations follow the option`` (setting: string, code: string, selected: string, expected: string) =
     let code = fileOf code
 
-    Assert.Equal(fileOf expected, extractedAtWith (settingOf setting) extractToLocalFunction code (selectionOf code selected))
+    Assert.Equal(fileOf expected, extractedLocalFunction (settingOf setting) code (selectionOf code selected))
 
 [<Theory>]
 [<InlineData("Variants follow what the selection uses", area, "w * h + 1", localAndModule)>]
