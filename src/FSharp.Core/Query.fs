@@ -1155,6 +1155,12 @@ module Query =
     /// Given an expression involving mutable tuples logically corresponding to a "yield" or "select" with the given
     /// immutable-to-mutable conversion information, convert it back to an expression involving immutable tuples or records.
     let rec ConvMutableToImmutable conv mutExpr =
+        match mutExpr with
+        // The conversion reads the expression once for each part it builds. The lets in front of a construction, which
+        // a record with fields written out of order has, stay in front of it, so that each is evaluated once.
+        | Let (v, e, rest) when (match conv with NoConv -> false | _ -> true) -> Expr.Let (v, e, ConvMutableToImmutable conv rest)
+        | _ ->
+
         match conv with
         | TupleConv (isStruct, convs) ->
             let elements = convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i)))
@@ -1700,13 +1706,7 @@ module Query =
                 IsIQueryableTy immutSourceTy
             match mutSource with
             | TransInnerResult.Select(selectCanElim, isQTy, selectSource, selectVar, selectBody) when isQTy = mustReturnIQueryable ->
-                // The conversion reads the body once for each of its parts. The lets in front of the construction, which
-                // a record with fields written out of order has, stay in front of it, so that each is evaluated once.
-                let rec convertUnderLets body =
-                    match body with
-                    | Let(v, e, rest) -> Expr.Let(v, e, convertUnderLets rest)
-                    | _ -> ConvMutableToImmutable sourceConv body
-                MakeSelect(selectCanElim, isQTy, CommitTransInnerResult selectSource, selectVar, convertUnderLets selectBody)
+                MakeSelect(selectCanElim, isQTy, CommitTransInnerResult selectSource, selectVar, ConvMutableToImmutable sourceConv selectBody)
             | _ ->
             let immutVar = Var("after", immutSourceElemTy)
             let mutVar, mutToImmutSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar, Expr.Var immutVar)
