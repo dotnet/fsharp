@@ -44,16 +44,31 @@ let private startsAt (position: pos) (ident: Ident) =
 let private endsAt (position: pos) (ident: Ident) =
     Position.posEq ident.idRange.End position
 
-let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int) (index: int voption) =
-    if group >= mfv.CurriedParameterGroups.Count then
-        false
+let rec private skipArrows (groups: int) (ty: FSharpType) =
+    if groups > 0 && ty.IsFunctionType then
+        skipArrows (groups - 1) ty.GenericArguments[1]
     else
+        ty
+
+let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int) (index: int voption) =
+    if group < mfv.CurriedParameterGroups.Count then
         let parameters = mfv.CurriedParameterGroups[group]
 
         match index with
         | ValueSome index when index < parameters.Count -> parameters[index].Type.IsGenericParameter
         | ValueSome _ -> false
         | ValueNone -> parameters.Count = 1 && parameters[0].Type.IsGenericParameter
+    else
+        match mfv.FullTypeSafe |> Option.map (skipArrows group) with
+        | Some ty when ty.IsFunctionType ->
+            let domain = ty.GenericArguments[0]
+
+            match index with
+            | ValueSome index when domain.IsTupleType && index < domain.GenericArguments.Count ->
+                domain.GenericArguments[index].IsGenericParameter
+            | ValueSome _ -> false
+            | ValueNone -> domain.IsGenericParameter
+        | _ -> false
 
 let rec private tryPatternIdent (pat: SynPat) =
     match pat with
