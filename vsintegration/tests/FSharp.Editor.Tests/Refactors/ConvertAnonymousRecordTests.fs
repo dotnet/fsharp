@@ -368,22 +368,30 @@ let total = C().Grow(p = struct {| Size = 1 |}, by = 1)
 let ``Member parameter converts with the arguments given for it by position or by name`` (reference: string, structs: string) =
     convertsBothWays [ "Size = 1"; "Size: int" ] reference structs
 
-[<Fact>]
-let ``Generic parameter stops the conversion`` () =
-    let reference =
-        """
+[<Theory>]
+[<InlineData("""
 let identity<'T> (x: 'T) = x
 let a = identity {| A = 1 |}
 let b = identity<{| B: int |}> {| B = 2 |}
-"""
-
-    let structs =
-        """
+""",
+             """
 let identity<'T> (x: 'T) = x
 let a = identity struct {| A = 1 |}
 let b = identity<{| B: int |}> {| B = 2 |}
-"""
-
+""")>]
+[<InlineData("""
+let identity<'T> (x: 'T) = x
+let alias = identity
+let a = alias {| A = 1 |}
+let b: {| B: int |} = alias {| B = 2 |}
+""",
+             """
+let identity<'T> (x: 'T) = x
+let alias = identity
+let a = alias struct {| A = 1 |}
+let b: {| B: int |} = alias {| B = 2 |}
+""")>]
+let ``Generic parameter stops the conversion`` (reference: string, structs: string) =
     convertsBothWays [ "A = 1" ] reference structs
 
 [<Fact>]
