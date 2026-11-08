@@ -302,6 +302,11 @@ let f x =
              "module M\n\nlet r = combine 1 [\n            #if ALT\n            \"\"\"first\n    preserved\n            last\"\"\"\n            #else\n            \"\"\n            #endif\n            ]\n",
              "1",
              "module M\n\nlet r =\n    let extracted = 1\n    combine extracted [\n        #if ALT\n        \"\"\"first\n    preserved\n            last\"\"\"\n        #else\n        \"\"\n        #endif\n        ]\n")>]
+[<InlineData("Name does not collide with an identifier of an inactive branch",
+             extractToLetBinding,
+             "module M\n\nlet f () =\n    let n = (1 + 2)\n#if ALT\n    n + extracted\n#else\n    n\n#endif\n",
+             "(1 + 2)",
+             "module M\n\nlet f () =\n    let extracted1 = 1 + 2\n    let n = extracted1\n#if ALT\n    n + extracted\n#else\n    n\n#endif\n")>]
 [<InlineData("Constant in a module-level declaration becomes a literal in front of it",
              extractToLiteral,
              greet,
