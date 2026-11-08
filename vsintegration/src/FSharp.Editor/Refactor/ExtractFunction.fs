@@ -26,7 +26,8 @@ module private FunctionExtraction =
         {
             Name: string
             Type: string
-            IsMutable: bool
+            Value: FSharpMemberOrFunctionOrValue
+            Declaration: range
             Uses: range list
         }
 
@@ -43,10 +44,10 @@ module private FunctionExtraction =
 
     let private tryEnclosingDeclaration (path: SyntaxVisitorPath) =
         path
-        |> Seq.tryPickV (function
-            | SyntaxNode.SynMemberDefn(SynMemberDefn.Member(range = m) | SynMemberDefn.LetBindings(range = m))
-            | SyntaxNode.SynModule(SynModuleDecl.Let(range = m) | SynModuleDecl.Expr(range = m)) -> ValueSome m
-            | _ -> ValueNone)
+        |> Seq.tryFindV (function
+            | SyntaxNode.SynMemberDefn(SynMemberDefn.Member _ | SynMemberDefn.LetBindings _)
+            | SyntaxNode.SynModule(SynModuleDecl.Let _ | SynModuleDecl.Expr _) -> true
+            | _ -> false)
 
     let tryTargetInDeclaration (sourceText: SourceText) (parseTree: ParsedInput) (selection: TextSpan) =
         trySelectedTarget sourceText parseTree selection
@@ -112,7 +113,8 @@ module private FunctionExtraction =
                 {
                     Name = value.DisplayName
                     Type = fullType.FormatWithConstraints symbolUse.DisplayContext
-                    IsMutable = value.IsMutable
+                    Value = value
+                    Declaration = declaration
                     Uses = [ symbolUse.Range ]
                 }
 
@@ -164,9 +166,9 @@ module private FunctionExtraction =
         else
             ValueNone
 
-    let readsMutableInDelayedCode (expr: SynExpr) (parameters: Parameter list) =
+    let mutableCapturedByClosure (checkResults: FSharpCheckFileResults) (declaration: SyntaxNode) (parameters: Parameter list) =
         let delayed =
-            (ResizeArray<range>(), [ SyntaxNode.SynExpr expr ])
+            (ResizeArray<range>(), [ declaration ])
             ||> SyntaxNodes.fold (fun delayed _ node ->
                 match node with
                 | SyntaxNode.SynExpr(SynExpr.Lambda(range = m) | SynExpr.DotLambda(range = m) | SynExpr.MatchLambda(range = m) | SynExpr.Lazy(
@@ -177,11 +179,15 @@ module private FunctionExtraction =
 
                 delayed)
 
+        let capturedBy (parameter: Parameter) (code: range) (symbolUse: FSharpSymbolUse) =
+            Range.rangeContainsRange code symbolUse.Range
+            && not (Range.rangeContainsRange code parameter.Declaration)
+
         parameters
         |> List.exists (fun parameter ->
-            parameter.IsMutable
-            && parameter.Uses
-               |> List.exists (fun m -> delayed |> Seq.exists (fun code -> Range.rangeContainsRange code m)))
+            parameter.Value.IsMutable
+            && checkResults.GetUsesOfSymbolInFile parameter.Value
+               |> Array.exists (fun symbolUse -> delayed |> Seq.exists (fun code -> capturedBy parameter code symbolUse)))
 
     let assignsCapturedValue (expr: SynExpr) (parameters: Parameter list) =
         let assigned =
@@ -400,16 +406,16 @@ module private FunctionExtraction =
         | ParameterAnnotationSetting.WhenNeeded -> parameter.Uses |> List.exists (fun m -> needingType.Contains m.Start)
         | ParameterAnnotationSetting.Never -> false
 
-    let offer (extraction: Extraction) (declaration: range) (setting: ParameterAnnotationSetting) =
+    let offer (extraction: Extraction) (declaration: SyntaxNode) (setting: ParameterAnnotationSetting) =
         let target = extraction.Target
 
         let selection =
             RoslynHelpers.TextSpanToFSharpRange(extraction.Context.Document.FilePath, target.Extracted, extraction.SourceText)
 
-        match tryCaptures extraction.CheckResults selection declaration extraction.Context.CancellationToken with
+        match tryCaptures extraction.CheckResults selection declaration.Range extraction.Context.CancellationToken with
         | ValueSome captures when
             not (assignsCapturedValue target.Expr captures.Parameters)
-            && not (readsMutableInDelayedCode target.Expr captures.Parameters)
+            && not (mutableCapturedByClosure extraction.CheckResults declaration captures.Parameters)
             ->
             let annotate =
                 annotationOf setting (positionsNeedingType target.Expr captures.MethodNameEnds)
