@@ -113,6 +113,7 @@ let ``Shorthand converts to lambda`` (marker: string, before: string, after: str
 [<InlineData("<@ _.P @>")>]
 [<InlineData("_.Trim()\n            .Length")>]
 [<InlineData("_.Replace(\"a\",\n        \"b\").Trim()")>]
+[<InlineData("[ \" a \" ] |> List.map (fun s ->\n    s.Trim()\n        .Length)")>]
 [<InlineData("1 + 2")>]
 let ``No action`` (binding: string) =
     let code = inModule binding
