@@ -732,3 +732,45 @@ let ``Let of a division by a parameter keeps its block so that its failure is no
 
     Assert.True(hasBlock lambda)
     Assert.Throws<DivideByZeroException>(fun () -> run lambda 0 |> ignore) |> ignore
+
+/// A record with a division by a character, a divisor that is no number to convert
+type CharBox =
+    { Code: int }
+
+    static member (/)(b: CharBox, divisor: char) : char = char (b.Code / int divisor)
+
+[<Fact>]
+let ``Let of a division by a captured native integer is converted`` () =
+    let divisor = 2n
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<nativeint, nativeint>(fun a -> let half = a / divisor in half + half) @>
+
+    Assert.Equal(10n, lambda.Compile().Invoke 10n)
+
+[<Fact>]
+let ``Let of a remainder by a captured unsigned native integer is converted`` () =
+    let divisor = 4un
+
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression
+            <@ Func<unativeint, unativeint>(fun a -> let rest = a % divisor in rest + rest) @>
+
+    Assert.Equal(4un, lambda.Compile().Invoke 10un)
+
+[<Fact>]
+let ``Let of a division by a character with an operator of the user's is converted`` () =
+    let lambda =
+        LeafExpressionConverter.QuotationToLambdaExpression <@ Func<CharBox, char>(fun b -> let half = b / '\002' in half) @>
+
+    Assert.Equal('\001', lambda.Compile().Invoke { Code = 2 })
+
+[<Fact>]
+let ``Query that selects a let of a division by a captured native integer is translated`` () =
+    let divisor = 2n
+    let numbers = System.Linq.Queryable.AsQueryable [ 4n; 10n ]
+
+    let doubled = query { for n in numbers do select (let half = n / divisor in half + half) } |> Seq.toArray
+
+    Assert.Equal<nativeint[]>([| 4n; 10n |], doubled)

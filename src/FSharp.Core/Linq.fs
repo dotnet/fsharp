@@ -515,6 +515,26 @@ module LeafExpressionConverter =
             && (conversion.Operand :? ConstantExpression || isElementRead letVariables conversion.Operand)
         | _ -> isElementRead letVariables expr
 
+    /// A constant integer of a fixed width other than 0, which fails a division, and -1, which overflows the division of
+    /// the smallest integer. A native integer or a character is no such number, and 'Convert.ToDecimal' throws for
+    /// both: a division by one of those is taken as one that can fail.
+    let isDivisorThatCannotFail (divisor: ConstantExpression) =
+        match divisor.Value with
+        | null -> false
+        | value ->
+            match Type.GetTypeCode (value.GetType ()) with
+            | TypeCode.SByte
+            | TypeCode.Byte
+            | TypeCode.Int16
+            | TypeCode.UInt16
+            | TypeCode.Int32
+            | TypeCode.UInt32
+            | TypeCode.Int64
+            | TypeCode.UInt64 ->
+                let number = Convert.ToDecimal value
+                number <> 0m && number <> -1m
+            | _ -> false
+
     /// A division or remainder that cannot fail: one of floating point numbers, which give infinity or NaN, or one of
     /// integers by a constant other than 0 and -1, which overflows for the smallest integer
     let isSafeDivision (operation: BinaryExpression) =
@@ -523,9 +543,7 @@ module LeafExpressionConverter =
         && (Type.op_Equality (operation.Type, typeof<float>)
             || Type.op_Equality (operation.Type, typeof<float32>)
             || (match operation.Right with
-                | :? ConstantExpression as divisor when not (isNull divisor.Value) ->
-                    let value = Convert.ToDecimal divisor.Value
-                    value <> 0m && value <> -1m
+                | :? ConstantExpression as divisor -> isDivisorThatCannotFail divisor
                 | _ -> false))
 
     /// An addition, subtraction or multiplication of plain values, or a division that cannot fail: it runs no code of
