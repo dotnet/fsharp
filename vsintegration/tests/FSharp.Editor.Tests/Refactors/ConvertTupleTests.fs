@@ -655,6 +655,14 @@ let pair =
 """,
              "1,")>]
 [<InlineData("""
+let pair =
+    1,
+    2
+let sum (p: int * int) = p
+let total = sum pair
+""",
+             "int * int")>]
+[<InlineData("""
 type Pair = int * int
 let pair: Pair = (1, 2)
 let (a, b) = pair
