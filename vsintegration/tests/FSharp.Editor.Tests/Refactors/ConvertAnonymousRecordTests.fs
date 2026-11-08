@@ -259,6 +259,14 @@ let typed: {| A: int |} = person
 let (person: struct {| A: int |}) = struct {| A = 1 |}
 let typed: struct {| A: int |} = person
 """)>]
+[<InlineData("""
+let ((person: {| A: int |}) as alias) = {| A = 1 |}
+let typed: {| A: int |} = alias
+""",
+             """
+let ((person: struct {| A: int |}) as alias) = struct {| A = 1 |}
+let typed: struct {| A: int |} = alias
+""")>]
 let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
     convertsBothWays [ "A = 1"; "A: int" ] reference structs
 
@@ -416,6 +424,11 @@ let point = { X = 1 }
              "X = 1")>]
 [<InlineData("""
 let quoted = <@ {| A = 1 |} @>
+""",
+             "A = 1")>]
+[<InlineData("""
+type Person = {| A: int |}
+let person: Person = {| A = 1 |}
 """,
              "A = 1")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
