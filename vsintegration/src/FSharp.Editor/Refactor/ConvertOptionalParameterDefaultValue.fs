@@ -322,6 +322,14 @@ module private OptionalParameterDefaultValueConversion =
                    | ValueNone -> false
                | _ -> false)
 
+    let private interopAttributesResolveAt (checkResults: FSharpCheckFileResults) (position: pos) =
+        let resolves (name: string) =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> List.tryPick (fun assembly -> assembly.Contents.FindEntityByPath [ yield! interopServices; yield name ])
+            |> Option.exists (fun attribute -> checkResults.IsRelativeNameResolvableFromSymbol(position, [], attribute))
+
+        resolves "OptionalAttribute" && resolves "DefaultParameterValueAttribute"
+
     let tryToDotNetChanges
         (checkResults: FSharpCheckFileResults)
         (sourceText: SourceText)
@@ -357,7 +365,10 @@ module private OptionalParameterDefaultValueConversion =
         match found, attributes with
         | ValueSome found, ValueSome attributes when not (hasOptionalValBefore optionalValRange.Start headPat) ->
             let qualifier =
-                if hasInteropServicesOpenAt parameter.MemberName.idRange.Start parseTree then
+                if
+                    hasInteropServicesOpenAt parameter.MemberName.idRange.Start parseTree
+                    && interopAttributesResolveAt checkResults parameter.MemberName.idRange.Start
+                then
                     ""
                 else
                     String.Join(".", interopServices) + "."
@@ -460,7 +471,13 @@ module private OptionalParameterDefaultValueConversion =
             match trivia.EqualsRange with
             | Some equals when body.Range.StartLine > equals.EndLine ->
                 let line = sourceText.Lines[Line.toZ body.Range.StartLine]
-                ValueSome(TextChange(TextSpan(line.Start, 0), $"{String(' ', body.Range.StartColumn)}{declaration}{lineBreak}"))
+                let bodyStart = (spanOf sourceText body.Range).Start
+                let indent = String(' ', body.Range.StartColumn)
+
+                if sourceText.ToString(TextSpan.FromBounds(line.Start, bodyStart)).AsSpan().TrimStart(' ').IsEmpty then
+                    ValueSome(TextChange(TextSpan(line.Start, 0), $"{indent}{declaration}{lineBreak}"))
+                else
+                    ValueSome(TextChange(TextSpan(bodyStart, 0), $"{declaration}{lineBreak}{indent}"))
             | Some _ when body.Range.StartLine = body.Range.EndLine ->
                 let indent = String(' ', leadingSpaces memberLine + indentSize)
                 let bodyStart = (spanOf sourceText body.Range).Start
@@ -545,13 +562,17 @@ module private OptionalParameterDefaultValueConversion =
         (name: string)
         (useRange: range)
         =
+        let endsAtUse (func: SynExpr) =
+            Position.posEq func.Range.End useRange.End
+            || match func with
+               | SynExpr.TypeApp(expr = inner) -> Position.posEq inner.Range.End useRange.End
+               | _ -> false
+
         let arguments =
             (useRange.Start, parseTree)
             ||> ParsedInput.tryPickLast (fun _ node ->
                 match node with
-                | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arguments)) when
-                    Position.posEq func.Range.End useRange.End
-                    ->
+                | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arguments)) when endsAtUse func ->
                     Some arguments
                 | _ -> None)
 
