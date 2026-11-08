@@ -467,6 +467,20 @@ module C =
     let x = 1
 """,
              "namespace")>]
+[<InlineData("""
+namespace
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.
+    B
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
 
 [<Fact>]

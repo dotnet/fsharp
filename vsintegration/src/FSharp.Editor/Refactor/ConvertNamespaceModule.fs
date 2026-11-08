@@ -84,7 +84,7 @@ module private NamespaceModuleConversion =
         match parseTree with
         | ParsedInput.ImplFile(ParsedImplFileInput(
             contents = [ SynModuleOrNamespace(
-                             longId = namespacePath
+                             longId = (_ :: _ as namespacePath)
                              isRecursive = namespaceIsRecursive
                              kind = SynModuleOrNamespaceKind.DeclaredNamespace
                              decls = decls
@@ -105,6 +105,7 @@ module private NamespaceModuleConversion =
                     && moduleKeyword.StartLine = equals.EndLine
                     && firstDeclaration.Range.StartLine > equals.EndLine
                     && Position.posEq moduleRange.End (List.last declarations).Range.End
+                    && (List.last namespacePath).idRange.EndLine = namespaceKeyword.StartLine
                     && restOfLineIsBlank sourceText (List.last namespacePath).idRange
                     && List.forall (restOfLineIsBlankOrLineComment sourceText) opens
                     && not (hasIfDirectiveOnOrAbove equals.EndLine fileTrivia.ConditionalDirectives)
