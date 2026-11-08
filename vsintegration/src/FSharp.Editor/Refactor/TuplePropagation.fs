@@ -270,6 +270,17 @@ let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group:
 let private annotationChanges (sourceText: SourceText) (toStruct: bool) (annotation: SynType) =
     typeChanges sourceText toStruct true (stripParenTypes annotation)
 
+let rec private isTupleAbbreviation (source: Source) (annotation: SynType) =
+    match stripParenTypes annotation with
+    | SynType.App(typeName = typeName) -> isTupleAbbreviation source typeName
+    | SynType.LongIdent(SynLongIdent(id = ids)) ->
+        match List.tryLast ids |> Option.bind (symbolUseAt source) |> Option.map _.Symbol with
+        | Some(:? FSharpEntity as entity) ->
+            entity.IsFSharpAbbreviation
+            && entity.AbbreviatedType.StripAbbreviations().IsTupleType
+        | _ -> false
+    | _ -> false
+
 let private hasName (name: string) (parameter: FSharpParameter) =
     parameter.Name
     |> Option.exists (fun parameterName -> String.Equals(parameterName, name, StringComparison.Ordinal))
@@ -415,7 +426,10 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | ValueNone -> failed <- true
 
     member this.AddAnnotation (source: Source) (annotation: SynType) =
-        this.Add source (annotationChanges source.Text toStruct annotation)
+        if isTupleAbbreviation source annotation then
+            failed <- true
+        else
+            this.Add source (annotationChanges source.Text toStruct annotation)
 
     member _.Enqueue (key: string option) (slot: Slot) =
         match key with

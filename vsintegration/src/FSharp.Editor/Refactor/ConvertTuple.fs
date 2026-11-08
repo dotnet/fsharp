@@ -68,31 +68,21 @@ type internal FSharpConvertTupleRefactoring [<ImportingConstructor>] () =
 
                 match found with
                 | ValueSome caretNode when not (isInQuotation caretNode) && canChange sourceText caretNode ->
-                    let title =
-                        if isStructNode caretNode then
-                            SR.ConvertToReferenceTuple()
-                        else
-                            SR.ConvertToStructTuple()
+                    let! converted = TuplePropagation.tryConvert document caretNode (nameof FSharpConvertTupleRefactoring)
 
-                    let changedSolution =
-                        cancellableTask {
-                            let! converted = TuplePropagation.tryConvert document caretNode (nameof FSharpConvertTupleRefactoring)
+                    match converted with
+                    | ValueSome solution ->
+                        let title =
+                            if isStructNode caretNode then
+                                SR.ConvertToReferenceTuple()
+                            else
+                                SR.ConvertToStructTuple()
 
-                            return
-                                match converted with
-                                | ValueSome solution -> solution
-                                | ValueNone -> document.Project.Solution
-                        }
+                        let action =
+                            CodeAction.Create(title, Func<CancellationToken, Task<Solution>>(fun _ -> Task.FromResult solution), title)
 
-                    let action =
-                        CodeAction.Create(
-                            title,
-                            Func<CancellationToken, Task<Solution>>(fun cancellationToken ->
-                                CancellableTask.start cancellationToken changedSolution),
-                            title
-                        )
-
-                    context.RegisterRefactoring action
+                        context.RegisterRefactoring action
+                    | ValueNone -> ()
                 | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
