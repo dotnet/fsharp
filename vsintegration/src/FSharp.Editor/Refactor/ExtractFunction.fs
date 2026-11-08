@@ -203,6 +203,28 @@ module private FunctionExtraction =
         parameters
         |> List.exists (fun parameter -> parameter.Uses |> List.exists (fun m -> assigned.Contains m.Start))
 
+    let mutatesStructCopy (expr: SynExpr) (parameters: Parameter list) =
+        let receivers =
+            (HashSet<pos>(), [ SyntaxNode.SynExpr expr ])
+            ||> SyntaxNodes.fold (fun positions _ node ->
+                match node with
+                | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = head :: _ :: _)))
+                | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = head :: _ :: _)))
+                | SyntaxNode.SynExpr(SynExpr.DotGet(expr = SynExpr.Ident head))
+                | SyntaxNode.SynExpr(SynExpr.DotSet(targetExpr = SynExpr.Ident head))
+                | SyntaxNode.SynExpr(SynExpr.DotIndexedGet(objectExpr = SynExpr.Ident head))
+                | SyntaxNode.SynExpr(SynExpr.DotIndexedSet(objectExpr = SynExpr.Ident head))
+                | SyntaxNode.SynExpr(SynExpr.AddressOf(expr = SynExpr.Ident head)) -> positions.Add head.idRange.Start |> ignore
+                | _ -> ()
+
+                positions)
+
+        parameters
+        |> List.exists (fun parameter ->
+            parameter.Value.IsMutable
+            && parameter.Value.FullTypeSafe |> Option.exists isStruct
+            && parameter.Uses |> List.exists (fun m -> receivers.Contains m.Start))
+
     let rec private identifierArguments (argument: SynExpr) =
         match argument with
         | SynExpr.Ident ident -> [ ident ]
@@ -416,6 +438,7 @@ module private FunctionExtraction =
         | ValueSome captures when
             not (assignsCapturedValue target.Expr captures.Parameters)
             && not (mutableCapturedByClosure extraction.CheckResults declaration captures.Parameters)
+            && not (mutatesStructCopy target.Expr captures.Parameters)
             ->
             let annotate =
                 annotationOf setting (positionsNeedingType target.Expr captures.MethodNameEnds)

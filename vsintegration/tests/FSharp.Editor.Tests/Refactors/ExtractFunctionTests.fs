@@ -336,6 +336,21 @@ let f () =
 """,
              "(bump (); n)",
              "")>]
+[<InlineData("Mutable struct local the selection calls a member on",
+             """
+[<Struct>]
+type S =
+    val mutable X: int
+    new(x) = { X = x }
+    member self.Inc() = self.X <- self.X + 1
+
+let f () =
+    let mutable s = S(1)
+    s.Inc()
+    s.X
+""",
+             "s.Inc()",
+             "")>]
 [<InlineData("Mutable local read at once becomes a parameter",
              """
 let f () =
