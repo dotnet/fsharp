@@ -991,6 +991,8 @@ type internal TransparentCompiler
                     if
                         tcGlobals.langVersion <> tcConfig.langVersion
                         || tcGlobals.realsig <> tcConfig.realsig
+                        || tcGlobals.emitHotReloadClassStateMachines
+                           <> tcConfig.emitHotReloadClassStateMachines
                         || tcGlobals.pathMap <> tcConfig.pathMap
                     then
                         TcGlobals(
@@ -1007,6 +1009,7 @@ type internal TransparentCompiler
                             tcConfig.pathMap,
                             tcConfig.langVersion,
                             tcConfig.realsig,
+                            tcConfig.emitHotReloadClassStateMachines,
                             tcConfig.compilationMode
                         )
                     else

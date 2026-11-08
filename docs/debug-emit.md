@@ -26,11 +26,28 @@ Debugging information affects numerous user experiences:
 * **Profiling** results
 * **Code coverage** results
 
-Some experiences are un-implemented by F# including:
+Some debugger experiences remain incomplete in F# including:
 
 * **Autos** during debugging
-* **Edit and Continue**
-* **Hot reload**
+* Full IDE/debugger-host integration for **Edit and Continue** and **Hot Reload**. The compiler
+  has experimental metadata/IL/PDB delta support and a session API, but Visual Studio/vsdbg
+  active-statement plumbing is still separate host work.
+
+## Hot reload heap tracing
+
+The hot-reload metadata writer exposes a lightweight tracing hook for capturing heap sizes while iterating on delta emission. Set the environment variable `FSHARP_HOTRELOAD_TRACE_HEAPS=1` before running a targeted test, for example:
+
+```
+FSHARP_HOTRELOAD_TRACE_HEAPS=1 ./.dotnet/dotnet test --project tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Debug --no-build -- --filter-class "*FSharpDeltaMetadataWriterTests*"
+```
+
+Each delta emitted during the run prints a summary such as:
+
+```
+[fsharp-hotreload][heap-summary] baseline:string=1234 blob=2048 guid=256 | delta:string=64 blob=32 guid=0
+```
+
+The new service-level regressions (`property/event/async delta reports baseline heap offsets`) validate that `MetadataDelta.HeapOffsets` mirror the baseline reader before any heap reuse changes are made. Combine those tests with the trace output above to document the current string/blob footprint before adjusting the builders.
 
 ## Emitted information
 

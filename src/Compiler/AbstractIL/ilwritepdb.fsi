@@ -68,9 +68,10 @@ type PdbMethodData =
       DebugPoints: PdbDebugPoint[] }
 
 /// A pre-serialized CustomDebugInformation row to attach to a method definition row in
-/// the portable PDB (kind GUID + blob). Supplied by the compiler as a side channel keyed
-/// by IL method name. The writer attaches the rows only when the name identifies exactly
-/// one method row (fail closed on ambiguity).
+/// the portable PDB (kind GUID + blob). Supplied by the compiler as a side channel for
+/// hot reload baseline emission (--test:HotReloadDeltas): EnC lambda/closure map blobs
+/// computed from the typed tree, keyed by IL method name. The writer attaches the rows
+/// only when the name identifies exactly one method row (fail closed on ambiguity).
 type PdbMethodCustomDebugInfo = { KindGuid: System.Guid; Blob: byte[] }
 
 /// A pre-serialized CustomDebugInformation row to attach to the module definition row

@@ -1,0 +1,11 @@
+# SHA256 fingerprints for allowed .fsi drift relative to origin/main.
+# Format: <path> <sha256(git diff --no-color BASE_REF...HEAD -- <path>)>
+
+src/Compiler/AbstractIL/ilwrite.fsi 8d6d6dd29510faa52e257ddbee8fe32ea6dbae15f251b7f385c04f430527878c
+src/Compiler/AbstractIL/ilwritepdb.fsi 943553d333e0e1fc43e322f1c32bc60ec15671481f48358d9b24553680d8e06d
+src/Compiler/CodeGen/IlxGen.fsi fe362e3d3288f595352259f49b125bd91bbec8adc94c5940168b8483850f3150
+src/Compiler/Driver/CompilerConfig.fsi 79d8b435e73eb83b895d48aedd11d33ba165a41bf4a4cd693cc7266cd30faf72
+src/Compiler/Optimize/LowerStateMachines.fsi 2f7cc4770c520643148d84c8ce085aa316086f638a6fa9ddaf5ea501551de67a
+src/Compiler/Service/FSharpCheckerResults.fsi b71439521dc7b98c2c93a45b8b861c7a0108b82f008c7828a68a3d973920b286
+src/Compiler/Service/service.fsi 489c4cc2286c1bdcb6df32bcfb46059bbba90ba5ee122ca2c83bc6b171f2f1ce
+src/Compiler/TypedTree/TcGlobals.fsi 027a828e340dec6053f70e2b72b012dcae9c1940da9b2289f804bc1836c06074
