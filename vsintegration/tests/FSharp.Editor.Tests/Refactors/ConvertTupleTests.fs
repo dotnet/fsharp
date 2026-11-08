@@ -334,6 +334,32 @@ let pair = struct (1, 2)
 let alias = pair
 let struct (a, b) = alias
 """)>]
+[<InlineData("""
+let pair = (1, 2)
+let ((a, b) as alias) = pair
+let (c, d) = alias
+""",
+             """
+let pair = struct (1, 2)
+let (struct (a, b) as alias) = pair
+let struct (c, d) = alias
+""")>]
+[<InlineData("""
+let ((c, d) as alias) = (1, 2)
+let (a, b) = alias
+""",
+             """
+let (struct (c, d) as alias) = struct (1, 2)
+let struct (a, b) = alias
+""")>]
+[<InlineData("""
+let sum ((a, b) as p) = let (c, d) = p in a + c
+let total = sum (1, 2)
+""",
+             """
+let sum (struct (a, b) as p) = let struct (c, d) = p in a + c
+let total = sum struct (1, 2)
+""")>]
 let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
     convertsBothWays [ "1, 2"; "a, b" ] reference structs
 
