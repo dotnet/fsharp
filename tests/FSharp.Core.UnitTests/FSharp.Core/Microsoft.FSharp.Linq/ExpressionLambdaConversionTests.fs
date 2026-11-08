@@ -502,6 +502,54 @@ let ``Record fields written out of order are evaluated as written in a query ove
 
     Assert.Equal<Reading list>([ { First = 2; Second = 1 } ], rows)
 
+[<Fact>]
+let ``Record fields written out of order are evaluated as written in a tuple of a query over a queryable`` () =
+    let counter = Counter()
+    let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
+
+    let rows =
+        query {
+            for x in source do
+                select (x, { Second = counter.Next(); First = counter.Next() })
+        }
+        |> Seq.toList
+
+    Assert.Equal<(int * Reading) list>([ (1, { First = 2; Second = 1 }); (2, { First = 4; Second = 3 }) ], rows)
+    Assert.Equal(4, counter.Calls)
+
+[<Fact>]
+let ``Record fields written out of order are evaluated as written in a tuple of a query over a sequence`` () =
+    let counter = Counter()
+
+    let rows =
+        query {
+            for x in [ 1; 2 ] do
+                select (x, { Second = counter.Next(); First = counter.Next() })
+        }
+        |> Seq.toList
+
+    Assert.Equal<(int * Reading) list>([ (1, { First = 2; Second = 1 }); (2, { First = 4; Second = 3 }) ], rows)
+    Assert.Equal(4, counter.Calls)
+
+[<Fact>]
+let ``Record fields written out of order are evaluated after the items of the tuple that come before them`` () =
+    let counter = Counter()
+    let source = System.Linq.Queryable.AsQueryable [ 1; 2 ]
+
+    let rows =
+        query {
+            for _ in source do
+                select (counter.Next(), (0, { Second = counter.Next(); First = counter.Next() }))
+        }
+        |> Seq.toList
+
+    Assert.Equal<(int * (int * Reading)) list>(
+        [ (1, (0, { First = 3; Second = 2 })); (4, (0, { First = 6; Second = 5 })) ],
+        rows
+    )
+
+    Assert.Equal(6, counter.Calls)
+
 /// A record that is equal to another when its first field is
 [<CustomEquality; NoComparison>]
 type HeadOnly =
