@@ -42,6 +42,11 @@ imports:
 
 engine: copilot
 
+# gh-aw-firewall#8944 fixes apply_patch replay IDs rejected by Copilot.
+sandbox:
+  agent:
+    version: v0.29.7
+
 jobs:
   fetch-binlog:
     name: Fetch binlogs (Azure Pipelines)

@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -127,6 +128,36 @@ class CommandPublicationTests(unittest.TestCase):
             compiled["with"]["script"].strip(),
             self.check["with"]["script"].strip(),
         )
+
+    def test_firewall_version_reaches_every_compiled_installation(self):
+        for name in ("build-failure-analysis", WORKFLOW_NAME):
+            with self.subTest(workflow=name):
+                source = load(WORKFLOWS / f"{name}.md")
+                version = source["sandbox"]["agent"]["version"]
+                compiled = (WORKFLOWS / f"{name}.lock.yml").read_text(encoding="utf-8")
+                lock = yaml.safe_load(compiled)
+                installs = [
+                    step["run"]
+                    for job in lock["jobs"].values()
+                    for step in job.get("steps", [])
+                    if "install_awf_binary.sh" in step.get("run", "")
+                ]
+                self.assertTrue(installs)
+                for command in installs:
+                    self.assertEqual(shlex.split(command)[2], version)
+                manifest = json.loads(next(
+                    line.removeprefix("# gh-aw-manifest: ")
+                    for line in compiled.splitlines()
+                    if line.startswith("# gh-aw-manifest: ")
+                ))
+                images = [
+                    item for item in manifest["containers"]
+                    if item["image"].startswith("ghcr.io/github/gh-aw-firewall/")
+                ]
+                self.assertTrue(images)
+                for image in images:
+                    self.assertTrue(image["image"].endswith(f":{version.removeprefix('v')}"))
+                    self.assertTrue(image.get("pinned_image", "").startswith(f"{image['image']}@sha256:"))
 
     def test_fix_delivery_requires_validation_and_blocks_fork_pushes(self):
         def summary(status, delivery=None):
