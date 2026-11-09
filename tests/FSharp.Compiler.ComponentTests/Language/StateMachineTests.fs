@@ -613,3 +613,105 @@ let trigger() =
         |> withNoOptimize
         |> compile
         |> shouldSucceed
+
+    [<Theory; InlineData(false); InlineData(true)>]
+    let ``ResumableStateMachine values of other instantiations are not replaced by the task state machine`` optimize =
+        FSharp """
+module ResumableStateMachineInstantiations
+
+#nowarn "57"
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+type Holder<'T>() =
+    [<DefaultValue(false)>]
+    val mutable Machine: ResumableStateMachine<'T>
+
+type Data<'T>() =
+    [<DefaultValue(false)>]
+    val mutable items: ResizeArray<'T>
+
+type Runner<'T>() =
+    [<DefaultValue(false)>]
+    val mutable _machine: ResumableStateMachine<Data<'T>>
+
+    member this.Init(xs: 'T list) =
+        let d = Data<'T>()
+        d.items <- ResizeArray xs
+        this._machine.Data <- d
+
+    member this.CountAsync() =
+        task {
+            do! Task.Yield()
+            return this._machine.Data.items.Count
+        }
+
+let read (h: Holder<string>) =
+    task {
+        do! Task.Yield()
+        return h.Machine.Data
+    }
+
+let readInLoop (h: Holder<ResizeArray<string>>) =
+    task {
+        let results = ResizeArray()
+        for item in h.Machine.Data do
+            do! Task.Yield()
+            results.Add item
+        return List.ofSeq results
+    }
+
+let readWrite (h: Holder<int>) =
+    task {
+        h.Machine.Data <- 1
+        do! Task.Yield()
+        h.Machine.Data <- h.Machine.Data + 1
+        h.Machine.ResumptionPoint <- 7
+        return h.Machine.Data, h.Machine.ResumptionPoint
+    }
+
+let readWriteGeneric (h: Holder<'T>) (value: 'T) =
+    task {
+        do! Task.Yield()
+        h.Machine.Data <- value
+        return h.Machine.Data
+    }
+
+let localAcrossAwait () =
+    task {
+        let mutable local = ResumableStateMachine<int list>()
+        local.Data <- [ 1; 2 ]
+        do! Task.Yield()
+        return local.Data
+    }
+
+let check name expected actual =
+    if expected <> actual then failwith $"%s{name}: expected %A{expected}, got %A{actual}"
+
+let runner = Runner<int>()
+runner.Init [ 1; 2; 3 ]
+check "member read through this" 3 (runner.CountAsync()).Result
+
+let hl = Holder<ResizeArray<string>>()
+hl.Machine.Data <- ResizeArray [ "a"; "b" ]
+check "readInLoop" [ "a"; "b" ] (readInLoop hl).Result
+
+let hs = Holder<string>()
+hs.Machine.Data <- "hello"
+check "read" "hello" (read hs).Result
+
+let hi = Holder<int>()
+check "readWrite" (2, 7) (readWrite hi).Result
+check "readWrite field" 2 hi.Machine.Data
+
+let hg = Holder<int option>()
+check "readWriteGeneric" (Some 3) (readWriteGeneric hg (Some 3)).Result
+check "readWriteGeneric field" (Some 3) hg.Machine.Data
+
+check "localAcrossAwait" [ 1; 2 ] (localAcrossAwait ()).Result
+"""
+        |> withOptimization optimize
+        |> withOptions [ "--warnaserror+:3511" ]
+        |> compileExeAndRun
+        |> shouldSucceed
