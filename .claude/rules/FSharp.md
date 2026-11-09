@@ -5,4 +5,4 @@ paths:
   - "tests/**/*.{fs,fsi,fsx}"
 ---
 
-@../../.github/instructions/FSharp.instructions.md
+Read [FSharp.instructions.md](../../.github/instructions/FSharp.instructions.md).
