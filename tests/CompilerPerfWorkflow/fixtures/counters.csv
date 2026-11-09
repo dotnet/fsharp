@@ -1,0 +1,5 @@
+Timestamp,Provider,Counter Name,Counter Type,Mean/Increment
+2026-09-18T10:00:00.0000000Z,System.Runtime,Allocation Rate (B / 1 sec),Rate,100
+2026-09-18T10:00:01.5000000Z,System.Runtime,Allocation Rate (B / 1 sec),Rate,200
+2026-09-18T10:00:04.0000000Z,System.Runtime,Allocation Rate (B / 1 sec),Rate,400
+2026-09-18T10:00:04.0000000Z,System.Runtime,GC Heap Size (MB),Metric,12
