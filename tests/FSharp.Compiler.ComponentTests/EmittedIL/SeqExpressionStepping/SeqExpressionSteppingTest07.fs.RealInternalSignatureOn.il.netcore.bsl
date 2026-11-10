@@ -56,7 +56,7 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> f<a>() cil managed
   {
     
-    .maxstack  5
+    .maxstack  4
     .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<!!a> V_0,
              string V_1)
     IL_0000:  nop
