@@ -18,7 +18,7 @@ open Xunit
 
 let private embeddedTextDirectory = __SOURCE_DIRECTORY__ ++ "resources" ++ "EmbeddedText"
 
-let private createSdkProjectDirectory () =
+let createSdkProjectDirectory () =
     let output = createTemporaryDirectory().FullName
     let buildDirectory = Path.GetDirectoryName(initialConfig.FSharpBuild)
     File.WriteAllText(

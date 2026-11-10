@@ -7,6 +7,7 @@ module internal FSharp.Compiler.Features
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | FromEndSlicing
+    | ConditionalAutoOpen
     | RuntimeAsync
     | NullnessChecking
     | UnionIsPropertiesVisible

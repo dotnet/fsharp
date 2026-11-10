@@ -4134,7 +4134,7 @@ type FsiInteractiveChecker
 
             let applyCompilerOptions tcConfigB =
                 let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB
-                CompilerOptions.ParseCompilerOptions(ignore, fsiCompilerOptions, [])
+                CompilerOptions.ParseCompilerOptions(ignore, fsiCompilerOptions, [], tcConfigB.RecordCommandLineOption)
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(

@@ -220,6 +220,7 @@ this file.
 
     <ItemGroup>
         <DocFileItem Include="$(DocumentationFile)" Condition="'$(DocumentationFile)'!=''"/>
+        <CoreCompileCache Include="$(Features)" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
@@ -230,6 +231,7 @@ this file.
 
     <PropertyGroup>
         <CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
+        <CoreCompileCacheIgnoreCase>false</CoreCompileCacheIgnoreCase>
     </PropertyGroup>
 
     <Target Name="GenerateFSharpTextResources"
@@ -380,6 +382,7 @@ this file.
               KeyFile="$(KeyOriginatorFile)"
               LangVersion="$(LangVersion)"
               DisabledLanguageFeatures="@(DisabledLanguageFeatures)"
+              Features="$(Features)"
               LCID="$(LCID)"
               NoFramework="true"
               NoInterfaceData="$(NoInterfaceData)"

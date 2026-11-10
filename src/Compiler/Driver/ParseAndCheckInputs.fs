@@ -970,7 +970,10 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
 
     let ccus =
         tcImports.GetImportedAssemblies()
-        |> List.map (fun asm -> asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
+        |> List.map (fun asm ->
+            asm.FSharpViewOfMetadata,
+            SelectAssemblyAutoOpens tcConfig asm.AssemblyAutoOpenAttributes,
+            asm.AssemblyInternalsVisibleToAttributes)
 
     let amap = tcImports.GetImportMap()
 
