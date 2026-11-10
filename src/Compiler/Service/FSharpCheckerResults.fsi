@@ -430,7 +430,12 @@ type public FSharpCheckFileResults =
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetSemanticClassification:
-        range option * ?relatedSymbolKinds: RelatedSymbolUseKind -> SemanticClassificationItem[]
+        range option * [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind -> SemanticClassificationItem[]
+
+    /// <summary>Get any extra colorization info that is available after the typecheck</summary>
+    [<Obsolete("This overload is kept for binary compatibility. Use the overload that takes relatedSymbolKinds as a struct option: relatedSymbolKinds = kinds, or ?relatedSymbolKinds = a voption.")>]
+    member GetSemanticClassification:
+        range option * relatedSymbolKinds: RelatedSymbolUseKind option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
@@ -444,7 +449,15 @@ type public FSharpCheckFileResults =
 
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile:
-        symbol: FSharpSymbol * ?relatedSymbolKinds: RelatedSymbolUseKind * ?cancellationToken: CancellationToken ->
+        symbol: FSharpSymbol *
+        [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind *
+        ?cancellationToken: CancellationToken ->
+            FSharpSymbolUse[]
+
+    /// Get the textual usages that resolved to the given symbol throughout the file
+    [<Obsolete("This overload is kept for binary compatibility. Use the overload that takes relatedSymbolKinds as a struct option: relatedSymbolKinds = kinds, or ?relatedSymbolKinds = a voption.")>]
+    member GetUsesOfSymbolInFile:
+        symbol: FSharpSymbol * relatedSymbolKinds: RelatedSymbolUseKind option * ?cancellationToken: CancellationToken ->
             FSharpSymbolUse[]
 
     member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef[]

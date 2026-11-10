@@ -9,6 +9,7 @@ open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
 open System.Text
+open System.Text.RegularExpressions
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -102,6 +103,25 @@ module Utilities =
         bytes
 
     let inline getTestsDirectory src dir = src ++ dir
+
+    [<Struct>]
+    type MarkedRef = { Line: int; Column: int; Text: string }
+
+    let private refMarkers = Regex @"\{ref\}(.*?)\{/ref\}"
+
+    let private refMarkersLength = "{ref}{/ref}".Length
+
+    let extractRefs (markedSource: string) =
+        let lines = markedSource.Split([| "\r\n"; "\n" |], StringSplitOptions.None)
+
+        let refs =
+            [ for line in 0 .. lines.Length - 1 do
+                  let matches = refMarkers.Matches lines[line]
+
+                  for i in 0 .. matches.Count - 1 do
+                      { Line = line; Column = matches[i].Index - i * refMarkersLength; Text = matches[i].Groups[1].Value } ]
+
+        struct (lines |> Array.map (fun line -> refMarkers.Replace(line, "$1")), refs)
 
     module private TestReferences =
         let testDirectory = lazy (
