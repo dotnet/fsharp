@@ -327,6 +327,11 @@
         <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstantInterpolatedStrings">
+        <source>interpolated strings in constant expressions</source>
+        <target state="new">interpolated strings in constant expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
