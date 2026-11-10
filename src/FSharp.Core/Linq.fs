@@ -36,6 +36,28 @@ module LeafExpressionConverter =
 
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
+    // Reflection does not reliably expose F# field mutability.
+    let needsDefensiveCopy (objOpt: Expr option) =
+        match objOpt with
+        | Some (Var v) when not v.IsMutable ->
+            let ty = v.Type
+            let flags = BindingFlags.Public ||| BindingFlags.NonPublic
+            ty.IsValueType
+            && not ty.IsEnum
+            // Reading attributes can load other assemblies; if one is missing, do not copy.
+            && (try
+                    ty.IsDefined(typeof<CompilationMappingAttribute>, false)
+                    && not (ty.CustomAttributes |> Seq.exists (fun a -> a.AttributeType.FullName = "System.Runtime.CompilerServices.IsReadOnlyAttribute"))
+                    && not (FSharpType.IsUnion(ty, flags))
+                    && not (FSharpType.IsRecord(ty, flags) && FSharpType.GetRecordFields(ty, flags) |> Array.forall (fun p -> not p.CanWrite))
+                with
+                | :? IO.FileNotFoundException
+                | :? IO.FileLoadException
+                | :? TypeLoadException
+                | :? BadImageFormatException
+                | :? CustomAttributeFormatException -> false)
+        | _ -> false
+
     /// Determines if a property access on a derived union case type needs to be coerced to the declaring type.
     /// This handles the case where a property is defined on a specific union case type that inherits from the union type.
     let getUnionCaseCoercionType (objOpt: Expr option) (declaringType: Type) =
@@ -487,10 +509,10 @@ module LeafExpressionConverter =
             let coerceTo = getUnionCaseCoercionType objOpt propInfo.DeclaringType
             match args with
             | [] ->
-                Expression.Property(ConvObjArg env objOpt coerceTo, propInfo) |> asExpr
+                ConvCallOn env objOpt coerceTo (fun objP -> Expression.Property(objP, propInfo) |> asExpr)
             | _ ->
                 let argsP = ConvExprsToLinq env args
-                Expression.Call(ConvObjArg env objOpt coerceTo, propInfo.GetGetMethod(true), argsP) |> asExpr
+                ConvCallOn env objOpt coerceTo (fun objP -> Expression.Call(objP, propInfo.GetGetMethod(true), argsP) |> asExpr)
 
         // Expr.(Call, Application)
         | Call(objOpt, minfo, args) ->
@@ -649,7 +671,7 @@ module LeafExpressionConverter =
 
             | _ ->
                 let argsP = ConvExprsToLinq env args
-                Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr
+                ConvCallOn env objOpt None (fun objP -> Expression.Call(objP, minfo, argsP) |> asExpr)
 
 #if !NO_CURRIED_FUNCTION_OPTIMIZATIONS
         // f x1 x2 x3 x4 --> InvokeFast4
@@ -931,6 +953,14 @@ module LeafExpressionConverter =
             | Some ty -> Expression.TypeAs(expr, ty) :> Expression
         | None ->
             null
+
+    and ConvCallOn env objOpt coerceTo (call: Expression -> Expression) : Expression =
+        let objP = ConvObjArg env objOpt coerceTo
+        if needsDefensiveCopy objOpt then
+            let copy = Expression.Variable(objP.Type, "copy")
+            Expression.Block([| copy |], Expression.Assign(copy, objP), call (copy :> Expression)) |> asExpr
+        else
+            call objP
 
     and ConvExprsToLinq env es : Expression array =
         es |> List.map (ConvExprToLinqInContext env) |> Array.ofList
