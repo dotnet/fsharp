@@ -3699,7 +3699,7 @@ type FsiStdinLexerProvider
             mkLexargs (tcConfigB.conditionalDefines, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf, tcConfigB.tokenize = TokenizeOption.Debug)
+            LexFilter.LexFilter(tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
 
         tokenizer
 

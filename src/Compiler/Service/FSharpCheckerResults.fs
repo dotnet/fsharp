@@ -3074,7 +3074,7 @@ module internal ParseAndCheckFile =
             mkLexargs (conditionalDefines, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty, options.ApplyLineDirectives)
 
         let tokenizer =
-            LexFilter.LexFilter(options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
+            LexFilter.LexFilter(options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)
 
         if ct.CanBeCanceled then
             (fun _ ->

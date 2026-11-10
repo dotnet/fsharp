@@ -2,6 +2,7 @@
 
 namespace EmittedIL
 
+open System.Reflection.Metadata
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -218,3 +219,24 @@ let empty<'T> = Seq.empty<'T>
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 )
 """
         ]
+
+    [<Fact>]
+    let ``Sparse union case tests do not emit a full jump table`` () =
+        let cases = [ for i in 0..39 -> $"C{i} of int" ] |> String.concat " | "
+        FSharp $"""
+module Test
+type U = {cases}
+let f u = match u with C3 _ -> 1 | C38 _ -> 2 | _ -> 0
+[<EntryPoint>]
+let main _ =
+    if (f (C3 0), f (C38 0), f (C5 0), f (C39 0)) <> (1, 2, 0, 0) then failwith "f"
+    0
+"""
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withPeReader (fun pe ->
+            let md = pe.GetMetadataReader()
+            let f = md.MethodDefinitions |> Seq.map md.GetMethodDefinition |> Seq.find (fun m -> md.GetString m.Name = "f")
+            let size = pe.GetMethodBody(f.RelativeVirtualAddress).Size
+            Assert.True(size < 100, $"f has {size} IL bytes"))

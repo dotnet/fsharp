@@ -490,7 +490,7 @@ let ConvertSequenceExprToObject g amap (runtimeAsync: RuntimeAsyncUnwind option)
 
         | Expr.Let (bind, bodyExpr, m, _)
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
-              when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
+              when not bind.Var.IsDecisionTreeJoin && (bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var)) ->
 
             let resBodyOpt = ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
             match resBodyOpt with
