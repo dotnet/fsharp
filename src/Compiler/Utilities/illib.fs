@@ -558,6 +558,20 @@ module List =
 
         loop 0 xs
 
+    let chooseV chooser xs =
+        List.foldBack
+            (fun x chosen ->
+                match chooser x with
+                | ValueSome y -> y :: chosen
+                | ValueNone -> chosen)
+            xs
+            []
+
+    let rec tryFindV predicate xs =
+        match xs with
+        | [] -> ValueNone
+        | x :: rest -> if predicate x then ValueSome x else tryFindV predicate rest
+
     let inline lengthsEqAndForall2 ([<InlineIfLambda>] p) l1 l2 =
         List.length l1 = List.length l2 && ListInline.forall2 p l1 l2
 
