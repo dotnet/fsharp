@@ -55,6 +55,9 @@ module internal Adapters =
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
+    let DefaultIfEmptyMeth =
+        methodhandleof Enumerable.DefaultIfEmpty |> MethodInfo.GetMethodFromHandle :?> MethodInfo
+
     // The following patterns are used to recognize object construction
     // using the 'new O(Prop1 = <e>, Prop2 = <e>)' syntax
 
@@ -107,14 +110,6 @@ module internal Adapters =
         |]
 
     let anonObjectTypes = tupleTypes |> Array.map snd
-
-    let tupleToAnonTypeMap =
-        let t = Dictionary<Type, Type>()
-
-        for k, v in tupleTypes do
-            t.[k] <- v
-
-        t
 
     let anonToTupleTypeMap =
         let t = Dictionary<Type, Type>()
@@ -173,18 +168,13 @@ module internal Adapters =
 
         walk i e e.Type
 
+    /// Reference and struct tuples of the same arity share one anonymous object type.
     let RewriteTupleType (ty: Type) conv =
-        // Tuples are generic, so lookup only for generic types
-        assert ty.IsGenericType
-        let generic = ty.GetGenericTypeDefinition()
-
-        match tupleToAnonTypeMap.TryGetValue generic with
-        | true, mutableTupleType ->
-            // Recursively transform type arguments
-            mutableTupleType.MakeGenericType(ty.GetGenericArguments() |> Array.toList |> conv |> Array.ofList)
-        | _ ->
-            assert false
-            failwith "unreachable"
+        assert (FSharpType.IsTuple ty)
+        let elementTypes = ty.GetGenericArguments()
+        let mutableTupleType = anonObjectTypes.[elementTypes.Length - 1]
+        // Recursively transform type arguments
+        mutableTupleType.MakeGenericType(elementTypes |> Array.toList |> conv |> Array.ofList)
 
     let (|RecordFieldGetSimplification|_|) (expr: Expr) =
         match expr with
@@ -206,28 +196,30 @@ module internal Adapters =
     /// that we can invert the process in final query results.
     [<NoComparison; NoEquality>]
     type ConversionDescription =
-        | TupleConv of ConversionDescription list
+        | TupleConv of isStruct: bool * ConversionDescription list
         | RecordConv of Type * ConversionDescription list
         | GroupingConv (* origKeyType: *) of Type (* origElemType: *) * Type * ConversionDescription
         | SeqConv of ConversionDescription
+        /// The group of a 'leftOuterJoin', kept as the join produced it and read through 'DefaultIfEmpty'
+        | DefaultIfEmptyConv
         | NoConv
 
     /// Given an type involving immutable tuples and records, logically corresponding to the type produced at a
     /// "yield" or "select", convert it to a type involving anonymous objects according to the conversion data.
     let rec ConvImmutableTypeToMutableType conv ty =
         match conv with
-        | TupleConv convs ->
+        | TupleConv(isStruct, convs) ->
             assert (FSharpType.IsTuple ty)
 
             match convs with
             | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
-                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ]
+                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(isStruct, x8 :: tail) ]
                 RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType els)
             | _ -> RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
         | RecordConv(_, convs) ->
             assert (isPartiallyImmutableRecord ty)
             let types = [| for f in FSharpType.GetRecordFields ty -> f.PropertyType |]
-            ConvImmutableTypeToMutableType (TupleConv convs) (FSharpType.MakeTupleType types)
+            ConvImmutableTypeToMutableType (TupleConv(false, convs)) (FSharpType.MakeTupleType types)
         | GroupingConv(_keyTy, _elemTy, conv) ->
             assert ty.IsGenericType
             assert (ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
@@ -249,6 +241,7 @@ module internal Adapters =
                 typedefof<IQueryable<_>>.MakeGenericType args
             else
                 typedefof<seq<_>>.MakeGenericType args
+        | DefaultIfEmptyConv
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
@@ -313,6 +306,20 @@ module internal Adapters =
         | RecordFieldGetSimplification newExpr -> newExpr
         | _ -> e
 
+    /// 'DefaultIfEmpty' over a member of an anonymous object: the group of a 'leftOuterJoin' as one tuple of the query reads it
+    /// from the one before
+    [<return: Struct>]
+    let (|ReadOfLeftOuterJoinGroup|_|) (expr: Expr) =
+        match expr with
+        | Patterns.Call(None, meth, [ Patterns.PropertyGet(Some anonymousObject, _, []) as group ]) when
+            meth.IsGenericMethod
+            && meth.GetGenericMethodDefinition() = DefaultIfEmptyMeth
+            && anonymousObject.Type.IsGenericType
+            && anonToTupleTypeMap.ContainsKey(anonymousObject.Type.GetGenericTypeDefinition())
+            ->
+            ValueSome group
+        | _ -> ValueNone
+
     /// Given the expression part of a "yield" or "select" which produces a result in terms of immutable tuples or immutable records,
     /// generate an equivalent expression yielding anonymous objects. Also return the conversion for the immutable-to-mutable correspondence
     /// so we can reverse this later.
@@ -322,9 +329,15 @@ module internal Adapters =
         // Replace immutable tuples by anonymous objects
         | Patterns.NewTuple exprs ->
             let argExprsNow, argScripts =
-                exprs |> List.map (ProduceMoreMutables tipf) |> List.unzip
+                exprs
+                |> List.map (fun arg ->
+                    match arg with
+                    // Hand the group on as the join produced it, as C# does
+                    | ReadOfLeftOuterJoinGroup group -> group, DefaultIfEmptyConv
+                    | arg -> ProduceMoreMutables tipf arg)
+                |> List.unzip
 
-            NewAnonymousObject argExprsNow, TupleConv argScripts
+            NewAnonymousObject argExprsNow, TupleConv(expr.Type.IsValueType, argScripts)
 
         // Replace immutable records by anonymous objects
         | Patterns.NewRecord(typ, args) when isPartiallyImmutableRecord typ ->
