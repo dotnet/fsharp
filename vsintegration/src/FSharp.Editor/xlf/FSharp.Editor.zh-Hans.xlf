@@ -74,6 +74,31 @@
 {2}</target>
         <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLocalFunction">
+        <source>Extract to local function</source>
+        <target state="new">Extract to local function</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToModuleFunction">
+        <source>Extract to module function</source>
+        <target state="new">Extract to module function</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToPrivateMember">
+        <source>Extract to private member</source>
+        <target state="new">Extract to private member</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">F# 可释放值(局部值)</target>
@@ -204,6 +229,21 @@
         <target state="new">Advanced</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnifiedSettingsAnnotateParametersAlwaysLabel">
+        <source>Annotate every parameter</source>
+        <target state="new">Annotate every parameter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsAnnotateParametersNeverLabel">
+        <source>Leave parameter types to type inference</source>
+        <target state="new">Leave parameter types to type inference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsAnnotateParametersWhenNeededLabel">
+        <source>Annotate parameters whose type inference cannot determine from the extracted code</source>
+        <target state="new">Annotate parameters whose type inference cannot determine from the extracted code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnifiedSettingsBackingStoreDescription">
         <source>This compiler setting uses the user-wide F# compiler configuration.</source>
         <target state="new">This compiler setting uses the user-wide F# compiler configuration.</target>
@@ -242,6 +282,11 @@
       <trans-unit id="UnifiedSettingsDotUnderlineLabel">
         <source>Dot underline</source>
         <target state="new">Dot underline</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnifiedSettingsExtractFunctionParameterAnnotationsTitle">
+        <source>Parameter types in Extract to function</source>
+        <target state="new">Parameter types in Extract to function</target>
         <note />
       </trans-unit>
       <trans-unit id="UnifiedSettingsInMemoryCrossProjectReferencesTitle">
