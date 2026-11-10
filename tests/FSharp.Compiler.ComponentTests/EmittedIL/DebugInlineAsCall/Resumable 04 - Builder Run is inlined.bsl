@@ -88,13 +88,7 @@ code@22::Invoke
     IL_0001:  ret
 
 result@23::MoveNext
-  <hidden>
-    IL_0000:  ldarg.0
-    IL_0001:  stloc.1
-
   (22,50-22,54)  true
-    IL_0002:  ldc.i4.1
-    IL_0003:  stloc.0
-    IL_0004:  ldloc.0
-    IL_0005:  stloc.2
-    IL_0006:  ret
+    IL_0000:  ldc.i4.1
+    IL_0001:  stloc.0
+    IL_0002:  ret

@@ -3,6 +3,7 @@
 namespace Language
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Assert
 open FSharp.Test.Compiler
 
@@ -64,6 +65,56 @@ let main _ =
         |> withFSharpCoreShippedNet
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<FSharp.Test.TheoryForNETCOREAPP; InlineData(false); InlineData(true)>]
+    let ``Closures in after-code of a generic state machine keep the type parameters`` optimize =
+        FSharp """
+module M
+#nowarn "3513"
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type IA = abstract A: int
+[<AbstractClass>]
+type B() = abstract Bv: int
+
+let inline run ([<InlineIfLambda>] code: unit -> int) : unit -> int =
+    if __useResumableCode then
+        __stateMachine<int, unit -> int>
+            (MoveNextMethodImpl<_>(fun sm -> sm.Data <- code ()))
+            (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+            (AfterCode<_, _>(fun sm ->
+                let sm = sm
+                fun () ->
+                    let mutable sm = sm
+                    sm.Data + 42))
+    else
+        code
+
+let f (p: 'T when 'T :> IA and 'T :> B) = run (fun () -> p.A + p.Bv)
+
+let g (p: 'T when 'T :> IA) = run (fun () -> p.A)
+
+type C() =
+    inherit B()
+    override _.Bv = 1
+    interface IA with
+        member _.A = 41
+
+[<Struct>]
+type S =
+    interface IA with
+        member _.A = 0
+
+[<EntryPoint>]
+let main _ =
+    if f (C()) () = 42 && g (C()) () = 42 && g (S()) () = 42 then 0 else 1
+"""
+        |> withOptimization optimize
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
 
     [<Theory>]
     [<InlineData(false, false)>]

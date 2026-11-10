@@ -3313,6 +3313,12 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
                 match smResult with
                 | LoweredStateMachineResult.Lowered res ->
+                    let (LoweredStateMachine(prefixBindings = prefixBindings)) = res
+
+                    let eenv, sequel =
+                        ((eenv, sequel), prefixBindings)
+                        ||> List.fold (fun (eenv, sequel) bind -> GenLetBindingInScope cenv cgbuf eenv bind sequel)
+
                     let eenv = RemoveTemplateReplacement eenv
                     GenStructStateMachine cenv cgbuf eenv res sequel
                     true
@@ -3897,24 +3903,10 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
             contf Fake
         else
             // This case implemented here to get a guaranteed tailcall
-            // Make sure we generate the debug point outside the scope of the variable
-            let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
-            let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
-            GenDebugPointForBind cenv cgbuf bind
-            GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
-
-            // Track expand-var (resumable code) definitions so state machine lowering
-            // inside nested lambdas can resolve otherwise-free expand variables.
-            let eenv =
-                if isReturnsResumableCodeTy cenv.g bind.Var.TauType then
-                    { eenv with
-                        resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
-                    }
-                else
-                    eenv
+            let eenv, bodySequel = GenLetBindingInScope cenv cgbuf eenv bind sequel
 
             // Generate the body
-            GenLinearExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark)) true contf
+            GenLinearExpr cenv cgbuf eenv body bodySequel true contf
 
     | Expr.Match(spBind, _exprm, tree, targets, m, ty) ->
         // Process the debug point and see if there's a replacement technique to process this expression
@@ -6621,7 +6613,8 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
 
 and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel =
 
-    let (LoweredStateMachine(templateStructTy,
+    let (LoweredStateMachine(_,
+                             templateStructTy,
                              dataTy,
                              stateVars,
                              thisVars,
@@ -9369,6 +9362,26 @@ and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
 and GenDebugPointForBind cenv cgbuf bind =
     let _, pt = ComputeDebugPointForBinding cenv.g bind
     pt |> Option.iter (CG.EmitDebugPoint cgbuf)
+
+/// Generate a 'let' binding whose scope ends with the returned sequel
+and GenLetBindingInScope cenv cgbuf eenv (bind: Binding) sequel =
+    // Make sure we generate the debug point outside the scope of the variable
+    let startMark, endMark as scopeMarks = StartDelayedLocalScope "let" cgbuf
+    let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
+    GenDebugPointForBind cenv cgbuf bind
+    GenBindingAfterDebugPoint cenv cgbuf eenv bind false (Some startMark)
+
+    // Track expand-var (resumable code) definitions so state machine lowering
+    // inside nested lambdas can resolve otherwise-free expand variables.
+    let eenv =
+        if isExpandVar cenv.g bind.Var then
+            { eenv with
+                resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
+            }
+        else
+            eenv
+
+    eenv, EndLocalScope(sequel, endMark)
 
 and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
     GenDebugPointForBind cenv cgbuf bind
