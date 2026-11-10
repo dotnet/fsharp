@@ -2339,10 +2339,10 @@ module internal ExprRemapping =
 
             tcref.Deref
 
-        (tycons, tyconsR)
-        ||> List.iter2 (fun tcd tcdR ->
-            let lookupTycon tycon = lookupTycon tycon
+        let remapModulType (tcd: Tycon) (tcdR: Tycon) =
+            tcdR.entity_modul_type <- MaybeLazy.Strict(tcd.entity_modul_type.Value |> mapImmediateValsAndTycons lookupTycon lookupVal)
 
+        let remapClonedTycon (tcd: Tycon) (tcdR: Tycon) =
             let tpsR, tmenvinner2 =
                 tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner tcd.Typars
 
@@ -2351,7 +2351,7 @@ module internal ExprRemapping =
             tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
             let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
             tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
-            tcdR.entity_modul_type <- MaybeLazy.Strict(tcd.entity_modul_type.Value |> mapImmediateValsAndTycons lookupTycon lookupVal)
+            remapModulType tcd tcdR
             let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
 
             match tcdR.entity_opt_data with
@@ -2364,7 +2364,13 @@ module internal ExprRemapping =
                         }
             | _ ->
                 tcdR.SetTypeAbbrev typeAbbrevR
-                tcdR.SetExceptionInfo exnInfoR)
+                tcdR.SetExceptionInfo exnInfoR
+
+        match compgen with
+        // copyTycon returned each tycon itself. Other files' optimization may be reading it concurrently,
+        // so its typars and representation stay untouched; only its vals may have been copied.
+        | OnlyCloneExprVals -> List.iter2 remapModulType tycons tyconsR
+        | _ -> List.iter2 remapClonedTycon tycons tyconsR
 
         tyconsR, vsR, tmenvinner
 

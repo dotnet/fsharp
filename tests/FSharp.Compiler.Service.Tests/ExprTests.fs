@@ -4007,3 +4007,36 @@ let ``ImmediateSubExpressions`` (case: ImmediateSubExpressionsTestCase) =
     // on auto-generated comparison code for generic DUs/records.
     // Before the fix for #19118, this would crash with ConstraintSolverMissingConstraint.
     ProjectForWitnessConditionalComparison.walkAllExpressions case.Source
+
+[<Fact>]
+let ``Issue 20812 - optimization leaves the type parameters of checked type definitions untouched`` () =
+    let source = """
+module M
+
+type R<'T> = { F: int -> 'T }
+
+let apply (r: R<'T>) = r.F 1
+"""
+    let options = createProjectOptions [ source ] [ "--optimize+" ]
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
+    wholeProjectResults.Diagnostics |> shouldBeEmpty
+
+    let rec tryFindEntity name decls =
+        decls
+        |> Seq.tryPick (function
+            | FSharpImplementationFileDeclaration.Entity(e, _) when e.DisplayName = name -> Some e
+            | FSharpImplementationFileDeclaration.Entity(_, subDecls) -> tryFindEntity name subDecls
+            | _ -> None)
+
+    let record =
+        wholeProjectResults.AssemblyContents.ImplementationFiles[0].Declarations
+        |> tryFindEntity "R"
+        |> Option.get
+
+    let typarsBefore = record.GenericParameters |> Seq.map _.TypeParameter |> List.ofSeq
+    wholeProjectResults.GetOptimizedAssemblyContents() |> ignore
+    let typarsAfter = record.GenericParameters |> Seq.map _.TypeParameter |> List.ofSeq
+
+    List.forall2 (fun before after -> obj.ReferenceEquals(before, after)) typarsBefore typarsAfter
+    |> shouldEqual true
