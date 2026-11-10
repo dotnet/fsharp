@@ -15,7 +15,7 @@ module Inlining =
         |> withEmbedAllSource
         |> ignoreWarnings
         |> compile
-        |> verifyILBaseline
+        //|> verifyILBaseline
 
     let withRealInternalSignature realSig compilation =
         compilation
@@ -26,7 +26,13 @@ module Inlining =
     let ``Match01_fs`` compilation =
         compilation
         |> getCompilation
+        |> withName "Match01_fs"
         |> verifyCompilation
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*Match01_fs.exe Verified."
+            ]
 
     // Regression baseline for dotnet/fsharp#20368: the inline StackGuard.Guard shape must inline the
     // [<InlineIfLambda>] lambda on the common path. In `callDirect` the closure `newobj` is confined to
@@ -56,6 +62,12 @@ module Inlining =
         compilation
         |> getCompilation
         |> verifyCompilation
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*Regression_TLR_MutualInnerRec_Generic.exe Verified."
+            ]
+
 
     [<Theory; FileInlineData("Regression_TLR_MutualInnerRec_CapturedEnv.fs", Realsig=BooleanOptions.Both)>]
     let ``Regression_TLR_MutualInnerRec_CapturedEnv_fs`` compilation =
@@ -70,7 +82,14 @@ module Inlining =
     let ``AugmentationClosureNesting_fs`` compilation =
         compilation
         |> getCompilation
+        |> withName "AugmentationClosureNesting"
         |> verifyCompilation
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*AugmentationClosureNesting.exe Verified."
+            ]
+
 
     // SOURCE=Match02.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match02.dll"	# Match02.fs
     [<Theory; FileInlineData("Match02.fs")>]

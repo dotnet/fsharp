@@ -142,6 +142,16 @@ module Determinism
             areSame (Path.ChangeExtension(exename1, "pdb")) (Path.ChangeExtension(exename2, "pdb"))
         | _ -> raise (new Exception "Pathmap1 and PathMap2 do not match")
 
+    let private quoteReferencesIfHasSpace (argument: string) =
+
+        let result =
+            if argument.StartsWith("-r:") && argument.Contains(" ") then
+                if argument.StartsWith("-r:\"") then argument
+                elif argument.StartsWith("-r:'") then argument
+                else "-r:\"" + argument.Substring(3) + "\""
+            else argument
+        result
+
     /// Compile to ref assembly out-of-process via runFscProcess.
     /// Separate processes needed because String.GetHashCode is seeded once per process.
     let private compileRefAssembly (workDir: string) (sourceFile: string) : string * string =
@@ -152,7 +162,7 @@ module Determinism
         let result = runFscProcess [
             yield "--target:library"
             yield "--deterministic+"
-            yield! (defaultOpts |> Array.toList)
+            yield! (defaultOpts |> Array.map(fun s -> quoteReferencesIfHasSpace s) |> Array.toList)
             yield $"--refout:{outRef}"
             yield $"-o:{outDll}"
             yield sourceFile

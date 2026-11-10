@@ -46,9 +46,9 @@
     IL_0003:  ldc.i4     0x3e8
     IL_0008:  ldarg.0
     IL_0009:  tail.
-    IL_000b:  call       !!0 assembly::a@4<!!0>(!!0,
-                                                                             int32,
-                                                                             !!0)
+    IL_000b:  call       !0 class assembly<!!0>::a@4<!!0>(!0,
+                                                                                       int32,
+                                                                                       !0)
     IL_0010:  ret
   } 
 
@@ -95,9 +95,9 @@
     IL_000d:  sub
     IL_000e:  ldarg.2
     IL_000f:  tail.
-    IL_0011:  call       !!0 assembly::b@8<!!0>(!!0,
-                                                                             int32,
-                                                                             !!0)
+    IL_0011:  call       !0 class assembly<!!0,!!1>::b@8<!!1>(!0,
+                                                                                           int32,
+                                                                                           !0)
     IL_0016:  ret
 
     IL_0017:  ldarg.0
@@ -144,9 +144,9 @@
     IL_001a:  sub
     IL_001b:  ldarg.2
     IL_001c:  tail.
-    IL_001e:  call       !!0 assembly::a@4<!!0>(!!0,
-                                                                             int32,
-                                                                             !!0)
+    IL_001e:  call       !0 class assembly<!!0,!!1>::a@4<!!1>(!0,
+                                                                                           int32,
+                                                                                           !0)
     IL_0023:  ret
   } 
 

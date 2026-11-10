@@ -556,6 +556,13 @@ let mkTransform (scope: PerFileNamingScope) g (f: Val) m tps x1Ntys retTy (callP
             fCty
             valReprInfo
 
+    // [realsig+] Propagate the realsig closure parent from the original closure f
+    // to the transformed closure, since mkLocalVal mints a fresh stamp that is
+    // not in realsigClosureParents. Downstream TLR (RealsigClosureParentTryGet
+    // in InnerLambdasToTopLevelFuncs createFHat / FlatEnvPacks.packEnv) needs to
+    // find the record to subtract the owner typars from reqdTypars.
+    if g.realsig then g.RealsigClosureParentRekey(f, transformedVal)
+
     { transformCallPattern = callPattern
       transformedFormals = transformedFormals
       transformedVal = transformedVal }
