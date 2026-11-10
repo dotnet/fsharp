@@ -10,6 +10,7 @@ open System.Diagnostics
 open System.Text.Json
 
 open Microsoft.VisualStudio.LanguageServer.Protocol
+open Microsoft.Extensions.DependencyInjection
 open Nerdbank.Streams
 
 open FSharp.Test.ProjectGeneration.WorkspaceHelpers
@@ -27,13 +28,21 @@ type TestRpcClient(jsonRpc, rpcTrace, workspace, initializeResult: InitializeRes
 
     member _.RpcTrace = rpcTrace.ToString()
 
-let createLanguageServerWithClient (workspace: FSharpWorkspace) (config: FSharpLanguageServerConfig option) (configureClient: JsonRpc -> unit) =
+let createLanguageServerWithServices
+    (workspace: FSharpWorkspace)
+    (config: FSharpLanguageServerConfig option)
+    (configureClient: JsonRpc -> unit)
+    (configureServices: IServiceCollection -> unit)
+    =
     let rpcTrace = new StringWriter()
 
     let (inputStream, outputStream), server =
-        match config with
-        | Some cfg -> FSharpLanguageServer.Create(LspLogger Trace.TraceInformation, workspace, config = cfg)
-        | None -> FSharpLanguageServer.Create(workspace)
+        FSharpLanguageServer.Create(
+            LspLogger Trace.TraceInformation,
+            workspace,
+            addExtraHandlers = Action<IServiceCollection>(configureServices),
+            ?config = config
+        )
 
     let formatter = createConfiguredFormatter ()
 
@@ -65,6 +74,9 @@ let createLanguageServerWithClient (workspace: FSharpWorkspace) (config: FSharpL
         let! response = jsonRpc.InvokeWithParameterObjectAsync<InitializeResult>("initialize", initializeParams)
         return TestRpcClient(jsonRpc, rpcTrace, workspace, response)
     }
+
+let createLanguageServerWithClient workspace config configureClient =
+    createLanguageServerWithServices workspace config configureClient ignore
 
 let createLanguageServer workspace config =
     createLanguageServerWithClient workspace config ignore

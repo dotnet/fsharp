@@ -950,6 +950,7 @@ try {
 
     if ($testEditor -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $script:desktopTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.VisualStudio.Extension.Tests\FSharp.VisualStudio.Extension.Tests.csproj" -targetFramework "$($script:coreclrTargetFramework)-windows8.0"
     }
 
     if ($testVs -and -not $noVisualStudio) {

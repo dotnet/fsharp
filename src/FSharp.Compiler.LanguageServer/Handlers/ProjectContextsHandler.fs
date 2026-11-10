@@ -35,6 +35,11 @@ type ActiveProjectContextHandler() =
             (request: ActiveProjectContextParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
             =
             task {
+                let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+
+                let report outcome =
+                    Telemetry.reportEvent telemetry TelemetryEvents.SetActiveProjectContext [| "outcome", outcome :> obj |]
+
                 if
                     isNull request.Uri
                     || not request.Uri.IsAbsoluteUri
@@ -43,6 +48,7 @@ type ActiveProjectContextHandler() =
                     || String.IsNullOrWhiteSpace request.OutputFileName
                 then
                     context.Logger.LogWarning("Invalid active project context.", [||])
+                    report "invalid"
                     return false
                 else
                     let comparison =
@@ -74,6 +80,8 @@ type ActiveProjectContextHandler() =
 
                     match snapshot with
                     | None ->
+                        report "not_found"
+
                         context.Logger.LogWarning(
                             "Active project context does not match a workspace snapshot.",
                             [| request.ProjectFileName :> obj; request.OutputFileName :> obj |]
@@ -103,6 +111,7 @@ type ActiveProjectContextHandler() =
                             try
                                 do! server.InvokeWithParameterObjectAsync("workspace/semanticTokens/refresh", null, cancellationToken)
                                 context.SetActiveProjectContext(request.Uri, snapshot.Identifier)
+                                report "refreshed"
                                 return true
                             with error when (error :? RemoteInvocationException) || (error :? ConnectionLostException) ->
                                 context.Logger.LogException(
@@ -111,9 +120,18 @@ type ActiveProjectContextHandler() =
                                     [||]
                                 )
 
+                                report "refresh_failed"
+
+                                Telemetry.reportFault
+                                    telemetry
+                                    TelemetryEvents.SetActiveProjectContext
+                                    "Semantic token refresh failed."
+                                    error
+
                                 return false
                         else
                             context.SetActiveProjectContext(request.Uri, snapshot.Identifier)
+                            report (if changed then "selected" else "unchanged")
                             return true
             }
 

@@ -29,6 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="FSharp.VisualStudio.Extension.Tests" />
 		<ProjectReference Include="..\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj" />
 		<ProjectReference Include="..\Microsoft.CommonLanguageServerProtocol.Framework.Proxy\Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
 	</ItemGroup>

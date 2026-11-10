@@ -24,6 +24,7 @@
 		<Compile Include="ProjectContextsProtocolTests.fs" />
 		<Compile Include="ProjectContextSelectionTests.fs" />
 		<Compile Include="SemanticTokensProtocolTests.fs" />
+		<Compile Include="TelemetryProtocolTests.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

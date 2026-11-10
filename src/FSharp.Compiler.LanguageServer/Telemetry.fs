@@ -35,6 +35,9 @@ module TelemetryEvents =
     [<Literal>]
     let ServerFault = "lsp/fault"
 
+    [<Literal>]
+    let SetActiveProjectContext = "lsp/setactiveprojectcontext"
+
 /// Abstraction for telemetry reporting in the F# LSP server.
 /// Implementations can route events to VS telemetry, OpenTelemetry, or a no-op sink.
 type ILspTelemetry =
@@ -47,6 +50,19 @@ type ILspTelemetry =
 
     /// Report a fault/error event.
     abstract ReportFault: name: string * description: string * exn: exn option -> unit
+
+module internal Telemetry =
+    let reportEvent (telemetry: ILspTelemetry) name properties =
+        try
+            telemetry.ReportEvent(name, properties)
+        with _ ->
+            Trace.TraceWarning("F# LSP telemetry could not be posted.")
+
+    let reportFault (telemetry: ILspTelemetry) name description error =
+        try
+            telemetry.ReportFault(name, description, Some error)
+        with _ ->
+            Trace.TraceWarning("F# LSP fault telemetry could not be posted.")
 
 /// No-op telemetry implementation for standalone/testing use.
 type NullTelemetry() =

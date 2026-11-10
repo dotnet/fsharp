@@ -21,6 +21,14 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
     let activeProjectContexts =
         ConcurrentDictionary<string, FSharpProjectIdentifier>(pathComparer)
 
+    let openDocuments = ConcurrentDictionary<string, byte>(pathComparer)
+
+    member internal _.IsDocumentOpen(uri: Uri) = openDocuments.ContainsKey uri.LocalPath
+    member internal _.OpenDocument(uri: Uri) = openDocuments[uri.LocalPath] <- 0uy
+
+    member internal _.CloseDocument(uri: Uri) =
+        openDocuments.TryRemove uri.LocalPath |> ignore
+
     member _.LspServices = lspServices
     member _.Logger = logger
     member _.Workspace = workspace

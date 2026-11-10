@@ -212,11 +212,17 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         [Microsoft.VisualStudio.Extensibility.DocumentFilter.FromDocumentType(FSharpDocumentType)]);
 
     private VsTelemetryReporter? _telemetryReporter;
+    private volatile TelemetryConfiguration? _telemetryConfiguration;
+    private bool _semanticTokensEnabled;
 
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
-        _telemetryReporter = new VsTelemetryReporter();
+        _telemetryReporter = new VsTelemetryReporter(configurationChanged: value => _telemetryConfiguration = value);
+        if (_telemetryConfiguration is { } configuration)
+        {
+            _telemetryReporter.Configure(configuration);
+        }
         var activitySourceName = "fsc";
 
         FSharp.Compiler.LanguageServer.Activity.listenToSome();
@@ -249,6 +255,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 codeActions: false,
                 semanticTokens: effectiveSettingValues[FSharpExtensionSettings.SemanticClassificationProvider] == FSharpExtensionSettings.LSP
                 ));
+        _semanticTokensEnabled = serverConfig.EnabledFeatures.SemanticTokens;
 
         var disposeToEndSubscription =
             this.Extensibility.Settings().SubscribeAsync(
@@ -330,8 +337,10 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
-            serviceCollection.AddSingleton<ILspTelemetry>(_telemetryReporter!);
+            _telemetryReporter.Register(serviceCollection);
         });
+        var connectionTelemetry = _telemetryReporter;
+        _server.JsonRpc.Disconnected += (_, _) => connectionTelemetry.Disable();
 
         var solutions = await ws.QuerySolutionAsync(
     solution => solution.With(solution => solution.FileName),
@@ -359,16 +368,15 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             // Log telemetry for failure and disable the server from being activated again.
             this.Enabled = false;
-            _telemetryReporter?.ReportFault(
-                TelemetryEvents.ServerFault,
-                "LSP server initialization failed",
-                null);
+            _telemetryReporter?.ReportLifecycle(
+                "lsp/initializationfailed",
+                [Tuple.Create("has_failure_info", (object)(initializationFailureInfo is not null))]);
         }
         else
         {
-            _telemetryReporter?.ReportEvent(
+            _telemetryReporter?.ReportLifecycle(
                 TelemetryEvents.LspServerInitialized,
-                []);
+                [Tuple.Create("semantic_tokens_enabled", (object)_semanticTokensEnabled)]);
         }
 
         return base.OnServerInitializationResultAsync(serverInitializationResult, initializationFailureInfo, cancellationToken);

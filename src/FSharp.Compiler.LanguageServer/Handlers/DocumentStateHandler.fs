@@ -23,6 +23,7 @@ type DocumentStateHandler() =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Open(request.TextDocument.Uri, request.TextDocument.Text)
+            context.OpenDocument(request.TextDocument.Uri)
 
             telemetry.ReportEvent(TelemetryEvents.DocumentOpened, [| "uri_hash", hash request.TextDocument.Uri :> obj |])
 
@@ -36,6 +37,7 @@ type DocumentStateHandler() =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Edit(request.TextDocument.Uri, request.ContentChanges.[0].Text)
+            context.OpenDocument(request.TextDocument.Uri)
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -48,6 +50,7 @@ type DocumentStateHandler() =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Close(request.TextDocument.Uri)
+            context.CloseDocument(request.TextDocument.Uri)
             context.ClearActiveProjectContext(request.TextDocument.Uri)
 
             telemetry.ReportEvent(TelemetryEvents.DocumentClosed, [| "uri_hash", hash request.TextDocument.Uri :> obj |])

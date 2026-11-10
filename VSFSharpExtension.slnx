@@ -13,6 +13,7 @@
     <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/FSharp.VisualStudio.Extension.Tests/FSharp.VisualStudio.Extension.Tests.csproj" />
     <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj" />
     <Project Path="tests/FSharp.Compiler.LanguageServer.IntegrationTests/FSharp.Compiler.LanguageServer.IntegrationTests.csproj" />
   </Folder>

@@ -47,6 +47,7 @@
     <Compile Include="Options\EditorOptions.fs" />
     <Compile Include="Options\UnifiedSettingsMigration.fs" />
     <Compile Include="Telemetry\TelemetryReporter.fs" />
+    <Compile Include="Telemetry\SemanticHighlightingTelemetry.fs" />
     <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
     <Compile Include="LanguageService\TextViewCreationListener.fs" />
