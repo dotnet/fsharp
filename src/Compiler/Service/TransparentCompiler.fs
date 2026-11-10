@@ -1318,16 +1318,19 @@ type internal TransparentCompiler
         }
         |> Graph.make
 
-    let computeDependencyGraph (tcConfig: TcConfig) parsedInputs (processGraph: Graph<FileIndex> -> Graph<FileIndex>) =
+    let computeDependencyGraph
+        (tcConfig: TcConfig)
+        (parsedFiles: FSharpParsedFile array)
+        (processGraph: Graph<FileIndex> -> Graph<FileIndex>)
+        =
         async {
             let sourceFiles: FileInProject array =
-                parsedInputs
-                |> Seq.toArray
-                |> Array.mapi (fun idx (input: ParsedInput) ->
+                parsedFiles
+                |> Array.mapi (fun idx file ->
                     {
                         Idx = idx
-                        FileName = input.FileName
-                        ParsedInput = input
+                        FileName = file.ParsedInput.FileName
+                        ParsedInput = file.ParsedInput
                     })
 
             use _ =
@@ -1341,13 +1344,15 @@ type internal TransparentCompiler
                 if tcConfig.compilingFSharpCore then
                     mkLinearGraph sourceFiles.Length
                 else
-                    DependencyResolution.mkGraph filePairs sourceFiles |> fst |> processGraph
+                    DependencyResolution.mkGraphWith (fun file -> parsedFiles[file.Idx].FileContent) filePairs sourceFiles
+                    |> fst
+                    |> processGraph
 
             let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
             let fileNames =
-                parsedInputs
-                |> Seq.mapi (fun idx input -> idx, Path.GetFileName input.FileName)
+                parsedFiles
+                |> Seq.mapi (fun idx file -> idx, Path.GetFileName file.ParsedInput.FileName)
                 |> Map.ofSeq
 
             let debugGraph =
@@ -1402,10 +1407,7 @@ type internal TransparentCompiler
         //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (Graph.subGraphFor lastFileIndex))
         caches.DependencyGraph.Get(
             key,
-            computeDependencyGraph
-                tcConfig
-                (priorSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput))
-                (removeImplFilesThatHaveSignatures true priorSnapshot)
+            computeDependencyGraph tcConfig priorSnapshot.SourceFiles (removeImplFilesThatHaveSignatures true priorSnapshot)
         )
 
     let ComputeDependencyGraphForProjectSignatures (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
@@ -1414,20 +1416,14 @@ type internal TransparentCompiler
 
         caches.DependencyGraph.Get(
             key,
-            computeDependencyGraph
-                tcConfig
-                (projectSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput))
-                (removeImplFilesThatHaveSignatures false projectSnapshot)
+            computeDependencyGraph tcConfig projectSnapshot.SourceFiles (removeImplFilesThatHaveSignatures false projectSnapshot)
         )
 
     let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
 
         let key = projectSnapshot.SourceFiles.Key(DependencyGraphType.Project)
 
-        caches.DependencyGraph.Get(
-            key,
-            computeDependencyGraph tcConfig (projectSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput)) id
-        )
+        caches.DependencyGraph.Get(key, computeDependencyGraph tcConfig projectSnapshot.SourceFiles id)
 
     let ComputeTcIntermediate
         (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>)
