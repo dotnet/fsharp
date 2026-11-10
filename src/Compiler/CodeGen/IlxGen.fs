@@ -9374,7 +9374,7 @@ and GenLetBindingInScope cenv cgbuf eenv (bind: Binding) sequel =
     // Track expand-var (resumable code) definitions so state machine lowering
     // inside nested lambdas can resolve otherwise-free expand variables.
     let eenv =
-        if isReturnsResumableCodeTy cenv.g bind.Var.TauType then
+        if isExpandVar cenv.g bind.Var then
             { eenv with
                 resumableCodeDefinitions = eenv.resumableCodeDefinitions.Add bind.Var bind.Expr
             }

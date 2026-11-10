@@ -30,6 +30,9 @@ type LoweredStateMachineResult =
     /// The construct was not a state machine
     | NotAStateMachine
 
+/// A local whose value is resumable code, expanded where it is used
+val isExpandVar: g: TcGlobals -> v: Val -> bool
+
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
 val LowerStateMachineExpr:

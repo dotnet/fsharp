@@ -2006,6 +2006,108 @@ let main _ =
         |> shouldSucceed
         |> withExitCode 0
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Resumable 09 - Effects in the code argument run in source order`` optimize =
+        let result =
+            FSharp """
+#nowarn "3513"
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let log = ResizeArray<string>()
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let note (s: string) (v: 'a) = log.Add s; v
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let start<'M when 'M :> IAsyncStateMachine> (sm: byref<'M>) = sm.MoveNext()
+
+[<Struct; NoEquality; NoComparison>]
+type D<'T> = { mutable Result: 'T }
+
+type B() =
+    member inline _.Delay([<InlineIfLambda>] f: unit -> ResumableCode<'D, 'T>) =
+        ResumableCode<'D, 'T>(fun sm -> (f ()).Invoke(&sm))
+
+    member inline _.Return(v: 'T) =
+        ResumableCode<D<'T>, 'T>(fun sm -> note "body" (); sm.Data.Result <- v; true)
+
+    member inline _.Run(code: ResumableCode<D<'T>, 'T>, [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int) : 'T =
+        if __useResumableCode then
+            __stateMachine<D<'T>, 'T>
+                (MoveNextMethodImpl<D<'T>>(fun sm -> __resumeAt sm.ResumptionPoint; code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<D<'T>>(fun _ _ -> ()))
+                (AfterCode<D<'T>, 'T>(fun sm -> start &sm; ignore line; sm.Data.Result))
+        else
+            let mutable sm = ResumableStateMachine<D<'T>>()
+            code.Invoke(&sm) |> ignore
+            ignore line
+            sm.Data.Result
+
+let b = B()
+
+let inline mkCode () =
+    note "make code" ()
+    b.Delay(fun () -> b.Return 3)
+
+[<EntryPoint>]
+let main _ =
+    let r = b.Run(mkCode (), note "line arg" 7)
+    if r = 3 && String.concat ", " log = "make code, line arg, body" then 0 else 1
+"""
+            |> withDebug
+            |> withOptimization optimize
+            |> asExe
+            |> compileAndRun
+            |> shouldSucceed
+            |> withExitCode 0
+
+        if not optimize then
+            verifySequencePoints result |> ignore
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Resumable 10 - Address of a resumable code local`` optimize mutableLocal =
+        let local, byrefKind = if mutableLocal then "let mutable copy", "byref" else "let copy", "inref"
+        FSharp $"""
+#nowarn "3513"
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+type Observer =
+    [<NoCompilerInlining>]
+    static member Touch<'T>(value: {byrefKind}<'T>) : int = 42
+
+let inline touchCopy (value: 'T) =
+    {local} = value
+    Observer.Touch(&copy)
+
+let inline run () =
+    if __useResumableCode then
+        __stateMachine<unit, int>
+            (MoveNextMethodImpl<unit>(fun _ -> ()))
+            (SetStateMachineMethodImpl<unit>(fun _ _ -> ()))
+            (AfterCode<unit, int>(fun _ -> touchCopy (Unchecked.defaultof<ResumableCode<unit, unit>>)))
+    else
+        42
+
+[<EntryPoint>]
+let main _ =
+    if run () = 42 then 0 else 1
+"""
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+
     [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
         FSharp """
