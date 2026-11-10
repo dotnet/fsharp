@@ -24,6 +24,9 @@
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
     </EmbeddedResource>
+    <EmbeddedResource Include="VSPackage.resx">
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
      <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
       <Link>LegacyResolver.txt</Link>
     </EmbeddedText>
