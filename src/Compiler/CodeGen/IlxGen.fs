@@ -649,6 +649,12 @@ type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
 
+/// The generated state machine struct stands in for the template struct only at the template's own instantiation.
+/// Other instantiations, e.g. a user field of type ResumableStateMachine<string>, keep their own type.
+let isStateMachineTemplate g (templateTcref, templateTypeInst: TyparInstantiation) tcref tinst =
+    tyconRefEq g tcref templateTcref
+    && typesAEquivAux EraseMeasures g TypeEquivEnv.EmptyIgnoreNulls (List.map snd templateTypeInst) tinst
+
 let rec GenTypeArgAux cenv m tyenv tyarg =
     GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
 
@@ -675,7 +681,7 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = cenv.g
 
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when isStateMachineTemplate g (tcref2, templateTypeInst) tcref tinst ->
         let cloInst = List.map mkTyparTy cloFreeTyvars
         let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
         mkILValueTy ilCloTyRef ilTypeInst
@@ -911,7 +917,9 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when
+        isStateMachineTemplate cenv.g (tcref2, templateTypeInst) rfref.TyconRef tyargs
+        ->
         // Fixup references to the fields of a struct machine template
         //     templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
         //     templateTyconRef = ResumableStateMachine<'Data>
