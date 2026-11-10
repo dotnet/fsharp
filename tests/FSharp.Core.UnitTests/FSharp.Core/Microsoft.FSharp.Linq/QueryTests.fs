@@ -27,6 +27,10 @@ module TestData =
         { Id = 2; DeptName = "Marketing" }
     ]
 
+    /// A struct that holds a sequence of itself
+    [<Struct>]
+    type Node = { Children: seq<Node> }
+
     type Table1 = { Id1: int; Id2: int; Value1: string }
     type Table2 = { Id1: int; Id2: int; Value2: string }
 
@@ -495,3 +499,13 @@ type QueryHeadOrDefaultTests() =
         // The result is null (default for reference type tuple)
         // Accessing .Item1/.Item2 would cause NRE - this is the known issue
         Assert.True(obj.ReferenceEquals(null, result))
+
+type QueryRecursiveTypeTests() =
+
+    [<Fact>]
+    member _.``exists over a struct that holds a sequence of itself``() =
+        let empty = Queryable.AsQueryable Seq.empty<TestData.Node>
+        let single = Queryable.AsQueryable [ { TestData.Node.Children = Seq.empty } ]
+
+        Assert.False(query { for n in empty do exists (Seq.isEmpty n.Children) })
+        Assert.True(query { for n in single do exists (Seq.isEmpty n.Children) })
