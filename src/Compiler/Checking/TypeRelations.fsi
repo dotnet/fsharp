@@ -18,6 +18,10 @@ type CanCoerce =
 val TypeDefinitelySubsumesTypeNoCoercion:
     ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
 
+/// Same function as TypeDefinitelySubsumesTypeNoCoercion, but does not require reference types for subsumption checks
+val TypeSubsumesTypeForExhaustiveness:
+    ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
+
 /// The feasible equivalence relation. Part of the language spec.
 val TypesFeasiblyEquivalent:
     stripMeasures: bool -> ndeep: int -> g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
@@ -37,6 +41,15 @@ val TypeFeasiblySubsumesType:
     ty1: TType ->
     canCoerce: CanCoerce ->
     ty2: TType ->
+        bool
+
+/// Whether a runtime type test may have an overlapping source and target type.
+val TypeTestCanSucceedForRuntimeType:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    targetTy: TType ->
+    sourceTy: TType ->
         bool
 
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced

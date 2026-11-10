@@ -186,6 +186,7 @@
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\ExtensionConstraints\ExtensionConstraintsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
+    <Compile Include="Conformance\Types\UnionTypes\AnonymousUnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
@@ -562,7 +563,7 @@
 
   <ItemGroup>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
+        <Link>%(RelativeDir)TestSource\%(Filename)%(Extension)</Link>
     </None>
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
@@ -602,7 +603,7 @@
        test assembly so the test can request exactly the cached version with no manual sync when the pin
        is bumped; keep the package id here in sync with the id in FsiCliTests.fs. -->
   <PropertyGroup>
-    <FsiRestoreTestPackageVersion>@(PackageVersion->WithMetadataValue('Identity','FsCheck')->'%(Version)')</FsiRestoreTestPackageVersion>
+    <FsiRestoreTestPackageVersion>@(PackageVersion-&gt;WithMetadataValue('Identity','FsCheck')-&gt;'%(Version)')</FsiRestoreTestPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="FsiRestoreTestPackageVersion" Value="$(FsiRestoreTestPackageVersion)" />

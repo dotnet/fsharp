@@ -167,6 +167,16 @@
         <target state="translated">La signature de conteneurs de clés n'est pas prise en charge sur cette plateforme.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csAnonUnionTypeAmbiguous">
+        <source>The type '{0}' is ambiguous with respect to the anonymous union type '{1}' - multiple union cases match</source>
+        <target state="new">The type '{0}' is ambiguous with respect to the anonymous union type '{1}' - multiple union cases match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAnonUnionTypeNotContained">
+        <source>The type '{0}' is not compatible with the anonymous union type '{1}'</source>
+        <target state="new">The type '{0}' is not compatible with the anonymous union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Surcharges disponibles :\n{0}</target>
@@ -310,6 +320,11 @@
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAnonUnions">
+        <source>anonymous unions</source>
+        <target state="new">anonymous unions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBetterAnonymousRecordParsing">
@@ -1317,6 +1332,41 @@
         <target state="new">The source expression of a spread into an anonymous record expression must have a nominal or anonymous record type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonUnionCaseOverlap">
+        <source>The runtime representation of the type '{0}' is a subtype of the runtime representation of '{1}' and the case will be ignored.</source>
+        <target state="new">The runtime representation of the type '{0}' is a subtype of the runtime representation of '{1}' and the case will be ignored.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionDegraded">
+        <source>This anonymous union type degrades to a single type '{0}'. Consider using the underlying type directly instead of an anonymous union.</source>
+        <target state="new">This anonymous union type degrades to a single type '{0}'. Consider using the underlying type directly instead of an anonymous union.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionDuplicateCaseType">
+        <source>This anonymous union type has multiple cases of the same type '{0}'. Duplicate case types are not permitted in a directly-written anonymous union.</source>
+        <target state="new">This anonymous union type has multiple cases of the same type '{0}'. Duplicate case types are not permitted in a directly-written anonymous union.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNestedNotPermitted">
+        <source>Anonymous union types may not be nested directly. Use a type alias for the nested anonymous union case instead.</source>
+        <target state="new">Anonymous union types may not be nested directly. Use a type alias for the nested anonymous union case instead.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNullMustBeTrailing">
+        <source>'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</source>
+        <target state="new">'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNullNotAllowed">
+        <source>'null' cannot be applied to a parenthesized anonymous union. Write {0}.</source>
+        <target state="new">'null' cannot be applied to a parenthesized anonymous union. Write {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonUnionNullRequiresReferenceAncestor">
+        <source>The type '{0}' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.</source>
+        <target state="new">The type '{0}' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
         <source>This attribute is not valid for use on union cases with fields.</source>
         <target state="new">This attribute is not valid for use on union cases with fields.</target>
@@ -1520,6 +1570,11 @@
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
         <target state="translated">Désolé, nous n’avons pas pu trouver une propriété abstraite statique qui corresponde à cette substitution</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNullableNotAllowedInAnonymousUnion">
+        <source>The type System.Nullable&lt;'T&gt; is not allowed in an anonymous union type. Consider adding null case instead.</source>
+        <target state="new">The type System.Nullable&lt;'T&gt; is not allowed in an anonymous union type. Consider adding null case instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNullableToStringOverride">

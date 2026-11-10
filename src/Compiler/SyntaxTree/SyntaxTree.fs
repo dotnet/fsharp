@@ -467,6 +467,8 @@ type SynType =
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
+    | AnonUnion of anonUnionCases: SynAnonUnionCase list * range: range
+
     | Array of rank: int * elementType: SynType * range: range
 
     | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
@@ -508,6 +510,7 @@ type SynType =
         | SynType.Tuple(range = m)
         | SynType.Array(range = m)
         | SynType.AnonRecd(range = m)
+        | SynType.AnonUnion(range = m)
         | SynType.Fun(range = m)
         | SynType.Var(range = m)
         | SynType.Anon(range = m)
@@ -1359,6 +1362,15 @@ type SynUnionCase =
     member this.Range =
         match this with
         | SynUnionCase(range = m) -> m
+
+[<NoEquality; NoComparison>]
+type SynAnonUnionCase =
+
+    | SynAnonUnionCase of typ: SynType * xmlDoc: PreXmlDoc * range: range
+
+    member this.Range =
+        match this with
+        | SynAnonUnionCase(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynUnionCaseKind =

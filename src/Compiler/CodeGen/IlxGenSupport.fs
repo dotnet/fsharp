@@ -443,6 +443,9 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
             for t in tys do
                 yield! GetNullnessFromTType g t
         ]
+
+    | TType_anon_union(unionInfo, _, _) -> GetNullnessFromTType g unionInfo.CommonAncestorTy
+
     | TType_forall _
     | TType_ucase _
     | TType_measure _ -> []
