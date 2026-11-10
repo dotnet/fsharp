@@ -8,11 +8,11 @@ This file should be imported by eng/Versions.props
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>12.0.0-beta.26469.3</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-dotnet dependencies -->
-    <SystemCollectionsImmutablePackageVersion>10.0.15</SystemCollectionsImmutablePackageVersion>
-    <SystemCompositionPackageVersion>10.0.15</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.15</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>10.0.15</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>10.0.15</SystemSecurityCryptographyXmlPackageVersion>
+    <SystemCollectionsImmutablePackageVersion>10.0.16</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.16</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.16</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.16</SystemReflectionMetadataPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.16</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.12.0-1.26468.2</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.12.0-1.26468.2</MicrosoftBuildFrameworkPackageVersion>
