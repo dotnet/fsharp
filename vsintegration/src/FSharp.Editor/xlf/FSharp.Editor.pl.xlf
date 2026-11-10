@@ -379,6 +379,16 @@
         <target state="translated">Użyj składni wyrażenia lambda języka F#</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpOptionalParameter">
+        <source>Use F# '?' optional parameter</source>
+        <target state="new">Use F# '?' optional parameter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpStructOptionalParameter">
+        <source>Use F# '[&lt;Struct&gt;] ?' optional parameter</source>
+        <target state="new">Use F# '[&lt;Struct&gt;] ?' optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">Użyj znaku „&lt;-” w celu zmodyfikowania wartości</target>
@@ -417,6 +427,11 @@
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
         <target state="translated">Ujmij wyrażenie w nawiasy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseDotNetOptionalParameter">
+        <source>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</source>
+        <target state="new">Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</target>
         <note />
       </trans-unit>
     </body>
