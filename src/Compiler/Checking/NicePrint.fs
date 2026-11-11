@@ -1202,8 +1202,9 @@ module PrintTypes =
         if isEmptyL paramsL then
             retL
         else
-            // Right-align the return type delimiter with the colon of the last parameter
-            let retIndent = max 0 (lastColonColumn + 1 - retTyDelim.Text.Length)
+            // Right-align the return type delimiter with the colon of the last parameter,
+            // but no further than a code indent from the parameters
+            let retIndent = min 4 (max 0 (lastColonColumn + 1 - retTyDelim.Text.Length))
             Node(paramsL, retL, Broken retIndent)
 
     /// Layout type parameters

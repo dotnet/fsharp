@@ -36,8 +36,8 @@ type AssertionExtensions =
 [<Theory>]
 [<InlineData(false, true, "static member AssertionExtensions.ContainExactlyOneItemMatching: sequence: 'a seq * predicate: ('a -> bool) * [<Optional; DefaultParameterValue ((null :> obj))>] because: string -> 'a")>]
 [<InlineData(false, false, "static member AssertionExtensions.ContainExactlyOneItemMatching: sequence: 'a seq * predicate: ('a -> bool) * because: string -> 'a")>]
-[<InlineData(true, true, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   [<Optional; DefaultParameterValue ((null :> obj))>] because: string\n                                                             -> 'a")>]
-[<InlineData(true, false, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   because: string\n         -> 'a")>]
+[<InlineData(true, true, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   [<Optional; DefaultParameterValue ((null :> obj))>] because: string\n       -> 'a")>]
+[<InlineData(true, false, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   because: string\n       -> 'a")>]
 let ``Method parameters with attributes`` multiline showAttributes expected =
     assertTooltip { MultilineParameters = multiline; ShowAttributes = showAttributes } methodWithAttributeSource expected
 
@@ -65,7 +65,7 @@ let ``Curried function parameters are put on separate lines`` () =
 val bar:
    fileName: string ->
    version: int
-         -> int
+       -> int
 """
 
 [<Fact>]
