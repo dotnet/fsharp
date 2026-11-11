@@ -780,47 +780,49 @@ module private LspCodeFixes =
     // Registration
     // ---------------------------------------------------------------
 
+    let private sync name fix =
+        name, (fun ctx -> async { return fix ctx })
+
     let private allCodeFixes =
         [
-            "FS0760", nameof addNewKeywordFix, addNewKeywordFix
-            "FS0043", nameof convertToSingleEquals, convertToSingleEquals
-            "FS0043", nameof convertToNotEquals, convertToNotEquals
-            "FS3198", nameof changeToUpcast, changeToUpcast
-            "FS3366", nameof fixIndexerAccess, fixIndexerAccess
-            "FS0597", nameof wrapExpressionInParentheses, wrapExpressionInParentheses
-            "FS0003", nameof changePrefixNegationToInfixSubtraction, changePrefixNegationToInfixSubtraction
-            "FS0039", nameof convertCSharpUsingToFSharpOpen, convertCSharpUsingToFSharpOpen
-            "FS0201", nameof convertCSharpUsingToFSharpOpen, convertCSharpUsingToFSharpOpen
-            "FS0673", nameof addInstanceMemberParameter, addInstanceMemberParameter
-            "FS0010", nameof addMissingEqualsToTypeDefinition, addMissingEqualsToTypeDefinition
-            "FS0010", nameof addMissingFunKeyword, addMissingFunKeyword
-            "FS0010", nameof changeEqualsInFieldTypeToColon, changeEqualsInFieldTypeToColon
-            "FS0576", nameof addMissingRecToMutuallyRecFunctions, addMissingRecToMutuallyRecFunctions
-            "FS0039", nameof makeOuterBindingRecursive, makeOuterBindingRecursive
-            "FS0039", nameof convertCSharpLambdaToFSharpLambda, convertCSharpLambdaToFSharpLambda
-            "FS0747", nameof removeReturnOrYield, removeReturnOrYield
-            "FS0748", nameof removeReturnOrYield, removeReturnOrYield
-            "FS0020", nameof useMutationWhenValueIsMutable, useMutationWhenValueIsMutable
-            "FS3373", nameof useTripleQuotedInterpolation, useTripleQuotedInterpolation
-            "FS0001", nameof changeRefCellDerefToNotExpression, changeRefCellDerefToNotExpression
-            "FS0039", nameof replaceWithSuggestion, replaceWithSuggestion
-            "FS0495", nameof replaceWithSuggestion, replaceWithSuggestion
-            "FS1129", nameof replaceWithSuggestion, replaceWithSuggestion
-            "FS1182", nameof prefixUnusedValue, prefixUnusedValue
-            "FS1182", nameof discardUnusedValue, discardUnusedValue
-            "FS0027", nameof makeDeclarationMutable, makeDeclarationMutable
-            "FS0072", nameof addTypeAnnotationToObjectOfIndeterminateType, addTypeAnnotationToObjectOfIndeterminateType
-            "FS3245", nameof addTypeAnnotationToObjectOfIndeterminateType, addTypeAnnotationToObjectOfIndeterminateType
-            "FS0039", nameof convertToAnonymousRecord, convertToAnonymousRecord
-            "FS3578", nameof convertToAnonymousRecord, convertToAnonymousRecord
-            "FS3873", nameof addMissingSeq, addMissingSeq
-            "FS0740", nameof addMissingSeq, addMissingSeq
-            "FS0725", nameof removeSuperfluousCaptureForUnionCaseWithNoData, removeSuperfluousCaptureForUnionCaseWithNoData
-            "FS3548", nameof removeSuperfluousCaptureForUnionCaseWithNoData, removeSuperfluousCaptureForUnionCaseWithNoData
-            "FS3218", nameof renameParamToMatchSignature, renameParamToMatchSignature
+            "FS0760", sync (nameof addNewKeywordFix) addNewKeywordFix
+            "FS0043", sync (nameof convertToSingleEquals) convertToSingleEquals
+            "FS0043", sync (nameof convertToNotEquals) convertToNotEquals
+            "FS3198", sync (nameof changeToUpcast) changeToUpcast
+            "FS3366", sync (nameof fixIndexerAccess) fixIndexerAccess
+            "FS0597", sync (nameof wrapExpressionInParentheses) wrapExpressionInParentheses
+            "FS0003", sync (nameof changePrefixNegationToInfixSubtraction) changePrefixNegationToInfixSubtraction
+            "FS0039", sync (nameof convertCSharpUsingToFSharpOpen) convertCSharpUsingToFSharpOpen
+            "FS0201", sync (nameof convertCSharpUsingToFSharpOpen) convertCSharpUsingToFSharpOpen
+            "FS0673", sync (nameof addInstanceMemberParameter) addInstanceMemberParameter
+            "FS0010", sync (nameof addMissingEqualsToTypeDefinition) addMissingEqualsToTypeDefinition
+            "FS0010", sync (nameof addMissingFunKeyword) addMissingFunKeyword
+            "FS0010", sync (nameof changeEqualsInFieldTypeToColon) changeEqualsInFieldTypeToColon
+            "FS0576", sync (nameof addMissingRecToMutuallyRecFunctions) addMissingRecToMutuallyRecFunctions
+            "FS0039", sync (nameof makeOuterBindingRecursive) makeOuterBindingRecursive
+            "FS0039", sync (nameof convertCSharpLambdaToFSharpLambda) convertCSharpLambdaToFSharpLambda
+            "FS0747", sync (nameof removeReturnOrYield) removeReturnOrYield
+            "FS0748", sync (nameof removeReturnOrYield) removeReturnOrYield
+            "FS0020", sync (nameof useMutationWhenValueIsMutable) useMutationWhenValueIsMutable
+            "FS3373", sync (nameof useTripleQuotedInterpolation) useTripleQuotedInterpolation
+            "FS0001", sync (nameof changeRefCellDerefToNotExpression) changeRefCellDerefToNotExpression
+            "FS0039", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS0495", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS1129", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS1182", sync (nameof prefixUnusedValue) prefixUnusedValue
+            "FS1182", sync (nameof discardUnusedValue) discardUnusedValue
+            "FS0027", sync (nameof makeDeclarationMutable) makeDeclarationMutable
+            "FS0072", sync (nameof addTypeAnnotationToObjectOfIndeterminateType) addTypeAnnotationToObjectOfIndeterminateType
+            "FS3245", sync (nameof addTypeAnnotationToObjectOfIndeterminateType) addTypeAnnotationToObjectOfIndeterminateType
+            "FS0039", sync (nameof convertToAnonymousRecord) convertToAnonymousRecord
+            "FS3578", sync (nameof convertToAnonymousRecord) convertToAnonymousRecord
+            "FS3873", sync (nameof addMissingSeq) addMissingSeq
+            "FS0740", sync (nameof addMissingSeq) addMissingSeq
+            "FS0725", sync (nameof removeSuperfluousCaptureForUnionCaseWithNoData) removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3548", sync (nameof removeSuperfluousCaptureForUnionCaseWithNoData) removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3218", sync (nameof renameParamToMatchSignature) renameParamToMatchSignature
+            "FS0366", (nameof implementInterface, implementInterface)
         ]
-        |> List.map (fun (code, name, fix) -> code, (name, fun ctx -> async { return fix ctx }))
-        |> fun fixes -> ("FS0366", (nameof implementInterface, implementInterface)) :: fixes
 
     let private codeFixMap =
         allCodeFixes
