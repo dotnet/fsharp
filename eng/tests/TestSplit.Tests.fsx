@@ -29,12 +29,15 @@ let core = project "FSharp.Core.UnitTests"
 let service = project "FSharp.Compiler.Service.Tests"
 let scripting = project "FSharp.Compiler.Private.Scripting.UnitTests"
 let server = project "FSharp.Compiler.Interactive.Server.Tests"
+let languageServer = project "FSharp.Compiler.LanguageServer.Tests"
 let legacy = "tests/fsharp/FSharpSuite.Tests.fsproj"
 
 for platform in [ "coreclr"; "desktop" ] do
     let aggregate = commands [ "--all"; platform ]
     let expected =
-        [ componentTests; build; core; service; scripting ]
+        [ componentTests; build ]
+        @ (if platform = "coreclr" then [ languageServer ] else [])
+        @ [ core; service; scripting ]
         @ (if platform = "coreclr" then [ server ] else [])
         @ [ legacy ]
     if aggregate <> (expected |> List.map (fun p -> p, "")) then
@@ -42,7 +45,7 @@ for platform in [ "coreclr"; "desktop" ] do
 
     let batches = [ for batch in 1..3 -> commands [ string batch; platform ] ]
     let expectedBatches =
-        [ [ componentTests; build ]
+        [ [ componentTests; build ] @ (if platform = "coreclr" then [ languageServer ] else [])
           [ componentTests; core; service; scripting ] @ (if platform = "coreclr" then [ server ] else [])
           if platform = "desktop" then [ legacy ] else [] ]
     if (batches |> List.map (List.map fst)) <> expectedBatches then

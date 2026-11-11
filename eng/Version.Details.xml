@@ -80,10 +80,9 @@
       <Sha>295ff616832ba1f8b192f8178c4188a133affe93</Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Text.Json" Version="10.0.10">
-      <Uri>https://github.com/dotnet/runtime</Uri>
-      <Sha>
-      </Sha>
+    <Dependency Name="System.Text.Json" Version="10.0.15">
+      <Uri>https://github.com/dotnet/dotnet</Uri>
+      <Sha>295ff616832ba1f8b192f8178c4188a133affe93</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
