@@ -51,6 +51,7 @@
 
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
     <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
+    <Asset Type="Microsoft.VisualStudio.DirectedGraph.Provider" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" />
 
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|AppConfig;TemplateProjectOutputGroup|" d:ProjectName="AppConfig" d:VsixSubPath="ItemTemplates" />
