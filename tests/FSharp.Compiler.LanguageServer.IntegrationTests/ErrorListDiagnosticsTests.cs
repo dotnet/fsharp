@@ -17,6 +17,8 @@ namespace FSharp.Compiler.LanguageServer.IntegrationTests;
 /// including the Project column which requires VSDiagnosticProjectInformation from the language server.
 /// </summary>
 [TestClass]
+[Ignore("LSP diagnostics are hard-coded off in Visual Studio.")]
+// These tests may need migration to the new Apex suite when LSP diagnostics are enabled.
 public class ErrorListDiagnosticsTests : FSharpApexTestBase
 {
     /// <summary>

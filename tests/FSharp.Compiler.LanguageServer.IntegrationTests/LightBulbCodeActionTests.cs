@@ -17,6 +17,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FSharp.Compiler.LanguageServer.IntegrationTests;
 
 [TestClass]
+[Ignore("LSP code actions are suppressed by VsServerCapabilitiesOverride in Visual Studio.")]
+// These tests may need migration to the new Apex suite when LSP code actions are enabled.
 public class LightBulbCodeActionTests : FSharpApexTestBase
 {
     private const string CodeWithMissingNewKeyword = """

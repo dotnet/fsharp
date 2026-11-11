@@ -128,6 +128,18 @@ Will be packaged with FsLSP and available as a dotnet tool (?)
 
 It should always target the latest .NET runtime.
 
+#### Visual Studio provider selection
+
+`fsharp.semanticClassificationProvider` selects `old` (the in-process classifier)
+or `lsp`. The default, `unset`, resolves to `old` at read time without writing
+that fallback to user settings, preserving the distinction between an explicit
+choice and the default for telemetry and controlled rollouts.
+
+Restart Visual Studio after changing the provider. Unless the effective provider
+is `lsp`, the language server stays disabled: no LSP workspace, project
+subscriptions, document synchronization, or active-project-context forwarding is
+started. Exposure telemetry still records both providers, including `unset`.
+
 #### Transport and serialization
 
 The standalone server uses header-delimited JSON-RPC on standard input/output; logs

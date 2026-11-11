@@ -36,9 +36,9 @@ namespace FSharp.VisualStudio.Extension
             Description = "%FSharpSettings.SemanticClassificationProvider.Description%",
         };
 
-        // Each setting carries the concrete value to persist (and treat as effective)
-        // the first time it is read as UNSET. Semantic classification defaults to
-        // OLD so the in-proc classifier stays in charge until the user opts in
+        // Resolve UNSET at read time only; do not persist the fallback.
+        // Semantic classification defaults to OLD so the in-proc classifier
+        // stays in charge until the user opts in
         // (or is flipped into the LSP path by a controlled rollout).
         public static (Setting<string> Setting, string DefaultIfUnset)[] AllSettingsWithDefaults { get; } =
         [

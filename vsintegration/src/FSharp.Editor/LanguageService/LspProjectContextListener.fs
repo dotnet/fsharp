@@ -53,73 +53,73 @@ type internal LspProjectContextListener [<ImportingConstructor>] (broker: ILangu
 
     interface IWpfTextViewCreationListener with
         member _.TextViewCreated(view) =
-            let cancellation = new CancellationTokenSource()
-            let requests = ThreadHelper.JoinableTaskContext.CreateCollection()
-            let factory = ThreadHelper.JoinableTaskContext.CreateFactory requests
-
             let struct (settingValue, provider) =
                 HighlightingTelemetry.readProvider ServiceProvider.GlobalProvider
 
             telemetry.RegisterView(settingValue, provider, view.Closed)
 
-            let focused =
-                EventHandler(fun _ _ -> telemetry.Configure(retry = (provider = "lsp")))
+            if provider = "lsp" then
+                let cancellation = new CancellationTokenSource()
+                let requests = ThreadHelper.JoinableTaskContext.CreateCollection()
+                let factory = ThreadHelper.JoinableTaskContext.CreateFactory requests
 
-            view.GotAggregateFocus.AddHandler focused
+                let focused = EventHandler(fun _ _ -> telemetry.Configure(retry = true))
 
-            let updateContext () =
-                factory
-                    .RunAsync(fun () ->
-                        task {
-                            let document = view.TextSnapshot.GetOpenDocumentInCurrentContextWithChanges()
+                view.GotAggregateFocus.AddHandler focused
 
-                            if not (isNull document) && not (isNull document.Project.OutputFilePath) then
-                                // The Roslyn navbar does not populate the LSP client's navbar context.
-                                let parameters =
-                                    {|
-                                        Uri = Uri(document.FilePath)
-                                        ProjectFileName = document.Project.FilePath
-                                        OutputFileName = document.Project.OutputFilePath
-                                    |}
+                let updateContext () =
+                    factory
+                        .RunAsync(fun () ->
+                            task {
+                                let document = view.TextSnapshot.GetOpenDocumentInCurrentContextWithChanges()
 
-                                let request =
-                                    DocumentRequest<_, bool>(
-                                        TextBuffer = view.TextBuffer,
-                                        Method = "textDocument/fsharp/setActiveProjectContext",
-                                        LanguageServerName = "FSharp Analyzer LSP server",
-                                        ParameterFactory = (fun _ -> parameters)
-                                    )
+                                if not (isNull document) && not (isNull document.Project.OutputFilePath) then
+                                    // The Roslyn navbar does not populate the LSP client's navbar context.
+                                    let parameters =
+                                        {|
+                                            Uri = Uri(document.FilePath)
+                                            ProjectFileName = document.Project.FilePath
+                                            OutputFileName = document.Project.OutputFilePath
+                                        |}
 
-                                let! accepted = broker.RequestAsync(request, cancellation.Token)
+                                    let request =
+                                        DocumentRequest<_, bool>(
+                                            TextBuffer = view.TextBuffer,
+                                            Method = "textDocument/fsharp/setActiveProjectContext",
+                                            LanguageServerName = "FSharp Analyzer LSP server",
+                                            ParameterFactory = (fun _ -> parameters)
+                                        )
 
-                                if not accepted then
-                                    System.Diagnostics.Trace.TraceWarning("F# LSP active project context was not accepted.")
-                        }
-                        :> Task)
-                    .FileAndForget("vs/fsharp/lsp/projectContext")
+                                    let! accepted = broker.RequestAsync(request, cancellation.Token)
 
-            let handler =
-                EventHandler<DocumentActiveContextChangedEventArgs>(fun _ args ->
-                    if args.SourceTextContainer = view.TextBuffer.AsTextContainer() then
-                        telemetry.Configure false
-                        updateContext ())
+                                    if not accepted then
+                                        System.Diagnostics.Trace.TraceWarning("F# LSP active project context was not accepted.")
+                            }
+                            :> Task)
+                        .FileAndForget("vs/fsharp/lsp/projectContext")
 
-            workspace.DocumentActiveContextChanged.AddHandler handler
+                let handler =
+                    EventHandler<DocumentActiveContextChangedEventArgs>(fun _ args ->
+                        if args.SourceTextContainer = view.TextBuffer.AsTextContainer() then
+                            telemetry.Configure false
+                            updateContext ())
 
-            view.Closed.Add(fun _ ->
-                workspace.DocumentActiveContextChanged.RemoveHandler handler
-                cancellation.Cancel()
-                view.GotAggregateFocus.RemoveHandler focused
+                workspace.DocumentActiveContextChanged.AddHandler handler
 
-                ThreadHelper.JoinableTaskFactory
-                    .RunAsync(fun () ->
-                        task {
-                            try
-                                do! requests.JoinTillEmptyAsync()
-                            finally
-                                cancellation.Dispose()
-                        }
-                        :> Task)
-                    .FileAndForget("vs/fsharp/lsp/projectContext/close"))
+                view.Closed.Add(fun _ ->
+                    workspace.DocumentActiveContextChanged.RemoveHandler handler
+                    cancellation.Cancel()
+                    view.GotAggregateFocus.RemoveHandler focused
 
-            updateContext ()
+                    ThreadHelper.JoinableTaskFactory
+                        .RunAsync(fun () ->
+                            task {
+                                try
+                                    do! requests.JoinTillEmptyAsync()
+                                finally
+                                    cancellation.Dispose()
+                            }
+                            :> Task)
+                        .FileAndForget("vs/fsharp/lsp/projectContext/close"))
+
+                updateContext ()
