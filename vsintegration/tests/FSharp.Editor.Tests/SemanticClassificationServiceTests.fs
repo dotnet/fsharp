@@ -28,7 +28,8 @@ type SemanticClassificationPolicyTests() =
     [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
     [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
     [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
-    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, true)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, false)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, false, true)>]
     [<InlineData("lsp", "Custom", true, true)>]
     [<InlineData("old", WorkspaceKind.Host, true, true)>]
     [<InlineData("old", WorkspaceKind.Host, false, true)>]
@@ -40,6 +41,7 @@ type SemanticClassificationPolicyTests() =
     [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
     [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
     [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, false)>]
     [<InlineData("old", WorkspaceKind.Host, true, true)>]
     member _.``Legacy provider classifies closed and preview documents under LSP``(provider, workspaceKind, isOpen, expected) =
         task {

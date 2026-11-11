@@ -166,7 +166,11 @@ type internal FSharpClassificationService(provider: string, options: EditorOptio
         FSharpClassificationService(provider, options, HighlightingTelemetry.instance)
 
     static member ShouldClassify(provider, workspaceKind, isOpenDocument) =
-        provider <> "lsp" || workspaceKind <> WorkspaceKind.Host || not isOpenDocument
+        let isLspEditorWorkspace =
+            workspaceKind = WorkspaceKind.Host
+            || workspaceKind = WorkspaceKind.MiscellaneousFiles
+
+        provider <> "lsp" || not isLspEditorWorkspace || not isOpenDocument
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
