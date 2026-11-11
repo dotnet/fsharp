@@ -2116,12 +2116,14 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Boolean get_HasFullTypeChec
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext ProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpProjectContext get_ProjectContext()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.CodeAnalysis.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.DeclarationListInfo GetDeclarationListInfo(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.EditorServices.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.AssemblySymbol]]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Position,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.CompletionContext]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCodeCompletionOptions])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.FindDeclResult GetDeclarationLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetKeywordTooltip(Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
@@ -2625,9 +2627,12 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind All
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind AllInCode
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind AllInCodeAndDocs
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind CopyAndUpdateRecord
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind None
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind UnionCaseTester
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind XmlDocParameter
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: Int32 value__
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes)
 FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes, System.Collections.IEqualityComparer)
@@ -12741,11 +12746,62 @@ FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Empty
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Merge(FSharp.Compiler.Xml.XmlDoc, FSharp.Compiler.Xml.XmlDoc)
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc get_Empty()
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range] LineRanges
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range] get_LineRanges()
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Xml.XmlDocRef] GetRefs()
 FSharp.Compiler.Xml.XmlDoc: System.String GetXmlText()
 FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(FSharp.Compiler.Xml.XmlDocRef)
+FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(FSharp.Compiler.Xml.XmlDocRef, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(System.Object)
+FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRef: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Xml.XmlDocRef: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Xml.XmlDocRef: FSharp.Compiler.Xml.XmlDocRefKind Kind
+FSharp.Compiler.Xml.XmlDocRef: FSharp.Compiler.Xml.XmlDocRefKind get_Kind()
+FSharp.Compiler.Xml.XmlDocRef: Int32 GetHashCode()
+FSharp.Compiler.Xml.XmlDocRef: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRef: System.String Text
+FSharp.Compiler.Xml.XmlDocRef: System.String ToString()
+FSharp.Compiler.Xml.XmlDocRef: System.String get_Text()
+FSharp.Compiler.Xml.XmlDocRef: Void .ctor(FSharp.Compiler.Xml.XmlDocRefKind, System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 Param
+FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 ParamRef
+FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 TypeParam
+FSharp.Compiler.Xml.XmlDocRefKind+Tags: Int32 TypeParamRef
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(FSharp.Compiler.Xml.XmlDocRefKind)
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(FSharp.Compiler.Xml.XmlDocRefKind, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(System.Object)
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsParam
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsParamRef
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsTypeParam
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean IsTypeParamRef
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsParam()
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsParamRef()
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsTypeParam()
+FSharp.Compiler.Xml.XmlDocRefKind: Boolean get_IsTypeParamRef()
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind Param
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind ParamRef
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind TypeParam
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind TypeParamRef
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_Param()
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_ParamRef()
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_TypeParam()
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind get_TypeParamRef()
+FSharp.Compiler.Xml.XmlDocRefKind: FSharp.Compiler.Xml.XmlDocRefKind+Tags
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 CompareTo(FSharp.Compiler.Xml.XmlDocRefKind)
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 GetHashCode()
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 Tag
+FSharp.Compiler.Xml.XmlDocRefKind: Int32 get_Tag()
+FSharp.Compiler.Xml.XmlDocRefKind: System.String ToString()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
