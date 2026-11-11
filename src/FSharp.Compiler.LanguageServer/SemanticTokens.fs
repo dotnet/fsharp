@@ -1,5 +1,8 @@
 namespace FSharp.Compiler.LanguageServer
 
+open System.Collections.Generic
+open System.Threading
+
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -232,13 +235,27 @@ module LspSemanticTokens =
                         | 0 -> range
                         | index -> Range.mkRange range.FileName (Position.mkPos range.StartLine (startCol + index + 1)) range.End
 
-    let private splitRange (source: ISourceText) (range: range) tokenType modifiers sourceKind =
+    let private splitRange
+        (source: ISourceText)
+        (range: range)
+        tokenType
+        modifiers
+        sourceKind
+        (requestedRange: Range option)
+        (cancellationToken: CancellationToken)
+        =
         [|
             let startLine = range.StartLine - 1
             let endLine = range.EndLine - 1
 
             if startLine >= 0 && endLine >= startLine then
-                for line in startLine..endLine do
+                let firstLine, lastLine =
+                    match requestedRange with
+                    | None -> startLine, endLine
+                    | Some requested -> max startLine requested.Start.Line, min endLine requested.End.Line
+
+                for line in firstLine..lastLine do
+                    cancellationToken.ThrowIfCancellationRequested()
                     let lengthOfLine = lineLength source line
 
                     let startChar =
@@ -266,16 +283,36 @@ module LspSemanticTokens =
                         }
         |]
 
-    let fromSemanticClassifications (source: ISourceText) (items: SemanticClassificationItem array) =
+    let fromSemanticClassifications
+        (source: ISourceText)
+        (items: SemanticClassificationItem array)
+        (range: Range option)
+        (cancellationToken: CancellationToken)
+        =
         items
         |> Array.collect (fun item ->
-            match mapSemanticClassification item.Type with
-            | Some tokenType ->
-                let fixedRange = fixupRange source tokenType item.Range
-                splitRange source fixedRange tokenType [] TokenSource.Semantic
-            | None -> [||])
+            cancellationToken.ThrowIfCancellationRequested()
 
-    let fromTokenizer (parsingOptions: FSharpParsingOptions option) (fileName: string) (source: ISourceText) =
+            let inRange =
+                match range with
+                | None -> true
+                | Some range ->
+                    item.Range.EndLine - 1 >= range.Start.Line
+                    && item.Range.StartLine - 1 <= range.End.Line
+
+            match mapSemanticClassification item.Type with
+            | Some tokenType when inRange ->
+                let fixedRange = fixupRange source tokenType item.Range
+                splitRange source fixedRange tokenType [] TokenSource.Semantic range cancellationToken
+            | _ -> [||])
+
+    let fromTokenizer
+        (parsingOptions: FSharpParsingOptions option)
+        (fileName: string)
+        (source: ISourceText)
+        (range: Range option)
+        (cancellationToken: CancellationToken)
+        =
         let defines, langVersion =
             match parsingOptions with
             | Some opts -> CompilerEnvironment.GetConditionalDefinesForEditing opts, Some opts.LangVersionText
@@ -285,8 +322,14 @@ module LspSemanticTokens =
 
         let mutable state = FSharpTokenizerLexState.Initial
 
+        let firstLine, lastLine =
+            match range with
+            | None -> 0, source.GetLineCount() - 1
+            | Some range -> range.Start.Line, min range.End.Line (source.GetLineCount() - 1)
+
         [|
-            for line in 0 .. source.GetLineCount() - 1 do
+            for line in 0..lastLine do
+                cancellationToken.ThrowIfCancellationRequested()
                 let lineText = source.GetLineString line
                 // Should we cache the results?
                 let lineTokenizer = tokenizer.CreateLineTokenizer lineText
@@ -297,7 +340,7 @@ module LspSemanticTokens =
                     state <- nextState
 
                     match token with
-                    | Some tokenInfo ->
+                    | Some tokenInfo when line >= firstLine ->
                         match mapSyntacticToken tokenInfo with
                         | Some tokenType ->
                             let length = tokenInfo.RightColumn - tokenInfo.LeftColumn + 1
@@ -312,6 +355,7 @@ module LspSemanticTokens =
                                     Source = TokenSource.Syntactic
                                 }
                         | None -> ()
+                    | Some _ -> ()
                     | None -> keepScanning <- false
         |]
 
@@ -340,29 +384,50 @@ module LspSemanticTokens =
                     }
             ]
 
-    let resolveOverlaps (tokens: NormalizedToken array) =
+    let resolveOverlaps (cancellationToken: CancellationToken) (tokens: NormalizedToken array) =
+        cancellationToken.ThrowIfCancellationRequested()
+
         let sorted =
             tokens
             |> Array.sortBy (fun token -> sourcePriority token.Source, token.Line, token.StartChar, -token.Length)
 
         let accepted = ResizeArray()
+        let acceptedByLine = Dictionary<int, ResizeArray<NormalizedToken>>()
+
+        let mutable previousLine = -1
 
         for token in sorted do
+            if token.Line <> previousLine then
+                cancellationToken.ThrowIfCancellationRequested()
+                previousLine <- token.Line
+
+            let lineTokens =
+                match acceptedByLine.TryGetValue token.Line with
+                | true, tokens -> tokens
+                | _ ->
+                    let tokens = ResizeArray()
+                    acceptedByLine.Add(token.Line, tokens)
+                    tokens
+
+            let accept token =
+                accepted.Add token
+                lineTokens.Add token
+
             match token.Source with
             | TokenSource.Semantic ->
-                if not (accepted |> Seq.exists (fun existing -> overlaps existing token)) then
-                    accepted.Add token
+                if not (lineTokens.Exists(fun existing -> overlaps existing token)) then
+                    accept token
             | TokenSource.Syntactic ->
                 let fragments =
-                    ([ token ], accepted)
+                    ([ token ], lineTokens)
                     ||> Seq.fold (fun fragments existing -> fragments |> List.collect (subtractOverlap existing))
 
                 for fragment in fragments do
                     if
                         fragment.Length > 0
-                        && not (accepted |> Seq.exists (fun existing -> overlaps existing fragment))
+                        && not (lineTokens.Exists(fun existing -> overlaps existing fragment))
                     then
-                        accepted.Add fragment
+                        accept fragment
 
         accepted.ToArray()
 
@@ -422,10 +487,15 @@ module LspSemanticTokens =
 
     let emptyResponse () = SemanticTokens(Data = [||])
 
-    let responseFor source fileName semanticItems range parsingOptions =
+    let responseFor source fileName semanticItems range parsingOptions (cancellationToken: CancellationToken) =
+        cancellationToken.ThrowIfCancellationRequested()
+
         let tokens =
-            Array.append (fromSemanticClassifications source semanticItems) (fromTokenizer parsingOptions fileName source)
-            |> resolveOverlaps
+            Array.append
+                (fromSemanticClassifications source semanticItems range cancellationToken)
+                (fromTokenizer parsingOptions fileName source range cancellationToken)
+            |> resolveOverlaps cancellationToken
             |> filterRange range
 
+        cancellationToken.ThrowIfCancellationRequested()
         SemanticTokens(Data = encode tokens)

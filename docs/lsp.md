@@ -156,6 +156,11 @@ Mutating notifications and context changes cancel and drain earlier read
 requests so a completed request cannot reapply classifications from the previous
 context. A failed refresh is logged and leaves the selection unchanged for retry.
 
+Semantic-token overlap resolution checks accepted tokens on the same line only.
+Range requests normalize semantic classifications only on requested lines and
+scan the lexer from the start to preserve multiline string/comment state, stopping
+at the range's last line. Token processing observes request cancellation per line.
+
 CLaSP is centrally managed through `eng/Packages.props` and tracked as a Roslyn
 dependency in `eng/Version.Details.xml` and `eng/Version.Details.props`, with the same
 version and source commit as the other Roslyn packages.

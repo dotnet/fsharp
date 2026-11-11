@@ -85,7 +85,7 @@ type SemanticTokensHandler() =
                         let parsingOptions = this.GetParsingOptions(uri, context, projectContext)
 
                         let response =
-                            LspSemanticTokens.responseFor source uri.LocalPath semanticItems range parsingOptions
+                            LspSemanticTokens.responseFor source uri.LocalPath semanticItems range parsingOptions cancellationToken
 
                         tokenCount <- response.Data.Length / 5
                         outcome <- "completed"
