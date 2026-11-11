@@ -147,6 +147,12 @@
     <Compile Include="seq.fs">
       <Link>Collections/seq.fs</Link>
     </Compile>
+    <Compile Include="nativeptr.fsi">
+      <Link>NativeInterop/nativeptr.fsi</Link>
+    </Compile>
+    <Compile Include="nativeptr.fs">
+      <Link>NativeInterop/nativeptr.fs</Link>
+    </Compile>
     <Compile Include="string.fsi">
       <Link>Collections/string.fsi</Link>
     </Compile>
@@ -212,12 +218,6 @@
     </Compile>
     <Compile Include="quotations.fs">
       <Link>Quotations/quotations.fs</Link>
-    </Compile>
-    <Compile Include="nativeptr.fsi">
-      <Link>NativeInterop/nativeptr.fsi</Link>
-    </Compile>
-    <Compile Include="nativeptr.fs">
-      <Link>NativeInterop/nativeptr.fs</Link>
     </Compile>
     <Compile Include="event.fsi">
       <Link>Control/event.fsi</Link>
