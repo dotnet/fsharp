@@ -98,17 +98,12 @@ let ``Basic server workflow`` () =
             )
 
         let! diagnosticsResponse =
-            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+            client.JsonRpc.InvokeAsync<SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>>(
                 Methods.TextDocumentDiagnosticName,
                 DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
             )
 
-        Assert.Equal(
-            0,
-            (diagnosticsResponse.First.RelatedDocuments
-             |> Seq.head
-             |> _.Value.First.Items.Length)
-        )
+        Assert.Equal(0, diagnosticsResponse.First.Items.Length)
 
         let contentEdit = $"{contentOnDisk}\nx <- 2"
 
@@ -122,13 +117,12 @@ let ``Basic server workflow`` () =
             )
 
         let! diagnosticsResponse =
-            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+            client.JsonRpc.InvokeAsync<SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>>(
                 Methods.TextDocumentDiagnosticName,
                 DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
             )
 
-        let diagnostics =
-            diagnosticsResponse.First.RelatedDocuments |> Seq.head |> _.Value.First.Items
+        let diagnostics = diagnosticsResponse.First.Items
 
         Assert.Equal(1, diagnostics.Length)
         Assert.Contains("This value is not mutable", diagnostics[0].Message)
@@ -140,18 +134,13 @@ let ``Basic server workflow`` () =
             )
 
         let! diagnosticsResponse =
-            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+            client.JsonRpc.InvokeAsync<SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>>(
                 Methods.TextDocumentDiagnosticName,
                 DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
             )
 
         // We didn't save the file, so it should be again read from disk and have no diagnostics
-        Assert.Equal(
-            0,
-            (diagnosticsResponse.First.RelatedDocuments
-             |> Seq.head
-             |> _.Value.First.Items.Length)
-        )
+        Assert.Equal(0, diagnosticsResponse.First.Items.Length)
     }
 
 [<Fact>]
