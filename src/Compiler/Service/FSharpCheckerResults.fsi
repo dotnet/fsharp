@@ -250,6 +250,20 @@ type public FSharpCodeCompletionOptions =
 
     member internal AllowUnseen: UnseenItems
 
+/// Options controlling how signatures are laid out in tooltips.
+type public FSharpToolTipOptions =
+    {
+        /// Put each parameter of a function, method or constructor that has more than one parameter on its own line,
+        /// and the return type on the last line.
+        MultilineParameters: bool
+
+        /// Show attributes of parameters, such as <c>[&lt;Optional&gt;]</c>, and .NET code analysis attributes
+        /// of methods and their return values, such as <c>[&lt;return: NotNullIfNotNull "path"&gt;]</c>.
+        ShowAttributes: bool
+    }
+
+    static member Default: FSharpToolTipOptions
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
@@ -362,8 +376,15 @@ type public FSharpCheckFileResults =
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
     /// <param name="width">The optional width that the layout gets squashed to.</param>
+    /// <param name="options">Options controlling how signatures are laid out.</param>
     member GetToolTip:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
+        line: int *
+        colAtEndOfNames: int *
+        lineText: string *
+        names: string list *
+        tokenTag: int *
+        ?width: int *
+        ?options: FSharpToolTipOptions ->
             ToolTipText
 
     /// <summary>Compute a formatted tooltip for the given symbol at position</summary>

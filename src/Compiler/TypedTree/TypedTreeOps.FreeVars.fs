@@ -1242,6 +1242,8 @@ module internal MemberRepresentation =
             showMemberContainers: bool
             shortConstraints: bool
             useColonForReturnType: bool
+            multilineParameters: bool
+            suppressAttributesInSignatures: bool
             showAttributes: bool
             showCsharpCodeAnalysisAttributes: bool
             showOverrides: bool
@@ -1290,6 +1292,8 @@ module internal MemberRepresentation =
                 showTyparDefaultConstraints = false
                 shortConstraints = false
                 useColonForReturnType = false
+                multilineParameters = false
+                suppressAttributesInSignatures = false
                 shrinkOverloads = true
                 printVerboseSignatures = false
                 escapeKeywordNames = false
