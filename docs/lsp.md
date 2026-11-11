@@ -412,6 +412,12 @@ We should be able to apply configuration changes that require re-creating the FC
 
 #### Extensibility
 
+Code actions are disabled by default, both in Visual Studio and in the standalone
+server. Hosts can opt in by setting `EnabledFeatures.CodeActions = true` in
+`FSharpLanguageServerConfig`. The experimental fixes use FCS only; failures are
+logged and reported as `lsp/fault` events with the fix name and exception type,
+while cancellation propagates to the caller.
+
 The FsLSP library should be extensible by adding custom endpoints or overriding existing ones.
 
 It should also allow to hook into background processes or events to customize behavior.

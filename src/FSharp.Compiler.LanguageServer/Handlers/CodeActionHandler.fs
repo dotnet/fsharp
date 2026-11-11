@@ -12,7 +12,10 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Diagnostics.ExtendedData
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Tokenization
 open System.Threading
 
 #nowarn "57"
@@ -69,6 +72,22 @@ module private LspCodeFixes =
         |]
 
     let textAtRange (sourceText: ISourceText) (range: range) = sourceText.GetSubTextFromRange(range)
+
+    let symbolAtPosition (ctx: CodeFixContext) (checkResults: FSharpCheckFileResults) (position: pos) =
+        let line = ctx.SourceText.GetLineString(position.Line - 1)
+
+        let rec identifierAt column =
+            match QuickParse.GetCompleteIdentifierIsland true line column with
+            | Some(_, endColumn, _) when endColumn > column && endColumn < line.Length && line[endColumn] = '.' ->
+                identifierAt (endColumn + 1)
+            | identifier -> identifier
+
+        match identifierAt position.Column with
+        | Some(_, endColumn, _) ->
+            let name = QuickParse.GetPartialLongNameEx(line, endColumn - 1)
+            let island = [ yield! name.QualifyingIdents; name.PartialIdent ]
+            checkResults.GetSymbolUseAtLocation(position.Line, endColumn, line, island)
+        | None -> None
 
     // ---------------------------------------------------------------
     // FS0760: Add 'new' keyword
@@ -262,10 +281,47 @@ module private LspCodeFixes =
         if text <> "->" then
             [||]
         else
-            let insertRange =
-                Range.mkRange ctx.FilePath ctx.DiagnosticRange.Start ctx.DiagnosticRange.Start
+            let mutable lineNumber = ctx.DiagnosticRange.StartLine
+            let mutable line = ctx.SourceText.GetLineString(lineNumber - 1)
+            let mutable last = ctx.DiagnosticRange.StartColumn - 1
 
-            makeCodeAction "Add 'fun' keyword" ctx.DocumentUri insertRange "fun "
+            while (last >= 0 && Char.IsWhiteSpace line[last]) || (last < 0 && lineNumber > 1) do
+                if last < 0 then
+                    lineNumber <- lineNumber - 1
+                    line <- ctx.SourceText.GetLineString(lineNumber - 1)
+                    last <- line.Length - 1
+                else
+                    last <- last - 1
+
+            let argumentStart =
+                if last >= 0 && (line[last] = ')' || line[last] = ']' || line[last] = '}') then
+                    let mutable depth = 0
+                    let mutable first = last
+
+                    while first >= 0 && (first = last || depth > 0) do
+                        match line[first] with
+                        | ')'
+                        | ']'
+                        | '}' -> depth <- depth + 1
+                        | '('
+                        | '['
+                        | '{' -> depth <- depth - 1
+                        | _ -> ()
+
+                        first <- first - 1
+
+                    if depth = 0 then ValueSome(first + 1) else ValueNone
+                else
+                    match QuickParse.GetCompleteIdentifierIsland false line last with
+                    | Some(identifier, endColumn, _) -> ValueSome(endColumn - identifier.Length)
+                    | None -> ValueNone
+
+            match argumentStart with
+            | ValueSome column ->
+                let position = Position.mkPos lineNumber column
+                let insertRange = Range.mkRange ctx.FilePath position position
+                makeCodeAction "Add 'fun' keyword" ctx.DocumentUri insertRange "fun "
+            | ValueNone -> [||]
 
     // FS0010: Replace '=' with ':' in record field type definition
     let changeEqualsInFieldTypeToColon (ctx: CodeFixContext) =
@@ -362,33 +418,34 @@ module private LspCodeFixes =
     let useMutationWhenValueIsMutable (ctx: CodeFixContext) =
         match ctx.CheckResults with
         | None -> [||]
-        | Some _checkResults ->
-            // Find the identifier before the '=' on the diagnostic line
-            let lineIdx = ctx.DiagnosticRange.StartLine - 1
-            let line = ctx.SourceText.GetLineString(lineIdx)
-            // Look for '=' that should be '<-'
-            let rec findEquals i =
-                if i >= line.Length then
-                    None
-                elif
-                    line.[i] = '='
-                    && (i + 1 >= line.Length || line.[i + 1] <> '=')
-                    && (i = 0 || line.[i - 1] <> '<' && line.[i - 1] <> '>' && line.[i - 1] <> '!')
-                then
-                    Some i
-                else
-                    findEquals (i + 1)
+        | Some checkResults ->
+            match symbolAtPosition ctx checkResults ctx.DiagnosticRange.Start with
+            | Some symbolUse when
+                match symbolUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as value -> value.IsMutable || value.HasSetterMethod
+                | _ -> false
+                ->
+                let line = ctx.SourceText.GetLineString(symbolUse.Range.EndLine - 1)
+                let mutable eqCol = symbolUse.Range.EndColumn
 
-            match findEquals ctx.DiagnosticRange.StartColumn with
-            | None -> [||]
-            | Some eqCol ->
+                while eqCol < line.Length && Char.IsWhiteSpace line[eqCol] do
+                    eqCol <- eqCol + 1
+
+                let equalsPosition = Position.mkPos symbolUse.Range.EndLine eqCol
+
                 let eqRange =
-                    Range.mkRange
-                        ctx.FilePath
-                        (Position.mkPos ctx.DiagnosticRange.StartLine eqCol)
-                        (Position.mkPos ctx.DiagnosticRange.StartLine (eqCol + 1))
+                    Range.mkRange ctx.FilePath equalsPosition (Position.mkPos equalsPosition.Line (eqCol + 1))
 
-                makeCodeAction "Use '<-' for mutation" ctx.DocumentUri eqRange "<-"
+                if
+                    eqCol < line.Length
+                    && line[eqCol] = '='
+                    && (eqCol + 1 = line.Length || line[eqCol + 1] <> '=')
+                    && Range.rangeContainsRange ctx.DiagnosticRange eqRange
+                then
+                    makeCodeAction "Use '<-' for mutation" ctx.DocumentUri eqRange "<-"
+                else
+                    [||]
+            | _ -> [||]
 
     // FS3373: Use triple-quoted string interpolation
     let useTripleQuotedInterpolation (ctx: CodeFixContext) =
@@ -581,123 +638,193 @@ module private LspCodeFixes =
 
     // FS3218: Rename parameter to match signature file
     let renameParamToMatchSignature (ctx: CodeFixContext) =
-        let msg = ctx.Diagnostic.Message
-        // Message format: "... The parameter 'x' expected by ... was not found. The implementation has 'y' instead."
-        let m = Regex.Match(msg, @"parameter '([^']+)'")
+        let suggestion =
+            match ctx.Diagnostic.ExtendedData with
+            | Some(:? ArgumentsInSigAndImplMismatchExtendedData as data) -> ValueSome data.SignatureName
+            | _ ->
+                let parts = Regex.Match(ctx.Diagnostic.Message, ".+'(.+)'.+'(.+)'.+")
 
-        if not m.Success then
-            [||]
-        else
-            let expectedName = m.Groups.[1].Value
-            makeCodeAction $"Rename to '%s{expectedName}'" ctx.DocumentUri ctx.DiagnosticRange expectedName
+                if parts.Success then
+                    ValueSome parts.Groups[1].Value
+                else
+                    ValueNone
+
+        match suggestion, ctx.CheckResults with
+        | ValueSome name, Some checkResults ->
+            match symbolAtPosition ctx checkResults ctx.DiagnosticRange.Start with
+            | Some symbolUse ->
+                let replacement = FSharpKeywords.NormalizeIdentifierBackticks name
+
+                let edits =
+                    checkResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
+                    |> Array.map (fun useOfParameter -> useOfParameter.Range, replacement)
+
+                if Array.isEmpty edits then
+                    [||]
+                else
+                    makeMultiEditCodeAction $"Replace with '{name}'" ctx.DocumentUri edits
+            | None -> [||]
+        | _ -> [||]
 
     // FS0366: Implement interface members
     let implementInterface (ctx: CodeFixContext) =
-        match ctx.CheckResults with
-        | None -> [||]
-        | Some checkResults ->
-            let interfaceDataOpt =
-                FSharp.Compiler.EditorServices.InterfaceStubGenerator.TryFindInterfaceDeclaration
-                    ctx.DiagnosticRange.Start
-                    ctx.ParseResults.ParseTree
+        async {
+            match ctx.CheckResults with
+            | None -> return [||]
+            | Some checkResults ->
+                let interfaceDataOpt =
+                    InterfaceStubGenerator.TryFindInterfaceDeclaration ctx.DiagnosticRange.Start ctx.ParseResults.ParseTree
 
-            match interfaceDataOpt with
-            | None -> [||]
-            | Some interfaceData ->
-                let lineText = ctx.SourceText.GetLineString(ctx.DiagnosticRange.StartLine - 1)
+                match interfaceDataOpt with
+                | None -> return [||]
+                | Some interfaceData ->
+                    let symbolUseOpt = symbolAtPosition ctx checkResults interfaceData.Range.Start
 
-                let symbolUseOpt =
-                    checkResults.GetSymbolUseAtLocation(
-                        ctx.DiagnosticRange.StartLine,
-                        ctx.DiagnosticRange.EndColumn,
-                        lineText,
-                        [ textAtRange ctx.SourceText ctx.DiagnosticRange ]
-                    )
+                    match symbolUseOpt with
+                    | Some symbolUse ->
+                        match symbolUse.Symbol with
+                        | :? FSharpEntity as entity when
+                            InterfaceStubGenerator.IsInterface entity
+                            && not (InterfaceStubGenerator.HasNoInterfaceMember entity)
+                            ->
+                            let membersAndRanges = InterfaceStubGenerator.GetMemberNameAndRanges interfaceData
 
-                match symbolUseOpt with
-                | Some symbolUse ->
-                    match symbolUse.Symbol with
-                    | :? FSharpEntity as entity when
-                        FSharp.Compiler.EditorServices.InterfaceStubGenerator.IsInterface entity
-                        && not (FSharp.Compiler.EditorServices.InterfaceStubGenerator.HasNoInterfaceMember entity)
-                        ->
-                        let startColumn = ctx.DiagnosticRange.StartColumn + 4
-                        let typeInstances = interfaceData.TypeParameters
-                        let methodBody = "raise (System.NotImplementedException())"
-                        let displayContext = symbolUse.DisplayContext
+                            let indentation lineNumber =
+                                let line = ctx.SourceText.GetLineString(lineNumber - 1)
+                                line.Length - line.TrimStart().Length
 
-                        let stub =
-                            FSharp.Compiler.EditorServices.InterfaceStubGenerator.FormatInterface
-                                startColumn
-                                4
-                                typeInstances
-                                "this"
-                                methodBody
-                                displayContext
-                                Set.empty
-                                entity
-                                true
+                            let startColumn =
+                                match membersAndRanges with
+                                | (_, memberRange) :: _ -> indentation memberRange.StartLine
+                                | [] -> indentation interfaceData.Range.StartLine + 4
 
-                        if System.String.IsNullOrWhiteSpace(stub) then
-                            [||]
-                        else
-                            let insertText = " with\n" + stub
+                            let typeInstances = interfaceData.TypeParameters
+                            let methodBody = "raise (System.NotImplementedException())"
+                            let displayContext = symbolUse.DisplayContext
 
-                            let insertRange =
-                                Range.mkRange ctx.FilePath ctx.DiagnosticRange.End ctx.DiagnosticRange.End
+                            let getMemberByLocation (name, memberRange: range) =
+                                let line = ctx.SourceText.GetLineString(memberRange.EndLine - 1)
+                                checkResults.GetSymbolUseAtLocation(memberRange.EndLine, memberRange.EndColumn, line, [ name ])
 
-                            makeCodeAction "Implement interface" ctx.DocumentUri insertRange insertText
-                    | _ -> [||]
-                | None -> [||]
+                            let! implementedMembers =
+                                InterfaceStubGenerator.GetImplementedMemberSignatures getMemberByLocation displayContext interfaceData
+
+                            let stub =
+                                InterfaceStubGenerator.FormatInterface
+                                    startColumn
+                                    4
+                                    typeInstances
+                                    "this"
+                                    methodBody
+                                    displayContext
+                                    implementedMembers
+                                    entity
+                                    true
+
+                            if System.String.IsNullOrWhiteSpace(stub) then
+                                return [||]
+                            else
+                                let withKeyword =
+                                    (interfaceData.Range.Start, ctx.ParseResults.ParseTree)
+                                    ||> ParsedInput.tryPick (fun _ node ->
+                                        match node with
+                                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty; withKeyword = keyword)) when
+                                            Range.equals ty.Range interfaceData.Range
+                                            ->
+                                            Some keyword
+                                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty; withKeyword = keyword)) when
+                                            Range.equals ty.Range interfaceData.Range
+                                            ->
+                                            Some keyword
+                                        | _ -> None)
+                                    |> Option.flatten
+
+                                let memberEnds =
+                                    match interfaceData with
+                                    | InterfaceData.Interface(_, Some members) -> members |> List.map _.Range.End
+                                    | InterfaceData.ObjExpr(_, bindings) -> bindings |> List.map _.RangeOfBindingWithRhs.End
+                                    | _ -> []
+
+                                let insertPosition =
+                                    match memberEnds with
+                                    | [] -> withKeyword |> Option.map _.End |> Option.defaultValue interfaceData.Range.End
+                                    | positions ->
+                                        let last = positions |> List.maxBy (fun position -> position.Line, position.Column)
+
+                                        match interfaceData with
+                                        | InterfaceData.Interface _ ->
+                                            Position.mkPos last.Line (ctx.SourceText.GetLineString(last.Line - 1).Length)
+                                        | InterfaceData.ObjExpr _ -> last
+
+                                let newline =
+                                    if
+                                        ctx.SourceText.GetSubTextString(0, ctx.SourceText.Length).Contains("\r\n", StringComparison.Ordinal)
+                                    then
+                                        "\r\n"
+                                    else
+                                        "\n"
+
+                                let stub =
+                                    stub.Replace("\r\n", "\n").TrimStart(' ', '\t').Replace("\n", newline).TrimEnd('\r', '\n')
+
+                                let insertText = (if withKeyword.IsSome then "" else " with") + stub
+
+                                let insertRange = Range.mkRange ctx.FilePath insertPosition insertPosition
+
+                                return makeCodeAction "Implement interface" ctx.DocumentUri insertRange insertText
+                        | _ -> return [||]
+                    | None -> return [||]
+        }
 
     // ---------------------------------------------------------------
     // Registration
     // ---------------------------------------------------------------
 
-    // All registered code fixes as (diagnosticCode, fixFunction) pairs.
-    // Multiple fixes can share the same diagnostic code.
-    let private allCodeFixes: (string * (CodeFixContext -> CodeAction array)) list =
+    let private sync name fix =
+        name, (fun ctx -> async { return fix ctx })
+
+    let private allCodeFixes =
         [
-            "FS0760", addNewKeywordFix
-            "FS0043", convertToSingleEquals
-            "FS0043", convertToNotEquals
-            "FS3198", changeToUpcast
-            "FS3366", fixIndexerAccess
-            "FS0597", wrapExpressionInParentheses
-            "FS0003", changePrefixNegationToInfixSubtraction
-            "FS0039", convertCSharpUsingToFSharpOpen
-            "FS0201", convertCSharpUsingToFSharpOpen
-            "FS0673", addInstanceMemberParameter
-            "FS0010", addMissingEqualsToTypeDefinition
-            "FS0010", addMissingFunKeyword
-            "FS0010", changeEqualsInFieldTypeToColon
-            "FS0576", addMissingRecToMutuallyRecFunctions
-            "FS0039", makeOuterBindingRecursive
-            "FS0039", convertCSharpLambdaToFSharpLambda
-            "FS0747", removeReturnOrYield
-            "FS0748", removeReturnOrYield
-            "FS0020", useMutationWhenValueIsMutable
-            "FS3373", useTripleQuotedInterpolation
-            "FS0001", changeRefCellDerefToNotExpression
-            "FS0039", replaceWithSuggestion
-            "FS0495", replaceWithSuggestion
-            "FS1129", replaceWithSuggestion
-            "FS1182", prefixUnusedValue
-            "FS1182", discardUnusedValue
-            "FS0027", makeDeclarationMutable
-            "FS0072", addTypeAnnotationToObjectOfIndeterminateType
-            "FS3245", addTypeAnnotationToObjectOfIndeterminateType
-            "FS0039", convertToAnonymousRecord
-            "FS3578", convertToAnonymousRecord
-            "FS3873", addMissingSeq
-            "FS0740", addMissingSeq
-            "FS0725", removeSuperfluousCaptureForUnionCaseWithNoData
-            "FS3548", removeSuperfluousCaptureForUnionCaseWithNoData
-            "FS3218", renameParamToMatchSignature
-            "FS0366", implementInterface
+            "FS0760", sync (nameof addNewKeywordFix) addNewKeywordFix
+            "FS0043", sync (nameof convertToSingleEquals) convertToSingleEquals
+            "FS0043", sync (nameof convertToNotEquals) convertToNotEquals
+            "FS3198", sync (nameof changeToUpcast) changeToUpcast
+            "FS3366", sync (nameof fixIndexerAccess) fixIndexerAccess
+            "FS0597", sync (nameof wrapExpressionInParentheses) wrapExpressionInParentheses
+            "FS0003", sync (nameof changePrefixNegationToInfixSubtraction) changePrefixNegationToInfixSubtraction
+            "FS0039", sync (nameof convertCSharpUsingToFSharpOpen) convertCSharpUsingToFSharpOpen
+            "FS0201", sync (nameof convertCSharpUsingToFSharpOpen) convertCSharpUsingToFSharpOpen
+            "FS0673", sync (nameof addInstanceMemberParameter) addInstanceMemberParameter
+            "FS0010", sync (nameof addMissingEqualsToTypeDefinition) addMissingEqualsToTypeDefinition
+            "FS0010", sync (nameof addMissingFunKeyword) addMissingFunKeyword
+            "FS0010", sync (nameof changeEqualsInFieldTypeToColon) changeEqualsInFieldTypeToColon
+            "FS0576", sync (nameof addMissingRecToMutuallyRecFunctions) addMissingRecToMutuallyRecFunctions
+            "FS0039", sync (nameof makeOuterBindingRecursive) makeOuterBindingRecursive
+            "FS0039", sync (nameof convertCSharpLambdaToFSharpLambda) convertCSharpLambdaToFSharpLambda
+            "FS0747", sync (nameof removeReturnOrYield) removeReturnOrYield
+            "FS0748", sync (nameof removeReturnOrYield) removeReturnOrYield
+            "FS0020", sync (nameof useMutationWhenValueIsMutable) useMutationWhenValueIsMutable
+            "FS3373", sync (nameof useTripleQuotedInterpolation) useTripleQuotedInterpolation
+            "FS0001", sync (nameof changeRefCellDerefToNotExpression) changeRefCellDerefToNotExpression
+            "FS0039", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS0495", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS1129", sync (nameof replaceWithSuggestion) replaceWithSuggestion
+            "FS1182", sync (nameof prefixUnusedValue) prefixUnusedValue
+            "FS1182", sync (nameof discardUnusedValue) discardUnusedValue
+            "FS0027", sync (nameof makeDeclarationMutable) makeDeclarationMutable
+            "FS0072", sync (nameof addTypeAnnotationToObjectOfIndeterminateType) addTypeAnnotationToObjectOfIndeterminateType
+            "FS3245", sync (nameof addTypeAnnotationToObjectOfIndeterminateType) addTypeAnnotationToObjectOfIndeterminateType
+            "FS0039", sync (nameof convertToAnonymousRecord) convertToAnonymousRecord
+            "FS3578", sync (nameof convertToAnonymousRecord) convertToAnonymousRecord
+            "FS3873", sync (nameof addMissingSeq) addMissingSeq
+            "FS0740", sync (nameof addMissingSeq) addMissingSeq
+            "FS0725", sync (nameof removeSuperfluousCaptureForUnionCaseWithNoData) removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3548", sync (nameof removeSuperfluousCaptureForUnionCaseWithNoData) removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3218", sync (nameof renameParamToMatchSignature) renameParamToMatchSignature
+            "FS0366", (nameof implementInterface, implementInterface)
         ]
 
-    let private codeFixMap: IDictionary<string, (CodeFixContext -> CodeAction array) array> =
+    let private codeFixMap =
         allCodeFixes
         |> List.groupBy fst
         |> List.map (fun (code, fixes) -> code, fixes |> List.map snd |> Array.ofList)
@@ -712,31 +839,43 @@ module private LspCodeFixes =
         (requestRange: LspRange)
         (filePath: string)
         (documentUri: Uri)
-        : CodeAction array =
+        (logger: ILspLogger)
+        (telemetry: ILspTelemetry)
+        =
+        async {
+            let actions = ResizeArray<CodeAction>()
 
-        diagnostics
-        |> Array.filter (fun d -> rangesOverlap requestRange d.Range)
-        |> Array.collect (fun d ->
-            match codeFixMap.TryGetValue(d.ErrorNumberText) with
-            | true, fixes ->
-                let ctx =
-                    {
-                        SourceText = sourceText
-                        ParseResults = parseResults
-                        CheckResults = checkResults
-                        Diagnostic = d
-                        DiagnosticRange = d.Range
-                        FilePath = filePath
-                        DocumentUri = documentUri
-                    }
+            for d in diagnostics |> Array.filter (fun d -> rangesOverlap requestRange d.Range) do
+                match codeFixMap.TryGetValue(d.ErrorNumberText) with
+                | true, fixes ->
+                    let ctx =
+                        {
+                            SourceText = sourceText
+                            ParseResults = parseResults
+                            CheckResults = checkResults
+                            Diagnostic = d
+                            DiagnosticRange = d.Range
+                            FilePath = filePath
+                            DocumentUri = documentUri
+                        }
 
-                fixes
-                |> Array.collect (fun fix ->
-                    try
-                        fix ctx
-                    with _ ->
-                        [||])
-            | false, _ -> [||])
+                    for name, fix in fixes do
+                        try
+                            let! result = fix ctx
+                            actions.AddRange result
+                        with
+                        | :? OperationCanceledException as ex -> System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw()
+                        | ex ->
+                            logger.LogException(ex, $"Code fix '{name}' failed")
+
+                            Telemetry.reportEvent
+                                telemetry
+                                TelemetryEvents.ServerFault
+                                [| "fix_name", name :> obj; "exception_type", ex.GetType().Name :> obj |]
+                | false, _ -> ()
+
+            return actions.ToArray()
+        }
 
 type CodeActionHandler() =
     interface IMethodHandler with
@@ -768,7 +907,7 @@ type CodeActionHandler() =
                 | Some parseResults, Some sourceText ->
                     let filePath = uri.LocalPath
 
-                    return
+                    return!
                         LspCodeFixes.getCodeActions
                             sourceText
                             parseResults
@@ -777,6 +916,8 @@ type CodeActionHandler() =
                             request.Range
                             filePath
                             uri
+                            context.Logger
+                            telemetry
                 | _ -> return [||]
             }
             |> CancellableTask.start cancellationToken
