@@ -55,6 +55,35 @@ module internal PrintUtilities =
         else
             l ^^ RightL.colon
 
+    let hasMultilineParameters denv curriedParams =
+        denv.multilineParameters && (curriedParams |> List.sumBy (List.length >> max 1)) > 1
+
+    /// Joins `[<attribs>] name` (empty for an unnamed parameter) and the type of a parameter as `name: type`
+    let layoutParamParts (prefixL, tyL) =
+        if isEmptyL prefixL then tyL else (prefixL |> addColonL) ^^ tyL
+
+    /// Lays out parameters one per line, each but the last followed by its separator, with the names padded so that
+    /// the colons line up. Also returns the column of the colons.
+    let layoutAlignedParams paramsAndSeparators =
+        let width layout = (showL layout).Length
+
+        let colonColumn =
+            paramsAndSeparators
+            |> List.fold (fun column ((prefixL, _), _) ->
+                if isEmptyL prefixL then column else max column (width (addColonL prefixL) - 1)) 0
+
+        let lastIndex = List.length paramsAndSeparators - 1
+
+        let lineL i ((prefixL, tyL), separatorL) =
+            let paramL =
+                if isEmptyL prefixL then tyL
+                else
+                    let paddingL = sepL (tagSpace (String(' ', colonColumn - width prefixL)))
+                    prefixL ^^ paddingL ^^ RightL.colon ^^ tyL
+            if i < lastIndex then paramL ^^ separatorL else paramL
+
+        aboveListL (List.mapi lineL paramsAndSeparators), colonColumn
+
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
     let isDiscard (name: string) = name.StartsWithOrdinal("_")
@@ -1085,6 +1114,7 @@ module PrintTypes =
 
     /// Layout '[<attrib1; attrib2>]' for parameters
     and layoutAttribsOneline denv attribs =
+        if denv.suppressAttributesInSignatures then emptyL else
         match attribs with
         | [] -> emptyL
         | attribs ->
@@ -1093,8 +1123,8 @@ module PrintTypes =
 
             squareAngleL (sepListL RightL.semicolon attrsL)
 
-    // Format each argument, including its name and type
-    let layoutArgInfo denv env (ty, argInfo: ArgReprInfo) =
+    // Format each argument as its attributes and name, and its type
+    let layoutArgInfoParts denv env (ty, argInfo: ArgReprInfo) =
         let g = denv.g
 
         // Detect an optional argument
@@ -1109,10 +1139,7 @@ module PrintTypes =
                 |> filterOutWellKnownAttribs g WellKnownEntityAttributes.None WellKnownValAttributes.OptionalArgumentAttribute
                 |> layoutAttribsOneline denv
 
-            attrsLayout ^^
-            LeftL.questionMark ^^
-            (idL |> addColonL) ^^
-            layoutTypeWithInfoAndPrec denv env 2 ty
+            attrsLayout ^^ LeftL.questionMark ^^ idL, layoutTypeWithInfoAndPrec denv env 2 ty
 
         // Layout an unnamed argument
         // Cannot have any attributes
@@ -1124,18 +1151,19 @@ module PrintTypes =
                 | TType_tuple _ -> 2
                 | _ -> 4
 
-            layoutTypeWithInfoAndPrec denv env prec ty
+            emptyL, layoutTypeWithInfoAndPrec denv env prec ty
 
         // Layout a named argument
         | Some id, _, _ ->
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            let prefix = layoutAttribsOneline denv (argInfo.Attribs.AsList()) ^^ idL
-            (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+            layoutAttribsOneline denv (argInfo.Attribs.AsList()) ^^ idL, layoutTypeWithInfoAndPrec denv env 2 ty
+
+    let tupleSeparatorL = wordL (tagPunctuation "*")
 
     let layoutCurriedArgInfos denv env argInfos =
         argInfos
-        |> List.mapSquared (layoutArgInfo denv env)
-        |> List.map (sepListL (wordL (tagPunctuation "*")))
+        |> List.mapSquared (layoutArgInfoParts denv env >> layoutParamParts)
+        |> List.map (sepListL tupleSeparatorL)
 
     let layoutGenericParameterTypes denv env genParamTys =
       match genParamTys with
@@ -1161,6 +1189,29 @@ module PrintTypes =
             let retTyDelim = if denv.useColonForReturnType then colon else arrow
             let allArgsL = layoutCurriedArgInfos denv env argInfos
             curriedLayoutsL retTyDelim allArgsL retTyL --- cxsL
+
+    /// Layout the type of a member or value with one parameter per line, to be placed below its `name:` header:
+    ///    name : string *
+    ///    count: int
+    ///        -> unit
+    let layoutTopTypeMultiline denv env argInfos retTy cxs =
+        let paramsAndSeparators =
+            [ for args in argInfos do
+                let lastArgIndex = List.length args - 1
+                for argIndex, arg in List.indexed args do
+                    let separatorL = if argIndex < lastArgIndex then tupleSeparatorL else WordL.arrow
+                    layoutArgInfoParts denv env arg, separatorL ]
+
+        let paramsL, colonColumn = layoutAlignedParams paramsAndSeparators
+        let retTyDelim = if denv.useColonForReturnType then colon else arrow
+        let retL = wordL retTyDelim ^^ layoutReturnType denv env retTy --- layoutConstraintsWithInfo denv env cxs
+
+        if isEmptyL paramsL then
+            retL
+        else
+            // Right-align the return type delimiter with the colons of the parameters
+            let retIndent = max 0 (colonColumn + 1 - retTyDelim.Text.Length)
+            Node(paramsL, retL, Broken retIndent)
 
     /// Layout type parameters
     let layoutTyparDecls denv nmL prefix (typars: Typars) =
@@ -1196,17 +1247,18 @@ module PrintTypes =
         let prettyRetTyL = layoutTopType denv env [[]] prettyRetTy []
         prettyTyparInst, (prettyTys, prettyRetTy), (prettyTysL, prettyRetTyL), layoutConstraintsWithInfo denv env env.postfixConstraints
 
-    let prettyLayoutOfTopTypeInfoAux denv prettyArgInfos prettyRetTy cxs =
+    let prettyLayoutOfTopTypeInfoAux denv multiline prettyArgInfos prettyRetTy cxs =
         let env = SimplifyTypes.CollectInfo true (prettyRetTy :: List.collect (List.map fst) prettyArgInfos) cxs
+        let layoutTopType = if multiline then layoutTopTypeMultiline else layoutTopType
         layoutTopType denv env prettyArgInfos prettyRetTy env.postfixConstraints
 
     // Oddly this is called in multiple places with argInfos=[] and denv.useColonForReturnType=true, as a complex
     // way of giving give ": ty"
-    let prettyLayoutOfUncurriedSig denv typarInst argInfos retTy =
+    let prettyLayoutOfUncurriedSig denv multiline typarInst argInfos retTy =
         let (prettyTyparInst, prettyArgInfos, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndUncurriedSig denv.g (typarInst, argInfos, retTy)
-        prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv [prettyArgInfos] prettyRetTy cxs
+        prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv multiline [prettyArgInfos] prettyRetTy cxs
 
-    let prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys excludeSrtpConstraints =
+    let prettyLayoutOfCurriedMemberSig denv multiline typarInst argInfos retTy parentTyparTys excludeSrtpConstraints =
         let (prettyTyparInst, parentTyparTys, argInfos, retTy), cxs = PrettyTypes.PrettifyInstAndCurriedSig denv.g (typarInst, parentTyparTys, argInfos, retTy)
         // Filter out the parent typars, which don't get shown in the member signature
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false)))
@@ -1215,7 +1267,7 @@ module PrintTypes =
             if excludeSrtpConstraints then
                 cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
             else cxs
-        prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
+        prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv multiline argInfos retTy cxs
 
     let prettyArgInfos denv allTyparInst =
         function
@@ -1223,7 +1275,7 @@ module PrintTypes =
         | infos -> infos |> List.map (map1Of2 (instType allTyparInst))
 
     // Layout: type spec - class, datatype, record, abbrev
-    let prettyLayoutOfMemberSigCore denv memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) =
+    let prettyLayoutOfMemberSigCore denv multiline memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) =
         let niceMethodTypars, allTyparInst =
             let methTyparNames = methTypars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.DeclaredName |> Option.defaultValue tp.Name )
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
@@ -1236,20 +1288,20 @@ module PrintTypes =
         let memberParentTypars = List.map fst memberToParentInst
         let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
         let hasStaticallyResolvedTypars = niceMethodTypars |> List.exists (fun tp -> tp.StaticReq = TyparStaticReq.HeadType)
-        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv typarInst argInfos retTy parentTyparTys hasStaticallyResolvedTypars
+        let prettyTyparInst, layout = prettyLayoutOfCurriedMemberSig denv multiline typarInst argInfos retTy parentTyparTys hasStaticallyResolvedTypars
 
         prettyTyparInst, niceMethodTypars, layout
 
-    let prettyLayoutOfMemberType denv vref typarInst argInfos retTy =
+    let prettyLayoutOfMemberType denv multiline vref typarInst argInfos retTy =
         match PartitionValRefTypars denv.g vref with
         | Some(_, _, memberMethodTypars, memberToParentInst, _) ->
-            prettyLayoutOfMemberSigCore denv memberToParentInst (typarInst, memberMethodTypars, argInfos, retTy)
+            prettyLayoutOfMemberSigCore denv multiline memberToParentInst (typarInst, memberMethodTypars, argInfos, retTy)
         | None ->
-            let prettyTyparInst, layout = prettyLayoutOfUncurriedSig denv typarInst (List.concat argInfos) retTy
+            let prettyTyparInst, layout = prettyLayoutOfUncurriedSig denv multiline typarInst (List.concat argInfos) retTy
             prettyTyparInst, [], layout
 
     let prettyLayoutOfMemberSig denv (memberToParentInst, nm, methTypars, argInfos, retTy) =
-        let _, niceMethodTypars, tauL = prettyLayoutOfMemberSigCore denv memberToParentInst (emptyTyparInst, methTypars, argInfos, retTy)
+        let _, niceMethodTypars, tauL = prettyLayoutOfMemberSigCore denv false memberToParentInst (emptyTyparInst, methTypars, argInfos, retTy)
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> wordL) nm
         let nameL =
             if denv.showTyparBinding then
@@ -1389,30 +1441,33 @@ module PrintTastMemberOrVals =
                 for _,info in argInfo do
                     info.Attribs <- WellKnownValAttribs.Empty
                     info.Name <- None
+        let multiline = not short && hasMultilineParameters denv argInfos
         let supportAccessModifiersBeforeGetSet =
             denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
 
         let prettyTyparInst, memberL =
             match membInfo.MemberFlags.MemberKind with
             | SynMemberKind.Member ->
-                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv vref typarInst argInfos retTy
+                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv multiline vref typarInst argInfos retTy
                 let resL =
                     if short then tauL
                     else
                         let tag = if isNil argInfos then tagMember else tagMethod
                         let nameL = layoutMemberName denv vref niceMethodTypars argInfos tag vref.DisplayNameCoreMangled true
                         let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                        stat --- ((nameL  |> addColonL) ^^ tauL)
+                        if multiline then (stat --- (nameL |> addColonL)) @@--- tauL
+                        else stat --- ((nameL  |> addColonL) ^^ tauL)
                 prettyTyparInst, resL
 
             | SynMemberKind.ClassConstructor
             | SynMemberKind.Constructor ->
-                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv vref typarInst argInfos retTy
+                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv multiline vref typarInst argInfos retTy
                 let resL =
                     if short then tauL
                     else
                         let newL = layoutAccessibility denv vref.Accessibility WordL.keywordNew
-                        stat ++ (newL |> addColonL) ^^ tauL
+                        if multiline then (stat ++ (newL |> addColonL)) @@--- tauL
+                        else stat ++ (newL |> addColonL) ^^ tauL
                 prettyTyparInst, resL
 
             | SynMemberKind.PropertyGetSet ->
@@ -1438,7 +1493,7 @@ module PrintTastMemberOrVals =
                         match argInfos with
                         | [[(ty, _)]] when isUnitTy denv.g ty -> []
                         | _ -> argInfos
-                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv vref typarInst argInfos retTy
+                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv false vref typarInst argInfos retTy
                     let resL =
                         if short then
                             tauL --- withGet
@@ -1465,7 +1520,7 @@ module PrintTastMemberOrVals =
                 else
                     let curriedArgInfos = argInfos
                     let argInfos, valueInfo = List.frontAndBack argInfos.Head
-                    let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv vref typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
+                    let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv false vref typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
                     let resL =
                         if short then
                             (tauL --- withSet)
@@ -1541,7 +1596,10 @@ module PrintTastMemberOrVals =
             if hasStaticallyResolvedTypars then
                 cxs |> List.filter (fun (tp, _) -> tp.StaticReq <> TyparStaticReq.HeadType)
             else cxs
-        let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
+        let valAndTypeL =
+            let headerL = WordL.keywordVal ^^ (typarBindingsL |> addColonL)
+            if hasMultilineParameters denv argInfos then headerL @@--- layoutTopTypeMultiline denv env argInfos retTy cxs
+            else headerL --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
             | None -> valAndTypeL
@@ -1591,7 +1649,7 @@ let layoutConst g ty c = PrintTypes.layoutConst g ty c
 
 let prettyLayoutOfMemberSig denv x = x |> PrintTypes.prettyLayoutOfMemberSig denv
 
-let prettyLayoutOfUncurriedSig denv argInfos tau = PrintTypes.prettyLayoutOfUncurriedSig denv argInfos tau
+let prettyLayoutOfUncurriedSig denv argInfos tau = PrintTypes.prettyLayoutOfUncurriedSig denv false argInfos tau
 
 let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters = PrintTypes.prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters
 
@@ -1612,8 +1670,8 @@ module InfoMemberPrinting =
         /// not misleading (issue dotnet/fsharp#9838).
         | DeclaringType
 
-    /// Format the arguments of a method
-    let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
+    /// Format the arguments of a method as their attributes and name, and their type
+    let layoutParamDataParts denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         // detect parameter type, if ptyOpt is None - this is .NET style optional argument
         let ptyOpt = tryDestOptionTy denv.g pty
@@ -1623,26 +1681,25 @@ module InfoMemberPrinting =
         | _, Some id, true ->
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> rightL) id.idText
             let pty = match ptyOpt with ValueSome x -> x | _ -> pty
-            LeftL.questionMark ^^
-            (idL |> addColonL) ^^
-            PrintTypes.layoutType denv pty
+            LeftL.questionMark ^^ idL, PrintTypes.layoutType denv pty
 
         // Layout an unnamed argument
         | _, None, _ ->
-            PrintTypes.layoutType denv pty
+            emptyL, PrintTypes.layoutType denv pty
 
         // Layout a named ParamArray argument
-        | true, Some id, _ ->
+        | true, Some id, _ when not denv.suppressAttributesInSignatures ->
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
-            (idL  |> addColonL) ^^
-            PrintTypes.layoutType denv pty
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ idL, PrintTypes.layoutType denv pty
 
         // Layout a named normal argument
-        | false, Some id, _ ->
+        | _, Some id, _ ->
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
-            (idL  |> addColonL) ^^
-            PrintTypes.layoutType denv pty
+            idL, PrintTypes.layoutType denv pty
+
+    /// Format the arguments of a method
+    let layoutParamData denv paramData =
+        layoutParamDataParts denv paramData |> layoutParamParts
 
     let formatParamDataToBuffer denv os pd =
         layoutParamData denv pd |> bufferL os
@@ -1730,7 +1787,7 @@ module InfoMemberPrinting =
                     SepL.leftParen
 
         let layout,paramLayouts =
-            match denv.showCsharpCodeAnalysisAttributes, minfo with
+            match denv.showCsharpCodeAnalysisAttributes && not denv.suppressAttributesInSignatures, minfo with
             | true, (ILMeth(_, mi, _) | MethInfoWithModifiedReturnType(ILMeth(_, mi, _), _)) ->
                 let methodLayout =
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
@@ -1741,19 +1798,24 @@ module InfoMemberPrinting =
                     |> List.head
                     |> List.zip mi.ParamMetadata
                     |> List.map(fun (ilParams,paramData) ->
-                        layoutParamData denv paramData
                         // Render parameter attributes next to (^^) the parameter definition
-                        |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv ilParams.CustomAttrs (squareAngleL >> (^^)) )
+                        let addAttributesL = PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv ilParams.CustomAttrs (squareAngleL >> (^^))
+                        let prefixL, tyL = layoutParamDataParts denv paramData
+                        if isEmptyL prefixL then prefixL, addAttributesL tyL else addAttributesL prefixL, tyL)
                 methodLayout,paramLayouts
             | _ ->
                 layout,
                 minfo.GetParamDatas (amap, m, minst)
                 |> List.concat
-                |> List.map (layoutParamData denv)
+                |> List.map (layoutParamDataParts denv)
 
+        let returnL = RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy // Todo enrich return type
 
-        let layout = layout ^^ sepListL RightL.comma paramLayouts
-        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy // Todo enrich return type
+        if hasMultilineParameters denv [paramLayouts] then
+            let paramsL, _ = layoutAlignedParams [ for paramL in paramLayouts -> paramL, RightL.comma ]
+            (layout @@--- paramsL) @@ returnL
+        else
+            layout ^^ sepListL RightL.comma (List.map layoutParamParts paramLayouts) ^^ returnL
 
     // Prettify an ILMethInfo
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo =

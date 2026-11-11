@@ -384,7 +384,9 @@ module DeclarationListHelpers =
                             // tooltips are space-constrained, so don't include xml doc comments
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
-                            showDocumentation = false  }
+                            showDocumentation = false
+                            // a line per member of the type rather than per parameter
+                            multilineParameters = false }
             let layout = layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let layout = PrintUtilities.squashToWidth width layout
             let remarks = OutputFullName displayFullName hasPubPathTyconRef fullDisplayTextOfTyconRefAsLayout tcref

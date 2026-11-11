@@ -358,6 +358,18 @@ type FSharpCodeCompletionOptions =
              | EditorBrowsableState.Never -> UnseenItems.EditorBrowsableAdvanced ||| UnseenItems.EditorBrowsableNever
              | _ -> UnseenItems.EditorBrowsableAdvanced)
 
+type FSharpToolTipOptions =
+    {
+        MultilineParameters: bool
+        ShowAttributes: bool
+    }
+
+    static member Default =
+        {
+            MultilineParameters = false
+            ShowAttributes = true
+        }
+
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
 /// It is effectively immutable and not updated: when we re-typecheck we just drop the previous
@@ -389,7 +401,7 @@ type internal TypeCheckInfo
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
     let getToolTipTextCache =
-        AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(
+        AgedLookup<AnyCallerThreadToken, int * int * string * int option * FSharpToolTipOptions, ToolTipText>(
             getToolTipTextSize,
             areSimilar = (fun (x, y) -> x = y)
         )
@@ -2470,7 +2482,7 @@ type internal TypeCheckInfo
         ToolTipText [ toolTipElement ]
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names, width) =
+    member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names, width, options: FSharpToolTipOptions) =
         let Compute () =
             DiagnosticsScope.Protect
                 range0
@@ -2494,6 +2506,12 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> emptyToolTip
                     | Some(items, denv, _, m) ->
+                        let denv =
+                            { denv with
+                                multilineParameters = options.MultilineParameters
+                                suppressAttributesInSignatures = not options.ShowAttributes
+                            }
+
                         match items with
                         | [ { Kind = CompletionItemKind.Property } as prop
                             { Kind = CompletionItemKind.Field }
@@ -2524,7 +2542,7 @@ type internal TypeCheckInfo
                     ToolTipText [ ToolTipElement.CompositionError err ])
 
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
-        let key = line, colAtEndOfNames, lineStr, width
+        let key = line, colAtEndOfNames, lineStr, width, options
 
         match getToolTipTextCache.TryGet(AnyCallerThread, key) with
         | Some res -> res
@@ -3547,12 +3565,14 @@ type FSharpCheckFileResults
             ]
 
     /// Resolve the names at the given location to give a data tip
-    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, width) =
+    member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, width, ?options) =
         match tokenTagToTokenId tokenTag with
         | TOKEN_IDENT ->
             match details with
             | None -> emptyToolTip
-            | Some(scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width)
+            | Some(scope, _builderOpt) ->
+                let options = defaultArg options FSharpToolTipOptions.Default
+                scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names, width, options)
         | TOKEN_STRING
         | TOKEN_STRING_TEXT ->
             match details with
