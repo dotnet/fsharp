@@ -140,6 +140,12 @@ is `lsp`, the language server stays disabled: no LSP workspace, project
 subscriptions, document synchronization, or active-project-context forwarding is
 started. Exposure telemetry still records both providers, including `unset`.
 
+With `lsp`, legacy classification remains enabled for closed documents and documents
+in workspaces other than Host and Miscellaneous Files (including code-fix and
+rename previews). Find All References result lines for documents that are open
+in Host or Miscellaneous Files remain without semantic coloring; LSP startup
+failure or a server crash does not enable legacy classification for those documents.
+
 #### Transport and serialization
 
 The standalone server uses header-delimited JSON-RPC on standard input/output; logs
@@ -195,12 +201,15 @@ Properties use the `dotnet.fsharp.` prefix:
 | `resolved_provider` | Selection after applying the existing fallback: `old` or `lsp` |
 
 `dotnet/fsharp/semantichighlighting/providerstate` separately records actual
-legacy `enabled`/`disabled` decisions and LSP `ready`/`disabled`/`unavailable`
+legacy `enabled`/`fallback_only` decisions and LSP `ready`/`disabled`/`unavailable`
 states, with the same correlation ID. These state records are deduplicated
 per provider/state, not counted as new sessions. Selection is not evidence
 that a server started, returned semantic data, or applied colors in the editor.
 Construction-time settings can disagree after a setting changes; these
 records do not implement live provider switching.
+`fallback_only` means legacy classification is restricted to closed documents
+and workspaces other than Host and Miscellaneous Files under the `lsp` selection;
+legacy detail events are emitted only for requests that enter that classifier.
 
 All telemetry added by this implementation, including exposure, provider state,
 lifecycle summaries, measurements, and faults, requires the F# additional-telemetry

@@ -12,6 +12,22 @@ open StreamJsonRpc
 open Xunit
 
 type TelemetryTests() =
+    [<Theory>]
+    [<InlineData("old", "enabled")>]
+    [<InlineData("lsp", "fallback_only")>]
+    member _.``Legacy provider state describes its classification scope``(provider, expectedState) =
+        use options = new EditorOptions()
+        let events = ConcurrentQueue<TelemetryEvent>()
+
+        let telemetry =
+            SemanticHighlightingTelemetry(events.Enqueue, isMicrosoftInternal = (fun () -> true))
+
+        FSharpClassificationService(provider, options, telemetry) |> ignore
+        let state = Assert.Single(events)
+        Assert.Equal(box "old", state.Properties["dotnet.fsharp.provider"])
+        Assert.Equal(box provider, state.Properties["dotnet.fsharp.resolved_provider"])
+        Assert.Equal(box expectedState, state.Properties["dotnet.fsharp.state"])
+
     [<Fact>]
     member _.``Closing the last view does not stop consent forwarding to a pending request``() =
         task {
