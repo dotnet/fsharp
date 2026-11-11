@@ -1,6 +1,7 @@
 module LanguageServer.SemanticTokensProtocolTests
 
 open System
+open System.Threading
 open Xunit
 
 open Microsoft.VisualStudio.LanguageServer.Protocol
@@ -12,6 +13,50 @@ open LanguageServer.ProtocolHelpers
 open LanguageServer.SemanticTokensHelpers
 
 #nowarn "57"
+
+[<Fact>]
+let ``Semantic token response observes cancellation before processing`` () =
+    Assert.Throws<OperationCanceledException>(fun () ->
+        LspSemanticTokens.responseFor
+            (FSharp.Compiler.Text.SourceText.ofString "")
+            "cancelled.fs"
+            [||]
+            None
+            None
+            (CancellationToken(true))
+        |> ignore)
+    |> ignore
+
+[<Theory>]
+[<InlineData(2, 3)>]
+[<InlineData(5, 6)>]
+let ``Range tokens equal filtered full tokens inside multiline lexical constructs`` (startLine: int, endLine: int) =
+    task {
+        let! client = initializeLanguageServer None
+        let content =
+            String.concat "\n"
+                [ "module M"
+                  "let text = \"\"\"first"
+                  "second"
+                  "third\"\"\""
+                  "(* comment"
+                  "second"
+                  "third *)"
+                  "let result = text.Length" ]
+        let fileOnDisk = setupSingleFileProject client content
+        let range = Range(Start = Position(Line = startLine, Character = 1), End = Position(Line = endLine, Character = 3))
+        let! full = openAndPullSemanticTokens client fileOnDisk content
+        let! ranged = pullSemanticTokensRange client fileOnDisk range
+        let legend = getSemanticTokensLegend client
+        let expected =
+            decodeSemanticTokens legend full.Data
+            |> List.filter (fun token ->
+                token.Line >= startLine && token.Line <= endLine
+                && (token.Line <> startLine || token.StartChar + token.Length > range.Start.Character)
+                && (token.Line <> endLine || token.StartChar < range.End.Character))
+        Assert.NotEmpty(expected)
+        Assert.Equal<DecodedToken>(expected, decodeSemanticTokens legend ranged.Data)
+    }
 
 [<Theory>]
 [<InlineData(false)>]
