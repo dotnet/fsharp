@@ -36,7 +36,11 @@ let stringMethods =
         "ReplaceLineEndings";
 #endif
         "Split"; "StartsWith"; "Substring";
-        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant";
+#if NET11_0_OR_GREATER
+        "ToLowerOrdinal"; "ToUpperOrdinal";
+#endif
+        "ToString"; "ToUpper";
         "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
 #if NETCOREAPP
         "TryCopyTo"
