@@ -218,6 +218,24 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
+#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
+
+        var settingValues = FSharpExtensionSettings.AllSettingsWithDefaults.Select(
+            x => (x.Setting, x.DefaultIfUnset, value: settingsReadResult.ValueOrDefault(x.Setting, defaultValue: FSharpExtensionSettings.UNSET)));
+
+        var effectiveSettingValues = settingValues.ToDictionary(
+            x => x.Setting,
+            x => x.value == FSharpExtensionSettings.UNSET ? x.DefaultIfUnset : x.value);
+
+        if (effectiveSettingValues[FSharpExtensionSettings.SemanticClassificationProvider] != FSharpExtensionSettings.LSP)
+        {
+            // Returning null alone leaves the provider eligible for subsequent activation attempts.
+            this.Enabled = false;
+            return null;
+        }
+
         _telemetryReporter = new VsTelemetryReporter(configurationChanged: value => _telemetryConfiguration = value);
         if (_telemetryConfiguration is { } configuration)
         {
@@ -227,25 +245,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
         FSharp.Compiler.LanguageServer.Activity.listenToSome();
 
-#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-        // Write default settings unless they're overridden. Otherwise users can't even find which settings exist.
-
-        var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
-
-        var settingValues = FSharpExtensionSettings.AllSettingsWithDefaults.Select(
-            x => (x.Setting, x.DefaultIfUnset, value: settingsReadResult.ValueOrDefault(x.Setting, defaultValue: FSharpExtensionSettings.UNSET)));
-
-        foreach (var (setting, defaultIfUnset, value) in settingValues.Where(x => x.value == FSharpExtensionSettings.UNSET))
-        {
-            await this.Extensibility.Settings().WriteAsync(batch =>
-                batch.WriteSetting(setting, defaultIfUnset), "write default settings", cancellationToken);
-        }
-
-        var effectiveSettingValues = settingValues.ToDictionary(
-            x => x.Setting,
-            x => x.value == FSharpExtensionSettings.UNSET ? x.DefaultIfUnset : x.value);
-
         // Only semantic tokens are wired up. Diagnostics and code actions stay
         // false here so the capabilities override (which also hardcodes them
         // off) and the feature config agree.
@@ -253,7 +252,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             new FSharpLanguageServerFeatures(
                 diagnostics: false,
                 codeActions: false,
-                semanticTokens: effectiveSettingValues[FSharpExtensionSettings.SemanticClassificationProvider] == FSharpExtensionSettings.LSP
+                semanticTokens: true
                 ));
         _semanticTokensEnabled = serverConfig.EnabledFeatures.SemanticTokens;
 

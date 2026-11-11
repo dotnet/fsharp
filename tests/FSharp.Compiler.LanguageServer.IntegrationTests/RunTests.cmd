@@ -9,7 +9,7 @@ set "CONFIG=Release"
 
 :: Resolve vstest.console.dll path
 if not defined VSTEST_CONSOLE_PATH (
-    set "VSTEST_CONSOLE_PATH=C:\Program Files\Microsoft Visual Studio\18\IntPreview\Common7\IDE\CommonExtensions\Microsoft\TestWindow\VsTest\vstest.console.dll"
+    for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products * -find **\vstest.console.dll`) do if not defined VSTEST_CONSOLE_PATH set "VSTEST_CONSOLE_PATH=%%i"
 )
 
 if not exist "%VSTEST_CONSOLE_PATH%" (

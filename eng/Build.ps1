@@ -501,9 +501,9 @@ function Collect-ApexDiagnostics([string] $screenshotPath, [string] $destination
 }
 # ===== END Apex CI diagnostics helpers (Phase 2) =====
 
-function TestApexUsingVSTest([string] $targetFramework) {
-    $projectName = "FSharp.Editor.Apex.IntegrationTests"
-    $apexProject = Join-Path $RepoRoot "vsintegration\tests\$projectName\$projectName.csproj"
+function TestApexUsingVSTest([string] $targetFramework, [string] $testProject) {
+    $apexProject = Join-Path $RepoRoot $testProject
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($apexProject)
 
     # Create the results directory up-front so the CI 'publish test logs' step never fails on a missing
     # path, even when the run is skipped below (a marker file records the skip reason).
@@ -621,6 +621,11 @@ function TestApexUsingVSTest([string] $targetFramework) {
         "/logger:trx;LogFileName=$trxFileName",
         "/ResultsDirectory:$testResultsDir"
     )
+
+    $runSettings = Join-Path (Split-Path -Parent $apexProject) ".runsettings"
+    if (Test-Path $runSettings) {
+        $vstestArgs += "/Settings:$runSettings"
+    }
 
     Write-Host "$vstestConsole $($vstestArgs -join ' ')"
 
@@ -962,7 +967,8 @@ try {
     }
 
     if ($testApex) {
-        TestApexUsingVSTest -targetFramework $script:desktopTargetFramework
+        TestApexUsingVSTest -targetFramework $script:desktopTargetFramework -testProject "vsintegration\tests\FSharp.Editor.Apex.IntegrationTests\FSharp.Editor.Apex.IntegrationTests.csproj"
+        TestApexUsingVSTest -targetFramework $script:desktopTargetFramework -testProject "tests\FSharp.Compiler.LanguageServer.IntegrationTests\FSharp.Compiler.LanguageServer.IntegrationTests.csproj"
     }
 
     if ($testAOT) {
