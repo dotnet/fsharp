@@ -98,6 +98,40 @@ val f:
    -> unit
 """
 
+[<Fact>]
+let ``Curried tupled function parameters are put on separate lines`` () =
+    let source = """
+module Foo
+
+let f{caret} (a, b) (c, d) = ()
+"""
+
+    assertTooltip multilineParameters source """
+val f:
+   a: 'a *
+   b: 'b ->
+   c: 'c *
+   d: 'd
+   -> unit
+"""
+
+[<Fact>]
+let ``Curried tupled function parameters with a function parameter are put on separate lines`` () =
+    let source = """
+module Foo
+
+let f{caret} (a, b: int -> string) (c, d) = ()
+"""
+
+    assertTooltip multilineParameters source """
+val f:
+   a: 'a *
+   b: (int -> string) ->
+   c: 'b *
+   d: 'c
+   -> unit
+"""
+
 let private classWithConstructorSource usage = $"""
 module Foo
 
