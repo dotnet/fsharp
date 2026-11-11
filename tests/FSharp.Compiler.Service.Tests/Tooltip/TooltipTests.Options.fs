@@ -36,7 +36,8 @@ type AssertionExtensions =
 [<Theory>]
 [<InlineData(false, true, "static member AssertionExtensions.ContainExactlyOneItemMatching: sequence: 'a seq * predicate: ('a -> bool) * [<Optional; DefaultParameterValue ((null :> obj))>] because: string -> 'a")>]
 [<InlineData(false, false, "static member AssertionExtensions.ContainExactlyOneItemMatching: sequence: 'a seq * predicate: ('a -> bool) * because: string -> 'a")>]
-[<InlineData(true, false, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence : 'a seq *\n   predicate: ('a -> bool) *\n   because  : string\n           -> 'a")>]
+[<InlineData(true, true, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   [<Optional; DefaultParameterValue ((null :> obj))>] because: string\n                                                             -> 'a")>]
+[<InlineData(true, false, "static member AssertionExtensions.ContainExactlyOneItemMatching:\n   sequence: 'a seq *\n   predicate: ('a -> bool) *\n   because: string\n         -> 'a")>]
 let ``Method parameters with attributes`` multiline showAttributes expected =
     assertTooltip { MultilineParameters = multiline; ShowAttributes = showAttributes } methodWithAttributeSource expected
 
@@ -63,8 +64,8 @@ let ``Curried function parameters are put on separate lines`` () =
     assertTooltip multilineParameters curriedFunctionSource """
 val bar:
    fileName: string ->
-   version : int
-          -> int
+   version: int
+         -> int
 """
 
 [<Fact>]
@@ -138,7 +139,7 @@ let ``Constructor and method parameters stay on the same line in the tooltip of 
     assertTooltip multilineParameters (classWithConstructorSource "let f (c: C{caret}) = c") classTooltip
 
 [<Fact>]
-let ``Optional parameter is aligned with the others`` () =
+let ``Optional parameter is put on its own line`` () =
     let source = """
 module Foo
 
@@ -150,7 +151,7 @@ C.M{caret}(1)
 
     assertTooltip multilineParameters source """
 static member C.M:
-   y : int *
+   y: int *
    ?x: int
     -> unit
 """
@@ -166,7 +167,7 @@ let b = System.Char.IsSurrogate{caret}Pair('a', 'b')
     assertTooltip multilineParameters source """
 System.Char.IsSurrogatePair(
    highSurrogate: char,
-   lowSurrogate : char
+   lowSurrogate: char
 ) : bool
 """
 

@@ -254,7 +254,7 @@ type public FSharpCodeCompletionOptions =
 type public FSharpToolTipOptions =
     {
         /// Put each parameter of a function, method or constructor that has more than one parameter on its own line,
-        /// with the colons aligned and the return type on the last line.
+        /// and the return type on the last line.
         MultilineParameters: bool
 
         /// Show attributes of parameters, such as <c>[&lt;Optional&gt;]</c>, and .NET code analysis attributes

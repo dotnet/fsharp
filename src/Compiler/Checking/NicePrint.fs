@@ -62,27 +62,20 @@ module internal PrintUtilities =
     let layoutParamParts (prefixL, tyL) =
         if isEmptyL prefixL then tyL else (prefixL |> addColonL) ^^ tyL
 
-    /// Lays out parameters one per line, each but the last followed by its separator, with the names padded so that
-    /// the colons line up. Also returns the column of the colons.
-    let layoutAlignedParams paramsAndSeparators =
-        let width layout = (showL layout).Length
-
-        let colonColumn =
-            paramsAndSeparators
-            |> List.fold (fun column ((prefixL, _), _) ->
-                if isEmptyL prefixL then column else max column (width (addColonL prefixL) - 1)) 0
-
+    /// Lays out parameters one per line, each but the last followed by its separator.
+    /// Also returns the column of the colon of the last parameter, 0 when it is unnamed.
+    let layoutParamLines paramsAndSeparators =
         let lastIndex = List.length paramsAndSeparators - 1
 
-        let lineL i ((prefixL, tyL), separatorL) =
-            let paramL =
-                if isEmptyL prefixL then tyL
-                else
-                    let paddingL = sepL (tagSpace (String(' ', colonColumn - width prefixL)))
-                    prefixL ^^ paddingL ^^ RightL.colon ^^ tyL
-            if i < lastIndex then paramL ^^ separatorL else paramL
+        let lineL i (param, separatorL) =
+            if i < lastIndex then layoutParamParts param ^^ separatorL else layoutParamParts param
 
-        aboveListL (List.mapi lineL paramsAndSeparators), colonColumn
+        let lastColonColumn =
+            match List.tryLast paramsAndSeparators with
+            | Some((prefixL, _), _) when not (isEmptyL prefixL) -> (showL (addColonL prefixL)).Length - 1
+            | _ -> 0
+
+        aboveListL (List.mapi lineL paramsAndSeparators), lastColonColumn
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -1191,7 +1184,7 @@ module PrintTypes =
             curriedLayoutsL retTyDelim allArgsL retTyL --- cxsL
 
     /// Layout the type of a member or value with one parameter per line, to be placed below its `name:` header:
-    ///    name : string *
+    ///    name: string *
     ///    count: int
     ///        -> unit
     let layoutTopTypeMultiline denv env argInfos retTy cxs =
@@ -1202,15 +1195,15 @@ module PrintTypes =
                     let separatorL = if argIndex < lastArgIndex then tupleSeparatorL else WordL.arrow
                     layoutArgInfoParts denv env arg, separatorL ]
 
-        let paramsL, colonColumn = layoutAlignedParams paramsAndSeparators
+        let paramsL, lastColonColumn = layoutParamLines paramsAndSeparators
         let retTyDelim = if denv.useColonForReturnType then colon else arrow
         let retL = wordL retTyDelim ^^ layoutReturnType denv env retTy --- layoutConstraintsWithInfo denv env cxs
 
         if isEmptyL paramsL then
             retL
         else
-            // Right-align the return type delimiter with the colons of the parameters
-            let retIndent = max 0 (colonColumn + 1 - retTyDelim.Text.Length)
+            // Right-align the return type delimiter with the colon of the last parameter
+            let retIndent = max 0 (lastColonColumn + 1 - retTyDelim.Text.Length)
             Node(paramsL, retL, Broken retIndent)
 
     /// Layout type parameters
@@ -1812,7 +1805,7 @@ module InfoMemberPrinting =
         let returnL = RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy // Todo enrich return type
 
         if hasMultilineParameters denv [paramLayouts] then
-            let paramsL, _ = layoutAlignedParams [ for paramL in paramLayouts -> paramL, RightL.comma ]
+            let paramsL, _ = layoutParamLines [ for paramL in paramLayouts -> paramL, RightL.comma ]
             (layout @@--- paramsL) @@ returnL
         else
             layout ^^ sepListL RightL.comma (List.map layoutParamParts paramLayouts) ^^ returnL
