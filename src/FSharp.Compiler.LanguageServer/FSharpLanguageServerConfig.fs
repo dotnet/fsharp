@@ -10,7 +10,7 @@ type FSharpLanguageServerFeatures =
     static member Default =
         {
             Diagnostics = true
-            CodeActions = true
+            CodeActions = false
             SemanticTokens = true
         }
 
