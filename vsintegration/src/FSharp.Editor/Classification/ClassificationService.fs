@@ -37,18 +37,12 @@ type SemanticClassificationData = SemanticClassificationView
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
 
 [<Export(typeof<IFSharpClassificationService>)>]
-type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvider: SVsServiceProvider, options: EditorOptions) =
-
-    let struct (_, provider) = HighlightingTelemetry.readProvider serviceProvider
-    let produceSemanticClassification = provider <> "lsp"
+type internal FSharpClassificationService(provider: string, options: EditorOptions, telemetry: SemanticHighlightingTelemetry) =
 
     do
-        HighlightingTelemetry.instance.ReportState(
+        telemetry.ReportState(
             "old",
-            (if produceSemanticClassification then
-                 "enabled"
-             else
-                 "disabled"),
+            (if provider = "lsp" then "fallback_only" else "enabled"),
             [| "resolved_provider", box provider |],
             (fun () -> options.Advanced.SendAdditionalTelemetry)
         )
@@ -166,6 +160,14 @@ type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvi
     static let openedDocumentsSemanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-opened-documents-semantic-classification-cache", 2.)
 
+    [<ImportingConstructor>]
+    new(serviceProvider: SVsServiceProvider, options: EditorOptions) =
+        let struct (_, provider) = HighlightingTelemetry.readProvider serviceProvider
+        FSharpClassificationService(provider, options, HighlightingTelemetry.instance)
+
+    static member ShouldClassify(provider, workspaceKind, isOpenDocument) =
+        provider <> "lsp" || workspaceKind <> WorkspaceKind.Host || not isOpenDocument
+
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
         member _.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
@@ -222,7 +224,10 @@ type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvi
             (document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken)
             =
 
-            if not produceSemanticClassification then
+            let workspace = document.Project.Solution.Workspace
+            let isOpenDocument = workspace.IsDocumentOpen document.Id
+
+            if not (FSharpClassificationService.ShouldClassify(provider, workspace.Kind, isOpenDocument)) then
                 Task.CompletedTask
             else
                 cancellableTask {
@@ -232,7 +237,6 @@ type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvi
                     let mutable outcome = "faulted"
                     let mutable cacheHit = false
                     let mutable documentLength = -1
-                    let isOpenDocument = document.Project.Solution.Workspace.IsDocumentOpen document.Id
 
                     try
                         try
@@ -278,7 +282,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvi
                             outcome <- "cancelled"
                             ExceptionDispatchInfo.Capture(error).Throw()
                     finally
-                        HighlightingTelemetry.instance.ReportDetails(
+                        telemetry.ReportDetails(
                             (fun () ->
                                 document.Project.Solution.Workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry),
                             [|

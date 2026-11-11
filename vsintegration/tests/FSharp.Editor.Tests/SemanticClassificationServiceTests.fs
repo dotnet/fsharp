@@ -2,16 +2,98 @@
 
 namespace FSharp.Editor.Tests
 
-open Xunit
+open System
+open System.Collections.Generic
+open System.Threading
+
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Classification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
+open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open Microsoft.VisualStudio.Telemetry
+
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Classification
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
-open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+
+open Xunit
+
+type SemanticClassificationPolicyTests() =
+    [<Theory>]
+    [<InlineData("lsp", WorkspaceKind.Host, true, false)>]
+    [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, true)>]
+    [<InlineData("lsp", "Custom", true, true)>]
+    [<InlineData("old", WorkspaceKind.Host, true, true)>]
+    [<InlineData("old", WorkspaceKind.Host, false, true)>]
+    member _.``Legacy classification skips only LSP rendered documents``(provider, workspaceKind, isOpen, expected) =
+        Assert.Equal(expected, FSharpClassificationService.ShouldClassify(provider, workspaceKind, isOpen))
+
+    [<Theory>]
+    [<InlineData("lsp", WorkspaceKind.Host, true, false)>]
+    [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
+    [<InlineData("old", WorkspaceKind.Host, true, true)>]
+    member _.``Legacy provider classifies closed and preview documents under LSP``(provider, workspaceKind, isOpen, expected) =
+        task {
+            use workspace = new AdhocWorkspace(TestHostServices(), workspaceKind)
+            let projectId = ProjectId.CreateNewId()
+            let source = "module Test\ntype Widget() = class end\nlet create () = Widget()"
+
+            let documentInfo =
+                RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" source
+
+            let projectInfo =
+                RoslynTestHelpers.CreateProjectInfo projectId "C:\\test.fsproj" [ documentInfo ]
+
+            let project = workspace.AddProject projectInfo
+            RoslynTestHelpers.SetProjectOptions projectId project.Solution RoslynTestHelpers.DefaultProjectOptions
+
+            if isOpen then
+                workspace.OpenDocument documentInfo.Id
+
+            let document = workspace.CurrentSolution.GetDocument documentInfo.Id
+            Assert.Equal(isOpen, workspace.IsDocumentOpen document.Id)
+            use options = new EditorOptions()
+            let events = List<TelemetryEvent>()
+
+            let telemetry =
+                SemanticHighlightingTelemetry(events.Add, isMicrosoftInternal = (fun () -> true))
+
+            let service =
+                FSharpClassificationService(provider, options, telemetry) :> IFSharpClassificationService
+
+            let result = List<ClassifiedSpan>()
+            do! service.AddSemanticClassificationsAsync(document, TextSpan(0, source.Length), result, CancellationToken.None)
+
+            if expected then
+                Assert.Contains(
+                    result,
+                    fun span ->
+                        span.ClassificationType = ClassificationTypeNames.ClassName
+                        && source.Substring(span.TextSpan.Start, span.TextSpan.Length) = "Widget"
+                )
+
+                Assert.Contains(result, fun span -> span.ClassificationType = FSharpClassificationTypes.Function)
+
+                let details =
+                    Assert.Single(
+                        events
+                        |> Seq.filter (fun event -> event.Name.EndsWith("/addsemanticclassifications", StringComparison.Ordinal))
+                    )
+
+                Assert.Equal(box "old", details.Properties["dotnet.fsharp.provider"])
+            else
+                Assert.Empty(result)
+                Assert.Single(events) |> ignore
+        }
 
 type SemanticClassificationServiceTests() =
     let getRanges (source: string) : SemanticClassificationItem list =
