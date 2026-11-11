@@ -49,8 +49,8 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                         Full = System.Nullable(SumType<bool, SemanticTokensFullOptions>(true)),
                         Range = System.Nullable(SumType<bool, obj>(true))
                     ))
-            //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
-            //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
+        //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
+        //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
         )
 
     interface IInitializeManager<InitializeParams, InitializeResult> with

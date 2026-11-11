@@ -29,10 +29,7 @@ type LanguageFeaturesHandler() =
                 let projectContext = tryGetProjectContext request.TextDocument
 
                 use _scope =
-                    telemetry.ReportEventWithDuration(
-                        TelemetryEvents.GetDiagnostics,
-                        [| "uri_hash", hash uri :> obj |]
-                    )
+                    telemetry.ReportEventWithDuration(TelemetryEvents.GetDiagnostics, [| "uri_hash", hash uri :> obj |])
 
                 let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile(uri, ?context = projectContext)
 

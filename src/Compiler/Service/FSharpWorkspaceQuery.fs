@@ -60,6 +60,7 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         match context with
         | Some ctx ->
             let matching = candidates |> Seq.tryFind (fun s -> s.Identifier = ctx)
+
             match matching with
             | Some _ -> matching
             | None -> candidates |> Seq.tryHead
@@ -69,8 +70,7 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         use _ =
             Activity.start "GetProjectSnapshotsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
-        depGraph.GetProjectsContaining file.LocalPath
-        |> Seq.toArray
+        depGraph.GetProjectsContaining file.LocalPath |> Seq.toArray
 
     member this.GetParseAndCheckResultsForFile(file: Uri, ?context: ProjectSnapshot.FSharpProjectIdentifier) =
         async {

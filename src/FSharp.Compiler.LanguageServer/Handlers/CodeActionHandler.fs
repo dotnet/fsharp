@@ -22,13 +22,15 @@ type private LspPosition = Microsoft.VisualStudio.LanguageServer.Protocol.Positi
 
 // Context passed to each code fix function.
 type CodeFixContext =
-    { SourceText: ISourceText
-      ParseResults: FSharpParseFileResults
-      CheckResults: FSharpCheckFileResults option
-      Diagnostic: FSharpDiagnostic
-      DiagnosticRange: range
-      FilePath: string
-      DocumentUri: Uri }
+    {
+        SourceText: ISourceText
+        ParseResults: FSharpParseFileResults
+        CheckResults: FSharpCheckFileResults option
+        Diagnostic: FSharpDiagnostic
+        DiagnosticRange: range
+        FilePath: string
+        DocumentUri: Uri
+    }
 
 module private LspCodeFixes =
 
@@ -49,8 +51,7 @@ module private LspCodeFixes =
     let makeCodeAction (title: string) (documentUri: Uri) (editRange: range) (newText: string) =
         let changes = Dictionary<string, TextEdit array>()
 
-        changes.[documentUri.AbsoluteUri] <-
-            [| TextEdit(Range = fcsRangeToLspRange editRange, NewText = newText) |]
+        changes.[documentUri.AbsoluteUri] <- [| TextEdit(Range = fcsRangeToLspRange editRange, NewText = newText) |]
 
         [|
             CodeAction(Title = title, Kind = CodeActionKind.QuickFix, Edit = WorkspaceEdit(Changes = changes))
@@ -80,8 +81,7 @@ module private LspCodeFixes =
         let filePath = ctx.FilePath
         let documentUri = ctx.DocumentUri
 
-        let getSourceLineStr line =
-            sourceText.GetLineString(line - 1)
+        let getSourceLineStr line = sourceText.GetLineString(line - 1)
 
         let matchingApp path node =
             let (|TargetTy|_|) expr =
@@ -101,17 +101,7 @@ module private LspCodeFixes =
                         )
                     )
                 | SynExpr.TypeApp(SynExpr.LongIdent(longDotId = longDotId), lessRange, typeArgs, commaRanges, greaterRange, _, range) ->
-                    Some(
-                        SynType.App(
-                            SynType.LongIdent longDotId,
-                            Some lessRange,
-                            typeArgs,
-                            commaRanges,
-                            greaterRange,
-                            false,
-                            range
-                        )
-                    )
+                    Some(SynType.App(SynType.LongIdent longDotId, Some lessRange, typeArgs, commaRanges, greaterRange, false, range))
                 | _ -> None
 
             match node with
@@ -121,7 +111,10 @@ module private LspCodeFixes =
                 Some(targetTy, argExpr, path)
             | _ -> None
 
-        match (diagnosticRange.Start, parseResults.ParseTree) ||> ParsedInput.tryPick matchingApp with
+        match
+            (diagnosticRange.Start, parseResults.ParseTree)
+            ||> ParsedInput.tryPick matchingApp
+        with
         | None -> [||]
         | Some(targetTy, argExpr, path) ->
             let needsParens =
@@ -133,8 +126,7 @@ module private LspCodeFixes =
             let targetTyText = sourceText.GetSubTextFromRange(targetTy.Range)
 
             let textBetween =
-                let betweenRange =
-                    Range.mkRange filePath targetTy.Range.End argExpr.Range.Start
+                let betweenRange = Range.mkRange filePath targetTy.Range.End argExpr.Range.Start
 
                 if needsParens && betweenRange.StartLine = betweenRange.EndLine then
                     ""
@@ -149,8 +141,7 @@ module private LspCodeFixes =
                 else
                     originalArgText
 
-            let newText =
-                $"new %s{targetTyText}%s{textBetween}%s{argExprText}"
+            let newText = $"new %s{targetTyText}%s{textBetween}%s{argExprText}"
 
             makeCodeAction "Add 'new' keyword" documentUri diagnosticRange newText
 
@@ -204,20 +195,15 @@ module private LspCodeFixes =
         let col = ctx.DiagnosticRange.EndColumn
 
         let rec findDash i =
-            if i >= line.Length then
-                None
-            elif line.[i] = '-' then
-                Some i
-            elif Char.IsWhiteSpace(line.[i]) then
-                findDash (i + 1)
-            else
-                None
+            if i >= line.Length then None
+            elif line.[i] = '-' then Some i
+            elif Char.IsWhiteSpace(line.[i]) then findDash (i + 1)
+            else None
 
         match findDash col with
         | Some dashCol ->
             // Insert a space after the dash
-            let insertPos =
-                Position.mkPos ctx.DiagnosticRange.EndLine (dashCol + 1)
+            let insertPos = Position.mkPos ctx.DiagnosticRange.EndLine (dashCol + 1)
 
             let insertRange = Range.mkRange ctx.FilePath insertPos insertPos
             makeCodeAction "Use subtraction instead of negation" ctx.DocumentUri insertRange " "
@@ -240,7 +226,10 @@ module private LspCodeFixes =
                 let newLine = line.Replace("using", "open").Replace(";", "")
 
                 let lineRange =
-                    Range.mkRange ctx.FilePath (Position.mkPos ctx.DiagnosticRange.StartLine 0) (Position.mkPos ctx.DiagnosticRange.StartLine line.Length)
+                    Range.mkRange
+                        ctx.FilePath
+                        (Position.mkPos ctx.DiagnosticRange.StartLine 0)
+                        (Position.mkPos ctx.DiagnosticRange.StartLine line.Length)
 
                 makeCodeAction "Replace 'using' with 'open'" ctx.DocumentUri lineRange newLine
             else
@@ -303,8 +292,7 @@ module private LspCodeFixes =
         else
             let insertCol = letIdx + 3 // after "let"
 
-            let insertPos =
-                Position.mkPos ctx.DiagnosticRange.StartLine insertCol
+            let insertPos = Position.mkPos ctx.DiagnosticRange.StartLine insertCol
 
             let insertRange = Range.mkRange ctx.FilePath insertPos insertPos
             makeCodeAction "Make declaration 'rec'" ctx.DocumentUri insertRange " rec"
@@ -333,16 +321,11 @@ module private LspCodeFixes =
                     else
                         let insertCol = letIdx + 3
 
-                        let insertPos =
-                            Position.mkPos bindingNameRange.StartLine insertCol
+                        let insertPos = Position.mkPos bindingNameRange.StartLine insertCol
 
                         let insertRange = Range.mkRange ctx.FilePath insertPos insertPos
 
-                        makeCodeAction
-                            $"Make '%s{bindingName}' recursive"
-                            ctx.DocumentUri
-                            insertRange
-                            " rec"
+                        makeCodeAction $"Make '%s{bindingName}' recursive" ctx.DocumentUri insertRange " rec"
             | None -> [||]
 
     // FS0039: Convert C# lambda (=>) to F# lambda (->)
@@ -385,10 +368,16 @@ module private LspCodeFixes =
             let line = ctx.SourceText.GetLineString(lineIdx)
             // Look for '=' that should be '<-'
             let rec findEquals i =
-                if i >= line.Length then None
-                elif line.[i] = '=' && (i + 1 >= line.Length || line.[i + 1] <> '=') && (i = 0 || line.[i - 1] <> '<' && line.[i - 1] <> '>' && line.[i - 1] <> '!') then
+                if i >= line.Length then
+                    None
+                elif
+                    line.[i] = '='
+                    && (i + 1 >= line.Length || line.[i + 1] <> '=')
+                    && (i = 0 || line.[i - 1] <> '<' && line.[i - 1] <> '>' && line.[i - 1] <> '!')
+                then
                     Some i
-                else findEquals (i + 1)
+                else
+                    findEquals (i + 1)
 
             match findEquals ctx.DiagnosticRange.StartColumn with
             | None -> [||]
@@ -431,7 +420,8 @@ module private LspCodeFixes =
     let replaceWithSuggestion (ctx: CodeFixContext) =
         let msg = ctx.Diagnostic.Message
         // Diagnostic messages contain suggestions like: Did you mean 'xyz'?
-        let m = Regex.Match(msg, @"Maybe you want one of the following:\s*(.*?)$", RegexOptions.Singleline)
+        let m =
+            Regex.Match(msg, @"Maybe you want one of the following:\s*(.*?)$", RegexOptions.Singleline)
 
         let suggestions =
             if m.Success then
@@ -442,10 +432,7 @@ module private LspCodeFixes =
                 // Try single suggestion: "... Did you mean 'X'?"
                 let m2 = Regex.Match(msg, @"Did you mean '([^']+)'\?")
 
-                if m2.Success then
-                    [| m2.Groups.[1].Value |]
-                else
-                    [||]
+                if m2.Success then [| m2.Groups.[1].Value |] else [||]
 
         suggestions
         |> Array.map (fun suggestion ->
@@ -489,17 +476,20 @@ module private LspCodeFixes =
                 // Find end of identifier starting at StartColumn
                 let startCol = ctx.DiagnosticRange.StartColumn
                 let mutable endCol = startCol
-                while endCol < lineText.Length && (System.Char.IsLetterOrDigit(lineText.[endCol]) || lineText.[endCol] = '_' || lineText.[endCol] = '\'') do
+
+                while endCol < lineText.Length
+                      && (System.Char.IsLetterOrDigit(lineText.[endCol])
+                          || lineText.[endCol] = '_'
+                          || lineText.[endCol] = '\'') do
                     endCol <- endCol + 1
-                if endCol <= startCol then [||]
+
+                if endCol <= startCol then
+                    [||]
                 else
                     let identName = lineText.Substring(startCol, endCol - startCol)
+
                     let symbolOpt =
-                        checkResults.GetSymbolUseAtLocation(
-                            ctx.DiagnosticRange.StartLine,
-                            endCol,
-                            lineText,
-                            [ identName ])
+                        checkResults.GetSymbolUseAtLocation(ctx.DiagnosticRange.StartLine, endCol, lineText, [ identName ])
 
                     match symbolOpt with
                     | Some symbolUse ->
@@ -513,8 +503,7 @@ module private LspCodeFixes =
                             let prefix = declLine.Substring(0, min declRange.StartColumn declLine.Length)
 
                             if prefix.TrimEnd().EndsWith("let") || prefix.TrimEnd().EndsWith("and") then
-                                let insertRange =
-                                    Range.mkRange ctx.FilePath declRange.Start declRange.Start
+                                let insertRange = Range.mkRange ctx.FilePath declRange.Start declRange.Start
 
                                 makeCodeAction "Make declaration 'mutable'" ctx.DocumentUri insertRange "mutable "
                             else
@@ -528,12 +517,14 @@ module private LspCodeFixes =
         | None -> [||]
         | Some checkResults ->
             let lineText = ctx.SourceText.GetLineString(ctx.DiagnosticRange.StartLine - 1)
+
             let symbolOpt =
                 checkResults.GetSymbolUseAtLocation(
                     ctx.DiagnosticRange.StartLine,
                     ctx.DiagnosticRange.EndColumn,
                     lineText,
-                    [ textAtRange ctx.SourceText ctx.DiagnosticRange ])
+                    [ textAtRange ctx.SourceText ctx.DiagnosticRange ]
+                )
 
             match symbolOpt with
             | Some symbolUse ->
@@ -574,8 +565,7 @@ module private LspCodeFixes =
         match ctx.CheckResults with
         | None -> [||]
         | Some checkResults ->
-            let items =
-                checkResults.GetSemanticClassification(Some ctx.DiagnosticRange)
+            let items = checkResults.GetSemanticClassification(Some ctx.DiagnosticRange)
 
             let unionCaseItem =
                 items
@@ -593,8 +583,7 @@ module private LspCodeFixes =
     let renameParamToMatchSignature (ctx: CodeFixContext) =
         let msg = ctx.Diagnostic.Message
         // Message format: "... The parameter 'x' expected by ... was not found. The implementation has 'y' instead."
-        let m =
-            Regex.Match(msg, @"parameter '([^']+)'")
+        let m = Regex.Match(msg, @"parameter '([^']+)'")
 
         if not m.Success then
             [||]
@@ -653,7 +642,10 @@ module private LspCodeFixes =
                             [||]
                         else
                             let insertText = " with\n" + stub
-                            let insertRange = Range.mkRange ctx.FilePath ctx.DiagnosticRange.End ctx.DiagnosticRange.End
+
+                            let insertRange =
+                                Range.mkRange ctx.FilePath ctx.DiagnosticRange.End ctx.DiagnosticRange.End
+
                             makeCodeAction "Implement interface" ctx.DocumentUri insertRange insertText
                     | _ -> [||]
                 | None -> [||]
@@ -666,43 +658,44 @@ module private LspCodeFixes =
     // Multiple fixes can share the same diagnostic code.
     let private allCodeFixes: (string * (CodeFixContext -> CodeAction array)) list =
         [
-          "FS0760", addNewKeywordFix
-          "FS0043", convertToSingleEquals
-          "FS0043", convertToNotEquals
-          "FS3198", changeToUpcast
-          "FS3366", fixIndexerAccess
-          "FS0597", wrapExpressionInParentheses
-          "FS0003", changePrefixNegationToInfixSubtraction
-          "FS0039", convertCSharpUsingToFSharpOpen
-          "FS0201", convertCSharpUsingToFSharpOpen
-          "FS0673", addInstanceMemberParameter
-          "FS0010", addMissingEqualsToTypeDefinition
-          "FS0010", addMissingFunKeyword
-          "FS0010", changeEqualsInFieldTypeToColon
-          "FS0576", addMissingRecToMutuallyRecFunctions
-          "FS0039", makeOuterBindingRecursive
-          "FS0039", convertCSharpLambdaToFSharpLambda
-          "FS0747", removeReturnOrYield
-          "FS0748", removeReturnOrYield
-          "FS0020", useMutationWhenValueIsMutable
-          "FS3373", useTripleQuotedInterpolation
-          "FS0001", changeRefCellDerefToNotExpression
-          "FS0039", replaceWithSuggestion
-          "FS0495", replaceWithSuggestion
-          "FS1129", replaceWithSuggestion
-          "FS1182", prefixUnusedValue
-          "FS1182", discardUnusedValue
-          "FS0027", makeDeclarationMutable
-          "FS0072", addTypeAnnotationToObjectOfIndeterminateType
-          "FS3245", addTypeAnnotationToObjectOfIndeterminateType
-          "FS0039", convertToAnonymousRecord
-          "FS3578", convertToAnonymousRecord
-          "FS3873", addMissingSeq
-          "FS0740", addMissingSeq
-          "FS0725", removeSuperfluousCaptureForUnionCaseWithNoData
-          "FS3548", removeSuperfluousCaptureForUnionCaseWithNoData
-          "FS3218", renameParamToMatchSignature
-          "FS0366", implementInterface ]
+            "FS0760", addNewKeywordFix
+            "FS0043", convertToSingleEquals
+            "FS0043", convertToNotEquals
+            "FS3198", changeToUpcast
+            "FS3366", fixIndexerAccess
+            "FS0597", wrapExpressionInParentheses
+            "FS0003", changePrefixNegationToInfixSubtraction
+            "FS0039", convertCSharpUsingToFSharpOpen
+            "FS0201", convertCSharpUsingToFSharpOpen
+            "FS0673", addInstanceMemberParameter
+            "FS0010", addMissingEqualsToTypeDefinition
+            "FS0010", addMissingFunKeyword
+            "FS0010", changeEqualsInFieldTypeToColon
+            "FS0576", addMissingRecToMutuallyRecFunctions
+            "FS0039", makeOuterBindingRecursive
+            "FS0039", convertCSharpLambdaToFSharpLambda
+            "FS0747", removeReturnOrYield
+            "FS0748", removeReturnOrYield
+            "FS0020", useMutationWhenValueIsMutable
+            "FS3373", useTripleQuotedInterpolation
+            "FS0001", changeRefCellDerefToNotExpression
+            "FS0039", replaceWithSuggestion
+            "FS0495", replaceWithSuggestion
+            "FS1129", replaceWithSuggestion
+            "FS1182", prefixUnusedValue
+            "FS1182", discardUnusedValue
+            "FS0027", makeDeclarationMutable
+            "FS0072", addTypeAnnotationToObjectOfIndeterminateType
+            "FS3245", addTypeAnnotationToObjectOfIndeterminateType
+            "FS0039", convertToAnonymousRecord
+            "FS3578", convertToAnonymousRecord
+            "FS3873", addMissingSeq
+            "FS0740", addMissingSeq
+            "FS0725", removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3548", removeSuperfluousCaptureForUnionCaseWithNoData
+            "FS3218", renameParamToMatchSignature
+            "FS0366", implementInterface
+        ]
 
     let private codeFixMap: IDictionary<string, (CodeFixContext -> CodeAction array) array> =
         allCodeFixes
@@ -727,13 +720,15 @@ module private LspCodeFixes =
             match codeFixMap.TryGetValue(d.ErrorNumberText) with
             | true, fixes ->
                 let ctx =
-                    { SourceText = sourceText
-                      ParseResults = parseResults
-                      CheckResults = checkResults
-                      Diagnostic = d
-                      DiagnosticRange = d.Range
-                      FilePath = filePath
-                      DocumentUri = documentUri }
+                    {
+                        SourceText = sourceText
+                        ParseResults = parseResults
+                        CheckResults = checkResults
+                        Diagnostic = d
+                        DiagnosticRange = d.Range
+                        FilePath = filePath
+                        DocumentUri = documentUri
+                    }
 
                 fixes
                 |> Array.collect (fun fix ->
@@ -749,9 +744,7 @@ type CodeActionHandler() =
 
     interface IRequestHandler<CodeActionParams, CodeAction array, FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentCodeActionName, LanguageServerConstants.DefaultLanguageName)>]
-        member _.HandleRequestAsync
-            (request: CodeActionParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
-            =
+        member _.HandleRequestAsync(request: CodeActionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
             cancellableTask {
                 let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
 
@@ -765,7 +758,10 @@ type CodeActionHandler() =
                 let projectContext = tryGetProjectContext request.TextDocument
 
                 let! diagnosticReport = context.Workspace.Query.GetDiagnosticsForFile(uri, ?context = projectContext)
-                let! parseResultsOpt, checkResultsOpt = context.Workspace.Query.GetParseAndCheckResultsForFile(uri, ?context = projectContext)
+
+                let! parseResultsOpt, checkResultsOpt =
+                    context.Workspace.Query.GetParseAndCheckResultsForFile(uri, ?context = projectContext)
+
                 let! sourceTextOpt = context.Workspace.Query.GetSource uri
 
                 match parseResultsOpt, sourceTextOpt with
