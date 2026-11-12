@@ -12,6 +12,7 @@
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.14,)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
+    <DotnetTargetVersions>net10.0</DotnetTargetVersions>
   </Installation>
   <Installer>
     <Actions>
