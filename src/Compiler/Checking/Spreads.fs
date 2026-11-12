@@ -47,14 +47,39 @@ let private (|NestedUpdate|_|) expr2 expr1 =
         Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia))
     | _ -> None
 
+/// The fields of a nominal or anonymous record type, as name resolution items.
+let fieldItemsOfSpreadSrcTy (ncenv: NameResolver) m ad spreadSrcTy =
+    let g = ncenv.g
+
+    if isRecdTy g spreadSrcTy then
+        ResolveRecordOrClassFieldsOfType ncenv m ad spreadSrcTy false
+    else
+        tryDestAnonRecdTy g spreadSrcTy
+        |> ValueOption.map (fun (anonInfo, tys) ->
+            anonInfo.SortedIds
+            |> List.ofArray
+            |> List.mapi (fun i id -> Item.AnonRecdField(anonInfo, tys, i, id.idRange)))
+        |> ValueOption.defaultValue []
+
+/// Formats a field of an anonymous record type for a diagnostic.
+let private stringOfAnonRecdField (denv: DisplayEnv) fieldName ty =
+    let g = denv.g
+
+    let typars =
+        tryAppTy g ty
+        |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption))
+        |> ValueOption.defaultValue []
+
+    LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig denv ([], fieldName, typars, [], ty))
+
 /// Functions for checking type spreads.
 [<RequireQualifiedAccess>]
 module Types =
     /// Functions for checking record type spreads.
     [<RequireQualifiedAccess>]
     module Records =
-        /// Typechecks the given list of record fields or spreads.
-        let check checkSpreadsLanguageFeature tcField tcSpread (fieldsAndSpreads: SynFieldOrSpread list) : _ list =
+        /// Collects the fields of a record type definition from its explicit fields and spreads, applying the shadowing rules.
+        let check fieldOfExplicit fieldsOfSpread (fieldsAndSpreads: ExplicitOrSpread<'Explicit, 'Spread> list) : _ list =
             let rec loop fields i fieldsAndSpreads =
                 match fieldsAndSpreads with
                 | [] ->
@@ -64,14 +89,13 @@ module Types =
                     |> List.sortBy (fun (i, _) -> i)
                     |> List.map (fun (_, r) -> r)
 
-                | SynFieldOrSpread.Field(SynField(idOpt = None)) :: fieldsAndSpreads -> loop fields i fieldsAndSpreads
-
-                | SynFieldOrSpread.Field(SynField(idOpt = Some fieldId) as synField) :: fieldsAndSpreads ->
-                    let field, errorAmbiguousShadowing, infoExplicitShadowing = tcField synField
+                | ExplicitOrSpread.Explicit explicitField :: fieldsAndSpreads ->
+                    let fieldName, field, errorAmbiguousShadowing, infoExplicitShadowing =
+                        fieldOfExplicit explicitField
 
                     let fields =
                         fields
-                        |> Map.change fieldId.idText (function
+                        |> Map.change fieldName (function
                             | None -> Some(LeftwardExplicit, [ i, field ])
                             | Some(LeftwardExplicit, dupes) ->
                                 errorAmbiguousShadowing ()
@@ -82,16 +106,14 @@ module Types =
 
                     loop fields (i + 1) fieldsAndSpreads
 
-                | SynFieldOrSpread.Spread(SynTypeSpread(range = m) as synSpread) :: fieldsAndSpreads ->
-                    checkSpreadsLanguageFeature m
-
+                | ExplicitOrSpread.Spread spread :: fieldsAndSpreads ->
                     let rec collectFieldsFromSpread fields i fieldsFromSpread =
                         match fieldsFromSpread with
                         | [] -> fields, i
-                        | (fieldId, field, warnAmbiguousShadowing, infoSpreadShadowing) :: fieldsFromSpread ->
+                        | (fieldName, field, warnAmbiguousShadowing, infoSpreadShadowing) :: fieldsFromSpread ->
                             let fields =
                                 fields
-                                |> Map.change fieldId (function
+                                |> Map.change fieldName (function
                                     | None -> Some(NoLeftwardExplicit, [ i, field ])
                                     | Some(LeftwardExplicit, _dupes) ->
                                         warnAmbiguousShadowing ()
@@ -102,7 +124,7 @@ module Types =
 
                             collectFieldsFromSpread fields (i + 1) fieldsFromSpread
 
-                    let fields, i = collectFieldsFromSpread fields i (tcSpread synSpread)
+                    let fields, i = collectFieldsFromSpread fields i (fieldsOfSpread spread)
                     loop fields i fieldsAndSpreads
 
             loop Map.empty 0 fieldsAndSpreads
@@ -110,6 +132,15 @@ module Types =
 /// Functions for checking value spreads.
 [<RequireQualifiedAccess>]
 module Values =
+    let private shadowingDiagnostics m (fmtedSpreadField: unit -> string) =
+        let warnAmbiguousShadowing () =
+            warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField (fmtedSpreadField ()), m))
+
+        let infoSpreadShadowing () =
+            informationalWarning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField (fmtedSpreadField ()), m))
+
+        warnAmbiguousShadowing, infoSpreadShadowing
+
     /// Functions for checking record spreads.
     [<RequireQualifiedAccess>]
     module Records =
@@ -288,19 +319,8 @@ module Values =
 
                         spreadSrcAddrExpr, (fun expr -> wrap (mkCompGenLet m spreadSrcAddrVal oldAddr expr))
 
-                    let recordFieldsFromSpread =
-                        if isRecdTy g tyOfSpreadSrcExpr then
-                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad tyOfSpreadSrcExpr false
-                        else
-                            tryDestAnonRecdTy g tyOfSpreadSrcExpr
-                            |> ValueOption.map (fun (anonInfo, tys) ->
-                                anonInfo.SortedIds
-                                |> List.ofArray
-                                |> List.mapi (fun i id -> Item.AnonRecdField(anonInfo, tys, i, id.idRange)))
-                            |> ValueOption.defaultValue []
-
                     let fields =
-                        recordFieldsFromSpread
+                        fieldItemsOfSpreadSrcTy cenv.nameResolver m ad tyOfSpreadSrcExpr
                         |> List.choose (fun field ->
                             match field with
                             | Item.RecdField fieldInfo ->
@@ -310,17 +330,9 @@ module Values =
                                 let fieldId = ident (fieldInfo.RecdField.Id.idText, mExpr)
                                 let ty = fieldInfo.FieldType
 
-                                let warnAmbiguousShadowing () =
-                                    let fmtedSpreadField =
-                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
-
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
-
-                                let infoSpreadShadowing () =
-                                    let fmtedSpreadField =
-                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
-
-                                    informationalWarning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField fmtedSpreadField, m))
+                                let warnAmbiguousShadowing, infoSpreadShadowing =
+                                    shadowingDiagnostics m (fun () ->
+                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField)
 
                                 Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing, infoSpreadShadowing)
 
@@ -328,26 +340,11 @@ module Values =
                                 let fieldExpr =
                                     mkAnonRecdFieldGet g (anonInfo, spreadSrcAddrExpr, tys, fieldIndex, mExpr)
 
-                                let fieldId = anonInfo.SortedIds[fieldIndex]
+                                let fieldId = ident (anonInfo.SortedNames[fieldIndex], mExpr)
                                 let ty = tys[fieldIndex]
 
-                                let getFmtedSpreadField () =
-                                    let typars =
-                                        tryAppTy g ty
-                                        |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption))
-                                        |> ValueOption.defaultValue []
-
-                                    LayoutRender.showL (
-                                        NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
-                                    )
-
-                                let warnAmbiguousShadowing () =
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField (getFmtedSpreadField ()), m))
-
-                                let infoSpreadShadowing () =
-                                    informationalWarning (
-                                        Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField (getFmtedSpreadField ()), m)
-                                    )
+                                let warnAmbiguousShadowing, infoSpreadShadowing =
+                                    shadowingDiagnostics m (fun () -> stringOfAnonRecdField env.DisplayEnv fieldId.idText ty)
 
                                 Some(fieldId, ExplicitOrSpread.Spread(ty, fieldExpr), warnAmbiguousShadowing, infoSpreadShadowing)
 
@@ -585,23 +582,12 @@ module Values =
 
                         spreadSrcAddrExpr, (fun expr -> wrap (mkCompGenLet m spreadSrcAddrVal oldAddr expr))
 
-                    let recordFieldsFromSpread =
-                        if isRecdTy g tyOfSpreadSrcExpr then
-                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad tyOfSpreadSrcExpr false
-                        else
-                            tryDestAnonRecdTy g tyOfSpreadSrcExpr
-                            |> ValueOption.map (fun (anonInfo, tys) ->
-                                anonInfo.SortedIds
-                                |> List.ofArray
-                                |> List.mapi (fun i id -> Item.AnonRecdField(anonInfo, tys, i, id.idRange)))
-                            |> ValueOption.defaultValue []
-
                     let fields =
-                        recordFieldsFromSpread
+                        fieldItemsOfSpreadSrcTy cenv.nameResolver m ad tyOfSpreadSrcExpr
                         |> List.choose (fun field ->
                             match field with
                             | Item.RecdField fieldInfo ->
-                                let fieldId = fieldInfo.RecdField.Id
+                                let fieldId = fieldInfo.RecdField.Id.MakeSynthetic()
 
                                 let ty =
                                     possibleTargetTyAt fieldId.idText
@@ -620,22 +606,14 @@ module Values =
                                     let fieldExpr = mkCoerceIfNeeded g ty (tyOfExpr g fieldExpr) fieldExpr
                                     fieldExpr
 
-                                let warnAmbiguousShadowing () =
-                                    let fmtedSpreadField =
-                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
-
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
-
-                                let infoSpreadShadowing () =
-                                    let fmtedSpreadField =
-                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
-
-                                    informationalWarning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField fmtedSpreadField, m))
+                                let warnAmbiguousShadowing, infoSpreadShadowing =
+                                    shadowingDiagnostics m (fun () ->
+                                        NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField)
 
                                 Some(fieldId, ty, tcField, warnAmbiguousShadowing, infoSpreadShadowing)
 
                             | Item.AnonRecdField(anonInfo, tys, fieldIndex, _) ->
-                                let fieldId = anonInfo.SortedIds[fieldIndex]
+                                let fieldId = anonInfo.SortedIds[fieldIndex].MakeSynthetic()
 
                                 let ty =
                                     possibleTargetTyAt fieldId.idText
@@ -654,23 +632,8 @@ module Values =
                                     let fieldExpr = mkCoerceIfNeeded g ty (tyOfExpr g fieldExpr) fieldExpr
                                     fieldExpr
 
-                                let getFmtedSpreadField () =
-                                    let typars =
-                                        tryAppTy g ty
-                                        |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption))
-                                        |> ValueOption.defaultValue []
-
-                                    LayoutRender.showL (
-                                        NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty)
-                                    )
-
-                                let warnAmbiguousShadowing () =
-                                    warning (Error(FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField (getFmtedSpreadField ()), m))
-
-                                let infoSpreadShadowing () =
-                                    informationalWarning (
-                                        Error(FSComp.SR.tcRecordExprSpreadFieldShadowsSpreadField (getFmtedSpreadField ()), m)
-                                    )
+                                let warnAmbiguousShadowing, infoSpreadShadowing =
+                                    shadowingDiagnostics m (fun () -> stringOfAnonRecdField env.DisplayEnv fieldId.idText ty)
 
                                 Some(fieldId, ty, tcField, warnAmbiguousShadowing, infoSpreadShadowing)
 
