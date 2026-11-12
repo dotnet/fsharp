@@ -216,23 +216,32 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     private bool _semanticTokensEnabled;
 
     /// <inheritdoc/>
-    public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
+    protected override async Task InitializeAsync(CancellationToken cancellationToken)
+    {
+        await base.InitializeAsync(cancellationToken);
+
+        // Decide before Visual Studio's activation check: a provider that is still enabled
+        // when activated must return a connection, and a null one is reported as a failure.
+        this.Enabled = await this.ReadEffectiveProviderAsync(cancellationToken) == FSharpExtensionSettings.LSP;
+    }
+
+    private async Task<string> ReadEffectiveProviderAsync(CancellationToken cancellationToken)
     {
 #pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        var setting = FSharpExtensionSettings.SemanticClassificationProvider;
+        var defaultIfUnset = FSharpExtensionSettings.AllSettingsWithDefaults.Single(x => x.Setting == setting).DefaultIfUnset;
+        var settingValue = await this.Extensibility.Settings().ReadEffectiveValueAsync(setting, cancellationToken);
+        var value = settingValue.ValueOrDefault(FSharpExtensionSettings.UNSET);
+#pragma warning restore VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-        var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
+        return value == FSharpExtensionSettings.UNSET ? defaultIfUnset : value;
+    }
 
-        var settingValues = FSharpExtensionSettings.AllSettingsWithDefaults.Select(
-            x => (x.Setting, x.DefaultIfUnset, value: settingsReadResult.ValueOrDefault(x.Setting, defaultValue: FSharpExtensionSettings.UNSET)));
-
-        var effectiveSettingValues = settingValues.ToDictionary(
-            x => x.Setting,
-            x => x.value == FSharpExtensionSettings.UNSET ? x.DefaultIfUnset : x.value);
-
-        if (effectiveSettingValues[FSharpExtensionSettings.SemanticClassificationProvider] != FSharpExtensionSettings.LSP)
+    /// <inheritdoc/>
+    public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
+    {
+        if (!this.Enabled)
         {
-            // Returning null alone leaves the provider eligible for subsequent activation attempts.
-            this.Enabled = false;
             return null;
         }
 
@@ -256,6 +265,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 ));
         _semanticTokensEnabled = serverConfig.EnabledFeatures.SemanticTokens;
 
+#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var disposeToEndSubscription =
             this.Extensibility.Settings().SubscribeAsync(
                 [FSharpExtensionSettings.FSharpCategory],

@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Settings;
 
@@ -44,8 +43,5 @@ namespace FSharp.VisualStudio.Extension
         [
             (SemanticClassificationProvider, OLD),
         ];
-
-        public static Setting<string>[] AllStringSettings { get; } =
-            AllSettingsWithDefaults.Select(x => x.Setting).ToArray();
     }
 }
