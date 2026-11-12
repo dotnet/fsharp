@@ -134,7 +134,7 @@ type internal IBackgroundCompiler =
     abstract SetReferenceStampProvider: getReferenceStamp: (string -> System.DateTime) -> unit
 
     abstract ParseAndCheckFileInProject:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string * checkDependenciesOnly: bool ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// Parses and checks the source file and returns untyped AST and check results.

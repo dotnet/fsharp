@@ -142,7 +142,7 @@ type internal IBackgroundCompiler =
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     abstract member ParseAndCheckFileInProject:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string ->
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * userOpName: string * checkDependenciesOnly: bool ->
             Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// Parse and typecheck the whole project.
@@ -1660,7 +1660,7 @@ type internal BackgroundCompiler
             self.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
 
         member _.ParseAndCheckFileInProject
-            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string, _checkDependenciesOnly: bool)
             : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
                 let fileSnapshot =
