@@ -139,8 +139,16 @@ let main _argv =
                                             1
                                         else
                                             Console.WriteLine $"RecordCtor: inline=({viaInline.A},{viaInline.B}) direct=({viaCtor.A},{viaCtor.B})"
-                                            Console.WriteLine "SUCCESS: All compiler compatibility tests passed"
-                                            0
+
+                                            // T9: inline function whose SRTP constraint a .NET field solves
+                                            let x = Library.vectorX (Numerics.Vector2(1.5f, 2.0f))
+                                            if x <> 1.5f then
+                                                Console.WriteLine $"ERROR: vectorX = {x}, expected 1.5"
+                                                1
+                                            else
+                                                Console.WriteLine "SUCCESS: SRTP field constraint compat test passed"
+                                                Console.WriteLine "SUCCESS: All compiler compatibility tests passed"
+                                                0
 
     with ex ->
         printfn "ERROR: Exception occurred: %s" ex.Message

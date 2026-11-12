@@ -2834,6 +2834,14 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
+    /// ILFieldSln(ty, ilFieldRef, isSet)
+    ///
+    /// Indicates a trait is solved by reading or writing a .NET field.
+    ///    ty -- the apparent enclosing type of the field, including its type instantiation
+    ///    ilFieldRef -- the uninstantiated reference to the field
+    ///    isSet -- whether the trait writes the field
+    | ILFieldSln of ty: TType * ilFieldRef: ILFieldRef * isSet: bool
+
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText = x.ToString()

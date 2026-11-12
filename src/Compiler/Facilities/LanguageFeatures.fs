@@ -65,6 +65,9 @@ type LanguageFeature =
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
     | ReraiseInComputationExpressions
+    | SupportILFieldsInSRTP
+    | VolatileILFieldAccess
+    | SrtpPropertySetterAssignment
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -164,6 +167,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# preview
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.SupportILFieldsInSRTP, previewVersion
+                LanguageFeature.VolatileILFieldAccess, previewVersion
+                LanguageFeature.SrtpPropertySetterAssignment, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -308,6 +314,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
         | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
         | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
+        | LanguageFeature.SupportILFieldsInSRTP -> FSComp.SR.featureSupportILFieldsInSRTP ()
+        | LanguageFeature.VolatileILFieldAccess -> FSComp.SR.featureVolatileILFieldAccess ()
+        | LanguageFeature.SrtpPropertySetterAssignment -> FSComp.SR.featureSrtpPropertySetterAssignment ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
