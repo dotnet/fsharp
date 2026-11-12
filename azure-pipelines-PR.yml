@@ -51,6 +51,8 @@ pr:
     - TESTGUIDE.md
 
 variables:
+  - name: VSBuildDateUtc
+    value: $[ format('{0:yyyy-MM-dd}', pipeline.startTime) ]
   - name: _TeamName
     value: FSharp
   - name: _BuildConfig

@@ -1,6 +1,0 @@
-<Project>
-  <Import Project="..\Versions.props" />
-  <Target Name="PrintVSVersion">
-    <Message Importance="high" Text="VSMinorVersion=$(VSMinorVersion); VSAssemblyVersion=$(VSAssemblyVersion)" />
-  </Target>
-</Project>

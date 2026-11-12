@@ -86,12 +86,6 @@ $ErrorActionPreference = "Stop"
 if ($ci -and -not $PSBoundParameters.ContainsKey('msbuildMultiThreaded')) {
     $msbuildMultiThreaded = $false
 }
-
-# Capture once so restore, build and pack cannot straddle a scheduled version transition.
-if ($official -and -not $env:VSBuildTimestampUtc -and -not ($properties -match '^[-/]p:VSBuildTimestampUtc=')) {
-    $properties += "/p:VSBuildTimestampUtc=$([DateTime]::UtcNow.ToString('o', [Globalization.CultureInfo]::InvariantCulture))"
-}
-
 $BuildCategory = ""
 $BuildMessage = ""
 
@@ -581,13 +575,22 @@ try {
     }
 
     $buildTool = InitializeBuildTool
+    $dotnetPath = InitializeDotNetCli
+    $env:DOTNET_ROOT = "$dotnetPath"
+    $env:VSMinorVersion = $null
+    $branch = if ($env:SYSTEM_PULLREQUEST_TARGETBRANCH) { $env:SYSTEM_PULLREQUEST_TARGETBRANCH }
+              elseif ($env:BUILD_SOURCEBRANCH) { $env:BUILD_SOURCEBRANCH }
+              else { & git -C $RepoRoot branch --show-current }
+    if ($branch -notmatch '^(refs/heads/)?release/') {
+        $date = if ($env:VSBUILDDATEUTC) { $env:VSBUILDDATEUTC } else { [DateTime]::UtcNow.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) }
+        $env:VSMinorVersion = & (Join-Path $dotnetPath (GetExecutableFileName 'dotnet')) fsi "$PSScriptRoot/scripts/GetVSMinorVersion.fsx" $date
+        if ($LASTEXITCODE -ne 0) { throw "VS minor version calculation failed." }
+    }
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
 
-    $dotnetPath = InitializeDotNetCli
-    $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
 
     if ($bootstrap) {
