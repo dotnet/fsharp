@@ -31,6 +31,11 @@ module Info =
     /// Whether a test is run after being compiled to .NET Native
     let isNetNative = framework.StartsWith(".NET Native")
 
+    /// From .NET 11, narrow (sbyte/int16) floating-point-to-integer conversions saturate directly to the
+    /// target type's range. Earlier runtimes saturated to Int32 first and then truncated the low bits, which
+    /// yielded different overflow results for the signed narrow types. Use this to select the expected value.
+    let isNet11OrGreater = not isNetFramework && Environment.Version.Major >= 11
+
 
 module private Impl =
 
