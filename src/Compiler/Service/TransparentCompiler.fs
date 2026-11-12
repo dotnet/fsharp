@@ -2060,6 +2060,7 @@ type internal TransparentCompiler
                 let finalInfo =
                     { finalInfo with
                         tcDiagnosticsRev = diagnosticsLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
+                        topAttribs = Some topAttrs
                     }
 
                 return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics
