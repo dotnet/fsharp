@@ -3,8 +3,6 @@ using Microsoft.VisualStudio.Extensibility.Settings;
 
 namespace FSharp.VisualStudio.Extension
 {
-#pragma warning disable VSEXTPREVIEW_SETTINGS // The settings API is currently in preview and marked as experimental
-
     internal static class FSharpExtensionSettings
     {
         public const string OLD = "old";

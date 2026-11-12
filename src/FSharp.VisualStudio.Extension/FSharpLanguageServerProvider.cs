@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace FSharp.VisualStudio.Extension;
@@ -27,12 +27,6 @@ using Microsoft.VisualStudio.LanguageServer.Protocol;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
-
-/// <inheritdoc/>
-#pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
-
-#pragma warning disable VSEXTPREVIEW_PROJECTQUERY_PROPERTIES_BUILDPROPERTIES // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
 
 internal static class Extensions
 {
@@ -192,7 +186,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
     }
 }
 
-
+#pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
 [VisualStudioContribution]
 internal class FSharpLanguageServerProvider : LanguageServerProvider
 {
@@ -227,12 +221,10 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
     private async Task<string> ReadEffectiveProviderAsync(CancellationToken cancellationToken)
     {
-#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var setting = FSharpExtensionSettings.SemanticClassificationProvider;
         var defaultIfUnset = FSharpExtensionSettings.AllSettingsWithDefaults.Single(x => x.Setting == setting).DefaultIfUnset;
         var settingValue = await this.Extensibility.Settings().ReadEffectiveValueAsync(setting, cancellationToken);
         var value = settingValue.ValueOrDefault(FSharpExtensionSettings.UNSET);
-#pragma warning restore VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
         return value == FSharpExtensionSettings.UNSET ? defaultIfUnset : value;
     }
@@ -265,7 +257,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 ));
         _semanticTokensEnabled = serverConfig.EnabledFeatures.SemanticTokens;
 
-#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         var disposeToEndSubscription =
             this.Extensibility.Settings().SubscribeAsync(
                 [FSharpExtensionSettings.FSharpCategory],
@@ -275,7 +266,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                     Trace.TraceInformation($"Settings update", result);
                 });
 
-#pragma warning restore VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
 
         //const string vsMajorVersion = "17.0";
