@@ -616,6 +616,9 @@ type ILFieldInfo =
     /// Indicates if the field is a member of a struct or enum type
     member IsValueType: bool
 
+    /// Indicates if the field is volatile, i.e. its type has the 'IsVolatile' required modifier
+    member IsVolatile: bool
+
     /// Indicates if the field is a literal field with an associated literal value
     member LiteralValue: ILFieldInit option
 

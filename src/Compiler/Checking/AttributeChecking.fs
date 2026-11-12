@@ -576,10 +576,10 @@ let TryGetPropObsoleteInfo pinfo =
 let CheckILFieldAttributes g (finfo: ILFieldInfo) m =
     match finfo with
     | ILFieldInfo(_, pd) ->
-        CheckILAttributes g false pd.CustomAttrs m |> CommitOperationResult
+        CheckILAttributes g false pd.CustomAttrs m
 #if !NO_TYPEPROVIDERS
     | ProvidedField (amap, fi, m) ->
-        CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
+        CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
 #endif
 
 let TryGetILFieldObsoleteInfo g (finfo : ILFieldInfo) =

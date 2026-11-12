@@ -3169,6 +3169,25 @@ let BuildOffsetToStringData (cenv: cenv) env m =
     let offsetExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false offsetToStringDataMethod NormalValUse [] [] [] None
     offsetExpr
 
+/// Find the trait that sets the property of a property trait: the trait itself, or the setter constraint
+/// of the same property on its support type parameter.
+let inline TryFindPropertySetterTrait g (traitInfo: TraitConstraintInfo) =
+    match traitInfo.MemberFlags.MemberKind, traitInfo.SupportTypes with
+    | SynMemberKind.PropertySet, _ -> Some traitInfo
+    | SynMemberKind.PropertyGet, [ supportTy ] ->
+        match tryDestTyparTy g supportTy with
+        | ValueSome tp ->
+            GetTraitConstraintInfosOfTypars g [ tp ]
+            |> List.tryFind (fun setter ->
+                setter.MemberFlags.MemberKind = SynMemberKind.PropertySet
+                && setter.MemberFlags.IsInstance = traitInfo.MemberFlags.IsInstance
+                && setter.MemberDisplayNameCore = traitInfo.MemberDisplayNameCore)
+        | ValueNone -> None
+    | _ -> None
+
+let ILFieldVolatility (g: TcGlobals) (finfo: ILFieldInfo) =
+    if finfo.IsVolatile && g.langVersion.SupportsFeature LanguageFeature.VolatileILFieldAccess then Volatile else Nonvolatile
+
 let BuildILFieldGet g amap m objExpr (finfo: ILFieldInfo) =
     let fref = finfo.ILFieldRef
     let isStruct = finfo.IsValueType
@@ -3193,7 +3212,7 @@ let BuildILFieldGet g amap m objExpr (finfo: ILFieldInfo) =
       // polymorphic code, after inlining etc. *
     let fspec = mkILFieldSpec(fref, mkILNamedTy boxity fref.DeclaringTypeRef [])
     // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
-    wrap (mkAsmExpr (([ mkNormalLdfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else [])), tinst, [objExpr], [fieldTy], m))
+    wrap (mkAsmExpr (([ I_ldfld (Aligned, ILFieldVolatility g finfo, fspec) ] @ (if finfo.IsInitOnly then [ AI_nop ] else [])), tinst, [objExpr], [fieldTy], m))
 
 /// Checks that setting a field value does not set a literal or initonly field
 let private CheckFieldLiteralArg (finfo: ILFieldInfo) argExpr m =
@@ -3218,9 +3237,9 @@ let BuildILFieldSet g m objExpr (finfo: ILFieldInfo) argExpr =
     let fspec = mkILFieldSpec(fref, mkILNamedTy boxity fref.DeclaringTypeRef [])
     CheckFieldLiteralArg finfo argExpr m
     let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g isStruct false DefinitelyMutates objExpr None m
-    wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m))
+    wrap (mkAsmExpr ([ I_stfld (Aligned, ILFieldVolatility g finfo, fspec) ], tinst, [objExpr; argExpr], [], m))
 
-let BuildILStaticFieldSet m (finfo: ILFieldInfo) argExpr =
+let BuildILStaticFieldSet g m (finfo: ILFieldInfo) argExpr =
     let fref = finfo.ILFieldRef
     let isStruct = finfo.IsValueType
     let boxity = if isStruct then AsValue else AsObject
@@ -3230,7 +3249,7 @@ let BuildILStaticFieldSet m (finfo: ILFieldInfo) argExpr =
       // polymorphic code, after inlining etc.
     let fspec = mkILFieldSpec(fref, mkILNamedTy boxity fref.DeclaringTypeRef [])
     CheckFieldLiteralArg finfo argExpr m
-    mkAsmExpr ([ mkNormalStsfld fspec ], tinst, [argExpr], [], m)
+    mkAsmExpr ([ I_stsfld (ILFieldVolatility g finfo, fspec) ], tinst, [argExpr], [], m)
 
 let BuildRecdFieldSet g m objExpr (rfinfo: RecdFieldInfo) argExpr =
     let tgtTy = rfinfo.DeclaringType
@@ -9595,9 +9614,6 @@ and TcCtorItemThen (cenv: cenv) overallTy env item nm minfos tinstEnclosing tpen
 and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem delayed =
     let g = cenv.g
 
-    let argTys = traitInfo.GetLogicalArgumentTypes(g)
-    let retTy = traitInfo.GetReturnType(g)
-
     match traitInfo.SupportTypes with
     | tys when tys.Length > 1 ->
         error(Error(FSComp.SR.tcTraitHasMultipleSupportTypes(RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
@@ -9607,6 +9623,28 @@ and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem dela
     | Some _, false -> error (Error(FSComp.SR.tcTraitIsStatic (RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
     | None, true -> error (Error(FSComp.SR.tcTraitIsNotStatic (RichText.mkMember traitInfo.MemberDisplayNameCore), mItem))
     | _ -> ()
+
+    match delayed with
+    | DelayedSet(expr2, mStmt) :: otherDelayed when
+        (traitInfo.MemberFlags.MemberKind = SynMemberKind.PropertyGet || traitInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet)
+        && g.langVersion.SupportsFeature LanguageFeature.SrtpPropertySetterAssignment ->
+        if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
+        let setterTrait = TryFindPropertySetterTrait g traitInfo
+        match setterTrait, setterTrait |> Option.map (fun t -> t.GetCompiledArgumentTypes()) with
+        | Some setterTrait, Some [ propTy ] ->
+            UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
+            let expr2R, tpenv = TcExprFlex cenv true false propTy env tpenv expr2
+            Expr.Op (TOp.TraitCall setterTrait, [], Option.toList objOpt @ [ expr2R ], mStmt), tpenv
+        | _ ->
+            error(Error(FSComp.SR.tcPropertyCannotBeSet1(RichText.mkProperty traitInfo.MemberDisplayNameCore), mItem))
+
+    | _ when traitInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet ->
+        error(Error(FSComp.SR.tcPropertyIsNotReadable(RichText.mkProperty traitInfo.MemberDisplayNameCore), mItem))
+
+    | _ ->
+
+    let argTys = traitInfo.GetLogicalArgumentTypes(g)
+    let retTy = traitInfo.GetReturnType(g)
 
     // If this is an instance trait the object must be evaluated, just in case this is a first-class use of the trait, e.g.
     //     (Compute()).SomeMethod  -->
@@ -9961,7 +9999,7 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem mItemIdent delayed =
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         // Always allow subsumption on assignment to fields
         let expr2R, tpenv = TcExprFlex cenv true false exprTy env tpenv expr2
-        let expr = BuildILStaticFieldSet mStmt finfo expr2R
+        let expr = BuildILStaticFieldSet g mStmt finfo expr2R
         expr, tpenv
 
     | _ ->
@@ -9982,7 +10020,7 @@ and TcILFieldItemThen cenv overallTy env finfo tpenv mItem mItemIdent delayed =
                 let fspec = mkILFieldSpec(fref, mkILNamedTy boxity fref.DeclaringTypeRef [])
 
                 let ilInstrs =
-                    [ mkNormalLdsfld fspec
+                    [ I_ldsfld (ILFieldVolatility g finfo, fspec)
                       // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
                       if finfo.IsInitOnly then AI_nop ]
 
@@ -12103,7 +12141,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
                           CheckILFieldInfoAccessible g cenv.amap m ad finfo
-                          CheckILFieldAttributes g finfo m
+                          CheckILFieldAttributes g finfo m |> CommitOperationResult
                           id.idText, false, finfo.FieldType(cenv.amap, m)
                       | Item.RecdField rfinfo when not rfinfo.IsStatic ->
                           CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult

@@ -1678,6 +1678,15 @@ type ILFieldInfo =
         | ProvidedField(amap, _, _) -> isStructTy amap.g x.ApparentEnclosingType
 #endif
 
+     /// Indicates if the field is volatile, i.e. its type has the 'IsVolatile' required modifier
+    member x.IsVolatile =
+        let rec isVolatileType ilTy =
+            match ilTy with
+            | ILType.Modified(true, tref, _) when tref.FullName = "System.Runtime.CompilerServices.IsVolatile" -> true
+            | ILType.Modified(_, _, ilTy) -> isVolatileType ilTy
+            | _ -> false
+        isVolatileType x.ILFieldType
+
      /// Indicates if the field is static
     member x.IsStatic =
         match x with

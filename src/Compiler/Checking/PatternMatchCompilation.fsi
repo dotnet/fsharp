@@ -46,8 +46,6 @@ and PatternValBinding = PatternValBinding of Val * GeneralizedType
 
 and MatchClause = MatchClause of Pattern * Expr option * DecisionTreeTarget * range
 
-val ilFieldToTastConst: ILFieldInit -> Const
-
 /// Rethrow an exception from a position that is not a real .NET exception handler, such as the handler
 /// function a computation expression builder is given to simulate one. The IL 'rethrow' instruction is not
 /// valid there, so the exception is rethrown through ExceptionDispatchInfo, which preserves its stack trace.

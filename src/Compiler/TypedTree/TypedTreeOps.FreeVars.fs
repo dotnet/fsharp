@@ -297,6 +297,7 @@ module internal FreeTypeVars =
                 (accFreeInType opts ty (accFreeValRefInTraitSln opts vref (accFreeInTypes opts minst acc)))
         | FSAnonRecdFieldSln(_anonInfo, tinst, _n) -> accFreeInTypes opts tinst acc
         | FSRecdFieldSln(tinst, _rfref, _isSet) -> accFreeInTypes opts tinst acc
+        | ILFieldSln(ty, _ilFieldRef, _isSet) -> accFreeInType opts ty acc
         | BuiltInSln -> acc
         | ClosedExprSln _ -> acc // nothing to accumulate because it's a closed expression referring only to erasure of provided method calls
 
