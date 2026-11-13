@@ -5,6 +5,8 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<CheckNulls>true</CheckNulls>
 		<Nullable>enable</Nullable>
+		<!-- Depends on VS SDK packages (LSP protocol, VS threading, StreamJsonRpc) that are not source-built. -->
+		<ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">

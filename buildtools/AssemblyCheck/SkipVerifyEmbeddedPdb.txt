@@ -8,4 +8,5 @@ FSharp.Compiler.LanguageServer.Tests.dll
 FSharp.Compiler.Private.Scripting.UnitTests.dll
 FSharp.Compiler.Service.Tests.dll
 FSharp.Core.UnitTests.dll
+FSharp.VisualStudio.Extension.Tests.dll
 FSharpSuite.Tests.dll

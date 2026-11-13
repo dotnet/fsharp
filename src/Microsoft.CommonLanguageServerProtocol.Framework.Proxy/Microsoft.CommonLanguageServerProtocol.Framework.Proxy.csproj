@@ -5,6 +5,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>14.0</LangVersion>
+		<!-- CLaSP and its StreamJsonRpc/MessagePack dependencies are not source-built. -->
+		<ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
