@@ -24,26 +24,30 @@ open Xunit
 
 type SemanticClassificationPolicyTests() =
     [<Theory>]
-    [<InlineData("lsp", WorkspaceKind.Host, true, false)>]
-    [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
-    [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
-    [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
-    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, false)>]
-    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, false, true)>]
-    [<InlineData("lsp", "Custom", true, true)>]
-    [<InlineData("old", WorkspaceKind.Host, true, true)>]
-    [<InlineData("old", WorkspaceKind.Host, false, true)>]
-    member _.``Legacy classification skips only LSP rendered documents``(provider, workspaceKind, isOpen, expected) =
-        Assert.Equal(expected, FSharpClassificationService.ShouldClassify(provider, workspaceKind, isOpen))
+    [<InlineData("lsp", WorkspaceKind.Host, true, false, false)>]
+    [<InlineData("lsp", WorkspaceKind.Host, true, true, true)>]
+    [<InlineData("lsp", WorkspaceKind.Host, false, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, true, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, false, false, true)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, false, false)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, false, false, true)>]
+    [<InlineData("lsp", "Custom", true, false, true)>]
+    [<InlineData("old", WorkspaceKind.Host, true, false, true)>]
+    [<InlineData("old", WorkspaceKind.Host, false, false, true)>]
+    member _.``Legacy classification skips only LSP rendered documents``
+        (provider, workspaceKind, isOpen, isMiscellaneousOrMetadata, expected)
+        =
+        Assert.Equal(expected, FSharpClassificationService.ShouldClassify(provider, workspaceKind, isOpen, isMiscellaneousOrMetadata))
 
     [<Theory>]
-    [<InlineData("lsp", WorkspaceKind.Host, true, false)>]
-    [<InlineData("lsp", WorkspaceKind.Host, false, true)>]
-    [<InlineData("lsp", WorkspaceKind.Preview, true, true)>]
-    [<InlineData("lsp", WorkspaceKind.Preview, false, true)>]
-    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, true, false)>]
-    [<InlineData("old", WorkspaceKind.Host, true, true)>]
-    member _.``Legacy provider classifies closed and preview documents under LSP``(provider, workspaceKind, isOpen, expected) =
+    [<InlineData("lsp", WorkspaceKind.Host, "C:\\test.fsproj", true, false)>]
+    [<InlineData("lsp", WorkspaceKind.Host, "C:\\test.fsproj", false, true)>]
+    [<InlineData("lsp", WorkspaceKind.Host, FSharpConstants.FSharpMiscellaneousFilesName, true, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, "C:\\test.fsproj", true, true)>]
+    [<InlineData("lsp", WorkspaceKind.Preview, "C:\\test.fsproj", false, true)>]
+    [<InlineData("lsp", WorkspaceKind.MiscellaneousFiles, "C:\\test.fsproj", true, false)>]
+    [<InlineData("old", WorkspaceKind.Host, "C:\\test.fsproj", true, true)>]
+    member _.``Legacy provider classifies documents LSP cannot classify``(provider, workspaceKind, project: string, isOpen, expected) =
         task {
             use workspace = new AdhocWorkspace(TestHostServices(), workspaceKind)
             let projectId = ProjectId.CreateNewId()
@@ -53,7 +57,7 @@ type SemanticClassificationPolicyTests() =
                 RoslynTestHelpers.CreateDocumentInfo projectId "C:\\test.fs" source
 
             let projectInfo =
-                RoslynTestHelpers.CreateProjectInfo projectId "C:\\test.fsproj" [ documentInfo ]
+                RoslynTestHelpers.CreateProjectInfo projectId project [ documentInfo ]
 
             let project = workspace.AddProject projectInfo
             RoslynTestHelpers.SetProjectOptions projectId project.Solution RoslynTestHelpers.DefaultProjectOptions

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -165,12 +165,17 @@ type internal FSharpClassificationService(provider: string, options: EditorOptio
         let struct (_, provider) = HighlightingTelemetry.readProvider serviceProvider
         FSharpClassificationService(provider, options, HighlightingTelemetry.instance)
 
-    static member ShouldClassify(provider, workspaceKind, isOpenDocument) =
+    /// The LSP server only classifies semantically documents of the projects it is given, so legacy
+    /// keeps classifying F# Miscellaneous Files (scripts, loose files) and metadata (dotnet/fsharp#20972).
+    static member ShouldClassify(provider, workspaceKind, isOpenDocument, isFSharpMiscellaneousOrMetadata) =
         let isLspEditorWorkspace =
             workspaceKind = WorkspaceKind.Host
             || workspaceKind = WorkspaceKind.MiscellaneousFiles
 
-        provider <> "lsp" || not isLspEditorWorkspace || not isOpenDocument
+        provider <> "lsp"
+        || not isLspEditorWorkspace
+        || not isOpenDocument
+        || isFSharpMiscellaneousOrMetadata
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -231,7 +236,16 @@ type internal FSharpClassificationService(provider: string, options: EditorOptio
             let workspace = document.Project.Solution.Workspace
             let isOpenDocument = workspace.IsDocumentOpen document.Id
 
-            if not (FSharpClassificationService.ShouldClassify(provider, workspace.Kind, isOpenDocument)) then
+            if
+                not (
+                    FSharpClassificationService.ShouldClassify(
+                        provider,
+                        workspace.Kind,
+                        isOpenDocument,
+                        document.Project.IsFSharpMiscellaneousOrMetadata
+                    )
+                )
+            then
                 Task.CompletedTask
             else
                 cancellableTask {
