@@ -2,6 +2,8 @@ namespace FSharp.Compiler.LanguageServer.Handlers
 
 open System.IO
 open System
+open System.Text.Json
+open System.Text.Json.Serialization
 
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
@@ -16,9 +18,25 @@ open System.Threading.Tasks
 #nowarn "57"
 #nowarn "3261"
 
+/// Encodes a document as a file URI. The default converter round-trips a Unix path as a relative Uri.
+type AbsoluteUriConverter() =
+    inherit JsonConverter<Uri>()
+
+    override _.Read(reader, _, _) =
+        Uri(reader.GetString() |> nonNull, UriKind.Absolute)
+
+    override _.Write(writer, value, _) =
+        writer.WriteStringValue(
+            if value.IsAbsoluteUri then
+                value.AbsoluteUri
+            else
+                value.OriginalString
+        )
+
 [<CLIMutable>]
 type ActiveProjectContextParams =
     {
+        [<JsonConverter(typeof<AbsoluteUriConverter>)>]
         Uri: Uri
         ProjectFileName: string
         OutputFileName: string

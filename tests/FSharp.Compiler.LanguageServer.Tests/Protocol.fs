@@ -52,6 +52,18 @@ let ``Protocol formatter preserves VS project context and document URI`` () =
     Assert.Null(JsonSerializer.Deserialize<TextDocumentIdentifier>("null", options))
 
 [<Fact>]
+let ``Active project context URI is sent as an absolute file URI`` () =
+    let options = (createConfiguredFormatter ()).JsonSerializerOptions
+    let uri = Uri(IO.Path.Combine(IO.Path.GetTempPath(), "project name", "file.fs"))
+    let parameters: Handlers.ActiveProjectContextParams = { Uri = uri; ProjectFileName = "p.fsproj"; OutputFileName = "p.dll" }
+    let json = JsonSerializer.Serialize(parameters, options)
+    use document = JsonDocument.Parse(json)
+    Assert.Equal(uri.AbsoluteUri, document.RootElement.GetProperty("Uri").GetString())
+    let result = JsonSerializer.Deserialize<Handlers.ActiveProjectContextParams>(json, options)
+    Assert.True(result.Uri.IsAbsoluteUri)
+    Assert.Equal(uri.LocalPath, result.Uri.LocalPath)
+
+[<Fact>]
 let ``The server can process the initialization message`` () =
     task {
 
