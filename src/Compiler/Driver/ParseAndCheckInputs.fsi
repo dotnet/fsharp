@@ -95,9 +95,10 @@ val ParseOneInputStream:
     stream: Stream ->
         ParsedInput
 
-/// Parse one input source text
+/// Parse one input source text, merging the warn scopes of its #nowarn and #warnon directives into diagnosticOptions
 val ParseOneInputSourceText:
     tcConfig: TcConfig *
+    diagnosticOptions: FSharpDiagnosticOptions *
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
