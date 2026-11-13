@@ -499,9 +499,9 @@ module FSharpExprConvert =
                 let enclTyArgs, methTyArgs = List.splitAfter numEnclTypeArgs tyargs
                 let witnessArgsR = GetWitnessArgs cenv env vref m tps tyargs
                 // tailcall
-                ConvObjectModelCallLinear cenv env (isNewObj, FSharpMemberOrFunctionOrValue(cenv, vref), enclTyArgs, methTyArgs, witnessArgsR, callArgs) contf2
+                ConvObjectModelCallLinear cenv env (isNewObj, FSharpMemberOrFunctionOrValue.Shared(cenv, vref), enclTyArgs, methTyArgs, witnessArgsR, callArgs) contf2
             else
-                let v = FSharpMemberOrFunctionOrValue(cenv, vref)
+                let v = FSharpMemberOrFunctionOrValue.Shared(cenv, vref)
                 let witnessArgsR = GetWitnessArgs cenv env vref m vref.Typars tyargs
                 // tailcall
                 ConvObjectModelCallLinear cenv env (false, v, [], tyargs, witnessArgsR, List.concat untupledCurriedArgs) contf2
@@ -892,7 +892,7 @@ module FSharpExprConvert =
                 E.AddressSet(ConvExpr cenv env (exprForValRef m vref), ConvExpr cenv env e)
 
             | TOp.LValueOp (LSet, vref), [], [e] ->
-                E.ValueSet(FSharpMemberOrFunctionOrValue(cenv, vref), ConvExpr cenv env e)
+                E.ValueSet(FSharpMemberOrFunctionOrValue.Shared(cenv, vref), ConvExpr cenv env e)
 
             | TOp.LValueOp (LByrefGet, vref), [], [] ->
                 ConvValRef cenv env m vref
@@ -1039,7 +1039,7 @@ module FSharpExprConvert =
                     let minfo = MethInfo.FSMeth(g, enclosingTy, vr, None)
                     FSharpMemberOrFunctionOrValue(cenv, minfo)
                 else
-                    FSharpMemberOrFunctionOrValue(cenv, vr)
+                    FSharpMemberOrFunctionOrValue.Shared(cenv, vr)
             makeCall memOrVal
 
         // takes a possibly fake ValRef and tries to resolve it to an F# expression
@@ -1272,11 +1272,11 @@ module FSharpExprConvert =
         elif v.IsBaseVal then
             E.BaseValue(ConvType cenv v.Type)
         else
-            E.Value(FSharpMemberOrFunctionOrValue(cenv, vref))
+            E.Value(FSharpMemberOrFunctionOrValue.Shared(cenv, vref))
 
     and ConvVal cenv (v: Val) : FSharpMemberOrFunctionOrValue =
         let vref = mkLocalValRef v
-        FSharpMemberOrFunctionOrValue(cenv, vref)
+        FSharpMemberOrFunctionOrValue.Shared(cenv, vref)
 
     and ConvConst cenv env m c ty =
         let g = cenv.g
@@ -1401,7 +1401,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         assert v.IsCompiledAsTopLevel
         let valReprInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
         let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo bind.Expr
-        let v = FSharpMemberOrFunctionOrValue(cenv, mkLocalValRef v)
+        let v = FSharpMemberOrFunctionOrValue.Shared(cenv, mkLocalValRef v)
         let gps = v.GenericParameters
         let vslR = List.mapSquared (FSharpExprConvert.ConvVal cenv) vsl
         let env = ExprTranslationEnv.Empty(g).BindTypars (Seq.zip tps gps |> Seq.toList)
