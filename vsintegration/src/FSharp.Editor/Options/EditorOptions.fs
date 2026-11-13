@@ -145,6 +145,7 @@ type FormattingOptions =
 [<Shared; Export>]
 type EditorOptions private (reader: ISettingsReader option) =
     let cache = ConcurrentDictionary<Type, obj>()
+    let changed = Event<unit>()
 
     let register (value: 'T) = cache[typeof<'T>] <- value
 
@@ -242,7 +243,10 @@ type EditorOptions private (reader: ISettingsReader option) =
 
     let subscription =
         reader
-        |> Option.map (fun reader -> UnifiedSettings.subscribeToChanges reader "languages.fsharp.*" (fun () -> refresh reader))
+        |> Option.map (fun reader ->
+            UnifiedSettings.subscribeToChanges reader "languages.fsharp.*" (fun () ->
+                refresh reader
+                changed.Trigger()))
 
     new() = new EditorOptions(None)
 
@@ -271,7 +275,11 @@ type EditorOptions private (reader: ISettingsReader option) =
     member _.Advanced = unbox<AdvancedOptions> cache[typeof<AdvancedOptions>]
     member _.Formatting = unbox<FormattingOptions> cache[typeof<FormattingOptions>]
 
-    member _.With value = register value
+    member internal _.SettingsChanged = changed.Publish
+
+    member _.With value =
+        register value
+        changed.Trigger()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 

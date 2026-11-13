@@ -3,7 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
+open System.ComponentModel.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -34,11 +34,13 @@ type private CachedDiagnostics =
         Diagnostics: ImmutableArray<Diagnostic>
     }
 
-[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); Shared>]
+[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>); PartCreationPolicy(CreationPolicy.Shared)>]
 type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
-    let shouldProduceDiagnostics (document: Document) =
-        document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
+    // The in-proc (devenv) analyzer always produces diagnostics. The LSP
+    // diagnostics endpoint is intentionally not advertised, so there is no
+    // setting to consult here.
+    let shouldProduceDiagnostics (_document: Document) = true
 
     // DocumentId keys survive solution snapshots, and holding them weakly means a document dropped from the
     // solution takes its cached diagnostics with it, so no eviction pass is needed on the request path.

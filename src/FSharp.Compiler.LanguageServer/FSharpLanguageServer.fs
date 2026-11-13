@@ -1,10 +1,14 @@
 namespace FSharp.Compiler.LanguageServer
 
+open System
+open System.Diagnostics
 open System.Runtime.CompilerServices
+open System.Text.Json
+open System.Text.Json.Serialization
+
 open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer.Handlers
 
-open System
 open Microsoft.CommonLanguageServerProtocol.Framework.Handlers
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.Extensions.DependencyInjection
@@ -12,7 +16,6 @@ open Microsoft.VisualStudio.LanguageServer.Protocol
 
 open StreamJsonRpc
 open Nerdbank.Streams
-open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57"
@@ -21,6 +24,37 @@ open FSharp.Compiler.CodeAnalysis.Workspace
 module Stuff =
     [<Literal>]
     let FSharpLanguageName = "F#"
+
+    // Protocol.Extensions exposes its System.Text.Json converter registration only internally.
+    type private VSExtensionConverter<'TBase when 'TBase: not struct and 'TBase: not null>(extensionType: Type) =
+        inherit JsonConverter<'TBase>()
+
+        do
+            if not (typeof<'TBase>.IsAssignableFrom(extensionType)) then
+                invalidArg (nameof extensionType) "The extension type must derive from the protocol type."
+
+        override _.Read(reader: byref<Utf8JsonReader>, _typeToConvert: Type, options: JsonSerializerOptions) : 'TBase | null =
+            JsonSerializer.Deserialize(&reader, extensionType, options) :?> ('TBase | null)
+
+        override this.Write(writer: Utf8JsonWriter, value: 'TBase, options: JsonSerializerOptions) =
+            let runtimeType = value.GetType()
+
+            if runtimeType = typeof<'TBase> then
+                let baseOptions = JsonSerializerOptions(options)
+                baseOptions.Converters.Remove(this) |> ignore
+                JsonSerializer.Serialize(writer, value, baseOptions)
+            else
+                JsonSerializer.Serialize(writer, value, runtimeType, options)
+
+    let createConfiguredFormatter () =
+        let formatter = new SystemTextJsonFormatter()
+        let options = formatter.JsonSerializerOptions
+        options.Converters.Add(VSExtensionConverter<Diagnostic>(typeof<VSDiagnostic>))
+        options.Converters.Add(VSExtensionConverter<Location>(typeof<VSLocation>))
+        options.Converters.Add(VSExtensionConverter<ServerCapabilities>(typeof<VSServerCapabilities>))
+        options.Converters.Add(VSExtensionConverter<SymbolInformation>(typeof<VSSymbolInformation>))
+        options.Converters.Add(VSExtensionConverter<TextDocumentIdentifier>(typeof<VSTextDocumentIdentifier>))
+        formatter
 
 [<Extension>]
 type Extensions =
@@ -32,14 +66,14 @@ type Extensions =
 type FSharpLanguageServer
     (
         jsonRpc: JsonRpc,
+        serializerOptions: JsonSerializerOptions,
         logger: ILspLogger,
         ?initialWorkspace: FSharpWorkspace,
         ?addExtraHandlers: Action<IServiceCollection>,
         ?config: FSharpLanguageServerConfig
     ) =
 
-    // TODO: Switch to SystemTextJsonLanguageServer
-    inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
+    inherit CancellableSystemTextJsonLanguageServer<FSharpRequestContext>(jsonRpc, serializerOptions)
 
     let config = defaultArg config FSharpLanguageServerConfig.Default
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
@@ -56,17 +90,23 @@ type FSharpLanguageServer
         let _ =
             serviceCollection
                 .AddSingleton(initialWorkspace)
+                .AddSingleton(jsonRpc)
                 .AddSingleton<ContextHolder>()
                 .AddSingleton<FSharpLanguageServerConfig>(config)
                 .AddSingleton<IMethodHandler, InitializeHandler<InitializeParams, InitializeResult, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, InitializedHandler<InitializedParams, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
+                .AddSingleton<IMethodHandler, SemanticTokensHandler>()
+                .AddSingleton<IMethodHandler, CodeActionHandler>()
+                .AddSingleton<IMethodHandler, ProjectContextsHandler>()
+                .AddSingleton<IMethodHandler, ActiveProjectContextHandler>()
                 .AddSingleton<ILspLogger>(logger)
+                .AddSingleton<ILspTelemetry>(NullTelemetry.Instance)
                 .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
                 .AddSingleton<IInitializeManager<InitializeParams, InitializeResult>, CapabilitiesManager>()
                 .AddSingleton(this)
-                .AddSingleton<ILifeCycleManager>(new LspServiceLifeCycleManager())
+                .AddSingleton<IOnServerShutdown>(new LspServiceLifeCycleManager(logger))
 
         match addExtraHandlers with
         | Some handler -> handler.Invoke(serviceCollection)
@@ -95,21 +135,27 @@ type FSharpLanguageServer
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 
         // TODO: handle disposal of these
-        let formatter = new JsonMessageFormatter()
+        let formatter = createConfiguredFormatter ()
 
         let messageHandler =
             new HeaderDelimitedMessageHandler(serverStream, serverStream, formatter)
 
         let jsonRpc = new JsonRpc(messageHandler)
 
-        let listener = new TextWriterTraceListener(Console.Out)
-
-        jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
+        let consoleListener = new TextWriterTraceListener(Console.Out)
+        jsonRpc.TraceSource.Listeners.Add(consoleListener) |> ignore
 
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
         let server =
-            new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers, ?config = config)
+            new FSharpLanguageServer(
+                jsonRpc,
+                formatter.JsonSerializerOptions,
+                logger,
+                initialWorkspace,
+                ?addExtraHandlers = addExtraHandlers,
+                ?config = config
+            )
 
         jsonRpc.StartListening()
 

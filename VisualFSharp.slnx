@@ -46,6 +46,9 @@
     <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
+    <Project Path="tests/FSharp.VisualStudio.Extension.Tests/FSharp.VisualStudio.Extension.Tests.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
     <Project Path="tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>

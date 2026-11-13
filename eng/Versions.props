@@ -106,7 +106,7 @@
     <!-- Apex VS integration-test packages, consumed by-name via $(...) in
          vsintegration/tests/FSharp.Editor.Apex.IntegrationTests, so they stay properties here. -->
     <MicrosoftTestApexVisualStudioVersion>18.7.0-preview-1-11715-043</MicrosoftTestApexVisualStudioVersion>
-    <MSTestVersion>3.6.4</MSTestVersion>
+    <MSTestVersion>3.8.3</MSTestVersion>
 
     <!-- Read by name by the Arcade SDK (tools/VisualStudio.targets injects it into VSIX projects), so it must
          stay a property rather than being inlined into eng/Packages.props. -->

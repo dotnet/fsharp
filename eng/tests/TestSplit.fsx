@@ -47,6 +47,7 @@ let componentTestsAtoms =
 let otherProjects =
     [// project path                                                                         batch  batched platform, unbatched platform
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all",     "all"
+        "tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj", 1, "coreclr", "coreclr"
         "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all",     "all"
         "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all",     "all"
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all", "all"
@@ -74,7 +75,6 @@ let excludedPrefixes =
 // Individual projects excluded by exact path.
 let excludedProjects =
     [ "tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj"  // shared test utility library, not a test project
-      "tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj"  // LSP tests, run in a dedicated CI job
       "tests/FSharp.Build.UnitTests/resources/EmbeddedText/Runtime.fsproj"  // executable fixture built by ResourceTests
     ]
 

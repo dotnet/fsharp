@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace FSharp.VisualStudio.Extension;
@@ -28,12 +28,6 @@ using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
 
-/// <inheritdoc/>
-#pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
-
-#pragma warning disable VSEXTPREVIEW_PROJECTQUERY_PROPERTIES_BUILDPROPERTIES // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-
 internal static class Extensions
 {
     public static List<IQueryResultItem<T>> Please<T>(this IAsyncQueryable<T> x) => x.QueryAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
@@ -44,101 +38,47 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 {
     public ServerCapabilities OverrideServerCapabilities(FSharpLanguageServerConfig config, ServerCapabilities value, ClientCapabilities clientCapabilities)
     {
+        // Only the semantic-tokens capability is advertised. Diagnostics and
+        // code actions are unconditionally suppressed so the in-proc (devenv)
+        // implementations remain authoritative until the LSP server's
+        // diagnostics + code actions are graduated in a follow-up rollout.
+        // Project contexts stay on because they're metadata for the client, not UX.
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true,
+            SupportsDiagnosticRequests = false,
             ProjectContextProvider = true,
-            DiagnosticProvider =
-                config.EnabledFeatures.Diagnostics ?
-
-            new()
-            {
-                SupportsMultipleContextsDiagnostics = true,
-                DiagnosticKinds = [
-                        // Support a specialized requests dedicated to task-list items.  This way the client can ask just
-                        // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
-                        // the task list would not be visible.
-                        //VSInternalDiagnosticKind.Task,
-                        // Dedicated request for workspace-diagnostics only.  We will only respond to these if FSA is on.
-                        VSInternalDiagnosticKind.Syntax,
-                        // Fine-grained diagnostics requests.  Importantly, this separates out syntactic vs semantic
-                        // requests, allowing the former to quickly reach the user without blocking on the latter.  In a
-                        // similar vein, compiler diagnostics are explicitly distinct from analyzer-diagnostics, allowing
-                        // the former to appear as soon as possible as they are much more critical for the user and should
-                        // not be delayed by a slow analyzer.
-                        //new("Semantic"),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
-                    ]
-            } : null,
-            SemanticTokensOptions = config.EnabledFeatures.SemanticHighlighting ? new()
-            {
-                Legend = new()
-                {
-                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
-                },
-                Full = new SemanticTokensFullOptions()
-                {
-                    Delta = false
-                },
-                Range = false
-            } : null,
-            //,
-            //HoverProvider = new HoverOptions()
-            //{
-            //    WorkDoneProgress = true
-            //}
+            SemanticTokensOptions = value.SemanticTokensOptions,
+            CodeActionProvider = null,
+            DiagnosticProvider = null,
         };
         return capabilities;
     }
 }
 
 internal class VsDiagnosticsHandler
-    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
-      IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
+    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDiagnosticParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-        var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var projectContext = Utils.tryGetProjectContext(request!.TextDocument!);
+        var report = await context.Workspace.Query.GetDiagnosticsForFile(request.TextDocument!.Uri, projectContext).Please(cancellationToken);
+
+        var snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(request.TextDocument.Uri);
+        var projects = Utils.snapshotsToProjectInfos(snapshots);
 
         var vsReport = new VSInternalDiagnosticReport
         {
             ResultId = report.ResultId,
-            //Identifier = 1,
-            //Version = 1,
-            Diagnostics = [.. report.Diagnostics.Select(FSharpDiagnosticExtensions.ToLspDiagnostic)]
+            Diagnostics = [.. report.Diagnostics.Select(d => d.ToVsDiagnostic(projects))]
         };
 
         return [vsReport];
     }
 
-    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)]
-    public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(new VSProjectContextList()
-        {
-            DefaultIndex = 0,
-            ProjectContexts = [
-                //new() {
-                //    Id = "potato",
-                //    Label = "Potato",
-                //    // PR for F# project kind: https://devdiv.visualstudio.com/DevDiv/_git/VSLanguageServerClient/pullrequest/529882
-                //    Kind = VSProjectKind.FSharp
-                //},
-                //new () {
-                //    Id = "potato2",
-                //    Label = "Potato2",
-                //    Kind = VSProjectKind.FSharp
-                //}
-
-            ]
-        });
-    }
 }
 
 
@@ -246,7 +186,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
     }
 }
 
-
+#pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
 [VisualStudioContribution]
 internal class FSharpLanguageServerProvider : LanguageServerProvider
 {
@@ -265,35 +205,57 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         "%FSharpLspExtension.FSharpLanguageServerProvider.DisplayName%",
         [Microsoft.VisualStudio.Extensibility.DocumentFilter.FromDocumentType(FSharpDocumentType)]);
 
+    private VsTelemetryReporter? _telemetryReporter;
+    private volatile TelemetryConfiguration? _telemetryConfiguration;
+    private bool _semanticTokensEnabled;
+
+    /// <inheritdoc/>
+    protected override async Task InitializeAsync(CancellationToken cancellationToken)
+    {
+        await base.InitializeAsync(cancellationToken);
+
+        // Decide before Visual Studio's activation check: a provider that is still enabled
+        // when activated must return a connection, and a null one is reported as a failure.
+        this.Enabled = await this.ReadEffectiveProviderAsync(cancellationToken) == FSharpExtensionSettings.LSP;
+    }
+
+    private async Task<string> ReadEffectiveProviderAsync(CancellationToken cancellationToken)
+    {
+        var setting = FSharpExtensionSettings.SemanticClassificationProvider;
+        var defaultIfUnset = FSharpExtensionSettings.AllSettingsWithDefaults.Single(x => x.Setting == setting).DefaultIfUnset;
+        var settingValue = await this.Extensibility.Settings().ReadEffectiveValueAsync(setting, cancellationToken);
+        var value = settingValue.ValueOrDefault(FSharpExtensionSettings.UNSET);
+
+        return value == FSharpExtensionSettings.UNSET ? defaultIfUnset : value;
+    }
+
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
+        if (!this.Enabled)
+        {
+            return null;
+        }
+
+        _telemetryReporter = new VsTelemetryReporter(configurationChanged: value => _telemetryConfiguration = value);
+        if (_telemetryConfiguration is { } configuration)
+        {
+            _telemetryReporter.Configure(configuration);
+        }
         var activitySourceName = "fsc";
 
         FSharp.Compiler.LanguageServer.Activity.listenToSome();
 
-#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-        // Write default settings unless they're overridden. Otherwise users can't even find which settings exist.
-
-        var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
-
-        var settingValues = FSharpExtensionSettings.AllStringSettings.Select(
-            setting => (setting, settingsReadResult.ValueOrDefault(setting, defaultValue: FSharpExtensionSettings.UNSET)));
-
-        foreach (var (setting, value) in settingValues.Where(x => x.Item2 == FSharpExtensionSettings.UNSET))
-        {
-            await this.Extensibility.Settings().WriteAsync(batch =>
-                batch.WriteSetting(setting, FSharpExtensionSettings.BOTH), "write default settings", cancellationToken);
-        }
-
-        var enabled = new[] { FSharpExtensionSettings.LSP, FSharpExtensionSettings.BOTH };
-
+        // Only semantic tokens are wired up. Diagnostics and code actions stay
+        // false here so the capabilities override (which also hardcodes them
+        // off) and the feature config agree.
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
-                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
-                semanticHighlighting: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetSemanticHighlightingFrom, defaultValue: FSharpExtensionSettings.BOTH))
+                diagnostics: false,
+                codeActions: false,
+                semanticTokens: true
                 ));
+        _semanticTokensEnabled = serverConfig.EnabledFeatures.SemanticTokens;
 
         var disposeToEndSubscription =
             this.Extensibility.Settings().SubscribeAsync(
@@ -304,7 +266,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                     Trace.TraceInformation($"Settings update", result);
                 });
 
-#pragma warning restore VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
 
         //const string vsMajorVersion = "17.0";
@@ -368,15 +329,17 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
             await projectQuery(project.AsQueryable()).SubscribeAsync(observer, CancellationToken.None);
 
-            // TODO: should we do this, or are we guaranteed it will get processed?
-            // observer.ProcessProject(project);
+            //observer.ProcessProject(project);
         }
 
         var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, serverConfig, (serviceCollection) =>
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
+            _telemetryReporter.Register(serviceCollection);
         });
+        var connectionTelemetry = _telemetryReporter;
+        _server.JsonRpc.Disconnected += (_, _) => connectionTelemetry.Disable();
 
         var solutions = await ws.QuerySolutionAsync(
     solution => solution.With(solution => solution.FileName),
@@ -404,6 +367,15 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             // Log telemetry for failure and disable the server from being activated again.
             this.Enabled = false;
+            _telemetryReporter?.ReportLifecycle(
+                "lsp/initializationfailed",
+                [Tuple.Create("has_failure_info", (object)(initializationFailureInfo is not null))]);
+        }
+        else
+        {
+            _telemetryReporter?.ReportLifecycle(
+                TelemetryEvents.LspServerInitialized,
+                [Tuple.Create("semantic_tokens_enabled", (object)_semanticTokensEnabled)]);
         }
 
         return base.OnServerInitializationResultAsync(serverInitializationResult, initializationFailureInfo, cancellationToken);
