@@ -155,7 +155,7 @@ module IncrementalBuildSyntaxTree =
                         | TextContainer.Stream(stream) ->
                             ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
                         | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+                            ParseOneInputSourceText(tcConfig, tcConfig.diagnosticsOptions, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
                         | TextContainer.OnDisk ->
                             ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
 

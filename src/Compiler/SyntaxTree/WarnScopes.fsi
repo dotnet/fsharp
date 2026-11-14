@@ -18,6 +18,16 @@ module internal WarnScopes =
     /// Note that isScript and subModuleRanges are needed only to avoid breaking changes for previous language versions.
     val MergeInto: FSharpDiagnosticOptions -> isScript: bool -> subModuleRanges: range list -> Lexbuf -> unit
 
+    /// The warn scopes of one file, as MergeInto stored them after the file was parsed.
+    type FileWarnScopes
+
+    /// Get the warn scopes that MergeInto stored for a file, or None if it stored none.
+    val TryGetFileWarnScopes: FSharpDiagnosticOptions -> fileName: string -> FileWarnScopes option
+
+    /// Add the warn scopes of one file to the diagnostics options, replacing earlier warn scopes of the same file.
+    /// This lets a file parsed once be type checked with the diagnostics options of another TcConfig.
+    val MergeFileWarnScopes: FSharpDiagnosticOptions -> FileWarnScopes -> unit
+
     /// Get the collected ranges of the warn directives
     val getDirectiveTrivia: Lexbuf -> WarnDirectiveTrivia list
 
