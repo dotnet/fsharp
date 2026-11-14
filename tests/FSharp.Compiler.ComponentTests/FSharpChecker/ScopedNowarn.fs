@@ -9,7 +9,8 @@ open FSharp.Compiler.Text
 
 #nowarn "57" // FSharpProjectSnapshot is experimental
 
-let private source =
+/// Suppresses the FS1182 that --warnon:1182 turns on.
+let private nowarnSource =
     """module A
 
 #nowarn "1182"
@@ -19,15 +20,35 @@ let f x =
     x
 """
 
+/// Suppresses the FS1182 that --warnon:1182 turns on around the first unused value, and enables it again, so only the
+/// second one, on line 12, is reported.
+let private warnonSource =
+    """module A
+
+#nowarn "1182"
+
+let f x =
+    let unused = 1
+    x
+
+#warnon "1182"
+
+let g x =
+    let unusedToo = 1
+    x
+"""
+
 let private diagnostics answer =
     match answer with
     | FSharpCheckFileAnswer.Succeeded results ->
-        results.Diagnostics |> Array.map (fun d -> $"%A{d.Severity} FS%04d{d.ErrorNumber}") |> List.ofArray
+        results.Diagnostics
+        |> Array.map (fun d -> $"%A{d.Severity} FS%04d{d.ErrorNumber} at line %d{d.StartLine}")
+        |> List.ofArray
     | FSharpCheckFileAnswer.Aborted -> failwith "the check was aborted"
 
-/// A one-file project whose file suppresses the FS1182 that --warnon:1182 turns on, and which references a copy of
-/// an assembly, so a test can move the reference's last-write time.
-type private Project(useTransparentCompiler: bool, warnAsError: bool) =
+/// A one-file project compiled with --warnon:1182, which references a copy of an assembly, so a test can move the
+/// reference's last-write time.
+type private Project(source: string, useTransparentCompiler: bool, warnAsError: bool) =
     let dir =
         Path.Combine(Path.GetTempPath(), "ScopedNowarn_" + Guid.NewGuid().ToString("N").Substring(0, 8))
 
@@ -79,7 +100,7 @@ let ``#nowarn applies when a file is checked again after a reference's stamp mov
     (warnAsError: bool)
     : Task =
     task {
-        let project = Project(useTransparentCompiler, warnAsError)
+        let project = Project(nowarnSource, useTransparentCompiler, warnAsError)
 
         let! cold = project.Check()
         Assert.Empty cold
@@ -93,10 +114,47 @@ let ``#nowarn applies when a file is checked again after a reference's stamp mov
 [<Fact>]
 let ``#nowarn applies when the file was parsed on its own before the check`` () : Task =
     task {
-        let project = Project(useTransparentCompiler = true, warnAsError = true)
+        let project =
+            Project(nowarnSource, useTransparentCompiler = true, warnAsError = true)
 
         let! snapshot = FSharpProjectSnapshot.FromOptions(project.Options, DocumentSource.FileSystem)
         let! _ = project.Checker.ParseFile(project.File, snapshot)
         let! _, answer = project.Checker.ParseAndCheckFileInProject(project.File, snapshot)
         Assert.Empty(diagnostics answer)
+    }
+
+let private warnonExpected warnAsError =
+    [ (if warnAsError then "Error" else "Warning") + " FS1182 at line 12" ]
+
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``#warnon applies when a file is checked again after a reference's stamp moved``
+    (useTransparentCompiler: bool)
+    (warnAsError: bool)
+    : Task =
+    task {
+        let project = Project(warnonSource, useTransparentCompiler, warnAsError)
+
+        let! cold = project.Check()
+        Assert.Equal<string list>(warnonExpected warnAsError, cold)
+
+        project.MoveReferenceStamp()
+
+        let! afterStampMoved = project.Check()
+        Assert.Equal<string list>(warnonExpected warnAsError, afterStampMoved)
+    }
+
+[<Fact>]
+let ``#warnon applies when the file was parsed on its own before the check`` () : Task =
+    task {
+        let project =
+            Project(warnonSource, useTransparentCompiler = true, warnAsError = true)
+
+        let! snapshot = FSharpProjectSnapshot.FromOptions(project.Options, DocumentSource.FileSystem)
+        let! _ = project.Checker.ParseFile(project.File, snapshot)
+        let! _, answer = project.Checker.ParseAndCheckFileInProject(project.File, snapshot)
+        Assert.Equal<string list>(warnonExpected true, diagnostics answer)
     }
