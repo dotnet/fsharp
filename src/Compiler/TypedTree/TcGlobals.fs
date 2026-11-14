@@ -183,24 +183,32 @@ type CompilationMode =
     | Service
     | Interactive
 
+/// Every option a TcGlobals takes from TcConfig. A TcGlobals is reused for another TcConfig only when
+/// these are equal, so a new option belongs here rather than in its own constructor argument.
+[<RequireQualifiedAccess>]
+type TcGlobalsOptions =
+    {
+        isInteractive: bool
+        checkNullness: bool
+        useReflectionFreeCodeGen: bool
+        emitDebugInfoInQuotations: bool
+        noDebugAttributes: bool
+        pathMap: PathMap
+        langVersion: LanguageVersion
+        realsig: bool
+        compilationMode: CompilationMode
+    }
+
 type TcGlobals(
     compilingFSharpCore: bool,
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
-    isInteractive: bool,
-    checkNullness: bool,
-    useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
     tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option,
-    emitDebugInfoInQuotations: bool,
-    noDebugAttributes: bool,
-    pathMap: PathMap,
-    langVersion: LanguageVersion,
-    realsig: bool,
-    compilationMode: CompilationMode) =
+    options: TcGlobalsOptions) =
 
-  let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
+  let v_langFeatureNullness = options.langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
@@ -950,7 +958,7 @@ type TcGlobals(
 
   let debuggerNonUserCodeAttribute = mkILCustomAttribute (tref_DebuggerNonUserCodeAttribute, [], [], [])
   let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
-  let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
+  let generatedAttributes = if options.noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
 
   // Requests attributes to be added to compiler generated methods.
@@ -963,7 +971,7 @@ type TcGlobals(
           | attrs -> mkILCustomAttrsFromArray (Array.append attrs generatedAttributes)
 
   let addValGeneratedAttrs (v: Val) m =
-      if not noDebugAttributes then
+      if not options.noDebugAttributes then
           let attrs = [
               Attrib(v_CompilerGeneratedAttribute_tcr, ILAttrib compilerGeneratedAttribute.Method.MethodRef, [], [], false, None, m)
               Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib debuggerNonUserCodeAttribute.Method.MethodRef, [], [], false, None, m)
@@ -1139,9 +1147,11 @@ type TcGlobals(
 
   member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
 
+  member _.options = options
+
   member _.ilg = ilg
 
-  member _.noDebugAttributes = noDebugAttributes
+  member _.noDebugAttributes = options.noDebugAttributes
 
   member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option = tryFindSysTypeCcuHelper
 
@@ -1155,7 +1165,7 @@ type TcGlobals(
   // A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics = v_knownIntrinsics
 
-  member _.checkNullness = checkNullness
+  member _.checkNullness = options.checkNullness
 
   member _.langFeatureNullness = v_langFeatureNullness
 
@@ -1171,15 +1181,15 @@ type TcGlobals(
 
   member _.compilingFSharpCore = compilingFSharpCore
 
-  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
+  member _.useReflectionFreeCodeGen = options.useReflectionFreeCodeGen
 
-  member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
+  member _.emitDebugInfoInQuotations = options.emitDebugInfoInQuotations
 
-  member _.pathMap = pathMap
+  member _.pathMap = options.pathMap
 
-  member _.langVersion = langVersion
+  member _.langVersion = options.langVersion
 
-  member _.realsig = realsig
+  member _.realsig = options.realsig
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 
@@ -1841,9 +1851,9 @@ type TcGlobals(
   member _.suppressed_types = v_suppressed_types
 
   /// Are we assuming all code gen is for F# interactive, with no static linking
-  member _.isInteractive=isInteractive
+  member _.isInteractive=options.isInteractive
 
-  member val compilationMode = compilationMode
+  member val compilationMode = options.compilationMode
 
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.

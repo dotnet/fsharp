@@ -1262,44 +1262,31 @@ type RawFSharpAssemblyData(ilModule: ILModuleDef, ilAssemblyRefs) =
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr(parseILVersion FSharpBinaryMetadataFormatRevision)) attrs
 
-/// The one construction of a TcGlobals: the values that come from the framework imports, and every
-/// option from tcConfig. directoryToResolveRelativePaths is passed in, so a TcGlobals rebuilt for another
-/// project keeps the one of the project that built the framework imports. Only code generation reads it.
-let private mkTcGlobals (tcConfig: TcConfig) compilingFSharpCore ilg fslibCcu directoryToResolveRelativePaths tryFindSysTypeCcu =
-    TcGlobals(
-        compilingFSharpCore,
-        ilg,
-        fslibCcu,
-        directoryToResolveRelativePaths,
-        tcConfig.isInteractive,
-        tcConfig.checkNullness,
-        tcConfig.useReflectionFreeCodeGen,
-        tryFindSysTypeCcu,
-        tcConfig.emitDebugInfoInQuotations,
-        tcConfig.noDebugAttributes,
-        tcConfig.pathMap,
-        tcConfig.langVersion,
-        tcConfig.realsig,
-        tcConfig.compilationMode
-    )
+/// The options a TcGlobals takes from tcConfig. A record expression must assign every field, so an option
+/// added to TcGlobalsOptions does not compile until it is taken from tcConfig here.
+let private tcGlobalsOptionsOf (tcConfig: TcConfig) : TcGlobalsOptions =
+    {
+        TcGlobalsOptions.isInteractive = tcConfig.isInteractive
+        TcGlobalsOptions.checkNullness = tcConfig.checkNullness
+        TcGlobalsOptions.useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
+        TcGlobalsOptions.emitDebugInfoInQuotations = tcConfig.emitDebugInfoInQuotations
+        TcGlobalsOptions.noDebugAttributes = tcConfig.noDebugAttributes
+        TcGlobalsOptions.pathMap = tcConfig.pathMap
+        TcGlobalsOptions.langVersion = tcConfig.langVersion
+        TcGlobalsOptions.realsig = tcConfig.realsig
+        TcGlobalsOptions.compilationMode = tcConfig.compilationMode
+    }
 
+/// The rebuilt TcGlobals keeps the framework values, directoryToResolveRelativePaths included: that is the one
+/// of the project that built the framework imports. Only code generation reads it.
 let TcGlobalsForTcConfig (tcConfig: TcConfig) (frameworkTcGlobals: TcGlobals) =
     let g = frameworkTcGlobals
+    let options = tcGlobalsOptionsOf tcConfig
 
-    // checkNullness is part of the framework imports cache key, so it always matches
-    if
-        g.isInteractive = tcConfig.isInteractive
-        && g.useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
-        && g.emitDebugInfoInQuotations = tcConfig.emitDebugInfoInQuotations
-        && g.noDebugAttributes = tcConfig.noDebugAttributes
-        && g.pathMap = tcConfig.pathMap
-        && g.langVersion = tcConfig.langVersion
-        && g.realsig = tcConfig.realsig
-        && g.compilationMode = tcConfig.compilationMode
-    then
+    if g.options = options then
         g
     else
-        mkTcGlobals tcConfig g.compilingFSharpCore g.ilg g.fslibCcu g.directoryToResolveRelativePaths g.tryFindSysTypeCcuHelper
+        TcGlobals(g.compilingFSharpCore, g.ilg, g.fslibCcu, g.directoryToResolveRelativePaths, g.tryFindSysTypeCcuHelper, options)
 
 //----------------------------------------------------------------------------
 // TcImports
@@ -3053,7 +3040,14 @@ and [<Sealed>] TcImports
 
             // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
             let tcGlobals =
-                mkTcGlobals tcConfig tcConfig.compilingFSharpCore ilGlobals fslibCcu tcConfig.implicitIncludeDir tryFindSysTypeCcu
+                TcGlobals(
+                    tcConfig.compilingFSharpCore,
+                    ilGlobals,
+                    fslibCcu,
+                    tcConfig.implicitIncludeDir,
+                    tryFindSysTypeCcu,
+                    tcGlobalsOptionsOf tcConfig
+                )
 
 #if DEBUG
             // the global_g reference cell is used only for debug printing
