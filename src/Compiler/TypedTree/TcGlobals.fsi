@@ -135,8 +135,10 @@ val internal tname_RuntimeArgumentHandle: string = "System.RuntimeArgumentHandle
 [<Literal>]
 val internal tname_IsByRefLikeAttribute: string = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
-/// Every option a TcGlobals takes from TcConfig. A TcGlobals is reused for another TcConfig only when
-/// these are equal, so a new option belongs here rather than in its own constructor argument.
+/// The options of a project that can differ between projects sharing cached framework imports. A TcGlobals
+/// is reused for another TcConfig only when these are equal, so a new per-project option belongs here rather
+/// than in its own constructor argument. compilingFSharpCore and directoryToResolveRelativePaths also come
+/// from TcConfig but are not here: they belong to the framework imports and are kept when one is rebuilt.
 [<RequireQualifiedAccess>]
 type internal TcGlobalsOptions =
     { isInteractive: bool
