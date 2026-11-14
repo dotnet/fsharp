@@ -135,6 +135,22 @@ val internal tname_RuntimeArgumentHandle: string = "System.RuntimeArgumentHandle
 [<Literal>]
 val internal tname_IsByRefLikeAttribute: string = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
+/// The options of a project that can differ between projects sharing cached framework imports. A TcGlobals
+/// is reused for another TcConfig only when these are equal, so a new per-project option belongs here rather
+/// than in its own constructor argument. compilingFSharpCore and directoryToResolveRelativePaths also come
+/// from TcConfig but are not here: they belong to the framework imports and are kept when one is rebuilt.
+[<RequireQualifiedAccess>]
+type internal TcGlobalsOptions =
+    { isInteractive: bool
+      checkNullness: bool
+      useReflectionFreeCodeGen: bool
+      emitDebugInfoInQuotations: bool
+      noDebugAttributes: bool
+      pathMap: Internal.Utilities.PathMap
+      langVersion: Features.LanguageVersion
+      realsig: bool
+      compilationMode: CompilationMode }
+
 type internal TcGlobals =
 
     new:
@@ -142,21 +158,16 @@ type internal TcGlobals =
         ilg: FSharp.Compiler.AbstractIL.IL.ILGlobals *
         fslibCcu: TypedTree.CcuThunk *
         directoryToResolveRelativePaths: string *
-        isInteractive: bool *
-        checkNullness: bool *
-        useReflectionFreeCodeGen: bool *
         tryFindSysTypeCcuHelper: (string list -> string -> bool -> TypedTree.CcuThunk option) *
-        emitDebugInfoInQuotations: bool *
-        noDebugAttributes: bool *
-        pathMap: Internal.Utilities.PathMap *
-        langVersion: Features.LanguageVersion *
-        realsig: bool *
-        compilationMode: CompilationMode ->
+        options: TcGlobalsOptions ->
             TcGlobals
 
     static member IsInEmbeddableKnownSet: name: string -> bool
 
     member directoryToResolveRelativePaths: string
+
+    /// The options this TcGlobals was built with
+    member options: TcGlobalsOptions
 
     member noDebugAttributes: bool
 
