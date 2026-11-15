@@ -32,19 +32,58 @@ let visitIdentAsPotentialModuleName (moduleNameIdent: Ident) =
 
 let visitSynLongIdent (lid: SynLongIdent) : FileContentEntry list = visitLongIdent lid.LongIdent
 
-let visitLongIdent (lid: LongIdent) =
+/// Every segment as a name
+let names (lid: LongIdent) =
+    longIdentToPath false lid |> List.map FileContentEntry.Name
+
+let visitLongIdentPrefix (lid: LongIdent) =
     match lid with
     | []
     | [ _ ] -> []
     | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath true lid) ]
 
+let visitLongIdent (lid: LongIdent) = visitLongIdentPrefix lid @ names lid
+
+/// A name after a dot can be a member, a property, a record field or a union case.
+let memberOrFieldNames (ids: Ident list) =
+    ids
+    |> List.collect (fun id -> [ FileContentEntry.MemberName id.idText; FileContentEntry.FieldOrCaseName id.idText ])
+
+/// A dotted name in an expression: every segment after the first can also be a member or a field.
+let visitExprLongIdent (lid: SynLongIdent) =
+    visitSynLongIdent lid
+    @ (match lid.LongIdent with
+       | _ :: rest -> memberOrFieldNames rest
+       | [] -> [])
+
+/// Names after a dot on an expression: members or fields only.
+let visitDotted (lid: SynLongIdent) =
+    visitLongIdentPrefix lid.LongIdent @ memberOrFieldNames lid.LongIdent
+
+/// The names of a record label or union case, maybe qualified.
+let fieldOrCaseNames (lid: LongIdent) =
+    names lid
+    @ (match List.tryLast lid with
+       | Some id -> [ FileContentEntry.FieldOrCaseName id.idText ]
+       | None -> [])
+
+/// A record label or union case, maybe qualified.
+let visitFieldOrCase (lid: LongIdent) =
+    visitLongIdentPrefix lid @ fieldOrCaseNames lid
+
 let visitLongIdentForModuleAbbrev (lid: LongIdent) =
     match lid with
     | [] -> []
-    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath false lid) ]
+    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath false lid); yield! names lid ]
 
 let visitSynAttribute (a: SynAttribute) : FileContentEntry list =
-    [ yield! visitSynLongIdent a.TypeName; yield! visitSynExpr a.ArgExpr ]
+    [
+        yield! visitSynLongIdent a.TypeName
+        match List.tryLast a.TypeName.LongIdent with
+        | Some id when not (id.idText.EndsWith "Attribute") -> yield FileContentEntry.Name(id.idText + "Attribute")
+        | _ -> ()
+        yield! visitSynExpr a.ArgExpr
+    ]
 
 let visitSynAttributeList (attributes: SynAttributeList) : FileContentEntry list =
     List.collect visitSynAttribute attributes.Attributes
@@ -359,6 +398,13 @@ let visitNameofResult (nameofResult: NameofResult) : FileContentEntry =
         // So we should not cut off the last part.
         FileContentEntry.PrefixedIdentifier(longIdentToPath false longIdent)
 
+/// nameof, with the names it refers to
+let visitNameof (nameofResult: NameofResult) : FileContentEntry list =
+    visitNameofResult nameofResult
+    :: (match nameofResult with
+        | NameofResult.SingleIdent ident -> [ FileContentEntry.Name ident.idText ]
+        | NameofResult.LongIdent longIdent -> names longIdent)
+
 /// Special case of `nameof Module` type of expression
 [<return: Struct>]
 let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
@@ -380,6 +426,46 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
         | _ -> ValueNone
     | _ -> ValueNone
 
+/// The members `for x in e` can call on e
+let enumeratorMembers =
+    [ "GetEnumerator"; "MoveNext"; "Current" ] |> List.map FileContentEntry.MemberName
+
+/// The members `e.[i]`, `e[i]`, `e[a..b]` and their assignments can call on e
+let indexerMembers =
+    [ "Item"; "GetSlice"; "SetSlice"; "GetReverseIndex" ]
+    |> List.map FileContentEntry.MemberName
+
+/// The builder methods `let! … and! …` with this many sources can call, as CheckComputationExpressions.fs names
+/// them: Bind{n}, Bind{n}Return, and MergeSources, MergeSources3 … MergeSources{n}.
+let sourceMembers (sources: int) =
+    if sources < 2 then
+        []
+    else
+        [
+            yield $"Bind{sources}"
+            yield $"Bind{sources}Return"
+            yield "MergeSources"
+            for n in 3..sources do
+                yield $"MergeSources{n}"
+        ]
+        |> List.map FileContentEntry.MemberName
+
+/// The builder methods a computation expression can call, which may be extensions: every name
+/// Checking/Expressions/CheckComputationExpressions.fs looks up on a builder, plus Dispose, which `use` calls on
+/// the resource. Bind{N}, Bind{N}Return and MergeSources{N} grow with the number of `and!` sources: each
+/// `let! … and! …` also lists its own (sourceMembers).
+let builderMembers =
+    [
+        yield! [ "Bind"; "BindReturn"; "Combine"; "Delay"; "For"; "MergeSources"; "Quote"; "Return"; "ReturnFrom" ]
+        yield! [ "ReturnFromFinal"; "Run"; "Source"; "TryFinally"; "TryWith"; "Using"; "While"; "Yield"; "YieldFrom" ]
+        yield! [ "YieldFromFinal"; "Zero"; "Dispose" ]
+        for n in 2..16 do
+            yield $"Bind{n}"
+            yield $"Bind{n}Return"
+            yield $"MergeSources{n}"
+    ]
+    |> List.map FileContentEntry.MemberName
+
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
 #if BUILD_USING_MONO
     let stackGuard = StackGuard("FileContentMapping")
@@ -390,7 +476,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
 #endif
             match e with
-            | NameofExpr nameofResult -> continuation [ visitNameofResult nameofResult ]
+            | NameofExpr nameofResult -> continuation (visitNameof nameofResult)
             | SynExpr.Const _ -> continuation []
             | SynExpr.Paren(expr = expr) -> visit expr continuation
             | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
@@ -428,7 +514,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                         for fieldOrSpread in recordFields do
                             match fieldOrSpread with
                             | SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = (si, _); expr = expr), _) ->
-                                yield! visitSynLongIdent si
+                                yield! visitFieldOrCase si.LongIdent
                                 yield! collectFromOption visitSynExpr expr
                             | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = expr)) -> yield! visitSynExpr expr
                     ]
@@ -456,7 +542,14 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 Continuation.concatenate continuations continuation
             | SynExpr.ForEach(pat = pat; enumExpr = enumExpr; bodyExpr = bodyExpr) ->
                 visit enumExpr (fun enumNodes ->
-                    visit bodyExpr (fun bodyNodes -> [ yield! visitPat pat; yield! enumNodes; yield! bodyNodes ] |> continuation))
+                    visit bodyExpr (fun bodyNodes ->
+                        [
+                            yield! enumeratorMembers
+                            yield! visitPat pat
+                            yield! enumNodes
+                            yield! bodyNodes
+                        ]
+                        |> continuation))
             | SynExpr.ArrayOrListComputed(expr = expr) -> visit expr continuation
             | SynExpr.IndexRange(expr1 = expr1; expr2 = expr2) ->
                 match expr1, expr2 with
@@ -465,7 +558,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 | None, Some e -> visit e continuation
                 | Some e1, Some e2 -> visit e1 (fun e1Nodes -> visit e2 (fun e2Nodes -> e1Nodes @ e2Nodes |> continuation))
             | SynExpr.IndexFromEnd(expr, _) -> visit expr continuation
-            | SynExpr.ComputationExpr(expr = expr) -> visit expr continuation
+            | SynExpr.ComputationExpr(expr = expr) -> visit expr (fun nodes -> builderMembers @ nodes |> continuation)
             | SynExpr.Lambda(args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
             | SynExpr.DotLambda(expr = expr) -> visit expr continuation
             | SynExpr.MatchLambda(matchClauses = clauses) -> List.collect visitSynMatchClause clauses |> continuation
@@ -476,11 +569,20 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.Do(expr, _) -> visit expr continuation
             | SynExpr.Assert(expr, _) -> visit expr continuation
             | SynExpr.App(funcExpr = funcExpr; argExpr = argExpr) ->
-                visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
+                // `e[i]` and `e[a..b]` are applications to a list: indexers or slices, whether assigned to or not.
+                // An application of a function to a list literal has the same shape, so that counts too.
+                let implied =
+                    match argExpr with
+                    | SynExpr.ArrayOrList _
+                    | SynExpr.ArrayOrListComputed _ -> indexerMembers
+                    | _ -> []
+
+                visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> implied @ funcNodes @ argNodes |> continuation))
             | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
                 visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
-            | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->
-                visit body (fun nodes -> List.collect visitBinding bindings @ nodes |> continuation)
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = body } as letOrUse) ->
+                let implied = if letOrUse.IsBang then sourceMembers bindings.Length else []
+                visit body (fun nodes -> implied @ List.collect visitBinding bindings @ nodes |> continuation)
             | SynExpr.TryWith(tryExpr = tryExpr; withCases = withCases) ->
                 visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
             | SynExpr.TryFinally(tryExpr = tryExpr; finallyExpr = finallyExpr) ->
@@ -490,36 +592,40 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.IfThenElse(ifExpr = ifExpr; thenExpr = thenExpr; elseExpr = elseExpr) ->
                 let continuations = List.map visit (ifExpr :: thenExpr :: Option.toList elseExpr)
                 Continuation.concatenate continuations continuation
-            | SynExpr.Typar _
-            | SynExpr.Ident _ -> continuation []
-            | SynExpr.LongIdent(longDotId = longDotId) -> continuation (visitSynLongIdent longDotId)
-            | SynExpr.LongIdentSet(longDotId, expr, _) -> visit expr (fun nodes -> visitSynLongIdent longDotId @ nodes |> continuation)
-            | SynExpr.DotGet(expr = expr; longDotId = longDotId) ->
-                visit expr (fun nodes -> visitSynLongIdent longDotId @ nodes |> continuation)
+            | SynExpr.Typar _ -> continuation []
+            | SynExpr.Ident ident -> continuation [ FileContentEntry.Name ident.idText ]
+            | SynExpr.LongIdent(longDotId = longDotId) -> continuation (visitExprLongIdent longDotId)
+            | SynExpr.LongIdentSet(longDotId, expr, _) -> visit expr (fun nodes -> visitExprLongIdent longDotId @ nodes |> continuation)
+            | SynExpr.DotGet(expr = expr; longDotId = longDotId) -> visit expr (fun nodes -> visitDotted longDotId @ nodes |> continuation)
             | SynExpr.DotSet(targetExpr, longDotId, rhsExpr, _) ->
                 visit targetExpr (fun tNodes ->
-                    visit rhsExpr (fun rNodes ->
-                        [ yield! tNodes; yield! visitSynLongIdent longDotId; yield! rNodes ]
-                        |> continuation))
+                    visit rhsExpr (fun rNodes -> [ yield! tNodes; yield! visitDotted longDotId; yield! rNodes ] |> continuation))
             | SynExpr.Set(targetExpr, rhsExpr, _) ->
                 let continuations = List.map visit [ targetExpr; rhsExpr ]
                 Continuation.concatenate continuations continuation
             | SynExpr.DotIndexedGet(objectExpr, indexArgs, _, _) ->
                 let continuations = List.map visit [ objectExpr; indexArgs ]
-                Continuation.concatenate continuations continuation
+                Continuation.concatenate continuations (fun nodes -> indexerMembers @ nodes |> continuation)
             | SynExpr.DotIndexedSet(objectExpr, indexArgs, valueExpr, _, _, _) ->
                 let continuations = List.map visit [ objectExpr; indexArgs; valueExpr ]
-                Continuation.concatenate continuations continuation
+                Continuation.concatenate continuations (fun nodes -> indexerMembers @ nodes |> continuation)
             | SynExpr.NamedIndexedPropertySet(longDotId, expr1, expr2, _) ->
                 visit expr1 (fun nodes1 ->
                     visit expr2 (fun nodes2 ->
-                        [ yield! visitSynLongIdent longDotId; yield! nodes1; yield! nodes2 ]
+                        // mkSynAssign makes `M.arr[i] <- v` this: the checker makes it an indexer or slice set
+                        [
+                            yield! indexerMembers
+                            yield! visitExprLongIdent longDotId
+                            yield! nodes1
+                            yield! nodes2
+                        ]
                         |> continuation))
             | SynExpr.DotNamedIndexedPropertySet(targetExpr, longDotId, argExpr, rhsExpr, _) ->
                 let continuations = List.map visit [ targetExpr; argExpr; rhsExpr ]
 
+                // mkSynAssign makes `x.P[i] <- v` this: the checker makes it an indexer or slice set
                 let finalContinuation nodes =
-                    visitSynLongIdent longDotId @ List.concat nodes |> continuation
+                    indexerMembers @ visitDotted longDotId @ List.concat nodes |> continuation
 
                 Continuation.sequence continuations finalContinuation
             | SynExpr.TypeTest(expr, targetType, _) -> visit expr (fun nodes -> nodes @ visitSynType targetType |> continuation)
@@ -599,7 +705,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.DebugPoint _ -> continuation []
             | SynExpr.Dynamic(funcExpr, _, argExpr, _) ->
                 let continuations = List.map visit [ funcExpr; argExpr ]
-                Continuation.concatenate continuations continuation
+                Continuation.concatenate continuations (fun nodes -> FileContentEntry.Unresolvable :: nodes |> continuation)
 #if BUILD_USING_MONO
         )
 #endif
@@ -633,7 +739,7 @@ let (|NameofPat|_|) (pat: SynPat) =
 let visitPat (p: SynPat) : FileContentEntry list =
     let rec visit (p: SynPat) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match p with
-        | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
+        | NameofPat moduleNameIdent -> continuation (visitNameof moduleNameIdent)
         | SynPat.Paren(pat = pat) -> visit pat continuation
         | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t |> continuation)
         | SynPat.Const _ -> continuation []
@@ -655,7 +761,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.LongIdent(longDotId = longDotId; typarDecls = typarDecls; argPats = argPats) ->
             continuation
                 [
-                    yield! visitSynLongIdent longDotId
+                    yield! visitFieldOrCase longDotId.LongIdent
                     yield! collectFromOption visitSynValTyparDecls typarDecls
                     yield! visitSynArgPats argPats
                 ]
@@ -668,7 +774,12 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | SynPat.Record(fieldPats, _) ->
             let pats = fieldPats |> List.map (fun f -> f.Pattern)
             let continuations = List.map visit pats
-            Continuation.concatenate continuations continuation
+
+            let labels =
+                fieldPats
+                |> List.collect (fun (NamePatPairField(fieldName = fieldName)) -> fieldOrCaseNames fieldName.LongIdent)
+
+            Continuation.concatenate continuations (fun nodes -> labels @ nodes |> continuation)
         | SynPat.Null _ -> continuation []
         | SynPat.OptionalVal _ -> continuation []
         | SynPat.IsInst(t, _) -> continuation (visitSynType t)
@@ -683,8 +794,9 @@ let visitSynArgPats (argPat: SynArgPats) =
     | SynArgPats.Pats args -> List.collect visitPat args
     | SynArgPats.NamePatPairs(pats = pats) ->
         [
-            for p in pats do
-                yield! visitPat p.Pattern
+            for NamePatPairField(fieldName = fieldName; pat = pat) in pats do
+                yield! fieldOrCaseNames fieldName.LongIdent
+                yield! visitPat pat
         ]
 
 let visitSynSimplePat (pat: SynSimplePat) =
@@ -719,14 +831,27 @@ let visitSynBindingReturnInfo (SynBindingReturnInfo(typeName = typeName; attribu
 
 let visitSynMemberSig (ms: SynMemberSig) : FileContentEntry list =
     match ms with
-    | SynMemberSig.Member(memberSig = memberSig) -> visitSynValSig memberSig
+    | SynMemberSig.Member(memberSig = SynValSig(ident = SynIdent(id, _)) as memberSig) ->
+        FileContentEntry.MemberName id.idText :: visitSynValSig memberSig
     | SynMemberSig.Interface(interfaceType, _) -> visitSynType interfaceType
     | SynMemberSig.Inherit(inheritedType, _) -> visitSynType inheritedType
     | SynMemberSig.ValField(field, _) -> visitSynField field
     | SynMemberSig.NestedType _ -> []
 
+/// Leaves out the entries only declaration content reads.
+let rec fileLevel (entries: FileContentEntry list) =
+    entries
+    |> List.choose (function
+        | FileContentEntry.TopLevelNamespace(path, content) -> Some(FileContentEntry.TopLevelNamespace(path, fileLevel content))
+        | FileContentEntry.NestedModule(name, content) -> Some(FileContentEntry.NestedModule(name, fileLevel content))
+        | FileContentEntry.Name _
+        | FileContentEntry.MemberName _
+        | FileContentEntry.FieldOrCaseName _
+        | FileContentEntry.Unresolvable -> None
+        | entry -> Some entry)
+
 let mkFileContent (f: FileInProject) : FileContentEntry list =
-    [
+    fileLevel [
         match f.ParsedInput with
         | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
             for SynModuleOrNamespaceSig(longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do

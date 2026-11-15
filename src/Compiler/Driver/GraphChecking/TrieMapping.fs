@@ -352,3 +352,158 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
         FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
 
     out.WriteAllText(sb.ToString())
+
+// The names a declaration defines, beyond the modules and namespaces the trie holds: for dependencies between
+// declarations rather than files.
+
+/// The cases of an active pattern's name such as `|A|B|_|`.
+let private activePatternCases (name: string) =
+    if name.StartsWith "|" then
+        name.Split('|') |> Array.filter (fun case -> case <> "" && case <> "_") |> List.ofArray
+    else
+        []
+
+let private identNames (id: Ident) = id.idText :: activePatternCases id.idText
+
+let rec private patternNames (pat: SynPat) : string list =
+    match pat with
+    | SynPat.Named(ident = SynIdent(id, _)) -> identNames id
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = argPats) ->
+        match List.tryLast ids with
+        | None -> []
+        | Some id ->
+            // `F x` is a function F or a union case pattern binding x: which one depends on the environment, so an
+            // uppercase head with arguments defines both.
+            let args =
+                if not argPats.Patterns.IsEmpty && System.Char.IsUpper id.idText[0] then
+                    List.collect patternNames argPats.Patterns
+                else
+                    []
+
+            identNames id @ args
+    | SynPat.Typed(pat = pat)
+    | SynPat.Paren(pat = pat)
+    | SynPat.Attrib(pat = pat) -> patternNames pat
+    | SynPat.As(lhsPat, rhsPat, _)
+    | SynPat.Or(lhsPat, rhsPat, _, _)
+    | SynPat.ListCons(lhsPat, rhsPat, _, _) -> patternNames lhsPat @ patternNames rhsPat
+    | SynPat.Tuple(elementPats = pats)
+    | SynPat.ArrayOrList(elementPats = pats)
+    | SynPat.Ands(pats = pats) -> List.collect patternNames pats
+    | SynPat.Record(fieldPats = fields) -> fields |> List.collect (fun field -> patternNames field.Pattern)
+    | SynPat.OptionalVal(ident = id) -> [ id.idText ]
+    | SynPat.Const _
+    | SynPat.Wild _
+    | SynPat.Null _
+    | SynPat.IsInst _
+    | SynPat.QuoteExpr _
+    | SynPat.InstanceMember _
+    | SynPat.FromParseError _ -> []
+
+/// The operation names of `[<CustomOperation(...)>]` attributes, and whether one is not a string literal.
+let private customOperationNames (attributes: SynAttributes) =
+    let rec literal (expr: SynExpr) =
+        match expr with
+        | SynExpr.Paren(expr = expr) -> literal expr
+        | SynExpr.Tuple(exprs = first :: _) -> literal first
+        | SynExpr.Const(SynConst.String(text = text), _) -> Some text
+        | _ -> None
+
+    let operations =
+        [
+            for list in attributes do
+                for attr in list.Attributes do
+                    match List.tryLast attr.TypeName.LongIdent with
+                    | Some id when id.idText = "CustomOperation" || id.idText = "CustomOperationAttribute" -> literal attr.ArgExpr
+                    | _ -> ()
+        ]
+
+    List.choose id operations, List.exists Option.isNone operations
+
+let private ofAll (results: (string list * bool) list) =
+    List.collect fst results, List.exists snd results
+
+let private bindingNames (SynBinding(attributes = attributes; headPat = headPat)) =
+    let operations, unreadable = customOperationNames attributes
+
+    let names =
+        match headPat with
+        // A member: `this.M`, or `new`
+        | SynPat.LongIdent(longDotId = SynLongIdent(id = ids)) when ids.Length > 1 ->
+            match List.tryLast ids with
+            | Some id when id.idText <> "new" -> identNames id
+            | _ -> []
+        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) when id.idText = "new" -> []
+        | pat -> patternNames pat
+
+    names @ operations, unreadable
+
+let rec private memberNames (memberDefn: SynMemberDefn) : string list * bool =
+    match memberDefn with
+    | SynMemberDefn.Member(memberDefn = binding) -> bindingNames binding
+    | SynMemberDefn.GetSetMember(get, set, _, _) -> Option.toList get @ Option.toList set |> List.map bindingNames |> ofAll
+    | SynMemberDefn.AbstractSlot(slotSig = SynValSig(ident = SynIdent(id, _))) -> [ id.idText ], false
+    | SynMemberDefn.AutoProperty(ident = id) -> [ id.idText ], false
+    | SynMemberDefn.ValField(fieldInfo = SynField(idOpt = Some id)) -> [ id.idText ], false
+    | SynMemberDefn.Interface(members = Some members) -> members |> List.map memberNames |> ofAll
+    | SynMemberDefn.ValField _
+    | SynMemberDefn.Interface _
+    | SynMemberDefn.Open _
+    | SynMemberDefn.ImplicitCtor _
+    | SynMemberDefn.ImplicitInherit _
+    | SynMemberDefn.LetBindings _
+    | SynMemberDefn.Inherit _
+    | SynMemberDefn.NestedType _ -> [], false
+
+let private typeDefnNames (SynTypeDefn(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) =
+    let allMembers =
+        match typeRepr with
+        | SynTypeDefnRepr.ObjectModel(members = reprMembers) -> reprMembers @ members
+        | _ -> members
+
+    let memberNames, unreadable = allMembers |> List.map memberNames |> ofAll
+
+    let own =
+        match typeRepr with
+        // `type T with ...` adds members to T, not T itself
+        | SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Augmentation _) -> []
+        | _ -> typeInfo.LongIdent |> List.tryLast |> Option.map _.idText |> Option.toList
+
+    let reprNames =
+        match typeRepr with
+        | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Union(unionCases = cases), _) ->
+            [ for SynUnionCase(ident = SynIdent(id, _)) in cases -> id.idText ]
+        | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Enum(cases = cases), _) ->
+            [ for SynEnumCase(ident = SynIdent(id, _)) in cases -> id.idText ]
+        | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fields), _) ->
+            [
+                for field in fields do
+                    match field with
+                    | SynFieldOrSpread.Field(SynField(idOpt = Some id)) -> yield id.idText
+                    | _ -> ()
+            ]
+        | _ -> []
+
+    own @ reprNames @ memberNames, unreadable
+
+/// The names a declaration of an implementation file defines: values, types, union cases, record fields, members,
+/// custom operation names, modules, namespaces, and every such name inside a nested module or namespace fragment.
+/// The flag says whether a custom operation's name is not a string literal, so a name may be missing.
+let rec declarationNames (decl: SynModuleDecl) : string list * bool =
+    match decl with
+    | SynModuleDecl.Let(bindings = bindings) -> bindings |> List.map bindingNames |> ofAll
+    | SynModuleDecl.Types(typeDefns = typeDefns) -> typeDefns |> List.map typeDefnNames |> ofAll
+    | SynModuleDecl.Exception(exnDefn = SynExceptionDefn(SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _))), _, members, _)) ->
+        let names, unreadable = members |> List.map memberNames |> ofAll
+        id.idText :: names, unreadable
+    | SynModuleDecl.NestedModule(moduleInfo = moduleInfo; decls = decls) ->
+        let names, unreadable = decls |> List.map declarationNames |> ofAll
+        (moduleInfo.LongIdent |> List.map _.idText) @ names, unreadable
+    | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId = longId; decls = decls)) ->
+        let names, unreadable = decls |> List.map declarationNames |> ofAll
+        (longId |> List.map _.idText) @ names, unreadable
+    | SynModuleDecl.ModuleAbbrev(ident = id) -> [ id.idText ], false
+    | SynModuleDecl.Open _
+    | SynModuleDecl.Attributes _
+    | SynModuleDecl.Expr _
+    | SynModuleDecl.HashDirective _ -> [], false

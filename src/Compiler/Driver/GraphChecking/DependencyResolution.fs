@@ -131,6 +131,11 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
             let queryResult = queryTrieDual trie ns [ name ]
             processIdentifier queryResult state'
 
+    | FileContentEntry.Name _
+    | FileContentEntry.MemberName _
+    | FileContentEntry.FieldOrCaseName _
+    | FileContentEntry.Unresolvable -> state
+
 /// <summary>
 /// For a given file's content, collect all missing ("ghost") file dependencies that the core resolution algorithm didn't return,
 /// but are required to satisfy the type-checker.

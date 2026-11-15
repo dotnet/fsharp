@@ -160,6 +160,12 @@ type TcState =
 
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
+    member TryFindRootSig: QualifiedNameOfFile -> ModuleOrNamespaceType option
+
+    member HasRootImpl: QualifiedNameOfFile -> bool
+
+    member ImplicitOpenDeclarations: OpenDeclaration list
+
     member CreatesGeneratedProvidedTypes: bool
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType * ModuleOrNamespaceType
@@ -209,6 +215,18 @@ val AddCheckResultsToTcState:
         tcState: TcState ->
             ModuleOrNamespaceType * TcState
 
+val AddSignatureFileToTcState:
+    tcGlobals: TcGlobals *
+    amap: Import.ImportMap *
+    m: range *
+    qualNameOfFile: QualifiedNameOfFile *
+    sigFileType: ModuleOrNamespaceType *
+    createsGeneratedProvidedTypes: bool ->
+        tcState: TcState ->
+            TcState
+
+val AddCreatesGeneratedProvidedTypes: createsGeneratedProvidedTypes: bool -> tcState: TcState -> TcState
+
 val AddSignatureResultToTcImplEnv:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
@@ -239,3 +257,20 @@ val CheckClosedInputSet:
     eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
     inputs: ParsedInput list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
+
+/// Check a closed set of inputs in parallel over their dependency graph, leaving the check of each file to
+/// 'checkFile', and return each file's result and the state after it, in file order.
+val CheckMultipleInputsUsingGraphModeWithStates:
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcState: TcState *
+    inputs: ParsedInput array *
+    graph: Graph<FileIndex> *
+    filePairs: FilePairMap *
+    checkFile: (FileIndex -> TcState -> Finisher<NodeToTypeCheck, TcState, PartialResult>) *
+    onChecked: (FileIndex -> PartialResult -> TcState -> unit) *
+    loggerForFile: (FileIndex -> DiagnosticsLogger) *
+    ct: System.Threading.CancellationToken ->
+        (PartialResult * TcState) array
+
