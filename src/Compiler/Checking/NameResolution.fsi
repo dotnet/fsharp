@@ -398,6 +398,11 @@ val ItemsAreEffectivelyEqualHash: TcGlobals -> Item -> int
 
 [<Class>]
 type internal CapturedNameResolution =
+    /// For DeclarationChecker.Shift, which moves a resolution to another line
+    new:
+        i: Item * tpinst: TyparInstantiation * io: ItemOccurrence * nre: NameResolutionEnv * ad: AccessorDomain * m: range ->
+            CapturedNameResolution
+
     /// line and column
     member Pos: pos
 
@@ -424,6 +429,14 @@ type internal CapturedNameResolution =
 
 [<Class>]
 type internal TcResolutions =
+
+    new:
+        capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain> *
+        capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range> *
+        capturedNameResolutions: ResizeArray<CapturedNameResolution> *
+        capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution> *
+        capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind> ->
+            TcResolutions
 
     /// Name resolution environments for every interesting region in the file. These regions may
     /// overlap, in which case the smallest region applicable should be used.
@@ -457,6 +470,13 @@ type TcSymbolUseData =
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 [<Class>]
 type internal TcSymbolUses =
+
+    new:
+        g: TcGlobals *
+        capturedNameResolutions: ResizeArray<CapturedNameResolution> *
+        capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind> *
+        formatSpecifierLocations: (range * int)[] ->
+            TcSymbolUses
 
     /// Get all the uses of a particular item within the file
     member GetUsesOfSymbol: item: Item * ?relatedSymbolKinds: RelatedSymbolUseKind -> TcSymbolUseData[]
