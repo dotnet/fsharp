@@ -52,6 +52,24 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
+/// Whether conformance checks on this thread leave the other ranges of the signature's items as they are, writing
+/// only the implementation's: the signature's items are shared with every file checked after the signature.
+[<Sealed; AbstractClass>]
+type SignatureRanges =
+    static member Keep: bool with get, set
+
+/// Whether conformance checks on this thread record, in MutationLog.Current, how to undo what they change in the
+/// implementation's items, so a check can see what conformance would leave and then have it undone.
+[<Sealed; AbstractClass>]
+type UndoableConformance =
+    static member Recording: bool with get, set
+
+    /// When set, Isolate records in it, and only in it, how to undo what the conformance check it runs changes.
+    static member Log: ResizeArray<unit -> unit> | null with get, set
+
+    /// Runs a conformance check, recording in Log how to undo what it changes when Log is set.
+    static member Isolate: check: (unit -> 'T) -> 'T
+
 exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     denv: DisplayEnv *
     implTycon: Tycon *

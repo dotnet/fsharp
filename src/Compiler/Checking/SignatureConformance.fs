@@ -42,6 +42,112 @@ exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
 
+/// Whether conformance checks on this thread leave the other ranges of the signature's items as they are, writing
+/// only the implementation's: the signature's items are shared with every file checked after the signature.
+[<Sealed; AbstractClass>]
+type SignatureRanges =
+    [<System.ThreadStatic; DefaultValue>]
+    static val mutable private keep: bool
+
+    static member Keep
+        with get () = SignatureRanges.keep
+        and set (value: bool) = SignatureRanges.keep <- value
+
+/// Whether conformance checks on this thread record, in MutationLog.Current, how to undo what they change in the
+/// implementation's items, so a check can see what conformance would leave and then have it undone.
+[<Sealed; AbstractClass>]
+type UndoableConformance =
+    [<System.ThreadStatic; DefaultValue>]
+    static val mutable private recording: bool
+
+    static member Recording
+        with get () = UndoableConformance.recording
+        and set (value: bool) = UndoableConformance.recording <- value
+
+    [<System.ThreadStatic; DefaultValue>]
+    static val mutable private log: ResizeArray<unit -> unit> | null
+
+    /// When set, Isolate records in it, and only in it, how to undo what the conformance check it runs changes.
+    static member Log
+        with get () = UndoableConformance.log
+        and set (value: ResizeArray<unit -> unit> | null) = UndoableConformance.log <- value
+
+    /// Runs a conformance check, recording in Log how to undo what it changes when Log is set.
+    static member Isolate(check: unit -> 'T) : 'T =
+        match UndoableConformance.log with
+        | null -> check ()
+        | log ->
+            let outerLog = MutationLog.Current
+            let outerRecording = UndoableConformance.recording
+            MutationLog.Current <- log
+            UndoableConformance.recording <- true
+
+            try
+                check ()
+            finally
+                MutationLog.Current <- outerLog
+                UndoableConformance.recording <- outerRecording
+
+/// Records how to restore what conformance may change in an implementation item, while UndoableConformance.Recording.
+/// The optional data records are mutated in place, so copies are kept.
+module private ConformanceUndo =
+
+    let private record (save: unit -> (unit -> unit)) =
+        if UndoableConformance.Recording then
+            match MutationLog.Current with
+            | null -> ()
+            | log -> log.Add(save ())
+
+    let entity (e: Entity) =
+        record (fun () ->
+            let attribs = e.entity_attribs
+            let copy () = e.entity_opt_data |> Option.map (fun d -> { d with entity_other_range = d.entity_other_range })
+            let optData = copy ()
+
+            fun () ->
+                e.entity_attribs <- attribs
+                e.entity_opt_data <- optData |> Option.map (fun d -> { d with entity_other_range = d.entity_other_range }))
+
+    let private argInfo (info: ArgReprInfo) =
+        let attribs, name, otherRange = info.Attribs, info.Name, info.OtherRange
+
+        fun () ->
+            info.Attribs <- attribs
+            info.Name <- name
+            info.OtherRange <- otherRange
+
+    let value (v: Val) =
+        record (fun () ->
+            let optData = v.val_opt_data |> Option.map (fun d -> { d with val_other_range = d.val_other_range })
+
+            let args =
+                match v.ValReprInfo with
+                | Some (ValReprInfo (_, argInfos, retInfo)) -> [ for group in argInfos do for info in group -> argInfo info ] @ [ argInfo retInfo ]
+                | None -> []
+
+            fun () ->
+                v.val_opt_data <- optData |> Option.map (fun d -> { d with val_other_range = d.val_other_range })
+                for restore in args do restore ())
+
+    let unionCase (uc: UnionCase) =
+        record (fun () ->
+            let attribs, otherRange, xmlDoc = uc.Attribs, uc.OtherRangeOpt, uc.OtherXmlDoc
+
+            fun () ->
+                uc.Attribs <- attribs
+                uc.OtherRangeOpt <- otherRange
+                uc.OtherXmlDoc <- xmlDoc)
+
+    let field (f: RecdField) =
+        record (fun () ->
+            let fattribs, pattribs, otherRange, xmlDoc = f.rfield_fattribs, f.rfield_pattribs, f.rfield_other_range, f.rfield_otherxmldoc
+
+            fun () ->
+                f.rfield_fattribs <- fattribs
+                f.rfield_pattribs <- pattribs
+                f.rfield_other_range <- otherRange
+                f.rfield_otherxmldoc <- xmlDoc)
+
 type private V = WellKnownValAttributes
 type private E = WellKnownEntityAttributes
 
@@ -303,11 +409,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m = implTycon.Range
             let kindText = RichText.mkText (implTycon.TypeOrMeasureKind.ToString())
             let implTyconName = richTextOfEntity implTycon
+            ConformanceUndo.entity implTycon
 
             implTycon.SetOtherXmlDoc(sigTycon.XmlDoc)
 
             // Propagate defn location information from implementation to signature .
-            sigTycon.SetOtherRange (implTycon.Range, true)
+            if not SignatureRanges.Keep then sigTycon.SetOtherRange (implTycon.Range, true)
             implTycon.SetOtherRange (sigTycon.Range, false)
 
             checkEnforcedEntityAttribs implTycon sigTycon m
@@ -477,7 +584,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               requireImplAttribute WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute FSComp.SR.implMissingOptimizeClosureIfNotInlined
 
                               implArgInfo.OtherRange <- sigArgInfo.Name |> Option.map (fun ident -> ident.idRange)
-                              sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
+                              if not SignatureRanges.Keep then sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
 
                               implArgInfo.Name <- implArgInfo.Name |> Option.orElse sigArgInfo.Name
                               implArgInfo.Attribs <- WellKnownValAttribs.Create(attribs)))) &&
@@ -490,9 +597,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   res
 
         and checkVal implModRef (aenv: TypeEquivEnv) (infoReader: InfoReader) (implVal: Val) (sigVal: Val) =
+            ConformanceUndo.value implVal
 
             // Propagate defn location information from implementation to signature .
-            sigVal.SetOtherRange (implVal.Range, true)
+            if not SignatureRanges.Keep then sigVal.SetOtherRange (implVal.Range, true)
             implVal.SetOtherRange (sigVal.Range, false)
             implVal.SetOtherXmlDoc(sigVal.XmlDoc)
 
@@ -548,10 +656,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (errorR (err FSComp.SR.ExceptionDefsNotCompatibleExceptionDeclarationsDiffer); false)
 
         and checkUnionCase aenv infoReader (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) (implUnionCase: UnionCase) (sigUnionCase: UnionCase) =
+            ConformanceUndo.unionCase implUnionCase
             implUnionCase.SetOtherXmlDoc(sigUnionCase.XmlDoc)
 
             let err f = errorR(UnionCaseNotContained(denv, infoReader, enclosingImplTycon, implUnionCase, sigUnionCase, f));false
-            sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
+            if not SignatureRanges.Keep then sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
             if implUnionCase.Id.idText <> sigUnionCase.Id.idText then  err FSComp.SR.ModuleContainsConstructorButNamesDiffer
             elif implUnionCase.RecdFieldsArray.Length <> sigUnionCase.RecdFieldsArray.Length then err FSComp.SR.ModuleContainsConstructorButDataFieldsDiffer
@@ -560,6 +669,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else checkAttribs aenv implUnionCase.Attribs sigUnionCase.Attribs (fun attribs -> implUnionCase.Attribs <- attribs)
 
         and checkField aenv infoReader (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) implField sigField =
+            ConformanceUndo.field implField
             implField.SetOtherXmlDoc(sigField.XmlDoc)
 
             let diag kind f = FieldNotContained(kind,denv, infoReader, enclosingImplTycon, enclosingSigTycon, implField, sigField, f)
@@ -577,7 +687,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     not strictTyEquals
 
 
-            sigField.rfield_other_range <- Some (implField.Range, true)
+            if not SignatureRanges.Keep then sigField.rfield_other_range <- Some (implField.Range, true)
             implField.rfield_other_range <- Some (sigField.Range, false)
             if implField.rfield_id.idText <> sigField.rfield_id.idText then err FSComp.SR.FieldNotContainedNamesDiffer
             elif isLessAccessible implField.Accessibility sigField.Accessibility then err FSComp.SR.FieldNotContainedAccessibilitiesDiffer
@@ -891,10 +1001,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              allPairsOk && not someNotOk)
 
 
-        and checkModuleOrNamespace aenv (infoReader: InfoReader) implModRef sigModRef =
+        and checkModuleOrNamespace aenv (infoReader: InfoReader) (implModRef: ModuleOrNamespaceRef) sigModRef =
+            ConformanceUndo.entity implModRef.Deref
             implModRef.SetOtherXmlDoc(sigModRef.XmlDoc)
             // Propagate defn location information from implementation to signature .
-            sigModRef.SetOtherRange (implModRef.Range, true)
+            if not SignatureRanges.Keep then sigModRef.SetOtherRange (implModRef.Range, true)
             implModRef.Deref.SetOtherRange (sigModRef.Range, false)
             checkEnforcedEntityAttribs implModRef.Deref sigModRef implModRef.Range
             checkModuleOrNamespaceContents implModRef.Range aenv infoReader implModRef sigModRef.ModuleOrNamespaceType &&

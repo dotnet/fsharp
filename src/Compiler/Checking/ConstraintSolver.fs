@@ -717,7 +717,7 @@ let SubstMeasure (r: Typar) ms =
     if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type", r.Range))
 
     match r.typar_solution with
-    | None -> r.typar_solution <- Some (TType_measure ms)
+    | None -> r.SetSolution (Some (TType_measure ms))
     | Some _ -> error(InternalError("already solved", r.Range))
 
 let rec TransactStaticReq (csenv: ConstraintSolverEnv) (trace: OptionalTrace) (tpr: Typar) req =
@@ -1040,7 +1040,7 @@ let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: Option
         // Record the solution before we solve the constraints, since
         // We may need to make use of the equation when solving the constraints.
         // Record a entry in the undo trace if one is provided
-        trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
+        trace.Exec (fun () -> r.SetSolution (Some ty)) (fun () -> r.SetSolution None)
     }
 
 and SolveTyparEqualsTypePart2 (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (r: Typar) ty =

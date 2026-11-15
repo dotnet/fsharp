@@ -2795,7 +2795,9 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
         let valRecInfo = v.RecursiveValInfo
 
         // Don't count compiler-generated refs (synthetic range) for FS1182
-        if not m.IsSynthetic then v.SetHasBeenReferenced()
+        if not m.IsSynthetic then
+            v.SetHasBeenReferenced()
+            cenv.recordValueReference v
 
         CheckValAccessible g m env.eAccessRights vref
 
@@ -3134,6 +3136,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
     let ad = env.eAccessRights
 
     v.SetHasBeenReferenced()
+    cenv.recordValueReference v
 
     let disposeMethod =
         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Dispose" g.system_IDisposable_ty with
@@ -9808,6 +9811,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem mItemIdent afterResoluti
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
         vref.Deref.SetHasBeenReferenced()
+        cenv.recordValueReference vref.Deref
         CheckValAccessible g mItemIdent env.AccessRights vref
         CheckValAttributes g vref mItemIdent |> CommitOperationResult
         let vTy = vref.Type
