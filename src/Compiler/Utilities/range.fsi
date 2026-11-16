@@ -199,6 +199,9 @@ module internal LineDirectives =
     /// by the line number of the directive and the file index and line number of the target.
     val add: fileIndex: FileIndex -> lineDirectives: (int * (FileIndex * int)) list -> unit
 
+    /// The line directive data the latest add gave the source file of fileIndex; empty if none did.
+    val ofFile: fileIndex: FileIndex -> (int * (FileIndex * int)) list
+
 module Range =
 
     /// Ordering on positions
