@@ -69,6 +69,44 @@ let ``Declaration fingerprint cuts off body edits and detects signature changes`
     Assert.NotEqual<string>(r1.Fingerprint, r3.Fingerprint)
 
 [<Fact>]
+let ``Shift moves checked declaration ranges without rechecking`` () =
+    let file = testPath "ShiftTest.fs"
+    let ctx = DeclarationChecker.CreateProject(mkOptions Array.empty [| file |]) |> Async.RunSynchronously
+
+    let v1 =
+        """module Sample.Shift
+
+let first = 10
+
+let second x = x + first
+"""
+
+    let p1 = DeclarationChecker.Parse(ctx, file, v1)
+    let start, env0 = DeclarationChecker.BeginFile(ctx, [], p1)
+    let d1 = DeclarationChecker.Split p1
+    let rFirst = DeclarationChecker.CheckDeclaration(start, env0, d1[0], CancellationToken.None)
+    let env1 = DeclarationChecker.ExtendEnv(env0, rFirst)
+    let rSecond = DeclarationChecker.CheckDeclaration(start, env1, d1[1], CancellationToken.None)
+
+    let v2 =
+        """module Sample.Shift
+
+let first = 10
+
+
+let second x = x + first
+"""
+
+    let p2 = DeclarationChecker.Parse(ctx, file, v2)
+    let d2 = DeclarationChecker.Split p2
+
+    match DeclarationChecker.Shift(rSecond, d2[1]) with
+    | ValueSome shifted ->
+        Assert.Equal(rSecond.Declaration.Range.StartLine + 1, shifted.Declaration.Range.StartLine)
+        Assert.True(shifted.IsSameDelta rSecond)
+    | ValueNone -> failwith "Expected Shift to succeed for an unchanged line-shifted declaration."
+
+[<Fact>]
 let ``ProjectAssembly feeds referencing project in memory without disk output`` () =
     let fileA = testPath "LibA.fs"
     let optionsA = mkOptions Array.empty [| fileA |]

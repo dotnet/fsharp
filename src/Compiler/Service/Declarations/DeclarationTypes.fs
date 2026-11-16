@@ -357,6 +357,18 @@ type ProjectContext internal (state: CompilerState) =
     /// Runs `f` holding the file's check lock, as a declaration check does. For tests.
     member _.HoldingCheckLock(fileName: string, f: unit -> 'T) : 'T = lock (checks.FileLock fileName) f
 
+    /// For tests: when set, DeclarationChecker.Shift refuses every declaration of this context, so its callers check
+    /// them again.
+    member val RefuseShifts = false with get, set
+
+    /// Runs with the reason each time DeclarationChecker.Shift refuses a declaration of this context whose text is
+    /// the same at another line. For tests and diagnosis.
+    member val ShiftRefusedHook: string -> unit = ignore with get, set
+
+    /// How many checks the finish ran for shifted results of any context in the process reported at a range of their
+    /// file outside their declaration (see Leftovers.Shifted). For tests, which require 0.
+    static member ShiftFinishMisses = DeclarationShift.FinishMisses()
+
     /// Held while a file is parsed and its #nowarn scopes, which the parse records in the project's options, are
     /// copied: parses of one file serialize, parses of different files do not.
     member internal _.ParseLock(fileName: string) =
@@ -650,8 +662,31 @@ type internal Leftovers
         unionsWithDeferredAttributes: Set<Stamp>,
         deferredUnionNullnessChecks: (TType * range) list,
         createsGeneratedProvidedTypes: bool,
-        namedDebugPoints: KeyValuePair<NamedDebugPointKey, range>[]
+        namedDebugPoints: KeyValuePair<NamedDebugPointKey, range>[],
+        /// How far the checks' own ranges are from where the check left them: the file, the declaration's range and
+        /// the end of its scope as the check left them, and the lines moved over all shifts. The closures stay the
+        /// check's, so a result shifted many times runs each with one wrapper.
+        moved: struct (int * range * pos * int) voption
     ) =
+    /// The check run with what it reports, and what it raises, moved.
+    static member private MovedCheck(struct (fileIndex, range, scopeEnd, delta), check: unit -> unit) =
+        fun () ->
+            let s = DeclarationShift.Shifter.Create(fileIndex, range, scopeEnd, delta)
+
+            try
+                try
+                    use _ =
+                        UseTransformedDiagnosticsLogger(fun next -> DeclarationShift.ShiftingLogger(next, s.Diagnostic))
+
+                    check ()
+                with e ->
+                    match s.Exn e with
+                    | same when obj.ReferenceEquals(same, e) -> reraise ()
+                    | movedExn -> raise movedExn
+            finally
+                if s.Refused.IsSome then
+                    DeclarationShift.CountFinishMiss()
+
     static member Of(cenv: TcFileState) =
         let css = cenv.css
 
@@ -663,12 +698,18 @@ type internal Leftovers
             css.UnionsWithDeferredAttributes,
             css.DeferredUnionNullnessChecks,
             cenv.createsGeneratedProvidedTypes,
-            Array.ofSeq cenv.namedDebugPointsForInlinedCode
+            Array.ofSeq cenv.namedDebugPointsForInlinedCode,
+            ValueNone
         )
 
     member _.Apply(into: TcFileState) =
-        into.css.PostInferenceChecksPreDefaults.AddRange preDefaults
-        into.css.PostInferenceChecksFinal.AddRange final
+        let run (check: unit -> unit) =
+            match moved with
+            | ValueSome offset -> Leftovers.MovedCheck(offset, check)
+            | ValueNone -> check
+
+        into.css.PostInferenceChecksPreDefaults.AddRange(Array.map run preDefaults)
+        into.css.PostInferenceChecksFinal.AddRange(Array.map run final)
 
         for stamp, cx in extraCxs do
             into.css.ExtraCxs.Add(stamp, cx)
@@ -681,6 +722,36 @@ type internal Leftovers
 
         for KeyValue(key, m) in namedDebugPoints do
             into.namedDebugPointsForInlinedCode[key] <- m
+
+    /// Deferred union nullness checks, which compare a range they keep to themselves with one in the solver's state:
+    /// a shift could move only one of them.
+    member _.HasDeferredChecks = not deferredUnionNullnessChecks.IsEmpty
+
+    /// The checks the finish runs (post-inference checks: a member constraint retried, a type's nullness, an enum's
+    /// underlying type) keep the ranges they report at to themselves: each is run with what it reports, and what it
+    /// raises, moved. Those ranges are the ones its check's constraint solver was given (ConstraintSolver.fs: the
+    /// `csenv` and `m2` of PostponeOnFailedMemberConstraintResolution, SolveTypeIsEnum and AddCxTypeCanCarryNullnessInfo),
+    /// all of the declaration's own syntax, so a shift moves all of them. A range elsewhere in the file would be a miss
+    /// the finish can no longer refuse: it is counted (DeclarationShift.FinishMisses), which the tests require to be 0.
+    member _.Shifted(s: DeclarationShift.Shifter) =
+        // Numbers and ranges only: nothing here keeps a shifter alive, and the first shift's range is the check's
+        let fileIndex, oldRange, scopeEnd, delta = s.Parameters
+
+        let moved =
+            match moved with
+            | ValueSome(struct (fileIndex, range, scopeEnd, earlier)) -> struct (fileIndex, range, scopeEnd, earlier + delta)
+            | ValueNone -> struct (fileIndex, oldRange, scopeEnd, delta)
+
+        Leftovers(
+            preDefaults,
+            final,
+            extraCxs |> List.map (fun (stamp, (info, m)) -> stamp, (info, s.Own m)),
+            unionsWithDeferredAttributes,
+            deferredUnionNullnessChecks,
+            createsGeneratedProvidedTypes,
+            namedDebugPoints |> Array.map (fun kv -> KeyValuePair(kv.Key, s.Own kv.Value)),
+            ValueSome moved
+        )
 
 /// Tracks members added in place by later declarations without pinning superseded Tycons across FileStarts.
 [<Sealed>]
@@ -821,13 +892,14 @@ type DeclarationResult
         capturedScope: range
     ) =
     let mutable finishTypedUses: DeclarationRef[] = [||]
+    let mutable shiftedTo: DeclarationResult | null = null
 
     member _.Key = declaration.Key
-    /// What FinishFile keeps its computations for this result by.
+    /// What FinishFile keeps its computations for this result by: the check's, which shifting it keeps (see Shift)
     member internal _.ShareKey = shareKey
-    /// The scope the check was given for the declaration (its ScopeRange then): the scope its environments and opens
-    /// hold. The current parse's scope can end elsewhere, when a declaration was added or edited below it since;
-    /// ScopesNow maps this one to it.
+    /// The scope the check was given for the declaration (its ScopeRange then), moved by each shift of the result: the
+    /// scope its environments and opens hold. The current parse's scope can end elsewhere, when a declaration was added
+    /// or edited below it since; ScopesNow maps this one to it.
     member _.CapturedScope = capturedScope
     /// Made by CheckDeclarationAdHoc: its types are its own, and no finish holds it
     member val internal IsAdHoc = false with get, set
@@ -904,6 +976,12 @@ type DeclarationResult
 
     member internal _.SetFinishTypedUses(uses: DeclarationRef[]) = finishTypedUses <- uses
     member internal _.FinishTypedUses = finishTypedUses
+
+    /// The result the latest Shift of this one gave, which owns the items it moved; null while it was not shifted.
+    /// Under the FileStart's lock.
+    member internal _.ShiftedTo
+        with get () = shiftedTo
+        and set (r: DeclarationResult | null) = shiftedTo <- r
 
     member internal _.CheckTypedUses = typedUses
 

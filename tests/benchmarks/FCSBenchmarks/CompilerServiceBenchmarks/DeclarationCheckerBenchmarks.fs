@@ -122,6 +122,9 @@ type DeclarationCheckerBenchmarks() =
     let mutable bodyTextA = Unchecked.defaultof<ISourceText>
     let mutable bodyTextB = Unchecked.defaultof<ISourceText>
 
+    let mutable shiftedA = ""
+    let mutable shiftedB = ""
+
     let mutable editIdx = 0
     let mutable basePrintEdit = ""
 
@@ -133,10 +136,14 @@ type DeclarationCheckerBenchmarks() =
     let mutable bodyFullEnvsBefore = Array.empty<DeclarationEnvironment>
     let mutable bodyFullResults = Array.empty<DeclarationResult>
 
+    let mutable shiftStart = Unchecked.defaultof<FileStart>
+    let mutable shiftResults = Array.empty<DeclarationResult>
+
     let mutable wholeStep = 0
     let mutable wholeDeclStep = 0
     let mutable cutoffStep = 0
     let mutable fullStep = 0
+    let mutable shiftStep = 0
 
     [<GlobalSetup>]
     member _.Setup() =
@@ -146,6 +153,9 @@ type DeclarationCheckerBenchmarks() =
         bodyEditB <- DeclarationCheckerBenchHelpers.mkDeclarationsSource 202 0
         bodyTextA <- SourceText.ofString bodyEditA
         bodyTextB <- SourceText.ofString bodyEditB
+
+        shiftedA <- DeclarationCheckerBenchHelpers.mkDeclarationsSource 101 2
+        shiftedB <- DeclarationCheckerBenchHelpers.mkDeclarationsSource 101 4
 
         File.WriteAllText(filePath, bodyEditA)
         File.WriteAllText(wholeFilePath, bodyEditA)
@@ -180,6 +190,11 @@ type DeclarationCheckerBenchmarks() =
         bodyFullStart <- s2
         bodyFullEnvsBefore <- envs2
         bodyFullResults <- res2
+
+        let parseShift = DeclarationChecker.Parse(ctx, filePath, bodyEditA)
+        let s3, _, _, res3, _ = DeclarationCheckerBenchHelpers.checkAllDeclarations ctx parseShift
+        shiftStart <- s3
+        shiftResults <- res3
 
     [<Benchmark(Baseline = true)>]
     member _.BodyEdit_WholeFile_FSharpChecker() : int =
@@ -260,6 +275,32 @@ type DeclarationCheckerBenchmarks() =
             failwithf "CheckResults had diagnostics: %A" checkRes.Diagnostics
 
         checkRes.HasFullTypeCheckInfo
+
+    [<Benchmark>]
+    member _.LineShift_Incremental_DeclarationChecker() : int =
+        shiftStep <- shiftStep + 1
+        let src = if shiftStep &&& 1 = 1 then shiftedA else shiftedB
+        let parse = DeclarationChecker.Parse(ctx, filePath, src)
+        let decls = DeclarationChecker.Split parse
+        let mutable shiftedCount = 0
+
+        for i in 0 .. decls.Length - 1 do
+            if decls[i].Range.StartLine <> shiftResults[i].Declaration.Range.StartLine then
+                match DeclarationChecker.Shift(shiftResults[i], decls[i]) with
+                | ValueSome shifted ->
+                    shiftResults[i] <- shifted
+                    shiftedCount <- shiftedCount + 1
+                | ValueNone -> failwithf "Shift refused declaration %d (%s)" i decls[i].Key.Name
+
+        if shiftedCount < 59 then
+            failwithf "Expected at least 59 shifted declarations, got %d" shiftedCount
+
+        let fileRes = DeclarationChecker.FinishFile(shiftStart, shiftResults, parse)
+
+        if fileRes.Diagnostics.Length > 0 then
+            failwithf "FinishFile after Shift had diagnostics: %A" fileRes.Diagnostics
+
+        fileRes.Reused
 
     [<GlobalCleanup>]
     member _.Cleanup() =

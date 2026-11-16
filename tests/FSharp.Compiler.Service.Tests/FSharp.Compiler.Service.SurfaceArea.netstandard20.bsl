@@ -2090,6 +2090,7 @@ FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.C
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] DefinitionLocation(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, System.String, System.Threading.CancellationToken)
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SignatureLocation(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, FSharp.Compiler.CodeAnalysis.Declarations.FileSignature, System.String, Boolean, System.Threading.CancellationToken)
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[System.String] SymbolKey(FSharp.Compiler.Symbols.FSharpSymbol)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult] Shift(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult, FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration)
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.String[] PrintsNow(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[])
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.Declarations.FileStart,FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment] BeginFile(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileSignature], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
 FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.Tuple`2[System.String,System.String][] AccessPathTexts(FSharp.Compiler.CodeAnalysis.Declarations.FileSignature)
@@ -2284,9 +2285,17 @@ FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: Boolean ReadsFileOnDi
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: Boolean get_ReadsFileOnDisk()
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: System.String Fingerprint
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: System.String get_Fingerprint()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Boolean RefuseShifts
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Boolean get_RefuseShifts()
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int32 CheckResultsBuilt
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int32 get_CheckResultsBuilt()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int64 ShiftFinishMisses
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int64 get_ShiftFinishMisses()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] ShiftRefusedHook
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] get_ShiftRefusedHook()
 FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: T HoldingCheckLock[T](System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Void set_RefuseShifts(Boolean)
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Void set_ShiftRefusedHook(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
 FSharp.Compiler.CodeAnalysis.Declarations.StaleDependenciesException: Void .ctor(System.String)
 FSharp.Compiler.CodeAnalysis.Declarations.SupersededLineDirectivesException: Void .ctor(System.String)
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile

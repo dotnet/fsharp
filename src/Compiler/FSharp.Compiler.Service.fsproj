@@ -619,6 +619,7 @@
     <Compile Include="Service\FSharpWorkspaceState.fs" />
     <Compile Include="Service\FSharpWorkspaceQuery.fs" />
     <Compile Include="Service\FSharpWorkspace.fs" />
+    <Compile Include="Service\Declarations\DeclarationShift.fs" />
     <Compile Include="Service\Declarations\DeclarationTypes.fs" />
     <Compile Include="Service\Declarations\DeclarationSyntax.fs" />
     <Compile Include="Service\Declarations\DeclarationSymbolKeys.fs" />

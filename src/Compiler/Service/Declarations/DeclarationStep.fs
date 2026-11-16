@@ -857,6 +857,169 @@ let printsNow (start: FileStart) (results: DeclarationResult[]) : string[] =
             results
             |> Array.map (fun result -> fingerprintOf result.Delta result.Checked result.SlotsAtCheck)))
 
+let private shiftWith (s: DeclarationShift.Shifter) (result: DeclarationResult) (decl: ParsedDeclaration) : DeclarationResult voption =
+    let start = result.Start
+    let state = start.Context.State
+    let rawDiagnostics = result.RawDiagnostics |> Array.map s.Diagnostic
+    let leftovers = result.Leftovers.Shifted s
+    let sink = s.Sink(state.tcGlobals, result.Sink)
+    let contents, actions, attribs = result.Checked
+    let contents = List.map s.Contents contents
+
+    let attribs =
+        attribs |> List.map (fun (targets, attrib) -> targets, s.Attrib attrib)
+
+    let checkedDecl = contents, actions, attribs
+    s.ModuleType result.Delta
+
+    let nesting, envAfter =
+        let env = result.EnvAfter
+
+        match result.Nesting with
+        | ModuleHeader(depth, frame) ->
+            frame.Entity |> Option.iter (fun entity -> s.EntityWith(entity, false))
+
+            let frame =
+                { frame with
+                    ScopeRange = s.Scope frame.ScopeRange
+                    Range = s.Own frame.Range
+                }
+
+            let frames =
+                match env.Frames with
+                | _ :: outer -> frame :: outer
+                | [] -> []
+
+            ModuleHeader(depth, frame), DeclarationEnvironment(env.Env, env.Parent, env.TypeNames, frames, env.Definitions)
+        | InModules _ as nesting ->
+            let frames =
+                match env.Frames with
+                | frame :: outer when not frame.Checked.IsEmpty ->
+                    { frame with
+                        Checked = checkedDecl :: frame.Checked.Tail
+                    }
+                    :: outer
+                | frames -> frames
+
+            nesting, DeclarationEnvironment(env.Env, env.Parent, env.TypeNames, frames, env.Definitions)
+
+    if s.Refused.IsSome then
+        ValueNone
+    else
+        use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.TypeCheck)
+
+        let shifted =
+            DeclarationResult(
+                start,
+                decl,
+                result.Fingerprint,
+                result.AtCheck,
+                DeclarationProjectCheck.diagnosticsOf
+                    state
+                    start.Parse.FileName
+                    (DeclarationProjectCheck.refiltered state.tcConfig.diagnosticsOptions rawDiagnostics),
+                rawDiagnostics,
+                result.LeavesFreeTypars,
+                result.DependsOnLaterDeclarations,
+                result.OpenTypars,
+                result.LeavesUnsolved,
+                result.SlotsAtCheck,
+                envAfter,
+                result.EnvAtEnd,
+                checkedDecl,
+                result.Delta,
+                result.DeltaCombines,
+                sink,
+                leftovers,
+                nesting,
+                result.CheckTypedUses,
+                result.HeldDefinitions,
+                result.References,
+                result.ShareKey,
+                s.Move result.CapturedScope
+            )
+
+        shifted.SetFinishTypedUses result.FinishTypedUses
+        ValueSome shifted
+
+let private shiftLocked (result: DeclarationResult) (decl: ParsedDeclaration) (delta: int) : DeclarationResult voption =
+    let old = result.Declaration
+
+    let s =
+        DeclarationShift.Shifter(old.Range.FileIndex, old.Range, result.CapturedScope.End, delta, result.ShareKey)
+
+    // A refused or failed shift restores what it moved in place, so `result` is left as it was
+    try
+        match shiftWith s result decl with
+        | ValueSome _ as shifted ->
+            s.Release()
+            shifted
+        | ValueNone ->
+            s.Undo()
+            result.Start.Context.ShiftRefusedHook(defaultArg s.Refused "")
+            ValueNone
+    with _ ->
+        s.Undo()
+        reraise ()
+
+/// Under the FileStart's lock.
+let private shiftFrom (result: DeclarationResult) (decl: ParsedDeclaration) : DeclarationResult voption =
+    let old = result.Declaration
+    let delta = decl.Range.StartLine - old.Range.StartLine
+
+    if
+        delta = 0
+        || not (decl.IsUnchangedFrom old)
+        || decl.Range.StartColumn <> old.Range.StartColumn
+        || decl.Within <> old.Within
+        || decl.Key <> old.Key
+        || decl.Depth <> old.Depth
+        || decl.IsModuleHeader <> old.IsModuleHeader
+        || not (String.Equals(decl.Range.FileName, old.Range.FileName, StringComparison.Ordinal))
+        || result.Start.Context.RefuseShifts
+    then
+        ValueNone
+    elif result.Leftovers.HasDeferredChecks then
+        result.Start.Context.ShiftRefusedHook $"%A{old.Key.Name}: it holds deferred union nullness checks"
+        ValueNone
+    else
+        let start = result.Start
+        start.UndoLastFinish()
+
+        lock (start.Context.Checks.FileLock start.Parse.FileName) (fun () -> shiftLocked result decl delta)
+
+let shift (result: DeclarationResult) (decl: ParsedDeclaration) : DeclarationResult voption =
+    if
+        not (decl.IsUnchangedFrom result.Declaration)
+        || decl.Key <> result.Declaration.Key
+    then
+        ValueNone
+    else
+        let start = result.Start
+
+        lock start.Sync (fun () ->
+            let chain = ResizeArray [ result ]
+
+            while not (isNull chain[chain.Count - 1].ShiftedTo) do
+                chain.Add(!!chain[chain.Count - 1].ShiftedTo)
+
+            let latest = chain[chain.Count - 1]
+
+            if
+                latest.Declaration.Range.Start = decl.Range.Start
+                && not (obj.ReferenceEquals(latest, result))
+            then
+                ValueSome latest
+            else
+                match shiftFrom latest decl with
+                | ValueSome shifted as found ->
+                    // Each earlier result points at the latest, so the results in between can be collected
+                    for r in chain do
+                        r.ShiftedTo <- shifted
+
+                    found
+                | ValueNone -> ValueNone)
+
 let extendEnvLocked (envBefore: DeclarationEnvironment) (result: DeclarationResult) : DeclarationEnvironment =
     let decl = result.Declaration
     let start = result.Start

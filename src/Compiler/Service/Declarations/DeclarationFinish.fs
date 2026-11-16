@@ -152,7 +152,11 @@ let private mergeSinks (g: TcGlobals) (scopes: ScopesNow) (sinks: TcResultsSinkI
                     |> Seq.map (fun (m, nenv, ad) -> scopes.Of(sink, m), nenv, ad))
             ),
             all (fun r -> r.CapturedExpressionTypings),
-            all (fun r -> r.CapturedNameResolutions),
+            // What a shifted declaration copied from others, as it is now (DeclarationShift.currentItems)
+            ResizeArray(
+                all (fun r -> r.CapturedNameResolutions)
+                |> Seq.map DeclarationShift.currentItems
+            ),
             all (fun r -> r.CapturedMethodGroupResolutions),
             all (fun r -> r.CapturedRelatedSymbolUses)
         )
@@ -173,7 +177,7 @@ let private mergeSinks (g: TcGlobals) (scopes: ScopesNow) (sinks: TcResultsSinkI
 
     resolutions, symbolUses, openDeclarations
 
-/// Only what GetSemanticClassification reads of several sinks, in order: name resolutions, related symbol
+/// Only what GetSemanticClassification reads of several sinks, in order: shifted name resolutions, related symbol
 /// uses, and format specifier locations.
 let private mergeForClassification (sinks: TcResultsSinkImpl list) =
     let all (pick: TcResolutions -> ResizeArray<'T>) =
@@ -183,7 +187,10 @@ let private mergeForClassification (sinks: TcResultsSinkImpl list) =
         TcResolutions(
             ResizeArray 0,
             ResizeArray 0,
-            all (fun r -> r.CapturedNameResolutions),
+            ResizeArray(
+                all (fun r -> r.CapturedNameResolutions)
+                |> Seq.map DeclarationShift.currentItems
+            ),
             ResizeArray 0,
             all (fun r -> r.CapturedRelatedSymbolUses)
         )

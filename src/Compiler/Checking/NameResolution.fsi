@@ -398,6 +398,16 @@ val ItemsAreEffectivelyEqualHash: TcGlobals -> Item -> int
 
 [<Class>]
 type internal CapturedNameResolution =
+    /// For DeclarationChecker.Shift, which moves a resolution to another line
+    new:
+        i: Item *
+        tpinst: TyparInstantiation *
+        io: ItemOccurrence *
+        nre: NameResolutionEnv *
+        ad: AccessorDomain *
+        m: range ->
+            CapturedNameResolution
+
     /// line and column
     member Pos: pos
 

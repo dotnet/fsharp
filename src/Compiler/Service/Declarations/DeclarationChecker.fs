@@ -81,6 +81,8 @@ type DeclarationChecker =
 
     static member PrintsNow(start: FileStart, results: DeclarationResult[]) : string[] = DeclarationStep.printsNow start results
 
+    static member Shift(result: DeclarationResult, decl: ParsedDeclaration) : DeclarationResult voption = DeclarationStep.shift result decl
+
     static member ExtendEnv(envBefore: DeclarationEnvironment, result: DeclarationResult) : DeclarationEnvironment =
         DeclarationStep.extendEnv envBefore result
 

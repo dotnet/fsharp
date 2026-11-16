@@ -47,6 +47,8 @@ retention for `DeclarationChecker` versus `FSharpChecker`:
     `SignatureFingerprint` cutoff (0 downstream declarations re-checked), and `FinishFile`.
   * `BodyEdit_Incremental_WithCheckResults` — same incremental check plus forcing `fileRes.CheckResults`
     to materialize full `FSharpCheckFileResults` from merged sinks.
+  * `LineShift_Incremental_DeclarationChecker` — shifting 59+ unchanged declarations across line
+    insertions/deletions via `DeclarationChecker.Shift` + `FinishFile` without re-typechecking.
 * **`declaration-memory` probe (`DeclarationMemoryProbe`)**: Deterministic `GC.GetTotalMemory(true)`
   measurement comparing closed-file `FileSignature`, open-file `FileStart + DeclarationResult[]`, and
   `FSharpCheckFileResults` on the 60-declaration module after `TcImports` warmup.
