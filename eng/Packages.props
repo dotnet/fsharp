@@ -48,7 +48,7 @@
          which requires Microsoft.Extensions.DependencyInjection >= 10.0.0. FSharp.Compiler.LanguageServer (net8)
          keeps 8.0.0 via a VersionOverride. -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.9.317" />
+    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.11.573" />
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
@@ -58,8 +58,8 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
-    <!-- The 18.9.x Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
-         transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.VisualStudio.LanguageServices.ExternalAccess).
+    <!-- The Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
+         transitively via Microsoft.VisualStudio.LanguageServices.ExternalAccess.
          Under CPM transitive pinning the central pin must match that resolved version, otherwise NU1109 downgrades
          and MSB3277 assembly-version conflicts break every vsintegration project. -->
     <!-- ComponentModelHost is only ever pulled transitively. Projects that reference the full VS SDK get 18.9.453,
@@ -67,7 +67,7 @@
          ComponentModelHost would otherwise stay at 17.x; that 17.x/18.x split makes S/IComponentModel ambiguous
          (CS0433). Pin to the SDK 18.9.496 version so those types resolve to a single assembly. -->
     <PackageVersion Include="Microsoft.VisualStudio.ComponentModelHost" Version="18.9.453" />
-    <!-- Match Platform.VSEditor 18.12.46's transitive requirement to avoid NU1109 under central pinning.
+    <!-- Match Platform.VSEditor's transitive requirement to avoid NU1109 under central pinning.
          Compile-only: at runtime the VS-installed contract assembly wins through Copilot's binding redirect. -->
     <PackageVersion Include="Microsoft.VisualStudio.Copilot" Version="18.11.573" />
     <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.12.772" />
