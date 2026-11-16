@@ -118,22 +118,6 @@ module internal PervasiveAutoOpens =
         | None -> failwith "getHole"
         | Some x -> x
 
-    let reportTime =
-        let syncRoot = obj ()
-        let mutable tPrev: IDisposable | null = null
-
-        fun descr ->
-            lock syncRoot (fun () ->
-                match tPrev with
-                | null -> ()
-                | prev -> prev.Dispose()
-
-                tPrev <-
-                    if descr <> "Finish" then
-                        FSharp.Compiler.Diagnostics.Activity.Profiling.startAndMeasureEnvironmentStats descr
-                    else
-                        null)
-
     let foldOn p f z x = f z (p x)
 
     let notFound () = raise (KeyNotFoundException())

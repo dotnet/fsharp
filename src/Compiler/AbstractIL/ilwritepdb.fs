@@ -14,6 +14,7 @@ open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 open Internal.Utilities.Library
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 
@@ -321,10 +322,9 @@ let pdbGetDebugInfo
 let getDebugFileName outfile =
     (FileSystemUtils.chopExtension outfile) + ".pdb"
 
-let sortMethods info =
-    reportTime (sprintf "PDB: Defined %d documents" info.Documents.Length)
+let sortMethods (phaseTimer: Activity.Profiling.PhaseTimer) info =
+    phaseTimer.Next $"PDB: Sort %d{info.Methods.Length} methods"
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    reportTime (sprintf "PDB: Sorted %d methods" info.Methods.Length)
     ()
 
 let getRowCounts tableRowCounts =
@@ -346,6 +346,7 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
 
 type PortablePdbGenerator
     (
+        phaseTimer: Activity.Profiling.PhaseTimer,
         embedAllSource: bool,
         embedSourceList: string list,
         sourceLink: string,
@@ -355,6 +356,8 @@ type PortablePdbGenerator
         moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list,
         methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list>
     ) =
+
+    do phaseTimer.Next $"PDB: Define %d{info.Documents.Length} documents"
 
     // Deterministic: build the Document table in a stable order by mapped file path,
     // but preserve the original-document-index -> handle mapping by filename.
@@ -845,7 +848,8 @@ type PortablePdbGenerator
         | Some scope -> writeMethodScopes minfo.MethToken scope
 
     member _.Emit() =
-        sortMethods info
+        sortMethods phaseTimer info
+        phaseTimer.Next "PDB: Create"
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
         defineModuleImportScope ()
@@ -884,10 +888,10 @@ type PortablePdbGenerator
         let contentId = serializer.Serialize blobBuilder
         let portablePdbStream = new MemoryStream()
         blobBuilder.WriteContentTo portablePdbStream
-        reportTime "PDB: Created"
         (portablePdbStream.Length, contentId, portablePdbStream, algorithmName, contentHash)
 
 let generatePortablePdb
+    (phaseTimer: Activity.Profiling.PhaseTimer)
     (embedAllSource: bool)
     (embedSourceList: string list)
     (sourceLink: string)
@@ -899,6 +903,7 @@ let generatePortablePdb
     =
     let generator =
         PortablePdbGenerator(
+            phaseTimer,
             embedAllSource,
             embedSourceList,
             sourceLink,
