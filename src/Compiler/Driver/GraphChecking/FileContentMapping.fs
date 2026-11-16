@@ -47,7 +47,11 @@ let visitLongIdent (lid: LongIdent) = visitLongIdentPrefix lid @ names lid
 /// A name after a dot can be a member, a property, a record field or a union case.
 let memberOrFieldNames (ids: Ident list) =
     ids
-    |> List.collect (fun id -> [ FileContentEntry.MemberName id.idText; FileContentEntry.FieldOrCaseName id.idText ])
+    |> List.collect (fun id ->
+        [
+            FileContentEntry.MemberName id.idText
+            FileContentEntry.FieldOrCaseName id.idText
+        ])
 
 /// A dotted name in an expression: every segment after the first can also be a member or a field.
 let visitExprLongIdent (lid: SynLongIdent) =
@@ -74,7 +78,11 @@ let visitFieldOrCase (lid: LongIdent) =
 let visitLongIdentForModuleAbbrev (lid: LongIdent) =
     match lid with
     | [] -> []
-    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath false lid); yield! names lid ]
+    | lid ->
+        [
+            FileContentEntry.PrefixedIdentifier(longIdentToPath false lid)
+            yield! names lid
+        ]
 
 let visitSynAttribute (a: SynAttribute) : FileContentEntry list =
     [
@@ -428,7 +436,8 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
 
 /// The members `for x in e` can call on e
 let enumeratorMembers =
-    [ "GetEnumerator"; "MoveNext"; "Current" ] |> List.map FileContentEntry.MemberName
+    [ "GetEnumerator"; "MoveNext"; "Current" ]
+    |> List.map FileContentEntry.MemberName
 
 /// The members `e.[i]`, `e[i]`, `e[a..b]` and their assignments can call on e
 let indexerMembers =
@@ -456,8 +465,30 @@ let sourceMembers (sources: int) =
 /// `let! … and! …` also lists its own (sourceMembers).
 let builderMembers =
     [
-        yield! [ "Bind"; "BindReturn"; "Combine"; "Delay"; "For"; "MergeSources"; "Quote"; "Return"; "ReturnFrom" ]
-        yield! [ "ReturnFromFinal"; "Run"; "Source"; "TryFinally"; "TryWith"; "Using"; "While"; "Yield"; "YieldFrom" ]
+        yield!
+            [
+                "Bind"
+                "BindReturn"
+                "Combine"
+                "Delay"
+                "For"
+                "MergeSources"
+                "Quote"
+                "Return"
+                "ReturnFrom"
+            ]
+        yield!
+            [
+                "ReturnFromFinal"
+                "Run"
+                "Source"
+                "TryFinally"
+                "TryWith"
+                "Using"
+                "While"
+                "Yield"
+                "YieldFrom"
+            ]
         yield! [ "YieldFromFinal"; "Zero"; "Dispose" ]
         for n in 2..16 do
             yield $"Bind{n}"
@@ -581,7 +612,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
                 visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
             | SynExpr.LetOrUse({ Bindings = bindings; Body = body } as letOrUse) ->
-                let implied = if letOrUse.IsBang then sourceMembers bindings.Length else []
+                let implied =
+                    if letOrUse.IsBang then
+                        sourceMembers bindings.Length
+                    else
+                        []
+
                 visit body (fun nodes -> implied @ List.collect visitBinding bindings @ nodes |> continuation)
             | SynExpr.TryWith(tryExpr = tryExpr; withCases = withCases) ->
                 visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
@@ -851,32 +887,33 @@ let rec fileLevel (entries: FileContentEntry list) =
         | entry -> Some entry)
 
 let mkFileContent (f: FileInProject) : FileContentEntry list =
-    fileLevel [
-        match f.ParsedInput with
-        | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
-            for SynModuleOrNamespaceSig(longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
-                yield! List.collect visitSynAttributeList attribs
+    fileLevel
+        [
+            match f.ParsedInput with
+            | ParsedInput.SigFile(ParsedSigFileInput(contents = contents)) ->
+                for SynModuleOrNamespaceSig(longId = longId; kind = kind; decls = decls; attribs = attribs) in contents do
+                    yield! List.collect visitSynAttributeList attribs
 
-                match kind with
-                | SynModuleOrNamespaceKind.GlobalNamespace
-                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
-                | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                    let path = longIdentToPath false longId
-                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-                | SynModuleOrNamespaceKind.NamedModule ->
-                    let path = longIdentToPath true longId
-                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
-        | ParsedInput.ImplFile(ParsedImplFileInput(contents = contents)) ->
-            for SynModuleOrNamespace(longId = longId; attribs = attribs; kind = kind; decls = decls) in contents do
-                yield! List.collect visitSynAttributeList attribs
+                    match kind with
+                    | SynModuleOrNamespaceKind.GlobalNamespace
+                    | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleSigDecl decls
+                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                        let path = longIdentToPath false longId
+                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+                    | SynModuleOrNamespaceKind.NamedModule ->
+                        let path = longIdentToPath true longId
+                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleSigDecl decls)
+            | ParsedInput.ImplFile(ParsedImplFileInput(contents = contents)) ->
+                for SynModuleOrNamespace(longId = longId; attribs = attribs; kind = kind; decls = decls) in contents do
+                    yield! List.collect visitSynAttributeList attribs
 
-                match kind with
-                | SynModuleOrNamespaceKind.GlobalNamespace
-                | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
-                | SynModuleOrNamespaceKind.DeclaredNamespace ->
-                    let path = longIdentToPath false longId
-                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-                | SynModuleOrNamespaceKind.NamedModule ->
-                    let path = longIdentToPath true longId
-                    yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
-    ]
+                    match kind with
+                    | SynModuleOrNamespaceKind.GlobalNamespace
+                    | SynModuleOrNamespaceKind.AnonModule -> yield! List.collect visitSynModuleDecl decls
+                    | SynModuleOrNamespaceKind.DeclaredNamespace ->
+                        let path = longIdentToPath false longId
+                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+                    | SynModuleOrNamespaceKind.NamedModule ->
+                        let path = longIdentToPath true longId
+                        yield FileContentEntry.TopLevelNamespace(path, List.collect visitSynModuleDecl decls)
+        ]

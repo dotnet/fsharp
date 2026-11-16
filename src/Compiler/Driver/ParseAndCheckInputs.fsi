@@ -273,4 +273,3 @@ val CheckMultipleInputsUsingGraphModeWithStates:
     loggerForFile: (FileIndex -> DiagnosticsLogger) *
     ct: System.Threading.CancellationToken ->
         (PartialResult * TcState) array
-

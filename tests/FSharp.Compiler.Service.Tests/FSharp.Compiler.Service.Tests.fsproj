@@ -79,6 +79,8 @@
     <Compile Include="BlockTests.fs" />
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="SignatureFingerprintTests.fs" />
+    <Compile Include="DeclarationSyntaxTests.fs" />
+    <Compile Include="DeclarationCheckerTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="FsiHelpTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />

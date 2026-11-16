@@ -1069,7 +1069,8 @@ type TcState =
 
     member x.TryFindRootSig qualNameOfFile = x.tcsRootSigs.TryFind qualNameOfFile
 
-    member x.HasRootImpl qualNameOfFile = Zset.contains qualNameOfFile x.tcsRootImpls
+    member x.HasRootImpl qualNameOfFile =
+        Zset.contains qualNameOfFile x.tcsRootImpls
 
     member x.ImplicitOpenDeclarations = x.tcsImplicitOpenDeclarations
 

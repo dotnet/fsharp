@@ -359,11 +359,14 @@ let serializeToMermaid (path: string) (filesInProject: FileInProject array) (tri
 /// The cases of an active pattern's name such as `|A|B|_|`.
 let private activePatternCases (name: string) =
     if name.StartsWith "|" then
-        name.Split('|') |> Array.filter (fun case -> case <> "" && case <> "_") |> List.ofArray
+        name.Split('|')
+        |> Array.filter (fun case -> case <> "" && case <> "_")
+        |> List.ofArray
     else
         []
 
-let private identNames (id: Ident) = id.idText :: activePatternCases id.idText
+let private identNames (id: Ident) =
+    id.idText :: activePatternCases id.idText
 
 let rec private patternNames (pat: SynPat) : string list =
     match pat with
@@ -493,7 +496,8 @@ let rec declarationNames (decl: SynModuleDecl) : string list * bool =
     match decl with
     | SynModuleDecl.Let(bindings = bindings) -> bindings |> List.map bindingNames |> ofAll
     | SynModuleDecl.Types(typeDefns = typeDefns) -> typeDefns |> List.map typeDefnNames |> ofAll
-    | SynModuleDecl.Exception(exnDefn = SynExceptionDefn(SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _))), _, members, _)) ->
+    | SynModuleDecl.Exception(
+        exnDefn = SynExceptionDefn(SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _))), _, members, _)) ->
         let names, unreadable = members |> List.map memberNames |> ofAll
         id.idText :: names, unreadable
     | SynModuleDecl.NestedModule(moduleInfo = moduleInfo; decls = decls) ->

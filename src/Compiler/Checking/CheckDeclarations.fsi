@@ -70,7 +70,9 @@ val TcModuleOrNamespaceElementNonMutRec:
     scopem: range ->
     env: TcEnv ->
     synDecl: SynModuleDecl ->
-        Cancellable<(ModuleOrNamespaceContents list * (unit -> unit) list * (AttributeTargets * Attrib) list) * TcEnv * TcEnv>
+        Cancellable<
+            (ModuleOrNamespaceContents list * (unit -> unit) list * (AttributeTargets * Attrib) list) * TcEnv * TcEnv
+         >
 
 val CreateImplFileCheckState:
     TcGlobals *
