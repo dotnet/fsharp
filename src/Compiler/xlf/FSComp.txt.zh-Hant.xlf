@@ -322,6 +322,11 @@
         <target state="translated">布爾值傳回和傳回類型導向的部分現用模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCaptureStructFieldReadsInQuotations">
+        <source>reading fields of a captured struct local in a quotation</source>
+        <target state="new">reading fields of a captured struct local in a quotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果 'TailCall' 屬性用於非遞迴函數，則引發警告。</target>

@@ -322,6 +322,11 @@
         <target state="translated">布尔返回模式和返回类型定向部分活动模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCaptureStructFieldReadsInQuotations">
+        <source>reading fields of a captured struct local in a quotation</source>
+        <target state="new">reading fields of a captured struct local in a quotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>

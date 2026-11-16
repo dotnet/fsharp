@@ -56,6 +56,7 @@ type LanguageFeature =
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
     | ReraiseInComputationExpressions
+    | CaptureStructFieldReadsInQuotations
 
 /// LanguageVersion management
 type LanguageVersion =
