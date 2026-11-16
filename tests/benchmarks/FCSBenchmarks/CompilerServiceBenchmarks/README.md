@@ -33,6 +33,37 @@ compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide with
 To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
 and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
 
+## DeclarationChecker benchmarks
+
+`DeclarationCheckerBenchmarks.fs` measures single-file incremental checking and per-file live heap
+retention for `DeclarationChecker` versus `FSharpChecker`:
+
+* **`DeclarationCheckerBenchmarks`**: Uses a 60-declaration implementation module (`Bench.Declarations`)
+  with downstream callers (`compute31`..`compute35` calling `compute30`). Compares warm single-file
+  `FSharpChecker.ParseAndCheckFileInProject` (`BodyEdit_WholeFile_FSharpChecker`, baseline) against:
+  * `BodyEdit_WholeFile_DeclarationChecker` — whole-file `DeclarationChecker.CheckFile` without
+    materializing `TcResultsSink` (background signature checking).
+  * `BodyEdit_Incremental_Cutoff` — `Parse`, `Split`, single-declaration `CheckDeclaration` with
+    `SignatureFingerprint` cutoff (0 downstream declarations re-checked), and `FinishFile`.
+  * `BodyEdit_Incremental_WithCheckResults` — same incremental check plus forcing `fileRes.CheckResults`
+    to materialize full `FSharpCheckFileResults` from merged sinks.
+* **`declaration-memory` probe (`DeclarationMemoryProbe`)**: Deterministic `GC.GetTotalMemory(true)`
+  measurement comparing closed-file `FileSignature`, open-file `FileStart + DeclarationResult[]`, and
+  `FSharpCheckFileResults` on the 60-declaration module after `TcImports` warmup.
+
+Build and run with `BUILDING_USING_DOTNET=true`:
+```powershell
+$env:BUILDING_USING_DOTNET = "true"
+dotnet build-server shutdown
+dotnet build ..\..\..\..\src\FSharp.Build\FSharp.Build.fsproj -c Release --disable-build-servers
+dotnet build ..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj -c Release --disable-build-servers
+dotnet build ..\..\..\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj -c Release --disable-build-servers
+dotnet build ..\..\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj -c Release --disable-build-servers
+dotnet build FSharp.Compiler.Benchmarks.fsproj -c Release --no-dependencies --disable-build-servers
+dotnet run -c Release --no-build -- --filter *DeclarationCheckerBenchmarks* --warmupCount 3 --iterationCount 10
+dotnet run -c Release --no-build -- declaration-memory
+```
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
