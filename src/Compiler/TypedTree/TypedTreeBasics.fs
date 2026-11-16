@@ -172,10 +172,9 @@ let ccuOfValRef vref =
     | VRefLocal _ -> None
     | VRefNonLocal nlr -> Some nlr.Ccu
 
-let ccuOfTyconRef eref =
-    match eref with
-    | ERefLocal _ -> None
-    | ERefNonLocal nlr -> Some nlr.Ccu
+// Check IsLocalRef instead of matching | ERefLocal | ERefNonLocal | to avoid Choice allocations on every call.
+let ccuOfTyconRef (eref: EntityRef) =
+    if eref.IsLocalRef then None else Some eref.nlr.Ccu
 
 //--------------------------------------------------------------------------
 // Type parameters and inference unknowns

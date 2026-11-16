@@ -2039,3 +2039,34 @@ module Hidden =
             let secret = hidden.NestedEntities |> Seq.exactlyOne
             stampOf (Option.get hidden.DeclaringEntity) |> shouldEqual (stampOf test)
             stampOf (Option.get secret.DeclaringEntity) |> shouldEqual (stampOf hidden)
+
+module SymbolWrapperCaching =
+
+    [<Fact>]
+    let ``CurriedParameterGroups, GenericArguments, and IsAbbreviation return consistent cached wrappers`` () =
+        let source = """
+module CachingTest
+
+type Alias = int list
+
+let sample (xs: Alias) (fn: int -> string) : Alias = fn xs.Head |> ignore; xs
+"""
+        let _, checkResults = getParseAndCheckResults source
+        let mfv = findSymbolByName "sample" checkResults :?> FSharpMemberOrFunctionOrValue
+
+        let groups1 = mfv.CurriedParameterGroups
+        let groups2 = mfv.CurriedParameterGroups
+        Assert.Same(groups1, groups2)
+
+        let g0 = groups1[0]
+        let g1 = groups1[1]
+        let xsTy = g0[0].Type
+        Assert.True(xsTy.IsAbbreviation)
+        Assert.True(xsTy.AbbreviatedType.IsFSharpList)
+        Assert.Same(xsTy.GenericArguments, xsTy.GenericArguments)
+
+        let fnTy = g1[0].Type
+        Assert.False(fnTy.IsAbbreviation)
+        Assert.True(fnTy.IsFunctionType)
+        Assert.Equal(2, fnTy.GenericArguments.Count)
+        Assert.Same(fnTy.GenericArguments, fnTy.GenericArguments)

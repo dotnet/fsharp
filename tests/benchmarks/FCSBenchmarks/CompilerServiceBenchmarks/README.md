@@ -33,6 +33,17 @@ compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide with
 To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
 and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
 
+## Symbol & IWSAM allocation benchmarks
+
+`SymbolAndIwsamBenchmarks.fs` measures repeated inspection of `FSharpMemberOrFunctionOrValue.CurriedParameterGroups`
+and `FSharpType` (`InspectSymbolsRepeatedly`), plus warm checking of interface-annotated bindings
+exercising `CheckIWSAM` (`WarmCheckFileWithInterfaces`).
+
+Run with `BUILDING_USING_DOTNET=true`:
+```powershell
+dotnet run -c Release -- --filter *SymbolAndIwsamBenchmarks* --warmupCount 3 --iterationCount 10
+```
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |
