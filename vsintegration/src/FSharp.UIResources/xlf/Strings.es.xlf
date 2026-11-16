@@ -43,8 +43,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
-        <source>Find References Performance Options</source>
-        <target state="translated">Buscar opciones de rendimiento de referencias</target>
+        <source>Find References performance options</source>
+        <target state="needs-review-translation">Buscar opciones de rendimiento de referencias</target>
         <note />
       </trans-unit>
       <trans-unit id="Formatting">
@@ -58,18 +58,18 @@
         <note />
       </trans-unit>
       <trans-unit id="Inlay_Hints">
-        <source>Inlay Hints</source>
-        <target state="new">Inlay Hints</target>
+        <source>Inlay hints</source>
+        <target state="new">Inlay hints</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
-        <source>Code Fixes</source>
-        <target state="translated">Correcciones de código</target>
+        <source>Code fixes</source>
+        <target state="needs-review-translation">Correcciones de código</target>
         <note />
       </trans-unit>
       <trans-unit id="Completion_Lists">
-        <source>Completion Lists</source>
-        <target state="translated">Listas de finalización</target>
+        <source>Completion lists</source>
+        <target state="needs-review-translation">Listas de finalización</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
@@ -98,8 +98,8 @@
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers</source>
-        <target state="translated">Búferes activos</target>
+        <source>Live buffers</source>
+        <target state="needs-review-translation">Búferes activos</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -158,8 +158,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
-        <source>Transparent Compiler Cache Factor</source>
-        <target state="translated">Factor de caché del compilador transparente</target>
+        <source>Transparent Compiler cache factor</source>
+        <target state="needs-review-translation">Factor de caché del compilador transparente</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
@@ -178,8 +178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Block_Structure">
-        <source>Block Structure Guides</source>
-        <target state="translated">Guías de estructura de bloque</target>
+        <source>Block structure guides</source>
+        <target state="needs-review-translation">Guías de estructura de bloque</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
@@ -203,13 +203,13 @@
         <note />
       </trans-unit>
       <trans-unit id="IntelliSense_Performance">
-        <source>IntelliSense Performance Options</source>
-        <target state="translated">Opciones de rendimiento de IntelliSense</target>
+        <source>IntelliSense performance options</source>
+        <target state="needs-review-translation">Opciones de rendimiento de IntelliSense</target>
         <note />
       </trans-unit>
       <trans-unit id="Project_Performance">
-        <source>F# Project and Caching Performance Options</source>
-        <target state="translated">Opciones de rendimiento de almacenamiento en caché y proyectos de F#</target>
+        <source>F# project and caching performance options</source>
+        <target state="needs-review-translation">Opciones de rendimiento de almacenamiento en caché y proyectos de F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Stale_IntelliSense_Results">
@@ -243,8 +243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
-        <source>Re-format indentation on paste (Experimental)</source>
-        <target state="translated">Volver a aplicar formato a la sangría al pegar (experimental)</target>
+        <source>Re-format indentation on paste (experimental)</source>
+        <target state="needs-review-translation">Volver a aplicar formato a la sangría al pegar (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Suggest_names_for_errors_code_fix">

@@ -341,7 +341,7 @@ module UnifiedSettingsTests =
         let groups =
             [|
                 "debugging", "Debugging", [| "debugMode" |]
-                "fsiPreview", "FSI Preview", [| "preview" |]
+                "fsiPreview", "FSI preview", [| "preview" |]
                 "misc", "Misc", [| "commandLineArgs"; "shadowCopy"; "useNetCore"; "preferAnyCpuVersion" |]
             |]
 

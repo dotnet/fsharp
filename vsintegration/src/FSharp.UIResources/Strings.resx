@@ -121,10 +121,10 @@
     <value>Always place open statements at the top level</value>
   </data>
   <data name="Code_Fixes" xml:space="preserve">
-    <value>Code Fixes</value>
+    <value>Code fixes</value>
   </data>
   <data name="Completion_Lists" xml:space="preserve">
-    <value>Completion Lists</value>
+    <value>Completion lists</value>
   </data>
   <data name="Language_Service_Performance" xml:space="preserve">
     <value>Performance</value>
@@ -142,7 +142,7 @@
     <value>Analyze and suggest fixes for unused values</value>
   </data>
   <data name="Block_Structure" xml:space="preserve">
-    <value>Block Structure Guides</value>
+    <value>Block structure guides</value>
   </data>
   <data name="Show_guides" xml:space="preserve">
     <value>Show structure guidelines for F# code</value>
@@ -154,7 +154,7 @@
     <value>Show outlining and collapsible nodes for F# code</value>
   </data>
   <data name="Inlay_Hints" xml:space="preserve">
-    <value>Inlay Hints</value>
+    <value>Inlay hints</value>
   </data>
   <data name="Show_Inlay_Type_Hints" xml:space="preserve">
     <value>Display inlay type hints (preview)</value>
@@ -163,10 +163,10 @@
     <value>Time until stale results are used (in milliseconds)</value>
   </data>
   <data name="IntelliSense_Performance" xml:space="preserve">
-    <value>IntelliSense Performance Options</value>
+    <value>IntelliSense performance options</value>
   </data>
   <data name="Project_Performance" xml:space="preserve">
-    <value>F# Project and Caching Performance Options</value>
+    <value>F# project and caching performance options</value>
   </data>
   <data name="Enable_Stale_IntelliSense_Results" xml:space="preserve">
     <value>Enable stale data for IntelliSense features</value>
@@ -187,7 +187,7 @@
     <value>Enter key behavior</value>
   </data>
   <data name="Format_on_paste" xml:space="preserve">
-    <value>Re-format indentation on paste (Experimental)</value>
+    <value>Re-format indentation on paste (experimental)</value>
   </data>
   <data name="Suggest_names_for_errors_code_fix" xml:space="preserve">
     <value>Suggest names for unresolved identifiers</value>
@@ -205,7 +205,7 @@
     <value>Enable fast find references &amp; rename (experimental)</value>
   </data>
   <data name="Find_References_Performance" xml:space="preserve">
-    <value>Find References Performance Options</value>
+    <value>Find References performance options</value>
   </data>
   <data name="Language_Service_Settings" xml:space="preserve">
     <value>Language service settings (advanced)</value>
@@ -223,7 +223,7 @@
     <value>Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
-    <value>Live Buffers</value>
+    <value>Live buffers</value>
   </data>
   <data name="AdditionalTelemetry" xml:space="preserve">
     <value>Additional performance telemetry (experimental)</value>
@@ -256,7 +256,7 @@
     <value>Background analysis</value>
   </data>
   <data name="Transparent_Compiler_Cache_Factor" xml:space="preserve">
-    <value>Transparent Compiler Cache Factor</value>
+    <value>Transparent Compiler cache factor</value>
   </data>
   <data name="Remove_parens_code_fix" xml:space="preserve">
     <value>Remove unnecessary parentheses (experimental, might affect typing performance)</value>
