@@ -33,6 +33,17 @@ compare `Narrow` retained across `main` and this branch (and Narrow-vs-Wide with
 To compare branches: build + run on `main`, note the numbers, `git checkout il-pre-namespace`, rebuild
 and re-run, diff. (The `BenchmarkComparison/` project automates historical before/after runs if preferred.)
 
+## Comment-decoupled tooltip benchmarks (`GetToolTipParts`)
+
+`TooltipPartsBenchmarks.fs` compares re-parsing + `FSharpCheckFileResults.GetToolTip` over a 60-declaration
+module against `FSharpChecker.ParseFile` + `FSharpCheckFileResults.GetToolTipParts` + `FSharpDocSource.Compose`
+on `///` doc-comment edits without re-typechecking.
+
+Run with `BUILDING_USING_DOTNET=true`:
+```powershell
+dotnet run -c Release -- --filter *TooltipPartsBenchmarks* --warmupCount 3 --iterationCount 10
+```
+
 ## Sample results
 
 |                                 Method |        Job | UnrollFactor |           Mean |        Error |        StdDev |         Median |       Gen 0 |      Gen 1 |     Gen 2 |  Allocated |

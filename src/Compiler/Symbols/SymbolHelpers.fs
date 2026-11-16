@@ -36,6 +36,39 @@ type FSharpXmlDoc =
     | FromXmlText of XmlDoc
     | FromXmlFile of dllName: string * xmlSig: string
 
+type FSharpDocOwner = { FileName: string; Path: string }
+
+[<Sealed>]
+type FSharpDocSource
+    internal
+    (
+        owners: FSharpDocOwner list,
+        stale: XmlDoc,
+        inherits: (string * FSharpDocOwner list * XmlDoc) list,
+        fallback: FSharpXmlDoc,
+        compose: XmlDoc option -> (unit -> (string * string) option) -> (unit -> FSharpXmlDoc) -> FSharpXmlDoc
+    ) =
+    // The first non-empty comment, or what the check has when a declaration's comment isn't known
+    let current (commentOf: FSharpDocOwner -> XmlDoc voption) (candidates: FSharpDocOwner list) (stale: XmlDoc) =
+        let found = candidates |> List.map commentOf
+
+        if found |> List.exists (fun c -> c.IsNone) then
+            (if stale.IsEmpty then None else Some stale)
+        else
+            found |> List.tryPick (function ValueSome d when not d.IsEmpty -> Some d | _ -> None)
+
+    member _.Owners = owners
+
+    member _.InheritOwners = inherits |> List.collect (fun (_, o, _) -> o)
+
+    member _.Compose(commentOf: FSharpDocOwner -> XmlDoc voption) : FSharpXmlDoc =
+        let inherited () =
+            inherits
+            |> List.tryPick (fun (cref, candidates, stale) ->
+                current commentOf candidates stale |> Option.map (fun d -> cref, d.GetXmlText()))
+
+        compose (current commentOf owners stale) inherited (fun () -> fallback)
+
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
 
@@ -360,39 +393,41 @@ module internal SymbolHelpers =
     ///
     /// The returned cref token is only ever compared for equality against itself by the resolver
     /// built in GetXmlCommentForItemAux, so its exact spelling does not need to match a real cref.
-    let private tryGetImplicitInheritTarget (infoReader: InfoReader) m (d: Item) : (string * string) option =
+    /// What an implicit inherit target's documentation is read from
+    [<RequireQualifiedAccess>]
+    type DocTarget =
+        | Entity of TyconRef
+        | Value of ValRef option
+
+    /// The implicit inherit targets of an item, in the order they are tried, each with its cref token, its documentation
+    /// and what that is read from. The first whose documentation is not empty is the target.
+    let private implicitInheritCandidates (infoReader: InfoReader) m (d: Item) : seq<string * XmlDoc * DocTarget> =
         let g = infoReader.g
         let amap = infoReader.amap
-
-        let docTextOf (xmlDoc: XmlDoc) =
-            if xmlDoc.IsEmpty then None else Some(xmlDoc.GetXmlText())
 
         // Base class (skipping obj) or, failing that, the first implemented interface of a type.
         // NOTE (intentional deviation from Roslyn): Roslyn inherits System.Object's documentation
         // for a class whose only supertype is object; F# instead falls through to the first
         // interface (or nothing) to avoid surfacing System.Object's summary as tooltip noise.
         let tryBaseTypeTarget (ty: TType) =
+          seq {
             // Roslyn GetCandidateSymbol: structs, enums and delegates have no inheritance candidate.
-            if isStructTy g ty || isEnumTy g ty || isDelegateTy g ty then
-                None
-            else
+            if not (isStructTy g ty || isEnumTy g ty || isDelegateTy g ty) then
+                let baseTyOpt =
+                    match GetSuperTypeOfType g amap m ty with
+                    | Some baseTy when not (isObjTyAnyNullness g baseTy) -> Some baseTy
+                    | _ ->
+                        match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty with
+                        | intfTy :: _ -> Some intfTy
+                        | [] -> None
 
-            let baseTyOpt =
-                match GetSuperTypeOfType g amap m ty with
-                | Some baseTy when not (isObjTyAnyNullness g baseTy) -> Some baseTy
-                | _ ->
-                    match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty with
-                    | intfTy :: _ -> Some intfTy
-                    | [] -> None
-
-            match baseTyOpt with
-            | Some baseTy ->
-                match tryTcrefOfAppTy g baseTy with
-                | ValueSome tcref ->
-                    docTextOf tcref.XmlDoc
-                    |> Option.map (fun xmlText -> "T:" + tcref.CompiledRepresentationForNamedType.FullName, xmlText)
-                | ValueNone -> None
-            | None -> None
+                match baseTyOpt with
+                | Some baseTy ->
+                    match tryTcrefOfAppTy g baseTy with
+                    | ValueSome tcref -> yield "T:" + tcref.CompiledRepresentationForNamedType.FullName, tcref.XmlDoc, DocTarget.Entity tcref
+                    | ValueNone -> ()
+                | None -> ()
+          }
 
         // Candidate declaring types to look for the overridden member on: the declaring types of the
         // implemented slot signatures come first (these locate a member declared on a GRANDPARENT that
@@ -415,24 +450,24 @@ module internal SymbolHelpers =
         // interface implementation, which is not resolvable at this InfoReader layer). Signature
         // matching disambiguates overloaded base members so the correct overload's docs are used.
         let tryBaseMethodTarget (minfo: MethInfo) =
-            if not minfo.IsDefiniteFSharpOverride then
-                None
-            else
-                overriddenMemberBaseTypes minfo.ImplementedSlotSignatures minfo.ApparentEnclosingType
-                |> List.tryPick (fun baseTy ->
-                    GetImmediateIntrinsicMethInfosOfType (Some minfo.LogicalName, AccessibleFromSomeFSharpCode) g amap m baseTy
-                    |> List.filter (fun baseMinfo -> MethInfosEquivByNameAndSig EraseNone true g amap m minfo baseMinfo)
-                    |> List.tryPick (fun baseMinfo -> docTextOf baseMinfo.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText)))
+          seq {
+            if minfo.IsDefiniteFSharpOverride then
+                for baseTy in overriddenMemberBaseTypes minfo.ImplementedSlotSignatures minfo.ApparentEnclosingType do
+                    for baseMinfo in
+                        GetImmediateIntrinsicMethInfosOfType (Some minfo.LogicalName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                        |> List.filter (fun baseMinfo -> MethInfosEquivByNameAndSig EraseNone true g amap m minfo baseMinfo) do
+                        yield "M:" + minfo.LogicalName, baseMinfo.XmlDoc, DocTarget.Value baseMinfo.ArbitraryValRef
+          }
 
         let tryBasePropertyTarget (pinfo: PropInfo) =
-            if not pinfo.IsDefiniteFSharpOverride then
-                None
-            else
-                overriddenMemberBaseTypes pinfo.ImplementedSlotSignatures pinfo.ApparentEnclosingType
-                |> List.tryPick (fun baseTy ->
-                    GetImmediateIntrinsicPropInfosOfType (Some pinfo.PropertyName, AccessibleFromSomeFSharpCode) g amap m baseTy
-                    |> List.filter (fun basePinfo -> PropInfosEquivByNameAndSig EraseNone g amap m pinfo basePinfo)
-                    |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText)))
+          seq {
+            if pinfo.IsDefiniteFSharpOverride then
+                for baseTy in overriddenMemberBaseTypes pinfo.ImplementedSlotSignatures pinfo.ApparentEnclosingType do
+                    for basePinfo in
+                        GetImmediateIntrinsicPropInfosOfType (Some pinfo.PropertyName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                        |> List.filter (fun basePinfo -> PropInfosEquivByNameAndSig EraseNone g amap m pinfo basePinfo) do
+                        yield "P:" + pinfo.PropertyName, basePinfo.XmlDoc, DocTarget.Value basePinfo.ArbitraryValRef
+          }
 
         // For a CONSTRUCTOR, the base-type constructor with a matching parameter signature (Roslyn
         // GetCandidateSymbol matches constructors by signature). Constructors are not overrides, so
@@ -441,32 +476,38 @@ module internal SymbolHelpers =
         // full-signature comparer would never match a base constructor. Structs/enums/delegates have
         // no inheritance candidate.
         let tryBaseCtorTarget (minfo: MethInfo) =
+          seq {
             let enclTy = minfo.ApparentEnclosingType
 
-            if isStructTy g enclTy || isEnumTy g enclTy || isDelegateTy g enclTy then
-                None
-            else
+            if not (isStructTy g enclTy || isEnumTy g enclTy || isDelegateTy g enclTy) then
                 match GetSuperTypeOfType g amap m enclTy with
                 | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
-                    GetIntrinsicConstructorInfosOfType infoReader m baseTy
-                    |> List.filter (fun baseCtor -> MethInfosEquivByNameAndPartialSig EraseNone true g amap m minfo baseCtor)
-                    |> List.tryPick (fun baseCtor -> docTextOf baseCtor.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText))
-                | _ -> None
+                    for baseCtor in
+                        GetIntrinsicConstructorInfosOfType infoReader m baseTy
+                        |> List.filter (fun baseCtor -> MethInfosEquivByNameAndPartialSig EraseNone true g amap m minfo baseCtor) do
+                        yield "M:" + minfo.LogicalName, baseCtor.XmlDoc, DocTarget.Value baseCtor.ArbitraryValRef
+                | _ -> ()
+          }
 
+        match d with
+        | Item.DelegateCtor ty
+        | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
+        | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
+        | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo
+        | Item.CtorGroup(_, minfo :: _) -> tryBaseCtorTarget minfo
+        | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo
+        | _ -> Seq.empty
+
+    let private tryGetImplicitInheritTarget (infoReader: InfoReader) m (d: Item) : (string * string) option =
         try
-            match d with
-            | Item.DelegateCtor ty
-            | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
-            | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
-            | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo
-            | Item.CtorGroup(_, minfo :: _) -> tryBaseCtorTarget minfo
-            | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo
-            | _ -> None
+            implicitInheritCandidates infoReader m d
+            |> Seq.tryPick (fun (cref, xmlDoc, _) -> if xmlDoc.IsEmpty then None else Some(cref, xmlDoc.GetXmlText()))
         with _ ->
             None
 
-    /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
-    let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
+    /// Produce an XmlComment with a signature or raw text, given the F# comment, the implicit inherit target and the
+    /// signature to fall back to
+    let private composeXmlComment (xmlDoc: XmlDoc option) (inheritTarget: unit -> (string * string) option) (fallback: unit -> FSharpXmlDoc) =
         match xmlDoc with
         | Some xmlDoc when not xmlDoc.IsEmpty ->
             // Fast path: scan the raw (unelaborated) lines for "<inheritdoc" before paying for a
@@ -492,7 +533,7 @@ module internal SymbolHelpers =
                 // Only implicit <inheritdoc/> is resolvable at this layer (no SymbolEnv/CCU walk to
                 // resolve explicit crefs). Compute the base target and expand against it.
                 let implicitTargetCrefOpt, resolveCref =
-                    match tryGetImplicitInheritTarget infoReader m d with
+                    match inheritTarget () with
                     | Some(baseCref, baseXmlText) ->
                         let resolve cref =
                             if System.String.Equals(cref, baseCref, System.StringComparison.Ordinal) then
@@ -514,7 +555,11 @@ module internal SymbolHelpers =
                     // sees the leading '<' and passes it through verbatim instead of re-wrapping the
                     // whole thing in an implicit <summary> and XML-escaping the inherited markup.
                     FSharpXmlDoc.FromXmlText(XmlDoc(expandedText.Split('\n'), xmlDoc.Range))
-        | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
+        | _ -> fallback ()
+
+    /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
+    let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
+        composeXmlComment xmlDoc (fun () -> tryGetImplicitInheritTarget infoReader m d) (fun () -> GetXmlDocHelpSigOfItemForLookup infoReader m d)
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) =
         if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then
@@ -890,6 +935,312 @@ module internal SymbolHelpers =
             GetXmlCommentForItemAux None infoReader m item
 
         |> GetXmlDocFromLoader infoReader
+
+    /// An entity's name as its declaration gives it, with the number of its type parameters when it has any, which
+    /// tells apart the types of one name that FCS's XmlDocSig tells apart (`Box` and `Box<'T>`)
+    let private sourceNameOfEntity (tcref: TyconRef) =
+        match tcref.Typars.Length with
+        | 0 -> tcref.DisplayNameCore
+        | n -> tcref.DisplayNameCore + "`" + string n
+
+    /// The enclosing namespaces and modules of an entity and its own name, as the source names them
+    let private sourcePathOfEntity (tcref: TyconRef) =
+        let enclosing =
+            tcref.CompilationPath.AccessPath
+            |> List.map (fun (name, kind) ->
+                match kind with
+                | ModuleOrNamespaceKind.FSharpModuleWithSuffix when name.EndsWithOrdinal FSharpModuleSuffix ->
+                    name.Substring(0, name.Length - FSharpModuleSuffix.Length)
+                | _ -> name)
+
+        String.concat "." (enclosing @ [ sourceNameOfEntity tcref ])
+
+    /// A declaration's file and, when it has a signature in another file, that file at `signaturePath`: the first is the
+    /// doc, unless empty
+    let private ownersAt (path: string) (own: range) (signature: range) (signaturePath: string) =
+        [ yield { FileName = own.FileName; Path = path }
+          if not (String.Equals(signature.FileName, own.FileName, StringComparison.OrdinalIgnoreCase)) then
+              yield { FileName = signature.FileName; Path = signaturePath } ]
+
+    /// The declarations of a source file: what is compiled, or provided, has no `///` of its own there
+    let private isSourceEntity (tcref: TyconRef) =
+#if !NO_TYPEPROVIDERS
+        not (tcref.IsILTycon || tcref.IsProvided)
+#else
+        not tcref.IsILTycon
+#endif
+
+    let private ownersOfEntity (tcref: TyconRef) =
+        if not (isSourceEntity tcref) then None
+        else
+            let kind = if tcref.IsModuleOrNamespace then "N:" else "T:"
+            let path = kind + sourcePathOfEntity tcref
+            Some(ownersAt path tcref.Range tcref.SigRange path)
+
+    let private ownersOfUnionCase (ucref: UnionCaseRef) =
+        if not (isSourceEntity ucref.TyconRef) then None
+        else
+            let path = "C:" + sourcePathOfEntity ucref.TyconRef + "." + ucref.CaseName
+            Some(ownersAt path ucref.UnionCase.Range ucref.UnionCase.SigRange path)
+
+    let private ownersOfField (rfref: RecdFieldRef) =
+        if not (isSourceEntity rfref.TyconRef) then None
+        else
+            let path = "F:" + sourcePathOfEntity rfref.TyconRef + "." + rfref.FieldName
+            Some(ownersAt path rfref.RecdField.Range rfref.RecdField.SigRange path)
+
+    /// A member's kind and name as its declaration gives them
+    let private memberTag (v: ValRef) =
+        match v.MemberInfo with
+        | None -> None
+        | Some info ->
+            let isProperty =
+                match info.MemberFlags.MemberKind with
+                | FSharp.Compiler.Syntax.SynMemberKind.PropertyGet
+                | FSharp.Compiler.Syntax.SynMemberKind.PropertySet
+                | FSharp.Compiler.Syntax.SynMemberKind.PropertyGetSet -> true
+                | _ -> false
+
+            let name = if isProperty then v.PropertyName else v.LogicalName
+
+            if info.MemberFlags.IsDispatchSlot then Some("abstract " + name)
+            elif info.MemberFlags.MemberKind = FSharp.Compiler.Syntax.SynMemberKind.Constructor then Some "new"
+            elif isProperty then Some("property " + name)
+            else Some("member " + name)
+
+    /// The members of a type, or a module's extensions of it, once per tooltip
+    [<Sealed>]
+    type DocScope
+        (
+            signature: ModuleOrNamespaceType option,
+            fileName: string,
+            defined: Lazy<System.Collections.Generic.HashSet<struct (int * int * string)>>,
+            bound: Lazy<System.Collections.Generic.HashSet<struct (Stamp * int * int)>>
+        ) =
+        member val Members = System.Collections.Generic.Dictionary<struct (Stamp * string), ValRef list>()
+
+        /// The file the check is of
+        member _.FileName = fileName
+
+        /// Whether the check still defines a value of its own file: a declaration checked again leaves its old values in
+        /// the module's type, which a kept declaration's siblings would count
+        member _.IsCurrent(v: ValRef) =
+            not (String.Equals(v.Range.FileName, fileName, StringComparison.OrdinalIgnoreCase))
+            || defined.Value.Contains(struct (v.Range.EndLine, v.Range.EndColumn, v.LogicalName))
+
+        /// Whether a binding of this check makes the value where its range starts, not a kept declaration still referring
+        /// to the value a declaration checked again since had: those are the values whose places are in the check's parse.
+        /// By place as well as stamp: a value checked again can keep its stamp.
+        member _.Binds(v: ValRef) =
+            bound.Value.Contains(struct (v.Stamp, v.Range.StartLine, v.Range.StartColumn))
+
+        /// A method group's implicit inherit targets, which every overload's source shares
+        member val Inherits = System.Collections.Generic.Dictionary<obj, (string * XmlDoc * DocTarget) list>(HashIdentity.Reference)
+
+        /// The module of `p`'s path in the check's signature: what the file declares now, where a kept declaration's own
+        /// module can still hold what a declaration checked again since no longer declares
+        member _.CurrentModule(p: TyconRef) =
+            match signature with
+            | None -> None
+            | Some root ->
+                (Some root, (p.CompilationPath.AccessPath |> List.map fst) @ [ p.LogicalName ])
+                ||> List.fold (fun mty name ->
+                    mty |> Option.bind (fun (m: ModuleOrNamespaceType) ->
+                        m.AllEntitiesByLogicalMangledName.TryFind name |> Option.map _.ModuleOrNamespaceType))
+
+    /// The place of a declaration at `at` among `places` in its file, by position
+    let private placeOf (places: range list) (at: range) =
+        places
+        |> List.filter (fun r -> String.Equals(r.FileName, at.FileName, StringComparison.OrdinalIgnoreCase))
+        |> List.map _.Start
+        |> List.distinct
+        |> List.sortWith (fun a b -> compare (a.Line, a.Column) (b.Line, b.Column))
+        |> List.tryFindIndex (fun p -> Position.posEq p at.Start)
+        |> Option.defaultValue 0
+
+    /// A value's path: its module's (or type's, for a class `let`) and its name, or for a member its type's, its kind and
+    /// name, and its place among the declarations of its file with that kind and name in its type (or its extensions in
+    /// the module). A signature file's member is placed among the signature's, which can list them in another order or
+    /// leave one out.
+    let private ownersOfVal (g: TcGlobals) (scope: DocScope) (vref: ValRef) =
+        match vref.MemberInfo, vref.TryDeclaringEntity with
+        | None, Parent parent when parent.IsModuleOrNamespace ->
+            let path = "V:" + sourcePathOfEntity parent + "." + vref.LogicalName
+            Some(ownersAt path vref.Range vref.SigRange path)
+        | None, _ ->
+            // A local value, class let, or a value of the asking file
+            if String.Equals(vref.Range.FileName, scope.FileName, StringComparison.OrdinalIgnoreCase) then
+                if not vref.Deref.IsParameter && not vref.IsMemberThisVal && not vref.IsCtorThisVal && not vref.IsBaseVal && not vref.IsCompilerGenerated then
+                    if scope.Binds vref then
+                        let place = $"@%d{vref.Range.StartLine},%d{vref.Range.StartColumn}"
+                        Some(ownersAt place vref.Range vref.SigRange place)
+                    else
+                        Some(ownersAt "@?" vref.Range vref.SigRange "@?")
+                else
+                    None
+            else
+                match vref.TryDeclaringEntity with
+                | Parent parent ->
+                    let kind = if parent.IsModuleOrNamespace then "V:" else "L:"
+                    let path = kind + sourcePathOfEntity parent + "." + vref.LogicalName
+                    Some(ownersAt path vref.Range vref.SigRange path)
+                | ParentNone -> None
+        | Some _, declaring ->
+            match memberTag vref with
+            | None -> None
+            | Some tag ->
+                let apparent = vref.MemberApparentEntity
+
+                let typePath, key, scan =
+                    match declaring with
+                    | Parent p when not (tyconRefEq g p apparent) ->
+                        // An extension is placed among the module's extensions of types of its type's name and arity, as
+                        // the parse names them (`type N1.Thing with` and `type N2.Thing with` are both `Thing`), in what
+                        // the module declares now
+                        let name = sourceNameOfEntity apparent
+
+                        let scan () =
+                            defaultArg (scope.CurrentModule p) p.ModuleOrNamespaceType
+                            |> _.AllValsAndMembers
+                            |> Seq.map mkLocalValRef
+                            |> Seq.filter (fun v -> v.IsMember && v.IsExtensionMember && sourceNameOfEntity v.MemberApparentEntity = name)
+                            |> List.ofSeq
+
+                        sourcePathOfEntity p + "." + name, struct (p.Stamp, name), scan
+                    | _ -> sourcePathOfEntity apparent, struct (apparent.Stamp, ""), (fun () -> apparent.MembersOfFSharpTyconSorted)
+
+                let siblings =
+                    match scope.Members.TryGetValue key with
+                    | true, s -> s
+                    | _ ->
+                        let s = scan ()
+                        scope.Members[key] <- s
+                        s
+
+                let alike = siblings |> List.filter (fun v -> memberTag v = Some tag && (Position.posEq v.Range.Start vref.Range.Start || scope.IsCurrent v))
+                let ordinal = placeOf (alike |> List.map _.Range) vref.Range
+
+                // An extension in the asking file: its place among the module's extensions depends on other blocks, which
+                // a kept block counted as they were when it was checked. Its name's place in this check is its own, and is
+                // in the parse the check is of, when a binding of the check makes it. A kept declaration can refer to the
+                // value an extension had before its block was checked again, whose place is the old one: that is `@?`,
+                // which no parse has, and which the caller answers by checking the referring declaration again.
+                let ownPlace =
+                    match declaring with
+                    | Parent p when not (tyconRefEq g p apparent) && String.Equals(vref.Range.FileName, scope.FileName, StringComparison.OrdinalIgnoreCase) ->
+                        if scope.Binds vref then Some $"@%d{vref.Range.StartLine},%d{vref.Range.StartColumn}" else Some "@?"
+                    | _ -> None
+                // The signature's declarations that the alike members conformed to
+                let signatureOrdinal = placeOf (alike |> List.map _.SigRange) vref.SigRange
+                let path = "M:" + typePath + "." + tag + "#"
+
+                match ownPlace with
+                | Some place -> Some(ownersAt place vref.Range vref.SigRange (path + string signatureOrdinal))
+                | None -> Some(ownersAt (path + string ordinal) vref.Range vref.SigRange (path + string signatureOrdinal))
+
+    let private ownersOfMethInfo g scope (minfo: MethInfo) =
+        match minfo with
+        | FSMeth(_, _, vref, _) -> ownersOfVal g scope vref
+        // Compiled or provided: the doc the check has is the doc
+        | _ -> None
+
+    let private makeDocSource (infoReader: InfoReader) (scope: DocScope) m (d: Item) (owners: FSharpDocOwner list option) (stale: XmlDoc) (fallback: FSharpXmlDoc) =
+        match owners with
+        | None -> None
+        | Some owners ->
+            let g = infoReader.g
+
+            // As far as FCS's own walk would get: a candidate that throws ends it, and those before it stay
+            let inherits = ResizeArray()
+
+            // Once per item: a group's overloads share their head's targets
+            let candidates =
+                match scope.Inherits.TryGetValue(d :> obj) with
+                | true, c -> c
+                | _ ->
+                    let found = ResizeArray()
+
+                    try
+                        for c in implicitInheritCandidates infoReader m d do
+                            found.Add c
+                    with _ ->
+                        ()
+
+                    let c = List.ofSeq found
+                    scope.Inherits[d :> obj] <- c
+                    c
+
+            try
+                for cref, xmlDoc, target in candidates do
+                    let owners =
+                        match target with
+                        | DocTarget.Entity tcref -> ownersOfEntity tcref
+                        | DocTarget.Value(Some vref) -> ownersOfVal g scope vref
+                        | DocTarget.Value None -> None
+
+                    // Not known: a declaration no file names, whose comment is the one the check has
+                    inherits.Add((cref, defaultArg owners [ { FileName = ""; Path = "" } ], xmlDoc))
+            with _ ->
+                ()
+
+            Some(FSharpDocSource(owners, stale, List.ofSeq inherits, fallback, composeXmlComment))
+
+    /// Where the documentation of a method's tooltip element comes from, as GetXmlCommentForMethInfoItem makes it
+    let GetDocSourceOfMethInfoItem (infoReader: InfoReader) scope m d (minfo: MethInfo) (loaded: bool) =
+        let fallback =
+            if minfo.HasDirectXmlComment then GetXmlDocHelpSigOfItemForLookup infoReader m d
+            else mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
+
+        let fallback = if loaded then GetXmlDocFromLoader infoReader fallback else fallback
+
+        makeDocSource infoReader scope m d (ownersOfMethInfo infoReader.g scope minfo) minfo.XmlDoc fallback
+
+    /// Where the documentation of an item's tooltip element comes from, as GetXmlCommentForItem makes it. None when it
+    /// isn't known which declarations it is read from.
+    let rec GetDocSourceOfItem (infoReader: InfoReader) scope m item : FSharpDocSource option =
+        let g = infoReader.g
+        let fallback () = GetXmlDocHelpSigOfItemForLookup infoReader m item |> GetXmlDocFromLoader infoReader
+        let source owners stale = makeDocSource infoReader scope m item owners stale (fallback ())
+        let none () = source (Some []) XmlDoc.Empty
+
+        match item with
+        | Item.ImplicitOp(_, sln) ->
+            match sln.Value with
+            | Some(TraitConstraintSln.FSMethSln(vref = vref)) -> GetDocSourceOfItem infoReader scope m (Item.Value vref)
+            | _ -> none ()
+        | Item.Value vref
+        | Item.CustomBuilder(_, vref) -> source (ownersOfVal g scope vref) vref.XmlDoc
+        | Item.UnionCase(ucinfo, _)
+        | Item.UnionCaseField(ucinfo, _) -> source (ownersOfUnionCase ucinfo.UnionCaseRef) ucinfo.UnionCase.XmlDoc
+        | Item.ActivePatternCase apref -> source (ownersOfVal g scope apref.ActivePatternVal) apref.ActivePatternVal.XmlDoc
+        | Item.ExnCase ecref -> source (ownersOfEntity ecref) ecref.XmlDoc
+        | Item.RecdField rfinfo ->
+            if rfinfo.TyconRef.IsFSharpException then source (ownersOfEntity rfinfo.TyconRef) rfinfo.TyconRef.XmlDoc
+            else source (ownersOfField rfinfo.RecdFieldRef) rfinfo.RecdField.XmlDoc
+        | Item.Property(info = pinfo :: _) ->
+            match pinfo.ArbitraryValRef with
+            | Some vref when (match pinfo with FSProp _ -> true | _ -> false) -> source (ownersOfVal g scope vref) pinfo.XmlDoc
+            | _ -> None
+        | Item.Event einfo ->
+            match einfo with
+            | FSEvent(_, pinfo, _, _) ->
+                match pinfo.ArbitraryValRef with
+                | Some vref -> source (ownersOfVal g scope vref) einfo.XmlDoc
+                | None -> None
+            | _ -> None
+        | Item.CustomOperation(_, _, Some minfo)
+        | Item.CtorGroup(_, minfo :: _)
+        | Item.MethodGroup(_, minfo :: _, _) ->
+            GetDocSourceOfMethInfoItem infoReader scope m item minfo true
+        | Item.Types(_, AbbrevOrAppTy(tcref, _) :: _)
+        | Item.UnqualifiedType(tcref :: _) -> source (ownersOfEntity tcref) tcref.XmlDoc
+        | Item.ModuleOrNamespaces(modref :: _ as modrefs) when not (modrefs |> List.forall (fun modref -> modref.IsNamespace)) ->
+            source (ownersOfEntity modref) modref.XmlDoc
+        | Item.OtherName(container = Some(ArgumentContainer.Method minfo)) -> source (ownersOfMethInfo g scope minfo) minfo.XmlDoc
+        | Item.OtherName(container = Some(ArgumentContainer.Type tcref)) -> source (ownersOfEntity tcref) tcref.XmlDoc
+        | Item.SetterArg(_, item) -> GetDocSourceOfItem infoReader scope m item
+        | _ -> none ()
+
 
     let IsAttribute (infoReader: InfoReader) item =
         try

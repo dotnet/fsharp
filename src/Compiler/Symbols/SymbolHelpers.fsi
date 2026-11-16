@@ -31,6 +31,33 @@ type public FSharpXmlDoc =
     /// Indicates that the XML for the documentation can be found in a .xml documentation file for the given DLL, using the given signature key
     | FromXmlFile of dllName: string * xmlSig: string
 
+/// A declaration whose `///` comment a tooltip's documentation is read from: its file, and a path that names it there
+/// from that file's parse alone. The path is the enclosing namespaces, modules and types by name, then the declaration's
+/// kind and name, and for a member its place among the members of its kind and name.
+type public FSharpDocOwner = { FileName: string; Path: string }
+
+/// Where a tooltip element's documentation comes from: the declarations whose comments it reads, and how FCS makes the
+/// documentation from them, so it can be made again from newer comments with the same result as a check of them.
+[<Sealed>]
+type public FSharpDocSource =
+    internal new:
+        owners: FSharpDocOwner list *
+        stale: XmlDoc *
+        inherits: (string * FSharpDocOwner list * XmlDoc) list *
+        fallback: FSharpXmlDoc *
+        compose: (XmlDoc option -> (unit -> (string * string) option) -> (unit -> FSharpXmlDoc) -> FSharpXmlDoc) ->
+            FSharpDocSource
+
+    /// The declarations whose comment this is, in FCS's order: the first with a non-empty comment is the one shown
+    member Owners: FSharpDocOwner list
+
+    /// For an `<inheritdoc/>`, the declarations it can inherit from
+    member InheritOwners: FSharpDocOwner list
+
+    /// The documentation from each declaration's comment as `commentOf` gives it: XmlDoc.Empty for none, and ValueNone
+    /// for a declaration whose comment isn't known, which makes it the one the check has
+    member Compose: commentOf: (FSharpDocOwner -> XmlDoc voption) -> FSharpXmlDoc
+
 // Implementation details used by other code in the compiler
 module internal SymbolHelpers =
 
@@ -76,5 +103,31 @@ module internal SymbolHelpers =
     val ItemDisplayPartialEquality: g: TcGlobals -> IPartialEqualityComparer<Item>
 
     val GetXmlCommentForMethInfoItem: infoReader: InfoReader -> m: range -> d: Item -> minfo: MethInfo -> FSharpXmlDoc
+
+    /// What the doc sources of one tooltip share: each type's members, scanned once
+    [<Sealed>]
+    type DocScope =
+        /// `signature`: the check's signature, in which a declaring module is found as it is now
+        new:
+            signature: ModuleOrNamespaceType option *
+            fileName: string *
+            defined: Lazy<System.Collections.Generic.HashSet<struct (int * int * string)>> *
+            bound: Lazy<System.Collections.Generic.HashSet<struct (Stamp * int * int)>> ->
+                DocScope
+
+    /// Where GetXmlCommentForItem's documentation is read from. None when that isn't known.
+    val GetDocSourceOfItem:
+        infoReader: InfoReader -> scope: DocScope -> m: range -> item: Item -> FSharpDocSource option
+
+    /// Where GetXmlCommentForMethInfoItem's documentation is read from, `loaded` from an XML file when GetXmlDocFromLoader
+    /// is applied to it
+    val GetDocSourceOfMethInfoItem:
+        infoReader: InfoReader ->
+        scope: DocScope ->
+        m: range ->
+        d: Item ->
+        minfo: MethInfo ->
+        loaded: bool ->
+            FSharpDocSource option
 
     val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInstantiation -> Layout list

@@ -181,6 +181,64 @@ module SourceContext =
         |> List.map toMarkedSource
 
 
+/// GetToolTipParts with every doc composed from the check's own comments must be GetToolTip
+module ToolTipParts =
+    let private shown (ToolTipText elements) =
+        let doc (d: FSharp.Compiler.Symbols.FSharpXmlDoc) =
+            match d with
+            | FSharp.Compiler.Symbols.FSharpXmlDoc.FromXmlText x -> "text " + String.Join("\n", x.GetElaboratedXmlLines())
+            | FSharp.Compiler.Symbols.FSharpXmlDoc.FromXmlFile(dll, sig') -> "file " + dll + " " + sig'
+            | FSharp.Compiler.Symbols.FSharpXmlDoc.None -> "none"
+
+        [ for e in elements ->
+              match e with
+              | ToolTipElement.Group items ->
+                  [ for i in items ->
+                        String.concat
+                            " | "
+                            [ i.MainDescription.Text
+                              doc i.XmlDoc
+                              String.concat ";" (i.TypeMapping |> List.map _.Text)
+                              defaultArg i.ParamName ""
+                              (match i.Remarks with Some r -> r.Text | None -> "") ] ]
+                  |> String.concat "\n"
+              | ToolTipElement.CompositionError err -> "error " + err
+              | ToolTipElement.None -> "nothing" ]
+
+    let composed (tip: ToolTipText, sources: FSharp.Compiler.Symbols.FSharpDocSource option list) =
+        let mutable rest = sources
+
+        let next () =
+            match rest with
+            | s :: tail ->
+                rest <- tail
+                s
+            | [] -> None
+
+        let (ToolTipText elements) = tip
+
+        elements
+        |> List.map (function
+            | ToolTipElement.Group items ->
+                ToolTipElement.Group(
+                    items
+                    |> List.map (fun i ->
+                        match next () with
+                        | Some s -> { i with XmlDoc = s.Compose(fun _ -> ValueNone) }
+                        | None -> i)
+                )
+            | e -> e)
+        |> ToolTipText
+
+    let check (expected: ToolTipText) (parts: ToolTipText * FSharp.Compiler.Symbols.FSharpDocSource option list) =
+        let actual = composed parts
+        let e, a = shown expected, shown actual
+
+        if e <> a then
+            failwithf "GetToolTipParts composed from the check's comments isn't GetToolTip: %A but %A" e a
+
+        expected
+
 [<AutoOpen>]
 module CheckResultsExtensions =
     type FSharpCheckFileResults with
@@ -192,9 +250,17 @@ module CheckResultsExtensions =
 
         member this.GetTooltip(context: ResolveContext) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier)
+            |> fun tip ->
+                ToolTipParts.check
+                    tip
+                    (this.GetToolTipParts(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier))
 
         member this.GetTooltip(context: ResolveContext, width) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, width)
+            |> fun tip ->
+                ToolTipParts.check
+                    tip
+                    (this.GetToolTipParts(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, width))
 
         member this.GetDeclarationLocation(context: ResolveContext) =
             this.GetDeclarationLocation(context.Pos.Line, context.Pos.Column, context.LineText, context.Names)
