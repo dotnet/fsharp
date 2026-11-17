@@ -76,6 +76,15 @@ type MultiThreadedTaskTests() =
         Assert.Equal<Set<string>>(reviewed, discovered)
 
     [<Fact>]
+    member _.``barrier workers do not use the shared thread pool``() =
+        let run release =
+            release ()
+            Thread.CurrentThread.IsThreadPoolThread
+
+        let results = runConcurrentlyWithBarrier "dedicated barrier workers" [ run; run ]
+        Assert.All(results, fun isThreadPoolThread -> Assert.False isThreadPoolThread)
+
+    [<Fact>]
     member _.``failed preparation releases waiting workers``() =
         use finished = new ManualResetEventSlim()
         let errors =

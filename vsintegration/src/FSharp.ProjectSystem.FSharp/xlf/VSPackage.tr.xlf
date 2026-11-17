@@ -402,11 +402,6 @@
         <target state="translated">Kaynakları depolamak için dosya</target>
         <note />
       </trans-unit>
-      <trans-unit id="6000">
-        <source>F# Tools</source>
-        <target state="translated">F# Araçları</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
         <target state="translated">F# Etkileşimli</target>
@@ -420,11 +415,6 @@
       <trans-unit id="6003">
         <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
         <target state="translated">Visual F# Dosyaları (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6015">
-        <source>Compiler</source>
-        <target state="new">Compiler</target>
         <note />
       </trans-unit>
       <trans-unit id="7000">
@@ -510,16 +500,6 @@
       <trans-unit id="AddReferenceDialogTitle">
         <source>Add Reference</source>
         <target state="translated">Başvuru Ekle</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6005">
-        <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Yolu ve F# Etkileşimli'ye geçirilen komut satırı bağımsız değişkenlerini değiştir</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6006">
-        <source>Enable or disable Type Providers</source>
-        <target state="translated">Tür Sağlayıcılarını etkinleştir ve devre dışı bırak</target>
         <note />
       </trans-unit>
       <trans-unit id="6007">
