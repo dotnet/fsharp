@@ -280,6 +280,17 @@ module AnonymousUnionTypes =
             (Error 4501, Line 4, Col 8, Line 4, Col 37, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
+    [<Theory; FileInlineData("E_AnonSystemNullableGeneric.fs")>]
+    let ``E_SystemNullableGeneric_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 9, Col 31, Line 9, Col 53, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
+        ]
+
     [<Theory; FileInlineData("E_AnonWithNullPosition1.fs")>]
     let ``E_WithNullPosition1_fs`` compilation =
         compilation

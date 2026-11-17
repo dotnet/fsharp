@@ -1476,6 +1476,10 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2 ->
             SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
+        | TType_anon_union (_, cases1, _), TType_anon_union(_, cases2, _)
+            when cases1 |> List.exists (isNullableTy g) || cases2 |> List.exists (isNullableTy g) ->
+            ErrorD (ConstraintSolverError(snd (FSComp.SR.tcNullableNotAllowedInAnonymousUnion()), csenv.m, m2))
+
         | TType_anon_union (_, cases1, nullness1), TType_anon_union(_, cases2, nullness2) ->
             trackErrors {
                 do! SolveTypeEqualsTypeEqns csenv ndeep m2 trace None cases1 cases2
@@ -1691,6 +1695,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         // (int|string) :> sty1 if
         //     int :> sty1 AND
         //     string :> sty1
+        | _, TType_anon_union (_, cases2, _)
+            when cases2 |> List.exists (isNullableTy g) ->
+            ErrorD (ConstraintSolverError(snd (FSComp.SR.tcNullableNotAllowedInAnonymousUnion()), csenv.m, m2))
+
         | _, TType_anon_union (_, cases2, nullness2) ->
             trackErrors {
                 do! cases2 |> IterateD (fun ty2 -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln sty1 ty2)
@@ -1701,6 +1709,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         //    sty2 :> IComparable OR
         //    sty2 :> ICloneable OR
         // when sty2 is not an anon union type
+        | TType_anon_union (_, cases1, _), _
+            when cases1 |> List.exists (isNullableTy g) ->
+            ErrorD (ConstraintSolverError(snd (FSComp.SR.tcNullableNotAllowedInAnonymousUnion()), csenv.m, m2))
+
         | TType_anon_union (_, cases1, nullness1), _ ->
             trackErrors {
                 do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
