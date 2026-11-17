@@ -6,13 +6,13 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
-    <MicrosoftDotNetArcadeSdkPackageVersion>12.0.0-beta.26505.2</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetArcadeSdkPackageVersion>11.0.0-beta.26563.2</MicrosoftDotNetArcadeSdkPackageVersion>
     <!-- dotnet-dotnet dependencies -->
-    <SystemCollectionsImmutablePackageVersion>10.0.14</SystemCollectionsImmutablePackageVersion>
-    <SystemCompositionPackageVersion>10.0.14</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.14</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
-    <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
+    <SystemCollectionsImmutablePackageVersion>10.0.15</SystemCollectionsImmutablePackageVersion>
+    <SystemCompositionPackageVersion>10.0.15</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.15</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>10.0.15</SystemReflectionMetadataPackageVersion>
+    <SystemSecurityCryptographyXmlPackageVersion>10.0.15</SystemSecurityCryptographyXmlPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.13.0-1.26523.4</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26523.4</MicrosoftBuildFrameworkPackageVersion>
@@ -25,14 +25,14 @@ This file should be imported by eng/Versions.props
     <optimizationwindows_ntx64MIBCRuntimePackageVersion>1.0.0-prerelease.26527.2</optimizationwindows_ntx64MIBCRuntimePackageVersion>
     <optimizationwindows_ntx86MIBCRuntimePackageVersion>1.0.0-prerelease.26527.2</optimizationwindows_ntx86MIBCRuntimePackageVersion>
     <!-- dotnet-roslyn dependencies -->
-    <MicrosoftCodeAnalysisPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisPackageVersion>
-    <MicrosoftCodeAnalysisCompilersPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisCompilersPackageVersion>
-    <MicrosoftCodeAnalysisCSharpPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisCSharpPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.14.0-1.26551.1</MicrosoftCodeAnalysisFeaturesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.14.0-1.26551.1</MicrosoftVisualStudioLanguageServicesPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.14.0-1.26551.1</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
+    <MicrosoftCodeAnalysisPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisPackageVersion>
+    <MicrosoftCodeAnalysisCompilersPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisCompilersPackageVersion>
+    <MicrosoftCodeAnalysisCSharpPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisCSharpPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisFeaturesPackageVersion>5.14.0-1.26557.1</MicrosoftCodeAnalysisFeaturesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>5.14.0-1.26557.1</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>5.14.0-1.26557.1</MicrosoftVisualStudioLanguageServicesExternalAccessPackageVersion>
   </PropertyGroup>
   <!--Property group for alternate package version names-->
   <PropertyGroup>

@@ -129,35 +129,11 @@
   <data name="Language_Service_Performance" xml:space="preserve">
     <value>Performance</value>
   </data>
-  <data name="Dash_underline" xml:space="preserve">
-    <value>D_ash underline</value>
-  </data>
-  <data name="Dot_underline" xml:space="preserve">
-    <value>D_ot underline</value>
-  </data>
   <data name="Navigation_links" xml:space="preserve">
     <value>Navigation links</value>
   </data>
-  <data name="Show_all_symbols" xml:space="preserve">
-    <value>Show s_ymbols in unopened namespaces</value>
-  </data>
-  <data name="Show_completion_list_after_a_character_is_deleted" xml:space="preserve">
-    <value>Show completion list after a character is _deleted</value>
-  </data>
-  <data name="Show_completion_list_after_a_character_is_typed" xml:space="preserve">
-    <value>_Show completion list after a character is typed</value>
-  </data>
-  <data name="Enable_in_memory_cross_project_references" xml:space="preserve">
-    <value>_Enable in-memory cross project references</value>
-  </data>
-  <data name="Show_navigation_links_as" xml:space="preserve">
-    <value>S_how navigation links as</value>
-  </data>
   <data name="Simplify_name_code_fix" xml:space="preserve">
     <value>Simplify names (remove unnecessary qualifiers)</value>
-  </data>
-  <data name="Solid_underline" xml:space="preserve">
-    <value>_Solid underline</value>
   </data>
   <data name="Unused_opens_code_fix" xml:space="preserve">
     <value>Remove unused open statements</value>
@@ -216,14 +192,8 @@
   <data name="Suggest_names_for_errors_code_fix" xml:space="preserve">
     <value>Suggest names for unresolved identifiers</value>
   </data>
-  <data name="Text_hover" xml:space="preserve">
-    <value>Text hover</value>
-  </data>
-  <data name="Diagnostics" xml:space="preserve">
-    <value>Diagnostics</value>
-  </data>
   <data name="Parallelization" xml:space="preserve">
-    <value>Parallelization (requires restart)</value>
+    <value>Parallelization</value>
   </data>
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
     <value>Enable parallel reference resolution</value>
@@ -250,7 +220,7 @@
     <value>Keep background symbol keys</value>
   </data>
   <data name="Enable_Live_Buffers" xml:space="preserve">
-    <value>Use live (unsaved) buffers for analysis (restart required)</value>
+    <value>Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="LiveBuffers" xml:space="preserve">
     <value>Live Buffers</value>
@@ -270,9 +240,6 @@
   <data name="Preferred_description_width_in_characters" xml:space="preserve">
     <value>Preferred description width in characters</value>
   </data>
-  <data name="Tooltip_preferred_description_width_in_characters" xml:space="preserve">
-    <value>Format signature to the given width by adding line breaks conforming with F# syntax rules. </value>
-  </data>
   <data name="Show_Return_Type_Hints" xml:space="preserve">
     <value>Display return type hints (preview)</value>
   </data>
@@ -280,19 +247,16 @@
     <value>Transparent Compiler (experimental)</value>
   </data>
   <data name="Use_Transparent_Compiler" xml:space="preserve">
-    <value>Use Transparent Compiler (restart required)</value>
+    <value>Use Transparent Compiler</value>
   </data>
   <data name="Analyze_full_solution_on_background" xml:space="preserve">
-    <value>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</value>
+    <value>Keep analyzing the entire solution for diagnostics as a low priority background task</value>
   </data>
   <data name="Background_analysis" xml:space="preserve">
     <value>Background analysis</value>
   </data>
   <data name="Transparent_Compiler_Cache_Factor" xml:space="preserve">
     <value>Transparent Compiler Cache Factor</value>
-  </data>
-  <data name="Transparent_Compiler_Cache_Factor_Tooltip" xml:space="preserve">
-    <value>Higher number means more memory will be used for caching. Changing the value wipes cache.</value>
   </data>
   <data name="Remove_parens_code_fix" xml:space="preserve">
     <value>Remove unnecessary parentheses (experimental, might affect typing performance)</value>
@@ -302,15 +266,6 @@
   </data>
   <data name="Transparent_Compiler_Snapshot_Reuse" xml:space="preserve">
     <value>Create new project snapshots from existing ones</value>
-  </data>
-  <data name="TransparentCompiler_Disclaimer1" xml:space="preserve">
-    <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</value>
-  </data>
-  <data name="TransparentCompiler_Disclaimer2" xml:space="preserve">
-    <value>Use at your own risk!</value>
-  </data>
-  <data name="TransparentCompiler_Disclaimer3" xml:space="preserve">
-    <value>By checking this you also opt-in for additional performance telemetry</value>
   </data>
   <data name="Generate_Body_For_Overridden_Method" xml:space="preserve">
     <value>Generate default implementation body for overridden method</value>
