@@ -114,7 +114,31 @@ let visitSynUnionCase (SynUnionCase(attributes = attributes; caseType = caseType
         | SynUnionCaseKind.FullType(fullType = fullType) -> yield! visitSynType fullType
     ]
 
-let visitSynEnumCase (SynEnumCase(attributes = attributes)) = visitSynAttributes attributes
+let visitSynEnumCase (SynEnumCase(attributes = attributes; valueExpr = valueExpr)) =
+    [ yield! visitSynAttributes attributes; yield! visitSynExpr valueExpr ]
+
+let visitSynMeasure (measure: SynMeasure) : FileContentEntry list =
+    match measure with
+    | SynMeasure.Named(longId = longId) -> visitLongIdent longId
+    | SynMeasure.Product(measure1 = measure1; measure2 = measure2) -> visitSynMeasure measure1 @ visitSynMeasure measure2
+    | SynMeasure.Seq(measures = measures) -> List.collect visitSynMeasure measures
+    | SynMeasure.Divide(measure1 = measure1; measure2 = measure2) ->
+        [
+            yield! collectFromOption visitSynMeasure measure1
+            yield! visitSynMeasure measure2
+        ]
+    | SynMeasure.Power(measure = measure)
+    | SynMeasure.Paren(measure = measure) -> visitSynMeasure measure
+    | SynMeasure.One _
+    | SynMeasure.Anon _
+    | SynMeasure.Var _ -> []
+
+let visitSynConst (constant: SynConst) : FileContentEntry list =
+    match constant with
+    // A literal like `1Z` uses the functions of module `NumericLiteralZ`.
+    | SynConst.UserNum(suffix = suffix) -> [ FileContentEntry.PrefixedIdentifier [ $"NumericLiteral{suffix}" ] ]
+    | SynConst.Measure(constant = constant; synMeasure = measure) -> visitSynConst constant @ visitSynMeasure measure
+    | _ -> []
 
 let visitSynTypeDefn (SynTypeDefn(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) : FileContentEntry list =
     let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
@@ -287,7 +311,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
             visit typeName (fun nodes -> nodes @ List.collect visitSynTypeConstraint constraints |> continuation)
         | SynType.HashConstraint(innerType, _) -> visit innerType continuation
         | SynType.MeasurePower(baseMeasure = baseMeasure) -> visit baseMeasure continuation
-        | SynType.StaticConstant _ -> continuation []
+        | SynType.StaticConstant(constant = constant) -> continuation (visitSynConst constant)
         | SynType.StaticConstantNull _ -> continuation []
         | SynType.StaticConstantExpr(expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed(ident, value, _) ->
@@ -391,7 +415,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 #endif
             match e with
             | NameofExpr nameofResult -> continuation [ visitNameofResult nameofResult ]
-            | SynExpr.Const _ -> continuation []
+            | SynExpr.Const(constant = constant) -> continuation (visitSynConst constant)
             | SynExpr.Paren(expr = expr) -> visit expr continuation
             | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
                 visit operator (fun operatorNodes -> visit quotedExpr (fun quotedNodes -> operatorNodes @ quotedNodes |> continuation))
@@ -636,7 +660,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
         | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t |> continuation)
-        | SynPat.Const _ -> continuation []
+        | SynPat.Const(constant = constant) -> continuation (visitSynConst constant)
         | SynPat.Wild _ -> continuation []
         | SynPat.Named _ -> continuation []
         | SynPat.Attrib(pat, attributes, _) -> visit pat (fun nodes -> visitSynAttributes attributes @ nodes |> continuation)
