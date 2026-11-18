@@ -523,6 +523,8 @@
     <Compile Include="Driver\GraphChecking\Graph.fs" />
     <Compile Include="Driver\GraphChecking\TrieMapping.fsi" />
     <Compile Include="Driver\GraphChecking\TrieMapping.fs" />
+    <Compile Include="Driver\GraphChecking\ExposedNames.fsi" />
+    <Compile Include="Driver\GraphChecking\ExposedNames.fs" />
     <Compile Include="Driver\GraphChecking\FileContentMapping.fsi" />
     <Compile Include="Driver\GraphChecking\FileContentMapping.fs" />
     <Compile Include="Driver\GraphChecking\DependencyResolution.fsi" />

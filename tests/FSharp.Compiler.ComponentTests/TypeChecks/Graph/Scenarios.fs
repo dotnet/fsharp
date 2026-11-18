@@ -36,6 +36,15 @@ let private sourceFile fileName content (dependencies: Set<int>) =
             Content = content
         }
 
+/// A file adding declarations to a namespace, followed by a file of that namespace that mentions none of their names.
+let private unmentionedDeclarations name (declarations: string) (dependencies: Set<int>) =
+    scenario
+        name
+        [
+            sourceFile "A.fs" $"namespace Product\n{declarations}" Set.empty
+            sourceFile "B.fs" "module Product.Feature\n\nlet a = 1\n" dependencies
+        ]
+
 let internal compilingScenarios =
     [
         scenario
@@ -173,6 +182,447 @@ type X = { Y : string }
 module Product.Feature
 
 let a b = b.Y + "z"
+"""
+                    (set [| 0 |])
+            ]
+        unmentionedDeclarations
+            "Namespace types not mentioned"
+            """
+type X = { Y : string }
+"""
+            Set.empty
+        scenario
+            "Attributed static member"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+open System.Runtime.CompilerServices
+
+type Ext =
+    [<Extension>]
+    static member Twice(x: int) = x * 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a (b: int) = b.Twice()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Open with one type mentioned"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type X = int
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Product
+
+type Z = string
+"""
+                    Set.empty
+                sourceFile
+                    "C.fs"
+                    """
+module Other
+
+open Product
+
+let a : Z = "s"
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "Union case and exception names"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+exception Boom of string
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Product
+
+type U =
+    | Alpha
+    | Beta
+"""
+                    Set.empty
+                sourceFile
+                    "C.fs"
+                    """
+module Product.Feature
+
+let f () = raise (Boom "x")
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "D.fs"
+                    """
+module Product.Other
+
+let g = Alpha
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "List syntax union case"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type Chain<'T> =
+    | End
+    | (::) of 'T * Chain<'T>
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let prepend x xs = x :: xs
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "C.fs"
+                    """
+module Product.Other
+
+let a = Feature.prepend 1 End
+"""
+                    (set [| 0; 1 |])
+            ]
+        scenario
+            "Numeric literal module beside types"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type X = int
+
+module NumericLiteralZ =
+    let FromInt32 (x: int) = string x
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a: string = 5Z
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Record spread"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type S = { X: int }
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Product
+
+type R = { ...S; Y: int }
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "C.fs"
+                    """
+module Product.Feature
+
+let a (b: int) = b + 1
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "Unused nested open, namespace with types"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type X = int
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Other
+
+module Inner =
+    open Product
+
+    let a = 1
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused nested open, namespace without types"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+module Helpers =
+    let x = 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Other
+
+module Inner =
+    open Product
+
+    let a = 1
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Types in a System namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace System.Diagnostics
+
+type Debug =
+    static member Assert(condition: bool) = ignore condition
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Feature
+
+open System.Diagnostics
+
+let f (x: int) = assert (x > 0)
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Static member of auto-opened type"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+[<AutoOpen>]
+type Settings =
+    static member Limit = 10
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a = Limit + 1
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Auto-opened enum case"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+[<AutoOpen>]
+type Color =
+    | Red = 0
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a = Red
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Attribute without its suffix"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type MarkAttribute() =
+    inherit System.Attribute()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+[<Mark>]
+let a = 1
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Generic type by arity name"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type Pair<'a, 'b>() =
+    member _.V = 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a (x: ``Pair`2``<int, int>) = x.V
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Type name used by extern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type unit = int64
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+open System.Runtime.InteropServices
+
+[<DllImport("native")>]
+extern void f()
+
+let g () : int64 = f ()
+"""
+                    (set [| 0 |])
+            ]
+        unmentionedDeclarations
+            "Type augmentation"
+            """
+type X() =
+    class
+    end
+
+type X with
+    member _.V = 1
+"""
+            (set [| 0 |])
+        unmentionedDeclarations
+            "Auto-opened type abbreviation"
+            """
+[<AutoOpen>]
+type M = System.Math
+"""
+            (set [| 0 |])
+        unmentionedDeclarations
+            "Auto-opened type with base class"
+            """
+[<AutoOpen>]
+type X() =
+    inherit System.Exception()
+"""
+            (set [| 0 |])
+        unmentionedDeclarations
+            "Operator-named type"
+            """
+type ``op_Multiply``() =
+    class
+    end
+"""
+            (set [| 0 |])
+        unmentionedDeclarations
+            "Attributed module beside types"
+            """
+type X = int
+
+[<RequireQualifiedAccess>]
+module Helpers =
+    let x = 1
+"""
+            Set.empty
+        scenario
+            "Signature file types"
+            [
+                sourceFile
+                    "A.fsi"
+                    """
+namespace Product
+
+type X = { Y: int }
+"""
+                    Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+type X = { Y: int }
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a (b: int) = b + 1
+"""
+                    Set.empty
+                sourceFile
+                    "C.fs"
+                    """
+module Product.Other
+
+let x = { Y = 1 }
 """
                     (set [| 0 |])
             ]
@@ -1195,7 +1645,7 @@ module Assets =
     module Default =
         let Black = "black"
 """
-                    (set [| 0 |])
+                    Set.empty
                 sourceFile
                     "Constants.fs"
                     """
@@ -1205,7 +1655,7 @@ open Nu
 module Dissolve =
     let x = Assets.Default.Black
 """
-                    (set [| 0; 1 |])
+                    (set [| 1 |])
             ]
         scenario
             "Sub-namespace opens parent namespace and uses type constructor"
@@ -1280,7 +1730,7 @@ namespace Nu
 module BlockMapExtensions =
     let getBlockMapSize () = 42
 """
-                    (set [| 0 |])
+                    Set.empty
                 sourceFile
                     "Consumer.fs"
                     """

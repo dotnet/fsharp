@@ -1,5 +1,7 @@
 ﻿module TypeChecks.CompilationTests
 
+open System
+open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit;
@@ -56,10 +58,32 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
 
 let scenarios = compilingScenarios |> List.map (fun c -> [| box c |])
 
+/// The dependencies in the graph the compiler writes for `--test:DumpCheckingGraph`.
+let dumpedDependencies (result: CompilationResult) =
+    Path.ChangeExtension(result.OutputPath.Value, ".graph.md")
+    |> File.ReadAllLines
+    |> Array.choose (fun line ->
+        match line.Trim().Split([| " --> " |], StringSplitOptions.None) with
+        | [| file; dependency |] -> Some(int file, int dependency)
+        | _ -> None)
+
 [<Theory>]
 [<MemberData(nameof scenarios)>]
 let ``Compile a valid scenario using graph-based type-checking`` (scenario) =
-    compileAValidScenario scenario Method.Graph
+    let dependencies =
+        compileScenario scenario Method.Graph |> shouldSucceed |> dumpedDependencies
+
+    for file in scenario.Files do
+        let actualDependencies =
+            dependencies
+            |> Array.filter (fun (idx, _) -> idx = file.Index)
+            |> Array.map snd
+            |> set
+
+        Assert.True(
+            (file.ExpectedDependencies = actualDependencies),
+            $"Dependencies don't match for {Path.GetFileName file.FileName}: {actualDependencies}"
+        )
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]

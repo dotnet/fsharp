@@ -95,6 +95,7 @@ type internal FileContentQueryState =
     {
         OwnNamespace: LongIdentifier option
         OpenedNamespaces: Set<LongIdentifier>
+        NamespacesOpenedInNestedModules: Set<LongIdentifier>
         FoundDependencies: Set<FileIndex>
     }
 
@@ -102,6 +103,7 @@ type internal FileContentQueryState =
         {
             OwnNamespace = None
             OpenedNamespaces = Set.empty
+            NamespacesOpenedInNestedModules = Set.empty
             FoundDependencies = filesAtRoot
         }
 
