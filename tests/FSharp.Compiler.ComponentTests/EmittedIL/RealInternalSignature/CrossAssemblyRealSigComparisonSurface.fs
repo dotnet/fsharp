@@ -297,3 +297,220 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> ignore
+
+    /// A `let rec` group binding whose body compiles to a closure (a recursive function
+    /// that closes over the class's type parameter 'T), defined inside a generic class
+    /// member, and then inlined into a consumer with the opposite realsig flag.
+    ///
+    /// This is the canonical realsig+ "let rec group binding" re-hosting case that the
+    /// existing tests do NOT cover. The existing tests exercise:
+    ///   (a) a non-rec `let` closure over a typar inside a class member (comparePayload),
+    ///   (b) an object-expression closure over a typar (makeComparer),
+    ///   (c) a method that returns a closure over the class typar (Bag.Adder).
+    /// None of them go through TcLetrecGeneralizeBinding (CheckExpressions.fs:13377), the
+    /// `let rec` group-binding registration site. Under realsig+, a `let rec` group
+    /// binding inside a class member is registered as a re-hosted closure whose typars
+    /// !0..!n are inherited from the host class (g.AddRealsigClosureParent with
+    /// ownerTycon = the class). When the consumer inlines it, TLR
+    /// (InnerLambdasToTopLevelFuncs.packEnv) must EXCLUDE the host's typars from
+    /// reqdTypars so the re-hosted closure does not re-declare !0..!n.
+    ///
+    /// The failure mode this test guards: if the let-rec registration is skipped or the
+    /// TLR reqdTypars filter mis-applies to a group binding, the re-hosted closure either
+    /// re-declares the host typar (generic-parameter index out of bounds at its
+    /// instantiation site) or, conversely, loses its reference to the class typar. Both
+    /// fail PEVerify on the inlined consumer.
+    let private libRecClosureSource =
+        """
+module LibRecClosureSrc
+
+type RecHolder<'T when 'T : comparison>() =
+
+    /// A `let rec` group binding that compiles to a closure over 'T. The group
+    /// binding's body (countDigits) is a recursive function; the surrounding
+    /// lambda is the closure. Under realsig+ this closure is re-hosted as a
+    /// nested method of RecHolder, inheriting !0 (='T) from the host class.
+    /// Forcing the consumer to inline this into the consumer's own generic
+    /// class is the test.
+    member _.DigitCount (x: 'T) : int =
+        let rec countDigits (s: string) (acc: int) : int =
+            if s.Length = 0 then acc
+            else countDigits (s.Substring(1)) (acc + 1)
+        let go (z: 'T) : int =
+            let s = box z |> string
+            countDigits s 0
+        go x
+    """
+
+    let private exeRecClosureSource =
+        """
+module exeRecClosureSrc
+open LibRecClosureSrc
+
+[<EntryPoint>]
+let main _ =
+    let h = RecHolder<string>()
+    let r = h.DigitCount "one"
+    if r = 3 then 0 else 1
+    """
+
+    [<Theory>]
+    //           librs, exers, opt
+    // realsig+ is REQUIRED for the let-rec group-binding re-hosting registration
+    // (TcLetrecGeneralizeBinding). The (librs=true) cells are the regression: a
+    // re-hosted let-rec closure whose typars !0..!n are inherited from the host
+    // class, inlined into a consumer with the opposite realsig flag.
+    [<InlineData(true,  true,  true )>]
+    [<InlineData(true,  true,  false)>]
+    [<InlineData(true,  false, true )>]
+    [<InlineData(true,  false, false)>]
+    [<InlineData(false, true,  true )>]
+    [<InlineData(false, true,  false)>]
+    [<InlineData(false, false, true )>]
+    [<InlineData(false, false, false)>]
+    let ``A let rec group binding that compiles to a closure over a class typar is inlinable across mixed realsig modes`` (libRealsig: bool, exeRealsig: bool, optimize: bool) =
+        let lib =
+            FSharp libRecClosureSource
+            |> withName "libRecClosureSource"
+            |> withRealInternalSignature libRealsig
+            |> asLibrary
+            |> withOptimization optimize
+
+        // The failure mode is a PEVerify failure on the inlined consumer: either
+        // (a) the re-hosted let-rec closure re-declares the host typar !0 it already
+        // inherits (generic-parameter index out of bounds), or
+        // (b) it loses its reference to the class typar when re-hosted under the
+        // consumer's own generic class. Successful compilation + PEVerify + run is
+        // the regression assertion.
+        let exe =
+            FSharp exeRecClosureSource
+            |> withName "exeRecClosureSource"
+            |> withReferences [ lib ]
+            |> withRealInternalSignature exeRealsig
+            |> withOptimization optimize
+            |> compile
+
+        // (a) verify the main exe (the inlined consumer)
+        exe
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [ "All Classes and Methods in*exeRecClosureSource.dll Verified." ]
+        |> shouldSucceed
+        |> ignore
+
+        // (b) verify the referenced lib
+        let libPath = exe.Output.Dependencies |> List.item 0
+        verifyPEFileOnPath libPath
+        |> withOutputContainsAllInOrderWithWildcards [ "All Classes and Methods in*libRecClosureSource.dll Verified." ]
+        |> shouldSucceed
+        |> ignore
+
+    /// A `member inline` on a generic class whose body contains a `let rec` group
+    /// binding that compiles to a closure over the class typar, inlined into a
+    /// consumer that has its OWN generic class.
+    ///
+    /// This is the harder re-hosting scenario than the previous test: the previous
+    /// test inlines the body into a module-level function (no class context on the
+    /// consumer side). Here the consumer has its own generic class `Consumer<'T>`
+    /// whose member calls the lib's `member inline _.DigitCount`. The consumer's
+    /// TLR must splice the lib's `let rec` closure body into the consumer's own
+    /// generic class context, where the class typar `!0` is the consumer's, not
+    /// the lib's.
+    ///
+    /// The failure mode: if the consumer's TLR re-hosts the inlined closure under
+    /// the consumer's class (which is correct) but the closure body still references
+    /// the lib's class typar (which it should not, since `inline` re-emits the
+    /// body in the consumer's context), the result is a generic-parameter mismatch
+    /// that fails PEVerify.
+    let private libInlineRecClosureSource =
+        """
+module LibInlineRecClosureSrc
+
+type InlineRecHolder<'T when 'T : comparison>() =
+
+    /// An `inline` member whose body contains a `let rec` group binding that
+    /// compiles to a closure over 'T. The `inline` keyword forces the consumer
+    /// to splice this body into its own context (no fallback to a call site).
+    /// Under realsig+ the closure is re-hosted under InlineRecHolder's !0;
+    /// under realsig- it is not re-hosted. The consumer inlines it into its
+    /// OWN generic class, so the consumer's TLR must handle the spliced body
+    /// in the consumer's class context.
+    member inline _.DigitCount (x: 'T) : int =
+        let rec countDigits (s: string) (acc: int) : int =
+            if s.Length = 0 then acc
+            else countDigits (s.Substring(1)) (acc + 1)
+        let go (z: 'T) : int =
+            let s = box z |> string
+            countDigits s 0
+        go x
+    """
+
+    let private exeInlineRecClosureSource =
+        """
+module exeInlineRecClosureSrc
+open LibInlineRecClosureSrc
+
+type Consumer<'T when 'T : comparison>() =
+    /// Calls the lib's `member inline` from within the consumer's own generic
+    /// class. The consumer's TLR must splice the inlined body (a `let rec`
+    /// closure over 'T) into the consumer's class context, where !0 is the
+    /// consumer's own type parameter.
+    member _.Call (h: InlineRecHolder<'T>, x: 'T) : int = h.DigitCount x
+
+[<EntryPoint>]
+let main _ =
+    let h = InlineRecHolder<string>()
+    let c = Consumer<string>()
+    let r = c.Call (h, "one")
+    if r = 3 then 0 else 1
+    """
+
+    [<Theory>]
+    //           librs, exers, opt
+    // realsig+ is REQUIRED for the let-rec closure re-hosting registration in the
+    // lib. The (librs=true, exers=false) cell is the critical regression: a lib
+    // compiled with realsig+ whose `member inline` body (containing a `let rec`
+    // closure) is inlined into a consumer's own generic class compiled with
+    // realsig- (old compiler behavior).
+    [<InlineData(true,  true,  true )>]
+    [<InlineData(true,  true,  false)>]
+    [<InlineData(true,  false, true )>]
+    [<InlineData(true,  false, false)>]
+    [<InlineData(false, true,  true )>]
+    [<InlineData(false, true,  false)>]
+    [<InlineData(false, false, true )>]
+    [<InlineData(false, false, false)>]
+    let ``A member inline with a let rec closure over a class typar is inlinable into a consumer's own generic class across mixed realsig modes`` (libRealsig: bool, exeRealsig: bool, optimize: bool) =
+        let lib =
+            FSharp libInlineRecClosureSource
+            |> withName "libInlineRecClosureSource"
+            |> withRealInternalSignature libRealsig
+            |> asLibrary
+            |> withOptimization optimize
+
+        // The failure mode is a PEVerify failure on the consumer: the inlined
+        // `let rec` closure body, spliced into the consumer's own generic class,
+        // either (a) references the lib's class typar (a generic-parameter
+        // mismatch) or (b) is re-hosted under the consumer's class with the
+        // wrong typar inheritance. Successful compilation + PEVerify + run is
+        // the regression assertion.
+        let exe =
+            FSharp exeInlineRecClosureSource
+            |> withName "exeInlineRecClosureSource"
+            |> withReferences [ lib ]
+            |> withRealInternalSignature exeRealsig
+            |> withOptimization optimize
+            |> compile
+
+        // (a) verify the main exe (the consumer with its own generic class)
+        exe
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [ "All Classes and Methods in*exeInlineRecClosureSource.dll Verified." ]
+        |> shouldSucceed
+        |> ignore
+
+        // (b) verify the referenced lib
+        let libPath = exe.Output.Dependencies |> List.item 0
+        verifyPEFileOnPath libPath
+        |> withOutputContainsAllInOrderWithWildcards [ "All Classes and Methods in*libInlineRecClosureSource.dll Verified." ]
+        |> shouldSucceed
+        |> ignore
