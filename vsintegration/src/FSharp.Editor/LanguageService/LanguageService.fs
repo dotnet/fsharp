@@ -330,8 +330,9 @@ type internal FSharpPackage() as this =
                 let! legacy = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsSettingsPersistenceManager>)
                 let! metadata = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsMetadata>)
 
-                let! migration =
-                    UnifiedSettingsMigration.startAsync
+                let migration =
+                    UnifiedSettingsMigration.start
+                        this.JoinableTaskFactory
                         native
                         (legacy :?> Microsoft.VisualStudio.Settings.ISettingsManager5)
                         (metadata :?> Microsoft.Internal.VisualStudio.Services.UnifiedSettings.IUnifiedSettingsMetadata)
