@@ -550,6 +550,13 @@ let main1
         delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
         exiter.Exit 1
 
+    let graphCheckingUsesIdentifiers =
+        tcConfigB.typeCheckingConfig.Mode = TypeCheckingMode.Graph
+        && not tcConfigB.compilingFSharpCore
+
+    if graphCheckingUsesIdentifiers then
+        tcConfigB.captureIdentifiersWhenParsing <- true
+
     // If there's a problem building TcConfig, abort
     let tcConfig =
         try

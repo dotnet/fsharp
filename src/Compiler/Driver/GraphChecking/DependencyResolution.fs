@@ -109,12 +109,13 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
     | FileContentEntry.NestedModule(nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
         let nestedState = List.fold (processStateEntry trie) state nestedContent
-        // Afterward we are only interested in the found dependencies in the nested module
+
         let foundDependencies =
             Set.union state.FoundDependencies nestedState.FoundDependencies
 
         { state with
             FoundDependencies = foundDependencies
+            NamespacesOpenedInNestedModules = Set.union nestedState.OpenedNamespaces nestedState.NamespacesOpenedInNestedModules
         }
 
     | FileContentEntry.ModuleName name ->
@@ -148,34 +149,30 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
 /// </remarks>
 let collectGhostDependencies (fileIndex: FileIndex) (trie: TrieNode) (result: FileContentQueryState) =
     // For each opened namespace, if none of already resolved dependencies define it, return the top-most file that defines it.
-    Set.toArray result.OpenedNamespaces
+    Set.union result.OpenedNamespaces result.NamespacesOpenedInNestedModules
+    |> Set.toArray
     |> Array.choose (fun path ->
-        match queryTrie trie path with
-        | QueryTrieNodeResult.NodeExposesData _
-        | QueryTrieNodeResult.NodeDoesNotExist -> None
-        | QueryTrieNodeResult.NodeDoesNotExposeData ->
+        match queryTriePartial trie path with
+        | None -> None
+        | Some node ->
             // At this point we are following up if an open namespace really lead nowhere.
-            let node =
-                let rec find (node: TrieNode) (path: LongIdentifier) =
-                    match path with
-                    | [] -> node
-                    | head :: tail -> find node.Children[head] tail
-
-                find trie path
-
             match node.Current with
             // Both Root and module would expose data, so we can ignore them.
             | Root _
             | Module _ -> None
-            | Namespace(filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
-                if filesDefiningNamespaceWithoutTypes.Overlaps(result.FoundDependencies) then
+            | Namespace(
+                filesThatExposeTypes = filesThatExposeTypes; filesDefiningNamespaceWithoutTypes = filesDefiningNamespaceWithoutTypes) ->
+                let filesDefiningNamespace =
+                    filesDefiningNamespaceWithoutTypes.Union filesThatExposeTypes
+
+                if filesDefiningNamespace.Overlaps(result.FoundDependencies) then
                     // The ghost dependency is already covered by a real dependency.
                     None
                 else
                     // We are only interested in any file that contained the namespace when they came before the current file.
                     // If the namespace is defined in a file after the current file then there is no way the current file can reference it.
                     // Which means that namespace would come from a different assembly.
-                    filesDefiningNamespaceWithoutTypes
+                    filesDefiningNamespace
                     |> Seq.sort
                     |> Seq.tryFind (fun connectedFileIdx ->
                         // We pick the lowest file index from the namespace to satisfy the type-checker for the open statement.
@@ -202,6 +199,9 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
             else
                 FileContentMapping.mkFileContent file)
 
+    let exposedNames =
+        files |> Array.map (fun file -> ExposedNames.tryGet file.ParsedInput)
+
     let findDependencies (file: FileInProject) : FileIndex array =
         if file.Idx = 0 then
             // First file cannot have any dependencies.
@@ -226,6 +226,19 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 initialDepsResult
                 // Seq is faster than List in this case.
                 ||> Seq.fold (processStateEntry trieForFile)
+
+            let identifiers = file.ParsedInput.Identifiers
+            let areIdentifiersCaptured = not identifiers.IsEmpty
+
+            let mayDependOn (dependency: FileIndex) =
+                match exposedNames[dependency] with
+                | ValueSome names when areIdentifiersCaptured -> Set.exists identifiers.Contains names
+                | _ -> true
+
+            let depsResult =
+                { depsResult with
+                    FoundDependencies = Set.filter mayDependOn depsResult.FoundDependencies
+                }
 
             // Add missing links for cases where an unused open namespace did not create a link.
             let ghostDependencies = collectGhostDependencies file.Idx trieForFile depsResult

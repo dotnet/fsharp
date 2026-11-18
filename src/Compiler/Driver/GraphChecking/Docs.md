@@ -289,6 +289,11 @@ R --- Y
 To satisfy the type-checker when unused `open` statements are used, we need to make sure that at least one defining `namespace X` is a dependency of `Y.fs`. 
 We call such dependencies added outside of the main dependency resolution algorithm `ghost dependencies`.
 
+A namespace that does contain types links every file that sees it to the files defining them.
+Such a link is dropped when the dependent file mentions none of the names the other file declares.
+This needs the identifiers captured during parsing, and does not apply to a file that can be used without mentioning a name, see `ExposedNames.fs`.
+A name from a file that is not linked is not suggested in an error about an undefined name.
+
 ### Performance
 There are two main factors w.r.t. performance of the graph-based type-checking:
 1. The level of parallelisation allowed by the resolved dependency graph.
