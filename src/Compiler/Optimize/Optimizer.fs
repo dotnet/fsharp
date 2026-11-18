@@ -4814,10 +4814,18 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
                     Zset.elements freeInSplit.FreeLocals
                     |> List.tryPick (fun (v: Val) ->
                         match v.Type with
-                        | TType_app(tcr, _, _) when not (List.isEmpty tcr.Typars) -> Some tcr
+                        // [realsig+] Only a LOCAL (user-defined) host tycon can back a re-hosted
+                        // split-thunk: the closure's nested method def is added under the host's
+                        // type def (ComputeStorageForFSharpFunctionOrFSharpExtensionMember ->
+                        // GenType(ownerTycon)), which requires a local TypeDefBuilder. An imported
+                        // host (e.g. a free local of type FSharpOption<'T> / IComparer<'T>) has no
+                        // local type def, so re-hosting under it crashes codegen with
+                        // "FindTypeDefBuilder: Microsoft.FSharp.Core.FSharpOption`1 not found".
+                        // Such locals are skipped; splitTycon falls back to None (standalone).
+                        | TType_app(tcr, _, _) when not (List.isEmpty tcr.Typars) && tcr.IsLocalRef -> Some tcr
                         | TType_ucase(uc, _) ->
                             let hostTcr = uc.TyconRef
-                            if not (List.isEmpty hostTcr.Typars) then Some hostTcr
+                            if not (List.isEmpty hostTcr.Typars) && hostTcr.IsLocalRef then Some hostTcr
                             else None
                         | _ -> None)
                 g.AddRealsigClosureParent(fv, splitTypars, splitTycon)

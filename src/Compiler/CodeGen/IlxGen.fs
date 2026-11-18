@@ -10401,17 +10401,17 @@ and GenMethodForBinding
                     (match cenv.g.RealsigClosureParentTryGet(v) with
                      | Some info -> info.ownerTypars
                      | None ->
-                          // [realsig+] A TLR'd top-level method (IsCompiledAsTopLevel /
-                          // IsCompilerGenerated, NOT a member or module binding) carries its
-                          // own typars in methLambdaTypars. Returning eenv.tyenv's
-                          // user-provided typars as ambientTypars here would duplicate them
-                          // (ambient=own, methLambda=own), shifting the body's own typars by
-                          // |own| and making body (il-index |own|..2|own|-1) disagree with the
-                          // signature (il-index 0..|own|-1) -> out-of-range ldelem/callvirt
-                          // element types for loop@1[+T1,T2] / go@10412[+T]. An *unregistered*
-                          // top-level re-hosted closure's own typars are the full set and
-                          // must not be re-added as ambient.
-                          [])
+                         // [realsig+] A TLR'd top-level method (IsCompiledAsTopLevel /
+                         // IsCompilerGenerated, NOT a member or module binding) carries its
+                         // own typars in methLambdaTypars. Returning eenv.tyenv's
+                         // user-provided typars as ambientTypars here would duplicate them
+                         // (ambient=own, methLambda=own), shifting the body's own typars by
+                         // |own| and making body (il-index |own|..2|own|-1) disagree with the
+                         // signature (il-index 0..|own|-1) -> out-of-range ldelem/callvirt
+                         // element types for loop@1[+T1,T2] / go@10412[+T]. An *unregistered*
+                         // top-level re-hosted closure's own typars are the full set and
+                         // must not be re-added as ambient.
+                         [])
 
                 | _ -> []
 
@@ -11234,7 +11234,45 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
             // With realsig=true these vals are hosted on the type that originated the closure
             // With realsig=false these vals are hosted on the module enclosing the type that originated the closure
             if cenv.g.realsig then
-                cloc
+                // [realsig+] Jetison re-hosting for closures whose OWN (declared) typars already
+                // subsume the registered owner typars (by name). This is the module-origin inline
+                // case: `let local (x:'T)` inside `inline comparePayload`, inlined into a member
+                // of `Container<'T>` whose typar is the same `'T`. Here the closure's own typar IS
+                // the host typar, so hosting it as a nested method of the class and splicing in an
+                // owner-typar duplicates the typar, producing a method-typar(!0) vs class-typar(!T)
+                // generic-parameter-slot mismatch that the IL verifier rejects (PEVerify
+                // StackUnexpected: [found value 'T'][expected ref '!0']). Genuine re-hosted
+                // closures (whose own typars are a strict subset of the host's, e.g. memoize@6)
+                // have subsumption=false and are still hosted on the class, preserving the
+                // realsig+ re-hosting fix.
+                let closureOwnTypars =
+                    match v.Type with
+                    | TType.TType_forall(tps, _) -> tps
+                    | _ -> []
+
+                let hostTyparNames =
+                    match cenv.g.RealsigClosureParentTryGet(v) with
+                    | Some info -> Set.ofList (List.map (fun (t: Typar) -> t.Name) info.ownerTypars)
+                    | None -> Set.empty
+
+                let ownSubsumesOwnerTypars =
+                    not (Set.isEmpty hostTyparNames)
+                    && (closureOwnTypars
+                        |> List.exists (fun (t: Typar) -> Set.contains t.Name hostTyparNames))
+
+                if ownSubsumesOwnerTypars then
+                    // Fall to the module-host path (realsig- behavior): the closure is emitted as a
+                    // module-level function, so the method-typar vs class-typar distinction that
+                    // caused the verifier failure does not arise.
+                    if eenv.moduleCloc.Enclosing.IsEmpty then
+                        if IsFSharpValCompiledAsMethod cenv.g v then
+                            CompLocForTopLevelFunctions eenv.moduleCloc
+                        else
+                            CompLocForInitClass eenv.moduleCloc
+                    else
+                        eenv.moduleCloc
+                else
+                    cloc
             else if eenv.moduleCloc.Enclosing.IsEmpty then
                 if IsFSharpValCompiledAsMethod cenv.g v then
                     CompLocForTopLevelFunctions eenv.moduleCloc

@@ -12267,13 +12267,22 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         // returned None and the whole re-hosting fix silently did not apply.
         if g.realsig then
             match env.eFamilyType with
-            | Some hostTycon ->
+            | Some hostTycon when hostTycon.IsLocalRef ->
+                // [realsig+] Only a LOCAL (user-defined) host tycon can back a re-hosted
+                // closure: the closure's nested method def is added under the host's type def
+                // (ComputeStorageForFSharpFunctionOrFSharpExtensionMember -> GenType(ownerTycon)),
+                // which requires a local TypeDefBuilder. An imported host (e.g. an
+                // object-expression member implementing IComparer<'T> / FSharpOption<'T>,
+                // registered via EnterFamilyRegion at the object-expr site) has no local type
+                // def, so re-hosting under it crashes codegen with
+                // "FindTypeDefBuilder: Microsoft.FSharp.Core.FSharpOption`1 not found".
+                // Such a host falls through to the module-scope (ownerTycon = None) branch below.
                 let hostTypars = hostTycon.Typars
                 if not (List.isEmpty hostTypars) then
                     NameMap.iter (fun pair ->
                         let (v: Val) = fst pair
                         g.AddRealsigClosureParent(v, hostTypars, Some hostTycon)) values
-            | None ->
+            | _ ->
                 // [realsig+] Module-scope (no family type) non-rec closure: register any
                 // typars free in the closure's full type but not declared by its own
                 // signature (e.g. a surrounding function's inference typar the body
@@ -13367,14 +13376,19 @@ and TcIncrementalLetRecGeneralization cenv scopem
                 // call site, so it must remain the method's own declared typar.
                 if g.realsig then
                     match envNonRec.eFamilyType with
-                    | Some hostTycon ->
+                    | Some hostTycon when hostTycon.IsLocalRef ->
+                        // [realsig+] Same guard as the TcLetBinding site above: an imported
+                        // host tycon (e.g. an object-expression member implementing an
+                        // imported generic like IComparer<'T>) has no local type def to host
+                        // the re-hosted closure's method def, so it must fall through to the
+                        // module-scope (ownerTycon = None) treatment below.
                         let familyTypars = hostTycon.Typars
                         if not (List.isEmpty familyTypars) then
                             List.iter (fun (pgrbind: PreGeneralizationRecursiveBinding) ->
                                 let rbinfo = pgrbind.RecBindingInfo
                                 if rbinfo.DeclKind = DeclKind.ExpressionBinding then
                                     g.AddRealsigClosureParent(rbinfo.Val, familyTypars, Some hostTycon)) newGeneralizableBindings
-                    | None ->
+                    | _ ->
                         // Module scope: no class owner. The captured typar, if any, is the closure's
                         // own generalized typar (declared on the re-hosted method's signature); leave
                         // it unregistered so the standalone method keeps it as its own declared typar.

@@ -259,6 +259,7 @@
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRoot.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeInitialization.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\CrossAssemblyRealSigComparisonSurface.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\RealInternalSignature.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
@@ -330,8 +331,8 @@
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Exceptions.fs" />
-    <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
+    <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
     <Compile Include="ErrorMessages\IndexedSetterNamedArgTests.fs" />
