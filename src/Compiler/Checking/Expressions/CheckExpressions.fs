@@ -8069,7 +8069,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
 
     | SynConst.UserNum (s, suffix) ->
         let expr =
-            let modName = "NumericLiteral" + suffix
+            let modName = numericLiteralModuleName suffix
             let ad = env.eAccessRights
             match ResolveLongIdentAsModuleOrNamespace cenv.tcSink cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false ShouldNotifySink.Yes with
             | Result []

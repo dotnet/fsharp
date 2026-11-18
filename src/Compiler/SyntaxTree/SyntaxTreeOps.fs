@@ -1294,3 +1294,5 @@ let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause l
     | SynMatchClause(pat, whenExpr, resultExpr, range, debugPoint, trivia) :: restClauses ->
         SynMatchClause(addOrPat pat, whenExpr, resultExpr, range, debugPoint, trivia)
         :: restClauses
+
+let numericLiteralModuleName (suffix: string) = $"NumericLiteral{suffix}"
