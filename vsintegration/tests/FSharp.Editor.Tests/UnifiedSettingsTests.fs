@@ -10,8 +10,10 @@ open System.Resources
 open System.Threading
 open System.Threading.Tasks
 
+open Microsoft.Internal.VisualStudio.Services.UnifiedSettings
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Interactive
+open Microsoft.VisualStudio.Settings
 open Microsoft.VisualStudio.Threading
 open Microsoft.VisualStudio.Utilities.UnifiedSettings
 
@@ -262,7 +264,7 @@ module UnifiedSettingsTests =
     #nowarn "57"
 
     let private legacySettings (values: Dictionary<string, obj>) (roamingSyncComplete: Event<EventHandler, EventArgs>) =
-        { new Microsoft.VisualStudio.Settings.ISettingsManager5 with
+        { new ISettingsManager5 with
             [<CLIEvent>]
             member _.RoamingSyncComplete = roamingSyncComplete.Publish
 
@@ -270,8 +272,8 @@ module UnifiedSettingsTests =
                 match values.TryGetValue name with
                 | true, stored ->
                     value <- unbox<'T> stored
-                    Microsoft.VisualStudio.Settings.GetValueResult.Success
-                | _ -> Microsoft.VisualStudio.Settings.GetValueResult.Missing
+                    GetValueResult.Success
+                | _ -> GetValueResult.Missing
 
             member _.NamesStartingWith prefix =
                 values.Keys
@@ -284,13 +286,8 @@ module UnifiedSettingsTests =
 
             member _.SetValueAsync(_: string, _: obj, _: bool, _: Nullable<bool>) : Task = unexpected ()
 
-            member _.TryGetValue<'T>(_: string, _: byref<'T>, _: byref<Nullable<bool>>) : Microsoft.VisualStudio.Settings.GetValueResult =
-                unexpected ()
-
-            member _.TryGetValue<'T>
-                (_: ReadOnlySpan<char>, _: byref<'T>, _: byref<Nullable<bool>>)
-                : Microsoft.VisualStudio.Settings.GetValueResult =
-                unexpected ()
+            member _.TryGetValue<'T>(_: string, _: byref<'T>, _: byref<Nullable<bool>>) : GetValueResult = unexpected ()
+            member _.TryGetValue<'T>(_: ReadOnlySpan<char>, _: byref<'T>, _: byref<Nullable<bool>>) : GetValueResult = unexpected ()
 
             member _.GetValueOrDefault<'T>(_: string, _: 'T) : 'T = unexpected ()
             member _.GetOrCreateList(_, _) = unexpected ()
@@ -306,7 +303,7 @@ module UnifiedSettingsTests =
     #warnon "57"
 
     let private refreshingMetadata (refresh: Task) =
-        { new Microsoft.Internal.VisualStudio.Services.UnifiedSettings.IUnifiedSettingsMetadata with
+        { new IUnifiedSettingsMetadata with
             member _.WaitForRefreshAsync _ = refresh
             member _.GetMonikersMatchingPattern _ = Seq.empty
             member _.GetMonikersMatchingPatterns(_: string[]) = unexpected ()
@@ -1134,7 +1131,7 @@ module UnifiedSettingsTests =
             refresh.SetResult()
             do! pending.JoinTillEmptyAsync()
             Assert.Equal(box true, native.Values["languages.fsharp.formatting.formatOnPaste"])
-            Assert.False(legacy.ContainsKey UnifiedSettingsMigration.CompletionKey)
+            Assert.DoesNotContain(UnifiedSettingsMigration.CompletionKey, legacy)
             roamingSyncComplete.Trigger(null, EventArgs.Empty)
             do! pending.JoinTillEmptyAsync()
             Assert.Equal(box true, legacy[UnifiedSettingsMigration.CompletionKey])
