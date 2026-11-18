@@ -2,25 +2,21 @@
 <Dependencies>
   <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="7cdb217445905f3342bbb0266a4497b9a014389a" BarId="326717" />
   <ProductDependencies>
-    <!-- Pinned at 18.10.0-1.26370.18: the 18.10.0-1.26371.x MSBuild builds dropped their net10.0
-         assets (they ship net11.0 + net472 only), which is incompatible with this repo's net10.0
-         product target framework - fsc/fsi fail to load Microsoft.Build.* at runtime. Unpin once
-         the product moves to net11.0 or MSBuild restores net10.0 assets. -->
-    <Dependency Name="Microsoft.Build" Version="18.10.0-1.26370.18" Pinned="true">
+    <Dependency Name="Microsoft.Build" Version="18.11.2-1.26560.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>1c842567c39aca77ab2348145428e3f9737ab9fd</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="18.10.0-1.26370.18" Pinned="true">
+    <Dependency Name="Microsoft.Build.Framework" Version="18.11.2-1.26560.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>1c842567c39aca77ab2348145428e3f9737ab9fd</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.10.0-1.26370.18" Pinned="true">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="18.11.2-1.26560.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>1c842567c39aca77ab2348145428e3f9737ab9fd</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.10.0-1.26370.18" Pinned="true">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="18.11.2-1.26560.2">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>eae54023463db15e9a9081f35a959c9162797643</Sha>
+      <Sha>1c842567c39aca77ab2348145428e3f9737ab9fd</Sha>
     </Dependency>
     <Dependency Name="Microsoft.CodeAnalysis" Version="5.10.0-1.26365.3">
       <Uri>https://github.com/dotnet/roslyn</Uri>
@@ -79,7 +75,7 @@
       </Sha>
     </Dependency>
     <!-- Necessary for source-build. This allows the live version of the package to be used by source-build. -->
-    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.10">
+    <Dependency Name="System.Security.Cryptography.Xml" Version="10.0.13">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>
       </Sha>
