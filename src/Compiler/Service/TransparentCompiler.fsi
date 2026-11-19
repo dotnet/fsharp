@@ -89,12 +89,15 @@ type internal DependencyGraphType =
     /// A dependency graph for a project - it will contain all files in the project
     | Project
 
+    /// A dependency graph for a project without the implementation files that have a signature file
+    | ProjectSignatures
+
 [<System.Runtime.CompilerServices.Extension; Class>]
 type internal Extensions =
 
     [<System.Runtime.CompilerServices.Extension>]
     static member Key:
-        fileSnapshots: #IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
+        fileSnapshots: #IFileSnapshot array * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<DependencyGraphType option * byte array, string>
 
 [<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
@@ -141,6 +144,8 @@ type internal CompilerCaches =
     member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, string * string, ProjectAssemblyDataResult>
 
     member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, BootstrapInfo option * FSharpDiagnostic array>
+
+    member ParsingTcConfig: AsyncMemoize<FSharpProjectIdentifier, string, TcConfig option * FSharpDiagnostic array>
 
     member BootstrapInfoStatic:
         AsyncMemoize<FSharpProjectIdentifier, string * string, int * TcImports * TcGlobals * TcInfo * Event<unit>>

@@ -11,6 +11,44 @@ open FSharp.Test.Compiler
 
 module Langversion =
 
+    [<Theory>]
+    [<InlineData("4.6")>]
+    [<InlineData("4.7")>]
+    [<InlineData("5")>]
+    [<InlineData("5.0")>]
+    [<InlineData("6")>]
+    [<InlineData("6.0")>]
+    [<InlineData("7")>]
+    [<InlineData("7.0")>]
+    let ``Issue 20666 - fsi unsupported langversion identifies the last compatible SDK feature band`` (version: string) =
+        let expected =
+            $"Language version '{version}' is out of support. The last compatible SDK feature band is .NET SDK 10.0.1xx. Download it at https://dotnet.microsoft.com/en-us/download/dotnet/10.0."
+
+        let result = runFsiProcess ["--nologo"; "--exec"; $"--langversion:{version}"]
+        Assert.NotEqual(0, result.ExitCode)
+        Assert.Contains("error FS3880:", result.StdErr)
+        Assert.Contains(expected, result.StdErr)
+        Assert.DoesNotContain("10.0.2", result.StdErr)
+        Assert.DoesNotContain("10.0.4", result.StdErr)
+
+    [<Theory>]
+    [<InlineData("8")>]
+    [<InlineData("8.0")>]
+    [<InlineData("9.0")>]
+    [<InlineData("10.0")>]
+    [<InlineData("11.0")>]
+    [<InlineData("11.2")>]
+    [<InlineData("default")>]
+    [<InlineData("latest")>]
+    [<InlineData("latestmajor")>]
+    [<InlineData("preview")>]
+    [<InlineData("pRevIew")>]
+    [<InlineData("laTestmaJor")>]
+    let ``fsi langversion supports numeric versions and named selectors`` (version: string) =
+        let result = runFsiProcess ["--nologo"; "--exec"; $"--langversion:{version}"]
+        Assert.Equal(0, result.ExitCode)
+        Assert.DoesNotContain("FS3880", result.StdErr)
+
     // Test: --langversion:4.5 - unrecognized version
     // Original: SOURCE=badlangversion.fsx SCFLAGS=" --langversion:4.5"
     [<Fact>]

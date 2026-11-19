@@ -402,11 +402,6 @@
         <target state="translated">Fichier pour stocker les ressources</target>
         <note />
       </trans-unit>
-      <trans-unit id="6000">
-        <source>F# Tools</source>
-        <target state="translated">Outils F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
         <target state="translated">F# Interactive</target>
@@ -420,11 +415,6 @@
       <trans-unit id="6003">
         <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
         <target state="translated">Fichiers Visual F# (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6015">
-        <source>Compiler</source>
-        <target state="new">Compiler</target>
         <note />
       </trans-unit>
       <trans-unit id="7000">
@@ -510,16 +500,6 @@
       <trans-unit id="AddReferenceDialogTitle">
         <source>Add Reference</source>
         <target state="translated">Ajouter une référence</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6005">
-        <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Modifier les arguments de chemin d'accès et de ligne de commande passés à F# Interactive</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6006">
-        <source>Enable or disable Type Providers</source>
-        <target state="translated">Activer ou désactiver les fournisseurs de type</target>
         <note />
       </trans-unit>
       <trans-unit id="6007">

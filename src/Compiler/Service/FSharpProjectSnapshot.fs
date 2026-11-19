@@ -88,24 +88,21 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
                 |> Task.FromResult
         )
 
-    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) =
+    /// A custom source gets the file text now and uses its checksum as the version,
+    /// so a file that did not change keeps its version. When it returns None, the file is read from disk.
+    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) : Async<FSharpFileSnapshot> =
+        async {
+            match documentSource with
+            | DocumentSource.Custom f ->
+                match! f fileName with
+                | Some source ->
+                    let source = SourceTextNew.ofISourceText source
+                    let version = source.GetChecksum().ToBuilder().ToArray() |> Md5Hasher.toString
+                    return FSharpFileSnapshot(fileName, version, fun () -> Task.FromResult source)
+                | None -> return FSharpFileSnapshot.CreateFromFileSystem fileName
 
-        match documentSource with
-        | DocumentSource.Custom f ->
-            let version = DateTime.Now.Ticks.ToString()
-
-            FSharpFileSnapshot(
-                fileName,
-                version,
-                fun () ->
-                    task {
-                        match! f fileName |> Async.StartAsTask with
-                        | Some source -> return SourceTextNew.ofISourceText source
-                        | None -> return failwith $"Couldn't get source for file {fileName}"
-                    }
-            )
-
-        | DocumentSource.FileSystem -> FSharpFileSnapshot.CreateFromFileSystem fileName
+            | DocumentSource.FileSystem -> return FSharpFileSnapshot.CreateFromFileSystem fileName
+        }
 
     member public _.FileName = FileName
     member _.Version = Version
@@ -173,7 +170,7 @@ type ReferenceOnDisk =
 
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
-    (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
+    (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot[], sourceFiles: 'T[]) =
 
     // Version of project without source files
     let baseVersion =
@@ -234,7 +231,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     let lastFileHash =
         lazy
-            (let lastFile = sourceFiles |> List.last
+            (let lastFile = sourceFiles |> Array.last
              let sigHash, f = signatureHash.Value
 
              (if f = lastFile.FileName then
@@ -253,7 +250,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                  member _.GetVersion() = hash |> Md5Hasher.toString
              })
 
-    let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))
+    let sourceFileNames = lazy [ for x in sourceFiles -> x.FileName ]
 
     member _.ProjectFileName = projectConfig.ProjectFileName
     member _.ProjectId = projectConfig.ProjectId
@@ -285,20 +282,20 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     member _.IndexOf fileName =
         sourceFiles
-        |> List.tryFindIndex (fun x -> x.FileName = fileName)
+        |> Array.tryFindIndex (fun x -> x.FileName = fileName)
         |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectConfig.ProjectFileName))
 
-    member private _.With(sourceFiles: 'T list) =
+    member private _.With(sourceFiles: 'T[]) =
         ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
 
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
-    member this.Replace(changedSourceFiles: 'T list) =
+    member this.Replace(changedSourceFiles: 'T[]) =
         // TODO: validate if changed files are not present in the original list?
 
         let sourceFiles =
             sourceFiles
-            |> List.map (fun x ->
-                match changedSourceFiles |> List.tryFind (fun y -> y.FileName = x.FileName) with
+            |> Array.map (fun x ->
+                match changedSourceFiles |> Array.tryFind (fun y -> y.FileName = x.FileName) with
                 | Some y -> y
                 | None -> x)
 
@@ -314,9 +311,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     member this.OnlyWith fileIndexes =
         this.With(
             fileIndexes
-            |> Set.toList
-            |> List.sort
-            |> List.choose (fun x -> sourceFiles |> List.tryItem x)
+            |> Seq.choose (fun x -> sourceFiles |> Array.tryItem x)
+            |> Seq.toArray
         )
 
     override this.ToString() =
@@ -362,7 +358,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
 
     member this.FileKeyWithExtraFileSnapshotVersion(fileName: string) =
         let fileKey = this.FileKey fileName
-        let fileSnapshot = this.SourceFiles |> Seq.find (fun f -> f.FileName = fileName)
+        let fileSnapshot = this.SourceFiles |> Array.find (fun f -> f.FileName = fileName)
 
         fileKey.WithExtraVersion(fileSnapshot.Version |> Md5Hasher.toString)
 
@@ -589,7 +585,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     member internal _.ProjectSnapshot: ProjectSnapshot = projectSnapshot
 
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
-    member _.Replace(changedSourceFiles: FSharpFileSnapshot list) =
+    member _.Replace(changedSourceFiles: FSharpFileSnapshot[]) =
         projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
 
     member _.Label = projectSnapshot.Label
@@ -617,10 +613,10 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             projectFileName: string,
             outputFileName: string option,
             projectId: string option,
-            sourceFiles: FSharpFileSnapshot list,
+            sourceFiles: FSharpFileSnapshot[],
             referencesOnDisk: ReferenceOnDisk list,
             otherOptions: string list,
-            referencedProjects: FSharpReferencedProjectSnapshot list,
+            referencedProjects: FSharpReferencedProjectSnapshot[],
             isIncompleteTypeCheckEnvironment: bool,
             useScriptResolutionRules: bool,
             loadTime: DateTime,
@@ -695,10 +691,10 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                         projectFileName = options.ProjectFileName,
                         outputFileName = None,
                         projectId = options.ProjectId,
-                        sourceFiles = (sourceFiles |> List.ofArray),
+                        sourceFiles = sourceFiles,
                         referencesOnDisk = (referencesOnDisk |> List.ofArray),
                         otherOptions = (otherOptions |> List.ofArray),
-                        referencedProjects = (referencedProjects |> List.ofArray),
+                        referencedProjects = referencedProjects,
                         isIncompleteTypeCheckEnvironment = options.IsIncompleteTypeCheckEnvironment,
                         useScriptResolutionRules = options.UseScriptResolutionRules,
                         loadTime = options.LoadTime,
@@ -713,12 +709,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         }
 
     static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
-        FSharpProjectSnapshot.FromOptions(
-            options,
-            fun _ fileName ->
-                FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource)
-                |> async.Return
-        )
+        FSharpProjectSnapshot.FromOptions(options, fun _ fileName -> FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource))
 
     static member FromOptions
         (options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText, documentSource: DocumentSource)
@@ -731,9 +722,9 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     $"{fileVersion}{sourceText.GetHashCode().ToString()}",
                     fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                 )
+                |> async.Return
             else
                 FSharpFileSnapshot.CreateFromDocumentSource(fName, documentSource)
-            |> async.Return
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
@@ -767,7 +758,6 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
                     let fullPath = Path.Combine(directoryPath, line)
                     if not (File.Exists fullPath) then None else Some fullPath)
-            |> Array.toList
 
         let referencesOnDisk =
             compilerArgs |> Seq.filter isReference |> Seq.map _.Substring(3) |> Seq.toList
@@ -782,7 +772,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             projectFileName = projectFileName,
             outputFileName = None,
             projectId = None,
-            sourceFiles = (fsharpFiles |> List.map FSharpFileSnapshot.CreateFromFileSystem),
+            sourceFiles = (fsharpFiles |> Array.map FSharpFileSnapshot.CreateFromFileSystem),
             referencesOnDisk =
                 (referencesOnDisk
                  |> List.map (fun x ->
@@ -791,7 +781,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                          LastModified = FileSystem.GetLastWriteTimeShim(x)
                      })),
             otherOptions = otherOptions,
-            referencedProjects = [],
+            referencedProjects = [||],
             isIncompleteTypeCheckEnvironment = false,
             useScriptResolutionRules = false,
             loadTime = DateTime.Now,
@@ -810,17 +800,16 @@ let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshot) =
             {
                 ProjectFileName = projectSnapshot.ProjectFileName
                 ProjectId = projectSnapshot.ProjectId
-                SourceFiles = projectSnapshot.SourceFiles |> Seq.map (fun x -> x.FileName) |> Seq.toArray
+                SourceFiles = projectSnapshot.SourceFiles |> Array.map _.FileName
                 OtherOptions = projectSnapshot.CommandLineOptions |> List.toArray
                 ReferencedProjects =
                     projectSnapshot.ReferencedProjects
-                    |> Seq.map (function
+                    |> Array.map (function
                         | FSharpReference(name, opts) ->
                             FSharpReferencedProject.FSharpReference(name, opts.ProjectSnapshot |> snapshotToOptions)
                         | PEReference(getStamp, reader) -> FSharpReferencedProject.PEReference(getStamp, reader)
                         | ILModuleReference(name, getStamp, getReader) ->
                             FSharpReferencedProject.ILModuleReference(name, getStamp, getReader))
-                    |> Seq.toArray
                 IsIncompleteTypeCheckEnvironment = projectSnapshot.IsIncompleteTypeCheckEnvironment
                 UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
                 LoadTime = projectSnapshot.LoadTime

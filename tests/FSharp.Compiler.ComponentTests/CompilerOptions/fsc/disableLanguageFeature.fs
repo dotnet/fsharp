@@ -13,7 +13,7 @@ module disableLanguageFeature =
         FSharp """
 printfn "Hello, World"
         """
-        |> withOptions ["--disableLanguageFeature:StringInterpolation"]
+        |> withOptions ["--disableLanguageFeature:FromEndSlicing"]
         |> typecheck
         |> shouldSucceed
         |> ignore

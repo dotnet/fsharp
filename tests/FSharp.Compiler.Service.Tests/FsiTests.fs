@@ -677,13 +677,6 @@ module FsiTests =
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         FsiEvaluationSession.Create(fsiConfig, allArgs, stdin, stdout, stderr, collectible = true)
 
-    // RFC FS-1043: each EvalInteraction reuses the dummy file name "input.fsx" and a fresh lexbuf, so two
-    // identical-layout submissions produce identical source ranges while sharing one session CcuThunk (and its
-    // extension-operator solution sink). Submission 0 defines two different String '*' extensions; submissions
-    // 1 and 2 open one each with IDENTICAL layout, so their trait-call ranges coincide. Without resetting the
-    // sink per fragment the stale record from submission 1 is indistinguishable from submission 2's, the
-    // ambiguous file-global re-resolution is used, and the second use of '*' falls back to FSharp.Core's
-    // throwing dynamic stub (NotSupportedException) instead of the freshly opened extension.
     [<TheoryForNETCOREAPP>]
     [<InlineData(true)>]
     [<InlineData(false)>]

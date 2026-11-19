@@ -448,9 +448,11 @@ type ILTypeInfo =
     member x.IsReadOnly (g: TcGlobals) =
         x.RawMetadata.HasWellKnownAttribute(g, WellKnownILAttributes.IsReadOnlyAttribute)
 
-    member x.Instantiate inst =
+    member x.MapType remapType =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
-        ILTypeInfo(g, instType inst ty, tref, tdef)
+        ILTypeInfo(g, remapType ty, tref, tdef)
+
+    member x.Instantiate inst = x.MapType(instType inst)
 
     member x.NullableAttributes = AttributesFromIL(x.RawMetadata.MetadataIndex,x.RawMetadata.CustomAttrsStored)
 
@@ -1258,6 +1260,25 @@ type MethInfo =
             match inst with
             | [] -> x
             | _ -> assert false; failwith "Not supported"
+#endif
+
+    member x.Remap(remapType, remapValRef) =
+        let g = x.TcGlobals
+        match x with
+        | ILMeth(_, ILMethInfo(_, parent, md, tps), pri) ->
+            let parent =
+                match parent with
+                | IlType tinfo -> IlType(tinfo.MapType remapType)
+                | CSharpStyleExtension(tcref, ty) ->
+                    let tcref = tcrefOfAppTy g (remapType (generalizedTyconRef g tcref))
+                    CSharpStyleExtension(tcref, remapType ty)
+            ILMeth(g, ILMethInfo(g, parent, md, tps), pri)
+        | FSMeth(_, ty, vref, pri) -> FSMeth(g, remapType ty, remapValRef vref, pri)
+        | MethInfoWithModifiedReturnType(mi, retTy) -> MethInfoWithModifiedReturnType(mi.Remap(remapType, remapValRef), remapType retTy)
+        | DefaultStructCtor(_, ty) -> DefaultStructCtor(g, remapType ty)
+        | RecdCtor(_, ty) -> RecdCtor(g, remapType ty)
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth _ -> x
 #endif
 
     /// Get the return type of a method info, where 'void' is returned as 'None'

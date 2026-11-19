@@ -531,11 +531,36 @@ type GeneratedSequenceBase<'T>() =
 type GeneratedRuntimeAsyncSequenceBase<'T>() =
     [<DefaultValue>]
     val mutable private claimed: int
+    [<DefaultValue>]
+    val mutable private moving: int
     abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract SetCancellationToken: System.Threading.CancellationToken -> unit
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
-    abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
+    abstract Close: unit -> unit
     abstract Current: 'T
+
+    // The generated MoveNextAsync calls this from a finally block, before its result completes.
+    member x.CompleteMoveNext() = System.Threading.Volatile.Write(&x.moving, 0)
+
+    member private x.MoveNextImplAsync() =
+        if System.Threading.Interlocked.CompareExchange(&x.moving, 1, 0) <> 0 then
+            invalidOp "Concurrent MoveNextAsync calls are not supported."
+
+        x.MoveNextAsync()
+
+    // Close makes the next move run the pending finally blocks instead of resuming.
+    member private x.DisposeImplAsync() =
+        if System.Threading.Interlocked.CompareExchange(&x.moving, 1, 0) <> 0 then
+            invalidOp "DisposeAsync cannot be called while MoveNextAsync is pending."
+
+        x.Close()
+        let move = x.MoveNextAsync()
+
+        if move.IsCompletedSuccessfully then
+            move.Result |> ignore
+            System.Threading.Tasks.ValueTask()
+        else
+            System.Threading.Tasks.ValueTask(move.AsTask())
 
     interface IAsyncEnumerable<'T> with
         member x.GetAsyncEnumerator(cancellationToken) =
@@ -550,8 +575,8 @@ type GeneratedRuntimeAsyncSequenceBase<'T>() =
 
     interface IAsyncEnumerator<'T> with
         member x.Current = x.Current
-        member x.MoveNextAsync() = x.MoveNextAsync()
-        member x.DisposeAsync() = x.DisposeAsync()
+        member x.MoveNextAsync() = x.MoveNextImplAsync()
+        member x.DisposeAsync() = x.DisposeImplAsync()
 #endif
 
 [<Struct; NoEquality; NoComparison>]

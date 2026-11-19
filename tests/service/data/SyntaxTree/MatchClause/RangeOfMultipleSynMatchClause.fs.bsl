@@ -45,17 +45,18 @@ ImplFile
                            (7,4--7,35)), Ident None, (7,4--8,8),
                         { SeparatorRange = None }), (6,2--8,8), Yes,
                      { ArrowRange = Some (6,5--6,7)
-                       BarRange = Some (6,0--6,1) });
+                       BarRange = Some (6,0--6,1)
+                       WhenKeyword = None });
                   SynMatchClause
                     (Named (SynIdent (exx, None), false, None, (9,2--9,5)), None,
                      Ident None, (9,2--10,8), Yes,
                      { ArrowRange = Some (9,6--9,8)
-                       BarRange = Some (9,0--9,1) })], (2,0--10,8),
-                 Yes (2,0--2,3), Yes (5,0--5,4),
-                 { TryKeyword = (2,0--2,3)
-                   TryToWithRange = (2,0--5,4)
-                   WithKeyword = (5,0--5,4)
-                   WithToEndRange = (5,0--10,8) }), (2,0--10,8))],
+                       BarRange = Some (9,0--9,1)
+                       WhenKeyword = None })], (2,0--10,8), Yes (2,0--2,3),
+                 Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
+                                   TryToWithRange = (2,0--5,4)
+                                   WithKeyword = (5,0--5,4)
+                                   WithToEndRange = (5,0--10,8) }), (2,0--10,8))],
           PreXmlDocEmpty, [], None, (2,0--11,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

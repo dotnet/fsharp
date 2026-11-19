@@ -119,7 +119,6 @@ type Exception with
         | LetRecEvaluatedOutOfOrder(_, _, _, m)
         | DiagnosticWithText(_, _, m)
         | DiagnosticWithSuggestions(_, _, m, _, _)
-        | DiagnosticEnabledWithLanguageFeature(_, _, m, _)
         | SyntaxError(_, m)
         | InternalError(_, m)
         | InternalException(_, _, m)
@@ -339,7 +338,6 @@ type Exception with
         | WrappedError(e, _) -> e.DiagnosticNumber
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
-        | DiagnosticEnabledWithLanguageFeature(n, _, _, _) -> n
         | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Number
@@ -368,7 +366,6 @@ type PhasedDiagnostic with
         | DefensiveCopyWarning _ -> 5
 
         | DiagnosticWithText(n, _, _)
-        | DiagnosticEnabledWithLanguageFeature(n, _, _, _)
         | DiagnosticWithSuggestions(n, _, _, _, _) ->
             // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
             // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
@@ -408,11 +405,8 @@ type PhasedDiagnostic with
         | 3906 -> false // tcRecordExplicitFieldShadowsSpreadField - off by default
         | 3907 -> false // tcRecordExprSpreadFieldShadowsSpreadField - off by default
         | _ ->
-            match x.Exception with
-            | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
-            | _ ->
-                (severity = FSharpDiagnosticSeverity.Info && level > 0)
-                || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
+            (severity = FSharpDiagnosticSeverity.Info && level > 0)
+            || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     member x.AdjustSeverity(options) =
         let severity = x.Severity
@@ -1866,8 +1860,7 @@ type Exception with
 
             os.Append(NonUniqueInferredAbstractSlot4E().Format)
 
-        | DiagnosticWithText(_, s, _)
-        | DiagnosticEnabledWithLanguageFeature(_, s, _, _) -> os.Append s
+        | DiagnosticWithText(_, s, _) -> os.Append s
 
         | DiagnosticWithSuggestions(_, s, _, idText, suggestionF) ->
             os.Append s

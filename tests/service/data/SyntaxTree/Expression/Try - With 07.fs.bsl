@@ -17,15 +17,17 @@ ImplFile
                         (Wild (5,9--5,10), Some (Const (Int32 2, (5,16--5,17))),
                          Const (Int32 3, (5,21--5,22)), (5,9--5,22), Yes,
                          { ArrowRange = Some (5,18--5,20)
-                           BarRange = None })], (4,4--5,22), Yes (4,4--4,7),
-                     Yes (5,4--5,8), { TryKeyword = (4,4--4,7)
-                                       TryToWithRange = (4,4--5,8)
-                                       WithKeyword = (5,4--5,8)
-                                       WithToEndRange = (5,4--5,22) }),
-                  (3,4--3,5), NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
-                                           InlineKeyword = None
-                                           EqualsRange = Some (3,6--3,7) })],
-              (3,0--5,22), { InKeyword = None });
+                           BarRange = None
+                           WhenKeyword = Some (5,11--5,15) })], (4,4--5,22),
+                     Yes (4,4--4,7), Yes (5,4--5,8),
+                     { TryKeyword = (4,4--4,7)
+                       TryToWithRange = (4,4--5,8)
+                       WithKeyword = (5,4--5,8)
+                       WithToEndRange = (5,4--5,22) }), (3,4--3,5), NoneAtLet,
+                  { LeadingKeyword = Let (3,0--3,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (3,6--3,7) })], (3,0--5,22),
+              { InKeyword = None });
            Expr (Const (Int32 4, (7,0--7,1)), (7,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

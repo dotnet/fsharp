@@ -39,16 +39,18 @@ ImplFile
                                   (5,12--5,55))], None, (5,6--5,55)), None,
                          Const (Unit, (5,59--5,61)), (5,6--5,61), Yes,
                          { ArrowRange = Some (5,56--5,58)
-                           BarRange = Some (5,4--5,5) });
+                           BarRange = Some (5,4--5,5)
+                           WhenKeyword = None });
                       SynMatchClause
                         (Wild (6,6--6,7), None, Const (Unit, (6,11--6,13)),
                          (6,6--6,13), Yes, { ArrowRange = Some (6,8--6,10)
-                                             BarRange = Some (6,4--6,5) })],
-                     (4,4--6,13), { MatchKeyword = (4,4--4,9)
-                                    WithKeyword = (4,12--4,16) }), (3,4--3,7),
-                  NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
-                               InlineKeyword = None
-                               EqualsRange = Some (3,8--3,9) })], (3,0--6,13),
+                                             BarRange = Some (6,4--6,5)
+                                             WhenKeyword = None })], (4,4--6,13),
+                     { MatchKeyword = (4,4--4,9)
+                       WithKeyword = (4,12--4,16) }), (3,4--3,7), NoneAtLet,
+                  { LeadingKeyword = Let (3,0--3,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (3,8--3,9) })], (3,0--6,13),
               { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,13), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

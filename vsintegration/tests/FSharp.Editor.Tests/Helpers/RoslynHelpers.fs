@@ -343,7 +343,7 @@ type RoslynTestHelpers private () =
         let document = project.Documents |> Seq.last
         document
 
-    static member CreateSolution(syntheticProject: SyntheticProject) =
+    static member CreateSolution(syntheticProject: SyntheticProject, ?configureWorkspace: Solution -> unit) =
 
         let checker = syntheticProject.SaveAndCheck()
 
@@ -371,6 +371,7 @@ type RoslynTestHelpers private () =
             projInfo.WithMetadataReferences(RoslynTestHelpers.MetadataReferencesOf(options, []))
 
         let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
+        (defaultArg configureWorkspace ignore) solution
 
         options |> RoslynTestHelpers.SetProjectOptions projId solution
 
@@ -378,7 +379,7 @@ type RoslynTestHelpers private () =
 
     /// One Roslyn project per synthetic project, wired with project references the way VS wires
     /// project-to-project references, so the options manager builds in-memory F# references.
-    static member CreateMultiProjectSolution(syntheticProject: SyntheticProject) =
+    static member CreateMultiProjectSolution(syntheticProject: SyntheticProject, ?configureWorkspace: Solution -> unit) =
         let checker = syntheticProject.SaveAndCheck()
 
         let projects =
@@ -410,6 +411,7 @@ type RoslynTestHelpers private () =
             ]
 
         let solution = RoslynTestHelpers.CreateSolution projectInfos
+        (defaultArg configureWorkspace ignore) solution
 
         for project, id in projects do
             project.GetProjectOptions checker

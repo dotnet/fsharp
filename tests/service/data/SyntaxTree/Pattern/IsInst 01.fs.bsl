@@ -11,7 +11,8 @@ ImplFile
                        (LongIdent (SynLongIdent ([T], [], [None])), (4,2--4,6)),
                      None, Const (Unit, (4,10--4,12)), (4,2--4,12), Yes,
                      { ArrowRange = Some (4,7--4,9)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,12),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,12),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,9--3,13) }), (3,0--4,12));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],

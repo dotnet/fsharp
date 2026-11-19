@@ -900,6 +900,73 @@ module EventHandlerSyntheticSymbols =
 /// https://github.com/dotnet/fsharp/issues/15290
 module RecordCopyAndUpdate =
 
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(true, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, true)>]
+    let ``Issue 20791 - record references distinguish type tokens and semantic expressions`` (fast, transparent) : Task =
+        task {
+            let source = """module Main
+type State = { Count: int }
+type Outer = { Inner: State }
+let state = { Count = 0 }
+let update (state: State) = { state with Count = state.Count + 1 }
+let outer = { Inner = state }
+let nested = { outer with Inner.Count = 2 }
+let explicitNested = { outer with Inner = { state with Count = 3 } }
+"""
+            let project =
+                { SyntheticProject.Create({ sourceFile "Main" [] with Source = source }) with AutoAddModules = false }
+            let checker =
+                FSharpChecker.Create(
+                    useTransparentCompiler = transparent,
+                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                    captureIdentifiersWhenParsing = true)
+            let! _ = SaveAndCheckProject project checker false
+            let! results = checkFile "Main" project checker
+            let check = getTypeCheckResult results
+            let symbol = check.GetSymbolUseAtLocation(2, 10, "type State = { Count: int }", ["State"]).Value.Symbol
+            let text = SourceText.ofString source
+            let describe (range: range) =
+                range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, text.GetSubTextFromRange range
+            let ordinary = check.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.None)
+            let related = check.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.CopyAndUpdateRecord)
+            let expectedOrdinary =
+                [|2, 5, 2, 10, "State"; 3, 22, 3, 27, "State"; 5, 19, 5, 24, "State"|]
+            let expectedRelated =
+                [|yield! expectedOrdinary
+                  5, 28, 5, 66, "{ state with Count = state.Count + 1 }"
+                  8, 42, 8, 66, "{ state with Count = 3 }"|]
+            for use' in related do
+                Assert.True(symbol.IsEffectivelySameAs use'.Symbol)
+            let outer = check.GetSymbolUseAtLocation(3, 10, "type Outer = { Inner: State }", ["Outer"]).Value.Symbol
+            Assert.Equal<(int * int * int * int * string) array>(
+                [|3, 5, 3, 10, "Outer"
+                  7, 13, 7, 43, "{ outer with Inner.Count = 2 }"
+                  8, 21, 8, 68, "{ outer with Inner = { state with Count = 3 } }"|],
+                check.GetUsesOfSymbolInFile(outer, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                |> Array.map (fun use' -> describe use'.Range)
+                |> Array.sort)
+            Assert.Equal<(int * int * int * int * string) array>(
+                expectedOrdinary,
+                ordinary |> Array.map (fun use' -> describe use'.Range) |> Array.sort)
+            Assert.Equal<(int * int * int * int * string) array>(
+                expectedRelated, related |> Array.map (fun use' -> describe use'.Range) |> Array.sort)
+            let options = project.GetProjectOptions checker
+            let! background =
+                if transparent then
+                    async {
+                        let! snapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
+                        return! checker.FindBackgroundReferencesInFile(project.GetFilePath "Main", snapshot, symbol)
+                    }
+                else
+                    checker.FindBackgroundReferencesInFile(project.GetFilePath "Main", options, symbol, fastCheck = fast)
+            Assert.Equal<(int * int * int * int * string) array>(
+                related |> Array.map (fun use' -> describe use'.Range) |> Array.sort,
+                background |> Seq.map describe |> Seq.sort |> Seq.toArray)
+        }
+
     [<Fact>]
     let ``Find references of record type includes copy-and-update`` () =
         let source = """

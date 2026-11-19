@@ -26,7 +26,7 @@ type internal EvictionMode =
     | NoEviction
     /// Evict items immediately on the caller's thread when adding a new item that would exceed capacity.
     | Immediate
-    /// Evict items in the background using a MailboxProcessor to queue eviction requests. This may lag behind during heavy load but avoids blocking callers.
+    /// Evict items in the background using a shared MailboxProcessor to queue eviction requests. This may lag behind during heavy load but avoids blocking callers.
     | MailboxProcessor
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -53,6 +53,9 @@ module internal CacheOptions =
     /// Set eviction mode to NoEviction.
     val withNoEviction: CacheOptions<'Key> -> CacheOptions<'Key>
 
+module internal EvictionProcessor =
+    val Error: IEvent<exn>
+
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null> =
     new: options: CacheOptions<'Key> * ?name: string -> Cache<'Key, 'Value>
@@ -60,8 +63,6 @@ type internal Cache<'Key, 'Value when 'Key: not null> =
     member TryAdd: key: 'Key * value: 'Value -> bool
     member GetOrAdd: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
     member AddOrUpdate: key: 'Key * value: 'Value -> unit
-
-    interface IDisposable
 
     /// For testing only.
     member Evicted: IEvent<unit>

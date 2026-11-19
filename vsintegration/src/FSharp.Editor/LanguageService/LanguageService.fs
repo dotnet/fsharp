@@ -6,10 +6,13 @@ open System
 open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open System.Threading
+open System.Threading.Tasks
 open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
+open Microsoft.ServiceHub.Framework
+open Microsoft.VisualStudio.Copilot
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.NativeInterop
@@ -20,6 +23,7 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Shell.ServiceBroker
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host.Mef
@@ -53,6 +57,15 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 type internal FSharpWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (editorOptions: EditorOptions, metadataAsSourceService: FSharpMetadataAsSourceService) =
+
+    static do
+        FSharp.Compiler.Caches.EvictionProcessor.Error.Add(fun ex ->
+            ThreadHelper.JoinableTaskFactory.RunAsync(fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw()
+                })
+            |> ignore)
 
     let tryGetMetadataSnapshot (workspace: VisualStudioWorkspace) (path, timeStamp) =
         try
@@ -248,9 +261,8 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
         member _.CreateService(_) = upcast settings
 
 [<Guid(FSharpConstants.packageGuidString)>]
-[<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
-[<ProvideOptionPage(typeof<FSharp.Interactive.FSharpCompilerPropertyPage>, "F# Tools", "Compiler", 6000s, 6015s, true)>]
-
+[<ProvideSettingsManifest(PackageRelativeManifestFile = "fsharpSettings.registration.json")>]
+[<ProvideService(typeof<FSharpSettingsProvider>, IsAsyncQueryable = true)>]
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
 
 [<ProvideToolWindow(typeof<FSharp.Interactive.FsiToolWindow>,
@@ -263,17 +275,6 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
                     Window = "34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")
 // The following should place the ToolWindow with the OutputWindow by default.
 >]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008", "IntelliSensePageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009", "QuickInfoPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010", "CodeFixesPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>,
-                                  "F#",
-                                  null,
-                                  "Performance",
-                                  "6011",
-                                  "PerformancePageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012", "AdvancedPageKeywords")>]
-[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.FormattingOptionPage>, "F#", null, "Formatting", "6014", "FormattingPageKeywords")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -316,18 +317,71 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
+    let mutable settingsLifetime = None
+
+    let initializeSettings =
+        lazy
+            (task {
+                let! native = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsManager>)
+
+                let native =
+                    native :?> Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager
+
+                let! legacy = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsSettingsPersistenceManager>)
+                let! metadata = this.GetServiceAsync(typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUnifiedSettingsMetadata>)
+
+                let! migration =
+                    UnifiedSettingsMigration.startAsync
+                        native
+                        (legacy :?> Microsoft.VisualStudio.Settings.ISettingsManager5)
+                        (metadata :?> Microsoft.Internal.VisualStudio.Services.UnifiedSettings.IUnifiedSettingsMetadata)
+                        this.DisposalToken
+
+                try
+                    let interactive = UnifiedSettings.subscribeToInteractive (native.GetReader())
+
+                    settingsLifetime <-
+                        Some
+                            { new IDisposable with
+                                member _.Dispose() =
+                                    interactive.Dispose()
+                                    migration.Dispose()
+                            }
+                with error ->
+                    migration.Dispose()
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error).Throw()
+            })
+
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
+    do
+        this.AddService(
+            typeof<FSharpSettingsProvider>,
+            AsyncServiceCreatorCallback(fun _ cancellationToken _ ->
+                cancellationToken.ThrowIfCancellationRequested()
+
+                Task.FromResult<obj>(
+                    new FSharpSettingsProvider(
+                        (fun () -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler),
+                        (fun value -> FSharp.Interactive.FSharpCompilerSettings.UseNetSdkCompiler <- value),
+                        (fun error -> ActivityLog.LogError("F# Unified Settings", error.ToString()))
+                    )
+                )),
+            true
+        )
+
 #if DEBUG
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
+#endif
 
     override this.Dispose(disposing: bool) =
-        base.Dispose(disposing: bool)
-
         if disposing then
+            settingsLifetime |> Option.iter _.Dispose()
+#if DEBUG
             flushTelemetry ()
 #endif
+        base.Dispose(disposing: bool)
 
     override this.RegisterInitializeAsyncWork(packageRegistrationTasks: PackageLoadTasks) : unit =
         base.RegisterInitializeAsyncWork(packageRegistrationTasks)
@@ -336,13 +390,11 @@ type internal FSharpPackage() as this =
             true,
             (fun _tasks cancellationToken ->
                 foregroundCancellableTask {
+                    do! initializeSettings.Value
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let theme = exportProvider.GetExport<ISetThemeColors>().Value
                     theme.SetColors()
-
-                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-                    this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>) |> ignore
 
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
@@ -357,6 +409,7 @@ type internal FSharpPackage() as this =
             false,
             (fun _tasks cancellationToken ->
                 cancellableTask {
+                    do! initializeSettings.Value
                     let exportProvider = this.ComponentModel.DefaultExportProvider
 
                     let workspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
@@ -411,6 +464,9 @@ type internal FSharpPackage() as this =
 
 #if DEBUG
     override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        // The base schedules LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync, which registers Copilot.
+        base.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks)
+
         afterPackageLoadedTasks.AddTask(
             false,
             fun _ _ ->
@@ -421,6 +477,49 @@ type internal FSharpPackage() as this =
                 }
         )
 #endif
+
+    member private this.RegisterCopilotContextProviderAsync(cancellationToken: CancellationToken) : Task =
+        task {
+            try
+                // Copilot's registration part blocks on the main thread while MEF constructs it, so a background
+                // request deadlocks against the Git provider's request for it on the main thread at solution open.
+                do! this.JoinableTaskFactory.SwitchToMainThreadAsync(alwaysYield = true, cancellationToken = cancellationToken)
+
+                let! container = this.GetServiceAsync(typeof<SVsBrokeredServiceContainer>)
+
+                match container with
+                | :? IBrokeredServiceContainer as container ->
+                    // The Interactions service also serves ICopilotRegistrationService.
+                    let! registration =
+                        container
+                            .GetFullAccessServiceBroker()
+                            .GetProxyAsync<ICopilotRegistrationService>(CopilotDescriptors.InteractionService, cancellationToken)
+
+                    use registration = registration
+
+                    match registration with
+                    | null -> ()
+                    | registration ->
+                        let moniker =
+                            ServiceMoniker(
+                                FSharpConstants.copilotSymbolProviderName,
+                                Version CopilotDescriptors.CurrentContextProviderVersion
+                            )
+
+                        do! registration.RegisterContextProviderAsync(moniker, cancellationToken)
+                | _ -> ()
+            with ex when not (ex :? OperationCanceledException) ->
+                DebugHelpers.FSharpOutputPane.logExceptionWithContext (ex, "Registering the Copilot context provider")
+        }
+
+    override this.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken) : Task =
+        let baseComponents =
+            base.LoadComponentsInBackgroundAfterSolutionFullyLoadedAsync(cancellationToken)
+
+        task {
+            do! baseComponents
+            do! this.RegisterCopilotContextProviderAsync(cancellationToken)
+        }
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)

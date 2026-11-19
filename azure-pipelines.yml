@@ -126,7 +126,6 @@ extends:
                   zipSources: false
 
             variables:
-            - group: DotNet-DevDiv-Insertion-Workflow-Variables
             - name: _SignType
               value: Real
             steps:
@@ -137,6 +136,7 @@ extends:
                       -configuration $(_BuildConfig)
                       -prepareMachine
                       -testAllButIntegrationAndAot
+                      -testUsingModules
                       -officialSkipTests $(SkipTests)
                       /p:SignType=$(_SignType)
                       /p:DotNetSignType=$(_SignType)

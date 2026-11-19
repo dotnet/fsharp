@@ -2,12 +2,16 @@
 [<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ScriptOptionsTests
 
-open Xunit
+open System
 open System.IO
-open FSharp.Compiler.Service.Tests.Common
+
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
+
 open TestFramework
+
+open Xunit
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported
@@ -62,6 +66,29 @@ let pi = Math.PI
     let expectedReferenceText = match [| flag |] |> Array.tryFind(fun f -> f = "--targetprofile:mscorlib") with | Some _ -> "net45" | _ -> "netstandard2.0"
     let found = options.OtherOptions |> Array.exists (fun s -> s.Contains(expectedReferenceText) && s.Contains("FSharp.Data.dll"))
     Assert.True(found)
+
+// https://github.com/dotnet/fsharp/issues/12708
+[<Fact>]
+let ``Issue 12708 - editor-side NuGet resolution does not alter host PATH`` () =
+    let originalPath = Environment.GetEnvironmentVariable("PATH")
+
+    try
+        let file = Path.Combine(Path.GetTempPath(), getTemporaryFileName () + ".fsx")
+        let localChecker = FSharpChecker.Create()
+
+        let _, errors =
+            localChecker.GetProjectOptionsFromScript(
+                file,
+                SourceText.ofString """#r "nuget: System.Json, 4.6.0" """,
+                assumeDotNetFramework = false,
+                useSdkRefs = true
+            )
+            |> Async.RunSynchronouslyImmediate
+
+        Assert.Empty errors
+        Assert.Equal(originalPath, Environment.GetEnvironmentVariable("PATH"))
+    finally
+        Environment.SetEnvironmentVariable("PATH", originalPath)
 
 /// `SourceFiles` is exactly the single script; the fsi default-reference injection for a missing `#load`
 /// is a host-layout detail (not product behaviour) and is intentionally not asserted.

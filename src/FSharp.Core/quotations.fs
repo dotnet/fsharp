@@ -378,7 +378,13 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
         | CombTerm(NewRecordOp ty, args) -> combL "NewRecord" (typeL ty :: exprs args)
         | CombTerm(NewUnionCaseOp unionCase, args) -> combL "NewUnionCase" (ucaseL unionCase :: exprs args)
         | CombTerm(UnionCaseTestOp unionCase, args) -> combL "UnionCaseTest" (exprs args @ [ ucaseL unionCase ])
-        | CombTerm(NewTupleOp _, args) -> combL "NewTuple" (exprs args)
+        | CombTerm(NewTupleOp ty, args) ->
+            combL
+                (if ty.IsValueType then
+                     "NewStructTuple"
+                 else
+                     "NewTuple")
+                (exprs args)
         | CombTerm(TupleGetOp(_, i), [ arg ]) -> combL "TupleGet" ([ expr arg ] @ [ objL i ])
         | CombTerm(ValueOp(v, _, Some nm), []) -> combL "ValueWithName" [ objL v; wordL (tagLocal nm) ]
         | CombTerm(ValueOp(v, _, None), []) -> combL "Value" [ objL v ]

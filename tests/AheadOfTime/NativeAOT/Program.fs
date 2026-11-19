@@ -21,10 +21,7 @@ let runChecks () =
     check ($"answer = %d{x}", "answer = 42")
     check ($"initial = %c{initial}", "initial = F")
 
-    // The following use printf specifiers that still route through 'sprintf', so they would make the
-    // NativeAOT publish fail with IL2026/IL2070/IL3050.
-    // check ($"pi ~ %.2f{pi}", "pi ~ 3.14")
-    // check ($"value = %A{x}", "value = 42")
+    // Captured printf compatibility is tested separately: its Core analysis warnings are not reflection-free.
 
 [<EntryPoint>]
 let main argv =

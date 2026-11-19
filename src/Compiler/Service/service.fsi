@@ -254,7 +254,7 @@ type public FSharpChecker =
     /// <param name="fileName">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
     /// <param name="source">The source for the file.</param>
     /// <param name="caret">The editor location for the cursor if available.</param>
-    /// <param name="documentSource">DocumentSource to load any additional files.</param>
+    /// <param name="documentSource">DocumentSource to load any additional files. Defaults to the document source of the checker.</param>
     /// <param name="previewEnabled">Is the preview compiler enabled.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
@@ -510,6 +510,10 @@ type public FSharpChecker =
 
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
+
+    /// Answers a referenced assembly's last-write time to the incremental builders created after this call, in place of a
+    /// file system read per request. The value must be what `File.GetLastWriteTimeUtc` returns, kept current by the host.
+    member internal SetReferenceStampProvider: getReferenceStamp: (string -> DateTime) -> unit
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState

@@ -7,6 +7,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open System.Diagnostics
 open System.IO
 open System.Threading
@@ -22,6 +23,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
@@ -335,6 +337,7 @@ type FSharpCodeCompletionOptions =
     {
         SuggestPatternNames: bool
         SuggestObsoleteSymbols: bool
+        SuggestEditorBrowsableSymbols: EditorBrowsableState
         SuggestGeneratedOverrides: bool
         SuggestOverrideBodies: bool
     }
@@ -343,9 +346,17 @@ type FSharpCodeCompletionOptions =
         {
             SuggestPatternNames = true
             SuggestObsoleteSymbols = false
+            SuggestEditorBrowsableSymbols = EditorBrowsableState.Advanced
             SuggestGeneratedOverrides = true
             SuggestOverrideBodies = true
         }
+
+    member internal x.AllowUnseen =
+        UnseenItems.ofBool x.SuggestObsoleteSymbols UnseenItems.Obsolete
+        ||| (match x.SuggestEditorBrowsableSymbols with
+             | EditorBrowsableState.Always -> UnseenItems.None
+             | EditorBrowsableState.Never -> UnseenItems.EditorBrowsableAdvanced ||| UnseenItems.EditorBrowsableNever
+             | _ -> UnseenItems.EditorBrowsableAdvanced)
 
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
@@ -496,7 +507,7 @@ type internal TypeCheckInfo
     /// Looks at the exact name resolutions that occurred during type checking
     /// If 'membersByResidue' is specified, we look for members of the item obtained
     /// from the name resolution and filter them by the specified residue (?)
-    let GetPreciseItemsFromNameResolution (line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, allowObsolete) =
+    let GetPreciseItemsFromNameResolution (line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, allowUnseen) =
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
@@ -517,7 +528,7 @@ type internal TypeCheckInfo
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
-            let items = ResolveCompletionsInType ncenv nenv targets m ad true ty allowObsolete
+            let items = ResolveCompletionsInType ncenv nenv targets m ad true ty allowUnseen
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors
 
@@ -527,7 +538,7 @@ type internal TypeCheckInfo
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
             let items =
-                ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp) allowObsolete
+                ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp) allowUnseen
 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors
@@ -564,7 +575,7 @@ type internal TypeCheckInfo
                 let targets =
                     ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
-                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty allowObsolete
+                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty allowUnseen
                 let items = List.map ItemWithNoInst items
                 ReturnItemsOfType items g denv m filterCtors
 
@@ -677,7 +688,7 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowObsolete =
+    let GetNamedParametersAndSettableFields endOfExprPos cursorLine (lineStr: string) allowUnseen =
         let cnrs =
             GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
             |> ResizeArray.toList
@@ -703,7 +714,7 @@ type internal TypeCheckInfo
             let props =
                 propTys
                 |> List.collect (fun ty ->
-                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ty allowObsolete)
+                    ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ty allowUnseen)
 
             nenv.DisplayEnv, m, props @ CollectParameters meths amap m
 
@@ -736,7 +747,14 @@ type internal TypeCheckInfo
                 else
                     let (nenv, ad), m = GetBestEnvForPos endOfExprPos
 
-                    ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid.QualifyingIdents false
+                    ResolvePartialLongIdent
+                        ncenv
+                        nenv
+                        (ConstraintSolver.IsApplicableMethApprox g amap m)
+                        m
+                        ad
+                        plid.QualifyingIdents
+                        UnseenItems.None
                     |> List.tryPick (function
                         | NamedArgGroup(name, meths, isCtor) when name = lastName -> Some(buildGroup meths isCtor nenv ad m)
                         | _ -> None)
@@ -828,7 +846,9 @@ type internal TypeCheckInfo
 
     /// Looks at the exact expression types at the position to the left of the
     /// residue then the source when it was typechecked.
-    let GetPreciseCompletionListFromExprTypings (parseResults: FSharpParseFileResults, endOfExprPos, filterCtors, allowObsolete: bool) =
+    let GetPreciseCompletionListFromExprTypings
+        (parseResults: FSharpParseFileResults, endOfExprPos, filterCtors, allowUnseen: UnseenItems)
+        =
 
         let thereWereSomeQuals, quals = GetExprTypingForPosition(endOfExprPos)
 
@@ -868,7 +888,7 @@ type internal TypeCheckInfo
                 let targets =
                     ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
-                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty allowObsolete
+                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty allowUnseen
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
@@ -881,9 +901,9 @@ type internal TypeCheckInfo
                     ExprTypingsResult.None
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutions (nenv, ad, m, plid, filterCtors, showObsolete) =
+    let GetEnvironmentLookupResolutions (nenv, ad, m, plid, filterCtors, allowUnseen) =
         let items =
-            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid allowUnseen
 
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
@@ -892,16 +912,16 @@ type internal TypeCheckInfo
         (items, nenv.DisplayEnv, m)
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutionsAtPosition (cursorPos, plid, filterCtors, showObsolete) =
+    let GetEnvironmentLookupResolutionsAtPosition (cursorPos, plid, filterCtors, allowUnseen) =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
+        GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, allowUnseen)
 
     /// Find record fields in the best naming environment.
-    let GetClassOrRecordFieldsEnvironmentLookupResolutions (cursorPos, plid, fieldsOnly, allowObsolete) =
+    let GetClassOrRecordFieldsEnvironmentLookupResolutions (cursorPos, plid, fieldsOnly, allowUnseen) =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
 
         let items =
-            ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid allowObsolete fieldsOnly
+            ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid allowUnseen fieldsOnly
 
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
@@ -1402,7 +1422,7 @@ type internal TypeCheckInfo
                     None,
                     ResolveTypeNamesToTypeRefs,
                     ResolveOverloads.Yes,
-                    options.SuggestObsoleteSymbols
+                    options.AllowUnseen
                 )
 
             match nameResItems with
@@ -1564,10 +1584,15 @@ type internal TypeCheckInfo
             loc,
             filterCtors,
             resolveOverloads,
-            isInRangeOperator,
+            completionContext: CompletionContext option,
             allSymbols: unit -> AssemblySymbol list,
             options: FSharpCodeCompletionOptions
         ) =
+        let isInRangeOperator =
+            match completionContext with
+            | Some CompletionContext.RangeOperator -> true
+            | _ -> false
+
         let isSpread =
             FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)
             |> Option.exists (fun i ->
@@ -1596,7 +1621,7 @@ type internal TypeCheckInfo
                         None,
                         filterCtors,
                         resolveOverloads,
-                        options.SuggestObsoleteSymbols
+                        options.AllowUnseen
                     )
                 | Some residue ->
                     // Deals with cases when we have spaces between dot and\or identifier, like A  . $
@@ -1618,7 +1643,7 @@ type internal TypeCheckInfo
                                 Some(residue),
                                 filterCtors,
                                 resolveOverloads,
-                                options.SuggestObsoleteSymbols
+                                options.AllowUnseen
                             )
                         | None -> NameResResult.Empty
                     | _ -> NameResResult.Empty
@@ -1694,8 +1719,7 @@ type internal TypeCheckInfo
 
                             match leftOfDot with
                             | Some(pos, _) ->
-                                GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, options.SuggestObsoleteSymbols),
-                                true
+                                GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, options.AllowUnseen), true
                             | None ->
                                 // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
                                 // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
@@ -1727,8 +1751,7 @@ type internal TypeCheckInfo
                     | _ ->
                         // Use an environment lookup as the last resort
                         let envItems, denv, m =
-                            let allowObsolete = options.SuggestObsoleteSymbols
-                            GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, allowObsolete)
+                            GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, options.AllowUnseen)
 
                         let envResult =
                             match nameResItems, (envItems, denv, m), qualItems with
@@ -1761,6 +1784,11 @@ type internal TypeCheckInfo
                                         &&
 
                                         match x.Symbol with
+                                        | :? FSharpActivePatternCase as symbol ->
+                                            match symbol.Item, completionContext with
+                                            | Item.ActivePatternCase case, Some(CompletionContext.Pattern _) ->
+                                                not (ItemIsUnseen ad g ncenv.amap m options.AllowUnseen (Item.Value case.ActivePatternVal))
+                                            | _ -> false
                                         | :? FSharpMemberOrFunctionOrValue as m when
                                             m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs
                                             ->
@@ -1798,7 +1826,7 @@ type internal TypeCheckInfo
         let (nenv, _), m = GetBestEnvForPos cursorPos
 
         let fieldItems, _, _ =
-            GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, true, options.SuggestObsoleteSymbols)
+            GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, true, options.AllowUnseen)
 
         let fieldCompletionItems, _, _ as fieldsResult =
             (fieldItems, nenv.DisplayEnv, m) |> toCompletionItems
@@ -1831,6 +1859,16 @@ type internal TypeCheckInfo
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
+        let pos = mkPos line colAtEndOfNamesAndResidue
+
+        let completionContext =
+            match completionContextAtPos with
+            | Some(contextForPos, context) when contextForPos = pos -> context
+            | _ ->
+                parseResultsOpt
+                |> Option.map (fun x -> x.ParseTree)
+                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
+
         let getDeclaredItemsNotInRangeOpWithAllSymbols () =
             GetDeclaredItems(
                 parseResultsOpt,
@@ -1843,23 +1881,10 @@ type internal TypeCheckInfo
                 loc,
                 filterCtors,
                 resolveOverloads,
-                false,
+                completionContext,
                 getAllSymbols,
                 options
             )
-
-        let pos = mkPos line colAtEndOfNamesAndResidue
-
-        // Look for a "special" completion context
-        let completionContext =
-            // If the completion context we have computed higher up the stack is for the same position,
-            // reuse it, otherwise recompute
-            match completionContextAtPos with
-            | Some(contextForPos, context) when contextForPos = pos -> context
-            | _ ->
-                parseResultsOpt
-                |> Option.map (fun x -> x.ParseTree)
-                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
 
         let res =
             match completionContext with
@@ -1868,19 +1893,19 @@ type internal TypeCheckInfo
 
             // Completion at 'inherit C(...)"
             | Some(CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
-                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
+                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, UnseenItems.None)
                 |> FilterRelevantItemsBy getItem None (getItem >> IsInheritsCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'interface ..."
             | Some(CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
-                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
+                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, UnseenItems.None)
                 |> FilterRelevantItemsBy getItem None (getItem >> IsInterfaceCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'implement ..."
             | Some(CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
-                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
+                GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, UnseenItems.None)
                 |> FilterRelevantItemsBy
                     getItem
                     None
@@ -1905,7 +1930,7 @@ type internal TypeCheckInfo
                             loc,
                             filterCtors,
                             resolveOverloads,
-                            false,
+                            None,
                             (fun () -> []),
                             options
                         )
@@ -1914,7 +1939,7 @@ type internal TypeCheckInfo
                 else
                     // { x. } can be either record construction or computation expression. Try to get all visible record fields first
                     match
-                        GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false, options.SuggestObsoleteSymbols)
+                        GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false, options.AllowUnseen)
                         |> toCompletionItems
                     with
                     | [], _, _ ->
@@ -1930,7 +1955,7 @@ type internal TypeCheckInfo
                             loc,
                             filterCtors,
                             resolveOverloads,
-                            false,
+                            None,
                             (fun () -> []),
                             options
                         )
@@ -1952,7 +1977,7 @@ type internal TypeCheckInfo
                         loc,
                         filterCtors,
                         resolveOverloads,
-                        false,
+                        None,
                         (fun () -> []),
                         options
                     )
@@ -1963,13 +1988,13 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(identRange, (plid, _)))) ->
                 match GetRecdFieldsForCopyAndUpdateExpr(identRange, plid) with
                 | None ->
-                    Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false, options.SuggestObsoleteSymbols))
+                    Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false, options.AllowUnseen))
                     |> Option.map toCompletionItems
                 | Some(items, denv, m) -> Some(List.map ItemWithNoInst items, denv, m) |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-                GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false, options.SuggestObsoleteSymbols)
+                GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [ typeName ], false, options.AllowUnseen)
                 |> toCompletionItems
                 |> Some
 
@@ -2017,7 +2042,7 @@ type internal TypeCheckInfo
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
                 let results =
-                    GetNamedParametersAndSettableFields endPos line lineStr options.SuggestObsoleteSymbols
+                    GetNamedParametersAndSettableFields endPos line lineStr options.AllowUnseen
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -2121,11 +2146,6 @@ type internal TypeCheckInfo
                     // because providing generic parameters list is context aware, which we don't have here (yet).
                     None
                 | _ ->
-                    let isInRangeOperator =
-                        (match cc with
-                         | Some CompletionContext.RangeOperator -> true
-                         | _ -> false)
-
                     GetDeclaredItems(
                         parseResultsOpt,
                         lineStr,
@@ -2137,7 +2157,7 @@ type internal TypeCheckInfo
                         loc,
                         filterCtors,
                         resolveOverloads,
-                        isInRangeOperator,
+                        cc,
                         getAllSymbols,
                         options
                     )
@@ -2157,7 +2177,7 @@ type internal TypeCheckInfo
 
     member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m ad false
+        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m ad UnseenItems.None
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
@@ -2229,13 +2249,19 @@ type internal TypeCheckInfo
                             items
 
                     let getAccessibility item =
-                        FSharpSymbol.Create(cenv, item).Accessibility
+                        match item with
+                        | Item.ActivePatternCase case -> FSharpAccessibility(case.ActivePatternVal.Accessibility)
+                        | _ -> FSharpSymbol.Create(cenv, item).Accessibility
 
-                    let currentNamespaceOrModule =
+                    let scopeInfo =
                         parseResultsOpt
                         |> Option.map (fun x -> x.ParseTree)
-                        |> Option.map (fun parsedInput ->
-                            ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
+                        |> Option.map (fun parsedInput -> ParsedInput.getScopeInfo (mkPos line 0, parsedInput))
+
+                    let currentNamespaceOrModule =
+                        scopeInfo |> Option.map (fun struct (path, _) -> path)
+
+                    let currentScope = scopeInfo |> Option.map (fun struct (_, scope) -> scope)
 
                     let isAttributeApplication =
                         match ctx with
@@ -2250,6 +2276,7 @@ type internal TypeCheckInfo
                         getAccessibility,
                         items,
                         currentNamespaceOrModule,
+                        currentScope,
                         isAttributeApplication
                     ))
             (fun msg ->

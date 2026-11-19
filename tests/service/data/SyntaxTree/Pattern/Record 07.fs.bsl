@@ -21,9 +21,10 @@ ImplFile
                             (4,18--4,23), Const (Int32 3, (4,22--4,23)), None)],
                         (4,2--4,25)), None, Const (Unit, (4,29--4,31)),
                      (4,2--4,31), Yes, { ArrowRange = Some (4,26--4,28)
-                                         BarRange = Some (4,0--4,1) })],
-                 (3,0--4,31), { MatchKeyword = (3,0--3,5)
-                                WithKeyword = (3,9--3,13) }), (3,0--4,31))],
+                                         BarRange = Some (4,0--4,1)
+                                         WhenKeyword = None })], (3,0--4,31),
+                 { MatchKeyword = (3,0--3,5)
+                   WithKeyword = (3,9--3,13) }), (3,0--4,31))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,31), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

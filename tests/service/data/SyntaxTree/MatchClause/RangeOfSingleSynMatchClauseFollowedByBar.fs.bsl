@@ -35,15 +35,15 @@ ImplFile
                     (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
                      Const (Unit, (7,4--7,6)), (6,2--7,6), Yes,
                      { ArrowRange = Some (6,5--6,7)
-                       BarRange = Some (6,0--6,1) })], (2,0--8,1),
-                 Yes (2,0--2,3), Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
-                                                   TryToWithRange = (2,0--5,4)
-                                                   WithKeyword = (5,0--5,4)
-                                                   WithToEndRange = (5,0--8,1) }),
-              (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--9,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                       BarRange = Some (6,0--6,1)
+                       WhenKeyword = None })], (2,0--8,1), Yes (2,0--2,3),
+                 Yes (5,0--5,4), { TryKeyword = (2,0--2,3)
+                                   TryToWithRange = (2,0--5,4)
+                                   WithKeyword = (5,0--5,4)
+                                   WithToEndRange = (5,0--8,1) }), (2,0--8,1))],
+          PreXmlDocEmpty, [], None, (2,0--9,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
 
 (9,0)-(9,0) parse error Incomplete structured construct at or before this point in pattern matching

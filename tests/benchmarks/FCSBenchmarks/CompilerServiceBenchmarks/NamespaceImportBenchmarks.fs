@@ -64,7 +64,7 @@ let ms = new MemoryStream()"""
 
     /// Empty reader cache and a fresh checker, so the namespace trees are built from scratch.
     let coldCheck (fileName: string) (source: string) (options: FSharpProjectOptions) =
-        ClearAllILModuleReaderCache()
+        clearReaderCache.Invoke()
         let checker = FSharpChecker.Create(projectCacheSize = 200)
         check checker fileName source options |> ignore
         checker
@@ -174,11 +174,6 @@ module TimesProbe =
 /// working directory so the response file's relative paths resolve.
 module CompileProjectProbe =
 
-    let private forceGC () =
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-        GC.WaitForPendingFinalizers()
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-
     let run (responseFile: string) (projectDir: string) =
         Environment.CurrentDirectory <- projectDir
         let argv =
@@ -197,31 +192,33 @@ module CompileProjectProbe =
         printfn "warm-up done (%d errors)" errs
 
         for i in 1..3 do
-            ClearAllILModuleReaderCache()
+            clearReaderCache.Invoke()
             forceGC ()
             let before = GC.GetTotalAllocatedBytes true
             let sw = System.Diagnostics.Stopwatch.StartNew()
             let errs = compile ()
             sw.Stop()
             let allocated = GC.GetTotalAllocatedBytes true - before
-            printfn "run %d: %6.0f ms | allocated %8.1f MB | %d errors"
-                i sw.Elapsed.TotalMilliseconds (float allocated / 1024.0 / 1024.0) errs
+            printfn "run %d: %.3f ms | allocated %d bytes | %d errors"
+                i sw.Elapsed.TotalMilliseconds allocated errs
 
         // What a long-lived process keeps alive. Isolated as the heap drop when the cache is cleared, so
         // it excludes JIT / checker / GC noise.
         let mb (b: int64) = float b / 1024.0 / 1024.0
         for i in 1..3 do
-            ClearAllILModuleReaderCache()
+            clearReaderCache.Invoke()
             forceGC ()
             let baseHeap = GC.GetTotalMemory true
             compile () |> ignore
             forceGC ()
             let withCache = GC.GetTotalMemory true
-            ClearAllILModuleReaderCache()
+            clearReaderCache.Invoke()
             forceGC ()
             let afterClear = GC.GetTotalMemory true
             printfn "retain %d: reader-cache holds %7.1f MB | total post-compile %7.1f MB (base %6.1f, withCache %6.1f, afterClear %6.1f)"
                 i (mb (withCache - afterClear)) (mb (withCache - baseHeap)) (mb baseHeap) (mb withCache) (mb afterClear)
+            printfn "retain-bytes %d: reader-cache %d | post-compile %d"
+                i (withCache - afterClear) (withCache - baseHeap)
 
 /// Retained memory for a real project: keeps ParseAndCheckProject's results alive so the imported
 /// structures stay on the heap, as an IDE holding a project's analysis does.
@@ -229,43 +226,16 @@ module CompileProjectProbe =
 /// Run from Program.fs: `retain-project <response-file> <project-dir>`.
 module RetainProjectProbe =
 
-    let private forceGC () =
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-        GC.WaitForPendingFinalizers()
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-
     let run (responseFile: string) (projectDir: string) =
         Environment.CurrentDirectory <- projectDir
-        let lines =
-            File.ReadAllLines responseFile
-            |> Array.filter (fun l -> l.Trim().Length > 0)
-        // Kept in response-file order: signature files must precede their implementations.
-        let sources =
-            lines
-            |> Array.filter (fun l -> (l.EndsWith ".fs" || l.EndsWith ".fsi") && not (l.StartsWith "-"))
-        let otherOptions =
-            lines |> Array.filter (fun l ->
-                l <> "fsc.dll" && not (l.StartsWith "-o:") && not (Array.contains l sources))
-
-        let options: FSharpProjectOptions =
-            { ProjectFileName = Path.Combine(projectDir, "FSharp.Common.fsproj")
-              ProjectId = None
-              SourceFiles = sources
-              OtherOptions = otherOptions
-              ReferencedProjects = [||]
-              IsIncompleteTypeCheckEnvironment = false
-              UseScriptResolutionRules = false
-              LoadTime = System.DateTime(2020, 1, 1)
-              UnresolvedReferences = None
-              OriginalLoadReferences = []
-              Stamp = None }
+        let options = readProjectOptions responseFile projectDir
 
         let mb (b: int64) = float b / 1024.0 / 1024.0
         printfn "ParseAndCheckProject: %d sources, %d refs"
-            sources.Length (otherOptions |> Array.filter (fun o -> o.StartsWith "-r:") |> Array.length)
+            options.SourceFiles.Length (options.OtherOptions |> Array.filter (fun o -> o.StartsWith "-r:") |> Array.length)
 
         // One measurement per process: FSharpChecker's static caches contaminate a second sample.
-        ClearAllILModuleReaderCache()
+        clearReaderCache.Invoke()
         let checker = FSharpChecker.Create(projectCacheSize = 0)
         forceGC ()
         let baseHeap = GC.GetTotalMemory true
@@ -286,31 +256,9 @@ module RetainProjectProbe =
 /// sleeps, so `dotnet-gcdump collect -p <pid>` can run.
 module CheckFileProbe =
 
-    let private forceGC () =
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-        GC.WaitForPendingFinalizers()
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-
     let run (responseFile: string) (projectDir: string) (fileToCheck: string) =
         Environment.CurrentDirectory <- projectDir
-        let lines = File.ReadAllLines responseFile |> Array.filter (fun l -> l.Trim().Length > 0)
-        let sources = lines |> Array.filter (fun l -> l.EndsWith ".fs" && not (l.StartsWith "-"))
-        let otherOptions =
-            lines |> Array.filter (fun l ->
-                l <> "fsc.dll" && not (l.StartsWith "-o:") && not (Array.contains l sources))
-
-        let options: FSharpProjectOptions =
-            { ProjectFileName = Path.Combine(projectDir, "FSharp.Common.fsproj")
-              ProjectId = None
-              SourceFiles = sources
-              OtherOptions = otherOptions
-              ReferencedProjects = [||]
-              IsIncompleteTypeCheckEnvironment = false
-              UseScriptResolutionRules = false
-              LoadTime = System.DateTime(2020, 1, 1)
-              OriginalLoadReferences = []
-              UnresolvedReferences = None
-              Stamp = None }
+        let options = readProjectOptions responseFile projectDir
 
         // Keeps the incremental builder, and so the imported assemblies, alive.
         let checker = FSharpChecker.Create(projectCacheSize = 1)
@@ -341,11 +289,6 @@ module CheckFileProbe =
 ///
 /// Not a BDN benchmark: run from Program.fs with the `retained-memory` argument.
 module RetainedMemoryProbe =
-
-    let private forceGC () =
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-        GC.WaitForPendingFinalizers()
-        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
 
     let private measureOne label fileName source =
         ClearAllILModuleReaderCache()

@@ -469,7 +469,7 @@ module Array =
     /// <code lang="fsharp">
     /// let input = [| 1; 2; 3 |]
     ///
-    /// input |> Array.tryPick (fun n -> if n > 3 = 0 then Some (string n) else None)
+    /// input |> Array.tryPick (fun n -> if n > 3 then Some (string n) else None)
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>

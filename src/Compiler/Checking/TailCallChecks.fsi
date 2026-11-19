@@ -9,5 +9,4 @@ open FSharp.Compiler.TypedTree
 /// For functions that are annotated with the [<TailCall>] attribute, a warning is emitted if they are called in a
 /// non-tailrecursive manner in the recursive scope of the function.
 /// The ModuleOrNamespaceContents aren't mutated in any way by performing this check.
-val CheckImplFile:
-    g: TcGlobals * amap: Import.ImportMap * reportErrors: bool * implFileContents: ModuleOrNamespaceContents -> unit
+val CheckImplFile: g: TcGlobals * amap: Import.ImportMap * implFileContents: ModuleOrNamespaceContents -> unit

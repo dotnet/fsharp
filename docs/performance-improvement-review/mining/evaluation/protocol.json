@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "policy_version": "scope-exposure-1",
+  "frozen_at": "2026-09-23T10:56:38.406255Z",
+  "repository": "dotnet/fsharp",
+  "start": "2026-04-22T00:00:00Z",
+  "cutoff": "2026-09-22T09:28:34Z",
+  "inventory_count": 485,
+  "new_reviewer_runs": 0,
+  "new_rule_changes": 0,
+  "final_corpus_complete": false,
+  "scope": {
+    "eligible": "An explicit performance claim, measurement or concrete performance-oriented mechanism in the complete preserved title/description/labels; mixed, withdrawn, rejected, open, benchmark-only, test-only, tooling and documentation changes are eligible on the same basis.",
+    "insufficient": [
+      "Unchecked template benchmark checkbox",
+      "Incidental dependency or package name",
+      "Correctness-only optimizer/cache vocabulary",
+      "Author or bot identity",
+      "Merge state, difficulty or workload",
+      "Link without an independent performance claim"
+    ],
+    "temporal": "Creation within the inclusive fixed bounds qualifies; older creation needs a timestamped in-window event with an immutable source reference. updatedAt alone never qualifies. Current description/label snapshots are not a reconstructed historical edit log.",
+    "context": "Linked context-only changes remain explicit out-of-scope rows, connected to their families. Controls never count as in-scope inspection.",
+    "reconciliation": "Preserve the old decision and explain every changed decision. Neither 122 nor any other included total is a target.",
+    "partitions": "Sort all 485 numeric PR identities; ordinal is zero-based 0..484; shard is ordinal modulo 6. Families may span mining shards."
+  },
+  "exposure": {
+    "categories": [
+      "acquisition-only",
+      "metadata-only-screening",
+      "substantive-inspection",
+      "shared-oracle-access",
+      "reviewer-execution",
+      "score-access",
+      "rule-derivation",
+      "unknown"
+    ],
+    "freshness": "Only a positively audited access boundary with no semantic, oracle, execution, score, derivation or unknown exposure anywhere in a connected family can be fresh. A new context, rename, historical/final variant or sanitized replay cannot reset exposure.",
+    "family_unit": "Take the transitive union of historical families, explicit predecessor/superseding relations and demonstrated shared mechanisms, including ancillary mixed changes. Shared path/ancestry alone is not proof. Unresolved connections cannot certify independence.",
+    "split_unit": "A connected family has one development/control/holdout split. Changing an alias must preserve immutable PR membership and all exposure events.",
+    "metadata_boundary": "Read complete author PR descriptions and allowlisted identity/label/time/path/run/report metadata for scope; do not open potentially untouched review, oracle, output or feedback bodies.",
+    "supplemental": "Validation-only leads outside the unchanged 485 and all exposed families must independently satisfy the same historical bounds and positive freshness audit. The 804-PR metadata/path screen proves neither eligibility nor freshness."
+  },
+  "authorship": {
+    "classifications": [
+      "verified-human",
+      "bot",
+      "disclosed-model",
+      "automation",
+      "uncertain"
+    ],
+    "default": "uncertain",
+    "verified_human": "Require positive source-specific composition provenance, including rationale, immutable source, exact subject and enclosing review/disclosure scope. Evidence for one author, comment or PR cannot certify another.",
+    "insufficient": [
+      "User account type or identity",
+      "Role or reputation",
+      "Writing style",
+      "Replies or conversational interaction",
+      "Absence of model disclosure",
+      "Code changes matching a comment"
+    ],
+    "separations": [
+      "Account identity versus content composition",
+      "Original text versus quotations and attribution within them",
+      "Author rationale versus independent review",
+      "No feedback after a complete channel audit versus missing or uninspected feedback"
+    ],
+    "application": "Classify each substantive source item before mining credit. Description-level uncertain records here do not classify enclosing comments/reviews or award verified-human support. A disclosure applies only to its documented enclosing scope."
+  },
+  "recurrence": {
+    "minimum_distinct_prs": 2,
+    "minimum_independent_families_for_generalization": 2,
+    "required_support": "Verified-human substantive support at a traceable source-item boundary",
+    "normalization": "One PR vote per concern; repeated comments, reviews, revisions, quotations and historical/final variants do not multiply votes.",
+    "dependence": "Record connected-family dependence even when two distinct PRs support the concern. General recurring rules require independent families.",
+    "one_off": "Keep one-off concerns as scoped observations, not generalized recurring rules.",
+    "contrary_feedback": "Mandatory collection and reporting alongside support; disagreement is never a reason to discard a source.",
+    "policy_origins": "Requirement/policy rules name their actual requirement or policy origin; never invent human citations."
+  },
+  "evaluation": {
+    "required_real_strata": [
+      "time",
+      "throughput",
+      "memory",
+      "allocation",
+      "GC",
+      "artifacts",
+      "CPU",
+      "concurrency",
+      "lifecycle",
+      "compiler",
+      "runtime",
+      "IDE",
+      "tooling",
+      "behavior",
+      "diagnostics",
+      "output",
+      "noisy",
+      "negative",
+      "withdrawn",
+      "rejected",
+      "benchmark-only",
+      "test-only",
+      "docs",
+      "generated",
+      "mixed"
+    ],
+    "case_fields_frozen_before_output": [
+      "case_id",
+      "real_or_synthetic",
+      "pr_ids",
+      "connected_family_ids",
+      "strata",
+      "eligibility_receipts",
+      "exposure_receipts",
+      "authorship_receipts",
+      "source_revision",
+      "input_sha256",
+      "oracle_sha256",
+      "candidate_sha256",
+      "protocol_sha256",
+      "expected_concerns",
+      "prohibited_unsupported_claims"
+    ],
+    "expected_concern_fields": [
+      "concern_id",
+      "source_ids",
+      "material",
+      "claim_scope",
+      "appropriate_scoped_outcomes",
+      "historical_or_final_variant"
+    ],
+    "scoring_fields": [
+      "case_id",
+      "run_id",
+      "output_sha256",
+      "concern_id",
+      "claim_scope",
+      "outcome",
+      "evidence",
+      "justified_extra_findings",
+      "uncertainty",
+      "misses",
+      "unsupported_findings",
+      "unsupported_evidence_demands",
+      "material_expected_denominator",
+      "all_expected_denominator",
+      "all_emitted_claims_denominator",
+      "all_evidence_demands_denominator"
+    ],
+    "claim_scoped_outcomes": [
+      "addressed",
+      "appropriately-qualified",
+      "justified-not-applicable",
+      "missed",
+      "unsupported",
+      "uncertain"
+    ],
+    "acceptance": {
+      "material_expected_concerns_with_appropriate_scoped_outcome": "all",
+      "unsupported_correctness_or_regression_blockers": 0,
+      "required_real_source_gaps": 0,
+      "delete_misses_or_unsupported_demands": false,
+      "relax_thresholds_after_outputs": false,
+      "synthetic_can_replace_real": false
+    },
+    "reporting": "Report every expected concern and emitted claim, uncertainty, misses and unsupported findings/demands with their frozen denominators and claim scopes. Justified extras receive separate evidence-backed credit, never substitute for a miss. Keep real and synthetic coverage and denominators separate; do not average away a required stratum gap.",
+    "historical_replay": "C6-S and all earlier exposed cases are regression replays only. These predeclared policies govern future evaluation; they do not retroactively make previously viewed outputs blind.",
+    "availability": "A required real-source gap blocks evaluation acceptance. In particular BENCH-01 is synthetic and cannot cover the real benchmark-only requirement. Preserve gaps for the custodian instead of tuning on exposed cases."
+  }
+}

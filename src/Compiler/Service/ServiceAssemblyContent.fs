@@ -12,6 +12,7 @@ open System.Collections.Generic
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
@@ -168,23 +169,36 @@ module AssemblyContent =
               UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName ns
             })
 
-    let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
+    let createFunctionOrValue ns (parent: Parent) =
         let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+        let nearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
         let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+        fun fullName idents (symbol: FSharpSymbol) isActivePattern ->
+            let cleanedIdents = parent.FixParentModuleSuffix idents
+            { FullName = fullName
+              CleanedIdents = cleanedIdents
+              Namespace = ns
+              NearestRequireQualifiedAccessParent = nearestRequireQualifiedAccessParent
+              TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
+              AutoOpenParent = autoOpenParent
+              Symbol = symbol
+              Kind = fun _ -> EntityKind.FunctionOrValue isActivePattern
+              UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
+
+    let isPublic (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpActivePatternCase ->
+            match symbol.Item with
+            | Item.ActivePatternCase case -> case.ActivePatternVal.Accessibility.IsPublic
+            | _ -> symbol.Accessibility.IsPublic
+        | _ -> symbol.Accessibility.IsPublic
+
+    let traverseMemberFunctionAndValues (createSymbol: string -> ShortIdents -> FSharpSymbol -> bool -> AssemblySymbol) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents =
-                let cleanedIdents = parent.FixParentModuleSuffix idents
-                { FullName = fullName
-                  CleanedIdents = cleanedIdents
-                  Namespace = ns
-                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
-                  TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
-                  AutoOpenParent = autoOpenParent
-                  Symbol = func
-                  Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
+                createSymbol fullName idents func func.IsActivePattern
 
             [ yield! func.TryGetFullDisplayName()
                      |> Option.map (fun fullDisplayName ->
@@ -252,9 +266,23 @@ module AssemblyContent =
                           Namespace = ns
                           IsModule = entity.IsFSharpModule }
 
+                    let createValue = createFunctionOrValue ns currentParent
                     match entity.TryGetMembersFunctionsAndValues() with
                     | xs when xs.Count > 0 ->
-                        yield! traverseMemberFunctionAndValues ns currentParent xs
+                        yield! traverseMemberFunctionAndValues createValue xs
+                    | _ -> ()
+
+                    match currentEntity with
+                    | Some moduleSymbol when entity.IsFSharpModule ->
+                        for case in entity.ActivePatternCases do
+                            if contentType = Full || isPublic case then
+                                let idents = Array.append moduleSymbol.CleanedIdents [| case.Name |]
+                                let symbol = createValue case.FullName idents case true
+                                let struct (_, openableNs, restIdents) =
+                                    Entity.getOpenableNamespace symbol.TopRequireQualifiedAccessParent symbol.AutoOpenParent symbol.CleanedIdents
+                                yield { symbol with
+                                            UnresolvedSymbol =
+                                                UnresolvedSymbol None (Array.append openableNs restIdents) case.FullName (Some openableNs) }
                     | _ -> ()
 
                     for e in (try entity.NestedEntities :> _ seq with _ -> Seq.empty) do
@@ -312,7 +340,7 @@ module AssemblyContent =
         |> List.filter (fun entity ->
             match contentType with
             | Full -> true
-            | Public -> entity.Symbol.Accessibility.IsPublic)
+            | Public -> isPublic entity.Symbol)
 
 type EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()

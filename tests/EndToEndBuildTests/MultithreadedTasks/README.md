@@ -34,7 +34,8 @@ Both reuse their built products and publish the SDK evidence. There are no separ
 The existing Linux and macOS build jobs use Arcade's `--mt true` option.
 The three `Plain_Build_*` SDK jobs pass `-mt` directly to MSBuild.
 Those plain builds use SDK-shipped tasks; the redirected product builds and this harness exercise the migrated tasks.
-VS/MSBuild.exe jobs and Arcade-managed source-build configuration are unchanged.
+Bootstrap publishing uses MT by default on Windows and Unix; explicit `-mt 0` / `--mt false` build options disable it. ILVerify and both compiler determinism modes explicitly opt into MSBuild MT. The determinism modes still compare the same F# compiler flags or sequential versus parallel compilation, independently of MSBuild scheduling.
+Other VS/MSBuild.exe product builds and Arcade-managed source-build configuration are unchanged.
 No repository-wide environment override or replacement for Arcade's MT controls is added.
 
 Use `--repetitions 10` for local stress runs.

@@ -13,9 +13,10 @@ ImplFile
                         FromParseError (4,4--4,4), (4,2--4,4)), None,
                      ArbitraryAfterError ("patternClauses2", (4,4--4,4)),
                      (4,2--4,4), Yes, { ArrowRange = None
-                                        BarRange = Some (4,0--4,1) })],
-                 (3,0--4,4), { MatchKeyword = (3,0--3,5)
-                               WithKeyword = (3,9--3,13) }), (3,0--4,4))],
+                                        BarRange = Some (4,0--4,1)
+                                        WhenKeyword = None })], (3,0--4,4),
+                 { MatchKeyword = (3,0--3,5)
+                   WithKeyword = (3,9--3,13) }), (3,0--4,4))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,4), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

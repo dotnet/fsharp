@@ -13,7 +13,8 @@ ImplFile
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (5,2--5,4)), None,
                      Ident y, (5,2--5,9), Yes, { ArrowRange = Some (5,5--5,7)
-                                                 BarRange = Some (5,0--5,1) })],
+                                                 BarRange = Some (5,0--5,1)
+                                                 WhenKeyword = None })],
                  (2,0--5,9), Yes (2,0--2,3), Yes (4,0--4,4),
                  { TryKeyword = (2,0--2,3)
                    TryToWithRange = (2,0--4,4)

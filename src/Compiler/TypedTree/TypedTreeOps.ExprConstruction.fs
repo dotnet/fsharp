@@ -580,6 +580,9 @@ module internal TypedTreeCollections =
         member m.Add(v, x) =
             TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
 
+        member _.Remap(remapStamp, mapping) =
+            TyconRefMultiMap(contents.Map(remapStamp, List.map mapping))
+
         static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
 
         static member OfList vs =
@@ -833,18 +836,12 @@ module internal TypeTesters =
         | _ -> false)
 
     let isUnitTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.unit_tcr_canon tcref)
 
     let isObjTyAnyNullness g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Object_tcref tcref)
 
     let isObjNullTy g ty =
         ty
@@ -866,18 +863,12 @@ module internal TypeTesters =
            | _ -> false)
 
     let isValueTypeTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Value_tcref tcref)
 
     let isVoidTy g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, _, _) -> tyconRefEq g g.system_Void_tcref tcref
-        | _ -> false)
+        tryTcrefOfAppTy g ty
+        |> ValueOption.exists (fun tcref -> tyconRefEq g g.system_Void_tcref tcref)
 
     let isILAppTy g ty =
         ty

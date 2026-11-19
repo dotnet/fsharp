@@ -15,11 +15,12 @@ ImplFile
                               None, Pats [], None, (5,6--5,8)), None,
                            ArbitraryAfterError ("patternClauses2", (5,8--5,8)),
                            (5,6--5,8), Yes, { ArrowRange = None
-                                              BarRange = Some (5,4--5,5) })],
-                       (4,4--5,8), { MatchKeyword = (4,4--4,9)
-                                     WithKeyword = (4,12--4,16) }),
-                    Const (Unit, (7,4--7,6)), (4,4--7,6),
-                    { SeparatorRange = None }), (3,0--7,6)), (3,0--7,6))],
+                                              BarRange = Some (5,4--5,5)
+                                              WhenKeyword = None })], (4,4--5,8),
+                       { MatchKeyword = (4,4--4,9)
+                         WithKeyword = (4,12--4,16) }), Const (Unit, (7,4--7,6)),
+                    (4,4--7,6), { SeparatorRange = None }), (3,0--7,6)),
+              (3,0--7,6))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

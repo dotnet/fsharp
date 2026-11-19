@@ -11,12 +11,14 @@ ImplFile
                     (Named (SynIdent (a, None), false, None, (4,2--4,3)), None,
                      ArbitraryAfterError ("patternClauses4", (4,8--4,8)),
                      (4,2--4,8), Yes, { ArrowRange = None
-                                        BarRange = Some (4,0--4,1) });
+                                        BarRange = Some (4,0--4,1)
+                                        WhenKeyword = Some (4,4--4,8) });
                   SynMatchClause
                     (Named (SynIdent (b, None), false, None, (5,2--5,3)), None,
                      Const (Unit, (5,7--5,9)), (5,2--5,9), Yes,
                      { ArrowRange = Some (5,4--5,6)
-                       BarRange = Some (5,0--5,1) })], (3,0--5,9),
+                       BarRange = Some (5,0--5,1)
+                       WhenKeyword = None })], (3,0--5,9),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,9--3,13) }), (3,0--5,9))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

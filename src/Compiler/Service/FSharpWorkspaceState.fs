@@ -21,7 +21,7 @@ open Internal.Utilities.Library
 module internal WorkspaceGraphTypes =
 
     /// All project information except source files
-    type ProjectWithoutFiles = ProjectConfig * FSharpReferencedProjectSnapshot list
+    type ProjectWithoutFiles = ProjectConfig * FSharpReferencedProjectSnapshot[]
 
     [<RequireQualifiedAccess>]
     type internal WorkspaceNodeKey =
@@ -344,12 +344,12 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
                                 |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
                                 s
                             ))
-                        |> Seq.toList
+                        |> Seq.toArray
 
                     projectConfig, referencedProjects)
                 .AddSourceFiles(sourceFilePaths |> Seq.map (fun path -> path, createFileSnapshot path))
                 .AddProjectSnapshot(fun ((projectConfig, referencedProjects), sourceFiles) ->
-                    ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
+                    ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toArray)
                     |> FSharpProjectSnapshot)
 
             // In case this is an update, we should check for any existing project references that are not contained in the incoming compiler args and remove them

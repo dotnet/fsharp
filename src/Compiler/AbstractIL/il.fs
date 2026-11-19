@@ -1309,6 +1309,8 @@ type WellKnownILAttributes =
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
     | RequireNamedArgumentsAttribute = (1u <<< 27)
+    | EditorBrowsableNever = (1u <<< 28)
+    | EditorBrowsableAdvanced = (1u <<< 29)
     | NotComputed = (1u <<< 31)
 
 [<Sealed; NoEquality; NoComparison>]

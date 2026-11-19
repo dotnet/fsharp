@@ -17,7 +17,8 @@ ImplFile
                         (Wild (5,9--5,10), None,
                          ArbitraryAfterError ("patternClauses2", (5,10--5,10)),
                          (5,9--5,10), Yes, { ArrowRange = None
-                                             BarRange = None })], (4,4--5,10),
+                                             BarRange = None
+                                             WhenKeyword = None })], (4,4--5,10),
                      Yes (4,4--4,7), Yes (5,4--5,8),
                      { TryKeyword = (4,4--4,7)
                        TryToWithRange = (4,4--5,8)

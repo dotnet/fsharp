@@ -309,6 +309,26 @@ let main (args: string[]) =
         |> verifyILNotPresent ["quadruple"; "double"]
 
     [<Fact>]
+    let ``Call 17 - Inline base member`` () =
+        FSharp """
+type One() =
+    member inline _.Source1 x = x
+
+type Two() =
+    inherit One()
+    member inline this.Source2 x = base.Source1 x
+
+[<EntryPoint>]
+let main _ =
+    if (Two()).Source2 42 = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``SRTP 01`` () =
         FSharp """
 let inline add (x: ^T) (y: ^T) =
@@ -1270,6 +1290,51 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 40 - Type argument only in constraint`` () =
+        FSharp """
+type A = static member Name = "A"
+type B = static member Name = "B"
+
+let inline name<'T when 'T: (static member Name: string)> () = 'T.Name
+
+[<EntryPoint>]
+let main _ =
+    if name<A> () = "A" && name<B> () = "B" then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withLangVersion11
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Fact>]
+    let ``SRTP 41 - Nullness of type argument`` () =
+        FSharp """
+type R =
+    { V: int }
+    static member Default = { V = 0 }
+
+let inline isDefault (x: ^T) = x = (^T: (static member Default: ^T) ())
+
+[<EntryPoint>]
+let main _ =
+    let r = { V = 1 }
+    let n: R | null = null
+    if not (isDefault r) && not (isDefault n) then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withCheckNulls
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
         |> verifySequencePoints
 
     [<Fact>]

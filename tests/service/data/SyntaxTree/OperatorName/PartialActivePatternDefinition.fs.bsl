@@ -38,11 +38,13 @@ ImplFile
                          App
                            (NonAtomic, false, Ident Some, Ident a, (2,70--2,76)),
                          (2,50--2,76), Yes, { ArrowRange = Some (2,67--2,69)
-                                              BarRange = None });
+                                              BarRange = None
+                                              WhenKeyword = None });
                       SynMatchClause
                         (Wild (2,79--2,80), None, Ident None, (2,79--2,88), Yes,
                          { ArrowRange = Some (2,81--2,83)
-                           BarRange = Some (2,77--2,78) })], (2,37--2,88),
+                           BarRange = Some (2,77--2,78)
+                           WhenKeyword = None })], (2,37--2,88),
                      { MatchKeyword = (2,37--2,42)
                        WithKeyword = (2,45--2,49) }), (2,4--2,34), NoneAtLet,
                   { LeadingKeyword = Let (2,0--2,3)
