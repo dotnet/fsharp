@@ -98,6 +98,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="15.0.25123-Dev15Preview" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Interop" Version="18.9.438" />
+    <PackageVersion Include="Microsoft.VisualStudio.Settings.Manifest.Build" Version="18.13.785" />
     <!-- Shell.15.0 references SolutionPersistence at runtime without declaring the NuGet dependency (it is expected
          from the VS install). The standalone VS unit-test host loads Shell.15.0 into a MEF catalog, so the assembly
          must be deployed next to it or Assembly.GetTypes throws and every legacy VS unit test fails. -->
