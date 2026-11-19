@@ -1436,11 +1436,13 @@ type internal TransparentCompiler
         (nodeToCheck: NodeToTypeCheck)
         bootstrapInfo
         (prevTcInfo: TcInfo)
+        (checkDependenciesOnly: bool)
         =
 
         ignore dependencyGraph
 
-        let key = projectSnapshot.FileKey(index).WithExtraVersion(bootstrapInfo.Id)
+        let key =
+            projectSnapshot.FileKey(index).WithExtraVersion(bootstrapInfo.Id).WithExtraVersion(checkDependenciesOnly)
 
         let _label, _k, _version = key.GetLabel(), key.GetKey(), key.GetVersion()
 
@@ -1538,13 +1540,39 @@ type internal TransparentCompiler
             }
         )
 
-    let processGraphNode projectSnapshot bootstrapInfo dependencyFiles collectSinks (fileNode: NodeToTypeCheck) tcInfo =
+    let tryGetTcIntermediateWithAllPriorFiles
+        (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>)
+        (index: FileIndex)
+        (bootstrapInfo: BootstrapInfo)
+        =
+        let key = projectSnapshot.FileKey(index).WithExtraVersion(bootstrapInfo.Id)
+        caches.TcIntermediate.TryGet(key.GetKey(), (=) (key.GetVersion(), false))
+
+    let processGraphNode
+        projectSnapshot
+        bootstrapInfo
+        dependencyFiles
+        collectSinks
+        (checkDependenciesOnly: bool)
+        (fileNode: NodeToTypeCheck)
+        tcInfo
+        =
         // TODO: should this be node?
         async {
             match fileNode with
             | NodeToTypeCheck.PhysicalFile index ->
 
-                let! tcIntermediate = ComputeTcIntermediate projectSnapshot dependencyFiles index fileNode bootstrapInfo tcInfo
+                let tcIntermediateWithAllPriorFiles =
+                    if checkDependenciesOnly then
+                        tryGetTcIntermediateWithAllPriorFiles projectSnapshot index bootstrapInfo
+                    else
+                        None
+
+                let! tcIntermediate =
+                    match tcIntermediateWithAllPriorFiles with
+                    | Some tcIntermediate -> async.Return tcIntermediate
+                    | None ->
+                        ComputeTcIntermediate projectSnapshot dependencyFiles index fileNode bootstrapInfo tcInfo checkDependenciesOnly
 
                 let (Finisher(node = node; finisher = finisher)) = tcIntermediate.finisher
 
@@ -1621,6 +1649,36 @@ type internal TransparentCompiler
                     )
 
         }
+
+    /// Makes the checked file of a single-file graph depend on all the other nodes, so it is checked against all the files
+    /// before it, as the BackgroundCompiler does. Its dependencies alone give the same typed tree and diagnostics, but
+    /// leave out of its name resolution environment what it does not reference yet, which completion offers.
+    /// Returns the graph, and whether this added dependencies to the checked file.
+    let dependOnAllPriorNodes (lastFileIndex: FileIndex) (graph: Graph<NodeToTypeCheck>) =
+        let lastFile = NodeToTypeCheck.PhysicalFile lastFileIndex
+        let directDeps = graph[lastFile]
+
+        // The stand-in of a signature is its implementation, so the stand-in of the checked file's own signature,
+        // or of the checked file itself, is not before it.
+        let isPriorNode node =
+            match node with
+            | NodeToTypeCheck.PhysicalFile index -> index <> lastFileIndex
+            | NodeToTypeCheck.ArtificialImplFile sigIndex ->
+                sigIndex <> lastFileIndex
+                && not (directDeps |> Array.contains (NodeToTypeCheck.PhysicalFile sigIndex))
+
+        let priorNodes = graph.Keys |> Seq.filter isPriorNode |> Seq.toArray
+        let reachable = HashSet((Graph.subGraphFor lastFile graph).Keys)
+
+        if priorNodes |> Array.forall reachable.Contains then
+            graph, false
+        else
+            let graph =
+                graph
+                |> Seq.map (fun (KeyValue(node, deps)) -> node, (if node = lastFile then priorNodes else deps))
+                |> Graph.make
+
+            graph, true
 
     let parseSourceFiles (projectSnapshot: ProjectSnapshotWithSources) tcConfig =
         async {
@@ -1712,11 +1770,22 @@ type internal TransparentCompiler
                 let! graph, dependencyFiles = ComputeDependencyGraphForFile bootstrapInfo.TcConfig projectSnapshot
 
                 let! results, tcInfo =
-                    processTypeCheckingGraph
-                        graph
-                        (processGraphNode projectSnapshot bootstrapInfo dependencyFiles false)
-                        bootstrapInfo.InitialTcInfo
-                        false
+                    let lastFileIndex = projectSnapshot.SourceFiles.Length - 1
+
+                    // TODO: skip this when only the dependencies are checked (checkDependenciesOnly of https://github.com/dotnet/fsharp/pull/20889)
+                    let graph, lastFileDependsOnAllPriorNodes =
+                        dependOnAllPriorNodes lastFileIndex graph
+
+                    let processNode node =
+                        let checkDependenciesOnly =
+                            not (
+                                lastFileDependsOnAllPriorNodes
+                                && node = NodeToTypeCheck.PhysicalFile lastFileIndex
+                            )
+
+                        processGraphNode projectSnapshot bootstrapInfo dependencyFiles false checkDependenciesOnly node
+
+                    processTypeCheckingGraph graph processNode bootstrapInfo.InitialTcInfo false
 
                 let lastResult = results |> List.head |> snd
 
@@ -1891,7 +1960,7 @@ type internal TransparentCompiler
                 let! results, tcInfo =
                     processTypeCheckingGraph
                         graph
-                        (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true)
+                        (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true true)
                         bootstrapInfo.InitialTcInfo
                         false
 
@@ -1922,7 +1991,7 @@ type internal TransparentCompiler
             let! results, tcInfo =
                 processTypeCheckingGraph
                     graph
-                    (processGraphNode projectSnapshot bootstrapInfo dependencyFiles false)
+                    (processGraphNode projectSnapshot bootstrapInfo dependencyFiles false true)
                     bootstrapInfo.InitialTcInfo
                     true
 
