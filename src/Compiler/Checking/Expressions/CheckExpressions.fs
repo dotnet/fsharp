@@ -7464,7 +7464,10 @@ and ComputeObjectExprOverrides (cenv: cenv) (env: TcEnv) tpenv impls =
 
     let allImpls =
         (impls, slotImplSets) ||> List.map2 (fun (m, ty, binds) implTySet ->
-            let binds = binds |> List.map (BindingNormalization.NormalizeBinding ObjExprBinding cenv env)
+            let binds = binds |> List.choose (fun bind ->
+                try
+                    Some(BindingNormalization.NormalizeBinding ObjExprBinding cenv env bind)
+                with RecoverableException _ -> None)
             m, ty, binds, implTySet)
 
     let overridesAndVirts, tpenv =
