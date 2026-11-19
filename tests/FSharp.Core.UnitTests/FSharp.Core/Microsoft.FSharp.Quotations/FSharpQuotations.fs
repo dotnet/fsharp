@@ -469,3 +469,84 @@ module TestConditionalConstraints =
 
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)
+
+module NullaryUnionCaseTests =
+    open System.Linq.Expressions
+
+    type RefKind =
+        | Handle
+        | Other of int
+
+    type EnumLikeKind =
+        | First
+        | Second
+
+    [<Struct>]
+    type StructKind =
+        | SHandle
+        | SOther of value: int
+
+    type GenericKind<'T> =
+        | GEmpty
+        | GValue of 'T
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    type NullKind =
+        | NNone
+        | NSome of int
+
+    [<DefaultAugmentation(false)>]
+    type NoHelpersKind =
+        | NHHandle
+        | NHOther of int
+
+    let assertCaseProperty (name: string) (ty: Type) (e: Expression) =
+        match e with
+        | :? MemberExpression as m when isNull m.Expression && m.Member.MemberType = System.Reflection.MemberTypes.Property ->
+            Assert.Equal(name, m.Member.Name)
+            Assert.Equal(ty, m.Type)
+        | _ -> failwithf "Expected a read of the static property %s, got %A: %O" name e.NodeType e
+
+    let assertGetterCall (name: string) (e: Expression) =
+        match e with
+        | :? MethodCallExpression as call -> Assert.Equal(name, call.Method.Name)
+        | _ -> failwithf "Expected a call to %s, got %A: %O" name e.NodeType e
+
+    [<Fact>]
+    let ``Nullary case of a reference union converts to its static property`` () =
+        assertCaseProperty "Handle" typeof<RefKind> (LeafExpressionConverter.QuotationToExpression <@ Handle @>)
+
+    [<Fact>]
+    let ``Nullary case of a union with only nullary cases converts to its static property`` () =
+        assertCaseProperty "Second" typeof<EnumLikeKind> (LeafExpressionConverter.QuotationToExpression <@ Second @>)
+
+    [<Fact>]
+    let ``Nullary case of a struct union converts to its static property`` () =
+        assertCaseProperty "SHandle" typeof<StructKind> (LeafExpressionConverter.QuotationToExpression <@ SHandle @>)
+        assertCaseProperty "ValueNone" typeof<int voption> (LeafExpressionConverter.QuotationToExpression <@ ValueNone: int voption @>)
+
+    [<Fact>]
+    let ``Nullary case of a generic union converts to the static property of the instantiated type`` () =
+        assertCaseProperty "GEmpty" typeof<GenericKind<string>> (LeafExpressionConverter.QuotationToExpression <@ GEmpty: GenericKind<string> @>)
+
+    [<Fact>]
+    let ``The empty list converts to its static property`` () =
+        assertCaseProperty "Empty" typeof<int list> (LeafExpressionConverter.QuotationToExpression <@ []: int list @>)
+
+    [<Fact>]
+    let ``Nullary cases represented as null stay calls to their getters`` () =
+        assertGetterCall "get_None" (LeafExpressionConverter.QuotationToExpression <@ None: int option @>)
+        assertGetterCall "get_NNone" (LeafExpressionConverter.QuotationToExpression <@ NNone @>)
+
+    [<Fact>]
+    let ``Nullary case of a union without default augmentation stays a call to its getter`` () =
+        Assert.Equal(NHHandle, LeafExpressionConverter.EvaluateQuotation <@ NHHandle @> |> unbox<NoHelpersKind>)
+        assertGetterCall "get_NHHandle" (LeafExpressionConverter.QuotationToExpression <@ NHHandle @>)
+
+    [<Fact>]
+    let ``Converted nullary cases evaluate to the case`` () =
+        Assert.Equal(Handle, LeafExpressionConverter.EvaluateQuotation <@ Handle @> |> unbox<RefKind>)
+        Assert.Equal(SHandle, LeafExpressionConverter.EvaluateQuotation <@ SHandle @> |> unbox<StructKind>)
+        Assert.Equal(GEmpty, LeafExpressionConverter.EvaluateQuotation <@ GEmpty: GenericKind<string> @> |> unbox<GenericKind<string>>)
+        Assert.Equal(None, LeafExpressionConverter.EvaluateQuotation <@ None: int option @> |> unbox<int option>)
+        Assert.Equal(NNone, LeafExpressionConverter.EvaluateQuotation <@ NNone @> |> unbox<NullKind>)
