@@ -48,15 +48,15 @@
          which requires Microsoft.Extensions.DependencyInjection >= 10.0.0. FSharp.Compiler.LanguageServer (net8)
          keeps 8.0.0 via a VersionOverride. -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.0.2188-preview.1" />
+    <PackageVersion Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="18.9.317" />
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
-    <!-- The 18.9.x Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
-         transitively by Microsoft.VisualStudio.SDK 18.9.496 (via Microsoft.VisualStudio.LanguageServices.ExternalAccess).
+    <!-- The Visual Studio SDK packages below (Interop/Shell/Editor) are pinned to the versions pulled
+         transitively by Microsoft.VisualStudio.SDK 18.12.772 (via Microsoft.VisualStudio.LanguageServices.ExternalAccess).
          Under CPM transitive pinning the central pin must match that resolved version, otherwise NU1109 downgrades
          and MSB3277 assembly-version conflicts break every vsintegration project. -->
     <!-- ComponentModelHost is only ever pulled transitively. Projects that reference the full VS SDK get 18.9.453,
@@ -64,7 +64,7 @@
          ComponentModelHost would otherwise stay at 17.x; that 17.x/18.x split makes S/IComponentModel ambiguous
          (CS0433). Pin to the SDK 18.9.496 version so those types resolve to a single assembly. -->
     <PackageVersion Include="Microsoft.VisualStudio.ComponentModelHost" Version="18.9.453" />
-    <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.9.438" />
+    <PackageVersion Include="Microsoft.VisualStudio.Designer.Interfaces" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.Editor" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
@@ -79,7 +79,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.ManagedInterfaces" Version="18.0.2077-preview.1" />
     <PackageVersion Include="Microsoft.VisualStudio.OLE.Interop" Version="18.9.438" />
-    <PackageVersion Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="18.9.493" />
+    <PackageVersion Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="18.12.772" />
     <!-- Microsoft.VisualStudio.Platform.VSEditor is the runtime editor implementation. Unlike the other editor
          packages it is not pulled transitively, so it is pinned explicitly to match the editor interfaces via the
          shared property; otherwise the VsMocks MEF catalog throws ReflectionTypeLoadException and every legacy VS unit test fails. -->
@@ -87,7 +87,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-    <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.9.493" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.12.772" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="15.0.25123-Dev15Preview" />
@@ -98,7 +98,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
     <PackageVersion Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.23" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.131" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
     <!-- Microsoft.VSSDK.BuildTools is injected as an implicit PackageReference by Arcade's VisualStudio.targets
          (Version="$(MicrosoftVSSDKBuildToolsVersion)"); an implicit reference must not be centrally managed (NU1009). -->
