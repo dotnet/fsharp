@@ -495,3 +495,40 @@ type QueryHeadOrDefaultTests() =
         // The result is null (default for reference type tuple)
         // Accessing .Item1/.Item2 would cause NRE - this is the known issue
         Assert.True(obj.ReferenceEquals(null, result))
+
+module SetterOrderTypes =
+    type SetterLog() =
+        let order = ResizeArray<string>()
+        member _.SetOrder = List.ofSeq order
+        member _.Key with get () = 0 and set (_: int) = order.Add "Key"
+        member _.Count with get () = 0 and set (_: int) = order.Add "Count"
+        member _.Size with get () = 0 and set (_: int) = order.Add "Size"
+
+    type MemberInitFinder() =
+        inherit System.Linq.Expressions.ExpressionVisitor()
+        member val Bindings: string list = [] with get, set
+
+        override this.VisitMemberInit node =
+            this.Bindings <- [ for b in node.Bindings -> b.Member.Name ]
+            base.VisitMemberInit node
+
+open SetterOrderTypes
+
+type QuerySetterOrderTests() =
+
+    [<Fact>]
+    member _.``Queryable select binds property setters in the order they are written``() =
+        let q = query { for x in [ 1 ].AsQueryable() do select (SetterLog(Count = x, Key = x, Size = x)) }
+        let finder = MemberInitFinder()
+        finder.Visit q.Expression |> ignore
+        Assert.Equal<string list>([ "Count"; "Key"; "Size" ], finder.Bindings)
+
+    [<Fact>]
+    member _.``Queryable select runs property setters in the order they are written``() =
+        let result = query { for x in [ 1 ].AsQueryable() do select (SetterLog(Count = x, Key = x, Size = x)) } |> Seq.exactlyOne
+        Assert.Equal<string list>([ "Count"; "Key"; "Size" ], result.SetOrder)
+
+    [<Fact>]
+    member _.``Enumerable select runs property setters in the order they are written``() =
+        let result = query { for x in [ 1 ] do select (SetterLog(Count = x, Key = x, Size = x)) } |> Seq.exactlyOne
+        Assert.Equal<string list>([ "Count"; "Key"; "Size" ], result.SetOrder)

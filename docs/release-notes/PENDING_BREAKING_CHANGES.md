@@ -68,6 +68,18 @@ query { for p in db.Products do select (p.Id, p.Name) }
 
 ---
 
+## Property Setters Keep Their Order 🟡
+
+```fsharp
+query { for x in xs.AsQueryable() do select (Cnt(Key = x, Count = 1)) }
+// Was: x => new Cnt() {Count = 1, Key = x}
+// Now: x => new Cnt() {Key = x, Count = 1}
+```
+
+**Impact:** The setters run in the order they are written, as they do outside a query, and a provider that emits one column or assignment per binding emits them in that order.
+
+---
+
 ## FCS API: Query Variables 🟢
 
 Query variables now report `IsCompilerGenerated = true`. Fixes #422 (FS1182 false positives).
