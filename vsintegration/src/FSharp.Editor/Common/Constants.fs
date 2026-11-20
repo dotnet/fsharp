@@ -69,34 +69,6 @@ module internal FSharpProviderConstants =
 [<RequireQualifiedAccess>]
 module internal Guids =
 
-    /// "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
-    let svsSettingsPersistenceManagerId = Guid "{9B164E40-C3A2-4363-9BC5-EB4039DEF653}"
-
-    [<Literal>]
-    /// "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
-    let intelliSenseOptionPageIdString = "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
-
-    [<Literal>]
-    /// "1e2b3290-4d67-41ff-a876-6f41f868e28f"
-    let quickInfoOptionPageIdString = "1e2b3290-4d67-41ff-a876-6f41f868e28f"
-
-    [<Literal>]
-    /// "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
-    let codeFixesOptionPageIdString = "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
-
-    [<Literal>]
-    /// "8FDA964A-263D-4B4E-9560-29897535217C"
-    let languageServicePerformanceOptionPageIdString =
-        "8FDA964A-263D-4B4E-9560-29897535217C"
-
-    [<Literal>]
-    /// "9007718C-357A-4327-A193-AB3EC38D7EE8"
-    let advancedSettingsPageIdString = "9007718C-357A-4327-A193-AB3EC38D7EE8"
-
-    [<Literal>]
-    /// "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
-    let formattingOptionPageIdString = "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
-
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"
 
 [<RequireQualifiedAccess>]

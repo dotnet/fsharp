@@ -12089,8 +12089,8 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                         errorR(Error(FSComp.SR.tcPropertyCannotBeSetPrivateSetter(RichText.mkProperty pinfo.PropertyName), m))
 
                 let namedAttribArgMap =
-                  attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
-                    if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
+                  attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, _, isOpt, callerArgExpr))) ->
+                    if isOpt then errorR (Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), id.idRange))
                     let m = callerArgExpr.Range
                     let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
                     let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv lookupKind m ad id IgnoreOverrides TypeNameResolutionInfo.Default ty

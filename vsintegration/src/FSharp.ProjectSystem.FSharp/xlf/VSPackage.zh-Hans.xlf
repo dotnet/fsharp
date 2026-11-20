@@ -402,11 +402,6 @@
         <target state="translated">用于存储资源的文件</target>
         <note />
       </trans-unit>
-      <trans-unit id="6000">
-        <source>F# Tools</source>
-        <target state="translated">F# 工具</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
         <target state="translated">F# 交互窗口</target>
@@ -420,11 +415,6 @@
       <trans-unit id="6003">
         <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
         <target state="translated">Visual F# 文件(*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6015">
-        <source>Compiler</source>
-        <target state="new">Compiler</target>
         <note />
       </trans-unit>
       <trans-unit id="7000">
@@ -510,16 +500,6 @@
       <trans-unit id="AddReferenceDialogTitle">
         <source>Add Reference</source>
         <target state="translated">添加引用</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6005">
-        <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">更改传递给 F# 交互窗口的路径和命令行参数</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6006">
-        <source>Enable or disable Type Providers</source>
-        <target state="translated">启用或禁用类型提供程序</target>
         <note />
       </trans-unit>
       <trans-unit id="6007">

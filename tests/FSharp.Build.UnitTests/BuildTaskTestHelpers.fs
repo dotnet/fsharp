@@ -90,7 +90,16 @@ module BuildTaskTestHelpers =
         use barrier = new Barrier(List.length actions)
         let release () =
             Assert.True(barrier.SignalAndWait(TimeSpan.FromSeconds 10.0), $"{scenario}: barrier timed out")
-        let tasks = [| for action in actions -> Task.Run(fun () -> action release) |]
+        let tasks =
+            [|
+                for action in actions ->
+                    Task.Factory.StartNew(
+                        (fun () -> action release),
+                        CancellationToken.None,
+                        TaskCreationOptions.LongRunning,
+                        TaskScheduler.Default
+                    )
+            |]
 
         Assert.True(
             Task.WaitAll([| for task in tasks -> task :> Task |], TimeSpan.FromSeconds 30.0),
