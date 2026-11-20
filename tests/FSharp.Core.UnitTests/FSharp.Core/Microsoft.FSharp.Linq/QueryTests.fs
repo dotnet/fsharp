@@ -495,3 +495,122 @@ type QueryHeadOrDefaultTests() =
         // The result is null (default for reference type tuple)
         // Accessing .Item1/.Item2 would cause NRE - this is the known issue
         Assert.True(obj.ReferenceEquals(null, result))
+
+module DefensiveCopyTypes =
+    [<Struct>]
+    type Counter =
+        val mutable Value: int
+        new(value) = { Value = value }
+
+        member c.Bump() =
+            c.Value <- c.Value + 1
+            c.Value
+
+        member c.Next =
+            c.Value <- c.Value + 1
+            c.Value
+
+        override c.ToString() =
+            c.Value <- c.Value + 1
+            string c.Value
+
+    type Level =
+        | Low = 0
+
+    [<Struct>]
+    type Point =
+        { X: int }
+        member p.Twice() = p.X * 2
+
+    [<Struct; System.Runtime.CompilerServices.IsReadOnly>]
+    type Frozen =
+        val X: int
+        new(x) = { X = x }
+        member f.Twice() = f.X * 2
+
+    [<Struct>]
+    type Shape =
+        | Circle of r: int
+        | Square of s: int
+        member s.Size = match s with Circle r -> r | Square s -> s
+
+    let isCopied (lambda: Linq.Expressions.Expression<'T>) = lambda.Body.NodeType = Linq.Expressions.ExpressionType.Block
+
+open DefensiveCopyTypes
+
+type DefensiveCopyTests() =
+
+    [<Fact>]
+    member _.``EvaluateQuotation calls a method of an immutable struct on a copy``() =
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let c = Counter(5) in c.Bump() + c.Value @>
+        Assert.Equal(11, result :?> int)
+
+    [<Fact>]
+    member _.``EvaluateQuotation calls a property getter of an immutable struct on a copy``() =
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let c = Counter(5) in c.Next + c.Value @>
+        Assert.Equal(11, result :?> int)
+
+    [<Fact>]
+    member _.``EvaluateQuotation calls a method of a mutable struct on the struct itself``() =
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let mutable c = Counter(5) in c.Bump() + c.Value @>
+        Assert.Equal(12, result :?> int)
+
+    [<Fact>]
+    member _.``EvaluateQuotation calls an override of an immutable struct on a copy``() =
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let c = Counter(5) in c.ToString(), c.Value @>
+        Assert.Equal(("6", 5), result :?> (string * int))
+
+    [<Fact>]
+    member _.``Queryable select calls a method of the element on a copy``() =
+        let result = query { for c in [ Counter(5) ].AsQueryable() do select (c.Bump() + c.Value) } |> Seq.toList
+        Assert.Equal<int list>([ 11 ], result)
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression copies an F# struct with mutable fields``() =
+        Assert.True(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Counter, int>(fun c -> c.Bump()) @>))
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression does not copy a struct from another language``() =
+        Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<struct (int * int), bool>(fun t -> t.Equals(struct (1, 2))) @>))
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression does not copy a read-only F# struct``() =
+        Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Frozen, int>(fun f -> f.Twice()) @>))
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression does not copy an F# enum``() =
+        Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Level, string>(fun l -> l.ToString()) @>))
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression does not copy an F# struct union``() =
+        Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Shape, int>(fun s -> s.Size) @>))
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression does not copy an F# struct record without mutable fields``() =
+        Assert.False(isCopied (LeafExpressionConverter.QuotationToLambdaExpression <@ Func<Point, int>(fun p -> p.Twice()) @>))
+
+#if NETCOREAPP
+    [<Fact>]
+    member _.``EvaluateQuotation calls ToString on a struct whose attribute's assembly is missing``() =
+        let core = typeof<obj>.Assembly
+        let annotations = Reflection.Emit.PersistedAssemblyBuilder(Reflection.AssemblyName("MissingAnnotations"), core)
+        let marker = annotations.DefineDynamicModule("MissingAnnotations").DefineType("Marker", Reflection.TypeAttributes.Public, typeof<Attribute>)
+        let markerCtor = marker.DefineDefaultConstructor(Reflection.MethodAttributes.Public)
+        marker.CreateType() |> ignore
+
+        let model = Reflection.Emit.PersistedAssemblyBuilder(Reflection.AssemblyName("AnnotatedModel"), core)
+        let position =
+            model.DefineDynamicModule("AnnotatedModel").DefineType("Position", Reflection.TypeAttributes.Public ||| Reflection.TypeAttributes.Sealed, typeof<ValueType>)
+        position.SetCustomAttribute(Reflection.Emit.CustomAttributeBuilder(markerCtor, [||]))
+        position.CreateType() |> ignore
+        use image = new IO.MemoryStream()
+        model.Save(image)
+
+        // MissingAnnotations is never saved, so reading Position's attributes fails.
+        let ty = Reflection.Assembly.Load(image.ToArray()).GetType("Position")
+        Assert.Throws<IO.FileNotFoundException>(fun () -> ty.GetCustomAttributes(false) |> ignore) |> ignore
+        // F# quotes p.ToString() as a call to Object.ToString on the struct.
+        let p = Quotations.Var("p", ty)
+        let call = Quotations.Expr.Let(p, Quotations.Expr.DefaultValue ty, Quotations.Expr.Call(Quotations.Expr.Var p, typeof<obj>.GetMethod("ToString"), []))
+        Assert.Equal("Position", LeafExpressionConverter.EvaluateQuotation call :?> string)
+#endif
