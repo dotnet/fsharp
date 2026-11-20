@@ -1,0 +1,432 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+// Suppress FS3220: a scenario reads the items of a System.Tuple by name, as the queries it checks do
+#nowarn "3220"
+
+module FSharp.Core.UnitTests.Linq.QueryStructureScenarios
+
+open System.Linq
+
+/// A record whose member gives the record itself
+type SelfRecord =
+    { SelfN: int }
+    member x.Identity: obj = x
+
+/// A struct with a tuple in it
+[<Struct>]
+type StructPair = { SPair: int * int }
+
+/// A record with a struct in it
+type StructHolder = { Wrapped: StructPair }
+
+let private pairOf (x: StructPair) = x.SPair
+
+/// A record that is changed through any copy of the struct that holds it
+type SharedChild = { SharedId: int; mutable State: int }
+
+[<Struct>]
+type SharedHolder = { Child: SharedChild }
+
+let private changeThenRead (x: SharedHolder) (y: SharedHolder) =
+    x.Child.State <- 99
+    y.Child.State
+
+/// A tree is pinned with every block it has: one that goes from three to two is a change as well
+let private blocks count =
+    List.replicate count (Violation.Statement System.Linq.Expressions.ExpressionType.Block)
+
+let private quotedLambda =
+    [ Violation.RuntimeHelperCall "LeafExpressionConverter.QuotationToLambdaExpression"
+      Violation.RuntimeHelperCall "LeafExpressionConverter.SubstHelper" ]
+
+let private nested operators =
+    operators |> List.map Violation.NestedInCollectionSelector
+
+let private orDefault (items: seq<'T>) =
+    if Seq.isEmpty items then Seq.singleton Unchecked.defaultof<'T> else items
+
+let private idOrNone (order: Order) =
+    match order with
+    | null -> -1
+    | order -> order.Id
+
+let private nameOrNone (product: Product) =
+    match product with
+    | null -> ""
+    | product -> product.Name
+
+let private ordersWithLines (data: Data) =
+    seq { for c in data.Customers do for o in c.Orders do for l in o.Lines -> c.Name, o.Id, l.Id }
+
+let private customersWithOrders (data: Data) =
+    seq { for c in data.Customers do for o in c.Orders -> c.Name, o.Id }
+
+let private leftJoinedOrders (data: Data) =
+    seq { for c in data.Customers do for o in orDefault c.Orders -> c.Name, idOrNone o }
+
+let private leftJoinedOrdersAndProducts (data: Data) =
+    seq {
+        for c in data.Customers do
+            for o in orDefault c.Orders do
+                for p in orDefault (data.Products |> List.filter (fun p -> p.Id = c.Id)) -> c.Name, idOrNone o, nameOrNone p
+    }
+
+let private loops () =
+    [ Scenario.rows
+          "two for"
+          (fun db -> query { for c in db.Customers do for p in db.Products do select (c.Name, p.Name) })
+          (fun data -> seq { for c in data.Customers do for p in data.Products -> c.Name, p.Name })
+      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "two for, where over both"
+          (fun db -> query { for c in db.Customers do for o in db.Orders do where (o.CustomerId = c.Id); select (c.Name, o.Id) })
+          customersWithOrders
+      |> Scenario.flat [ "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "for, where, for, where"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  where (c.Age > 26)
+                  for o in db.Orders do
+                  where (o.CustomerId = c.Id)
+                  select (c.Name, o.Id)
+              })
+          (fun data -> seq { for c in data.Customers do if c.Age > 26 then for o in c.Orders -> c.Name, o.Id })
+      |> Scenario.flat [ "Where"; "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "for over a navigation collection"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do select (c.Name, o.Id) })
+          customersWithOrders
+      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "for over two levels of navigation collections"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do for l in o.Lines do select (c.Name, o.Id, l.Id) })
+          ordersWithLines
+      |> Scenario.violating (nested [ "SelectMany" ])
+
+      Scenario.rows
+          "three for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in db.Orders do
+                  for l in db.Lines do
+                  where (o.CustomerId = c.Id && l.OrderId = o.Id)
+                  select (c.Name, o.Id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.violating (nested [ "SelectMany" ])
+
+      Scenario.rows
+          "for after sortBy"
+          (fun db -> query { for c in db.Customers do sortBy c.Age; for p in db.Products do select (c.Name, p.Name) })
+          (fun data -> seq { for c in data.Customers |> List.sortBy _.Age do for p in data.Products -> c.Name, p.Name })
+      |> Scenario.ordered
+      |> Scenario.flat [ "OrderBy"; "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "for after join"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  join o in db.Orders on (c.Id = o.CustomerId)
+                  for l in db.Lines do
+                  where (l.OrderId = o.Id)
+                  select (c.Name, o.Id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.flat [ "Join"; "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "let between for"
+          (fun db ->
+              query { for c in db.Customers do let next = c.Id + 9 in for o in db.Orders do where (o.Id = next); select (c.Name, o.Id) })
+          (fun data -> seq { for c in data.Customers do for o in data.Orders do if o.Id = c.Id + 9 then yield c.Name, o.Id })
+      |> Scenario.flat [ "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "if then around for"
+          (fun db -> query { for c in db.Customers do if c.Age > 26 then for o in c.Orders do yield (c.Name, o.Id) })
+          (fun data -> seq { for c in data.Customers do if c.Age > 26 then for o in c.Orders -> c.Name, o.Id })
+      |> Scenario.flat [ "Where"; "SelectMany"; "Select" ]
+
+      Scenario.rows
+          "for around if then"
+          (fun db -> query { for c in db.Customers do for o in db.Orders do if o.CustomerId = c.Id then yield (c.Name, o.Id) })
+          customersWithOrders
+      |> Scenario.flat [ "SelectMany"; "Select" ]
+
+      Scenario.rows
+          "yield! of a navigation collection"
+          (fun db -> query { for c in db.Customers do yield! c.Orders })
+          (fun data -> Seq.ofList data.Orders)
+      |> Scenario.flat [ "SelectMany" ]
+
+      Scenario.rows
+          "distinct and take after two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do select c.City; distinct; take 1 })
+          (fun _ -> seq { "London" })
+      |> Scenario.ordered
+      |> Scenario.flat [ "SelectMany"; "Select"; "Distinct"; "Take" ]
+
+      Scenario.rows
+          "groupBy after two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do groupBy c.City into g; select (g.Key, g.Count()) })
+          (fun data -> seq { for c in data.Customers do for _ in c.Orders -> c.City } |> Seq.countBy id)
+      |> Scenario.violating [ Violation.RuntimeHelperCall "new Grouping`2" ]
+
+      Scenario.value "count over two for" (fun db -> query { for c in db.Customers do for o in c.Orders do count }) (fun _ -> 4)
+
+      Scenario.value
+          "exists over two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do exists (o.Total > 10.0 && c.City = "London") })
+          (fun _ -> true) ]
+
+let private subqueries () =
+    [ Scenario.rows
+          "nested query as the source"
+          (fun db -> query { for o in (query { for o in db.Orders do where (o.Total > 4.0); select o }) do select o.Id })
+          (fun data -> seq { for o in data.Orders do if o.Total > 4.0 then yield o.Id })
+      |> Scenario.flat [ "Where"; "Select" ]
+
+      Scenario.rows
+          "nested query as the source of the second for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in (query { for o in db.Orders do where (o.CustomerId = c.Id); select o }) do
+                  select (c.Name, o.Id)
+              })
+          customersWithOrders
+      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "nested query in select"
+          (fun db ->
+              query { for c in db.Customers do select (c.Name, query { for o in db.Orders do where (o.CustomerId = c.Id); select o.Id }) })
+          (fun data -> seq { for c in data.Customers -> c.Name, (seq { for o in c.Orders -> o.Id }).AsQueryable() })
+
+      Scenario.rows
+          "second for over a source filtered by a lambda"
+          (fun db -> query { for c in db.Customers do for o in db.Orders.Where(fun o -> o.CustomerId = c.Id) do select (c.Name, o.Id) })
+          customersWithOrders
+      |> Scenario.violating quotedLambda
+
+      Scenario.rows
+          "where with a lambda over another source"
+          (fun db -> query { for c in db.Customers do where (db.Orders.Any(fun o -> o.CustomerId = c.Id)); select c.Name })
+          (fun data -> seq { for c in data.Customers do if c.Orders.Count > 0 then yield c.Name })
+      |> Scenario.violating quotedLambda ]
+
+let private leftJoins () =
+    [ Scenario.rows
+          "left join spelled leftOuterJoin"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  leftOuterJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders do
+                  select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id))
+              })
+          leftJoinedOrders
+      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "left join spelled groupJoin and DefaultIfEmpty"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders.DefaultIfEmpty() do
+                  select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id))
+              })
+          leftJoinedOrders
+      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select"; "Select" ]
+
+      Scenario.rows
+          "two left joins spelled leftOuterJoin"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  leftOuterJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders do
+                  leftOuterJoin p in db.Products on (c.Id = p.Id) into products
+                  for p in products do
+                  select
+                      (c.Name,
+                       (if obj.ReferenceEquals(o, null) then -1 else o.Id),
+                       (if obj.ReferenceEquals(p, null) then "" else p.Name))
+              })
+          leftJoinedOrdersAndProducts
+      |> Scenario.violating (nested [ "GroupJoin"; "SelectMany" ])
+
+      Scenario.rows
+          "two left joins spelled groupJoin and DefaultIfEmpty"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  groupJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders.DefaultIfEmpty() do
+                  groupJoin p in db.Products on (c.Id = p.Id) into products
+                  for p in products.DefaultIfEmpty() do
+                  select
+                      (c.Name,
+                       (if obj.ReferenceEquals(o, null) then -1 else o.Id),
+                       (if obj.ReferenceEquals(p, null) then "" else p.Name))
+              })
+          leftJoinedOrdersAndProducts
+      |> Scenario.violating (nested [ "GroupJoin"; "SelectMany" ])
+
+      Scenario.rows
+          "join after a left join"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  leftOuterJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders do
+                  join p in db.Products on (c.Id = p.Id)
+                  select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id), p.Name)
+              })
+          (leftJoinedOrdersAndProducts >> Seq.filter (fun (_, _, product) -> product <> ""))
+      |> Scenario.violating (nested [ "Join" ]) ]
+
+let private consumers () =
+    let totals (data: Data) = data.Orders |> List.map _.Total
+    let discounts (data: Data) = data.Lines |> List.filter _.Discount.HasValue |> List.map _.Discount.Value
+
+    [ Scenario.value
+          "all over two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do all (o.Total > 4.0 || c.City = "Paris") })
+          (fun data -> data.Customers |> List.forall (fun c -> c.Orders |> Seq.forall (fun o -> o.Total > 4.0 || c.City = "Paris")))
+
+      Scenario.value "sumBy over two for" (fun db -> query { for c in db.Customers do for o in c.Orders do sumBy o.Total }) (totals >> List.sum)
+
+      Scenario.value
+          "averageBy after a join"
+          (fun db -> query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); averageBy o.Total })
+          (totals >> List.average)
+
+      Scenario.value
+          "minByNullable over two for"
+          (fun db -> query { for o in db.Orders do for l in o.Lines do minByNullable l.Discount })
+          (discounts >> List.min >> System.Nullable)
+
+      Scenario.value
+          "sumByNullable after a join"
+          (fun db -> query { for o in db.Orders do join l in db.Lines on (o.Id = l.OrderId); sumByNullable l.Discount })
+          (discounts >> List.sum >> System.Nullable)
+
+      Scenario.value
+          "maxBy after a record select"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; maxBy p.PersonAge })
+          (fun data -> data.Customers |> List.map _.Age |> List.max)
+
+      Scenario.value
+          "exists after a record select"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (p.PersonAge > 30) })
+          (fun _ -> true)
+
+      // A function that uses an element as a value of its own gets the one object the query produced
+      Scenario.value
+          "exists after a record select, the record compared with itself"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (obj.ReferenceEquals(p, p)) })
+          (fun _ -> true)
+
+      // A member that is no field of the record gets the record itself
+      Scenario.value
+          "exists after a record select, a member of the record that gives the record itself"
+          (fun db -> query { for c in db.Customers do select { SelfN = c.Id } into p; exists (obj.ReferenceEquals(p.Identity, p.Identity)) })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "SelfRecord" ]
+
+      Scenario.value
+          "exists after a record select, a struct in it with a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select { Wrapped = { SPair = (c.Id, c.Age) } } into p
+                  exists (obj.ReferenceEquals(pairOf p.Wrapped, pairOf p.Wrapped))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "StructHolder" ]
+
+      // Copies of a struct hold the same objects
+      Scenario.value
+          "sumBy after a struct select, a record in it changed through the struct passed twice"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select { Child = { SharedId = c.Id; State = 0 } } into p
+                  sumBy (changeThenRead p p)
+              })
+          (fun data -> 99 * data.Customers.Length)
+
+      // A nested query that a function gets from the element is one sequence, however often it mentions it
+      Scenario.value
+          "exists with a nested query, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let orders = query { for o in db.Orders do where (o.CustomerId = c.Id); select (o.Id, o.Total) }
+                  exists (obj.ReferenceEquals(orders, orders))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      // The groups of a nested query are built anew from the groups of the provider, like its tuples
+      Scenario.value
+          "exists with a nested query of groups, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let groups = query { for o in db.Orders do where (o.CustomerId = c.Id); groupValBy (o.Id, o.Total) o.CustomerId }
+                  exists (obj.ReferenceEquals(groups, groups))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.RuntimeHelperCall "new Grouping`2"; Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.value
+          "exists with a nested query of struct tuples, the nested query compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  let orders = query { for o in db.Orders do where (o.CustomerId = c.Id); select (struct (o.Id, o.Total)) }
+                  exists (obj.ReferenceEquals(orders, orders))
+              })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.value
+          "all after a tuple select, the tuple compared with itself"
+          (fun db -> query { for c in db.Customers do select (c.Name, c.Age) into t; all (obj.ReferenceEquals(t, t)) })
+          (fun _ -> true)
+
+      Scenario.value
+          "sumBy after a tuple select, a tuple in it compared with itself"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select (c.Id, (c.Name, c.Age)) into t
+                  sumBy (if obj.ReferenceEquals(t.Item2, t.Item2) then 1 else 0)
+              })
+          (fun data -> data.Customers.Length)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.value
+          "exists after a tuple select"
+          (fun db -> query { for c in db.Customers do select (c.City, c.Age) into t; exists (match t with city, age -> city = "Paris" && age < 30) })
+          (fun _ -> true)
+      |> Scenario.violating (blocks 2)
+
+      Scenario.value
+          "count after a tuple select"
+          (fun db -> query { for c in db.Customers do select (c.City, c.Age) into t; count })
+          (fun data -> data.Customers.Length)
+      |> Scenario.flat [ "Select"; "Select"; "Count" ] ]
+
+let cases () = loops () @ subqueries () @ leftJoins () @ consumers ()
