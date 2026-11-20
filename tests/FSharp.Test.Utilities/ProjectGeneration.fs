@@ -665,18 +665,18 @@ module ProjectOperations =
             )
         }
 
-    let checkFileWithTransparentCompiler fileId (project: SyntheticProject) (checker: FSharpChecker) =
+    let checkFileWithTransparentCompiler checkDependenciesOnly fileId (project: SyntheticProject) (checker: FSharpChecker) =
         async {
             let file = project.Find fileId
             let absFileName = getFilePath project file
             let options = project.GetProjectOptions checker
             let! projectSnapshot = FSharpProjectSnapshot.FromOptions(options, getFileSnapshot project)
-            return! checker.ParseAndCheckFileInProject(absFileName, projectSnapshot)
+            return! checker.ParseAndCheckFileInProject(absFileName, projectSnapshot, checkDependenciesOnly = checkDependenciesOnly)
         }
 
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
         (if checker.UsesTransparentCompiler then
-            checkFileWithTransparentCompiler
+            checkFileWithTransparentCompiler false
         else
             checkFileWithIncrementalBuilder) fileId project checker
 
@@ -1147,15 +1147,13 @@ type ProjectWorkflowBuilder
         |> mapProject (fun project ->
             { project with SourceFiles = project.SourceFiles |> List.filter (fun f -> f.Id <> fileId) })
 
-    /// Parse and type check given file and process the results using `processResults` function.
-    [<CustomOperation "checkFile">]
-    member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
+    member private this.CheckFileUsing(workflow: Async<WorkflowContext>, activityName: string, check, fileId: string, processResults) =
         async {
             let! ctx = workflow
 
             let! results =
-                use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
-                checkFile fileId ctx.Project checker
+                use _ = Activity.start activityName [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
+                check fileId ctx.Project checker
 
             let oldSignature = ctx.Signatures |> Map.tryFind fileId |> Option.defaultValue ""
             let newSignature = getSignature results
@@ -1164,6 +1162,16 @@ type ProjectWorkflowBuilder
 
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
+
+    /// Parse and type check given file and process the results using `processResults` function.
+    [<CustomOperation "checkFile">]
+    member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
+        this.CheckFileUsing(workflow, "ProjectWorkflowBuilder.CheckFile", checkFile, fileId, processResults)
+
+    /// Like checkFile, but the Transparent Compiler type checks only the files the given file depends on.
+    [<CustomOperation "checkFileDependenciesOnly">]
+    member this.CheckFileDependenciesOnly(workflow: Async<WorkflowContext>, fileId: string, processResults) =
+        this.CheckFileUsing(workflow, "ProjectWorkflowBuilder.CheckFileDependenciesOnly", checkFileWithTransparentCompiler true, fileId, processResults)
 
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
