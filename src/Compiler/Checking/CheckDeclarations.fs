@@ -4110,9 +4110,10 @@ module EstablishTypeDefinitionCores =
 
         let edgesFrom (tycon: Tycon) =
 
-            let rec accInAbbrevType ty acc =
-                match stripTyparEqns ty with
-                | TType_anon (_,l)
+            let rec accInAbbrevType ty acc = 
+                match stripTyparEqns ty with 
+                | TType_anon (_,l) 
+                | TType_anon_union (_, l, _)
                 | TType_tuple (_, l) -> accInAbbrevTypes l acc
                 | TType_ucase (UnionCaseRef(tcref2, _), tinst)
                 | TType_app (tcref2, tinst, _) ->
@@ -4128,7 +4129,7 @@ module EstablishTypeDefinitionCores =
                     else
                         acc
 
-                | TType_fun (domainTy, rangeTy, _) ->
+                | TType_fun (domainTy, rangeTy, _) -> 
                     accInAbbrevType domainTy (accInAbbrevType rangeTy acc)
 
                 | TType_var _ -> acc

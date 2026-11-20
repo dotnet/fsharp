@@ -15,7 +15,7 @@
 * Have tests restructured the way, that they are easy to discover.
 * Have tests building and running on all supported platforms (Windows, macOS and Linux) and different frameworks (with exceptions when this is not applicable).
 * Make it easy to run tests using standard .NET instruments (dotnet cli, test explorer, etc.).
-* Leverage standard .NET testing platform and use all its benefits, suck as live unit testing, code coverage collecting, dead code elimination, etc.
+* Leverage standard .NET testing platform and use all its benefits, such as live unit testing, code coverage collecting, dead code elimination, etc.
 
 ## Framework for testing
 

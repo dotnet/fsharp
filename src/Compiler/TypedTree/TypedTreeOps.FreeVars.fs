@@ -334,6 +334,8 @@ module internal FreeTypeVars =
 
         | TType_anon(anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
 
+        | TType_anon_union(_, l, _) -> accFreeInTypes opts l acc
+
         | TType_app(tcref, tinst, _) ->
             let acc = accFreeTycon opts tcref acc
 
@@ -457,6 +459,8 @@ module internal FreeTypeVars =
         | TType_app(_, tinst, _) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
 
         | TType_ucase(_, tinst) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
+
+        | TType_anon_union(_, tys, _) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
 
         | TType_fun(domainTy, rangeTy, _) ->
             let dacc = accFreeInTypeLeftToRight g cxFlag thruFlag acc domainTy
@@ -1132,6 +1136,7 @@ module internal MemberRepresentation =
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
+            | TType_anon_union(_, tys, _)
             | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
 
             | TType_fun(domainTy, rangeTy, _) ->
