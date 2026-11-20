@@ -65,6 +65,7 @@ type LanguageFeature =
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
     | ReraiseInComputationExpressions
+    | CaptureStructFieldReadsInQuotations
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -162,6 +163,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExtensionConstraintSolutions, languageVersion112
 
                 // F# preview
+                LanguageFeature.CaptureStructFieldReadsInQuotations, previewVersion // #20376: read fields of a captured struct local in a quotation
+
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -308,6 +311,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
         | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
         | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
+        | LanguageFeature.CaptureStructFieldReadsInQuotations -> FSComp.SR.featureCaptureStructFieldReadsInQuotations ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

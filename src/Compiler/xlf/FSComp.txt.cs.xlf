@@ -322,6 +322,11 @@
         <target state="translated">Částečné aktivní vzory vracející logickou hodnotu a směrované návratovým typem</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCaptureStructFieldReadsInQuotations">
+        <source>reading fields of a captured struct local in a quotation</source>
+        <target state="new">reading fields of a captured struct local in a quotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Vyvolá upozornění, pokud je atribut TailCall použit u nerekurzivních funkcí.</target>

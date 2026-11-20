@@ -541,7 +541,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
             mkRecdGet(rgtypR, anonInfo.SortedNames[n], tyargsR, argsR)
 
         | TOp.UnionCaseFieldGet (ucref, n), tyargs, [e] ->
-            ConvUnionFieldGet cenv env m ucref n tyargs e
+            ConvUnionFieldGet cenv env true m ucref n tyargs e
 
         | TOp.ValFieldGetAddr (_rfref, _readonly), _tyargs, _ ->
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m))
@@ -553,10 +553,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
             wfail(Error(FSComp.SR.crefQuotationsCantContainStaticFieldRef(), m))
 
         | TOp.ValFieldGet rfref, tyargs, args ->
-            ConvClassOrRecdFieldGet cenv env m rfref tyargs args
+            ConvClassOrRecdFieldGet cenv env true m rfref tyargs args
 
         | TOp.TupleFieldGet (tupInfo, n), tyargs, [e] ->
-            let eR = ConvLValueExpr cenv env e
+            let eR = ConvLValueExpr cenv env true e
             let tyR = ConvType cenv env m (mkAnyTupledTy g tupInfo tyargs)
             mkTupleGet(tyR, n, eR)
 
@@ -564,12 +564,12 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
                     | [ I_ldfld (_, _, fspec); AI_nop ]
                     | [ I_ldsfld (_, fspec) ]
                     | [ I_ldsfld (_, fspec); AI_nop ]), _), enclTypeArgs, args ->
-            ConvLdfld  cenv env m fspec enclTypeArgs args
+            ConvLdfld  cenv env true m fspec enclTypeArgs args
 
         | TOp.ILAsm ([ I_stfld (_, _, fspec) | I_stsfld (_, fspec) ], _), enclTypeArgs, args ->
             let tyargsR = ConvTypes cenv env m enclTypeArgs
             let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
-            let argsR = ConvLValueArgs cenv env args
+            let argsR = ConvLValueArgs cenv env false args
             mkFieldSet(parentTyconR, fspec.Name, tyargsR, argsR)
 
         | TOp.ILAsm ([ AI_ceq ], _), _, [arg1;arg2] ->
@@ -607,7 +607,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
             mkCoerce(exnTypeR, objR)
 
         | TOp.ValFieldSet rfref, _tinst, args ->
-            let argsR = ConvLValueArgs cenv env args
+            let argsR = ConvLValueArgs cenv env false args
             let tyargsR = ConvTypes cenv env m tyargs
             let parentTyconR, fldOrPropName = ConvRecdFieldRef cenv rfref m
             if rfref.TyconRef.IsRecordTycon then
@@ -769,24 +769,24 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : Exp
     | _ ->
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr, expr.Range))
 
-and ConvLdfld cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
+and ConvLdfld cenv env isRead m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
     let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
-    let argsR = ConvLValueArgs cenv env args
+    let argsR = ConvLValueArgs cenv env isRead args
     mkFieldGet(parentTyconR, fspec.Name, tyargsR, argsR)
 
-and ConvUnionFieldGet cenv env m ucref n tyargs e =
+and ConvUnionFieldGet cenv env isRead m ucref n tyargs e =
     let tyargsR = ConvTypes cenv env m tyargs
     let tcR, s = ConvUnionCaseRef cenv ucref m
-    let eR = ConvLValueExpr cenv env e
+    let eR = ConvLValueExpr cenv env isRead e
     mkUnionFieldGet(tcR, s, n, tyargsR, eR)
 
-and ConvClassOrRecdFieldGet cenv env m rfref tyargs args =
-    EmitDebugInfoIfNecessary cenv env m (ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args)
+and ConvClassOrRecdFieldGet cenv env isRead m rfref tyargs args =
+    EmitDebugInfoIfNecessary cenv env m (ConvClassOrRecdFieldGetCore cenv env isRead m rfref tyargs args)
 
-and private ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args =
+and private ConvClassOrRecdFieldGetCore cenv env isRead m rfref tyargs args =
     let tyargsR = ConvTypes cenv env m tyargs
-    let argsR = ConvLValueArgs cenv env args
+    let argsR = ConvLValueArgs cenv env isRead args
     let parentTyconR, fldOrPropName = ConvRecdFieldRef cenv rfref m
     if rfref.TyconRef.IsRecordTycon then
         mkRecdGet(parentTyconR, fldOrPropName, tyargsR, argsR)
@@ -826,24 +826,30 @@ and ConvLetBind cenv env (bind : Binding) =
         let envinner = BindVal env v
         Some(vR, rhsR), envinner
 
-and ConvLValueArgs cenv env args =
+and ConvLValueArgs cenv env isRead args =
     match args with
-    | obj :: rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
+    | obj :: rest -> ConvLValueExpr cenv env isRead obj :: ConvExprs cenv env rest
     | [] -> []
 
-and ConvLValueExpr cenv env (expr: Expr) =
-    EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
+and ConvLValueExpr cenv env isRead (expr: Expr) =
+    EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env isRead expr)
 
 // This function has to undo the work of mkExprAddrOfExpr
-and ConvLValueExprCore cenv env expr =
+// isRead: the address is only used to read a field, so an immutable local can be captured by value
+and ConvLValueExprCore cenv env isRead expr =
     match expr with
     | Expr.Op (op, tyargs, args, m) ->
         match op, args, tyargs  with
-        | TOp.LValueOp (LAddrOf _, vref), _, _ -> ConvValRef false cenv env m vref []
-        | TOp.ValFieldGetAddr (rfref, _), _, _ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
-        | TOp.UnionCaseFieldGetAddr (ucref, n, _), [e], _ -> ConvUnionFieldGet cenv env m ucref n tyargs e
-        | TOp.ILAsm ([ I_ldflda(fspec) ], _), _, _ -> ConvLdfld  cenv env m fspec tyargs args
-        | TOp.ILAsm ([ I_ldsflda(fspec) ], _), _, _ -> ConvLdfld  cenv env m fspec tyargs args
+        | TOp.LValueOp (LAddrOf _, vref), _, _ ->
+            let holeOk =
+                isRead
+                && not vref.IsMutable
+                && cenv.g.langVersion.SupportsFeature LanguageFeature.CaptureStructFieldReadsInQuotations
+            ConvValRef holeOk cenv env m vref []
+        | TOp.ValFieldGetAddr (rfref, _), _, _ -> ConvClassOrRecdFieldGet cenv env isRead m rfref tyargs args
+        | TOp.UnionCaseFieldGetAddr (ucref, n, _), [e], _ -> ConvUnionFieldGet cenv env isRead m ucref n tyargs e
+        | TOp.ILAsm ([ I_ldflda(fspec) ], _), _, _ -> ConvLdfld  cenv env isRead m fspec tyargs args
+        | TOp.ILAsm ([ I_ldsflda(fspec) ], _), _, _ -> ConvLdfld  cenv env isRead m fspec tyargs args
         | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemTy] ->
             match shape.Rank, idxs with
             | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemTy arr idx1)
@@ -862,8 +868,8 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
     let tupledCurriedArgs = untupledCurriedArgs |> List.concat
     let allArgsR =
         match objArgs with
-        | [ obj ] -> ConvLValueExpr cenv env obj :: (witnessArgsR @ ConvExprs cenv env tupledCurriedArgs)
-        | [] -> witnessArgsR @ ConvLValueArgs cenv env tupledCurriedArgs
+        | [ obj ] -> ConvLValueExpr cenv env false obj :: (witnessArgsR @ ConvExprs cenv env tupledCurriedArgs)
+        | [] -> witnessArgsR @ ConvLValueArgs cenv env false tupledCurriedArgs
         | _ -> failwith "unreachable"
 
     if isPropGet || isPropSet then
@@ -1085,7 +1091,7 @@ and ConvDecisionTree cenv env tgs typR x =
 
                 match discrim with
                 | DecisionTreeTest.UnionCase (ucref, tyargs) ->
-                    let e1R = ConvLValueExpr cenv env e1
+                    let e1R = ConvLValueExpr cenv env false e1
                     let tcR, s = ConvUnionCaseRef cenv ucref m
                     let tyargsR = ConvTypes cenv env m tyargs
                     QP.mkCond (mkUnionCaseTagTest (tcR, s, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)

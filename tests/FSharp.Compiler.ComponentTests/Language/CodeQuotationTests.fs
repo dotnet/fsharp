@@ -480,3 +480,285 @@ match captured with
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    let private structLib =
+        CSharp """
+public struct Counter
+{
+    public int Value;
+    public int Increment() => ++Value;
+    public int Next => ++Value;
+}
+
+public struct Point
+{
+    public int X;
+    public int Y;
+}
+
+public struct Line
+{
+    public Point A;
+}
+
+public readonly struct ReadonlyHolder
+{
+    public readonly Counter C;
+    public ReadonlyHolder(Counter c) { C = c; }
+}"""
+        |> withName "CsStructs20376"
+
+    // https://github.com/dotnet/fsharp/issues/20376
+    [<Fact>]
+    let ``Reading fields of a captured struct in a quotation captures it by value - issue 20376`` () =
+        FSharp """
+module Test20376
+
+open System
+open System.Linq
+open System.Linq.Expressions
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+open Microsoft.FSharp.Linq.RuntimeHelpers
+
+[<Struct>]
+type Vertex = { Position: float; Normal: float }
+
+[<Struct>]
+type Outer = { In: Vertex; Tag: int }
+
+[<Struct; NoComparison>]
+type Holder = { C: Counter }
+
+[<Struct>]
+type Cls =
+    val X: int
+    new(x) = { X = x }
+
+[<Struct>]
+type Shape =
+    | Circle of r: float
+    | Square of side: float
+
+type Show =
+    static member One(e: Expression<Func<float, float>>) = e.Compile().Invoke 2.0
+
+let eval (q: Expr<'T>) = LeafExpressionConverter.EvaluateQuotation q :?> 'T
+
+let quoted (v: Vertex) = <@ v.Position + v.Normal @>
+
+let queried (v: Vertex) =
+    query {
+        for x in [ 1.0; 2.0; 3.0 ] do
+            where (x > v.Position)
+            select x
+    }
+    |> Seq.toList
+
+let localStruct () =
+    let v = { Position = 1.0; Normal = 2.0 }
+    <@ v.Position + v.Normal @>
+
+let hoisted (v: Vertex) =
+    let v = v
+    <@ v.Position + v.Normal @>
+
+let nested (o: Outer) = <@ o.In.Normal + float o.Tag @>
+let classField (c: Cls) = <@ c.X @>
+let ilField (p: Point) = <@ p.X + p.Y @>
+let ilNested (l: Line) = <@ l.A.Y @>
+let mixedNested (h: Holder) = <@ h.C.Value @>
+let readonlyFieldCall (h: ReadonlyHolder) = <@ h.C.Increment() @>
+let unionField (s: Shape) = <@ match s with Circle r -> r | Square side -> side @>
+let structTuple (t: struct (int * int)) = <@ match t with struct (a, _) -> a @>
+let viaExpression (v: Vertex) = Show.One(fun x -> x * v.Normal)
+
+let viaQueryable (v: Vertex) =
+    query {
+        for x in [ 1.0; 2.0; 3.0 ].AsQueryable() do
+            where (x > v.Position)
+            select x
+    }
+    |> Seq.toList
+
+let check name ok = if not ok then failwith name
+
+let v = { Position = 1.0; Normal = 2.0 }
+let mutable p = Point()
+p.X <- 2
+p.Y <- 5
+let mutable c = Counter()
+c.Value <- 9
+let mutable l = Line()
+l.A <- p
+
+check "quoted" (eval (quoted v) = 3.0)
+check "queried" (queried v = [ 2.0; 3.0 ])
+check "localStruct" (eval (localStruct ()) = 3.0)
+check "hoisted" (eval (hoisted v) = 3.0)
+check "nested" (eval (nested { In = v; Tag = 4 }) = 6.0)
+check "classField" (eval (classField (Cls(6))) = 6)
+check "ilField" (eval (ilField p) = 7)
+check "ilNested" (eval (ilNested l) = 5)
+check "mixedNested" (eval (mixedNested { C = c }) = 9)
+let r = ReadonlyHolder(c)
+check "readonlyFieldCall" (eval (readonlyFieldCall r) = 10 && r.C.Value = 9)
+check "unionField" (eval (unionField (Square 4.0)) = 4.0)
+check "viaExpression" (viaExpression v = 4.0)
+check "viaQueryable" (viaQueryable v = [ 2.0; 3.0 ])
+
+match structTuple (struct (3, 4)) with
+| Let(_, TupleGet(ValueWithName(value, _, "t"), 0), _) -> check "structTuple" (unbox<struct (int * int)> value = struct (3, 4))
+| q -> failwithf "Unexpected quotation: %A" q
+
+match quoted v with
+| Call(None, _, [ PropertyGet(Some(ValueWithName(value, _, "v")), position, []); _ ]) ->
+    check "shape" (position.Name = "Position" && unbox<Vertex> value = v)
+| q -> failwithf "Unexpected quotation: %A" q
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withNoWarn 52 // the readonly C# field is copied before the call
+        |> withReferences [ structLib ]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Reading a field of a captured struct in a quotation is still FS3155 without the preview feature - issue 20376`` () =
+        FSharp """
+module Test20376Default
+
+[<Struct>]
+type Vertex = { Position: float; Normal: float }
+
+let quoted (v: Vertex) = <@ v.Position @>
+        """
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3155
+
+    // These need the captured local's address, so a copy would lose or miss a mutation.
+    [<Theory>]
+    [<InlineData("let c = Counter()", "c.Increment()")>]
+    [<InlineData("let c = Counter()", "c.Next")>]
+    [<InlineData("let p = Pair(1, 2)", "p.A")>]
+    [<InlineData("let h = { Holder.C = Counter() }", "h.C.Increment()")>]
+    [<InlineData("let h = { Holder.C = Counter() }", "h.C.Next")>]
+    [<InlineData("let g = { Generic.G = Counter() }", "g.G.Increment()")>]
+    [<InlineData("let g = Guid.NewGuid()", "g.ToString()")>]
+    [<InlineData("let mutable v = { Position = 1.0; Normal = 2.0 }", "v.Position")>]
+    [<InlineData("let v = { Position = 1.0; Normal = 2.0 }", "read &v")>]
+    let ``Calls, getters, mutable locals and addresses of a captured struct are still FS3155`` (binding: string, quoted: string) =
+        FSharp $"""
+module Test20376Rejected
+
+open System
+
+[<Struct>]
+type Vertex = {{ Position: float; Normal: float }}
+
+[<Struct>]
+type Pair(a: int, b: int) =
+    member _.A = a
+
+[<Struct; NoComparison>]
+type Holder = {{ C: Counter }}
+
+[<Struct>]
+type Generic<'T> = {{ G: 'T }}
+
+let read (r: inref<Vertex>) = r.Position
+
+let f () =
+    {binding}
+    <@@ {quoted} @@>
+        """
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [ structLib ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3155
+
+    let private hiddenStorageImpl =
+        FsSource """
+module HiddenStorage20376
+
+[<Struct; NoComparison>]
+type Wrapper(c: Counter) =
+    member _.Increment() = c.Increment()
+
+[<Struct>]
+type Cfg = { Mult: int }
+"""
+
+    let private hiddenStorageLib =
+        Fsi """
+module HiddenStorage20376
+
+[<Struct; NoComparison>]
+type Wrapper =
+    new: c: Counter -> Wrapper
+    member Increment: unit -> int
+
+[<Struct>]
+type Cfg = { Mult: int }
+"""
+        |> withAdditionalSourceFile hiddenStorageImpl
+        |> asLibrary
+        |> withName "HiddenStorage20376"
+        |> withReferences [ structLib ]
+
+    let private inlineQuoteLib =
+        FSharp """
+module InlineQuote20376
+open HiddenStorage20376
+
+let inline mult (cfg: Cfg) = <@ cfg.Mult * 2 @>
+"""
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withName "InlineQuote20376"
+        |> withReferences [ structLib; hiddenStorageLib ]
+
+    // A struct from another assembly can hide its storage behind a signature; only the shape of the use decides.
+    [<Fact>]
+    let ``Method call on a captured struct with hidden storage from another assembly is still FS3155 - issue 20376`` () =
+        FSharp """
+module Test20376Hidden
+open HiddenStorage20376
+
+let f () =
+    let w = Wrapper(Counter())
+    <@ w.Increment() @>
+        """
+        |> asLibrary
+        |> withLangVersionPreview
+        |> withReferences [ structLib; hiddenStorageLib ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3155
+
+    [<Fact>]
+    let ``Reading a field of a captured struct from another assembly, also through an inline function - issue 20376`` () =
+        FSharp """
+module Test20376Imported
+open Microsoft.FSharp.Linq.RuntimeHelpers
+open HiddenStorage20376
+open InlineQuote20376
+
+let eval (q: Quotations.Expr<'T>) = LeafExpressionConverter.EvaluateQuotation q :?> 'T
+
+let direct () =
+    let cfg = { Mult = 3 }
+    <@ cfg.Mult + 1 @>
+
+if eval (direct ()) <> 4 then failwith "direct"
+if eval (mult { Mult = 5 }) <> 10 then failwith "inline"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [ structLib; hiddenStorageLib; inlineQuoteLib ]
+        |> compileAndRun
+        |> shouldSucceed
