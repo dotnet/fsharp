@@ -315,6 +315,8 @@ module internal SeqExprPatterns =
     [<return: Struct>]
     val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) voption
 
+    val isVarFreeInExpr: v: Val -> e: Expr -> bool
+
     /// Detect the de-sugared form of a 'while gd do expr' within a 'seq { ... }'
     [<return: Struct>]
     val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) voption
