@@ -305,8 +305,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UnifiedSettingsTransparentCompilerDescription">
-        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</source>
-        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</target>
+        <source>Warning! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</source>
+        <target state="new">Warning! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results. Use at your own risk! Enabling this also opts in to additional performance telemetry.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnifiedSettingsUnderlineStyleTitle">

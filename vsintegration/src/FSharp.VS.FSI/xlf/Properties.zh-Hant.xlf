@@ -43,8 +43,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
-        <source>FSI Preview</source>
-        <target state="translated">FSI 預覽</target>
+        <source>FSI preview</source>
+        <target state="needs-review-translation">FSI 預覽</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewMode">
@@ -83,8 +83,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCore">
-        <source>Use .NET Core Scripting</source>
-        <target state="translated">使用 .NET Core 指令碼</target>
+        <source>Use .NET Core scripting</source>
+        <target state="needs-review-translation">使用 .NET Core 指令碼</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCoreDescr">

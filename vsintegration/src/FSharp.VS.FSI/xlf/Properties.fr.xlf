@@ -43,8 +43,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
-        <source>FSI Preview</source>
-        <target state="translated">Préversion FSI</target>
+        <source>FSI preview</source>
+        <target state="needs-review-translation">Préversion FSI</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewMode">
@@ -83,8 +83,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCore">
-        <source>Use .NET Core Scripting</source>
-        <target state="translated">Utiliser les scripts .NET Core</target>
+        <source>Use .NET Core scripting</source>
+        <target state="needs-review-translation">Utiliser les scripts .NET Core</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCoreDescr">
