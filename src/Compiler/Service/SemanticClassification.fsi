@@ -69,5 +69,5 @@ module internal TcResolutionsExtensions =
             amap: ImportMap *
             formatSpecifierLocations: (range * int)[] *
             range: range option *
-            ?relatedSymbolKinds: RelatedSymbolUseKind ->
+            [<Struct>] ?relatedSymbolKinds: RelatedSymbolUseKind ->
                 SemanticClassificationItem[]

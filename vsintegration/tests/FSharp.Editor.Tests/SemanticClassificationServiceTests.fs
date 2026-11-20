@@ -25,7 +25,7 @@ type SemanticClassificationServiceTests() =
                 document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
                 |> CancellableTask.start ct
 
-            return checkFileResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+            return checkFileResults.GetSemanticClassification(None, RelatedSymbolUseKind.AllInCode)
         }
         |> Async.RunSynchronously
         |> Option.toList
