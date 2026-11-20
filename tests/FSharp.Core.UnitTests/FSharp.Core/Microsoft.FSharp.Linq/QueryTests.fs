@@ -42,9 +42,31 @@ module TestData =
         { Table2.Id1 = 4; Id2 = 40; Value2 = "Z" }
     ]
 
+    type PairedTable = { PairKey: int * int; PairValue: string }
+
+    let pairedData = [
+        { PairKey = (1, 10); PairValue = "P" }
+        { PairKey = (2, 20); PairValue = "Q" }
+        { PairKey = (4, 40); PairValue = "R" }
+    ]
+
 open TestData
 
 type QueryTupleJoinTests() =
+
+    [<Fact>]
+    member _.``Join of a key built on one side with a tuple property on the other``() =
+        let t1 = table1Data.AsQueryable()
+        let paired = pairedData.AsQueryable()
+
+        let result =
+            query {
+                for a in t1 do
+                join p in paired on ((a.Id1, a.Id2) = p.PairKey)
+                select (a.Value1, p.PairValue)
+            } |> Seq.toList
+
+        Assert.Equal<(string * string) list>([ ("A", "P"); ("B", "Q") ], result)
 
     [<Fact>]
     member _.``Inline tuple join returns correct matches - issue 7885``() =
