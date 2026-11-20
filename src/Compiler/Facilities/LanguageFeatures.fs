@@ -43,6 +43,7 @@ type LanguageFeature =
     | BetterAnonymousRecordParsing
     | ScopedNowarn
     | ErrorOnInvalidDeclsInTypeDefinitions
+    | AllowMixedRangesAndValuesInSeqExpressions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | MoreConcreteTiebreaker
@@ -164,6 +165,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# preview
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -285,6 +287,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
+        | LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions -> FSComp.SR.featureAllowMixedRangesAndValuesInSeqExpressions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
         | LanguageFeature.MoreConcreteTiebreaker -> FSComp.SR.featureMoreConcreteTiebreaker ()
