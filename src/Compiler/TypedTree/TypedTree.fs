@@ -40,6 +40,37 @@ type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
 
+/// Records how to undo mutations of inference state (type variables, augmentation closing, implemented slots) made on this thread
+/// while a log is active, so a pass that mutates shared typed trees can be undone and run again.
+[<Sealed; AbstractClass>]
+type MutationLog =
+    [<ThreadStatic; DefaultValue>]
+    static val mutable private current: ResizeArray<unit -> unit> | null
+
+    /// The active log of this thread, or null. It is thread-static: a mutation made on another thread, such as work a
+    /// logged pass hands to the thread pool, is not recorded, and nothing reports that.
+    static member Current
+        with get () = MutationLog.current
+        and set (log: ResizeArray<unit -> unit> | null) = MutationLog.current <- log
+
+    /// Runs `f` with no log active: what it changes has no earlier state an undo should go back to, such as a type
+    /// variable it has just made, which another pass goes on holding.
+    static member Unlogged(f: unit -> 'T) : 'T =
+        match MutationLog.current with
+        | null -> f ()
+        | outer ->
+            MutationLog.current <- null
+
+            try
+                f ()
+            finally
+                MutationLog.current <- outer
+
+    /// Runs undo actions, latest first.
+    static member Undo(log: ResizeArray<unit -> unit>) =
+        for i in log.Count - 1 .. -1 .. 0 do
+            log[i] ()
+
 [<RequireQualifiedAccess>]
 type ValInline =
     | Always
@@ -225,6 +256,9 @@ type ValFlags(flags: int64) =
     member x.HasBeenReferenced                =                   (flags &&& 0b00001000000000000000L) <> 0L
 
     member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b00001000000000000000L)
+
+    member x.WithHasBeenReferencedSetTo(referenced: bool) =
+        if referenced then x.WithHasBeenReferenced else ValFlags(flags &&& ~~~0b00001000000000000000L)
 
     member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b00010000000000000000L) <> 0L
 
@@ -1212,7 +1246,14 @@ type Entity =
 
     member x.IsAugmentationClosed = x.entity_flags.IsAugmentationClosed
 
-    member x.SetAugmentationClosed() = x.entity_flags <- x.entity_flags.WithIsAugmentationClosed
+    member x.SetAugmentationClosed() =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let flags = x.entity_flags
+            log.Add(fun () -> x.entity_flags <- flags)
+
+        x.entity_flags <- x.entity_flags.WithIsAugmentationClosed
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1555,7 +1596,14 @@ type TyconAugmentation =
 
     member tcaug.SetHashAndEqualsWith x = tcaug.tcaug_hash_and_equals_withc <- Some x
 
-    member tcaug.SetHasObjectGetHashCode b = tcaug.tcaug_hasObjectGetHashCode <- b
+    member tcaug.SetHasObjectGetHashCode b =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let prev = tcaug.tcaug_hasObjectGetHashCode
+            log.Add(fun () -> tcaug.tcaug_hasObjectGetHashCode <- prev)
+
+        tcaug.tcaug_hasObjectGetHashCode <- b
 
     static member Create() =
         { tcaug_compare=None
@@ -1834,7 +1882,8 @@ type UnionCase =
       mutable XmlDocSig: string
 
       /// Name/range of the case
-      Id: Ident
+      // MUTABILITY: moved when a line insert shifts the declaration (DeclarationChecker.Shift)
+      mutable Id: Ident
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is
       /// the signature range for an item in an implementation
@@ -1964,7 +2013,8 @@ type RecdField =
       mutable rfield_fattribs: Attribs
 
       /// Name/declaration-location of the field
-      rfield_id: Ident
+      // MUTABILITY: moved when a line insert shifts the declaration (DeclarationChecker.Shift)
+      mutable rfield_id: Ident
 
       rfield_name_generated: bool
 
@@ -2491,9 +2541,13 @@ type Typar =
     member x.IsCompatFlex = x.typar_flags.IsCompatFlex
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
-    member x.SetIsCompatFlex b = x.typar_flags <- x.typar_flags.WithCompatFlex b
+    member x.SetIsCompatFlex b =
+        x.RecordUndo()
+        x.typar_flags <- x.typar_flags.WithCompatFlex b
 
-     member x.SetSupportsNullFlex b = x.typar_flags <- x.typar_flags.WithSupportsNullFlex b
+    member x.SetSupportsNullFlex b =
+        x.RecordUndo()
+        x.typar_flags <- x.typar_flags.WithSupportsNullFlex b
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind = x.typar_flags.Kind
@@ -2509,6 +2563,7 @@ type Typar =
 
     /// Set the attributes on the type parameter
     member x.SetAttribs attribs =
+        x.RecordUndo()
         match attribs, x.typar_opt_data with
         | [], None -> ()
         | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
@@ -2530,6 +2585,7 @@ type Typar =
 
     /// Set the IL name of the type parameter
     member x.SetILName il_name =
+        x.RecordUndo()
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
         | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = None}
@@ -2542,6 +2598,7 @@ type Typar =
 
     /// Save the name as the declared name of the type parameter if it is not already set
     member x.PreserveDeclaredName() =
+        x.RecordUndo()
         match x.typar_opt_data with
         | Some optData when optData.typar_declared_name = None -> optData.typar_declared_name <- Some x.Name
         | None -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false; typar_declared_name = Some x.Name }
@@ -2552,6 +2609,7 @@ type Typar =
 
     /// Adjusts the constraints associated with a type variable
     member x.SetConstraints cs =
+        x.RecordUndo()
         match cs, x.typar_opt_data with
         | [], None -> ()
         | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false; typar_declared_name = None } when doc.IsEmpty ->
@@ -2561,6 +2619,7 @@ type Typar =
 
     /// Marks the typar as being contravariant
     member x.MarkAsContravariant() =
+        x.RecordUndo()
         match x.typar_opt_data with
         | Some optData -> optData.typar_is_contravariant <- true
         | _ ->
@@ -2614,34 +2673,62 @@ type Typar =
         | _ -> true
 
     /// Sets the identifier associated with a type variable
-    member x.SetIdent id = x.typar_id <- id
+    member x.SetIdent id =
+        x.RecordUndo()
+        x.typar_id <- id
+
+    /// Sets the solution of an inference variable
+    member x.SetSolution solution =
+        x.RecordUndo()
+        x.typar_solution <- solution
+
+    /// Records how to restore this type variable's state in the active mutation log, if any
+    member x.RecordUndo() =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let id, flags, solution = x.typar_id, x.typar_flags, x.typar_solution
+            // The optional data is mutated in place, so keep a copy
+            let optData = x.typar_opt_data |> Option.map (fun d -> { d with typar_il_name = d.typar_il_name })
+
+            log.Add(fun () ->
+                x.typar_id <- id
+                x.typar_flags <- flags
+                x.typar_solution <- solution
+                x.typar_opt_data <- optData |> Option.map (fun d -> { d with typar_il_name = d.typar_il_name }))
 
     /// Sets the rigidity of a type variable
     member x.SetRigidity b =
+        x.RecordUndo()
         let flags = x.typar_flags
         x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex)
 
     /// Sets whether a type variable is compiler generated
     member x.SetCompilerGenerated b =
+        x.RecordUndo()
         let flags = x.typar_flags
         x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex)
 
     /// Sets whether a type variable has a static requirement
     member x.SetStaticReq b =
+        x.RecordUndo()
         x.typar_flags <- x.typar_flags.WithStaticReq(b)
 
     /// Sets whether a type variable is required at runtime
     member x.SetDynamicReq b =
+        x.RecordUndo()
         let flags = x.typar_flags
         x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex)
 
     /// Sets whether the equality constraint of a type definition depends on this type variable
     member x.SetEqualityDependsOn b =
+        x.RecordUndo()
         let flags = x.typar_flags
         x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex)
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable
     member x.SetComparisonDependsOn b =
+        x.RecordUndo()
         let flags = x.typar_flags
         x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b, flags.IsSupportsNullFlex)
 
@@ -2771,7 +2858,14 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member x.Solution
         with get() = (let (TTrait(solution = sln)) = x in sln.Value)
-        and set v = (let (TTrait(solution = sln)) = x in sln.Value <- v)
+        and set v =
+            let (TTrait(solution = sln)) = x
+            match MutationLog.Current with
+            | null -> ()
+            | log ->
+                let prev = sln.Value
+                log.Add(fun () -> sln.Value <- prev)
+            sln.Value <- v
 
     member x.TraitContext = (let (TTrait(traitCtxt = tc)) = x in tc)
 
@@ -3451,6 +3545,16 @@ type Val =
 
     member x.SetHasBeenReferenced() = x.val_flags <- x.val_flags.WithHasBeenReferenced
 
+    /// Sets or clears whether the value has been referenced, recording how to restore it in the active mutation log
+    member x.SetHasBeenReferencedTo(referenced: bool) =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let was = x.val_flags.HasBeenReferenced
+            log.Add(fun () -> x.val_flags <- x.val_flags.WithHasBeenReferencedSetTo was)
+
+        x.val_flags <- x.val_flags.WithHasBeenReferencedSetTo referenced
+
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.WithIsCompiledAsStaticPropertyWithoutField
 
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
@@ -3588,6 +3692,26 @@ type ValMemberInfo =
 
       MemberFlags: SynMemberFlags
     }
+
+    /// Sets ImplementedSlotSigs, recording how to restore it in the active mutation log
+    member x.SetImplementedSlotSigs(slotsigs: SlotSig list) =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let prev = x.ImplementedSlotSigs
+            log.Add(fun () -> x.ImplementedSlotSigs <- prev)
+
+        x.ImplementedSlotSigs <- slotsigs
+
+    /// Sets IsImplemented, recording how to restore it in the active mutation log
+    member x.SetIsImplemented(isImplemented: bool) =
+        match MutationLog.Current with
+        | null -> ()
+        | log ->
+            let prev = x.IsImplemented
+            log.Add(fun () -> x.IsImplemented <- prev)
+
+        x.IsImplemented <- isImplemented
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

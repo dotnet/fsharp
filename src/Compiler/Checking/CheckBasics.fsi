@@ -260,6 +260,10 @@ type TcFileState =
         /// Set to true if this file causes the creation of generated provided types.
         mutable createsGeneratedProvidedTypes: bool
 
+        /// Called with each value a use marks referenced (the unused-value warning reads that flag), so a caller can
+        /// record which values a check referenced
+        mutable recordValueReference: Val -> unit
+
         /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
         isScript: bool
 

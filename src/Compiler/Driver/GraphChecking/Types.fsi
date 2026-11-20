@@ -73,6 +73,17 @@ type internal FileContentEntry =
     /// A single identifier that could be the name of a module.
     /// Example use-case: `let x = nameof Foo` where `Foo` is a module.
     | ModuleName of name: Identifier
+    /// A name resolved in the environment: an unqualified identifier, or any segment of a qualified one.
+    /// Only declaration content reads this; mkFileContent leaves it out.
+    | Name of name: Identifier
+    /// A member, property, field or extension: a name after a dot, or one a construct calls implicitly.
+    /// Only declaration content reads this; mkFileContent leaves it out.
+    | MemberName of name: Identifier
+    /// A record label or union case. Only declaration content reads this; mkFileContent leaves it out.
+    | FieldOrCaseName of name: Identifier
+    /// Something the syntax cannot attribute to a name, such as the `?` operator.
+    /// Only declaration content reads this; mkFileContent leaves it out.
+    | Unresolvable
 
 /// File identifiers and its content extract for dependency resolution
 type internal FileContent =
