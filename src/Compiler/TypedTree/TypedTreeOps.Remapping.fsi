@@ -244,6 +244,9 @@ module internal ExprRemapping =
 
     type RemapContext
 
+    /// Returns the TcGlobals associated with a remap context.
+    val GetRemapContextGlobals: RemapContext -> TcGlobals
+
     val mkRemapContext: TcGlobals -> StackGuard -> RemapContext
 
     val tryStripLambdaN: int -> Expr -> (Val list list * Expr) option

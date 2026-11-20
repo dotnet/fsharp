@@ -346,4 +346,5 @@ namespace Microsoft.FSharp.Core.CompilerServices
             if enumerator.MoveNext() then
                 printfn $"{enumerator.Current}"
                 loop ()
+
         loop ()

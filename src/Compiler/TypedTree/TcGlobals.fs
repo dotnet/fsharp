@@ -183,6 +183,25 @@ type CompilationMode =
     | Service
     | Interactive
 
+/// Per-compilation, cross-phase bookkeeping used by --realsig+.
+///
+/// When a closure (a binding of DeclKind.ExpressionBinding) is typechecked inside a
+/// generic class, under --realsig+ it is re-hosted at the class (IlxGen.fs AllocValReprWithinExpr).
+/// A nested method inherits the class's typars and cannot declare them. Under --realsig- the
+/// same closure is lifted to the outer module, where declaring the typars is correct, so the
+/// record is never made for that mode.
+///
+/// `ownerOriginalTypars` are the class's typars at typecheck time (un-cloned). When the compiler
+/// later clones typars (Remap.fs copyAndRemapAndBindTyparsFull) and a clone corresponds to one of
+/// these original typars, the clone's stamp is appended to `clonedStamps`. TLR (accBinds in
+/// InnerLambdasToTopLevelFuncs.fs) reads `clonedStamps` and subtracts them from reqdTypars so the
+/// closure's ep_etps does not redeclare them.
+[<NoEquality; NoComparison>]
+type RealsigClosureParentInfo =
+    { closureVal: Val
+      ownerTypars: Typars
+      ownerTycon: TyconRef option }
+
 type TcGlobals(
     compilingFSharpCore: bool,
     ilg: ILGlobals,
@@ -289,6 +308,19 @@ type TcGlobals(
   let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let mutable embeddedILTypeDefs = ConcurrentDictionary<string, ILTypeDef>()
+
+  // [realsig+] Written from the typechecker (TcNormalizedBinding) and read from TLR (FlatEnvPacks).
+  // Keyed by closure Val.Stamp (int64) because `Val` is NoEquality. Only present when realsig is on.
+  let mutable realsigClosureParents : Map<int64, RealsigClosureParentInfo> = Map.empty
+
+  // RFC FS-1043: compilation-scoped record of how the type-checker resolved built-in-operator SRTP
+  // constraints to extension members. Keyed by (operator logical name, support-type encoding, argument-type
+  // encoding); each entry keeps the (source range, solution-identity, solution) of every site that resolved
+  // that concrete key. The optimizer consults this to honor the checker's scope-aware decision when an
+  // inlined FSharp.Core operator arrives without a trait context. When one concrete key is resolved to two
+  // different extensions in two different scopes of the same file, the recorded ranges disambiguate which
+  // site is being replayed (see TryGetExtensionOperatorSolution), so opening/shadowing distinct same-signature
+  // extensions stays sound instead of falling back to an ambiguous file-global re-resolution.
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -1180,6 +1212,46 @@ type TcGlobals(
   member _.langVersion = langVersion
 
   member _.realsig = realsig
+
+  member _.AddRealsigClosureParent(closureVal: Val, ownerTypars: Typars, ownerTycon: TyconRef option) =
+      realsigClosureParents <- Map.add closureVal.Stamp { closureVal = closureVal; ownerTypars = ownerTypars; ownerTycon = ownerTycon } realsigClosureParents
+
+  member _.RealsigClosureParentTryGet(closureVal: Val) =
+      Map.tryFind closureVal.Stamp realsigClosureParents
+
+  /// Remove the old closureVal entry and re-add it under newVal.
+  /// If oldVal has no entry, this is a no-op.
+  member _.RealsigClosureParentRekey(oldVal: Val, newVal: Val) =
+      match Map.tryFind oldVal.Stamp realsigClosureParents with
+      | None ->
+          ()  // nothing to rekey
+      | Some info ->
+          // 1. Remove old key
+          realsigClosureParents <-
+              Map.remove oldVal.Stamp realsigClosureParents
+
+          // 2. Add new key with updated closureVal
+          let updated = { info with closureVal = newVal }
+
+          realsigClosureParents <-
+              Map.add newVal.Stamp updated realsigClosureParents
+
+  /// [realsig+] Return the list of (typar Name, typar Range) pairs that must be removed from the TLR
+  /// reqdTypars of a re-hosted closure. These are the owner typars of every registered
+  /// RealsigClosureParentInfo. The re-hosted closure cannot re-declare (or require) the enclosing
+  /// class's typars: it lives as a nested method of the class, so those typars are already bound by
+  /// the class itself.
+  ///
+  /// We match on (Name, Range) rather than Stamp because the TLR pass works on CLONED typars
+  /// (created by Remap.fs copyAndRemapAndBindTyparsFull), which have different stamps but the same
+  /// Collects the owner typars across all realsig+ closures recorded.
+  /// Returns the original typars (not clones) — the consumer must match by Name+Range, since TLR
+  /// works on cloned typars that share the original's Name/Range but not its Stamp.
+  member _.RealsigOwnerTypars() : Typar list =
+      realsigClosureParents
+      |> Map.values
+      |> Seq.collect (fun (info: RealsigClosureParentInfo) -> info.ownerTypars)
+      |> List.ofSeq
 
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
 

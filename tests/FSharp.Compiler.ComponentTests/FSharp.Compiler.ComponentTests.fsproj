@@ -259,6 +259,7 @@
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRoot.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ClassTypeInitialization.fs" />
+    <Compile Include="EmittedIL\RealInternalSignature\CrossAssemblyRealSigComparisonSurface.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\RealInternalSignature.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
@@ -288,6 +289,11 @@
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_MutualInnerRec_StructuralAssertions.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_Realsig_MixedAssemblyModes.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_GenericClassTyparSplit.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_NestedScopesAndNameCollisions.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_PrivateMemberReach.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_TLR_StateMachineGenerators.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RecursiveInlineMemberDependencies.fs" />
@@ -325,8 +331,8 @@
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Closures.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Crashes.fs" />
     <Compile Include="EmittedIL\CodeGenRegressions\CodeGenRegressions_Exceptions.fs" />
-    <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
+    <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
     <Compile Include="ErrorMessages\IndexedSetterNamedArgTests.fs" />
