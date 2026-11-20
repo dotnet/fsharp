@@ -6102,13 +6102,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m moduleContents extraAttribs =
 
         CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
 
-        // The priority order comes from the order of declaration of the defaults in FSharp.Core.
-        for priority = 10 downto 0 do
-            unsolved |> List.iter (fun tp ->
-                if not tp.IsSolved then
-                    // Apply the first default. If we're defaulting one type variable to another then
-                    // the defaults will be propagated to the new type variable.
-                    ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
+        ApplyTyparDefaultsByPriority denvAtEnd cenv.css unsolved |> RaiseOperationResult
 
         // OK, now apply defaults for any unsolved TyparStaticReq.HeadType or typars with SRTP (MayResolveMember) constraints
         // Note: We also check for MayResolveMember constraints because some SRTP typars may not have StaticReq set
