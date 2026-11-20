@@ -12,7 +12,8 @@
         "FSharpPreferAnyCpuTools": "true",
         "Fsc_NetFramework_ToolPath": "$(FSharpCompilerPathForDebuggingLocally)",
         "Fsc_NetFramework_AnyCpu_ToolExe": "fscAnyCpu.exe",
-        "FSHARP_OTEL_EXPORT": ""
+        "FSHARP_OTEL_EXPORT": "",
+        "FSHARP_INTERACTIVE_PATH": "$(FSharpInteractivePathForDebuggingLocally)"
       }
     },
     "OTEL Export": {
@@ -27,7 +28,8 @@
         "FSharpPreferAnyCpuTools": "true",
         "Fsc_NetFramework_ToolPath": "$(FSharpCompilerPathForDebuggingLocally)",
         "Fsc_NetFramework_AnyCpu_ToolExe": "fscAnyCpu.exe",
-        "FSHARP_OTEL_EXPORT": "http://127.0.0.1:4317"
+        "FSHARP_OTEL_EXPORT": "http://127.0.0.1:4317",
+        "FSHARP_INTERACTIVE_PATH": "$(FSharpInteractivePathForDebuggingLocally)"
       }
     }
   }
