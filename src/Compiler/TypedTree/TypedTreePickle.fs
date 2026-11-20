@@ -2885,8 +2885,9 @@ and p_tcaug p st =
           // in order to get check the well-formedness of an interface.
           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
           // does not work correctly (they may get incorrectly relinked to a default member)
-          |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
-          |> List.map (fun (_, vref) -> vref.LogicalName, vref)),
+          |> Seq.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
+          |> Seq.map (fun (_, vref) -> vref.LogicalName, vref)
+          |> Seq.toList),
          p.tcaug_interfaces,
          p.tcaug_super,
          p.tcaug_abstract,
