@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open System
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -80,3 +81,7 @@ module public Structure =
 
     /// Returns outlining ranges for given parsed input.
     val getOutliningRanges: sourceLines: string[] -> parsedInput: ParsedInput -> seq<ScopeRange>
+
+    /// Like getOutliningRanges, with the source lines given as slices of text the caller already holds.
+    val internal getOutliningRangesFromLineSlices:
+        sourceLines: ReadOnlyMemory<char>[] -> parsedInput: ParsedInput -> seq<ScopeRange>
