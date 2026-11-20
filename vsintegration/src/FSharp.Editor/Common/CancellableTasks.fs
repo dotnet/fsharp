@@ -1114,6 +1114,19 @@ module CancellableTasks =
         let inline sequential (tasks: CancellableTask<'a> seq) =
             fun ct -> Task.sequential ct tasks
 
+        /// Runs the chooser over the items one at a time and stops at the first ValueSome.
+        let tryPick (chooser: 'T -> CancellableTask<'U voption>) (items: 'T seq) : CancellableTask<'U voption> =
+            cancellableTask {
+                use items = items.GetEnumerator()
+                let mutable picked = ValueNone
+
+                while ValueOption.isNone picked && items.MoveNext() do
+                    let! result = chooser items.Current
+                    picked <- result
+
+                return picked
+            }
+
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
         /// If this CancellableTask gets canceled for another reason than the token being canceled, return the specified value.
