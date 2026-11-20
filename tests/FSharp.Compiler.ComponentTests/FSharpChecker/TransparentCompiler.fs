@@ -1393,3 +1393,139 @@ let b : int = ExtraIdentUserNeverWroteRulezzz
         Assert.Equal(0, checker.Caches.ParseFile.Count)
         Assert.Equal(1, checker.Caches.ParseFileWithoutProject.Count)
     }
+
+/// Asserts which files were type checked since the previous assertion,
+/// and that no cached result of another file was weakened.
+let private recordTypeChecks () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+    let mutable seenEvents = 0
+
+    let expectChecked (fileIds: string list) (_: FSharpCheckFileResults) =
+        let events = getEvents () |> List.skip seenEvents
+        seenEvents <- seenEvents + events.Length
+
+        let filesWith jobEvent =
+            events |> List.filter (snd >> (=) jobEvent) |> List.map fst |> set
+
+        let checkedFiles = filesWith Started
+        Assert.Equal<Set<string>>(set (fileNames fileIds), checkedFiles)
+        Assert.Empty(Set.difference (filesWith Weakened) checkedFiles)
+
+    observe, expectChecked
+
+
+[<Fact>]
+let ``Check all prior files - no changes`` () =
+    let observe, expectChecked = recordTypeChecks ()
+
+    let project =
+        SyntheticProject.Create(
+            sourceFile "A" [],
+            sourceFile "B" [],
+            sourceFile "C" [ "A" ],
+            sourceFile "D" [ "B"; "C" ])
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        // The builder has already checked every file: give them all new versions.
+        updateFile "A" updatePublicSurface
+        withChecker (observe _.TcIntermediate)
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "A"; "B"; "C" ])
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [])
+        checkFile "C" (expectChecked [])
+        checkFile "D" (expectChecked [ "D" ])
+        checkFile "B" (expectChecked [])
+        // TODO: checkFileWithPrior
+        checkFile "B" (expectChecked [ "B" ])
+        // TODO: checkFileWithPrior
+        checkFile "A" (expectChecked [])
+    } |> ignore
+
+[<Fact>]
+let ``Check all prior files - edit`` () =
+    let observe, expectChecked = recordTypeChecks ()
+
+    let project =
+        SyntheticProject.Create(
+            sourceFile "A" [],
+            sourceFile "B" [],
+            sourceFile "C" [ "A" ],
+            sourceFile "D" [ "B"; "C" ])
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        updateFile "A" updatePublicSurface
+        withChecker (observe _.TcIntermediate)
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "A"; "B"; "C" ])
+        updateFile "C" updateInternal
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "C" ])
+        checkFile "D" (expectChecked [ "D" ])
+        updateFile "B" updateInternal
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "B"; "C" ])
+        checkFile "A" (expectChecked [])
+    } |> ignore
+
+[<Fact>]
+let ``Check all prior files - edit, then check a dependent file`` () =
+    let observe, expectChecked = recordTypeChecks ()
+
+    let project =
+        SyntheticProject.Create(
+            sourceFile "A" [],
+            sourceFile "B" [],
+            sourceFile "C" [ "A" ],
+            sourceFile "D" [ "B"; "C" ])
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        updateFile "A" updatePublicSurface
+        withChecker (observe _.TcIntermediate)
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "A"; "B"; "C" ])
+        updateFile "C" updateInternal
+        checkFile "D" (expectChecked [ "C"; "D" ])
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "C" ])
+        checkFile "C" (expectChecked [])
+    } |> ignore
+
+[<Fact>]
+let ``Check all prior files - after a check of dependencies only`` () =
+    let observe, expectChecked = recordTypeChecks ()
+
+    let project =
+        SyntheticProject.Create(
+            sourceFile "A" [],
+            sourceFile "B" [],
+            sourceFile "C" [ "A" ],
+            sourceFile "D" [ "B"; "C" ])
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        updateFile "A" updatePublicSurface
+        withChecker (observe _.TcIntermediate)
+        checkFile "C" (expectChecked [ "A"; "B"; "C" ])
+        // TODO: checkFileWithPrior
+        checkFile "C" (expectChecked [ "C" ])
+        checkFile "C" (expectChecked [])
+    } |> ignore
+
+[<Fact>]
+let ``Check all prior files - file depending on all of them`` () =
+    let observe, expectChecked = recordTypeChecks ()
+
+    let project =
+        SyntheticProject.Create(
+            sourceFile "A" [],
+            sourceFile "B" [],
+            sourceFile "C" [ "A" ],
+            sourceFile "D" [ "B"; "C" ])
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        updateFile "A" updatePublicSurface
+        withChecker (observe _.TcIntermediate)
+        checkFile "D" (expectChecked [ "A"; "B"; "C"; "D" ])
+        // TODO: checkFileWithPrior
+        checkFile "D" (expectChecked [])
+    } |> ignore

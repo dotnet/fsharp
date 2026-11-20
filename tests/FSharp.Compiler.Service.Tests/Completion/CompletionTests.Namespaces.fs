@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.CompletionNamespacesTests
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text
 open Xunit
 
 [<Fact>]
@@ -97,3 +98,33 @@ open A
 Test.{caret}"""
 
     assertHasItemWithNames [ "foo" ] info
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Unreferenced symbol from a previous file`` useTransparentCompiler =
+    let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+
+    let file1 = """
+module Ns1.Ns2.M
+let i = 1
+"""
+
+    let file2 = """
+namespace Ns1.Ns2
+
+{caret}
+"""
+
+    let context = Checker.getCompletionContext file2
+    let options = createProjectOptions [ file1; file2 ] []
+
+    let parseResults, checkAnswer =
+        checker.ParseAndCheckFileInProject(options.SourceFiles[1], 0, SourceText.ofString context.Source, options)
+        |> Async.RunSynchronouslyImmediate
+
+    match checkAnswer with
+    | FSharpCheckFileAnswer.Aborted -> failwith "Type checking was aborted"
+    | FSharpCheckFileAnswer.Succeeded checkResults ->
+        checkResults.GetCodeCompletionSuggestions(context, parseResults, FSharpCodeCompletionOptions.Default)
+        |> assertHasItemWithNames [ "M" ]
