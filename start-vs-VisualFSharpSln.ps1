@@ -5,18 +5,81 @@
 # into the hive stamps it 42.42.42.42 and redirects every reference to itself, so the hive wins. Only
 # when the hive has no Roslyn of its own does the installation's version apply. This picks whichever
 # of the two is in force and matches the package versions to it - or leaves the repo's flowed versions
-# alone when they already match, which is the common case for a hive built from this same source.
+# alone when a shipped Roslyn already matches them.
 #
 # -RoslynVersion forces a package version; any 5.Y.* binds identically within a minor.
+# -RoslynRepo is where a locally built Roslyn was packed (default: a sibling roslyn folder).
+# -InstalledVersions takes the versions from the installed VS: Roslyn even when the hive has one of its own, and the
+# libraries VS binds to its own copies (System.*, MSBuild) wherever the repo flows newer ones.
 [CmdletBinding()]
 param(
     [string]$RoslynVersion,
     [string]$DevEnv,
     [string]$RootSuffix = 'RoslynDev',
     [string]$Solution = 'VisualFSharp.slnx',
+    [string]$RoslynRepo,
+    [switch]$InstalledVersions,
     [switch]$DryRun
 )
 Set-StrictMode -Version Latest; $ErrorActionPreference = 'Stop'; $root = $PSScriptRoot
+
+function ConvertTo-PropsPath([string]$path) {
+    [Security.SecurityElement]::Escape([regex]::Replace($path, '[%*?@$();'']', { '%{0:X2}' -f [int][char]$args[0].Value }))
+}
+
+function Get-StalePackageFolders([string[]]$feeds, [string]$version) {
+    $packages = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $env:USERPROFILE '.nuget\packages' }
+    foreach ($nupkg in Get-ChildItem -LiteralPath $feeds -Filter "*.$version.nupkg") {
+        $id = $nupkg.BaseName.Substring(0, $nupkg.BaseName.Length - $version.Length - 1)
+        $restored = Join-Path $packages "$id\$version\$($nupkg.Name)"
+        if ((Test-Path -LiteralPath $restored) -and (Get-FileHash -LiteralPath $restored).Hash -ne (Get-FileHash -LiteralPath $nupkg.FullName).Hash) { Split-Path $restored }
+    }
+}
+
+function Get-RoslynDevFeeds([string]$repo, [string]$version) {
+    if (-not $repo) { $repo = Join-Path (Split-Path $root) 'roslyn' }
+    $packed = Join-Path $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($repo) 'artifacts\packages\Release'
+    $feeds = @('Shipping', 'NonShipping' | ForEach-Object { Join-Path $packed $_ } | Where-Object { Test-Path -LiteralPath $_ })
+    $externalAccess = "Microsoft.VisualStudio.LanguageServices.ExternalAccess.$version.nupkg"
+    if (-not ($feeds | Where-Object { Test-Path -LiteralPath (Join-Path $_ $externalAccess) })) {
+        throw "No $externalAccess in $packed; check -RoslynRepo, pack that Roslyn (.\Build.cmd -restore -pack -c Release) or pass -RoslynVersion to build against a published one instead."
+    }
+
+    $stale = @(Get-StalePackageFolders $feeds $version)
+    if ($stale) { throw "Restore would reuse an earlier pack of Roslyn $version from the global packages folder; delete these once nothing uses them, or repack under a new version:`n$($stale -join "`n")" }
+
+    $feeds
+}
+
+# VS binds these to its own copies, so a package newer than they are loads in the build and fails in VS: System.* through the
+# redirects in devenv.exe.config (assembly 10.0.0.10 is package 10.0.10), MSBuild by its DLL's version (its redirects stay at 15.1.0.0).
+function Get-InstalledLibraryPins([string]$ideDir) {
+    $configPath = Join-Path $ideDir 'devenv.exe.config'
+    $config = if (Test-Path -LiteralPath $configPath) { [xml](Get-Content -LiteralPath $configPath -Raw) }
+    $flowed = [xml](Get-Content -LiteralPath (Join-Path $root 'eng\Version.Details.props') -Raw)
+    $msbuild = Join-Path (Split-Path (Split-Path $ideDir)) 'MSBuild\Current\Bin'
+    $libraries = [ordered]@{
+        SystemCollectionsImmutable        = 'System.Collections.Immutable'
+        SystemComposition                 = 'System.Composition.AttributedModel'
+        SystemDiagnosticsDiagnosticSource = 'System.Diagnostics.DiagnosticSource'
+        SystemReflectionMetadata          = 'System.Reflection.Metadata'
+        MicrosoftBuild                    = 'Microsoft.Build'
+        MicrosoftBuildFramework           = 'Microsoft.Build.Framework'
+        MicrosoftBuildTasksCore           = 'Microsoft.Build.Tasks.Core'
+        MicrosoftBuildUtilitiesCore       = 'Microsoft.Build.Utilities.Core'
+    }
+    foreach ($property in $libraries.Keys) {
+        $assembly = $libraries[$property]
+        $redirect = if ($config -and $assembly -like 'System.*') { $config.SelectSingleNode("//*[local-name()='dependentAssembly'][*[local-name()='assemblyIdentity' and @name='$assembly']]/*[local-name()='bindingRedirect']") }
+        $dll = Join-Path $msbuild "$assembly.dll"
+        $installed = if ($redirect) { $v = [version]$redirect.GetAttribute('newVersion'); '{0}.{1}.{2}' -f $v.Major, $v.Minor, $v.Revision }
+                     elseif (Test-Path -LiteralPath $dll) { ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).ProductVersion -split '\+')[0] }
+        $node = $flowed.GetElementsByTagName("${property}PackageVersion")[0]
+        if ($installed -and $node -and [version](($node.InnerText.Trim() -split '-')[0]) -gt [version](($installed -split '-')[0])) {
+            [pscustomobject]@{ Property = $property; Version = $installed }
+        }
+    }
+}
 
 if (-not $DevEnv) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -39,7 +102,7 @@ if (-not $RoslynVersion) {
     $hiveRoslyn = Get-ChildItem (Join-Path $hive 'Extensions') -Recurse -Filter 'Microsoft.CodeAnalysis.dll' -ErrorAction SilentlyContinue |
         Where-Object { $_.DirectoryName -like '*Roslyn Language Services*' } | Select-Object -First 1
 
-    if ($hiveRoslyn) {
+    if ($hiveRoslyn -and -not $InstalledVersions) {
         $target = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($hiveRoslyn.FullName).ProductVersion
         $source = "deployed in $RootSuffix"
     }
@@ -51,24 +114,27 @@ if (-not $RoslynVersion) {
     }
     Write-Host "Roslyn in force: $target ($source)."
 
-    # A dev build's "5.12.0-dev" is no package version, so only its minor is usable - and when that is
-    # the minor the repo already flows, the flowed packages are the match and no override belongs here.
+    # A local build carries API the flowed packages lack.
     $targetMinor = [version](($target -split '-')[0])
     $flowedMinor = [version](($flowed -split '-')[0])
-    if ($targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
+    if ($target -notmatch '-dev$' -and $targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
         Write-Host "Repo already flows Roslyn $flowed - building against it, no override."
-    }
-    elseif ($target -match '-dev$') {
-        throw "$RootSuffix has a locally built Roslyn $target but the repo flows $flowed; pass -RoslynVersion with a $($targetMinor.Major).$($targetMinor.Minor).* package version to build against that minor."
     }
     else { $RoslynVersion = $target }
 }
 
+$pins = @(if ($InstalledVersions) { Get-InstalledLibraryPins $ideDir })
+if ($InstalledVersions) {
+    Write-Host $(if ($pins) { 'Pinned to the installed VS: ' + (($pins | ForEach-Object { "$($_.Property) $($_.Version)" }) -join ', ') + '.' } else { 'The repo flows no library newer than the installed VS binds.' })
+}
+
+$feeds = $null
 if ($RoslynVersion) {
     $minor = [version](($RoslynVersion -split '-')[0])
     if ($minor -lt [version]'5.10.0') {
         throw "Roslyn $RoslynVersion is older than the 5.10 the repo's sources expect (unified ExternalAccess, #20099). Update VS or deploy a local Roslyn."
     }
+    if ($RoslynVersion -match '-dev$') { $feeds = Get-RoslynDevFeeds $RoslynRepo $RoslynVersion }
     Write-Host "Building the F# extension against Roslyn $RoslynVersion ($DevEnv)."
 }
 
@@ -80,10 +146,14 @@ $names = 'MicrosoftCodeAnalysis', 'MicrosoftCodeAnalysisCompilers', 'MicrosoftCo
 # Its own file: build-vs-VisualFSharpSln.ps1 writes an override too, and one path for both means
 # whichever ran last decides what a long-lived VS session restores against.
 $override = Join-Path $root 'artifacts\RoslynOverride.start-vs.props'
-if ($RoslynVersion) {
+if ($RoslynVersion -or $pins) {
+    $feedPaths = ($feeds | ForEach-Object { ConvertTo-PropsPath $_ }) -join ';'
+    $sources = if ($feeds) { "<RestoreAdditionalProjectSources>`$(RestoreAdditionalProjectSources);$feedPaths</RestoreAdditionalProjectSources>" }
+    $roslyn = if ($RoslynVersion) { -join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }) }
+    # Version.Details.props has already expanded each <Name>Version from <Name>PackageVersion, so both are set.
+    $libraries = -join ($pins | ForEach-Object { "<$($_.Property)PackageVersion>$($_.Version)</$($_.Property)PackageVersion><$($_.Property)Version>$($_.Version)</$($_.Property)Version>" })
     New-Item -ItemType Directory -Force (Split-Path $override) | Out-Null
-    "<Project><PropertyGroup>$(-join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }))</PropertyGroup></Project>" |
-        Set-Content -LiteralPath $override -Encoding UTF8
+    "<Project><PropertyGroup>$roslyn$sources$libraries</PropertyGroup></Project>" | Set-Content -LiteralPath $override -Encoding UTF8
 }
 
 # Apply to THIS process only, restoring in finally so it can't leak into a later build.cmd/CI run
@@ -98,17 +168,17 @@ $vars = @{
     RunRefApiCompat                 = 'false'
     VSRootSuffix                    = $RootSuffix
 }
-if ($RoslynVersion) { $vars.CustomAfterMicrosoftCommonProps = $override }
+if ($RoslynVersion -or $pins) { $vars.CustomAfterMicrosoftCommonProps = $override }
 $saved = @{}; foreach ($k in $vars.Keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k) }
 try {
     foreach ($k in $vars.Keys) { Set-Item -LiteralPath "Env:\$k" -Value $vars[$k] }
     if ($DryRun) {
-        if ($RoslynVersion) { Write-Host "DryRun: wrote $override" } else { Write-Host 'DryRun: no override needed' }
+        if ($RoslynVersion -or $pins) { Write-Host "DryRun: wrote $override" } else { Write-Host 'DryRun: no override needed' }
         Write-Host "Would restore, then open $Solution in $DevEnv; F5 deploys into and launches $RootSuffix"
         return
     }
     & (Join-Path $root 'Restore.cmd')
-    if ($LASTEXITCODE) { throw "Restore failed for Roslyn $RoslynVersion; try another 5.$($minor.Minor).* build via -RoslynVersion." }
+    if ($LASTEXITCODE) { throw "Restore failed$(if ($RoslynVersion) { " for Roslyn $RoslynVersion; try another 5.$($minor.Minor).* build via -RoslynVersion" })$(if ($pins) { '; a pinned library may be missing from the feeds, drop -InstalledVersions' })." }
     Start-Process $DevEnv "`"$(Join-Path $root $Solution)`""
     Write-Host "Launched VS. Set VisualFSharpDebug as the startup project, then F5 / Ctrl+F5 to run in $RootSuffix."
 }
