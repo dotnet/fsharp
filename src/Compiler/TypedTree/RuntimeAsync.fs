@@ -105,3 +105,21 @@ let ExistsExpr (predicate: Expr -> bool) expr =
         }
 
     FoldExpr folder false expr
+
+let ContainsSuspensionOutsideMarkers (g: TcGlobals) expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _ noInterceptF acc expr ->
+                    if acc then
+                        true
+                    elif
+                        (TryGetRuntimeAsyncReturn g expr).IsSome
+                        || (TryGetRuntimeAsyncSequence g expr).IsSome
+                    then
+                        false
+                    else
+                        IsRuntimeAsyncSuspensionExpr g expr || noInterceptF acc expr
+        }
+
+    FoldExpr folder false expr

@@ -143,10 +143,12 @@ Sequence expressions, resumable state machines, list and array comprehensions, a
 
 The optimizer also changes some ordinary behavior for runtime-async code:
 
-* Values containing runtime-async code are inlined even with `--optimize-`, and the result is reoptimized with inlining forced.
+* Values containing runtime-async code are inlined even with `--optimize-` and at every language version, and the result is reoptimized with inlining forced. The language version check is then done on the inlined code.
 * A large expression that contains a suspension is never split into a separate method, because that method would not be runtime-async.
 * A method whose body is a return marker is never exported as an inline definition.
 * A debug pipe chain in a runtime-async context is reoptimized once its synthetic input bindings are in scope.
 
 A suspension that none of these can move into a runtime-async method is reported as FS3918.
+
+An inline value can contain a suspension that is not in the body or recipe of a marker. Code generation does not report FS3918 for its compiled method, because only inlined copies of it can run correctly. The compiled method throws `NotSupportedException`, as a `NoDynamicInvocation` value does.
 
