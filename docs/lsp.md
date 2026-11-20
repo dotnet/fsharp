@@ -128,6 +128,206 @@ Will be packaged with FsLSP and available as a dotnet tool (?)
 
 It should always target the latest .NET runtime.
 
+#### Visual Studio provider selection
+
+`fsharp.semanticClassificationProvider` selects `old` (the in-process classifier)
+or `lsp`. The default, `unset`, resolves to `old` at read time without writing
+that fallback to user settings, preserving the distinction between an explicit
+choice and the default for telemetry and controlled rollouts.
+
+Restart Visual Studio after changing the provider. Unless the effective provider
+is `lsp`, the language server stays disabled: no LSP workspace, project
+subscriptions, document synchronization, or active-project-context forwarding is
+started. Exposure telemetry still records both providers, including `unset`.
+
+With `lsp`, legacy classification remains enabled for closed documents, documents
+in workspaces other than Host and Miscellaneous Files (including code-fix and
+rename previews), and documents of the F# Miscellaneous Files and metadata
+projects (scripts and loose files outside any `.fsproj`, and metadata-as-source),
+which the server cannot classify semantically yet (dotnet/fsharp#20972). Find All
+References result lines for other documents that are open in Host or Miscellaneous
+Files remain without semantic coloring; LSP startup failure or a server crash does
+not enable legacy classification for those documents.
+
+#### Transport and serialization
+
+The standalone server uses header-delimited JSON-RPC on standard input/output; logs
+are written to standard error. The Visual Studio host uses the same protocol over
+an in-memory duplex stream. Both use `SystemTextJsonFormatter`, and CLaSP receives
+the formatter's `JsonSerializerOptions` so request deserialization uses the same
+converters as the transport.
+
+The protocol packages supply System.Text.Json attributes and converters for URIs,
+sum types, and other LSP values. Local converters preserve the five Visual Studio
+extension mappings (diagnostics, locations, server capabilities, symbol information,
+and text-document identifiers), including diagnostic project information and
+`_vs_projectContext`. LSP requests and notifications carry a single parameter object,
+not a positional argument array.
+
+Visual Studio's existing F# navigation bar changes Roslyn's active document
+context rather than the LSP client's navigation-bar context. The in-process
+editor forwards those changes to `textDocument/fsharp/setActiveProjectContext`,
+with the document URI, project file and output file. Semantic-token requests
+without `_vs_projectContext` use that per-document selection; explicit request
+contexts still take precedence. Changed selections request
+`workspace/semanticTokens/refresh` when supported by the client, and closing the
+document clears the selection. Inactive conditional-compilation regions are
+returned as `excluded code` tokens.
+Mutating notifications and context changes cancel and drain earlier read
+requests so a completed request cannot reapply classifications from the previous
+context. A failed refresh is logged and leaves the selection unchanged for retry.
+
+Semantic-token overlap resolution checks accepted tokens on the same line only.
+Range requests normalize semantic classifications only on requested lines and
+scan the lexer from the start to preserve multiline string/comment state, stopping
+at the range's last line. Token processing observes request cancellation per line.
+
+CLaSP is centrally managed through `eng/Packages.props` and tracked as a Roslyn
+dependency in `eng/Version.Details.xml` and `eng/Version.Details.props`, with the same
+version and source commit as the other Roslyn packages.
+
+#### Highlighting telemetry
+
+The F# editor posts `dotnet/fsharp/semantichighlighting/exposure` once per
+eligible devenv lifetime when an F# document view opens, or telemetry is enabled
+while one is open. This includes scripts,
+legacy/default selections, and LSP selections whose server fails to initialize.
+It does not wait for or activate the LSP server.
+
+Properties use the `dotnet.fsharp.` prefix:
+
+| Property | Meaning |
+|---|---|
+| `schema_version` | `1` for this contract |
+| `rollout_session_id` | Random, process-lifetime correlation ID; never persisted |
+| `setting_value` | `old`, `lsp`, `unset`, `unrecognized`, or `unavailable` |
+| `resolved_provider` | Selection after applying the existing fallback: `old` or `lsp` |
+
+`dotnet/fsharp/semantichighlighting/providerstate` separately records actual
+legacy `enabled`/`fallback_only` decisions and LSP `ready`/`disabled`/`unavailable`
+states, with the same correlation ID. These state records are deduplicated
+per provider/state, not counted as new sessions. Selection is not evidence
+that a server started, returned semantic data, or applied colors in the editor.
+Construction-time settings can disagree after a setting changes; these
+records do not implement live provider switching.
+`fallback_only` means legacy classification is restricted to the documents listed
+above under the `lsp` selection;
+legacy detail events are emitted only for requests that enter that classifier.
+
+All telemetry added by this implementation, including exposure, provider state,
+lifecycle summaries, measurements, and faults, requires the F# additional-telemetry
+checkbox to be checked **or** the VS telemetry session to identify a
+Microsoft-internal user. Transparent Compiler use alone does not enable it.
+VS-wide consent, sampling, and deduplication still apply. Other legacy features
+and client-owned telemetry retain their existing policy. Suppressed exposure and
+state records do not consume their one-time guards; opting in with an open F#
+view can produce the session's exposure.
+
+The in-process host sends `fsharp/telemetry/configure` through the existing
+general broker to already-initialized servers, without activating a server.
+Parameters are `RolloutSessionId`,
+`Generation`, and `Enabled`; the reply contains the accepted `Generation`
+and actual `SemanticTokensEnabled` capability. `Enabled` carries the combined
+checkbox/Microsoft-internal policy. Policy generations reject stale updates.
+Non-internal LSP users require a known enabled policy; internal users bypass
+that wait. The latest policy is checked at publication, including scopes already
+in flight. LSP-selected views
+use a bounded, cancellable startup retry because client loading can precede
+initialization. Consent updates are forwarded independently of the current
+provider selection; same-host reconnects retain the accepted policy, while
+new clients and view focus reapply it. Standalone servers retain the no-op
+sink. This request is independent of project-context selection and does not
+require an output path.
+
+Consent forwarding and client-load observation belong to a shared editor service,
+not a document view. Closing the last F# view removes only view-owned exposure,
+focus, and project-context handlers; checkbox updates still reach an already
+running server. Disposing the service unsubscribes its settings observer and
+cancels/drains forwarding work without retaining closed views.
+
+Existing detail event names are retained:
+
+| Event | Property prefix | Existing duration |
+|---|---|---|
+| `dotnet/fsharp/addsemanticclassifications` | `dotnet.fsharp.` | `vs_event_duration_ms`: work after the editor-cache lookup |
+| `vs/fsharp/lsp/getsemantictokens` | `vs.fsharp.` | `duration_ms`: semantic-token handler work |
+
+Both add `schema_version`, `rollout_session_id`, `provider`,
+`provider_duration_ms`, `request_kind`, `outcome`, `isOpenDocument`, and
+`document_length` when source is available. The new provider duration includes
+source/cache retrieval through result production. Neither duration includes
+upstream scheduling/transport or downstream tag application/rendering.
+Outcomes distinguish `completed`, `cancelled`, `faulted`, and LSP `no_source`.
+
+Legacy retains document/project IDs, `textSpanLength`, and its real editor
+`cacheHit`. LSP records `context_source` (`explicit`, `active`, `default`),
+`semantic_data_available`, and `token_count`. A completed lexical-only response
+is not semantic-data success; an empty file is not a failure. Full requests and
+single-line ranges have `textSpanLength`; multi-line ranges instead carry their
+zero-based UTF-16 start/end line/character positions, avoiding extra source
+scans or allocations merely for telemetry. Do not equate an LSP compiler-cache
+hit with the legacy editor-cache property.
+
+Detail samples are bounded to one per five seconds per provider/request-kind
+stream. Use the VS client's `VS/LanguageServerClient/Request/AggregateStatistics`
+for method-level succeeded/failed/cancelled totals and successful-request
+average/max durations. Its measurements cover RPC invocation/response, not
+earlier client queueing or later tag application. Aggregates flush on lifecycle
+and feedback paths, so they are not a population signal. Weight averages by
+successful request counts across flushes.
+
+Client tag-application/transport faults already use
+`VS/LanguageServerClient/Fault`, with `VS.LanguageServerClient.Operation`
+identifying the operation such as `SemanticTokensFailed`. F# additionally
+records fixed active-context outcomes and gated, bounded/deduplicated
+server-side refresh faults. Cancellation is not a fault.
+
+The VS host's basic initialization summaries are `vs/fsharp/lsp/initialized`
+and `vs/fsharp/lsp/initializationfailed`; detailed initialization exceptions
+remain in the client-owned fault stream rather than a duplicate F# fault.
+For non-internal users, initialization summaries wait for the first policy
+decision and are discarded if telemetry is disabled. A failure that prevents
+policy negotiation cannot be sent by this adapter; eligible in-process
+exposure/unavailable records and the existing client fault stream retain that
+coverage. Internal-user summaries can precede configuration and therefore lack
+the rollout-session ID. Do not invent a server-side ID or infer legacy fallback
+from an absent initialization/ready record. Generic client wrapper types are
+not unique F# identifiers.
+
+For rollout analysis, first project the actual telemetry backend into
+`EventName`, `EventTime`, `SchemaVersion`, `RolloutSessionId`, `Provider`, `State`,
+and existing SDK session/user metadata. `Provider` comes from `resolved_provider`
+on exposure events and `provider` on state/detail events; the other custom
+fields use the event's `dotnet.fsharp.` or `vs.fsharp.` prefix.
+The following query assumes that explicit projection
+as `HighlightingEvents`; it is not a claim about a production table name:
+
+```kusto
+let exposures = HighlightingEvents
+    | where EventName == "dotnet/fsharp/semantichighlighting/exposure"
+    | where SchemaVersion == 1
+    | summarize arg_min(EventTime, *) by RolloutSessionId;
+exposures
+| summarize Sessions = count(), LspSelected = countif(Provider == "lsp")
+| extend LspSelectionPercent = 100.0 * LspSelected / Sessions
+```
+
+Keep default/unavailable-setting categories and selected-but-not-ready sessions
+visible. Report readiness and observed semantic-data availability separately.
+User-level counts require the existing SDK identity and must classify users
+seen in both cohorts as mixed. Never substitute a new persistent identifier.
+The denominator includes only telemetry-eligible sessions: opted-in sessions and
+Microsoft-internal users, subject to VS-wide consent. Opted-out external sessions
+and users cannot be inferred from these records. Use existing SDK internal-user
+metadata when reporting internal and external rollout rates separately.
+
+Validate backend field mapping, F# content types, SDK cross-process session
+association, and deployed VS/client versions using actual captured events
+before deploying queries. The process correlation ID joins configured F#
+host events without assuming that out-of-process SDK session IDs match.
+The existing in-process telemetry test channel alone does not establish
+extension-host upload or backend ingestion.
+
 #### Workspace State Management
 
 This part of the library is responsible for keeping track of the current workspace state. The internal workspace model is used to create requests for FCS. It needs to make sure the internal state doesn't get out of sync with what's in the editor and on disk.
@@ -223,6 +423,12 @@ We should be able to apply configuration changes that require re-creating the FC
 
 
 #### Extensibility
+
+Code actions are disabled by default, both in Visual Studio and in the standalone
+server. Hosts can opt in by setting `EnabledFeatures.CodeActions = true` in
+`FSharpLanguageServerConfig`. The experimental fixes use FCS only; failures are
+logged and reported as `lsp/fault` events with the fix name and exception type,
+while cancellation propagates to the caller.
 
 The FsLSP library should be extensible by adding custom endpoints or overriding existing ones.
 

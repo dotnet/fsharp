@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Extensibility;
 using System.Threading;
 using System;
 using Extension = Microsoft.VisualStudio.Extensibility.Extension;
+using System.Diagnostics;
 
 /// <summary>
 /// Extension entrypoint for the VisualStudio.Extensibility extension.
@@ -21,7 +22,10 @@ internal class ExtensionEntrypoint : Extension
                 version: this.ExtensionAssemblyVersion,
                 publisherName: "Publisher name",
                 displayName: "FSharp.VisualStudio.Extension",
-                description: "Extension description"),
+                description: "Extension description")
+        {
+            InstallationTargetVersion = "[18.14, 19.0)",
+        },
     };
 
     /// <inheritdoc />

@@ -1,4 +1,9 @@
 {
-  "FSharpLspExtension.FSharpLanguageServerProvider.DisplayName": "FSharp Analyzer LSP server"
-
+  "FSharpLspExtension.FSharpLanguageServerProvider.DisplayName": "FSharp Analyzer LSP server",
+  "F#": "F# LSP",
+  "FSharpSettings.Old": "Old extension (devenv process)",
+  "FSharpSettings.LSP": "LSP (separate process)",
+  "FSharpSettings.Unset": "Default",
+  "FSharpSettings.SemanticClassificationProvider": "Semantic Classification Provider",
+  "FSharpSettings.SemanticClassificationProvider.Description": "Which extension provides semantic classification (restart required)"
 }

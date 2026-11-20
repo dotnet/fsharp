@@ -8,10 +8,11 @@
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
     <MoreInfo>https://learn.microsoft.com/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
-  <Installation Experimental="true">
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[|%CurrentProject%;GetVSGeneralVersion|,)">
+  <Installation Experimental="true" ExtensionType="VSSDK+VisualStudio.Extensibility">
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.14,)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
+    <DotnetTargetVersions>net10.0</DotnetTargetVersions>
   </Installation>
   <Installer>
     <Actions>
@@ -62,7 +63,6 @@
 
   </Assets>
   <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" DisplayName="Visual Studio core editor" />
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[18.14,)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
 </PackageManifest>
-

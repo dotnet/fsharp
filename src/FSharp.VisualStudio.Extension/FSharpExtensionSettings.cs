@@ -1,22 +1,20 @@
-﻿using Microsoft.VisualStudio.Extensibility;
+using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Settings;
 
 namespace FSharp.VisualStudio.Extension
 {
-#pragma warning disable VSEXTPREVIEW_SETTINGS // The settings API is currently in preview and marked as experimental
-
     internal static class FSharpExtensionSettings
     {
         public const string OLD = "old";
         public const string LSP = "lsp";
-        public const string BOTH = "both";
         public const string UNSET = "unset";
 
-        public static EnumSettingEntry[] ExtensionChoice { get; } =
+        // Semantic classification can only come from one source at a time
+        // (the two would fight over the same spans), so there is no "both".
+        public static EnumSettingEntry[] ExtensionEitherChoice { get; } =
         [
             new(OLD, "%FSharpSettings.Old%"),
             new(LSP, "%FSharpSettings.LSP%"),
-            new(BOTH, "%FSharpSettings.Both%"),
             new(UNSET, "%FSharpSettings.Unset%"),
         ];
 
@@ -25,31 +23,23 @@ namespace FSharp.VisualStudio.Extension
         public static SettingCategory FSharpCategory { get; } = new("fsharp", "%F#%");
 
         [VisualStudioContribution]
-        public static Setting.Enum GetDiagnosticsFrom { get; } = new(
-            "getDiagnosticsFrom",
-            "%FSharpSettings.GetDiagnosticsFrom%",
+        public static Setting.Enum SemanticClassificationProvider { get; } = new(
+            "semanticClassificationProvider",
+            "%FSharpSettings.SemanticClassificationProvider%",
             FSharpCategory,
-            ExtensionChoice,
+            ExtensionEitherChoice,
             defaultValue: UNSET)
         {
-            Description = "%Which extension should be used to provide diagnostics%",
+            Description = "%FSharpSettings.SemanticClassificationProvider.Description%",
         };
 
-        [VisualStudioContribution]
-        public static Setting.Enum GetSemanticHighlightingFrom { get; } = new(
-            "getSemanticHighlightingFrom",
-            "%FSharpSettings.GetSemanticHighlightingFrom%",
-            FSharpCategory,
-            ExtensionChoice,
-            defaultValue: UNSET)
-        {
-            Description = "%Which extension should be used to provide semantic highlighting%",
-        };
-
-        public static Setting<string>[] AllStringSettings { get; } =
+        // Resolve UNSET at read time only; do not persist the fallback.
+        // Semantic classification defaults to OLD so the in-proc classifier
+        // stays in charge until the user opts in
+        // (or is flipped into the LSP path by a controlled rollout).
+        public static (Setting<string> Setting, string DefaultIfUnset)[] AllSettingsWithDefaults { get; } =
         [
-            GetDiagnosticsFrom,
-            GetSemanticHighlightingFrom,
+            (SemanticClassificationProvider, OLD),
         ];
     }
 }

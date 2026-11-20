@@ -5,6 +5,8 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<CheckNulls>true</CheckNulls>
 		<Nullable>enable</Nullable>
+		<!-- Depends on VS SDK packages (LSP protocol, VS threading, StreamJsonRpc) that are not source-built. -->
+		<ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
@@ -15,6 +17,9 @@
 		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
 		<!-- Direct dependency with no transitive floor and no central PackageVersion, so pin it explicitly. -->
 		<PackageReference Include="StreamJsonRpc" VersionOverride="2.26.10" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Extensions" />
+		<!-- Lift the host to CLaSP's floor: the Proxy references CLaSP with PrivateAssets="all". -->
+		<PackageReference Include="System.Text.Json" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -36,12 +41,17 @@
 
 	<ItemGroup>
 		<Compile Include="..\..\vsintegration\src\FSharp.Editor\Common\CancellableTasks.fs" />
+		<Compile Include="Telemetry.fs" />
 		<Compile Include="Utils.fs" />
 		<Compile Include="FSharpLanguageServerConfig.fs" />
+		<Compile Include="SemanticTokens.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
 		<Compile Include="Common\FSharpRequestContext.fs" />
+		<Compile Include="Handlers\CodeActionHandler.fs" />
 		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
+		<Compile Include="Handlers\SemanticTokensHandler.fs" />
+		<Compile Include="Handlers\ProjectContextsHandler.fs" />
 		<Compile Include="Handlers\DocumentStateHandler.fs" />
 		<Compile Include="FSharpLanguageServer.fs" />
 		<Compile Include="Executable.fs" />

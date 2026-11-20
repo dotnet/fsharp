@@ -182,9 +182,9 @@ module TcResolutionsExtensions =
                             | _ -> None
                         | _ -> None
 
-                    // Custom builders like 'async { }' are both Item.Value and Item.CustomBuilder.
-                    // We should prefer the latter, otherwise they would not get classified as CEs.
-                    let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
+                    // CLI event declarations share their range with synthesized add/remove methods;
+                    // custom builders share theirs with an ordinary value resolution.
+                    let takePreferredResolution (cnrs: CapturedNameResolution[]) =
                         assert (cnrs.Length > 0)
 
                         if cnrs.Length = 1 then
@@ -201,12 +201,22 @@ module TcResolutionsExtensions =
                                 | Item.Value _ -> true
                                 | _ -> false
 
-                            let ceCnrs = cnrs |> Array.filter isCE
-
-                            if ceCnrs.Length > 0 && cnrs |> Array.forall (fun c -> isCE c || isPlainValue c) then
-                                ceCnrs
-                            else
+                            let eventCnrs =
                                 cnrs
+                                |> Array.filter (fun cnr ->
+                                    match cnr.Item with
+                                    | Item.Value vref when vref.TryDeref.IsValueSome -> vref.IsFSharpEventProperty g
+                                    | _ -> false)
+
+                            if eventCnrs.Length > 0 then
+                                eventCnrs
+                            else
+                                let ceCnrs = cnrs |> Array.filter isCE
+
+                                if ceCnrs.Length > 0 && cnrs |> Array.forall (fun c -> isCE c || isPlainValue c) then
+                                    ceCnrs
+                                else
+                                    cnrs
 
                     let resolutions =
                         let baseCnrs =
@@ -218,7 +228,7 @@ module TcResolutionsExtensions =
 
                         baseCnrs
                         |> Array.groupBy (fun cnr -> cnr.Range)
-                        |> Array.collect (fun (_, cnrs) -> takeCustomBuilder cnrs)
+                        |> Array.collect (fun (_, cnrs) -> takePreferredResolution cnrs)
 
                     let duplicates = HashSet<range>(comparer)
 
@@ -238,6 +248,8 @@ module TcResolutionsExtensions =
                         match cnr.Item, cnr.ItemOccurrence, cnr.Range with
                         | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurrence.Use, m ->
                             add m SemanticClassificationType.ComputationExpression
+
+                        | Item.Value vref, _, m when vref.IsFSharpEventProperty g -> add m SemanticClassificationType.Event
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
@@ -299,7 +311,9 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.RecordField
 
                         | Item.Property(info = pinfo :: _), _, m ->
-                            if not pinfo.IsIndexer then
+                            if pinfo.IsFSharpEventProperty then
+                                add m SemanticClassificationType.Event
+                            elif not pinfo.IsIndexer then
                                 add m SemanticClassificationType.Property
 
                         | Item.CtorGroup(_, minfos), _, m ->

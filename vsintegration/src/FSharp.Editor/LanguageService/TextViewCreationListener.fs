@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.OLE.Interop
 [<Export(typeof<IVsTextViewCreationListener>)>]
 [<ContentType(Constants.FSharpContentType)>]
 [<TextViewRole(PredefinedTextViewRoles.Editable)>]
-type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEditorAdaptersFactoryService) =
+type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEditorAdaptersFactoryService, options: EditorOptions) =
 
     /// <summary>
     /// The <see cref="FSharpEditorFactory"/> initializes the pguidCmdUI to an empty Guid. This means that our buffer does not receive the normal text editor command bindings.
@@ -62,4 +62,14 @@ type TextViewCreationListener [<ImportingConstructor>] (adaptersFactory: IVsEdit
 
         member _.VsTextViewCreated(textViewAdapter) =
             let _textView = adaptersFactory.GetWpfTextView(textViewAdapter)
+
+            if
+                not (isNull _textView)
+                && _textView.Roles.Contains(PredefinedTextViewRoles.Document)
+            then
+                let struct (settingValue, provider) =
+                    HighlightingTelemetry.readProvider ServiceProvider.GlobalProvider
+
+                HighlightingTelemetry.instance.ReportExposure(settingValue, provider, (fun () -> options.Advanced.SendAdditionalTelemetry))
+
             initKeyBindings textViewAdapter

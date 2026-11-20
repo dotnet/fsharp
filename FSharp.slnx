@@ -30,6 +30,9 @@
     <Project Path="tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
+    <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
     <Project Path="tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
@@ -67,6 +70,9 @@
     <Project Path="src/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
+    <Project Path="src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
     <Project Path="src/fsi/fsiAnyCpuProject/fsiAnyCpu.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
@@ -74,6 +80,9 @@
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
     <Project Path="src/fsi/fsiProject/fsi.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/Microsoft.CommonLanguageServerProtocol.Framework.Proxy/Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
   </Folder>

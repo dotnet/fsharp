@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.LanguageServer.Handlers
+namespace FSharp.Compiler.LanguageServer.Handlers
 
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
@@ -7,8 +7,6 @@ open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer
 open System.Threading.Tasks
 open System.Threading
-open System.Collections.Generic
-open Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "57"
 
@@ -26,34 +24,24 @@ type LanguageFeaturesHandler() =
             (request: DocumentDiagnosticParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
             =
             cancellableTask {
+                let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+                let uri = request.TextDocument.Uri
+                let projectContext = tryGetProjectContext request.TextDocument
 
-                let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
+                use _scope =
+                    telemetry.ReportEventWithDuration(TelemetryEvents.GetDiagnostics, [| "uri_hash", hash uri :> obj |])
 
-                let report =
-                    FullDocumentDiagnosticReport(
-                        Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToLspDiagnostic())),
-                        ResultId = fsharpDiagnosticReport.ResultId
-                    )
+                let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile(uri, ?context = projectContext)
 
-                let relatedDocuments = Dictionary()
-
-                relatedDocuments.Add(
-                    request.TextDocument.Uri,
-                    SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport> report
-                )
+                let snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(uri)
+                let projects = snapshotsToProjectInfos snapshots
 
                 return
                     SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>(
-                        RelatedFullDocumentDiagnosticReport(RelatedDocuments = relatedDocuments)
+                        RelatedFullDocumentDiagnosticReport(
+                            Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToVsDiagnostic(projects))),
+                            ResultId = fsharpDiagnosticReport.ResultId
+                        )
                     )
-            }
-            |> CancellableTask.start cancellationToken
-
-    interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName, LanguageServerConstants.DefaultLanguageName)>]
-        member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
-            cancellableTask {
-                let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
-                return SemanticTokens(Data = tokens)
             }
             |> CancellableTask.start cancellationToken
