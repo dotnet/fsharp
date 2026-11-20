@@ -277,6 +277,9 @@ module internal LineDirectives =
     let add fileIndex lineDirectives =
         lock storeLock <| fun () -> store <- store.Add(fileIndex, lineDirectives)
 
+    let ofFile fileIndex =
+        store.TryFind fileIndex |> Option.defaultValue []
+
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1: int64, code2: int64) =

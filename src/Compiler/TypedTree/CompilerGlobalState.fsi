@@ -23,6 +23,10 @@ type NiceNameGenerator =
     /// concurrent codegen is using this generator when resetting.
     member ResetCompilerGeneratedNameState: unit -> unit
 
+    /// Reset the occurrence counters of one file, so checking it again assigns the names its first check did.
+    /// Callers must ensure nothing generates names in that file meanwhile; other files are untouched.
+    member ResetCompilerGeneratedNamesOfFile: fileIndex: int -> unit
+
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -37,6 +41,10 @@ type StableNiceNameGenerator =
     /// Reset the stable-name cache and inner occurrence counters, so both the cached stable names and
     /// the underlying occurrence counters are cleared. See NiceNameGenerator.ResetCompilerGeneratedNameState.
     member ResetCompilerGeneratedNameState: unit -> unit
+
+    /// Reset the occurrence counters of one file. The names already given to values stay cached, so a value
+    /// checked earlier keeps its name. See NiceNameGenerator.ResetCompilerGeneratedNamesOfFile.
+    member ResetCompilerGeneratedNamesOfFile: fileIndex: int -> unit
 
 /// A compiler-generated-name allocation scope bound to a single ImplFile being optimized.
 /// Instances can only be obtained from CompilerGlobalState.NewFileScope so a call site can't
@@ -72,6 +80,10 @@ type internal CompilerGlobalState =
     /// Callers must ensure no compilation is concurrently generating names (quiescence). Needed by
     /// Edit-and-Continue style scenarios that re-emit from a warm checker.
     member ResetCompilerGeneratedNameState: unit -> unit
+
+    /// Reset the type-checking name counters of one file, before checking it again in the same process, so it
+    /// gets the names a first check gives. The IlxGen counters are left alone: they belong to code generation.
+    member ResetCompilerGeneratedNamesOfFile: fileIndex: int -> unit
 
 type Unique = int64
 

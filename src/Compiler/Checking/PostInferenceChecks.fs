@@ -2927,7 +2927,8 @@ and CheckModuleSpec cenv env mbind =
 let CheckImplFileContents cenv env implFileTy implFileContents  =
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
     let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
-    UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
+    // The signature later files keep goes on holding these after an undo of this pass; only a name not yet given is set
+    MutationLog.Unlogged(fun () -> UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy)
     CheckDefnInModule cenv env implFileContents
 
 let rec private collectInlineBindingBodies (acc: Dictionary<Stamp, Expr>) mdef =

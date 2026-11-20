@@ -67,6 +67,14 @@ type NiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGeneratedNa
     /// concurrent codegen is using this generator when resetting.
     member _.ResetCompilerGeneratedNameState() = basicNameCounts.Clear()
 
+    /// Reset the occurrence counters of one file, so checking it again assigns the names its first check did.
+    /// Callers must ensure nothing generates names in that file meanwhile; other files are untouched.
+    member _.ResetCompilerGeneratedNamesOfFile(fileIndex: int) =
+        for pair in basicNameCounts do
+            let struct (_, index) = pair.Key
+            if index = fileIndex then
+                basicNameCounts.TryRemove pair.Key |> ignore
+
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -90,6 +98,11 @@ type StableNiceNameGenerator(getCompilerGeneratedNameMap: unit -> ICompilerGener
     member _.ResetCompilerGeneratedNameState() =
         niceNames.Clear()
         innerGenerator.ResetCompilerGeneratedNameState()
+
+    /// Reset the occurrence counters of one file. The names already given to values stay cached, so a value
+    /// checked earlier keeps its name. See NiceNameGenerator.ResetCompilerGeneratedNamesOfFile.
+    member _.ResetCompilerGeneratedNamesOfFile(fileIndex: int) =
+        innerGenerator.ResetCompilerGeneratedNamesOfFile fileIndex
 
 [<Sealed>]
 type PerFileNamingScope internal (nng: NiceNameGenerator, fileIndex: int) =
@@ -129,6 +142,12 @@ type internal CompilerGlobalState () as this =
         globalNng.ResetCompilerGeneratedNameState()
         globalStableNameGenerator.ResetCompilerGeneratedNameState()
         ilxgenGlobalNng.ResetCompilerGeneratedNameState()
+
+    /// Reset the type-checking name counters of one file, before checking it again in the same process, so it
+    /// gets the names a first check gives. The IlxGen counters are left alone: they belong to code generation.
+    member _.ResetCompilerGeneratedNamesOfFile(fileIndex: int) =
+        globalNng.ResetCompilerGeneratedNamesOfFile fileIndex
+        globalStableNameGenerator.ResetCompilerGeneratedNamesOfFile fileIndex
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

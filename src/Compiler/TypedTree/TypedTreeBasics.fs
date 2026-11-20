@@ -223,7 +223,7 @@ let tryShortcutSolvedUnitPar canShortcut (r: Typar) =
                match r2.Solution with
                | None -> ()
                | Some _ as soln ->
-                  r.typar_solution <- soln
+                  r.SetSolution soln
             | _ -> ()
         unt
     | _ ->
@@ -310,7 +310,7 @@ let rec stripTyparEqnsAux nullness0 canShortcut ty =
                        match r2.Solution with
                        | None -> ()
                        | Some _ as soln2 ->
-                          r.typar_solution <- soln2
+                          r.SetSolution soln2
                    | _ -> ()
                 | _ -> ()
             stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln

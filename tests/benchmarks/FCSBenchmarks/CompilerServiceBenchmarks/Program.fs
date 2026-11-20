@@ -9,6 +9,10 @@ let main args =
     | [| "retained-memory" |] ->
         RetainedMemoryProbe.run ()
         0
+    // Standalone 60-declaration retention probe for DeclarationChecker vs FSharpCheckFileResults.
+    | [| "declaration-memory" |] ->
+        DeclarationMemoryProbe.run ()
+        0
     // Per-phase compile breakdown via the compiler's --times flag; see TimesProbe.
     | [| "times" |] ->
         TimesProbe.run ()

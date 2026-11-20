@@ -894,7 +894,7 @@ module DispatchSlotChecking =
                                              match dispatchSlot.ArbitraryValRef with
                                              | Some virtMember ->
                                                   if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(), overrideByInfo.Range))
-                                                  virtMember.MemberInfo.Value.IsImplemented <- true
+                                                  virtMember.MemberInfo.Value.SetIsImplemented true
                                              | None -> () // not an F# slot
 
                                         // Get the slotsig of the overridden method
@@ -910,7 +910,7 @@ module DispatchSlotChecking =
                           //    assert nonNil overriddenForThisSlotImplSet
                           yield! overriddenForThisSlotImplSet ]
 
-            overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overridden)
+            overrideBy.MemberInfo.Value.SetImplementedSlotSigs overridden)
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
 let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv, tycon: Tycon) =

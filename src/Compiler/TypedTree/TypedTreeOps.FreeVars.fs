@@ -1001,7 +1001,7 @@ module internal MemberRepresentation =
             (typars, prettyNames)
             ||> List.iter2 (fun tp nm ->
                 if NeedsPrettyTyparName tp then
-                    tp.typar_id <- ident (nm, tp.Range))
+                    tp.SetIdent(ident (nm, tp.Range)))
 
         let PrettifyThings g foldTys mapTys things =
             let ftps =

@@ -2067,6 +2067,237 @@ FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
 FSharp.Compiler.Cancellable: System.Threading.CancellationToken get_Token()
 FSharp.Compiler.Cancellable: Void CheckAndThrow()
 FSharp.Compiler.Cancellable: Void TryCheckAndThrow()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Boolean WindowOpen(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[], System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent Content(FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment ExtendEnv(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment ExtendEnvAdHoc(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult CheckDeclaration(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment, FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult CheckDeclarationAdHoc(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment, FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.FileResult CheckFile(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileSignature], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.FileResult FinishFile(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.FileSignature CheckSignatureFile(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileSignature], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration[] Split(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly FailingProjectAssembly(System.String)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly ProjectAssembly(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileResult], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileSignature])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults ViewResults(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: FSharp.Compiler.CodeAnalysis.FSharpParseFileResults Parse(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, System.String, System.String)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Int32 CountDeclarations(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Int32[][] FileDependencies(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, FSharp.Compiler.CodeAnalysis.FSharpParseFileResults[])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext] CreateProject(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext] CreateProject(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, System.Collections.Generic.IReadOnlyDictionary`2[System.String,FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] AfterUndoHook
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] get_AfterUndoHook()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] DefinitionLocation(FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, System.String, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] SignatureLocation(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, FSharp.Compiler.CodeAnalysis.Declarations.FileSignature, System.String, Boolean, System.Threading.CancellationToken)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpOption`1[System.String] SymbolKey(FSharp.Compiler.Symbols.FSharpSymbol)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult] Shift(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult, FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.String[] PrintsNow(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.Tuple`2[FSharp.Compiler.CodeAnalysis.Declarations.FileStart,FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment] BeginFile(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.Declarations.FileSignature], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.Tuple`2[System.String,System.String][] AccessPathTexts(FSharp.Compiler.CodeAnalysis.Declarations.FileSignature)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.ValueTuple`3[FSharp.Compiler.Text.Range,System.Boolean,FSharp.Compiler.Symbols.FSharpSymbol][] SignatureUses(FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext, FSharp.Compiler.CodeAnalysis.Declarations.FileSignature)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: System.ValueTuple`3[System.Int32[],System.Int32,System.Boolean] AnsweringDeclarations(FSharp.Compiler.CodeAnalysis.Declarations.FileStart, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult[], FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, Int32, Int32)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationChecker: Void set_AfterUndoHook(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean AffectsAllLater
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean HasUnresolvable
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean get_AffectsAllLater()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Boolean get_HasUnresolvable()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String ToString()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] Augments
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] Defines
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] FieldOrCaseUses
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] MemberUses
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] Uses
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] get_Augments()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] get_Defines()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] get_FieldOrCaseUses()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] get_MemberUses()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: System.String[] get_Uses()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationContent: Void .ctor(System.String[], System.String[], System.String[], System.String[], Boolean, Boolean, System.String[])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Kind
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Kind()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 Ordinal
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Int32 get_Ordinal()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] ModulePath
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ModulePath()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: System.String Name
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: System.String ToString()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: System.String get_Name()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind, Int32)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Attribute
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Augmentation
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Do
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Exception
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Module
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 ModuleAbbrev
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Open
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 RecGroup
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Type
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags: Int32 Value
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsAttribute
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsAugmentation
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsDo
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsException
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsModule
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsModuleAbbrev
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsOpen
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsRecGroup
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsType
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean IsValue
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsAttribute()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsAugmentation()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsDo()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsException()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsModule()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsModuleAbbrev()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsOpen()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsRecGroup()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsType()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Boolean get_IsValue()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Attribute
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Augmentation
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Do
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Exception
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Module
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind ModuleAbbrev
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Open
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind RecGroup
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Type
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind Value
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Attribute()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Augmentation()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Do()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Exception()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Module()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_ModuleAbbrev()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Open()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_RecGroup()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Type()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind get_Value()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind+Tags
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 Tag
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKind: System.String ToString()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Boolean Equals(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey] Key
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey] get_Key()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: System.String File
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: System.String ToString()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: System.String get_File()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey])
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean DefinesEntities
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean DependsOnLaterDeclarations
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean IsSameDelta(FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult)
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean LeavesFreeTypars
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean get_DefinesEntities()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean get_DependsOnLaterDeclarations()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: Boolean get_LeavesFreeTypars()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment EnvAfter
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationEnvironment get_EnvAfter()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey Key
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey get_Key()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef[] TypedUses
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationRef[] get_TypedUses()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.Text.Range CapturedScope
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: FSharp.Compiler.Text.Range get_CapturedScope()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: System.String Fingerprint
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: System.String get_Fingerprint()
+FSharp.Compiler.CodeAnalysis.Declarations.DeclarationResult: System.String[] DescribeOpenTypars()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.Declarations.FileSignature Signature
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.Declarations.FileSignature get_Signature()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults CheckResults
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults CheckResultsNotKept
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_CheckResults()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_CheckResultsNotKept()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: Int32 Reused
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: Int32 get_Reused()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey,System.String] Fingerprints
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey,System.String] get_Fingerprints()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Int64] PhaseAllocated
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Int64] PhaseTicks
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Int64] get_PhaseAllocated()
+FSharp.Compiler.CodeAnalysis.Declarations.FileResult: System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Int64] get_PhaseTicks()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: Boolean Failed
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: Boolean HasFingerprint
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: Boolean get_Failed()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: Boolean get_HasFingerprint()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: FSharp.Compiler.EditorServices.SemanticClassificationItem[] SemanticClassification
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: FSharp.Compiler.EditorServices.SemanticClassificationItem[] get_SemanticClassification()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: System.String Fingerprint
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: System.String get_Fingerprint()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: System.String[] OutOfScope()
+FSharp.Compiler.CodeAnalysis.Declarations.FileSignature: System.String[] TyparNames()
+FSharp.Compiler.CodeAnalysis.Declarations.FileStart: FSharp.Compiler.CodeAnalysis.FSharpParseFileResults Parse
+FSharp.Compiler.CodeAnalysis.Declarations.FileStart: FSharp.Compiler.CodeAnalysis.FSharpParseFileResults get_Parse()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: Boolean IsUnchangedFrom(FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration)
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey Key
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey get_Key()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: Int32 SyntaxHash
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: Int32 get_SyntaxHash()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey] Within
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.Declarations.DeclarationKey] get_Within()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: System.String HeaderInputs
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: System.String Text
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: System.String get_HeaderInputs()
+FSharp.Compiler.CodeAnalysis.Declarations.ParsedDeclaration: System.String get_Text()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: Boolean ReadsFileOnDisk
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: Boolean get_ReadsFileOnDisk()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: System.String Fingerprint
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectAssembly: System.String get_Fingerprint()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Boolean RefuseShifts
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Boolean get_RefuseShifts()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int32 CheckResultsBuilt
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int32 get_CheckResultsBuilt()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int64 ShiftFinishMisses
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Int64 get_ShiftFinishMisses()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] ShiftRefusedHook
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit] get_ShiftRefusedHook()
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: T HoldingCheckLock[T](System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Void set_RefuseShifts(Boolean)
+FSharp.Compiler.CodeAnalysis.Declarations.ProjectContext: Void set_ShiftRefusedHook(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
+FSharp.Compiler.CodeAnalysis.Declarations.StaleDependenciesException: Void .ctor(System.String)
+FSharp.Compiler.CodeAnalysis.Declarations.SupersededLineDirectivesException: Void .ctor(System.String)
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
