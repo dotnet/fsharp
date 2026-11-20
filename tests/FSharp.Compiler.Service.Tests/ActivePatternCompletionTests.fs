@@ -509,7 +509,7 @@ let ``referenced case names retain the namespace-level insertion scope`` (patter
         |> Assert.Single
     Assert.Equal(Some ns, entity.Namespace)
     Assert.Equal(qualifier, entity.Qualifier)
-    Assert.Equal((if atTop then Position.mkPos 1 0 else Position.mkPos 4 8), insertion.Pos)
+    Assert.Equal((if atTop then Position.mkPos 2 0 else Position.mkPos 4 8), insertion.Pos)
     let opened =
         if atTop then
             context.Source.Replace("namespace N\n", $"namespace N\nopen {entity.Namespace.Value}\n")

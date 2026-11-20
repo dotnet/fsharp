@@ -131,7 +131,8 @@ type public InsertionContext =
         /// Current scope kind.
         ScopeKind: ScopeKind
 
-        /// Current position (F# compiler line number).
+        /// Where the `open` belongs (F# compiler line number): the first line inside the scope, below its header,
+        /// opens and directives. For a nested module whose body starts on the header's line, that line.
         Pos: pos
     }
 
@@ -198,6 +199,19 @@ module public ParsedInput =
             ShortIdents)
                 -> (InsertionContextEntity * InsertionContext)[])
 
+    /// Like `TryFindInsertionContext`, for a use at a position: on the line of a nested module declared in one line
+    /// that carries an attribute, only a use after the start of the module's body is inside the module.
+    val internal TryFindInsertionContextAt:
+        currentPos: pos ->
+        parsedInput: ParsedInput ->
+        partiallyQualifiedName: MaybeUnresolvedIdent[] ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) *
+            ShortIdents option (*  entityNamespace *) *
+            ShortIdents option (* entity: *) *
+            ShortIdents)
+                -> (InsertionContextEntity * InsertionContext)[])
+
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:
         currentLine: int ->
@@ -206,10 +220,19 @@ module public ParsedInput =
         insertionPoint: OpenStatementInsertionPoint ->
             InsertionContext
 
+    /// Like `FindNearestPointToInsertOpenDeclaration`, for a use at a position.
+    val internal FindNearestPointToInsertOpenDeclarationAt:
+        currentPos: pos ->
+        parsedInput: ParsedInput ->
+        entity: ShortIdents ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            InsertionContext
+
     /// Returns long identifier at position.
     val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
 
-    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    /// Moves the insertion point below the blank line that follows a declaration header. `getLineStr` returns
+    /// the trimmed text of a zero-based line, or an empty string past the end of the file.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
