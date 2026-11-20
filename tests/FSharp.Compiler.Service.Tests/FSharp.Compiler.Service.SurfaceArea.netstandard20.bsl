@@ -2148,6 +2148,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.Collections.Generic.
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.String[] get_DependencyFiles()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.Tuple`2[FSharp.Compiler.EditorServices.ToolTipText,Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpDocSource]]] GetToolTipParts(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: System.Tuple`2[FSharp.Compiler.Text.Range,System.Int32][] GetFormatSpecifierLocationsAndArity()
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: Boolean HasCriticalErrors
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: Boolean get_HasCriticalErrors()
@@ -5287,6 +5288,26 @@ FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisp
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithSuffixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithTopLevelPrefixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext get_Empty()
+FSharp.Compiler.Symbols.FSharpDocOwner: Boolean Equals(FSharp.Compiler.Symbols.FSharpDocOwner)
+FSharp.Compiler.Symbols.FSharpDocOwner: Boolean Equals(FSharp.Compiler.Symbols.FSharpDocOwner, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpDocOwner: Boolean Equals(System.Object)
+FSharp.Compiler.Symbols.FSharpDocOwner: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpDocOwner: Int32 CompareTo(FSharp.Compiler.Symbols.FSharpDocOwner)
+FSharp.Compiler.Symbols.FSharpDocOwner: Int32 CompareTo(System.Object)
+FSharp.Compiler.Symbols.FSharpDocOwner: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Symbols.FSharpDocOwner: Int32 GetHashCode()
+FSharp.Compiler.Symbols.FSharpDocOwner: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Symbols.FSharpDocOwner: System.String FileName
+FSharp.Compiler.Symbols.FSharpDocOwner: System.String Path
+FSharp.Compiler.Symbols.FSharpDocOwner: System.String ToString()
+FSharp.Compiler.Symbols.FSharpDocOwner: System.String get_FileName()
+FSharp.Compiler.Symbols.FSharpDocOwner: System.String get_Path()
+FSharp.Compiler.Symbols.FSharpDocOwner: Void .ctor(System.String, System.String)
+FSharp.Compiler.Symbols.FSharpDocSource: FSharp.Compiler.Symbols.FSharpXmlDoc Compose(Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Symbols.FSharpDocOwner,Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Xml.XmlDoc]])
+FSharp.Compiler.Symbols.FSharpDocSource: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpDocOwner] InheritOwners
+FSharp.Compiler.Symbols.FSharpDocSource: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpDocOwner] Owners
+FSharp.Compiler.Symbols.FSharpDocSource: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpDocOwner] get_InheritOwners()
+FSharp.Compiler.Symbols.FSharpDocSource: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpDocOwner] get_Owners()
 FSharp.Compiler.Symbols.FSharpEntity: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpEntity: Boolean HasAssemblyCodeRepresentation
 FSharp.Compiler.Symbols.FSharpEntity: Boolean HasFSharpModuleSuffix

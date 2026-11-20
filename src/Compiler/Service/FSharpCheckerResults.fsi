@@ -250,9 +250,47 @@ type public FSharpCodeCompletionOptions =
 
     member internal AllowUnseen: UnseenItems
 
+[<Sealed>]
+type internal TypeCheckInfo =
+    internal new:
+        _sTcConfig: TcConfig *
+        g: TcGlobals *
+        ccuSigForFile: ModuleOrNamespaceType *
+        ownSigForFile: ModuleOrNamespaceType *
+        thisCcu: CcuThunk *
+        tcImports: TcImports *
+        tcAccessRights: AccessorDomain *
+        projectFileName: string *
+        mainInputFileName: string *
+        projectOptions: FSharpProjectOptions option *
+        sResolutions: TcResolutions *
+        sSymbolUses: TcSymbolUses *
+        sFallback: NameResolutionEnv *
+        loadClosure: LoadClosure option *
+        implFileOpt: CheckedImplFile option *
+        openDeclarations: OpenDeclaration[] ->
+            TypeCheckInfo
+
+    member ScopeResolutions: TcResolutions
+    member ScopeSymbolUses: TcSymbolUses
+    member TcGlobals: TcGlobals
+    member TcImports: TcImports
+    member CcuSigForFile: ModuleOrNamespaceType
+    member ThisCcu: CcuThunk
+    member ImplementationFile: CheckedImplFile option
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
+    internal new:
+        fileName: string *
+        errors: FSharpDiagnostic[] *
+        scopeOptX: TypeCheckInfo option *
+        dependencyFiles: string[] *
+        builderX: IncrementalBuilder option *
+        keepAssemblyContents: bool ->
+            FSharpCheckFileResults
+
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
 
@@ -365,6 +403,16 @@ type public FSharpCheckFileResults =
     member GetToolTip:
         line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
             ToolTipText
+
+    /// <summary>
+    /// GetToolTip's tooltip in two parts: the tooltip without the documentation of each element whose documentation's
+    /// source is known, and, for each element of its groups in order, that source. The source names the declarations
+    /// the documentation is read from, so it can be made from newer comments than the check's.
+    /// </summary>
+    /// <remarks>An element whose source is None keeps its documentation, as does any element past the list's end.</remarks>
+    member GetToolTipParts:
+        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
+            ToolTipText * FSharpDocSource option list
 
     /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
     ///
