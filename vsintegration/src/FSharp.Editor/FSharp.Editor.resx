@@ -299,6 +299,21 @@
 {2}</value>
     <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
   </data>
+  <data name="ExtractToLetBinding" xml:space="preserve">
+    <value>Extract to let binding</value>
+  </data>
+  <data name="ExtractToLiteral" xml:space="preserve">
+    <value>Extract to literal</value>
+  </data>
+  <data name="ExtractToLocalFunction" xml:space="preserve">
+    <value>Extract to local function</value>
+  </data>
+  <data name="ExtractToModuleFunction" xml:space="preserve">
+    <value>Extract to module function</value>
+  </data>
+  <data name="ExtractToPrivateMember" xml:space="preserve">
+    <value>Extract to private member</value>
+  </data>
   <data name="UnifiedSettingsIntelliSenseTitle" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
@@ -347,6 +362,18 @@
   </data>
   <data name="UnifiedSettingsSolidUnderlineLabel" xml:space="preserve">
     <value>Solid underline</value>
+  </data>
+  <data name="UnifiedSettingsExtractFunctionParameterAnnotationsTitle" xml:space="preserve">
+    <value>Parameter types in Extract to function</value>
+  </data>
+  <data name="UnifiedSettingsAnnotateParametersAlwaysLabel" xml:space="preserve">
+    <value>Annotate every parameter</value>
+  </data>
+  <data name="UnifiedSettingsAnnotateParametersWhenNeededLabel" xml:space="preserve">
+    <value>Annotate parameters whose type inference cannot determine from the extracted code</value>
+  </data>
+  <data name="UnifiedSettingsAnnotateParametersNeverLabel" xml:space="preserve">
+    <value>Leave parameter types to type inference</value>
   </data>
   <data name="UnifiedSettingsDescriptionWidthTitle" xml:space="preserve">
     <value>Use a preferred description width</value>
