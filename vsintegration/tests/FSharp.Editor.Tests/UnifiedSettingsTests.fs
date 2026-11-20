@@ -10,8 +10,11 @@ open System.Resources
 open System.Threading
 open System.Threading.Tasks
 
+open Microsoft.Internal.VisualStudio.Services.UnifiedSettings
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Interactive
+open Microsoft.VisualStudio.Settings
+open Microsoft.VisualStudio.Threading
 open Microsoft.VisualStudio.Utilities.UnifiedSettings
 
 open Newtonsoft.Json
@@ -255,6 +258,61 @@ module UnifiedSettingsTests =
 
         interface IDisposable with
             member _.Dispose() = (migration :> IDisposable).Dispose()
+
+    let private unexpected () = invalidOp "Unexpected call."
+
+    #nowarn "57"
+
+    let private legacySettings (values: Dictionary<string, obj>) (roamingSyncComplete: Event<EventHandler, EventArgs>) =
+        { new ISettingsManager5 with
+            [<CLIEvent>]
+            member _.RoamingSyncComplete = roamingSyncComplete.Publish
+
+            member _.TryGetValue<'T>(name: string, value: byref<'T>) =
+                match values.TryGetValue name with
+                | true, stored ->
+                    value <- unbox<'T> stored
+                    GetValueResult.Success
+                | _ -> GetValueResult.Missing
+
+            member _.NamesStartingWith prefix =
+                values.Keys
+                |> Seq.filter (fun name -> name.StartsWith(prefix, StringComparison.Ordinal))
+                |> Seq.toArray
+
+            member _.SetValueAsync(name: string, value: obj, _: bool) =
+                values[name] <- value
+                Task.CompletedTask
+
+            member _.SetValueAsync(_: string, _: obj, _: bool, _: Nullable<bool>) : Task = unexpected ()
+
+            member _.TryGetValue<'T>(_: string, _: byref<'T>, _: byref<Nullable<bool>>) : GetValueResult = unexpected ()
+            member _.TryGetValue<'T>(_: ReadOnlySpan<char>, _: byref<'T>, _: byref<Nullable<bool>>) : GetValueResult = unexpected ()
+
+            member _.GetValueOrDefault<'T>(_: string, _: 'T) : 'T = unexpected ()
+            member _.GetOrCreateList(_, _) = unexpected ()
+            member _.GetSubset _ = unexpected ()
+            member _.SetSharedStore _ = unexpected ()
+            member _.SetOnlineStore _ = unexpected ()
+            member _.StoreUpdateLogger = unexpected ()
+            member _.GetRevision _ = unexpected ()
+            member _.ChangeSuppressor = unexpected ()
+            member _.DownloadOnlineSettings() = unexpected ()
+        }
+
+    #warnon "57"
+
+    let private refreshingMetadata (refresh: Task) =
+        { new IUnifiedSettingsMetadata with
+            member _.WaitForRefreshAsync _ = refresh
+            member _.GetMonikersMatchingPattern _ = Seq.empty
+            member _.GetMonikersMatchingPatterns(_: string[]) = unexpected ()
+            member _.GetSettingMonikerFromString _ = unexpected ()
+            member _.GetValueMonikerFromString _ = unexpected ()
+            member _.GetAdditionalSearchKeywords _ = unexpected ()
+            member _.GetEnumSettingChoicesAsync(_, _) = unexpected ()
+            member _.GetProvenance _ = unexpected ()
+        }
 
     [<Fact>]
     let ``All 43 native settings roam individually and only Compiler is external`` () =
@@ -1046,6 +1104,37 @@ module UnifiedSettingsTests =
             let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> fixture.Run(cancellation.Token))
             Assert.Empty fixture.Native.Values
             Assert.Empty fixture.Checkpoints
+        }
+
+    [<Fact(Timeout = 60000)>]
+    let ``Starting the migration does not wait for the settings refresh`` () =
+        task {
+            let refresh =
+                TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+            let roamingSyncComplete = Event<EventHandler, EventArgs>()
+            let legacy = Dictionary<string, obj>(StringComparer.Ordinal)
+            legacy[UnifiedSettingsMigration.editorKey "FormattingOptions"] <- "{\"FormatOnPaste\":true}"
+            let native = NativeHost()
+            use context = new JoinableTaskContext()
+            let pending = context.CreateCollection()
+
+            use _ =
+                UnifiedSettingsMigration.start
+                    (context.CreateFactory pending)
+                    native.Manager
+                    (legacySettings legacy roamingSyncComplete)
+                    (refreshingMetadata refresh.Task)
+                    CancellationToken.None
+
+            Assert.Empty native.Values
+            refresh.SetResult()
+            do! pending.JoinTillEmptyAsync()
+            Assert.Equal(box true, native.Values["languages.fsharp.formatting.formatOnPaste"])
+            Assert.DoesNotContain(UnifiedSettingsMigration.CompletionKey, legacy)
+            roamingSyncComplete.Trigger(null, EventArgs.Empty)
+            do! pending.JoinTillEmptyAsync()
+            Assert.Equal(box true, legacy[UnifiedSettingsMigration.CompletionKey])
         }
 
     [<Fact>]
