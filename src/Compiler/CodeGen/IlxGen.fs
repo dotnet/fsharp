@@ -8616,6 +8616,8 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     let targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, vs, es, stateVarFlagsOpt, startMark, endMark =
         targetInfo
 
+    // Restore the incoming stack before bindings can emit debug points and spill it.
+    CG.SetStack cgbuf stackAtTargets
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
 
     cgbuf.EmitStartOfHiddenCode()
@@ -8624,7 +8626,6 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     let binds = mkInvisibleBinds vs es
     GenBindings cenv cgbuf eenvAtTarget binds stateVarFlagsOpt
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
-    CG.SetStack cgbuf stackAtTargets
     (eenvAtTarget, successExpr, EndLocalScope(sequel, endMark))
 
 and GenDecisionTreeSwitch
