@@ -104,6 +104,11 @@
         <target state="translated">无类型批注的实现接口</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
         <target state="translated">将声明设为“可变”</target>
@@ -192,6 +197,11 @@
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">删除未使用的 open 声明</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">

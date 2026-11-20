@@ -104,6 +104,11 @@
         <target state="translated">형식 주석 없이 인터페이스 구현</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
         <target state="translated">선언을 '변경 가능'으로 지정</target>
@@ -192,6 +197,11 @@
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">사용하지 않는 열려 있는 선언 제거</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">

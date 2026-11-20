@@ -104,6 +104,11 @@
         <target state="translated">Tür ek açıklaması olmadan arabirim uygulama</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
         <target state="translated">Bildirimi 'mutable' yapın</target>
@@ -192,6 +197,11 @@
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Kullanılmayan açık bildirimleri kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">

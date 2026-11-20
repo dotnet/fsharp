@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>matcht</Title>
+      <Shortcut>matcht</Shortcut>
+      <Description>Code snippet for a match expression over a Try... call returning an out parameter</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>expression</ID>
+          <ToolTip>Call whose out parameter becomes the second element</ToolTip>
+          <Default>dictionary.TryGetValue key</Default>
+        </Literal>
+        <Literal>
+          <ID>value</ID>
+          <ToolTip>Name bound to the out parameter</ToolTip>
+          <Default>value</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[match $expression$ with
+| true, $value$ -> $end$
+| false, _ -> ()]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
