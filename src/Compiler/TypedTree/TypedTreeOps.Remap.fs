@@ -333,6 +333,7 @@ module internal TypeRemapping =
                     | FSRecdFieldSln(tinst, rfref, isSet) ->
                         FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)
                     | FSAnonRecdFieldSln(anonInfo, tinst, n) -> FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)
+                    | ILFieldSln(ty, ilFieldRef, isSet) -> ILFieldSln(remapTypeAux tyenv ty, ilFieldRef, isSet)
                     | BuiltInSln -> BuiltInSln
                     | ClosedExprSln e -> ClosedExprSln e // no need to remap because it is a closed expression, referring only to external types
 
@@ -1558,6 +1559,8 @@ module internal TypeEquivalence =
             && mref1 = mref2
             && typesAEquivAux erasureFlag g aenv minst1 minst2
             && returnTypesAEquivAux erasureFlag g aenv staticTy1 staticTy2
+        | Some(ILFieldSln(ty1, fref1, isSet1)), Some(ILFieldSln(ty2, fref2, isSet2)) ->
+            typeAEquivAux erasureFlag g aenv ty1 ty2 && fref1 = fref2 && isSet1 = isSet2
         | Some BuiltInSln, Some BuiltInSln -> true
         | _ -> false
 

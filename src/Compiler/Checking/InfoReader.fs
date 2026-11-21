@@ -119,6 +119,18 @@ let GetImmediateTraitsInfosOfType optFilter g ty =
                 | _ ->
                     traitInfo ]
         | Some nm ->
+            // A setter property trait can also be utilized via
+            //   x.Property <- v
+            // It comes after any getter of the same name, which reads of x.Property use
+            let assignableSetters =
+                if g.langVersion.SupportsFeature LanguageFeature.SrtpPropertySetterAssignment then
+                    infos
+                    |> List.filter (fun traitInfo ->
+                        traitInfo.MemberFlags.MemberKind = SynMemberKind.PropertySet
+                        && nm = traitInfo.MemberDisplayNameCore)
+                else
+                    []
+
             [ for traitInfo in infos do
                 match traitInfo.MemberFlags.MemberKind with
                 | SynMemberKind.PropertyGet ->
@@ -132,7 +144,7 @@ let GetImmediateTraitsInfosOfType optFilter g ty =
                     if nm = traitInfo2.MemberDisplayNameCore then
                         traitInfo2
                 | SynMemberKind.PropertySet ->
-                    // A setter property trait only can be utilized via
+                    // A setter property trait can be utilized via
                     //   ^T.set_Property(v)
                     let traitInfo2 = traitInfo.WithMemberKind(SynMemberKind.Member)
                     if nm = traitInfo2.MemberDisplayNameCore then
@@ -141,8 +153,8 @@ let GetImmediateTraitsInfosOfType optFilter g ty =
                     // Method traits can be utilized via
                     //   ^T.Member(v)
                     if nm = traitInfo.MemberDisplayNameCore then
-                        traitInfo
-                ]
+                        traitInfo ]
+            @ assignableSetters
 
     | _ ->
         []

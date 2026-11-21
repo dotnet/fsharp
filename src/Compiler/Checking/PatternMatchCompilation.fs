@@ -178,25 +178,6 @@ type RefutedSet =
 let notNullText = "some-non-null-value"
 let otherSubtypeText = "some-other-subtype"
 
-/// Create a TAST const value from an IL-initialized field read from .NET metadata
-// (Originally moved from TcFieldInit in CheckExpressions.fs -- feel free to move this somewhere more appropriate)
-let ilFieldToTastConst lit =
-    match lit with
-    | ILFieldInit.String s -> Const.String s
-    | ILFieldInit.Null -> Const.Zero
-    | ILFieldInit.Bool b -> Const.Bool b
-    | ILFieldInit.Char c -> Const.Char (char (int c))
-    | ILFieldInit.Int8 x -> Const.SByte x
-    | ILFieldInit.Int16 x -> Const.Int16 x
-    | ILFieldInit.Int32 x -> Const.Int32 x
-    | ILFieldInit.Int64 x -> Const.Int64 x
-    | ILFieldInit.UInt8 x -> Const.Byte x
-    | ILFieldInit.UInt16 x -> Const.UInt16 x
-    | ILFieldInit.UInt32 x -> Const.UInt32 x
-    | ILFieldInit.UInt64 x -> Const.UInt64 x
-    | ILFieldInit.Single f -> Const.Single f
-    | ILFieldInit.Double f -> Const.Double f
-
 exception CannotRefute
 
 [<Struct>]

@@ -818,7 +818,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     if not finfo.IsStatic then
         errorR (Error(FSComp.SR.tcFieldIsNotStatic (RichText.mkField finfo.FieldName), mLongId))
 
-    CheckILFieldAttributes g finfo m
+    CheckILFieldAttributes g finfo m |> CommitOperationResult
 
     match finfo.LiteralValue with
     | None ->

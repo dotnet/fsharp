@@ -1544,7 +1544,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         if isUnresolved() then false else
         match d.TryRecdField with
         | Choice1Of3 r -> r.IsVolatile
-        | Choice2Of3 _ -> false // F# doesn't actually respect "volatile" from other assemblies in any case
+        | Choice2Of3 f -> f.IsVolatile
         | Choice3Of3 _ -> false
 
     member _.IsDefaultValue =

@@ -192,6 +192,11 @@
         <target state="new">positions {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csFieldFoundButIsReadOnly">
+        <source>The type '{0}' has a field '{1}', but the field is read-only</source>
+        <target state="new">The type '{0}' has a field '{1}', but the field is read-only</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">"{0}" unterstützt den Typ "{1}" nicht, da letzteres nicht das erforderliche (echte oder integrierte) Element "{2}" aufweist.</target>
@@ -492,6 +497,16 @@
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSrtpPropertySetterAssignment">
+        <source>assigning a property through an SRTP setter constraint, e.g. 'x.Prop &lt;- v'</source>
+        <target state="new">assigning a property through an SRTP setter constraint, e.g. 'x.Prop &lt;- v'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSupportILFieldsInSRTP">
+        <source>Support for .NET fields in SRTP member constraints</source>
+        <target state="new">Support for .NET fields in SRTP member constraints</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -525,6 +540,11 @@
       <trans-unit id="featureUseTypeSubsumptionCache">
         <source>Use type conversion cache during compilation</source>
         <target state="new">Use type conversion cache during compilation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureVolatileILFieldAccess">
+        <source>emit the 'volatile.' prefix when accessing volatile .NET fields</source>
+        <target state="new">emit the 'volatile.' prefix when accessing volatile .NET fields</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">

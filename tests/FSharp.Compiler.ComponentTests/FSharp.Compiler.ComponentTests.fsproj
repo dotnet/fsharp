@@ -420,6 +420,8 @@
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <Compile Include="ConstraintSolver\ILFieldConstraints.fs" />
+    <Compile Include="ConstraintSolver\PropertySetterConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
     <Compile Include="ConstraintSolver\TaskCETypeInference.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
@@ -432,6 +434,7 @@
     <Compile Include="Interop\ParamArrayMigrated.fs" />
     <Compile Include="Interop\ParamArray.fs" />
     <Compile Include="Interop\Literals.fs" />
+    <Compile Include="Interop\VolatileFields.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="Scripting\PreferredUiLangTests.fs" />
