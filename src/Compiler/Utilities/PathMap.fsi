@@ -10,6 +10,8 @@ module internal PathMap =
 
     val empty: PathMap
 
+    val isEmpty: PathMap -> bool
+
     /// Add a path mapping to the map.
     val addMapping: string -> string -> PathMap -> PathMap
 

@@ -979,6 +979,8 @@ module internal Rewriting =
         let tpsR, tmenvinner =
             tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv d.Typars
 
+        remapTyparIdentsInPlace ctxt tpsR
+
         let typarsR = LazyWithContext.NotLazy tpsR
         let attribsR = d.entity_attribs.AsList() |> remapAttribs ctxt tmenvinner
         let tyconReprR = d.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner
@@ -994,16 +996,26 @@ module internal Rewriting =
         let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
 
         { d with
+            entity_range = remapRange ctxt d.entity_range
             entity_typars = typarsR
             entity_attribs = WellKnownEntityAttribs.Create(attribsR)
             entity_tycon_repr = tyconReprR
             entity_tycon_tcaug = tyconTcaugR
             entity_modul_type = modulContentsR
+            entity_cpath =
+                match d.entity_cpath with
+                | Some cpath ->
+                    let cpathR = remapCompPath ctxt cpath
+                    if cpath === cpathR then d.entity_cpath else Some cpathR
+                | None -> None
             entity_opt_data =
                 match d.entity_opt_data with
                 | Some dd ->
                     Some
                         { dd with
+                            entity_accessibility = dd.entity_accessibility |> remapAccess ctxt
+                            entity_other_range = dd.entity_other_range |> remapOtherRange ctxt
+                            entity_tycon_repr_accessibility = dd.entity_tycon_repr_accessibility |> remapAccess ctxt
                             entity_tycon_abbrev = tyconAbbrevR
                             entity_exn_info = exnInfoR
                         }
@@ -1020,6 +1032,38 @@ module internal Rewriting =
     let ApplyExportRemappingToEntity g tmenv x =
         let ctxt = mkRemapContext g (StackGuard("RemapExprStackGuardDepth"))
         remapTyconToNonLocal ctxt tmenv x
+
+    let ApplyExportRemappingToEntityLeavingAssembly g tmenv rescopeAccessTo x =
+        let ctxt =
+            mkRemapContextLeavingAssembly g (StackGuard("RemapExprStackGuardDepth")) rescopeAccessTo
+
+        remapTyconToNonLocal ctxt tmenv x
+
+    let PruneExportedSignatureInPlace (mspec: ModuleOrNamespace) =
+        let rec pruneEntity (entity: Entity) =
+            entity.entity_il_repr_cache <- null
+            pruneContents entity.ModuleOrNamespaceType
+
+        and pruneContents (mty: ModuleOrNamespaceType) =
+            for v in mty.AllValsAndMembers do
+                match v.val_opt_data with
+                | Some optData ->
+                    optData.val_defn <- None
+                    optData.val_repr_info_for_display <- None
+                    optData.arg_repr_info_for_display <- None
+
+                    match optData.val_other_xmldoc with
+                    | Some doc when optData.val_xmldoc.IsEmpty -> optData.val_xmldoc <- doc
+                    | _ -> ()
+
+                    optData.val_other_xmldoc <- None
+                | None -> ()
+
+            for e in mty.AllEntities do
+                pruneEntity e
+
+        pruneEntity mspec
+        mspec
 
     (* Which constraints actually get compiled to .NET constraints? *)
     let isCompiledOrWitnessPassingConstraint cx =
