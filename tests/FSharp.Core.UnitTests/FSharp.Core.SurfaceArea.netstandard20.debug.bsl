@@ -1043,6 +1043,11 @@ Microsoft.FSharp.Core.CompilerServices.TypeProviderTypeAttributes: Microsoft.FSh
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: System.String CommentText
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: System.String get_CommentText()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.ConditionalAutoOpenAttribute: System.String Condition
+Microsoft.FSharp.Core.ConditionalAutoOpenAttribute: System.String Path
+Microsoft.FSharp.Core.ConditionalAutoOpenAttribute: System.String get_Condition()
+Microsoft.FSharp.Core.ConditionalAutoOpenAttribute: System.String get_Path()
+Microsoft.FSharp.Core.ConditionalAutoOpenAttribute: Void .ctor(System.String, System.String)
 Microsoft.FSharp.Core.CustomComparisonAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomOperationAttribute: Boolean AllowIntoPattern
@@ -2151,6 +2156,11 @@ Microsoft.FSharp.Core.ResultModule: TState FoldBack[T,TError,TState](Microsoft.F
 Microsoft.FSharp.Core.ResultModule: TState Fold[T,TError,TState](Microsoft.FSharp.Core.FSharpFunc`2[TState,Microsoft.FSharp.Core.FSharpFunc`2[T,TState]], TState, Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: T[] ToArray[T,TError](Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: Void Iterate[T,TError](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpResult`2[T,TError])
+Microsoft.FSharp.Core.RetractExistingAutoopenAttribute: System.String Condition
+Microsoft.FSharp.Core.RetractExistingAutoopenAttribute: System.String Path
+Microsoft.FSharp.Core.RetractExistingAutoopenAttribute: System.String get_Condition()
+Microsoft.FSharp.Core.RetractExistingAutoopenAttribute: System.String get_Path()
+Microsoft.FSharp.Core.RetractExistingAutoopenAttribute: Void .ctor(System.String, System.String)
 Microsoft.FSharp.Core.SealedAttribute: Boolean Value
 Microsoft.FSharp.Core.SealedAttribute: Boolean get_Value()
 Microsoft.FSharp.Core.SealedAttribute: Void .ctor()

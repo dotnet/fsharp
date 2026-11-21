@@ -24,12 +24,21 @@ exception FileNameNotResolved of searchedLocations: string * fileName: string * 
 
 exception LoadedSourceNotFoundIgnoring of fileName: string * range: range
 
+type AssemblyAutoOpen =
+    | OrdinaryAutoOpen of path: string
+    | ConditionalAutoOpen of path: string * condition: string
+    | RetractAutoOpen of path: string * condition: string
+
+/// Recognizes the full name of an assembly attribute that adds or retracts an assembly auto-open conditionally
+[<return: Struct>]
+val (|ConditionalAutoOpenAttribute|_|): typeName: string -> (string * string -> AssemblyAutoOpen) voption
+
 /// Represents a reference to an F# assembly. May be backed by a real assembly on disk (read by Abstract IL), or a cross-project
 /// reference in FSharp.Compiler.Service.
 type IRawFSharpAssemblyData =
 
     /// The raw list AutoOpenAttribute attributes in the assembly
-    abstract GetAutoOpenAttributes: unit -> string list
+    abstract GetAutoOpenAttributes: unit -> AssemblyAutoOpen list
 
     /// The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: unit -> string list
@@ -263,6 +272,7 @@ type TcConfigBuilder =
         mutable implicitlyResolveAssemblies: bool
 
         mutable conditionalDefines: string list
+        mutable commandLineOptions: Set<string>
 
         /// Sources added into the build with #load
         mutable loadedSources: (range * string * string) list
@@ -549,6 +559,8 @@ type TcConfigBuilder =
 
     member DecideNames: string list -> string * string option * string
 
+    member RecordCommandLineOption: string -> unit
+
     member TurnWarningOff: range * string -> unit
 
     member TurnWarningOn: range * string -> unit
@@ -614,6 +626,8 @@ type TcConfig =
     member implicitlyResolveAssemblies: bool
 
     member conditionalDefines: string list
+
+    member commandLineOptions: Set<string>
 
     member subsystemVersion: int * int
 

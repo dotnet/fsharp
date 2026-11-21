@@ -67,6 +67,12 @@ Runtime restrictions and their compiler handling:
   the pending exception. This makes `use` on an `IAsyncDisposable` work under
   runtime async.
 
+  The body's result and the pending exception are held in two locals, the
+  exception staying null when the body succeeds, so the rewrite allocates
+  nothing on the success path. A pending exception, and `reraise ()` in a
+  rewritten handler, are rethrown with `ExceptionDispatchInfo.Capture(exn).Throw()`
+  so the exception keeps the stack trace of its original throw.
+
 Byref, byref-like, and pinned locals that are used after a suspension are
 rejected with diagnostic FS3919 when their non-preservable provenance is
 tracked. Pinned provenance is not currently propagated through ref cells or
@@ -354,7 +360,7 @@ type RuntimeTaskBuilder() =
         continuation (AsyncHelpers.Await task)
 ```
 
-Sample builders for tasks (`runtimeTask`), cancellable computations (`async2`) and async sequences (`asyncSeq2`) live with the [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md). They are examples, not FSharp.Core APIs.
+FSharp.Core provides runtime-managed `task` and `taskSeq` builders in `Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions`. They require .NET 11 or later. The [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md) contain a separate `async2` sample for cold, cancellable computations.
 
 ### Unsupported positions for inline runtime-async code
 
@@ -400,7 +406,7 @@ Other behavior:
 * Early disposal keeps ordinary sequence precedence: an outer cleanup failure replaces an inner one.
 * Runtime-async inputs that are consumed immediately stay adjacent to their awaits, so the runtime can fuse the calls.
 * Opaque recipes are rejected.
-* The compiler does not hand off tail `yield!` calls; a builder can, as the sample `asyncSeq2` does.
+* The compiler does not hand off tail `yield!` calls.
 * Builder-generated `MoveNextAsync` methods can lose sequence points, so source stepping is not guaranteed.
 
 Run the async-sequence tests with:

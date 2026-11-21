@@ -338,6 +338,9 @@ module ExtraTopLevelOperators =
     [<assembly: AutoOpen("Microsoft.FSharp.Core")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control")>]
+#if NET
+    [<assembly: ConditionalAutoOpen("Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions", "--features:runtime-async=on")>]
+#endif
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPlusPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]

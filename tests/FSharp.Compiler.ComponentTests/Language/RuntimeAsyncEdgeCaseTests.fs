@@ -1,25 +1,11 @@
 module Language.RuntimeAsyncEdgeCaseTests
 
-// Edge-case tests for runtime-async, inspired by the Roslyn async2 test surface (try/catch,
-// try/finally, loops, Task vs ValueTask, ref-struct/ReadOnlySpan, disposal). Two halves:
-//   * Execution facts (runtime behavior) — driven through the runtimeTask CE builder, which is
-//     treated as a hypothetical library (RuntimeAsync/RuntimeTaskBuilder.fs).
-//   * EmittedIL facts — assert the runtime-async codegen contract so dotnet/runtime folks can be
-//     pointed at concrete IL. Every asserted substring was captured from the PR's own fsc on the
-//     pinned net11 preview and normalized the way ILChecker does ([System.Runtime] -> [runtime]).
-//
-// IL facts that assert the *absence* of a token use direct StateMachineHelpers.__runtimeAsyncReturn
-// sources (single async method, clean assembly), because ILChecker's NotPresent check is
-// assembly-scoped and the CE builder's own inline members legitimately contain `tail.`/`MoveNext`.
-// The CE `Run` lowers `do!`/`let!` to exactly this intrinsic form (see the execution facts).
-
 open Xunit
 open FSharp.Test.Compiler
 open System.IO
 open System.Reflection.Metadata
 
 let private runtimeAsyncDir = Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync")
-let private builderPath = Path.Combine(runtimeAsyncDir, "RuntimeTaskBuilder.fs")
 
 // Builds a minimal direct-intrinsic compilation unit: the module header plus the opens every
 // StateMachineHelpers.__runtimeAsyncReturn body needs, then the supplied one-liner body. Used for the
@@ -51,17 +37,15 @@ let private assertSingleDiagnostic errorNumber (result: CompilationResult) =
     Assert.Equal(1, List.length diagnostics)
     result
 
-// ---- CE-builder sources (compiled against RuntimeTaskBuilder.fs, the hypothetical library) -------
-
 // ref-struct-across-suspension written through the CE builder: the `do!` desugars to a continuation
 // lambda that captures the span, so F#'s byref-capture check rejects it (FS0406).
 let private refStructAcrossAwaitCE = """
 module M
 open System
 open System.Threading.Tasks
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 let f () : Task<int> =
-    runtimeTask {
+    task {
         let data = [| 10; 20; 30 |]
         let span = ReadOnlySpan<int>(data)
         do! Task.Delay(1)
@@ -72,9 +56,9 @@ let f () : Task<int> =
 let private ceStateMachineSource = """
 module CeUser
 open System.Threading.Tasks
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 let f () : Task<int> =
-    runtimeTask {
+    task {
         let! x = Task.FromResult 41
         return x + 1
     }
@@ -88,8 +72,7 @@ let f () : Task<int> =
 [<InlineData(true)>]
 [<Theory>]
 let ``runtime async edge cases execute through the CE builder`` (optimize: bool) =
-    FsFromPath builderPath
-    |> withAdditionalSourceFile (SourceFromPath (Path.Combine(runtimeAsyncDir, "RuntimeAsyncEdgeCases.fs")))
+    FsFromPath (Path.Combine(runtimeAsyncDir, "RuntimeAsyncEdgeCases.fs"))
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
     |> withOptimization optimize
@@ -171,11 +154,8 @@ let ``suspension lowers to the full Await body with no compiler state machine`` 
     ]
 
 [<Fact>]
-// The runtimeTask CE lowers `let!`/`do!` to Await calls without a compiler-generated state machine
-// (unlike the task { } builder). This ties the hypothetical library to the runtime-async contract.
 let ``the CE builder lowers to Await with no state machine`` () =
-    FsFromPath builderPath
-    |> withAdditionalSourceFile (FsSource ceStateMachineSource)
+    FSharp ceStateMachineSource
     |> withFSharpCoreShippedNet
     |> withLangVersionPreview
     |> compile
@@ -212,16 +192,11 @@ let ``runtime async avoids a forbidden tail prefix (C1)`` () =
     |> verifyILContains [ tailPrefixBody ]
     |> shouldSucceed
 
-// ===== composed CE case: async marking follows the emitted method, not F# source layout =====
-// A larger `outer` (nested `inner`, non-async code before/after, a runtimeTask CE combining
-// for/let!/use/try-finally/do!/if). Empirically the 0x2000 (MethodImplOptions.Async) bit lands on
-// the lifted `outer@<line>::Invoke` (0x2000, async) and RuntimeTaskBuilder::Run, never on
-// `M::outer`/`M::helper` — asserted via assertAsyncFlagOnLiftedClosureOnly (ildasm/.bsl can't show it).
 let private composedLayoutProgram = """
 module M
 open System
 open System.Threading.Tasks
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
 
 let helper x = x * 2
 
@@ -229,12 +204,12 @@ let outer (n: int) : Task<int> =
     let inner y = y + helper n            // nested, non-async local function
     let baseline = inner 10               // non-async code BEFORE the async part
     let work : Task<int> =
-        runtimeTask {
+        task {
             let mutable total = baseline
             for i in 1 .. n do
                 let! d = Task.FromResult i
                 total <- total + d
-            use _ = { new IDisposable with member _.Dispose() = () }
+            use _ = { new IAsyncDisposable with member _.DisposeAsync() = ValueTask(Task.Delay 1) }
             try
                 do! Task.Delay 1
                 total <- total + 1
@@ -243,57 +218,6 @@ let outer (n: int) : Task<int> =
             if total > 0 then return total else return -1
         }
     work                                  // non-async code AFTER the async part
-"""
-
-// Two CE-only IL shapes the direct-intrinsic .bsl program cannot show (it has no use/try-finally),
-// pinned as targeted contiguous slices of outer@<line>::Invoke rather than the whole lifted body.
-// Captured from the PR's fsc; ILChecker normalizes [System.Runtime] -> [runtime].
-
-// (1) `do!` suspends INSIDE the try; the finally does only arithmetic. Await in a finally is
-// forbidden (docs/runtime-async.md), so the suspension must sit in the protected region. The `use`
-// wraps it in an outer try/catch; the exhibit keeps both frames so the nesting is visible. It starts
-// at the `use` resource allocation because the checker anchors on the first line, and a bare `.try`
-// also matches the builder's own TryWith/TryFinally members.
-let private ceAwaitInsideTry = """
-      IL_0022:  newobj     instance void M/'outer@13-1'::.ctor()
-      IL_0027:  stloc.3
-      .try
-      {
-        .try
-        {
-          IL_0028:  ldc.i4.1
-          IL_0029:  call       class [runtime]System.Threading.Tasks.Task [runtime]System.Threading.Tasks.Task::Delay(int32)
-          IL_002e:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)
-          IL_0033:  ldloc.0
-          IL_0034:  ldc.i4.1
-          IL_0035:  add
-          IL_0036:  stloc.0
-          IL_0037:  leave.s    IL_003f
-
-        }  
-        finally
-        {
-          IL_0039:  ldloc.0
-          IL_003a:  ldc.i4.s   100
-          IL_003c:  add
-          IL_003d:  stloc.0
-          IL_003e:  endfinally
-        }  
-"""
-
-// (2) `use` disposal emitted AFTER the protected region: the compiler rewrite hoists the awaited
-// DisposeAsync out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
-let private ceDisposalHoist = """
-      IL_0070:  isinst     [runtime]System.IAsyncDisposable
-      IL_0075:  stloc.s    V_8
-      IL_0077:  ldloc.s    V_8
-      IL_0079:  brfalse.s  IL_008d
-
-      IL_007b:  ldloc.s    V_8
-      IL_007d:  stloc.s    V_9
-      IL_007f:  ldloc.s    V_9
-      IL_0081:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
-      IL_0086:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
 """
 
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
@@ -323,13 +247,20 @@ let private assertAsyncFlagOnLiftedClosureOnly (md: MetadataReader) =
 
 [<Fact>]
 let ``composed CE body: await inside try, hoisted disposal, async flag on the lifted method`` () =
-    FsFromPath builderPath
-    |> withAdditionalSourceFile (FsSource composedLayoutProgram)
+    FSharp composedLayoutProgram
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldSucceed
-    |> verifyILContains [ ceAwaitInsideTry; ceDisposalHoist ]
+    |> verifyILContains [
+        "AsyncHelpers::Await<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)"
+        "AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)"
+        "callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()"
+        "call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)"
+        "call       class [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo [runtime]System.Runtime.ExceptionServices.ExceptionDispatchInfo::Capture(class [runtime]System.Exception)"
+        "finally"
+    ]
+    |> verifyRuntimeAsyncExceptionRegions [ "outer@13::Invoke", true ]
     |> withMetadataReader assertAsyncFlagOnLiftedClosureOnly
 
 // DEMO (auduchinok's sequence-points baseline format): source spans interleaved with the IL that
@@ -472,8 +403,7 @@ let ``runtime async reports a byref local after suspension once`` () =
 [<Fact>]
 // The CE builder rejects a ref-struct local captured by its continuation lambda (FS0406).
 let ``ref struct across a suspension is rejected through the CE builder`` () =
-    FsFromPath builderPath
-    |> withAdditionalSourceFile (FsSource refStructAcrossAwaitCE)
+    FSharp refStructAcrossAwaitCE
     |> withFSharpCoreShippedNet
     |> withLangVersionPreview
     |> compile

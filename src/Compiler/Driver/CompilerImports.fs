@@ -28,6 +28,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -618,7 +619,7 @@ type ImportedAssembly =
     {
         ILScopeRef: ILScopeRef
         FSharpViewOfMetadata: CcuThunk
-        AssemblyAutoOpenAttributes: string list
+        AssemblyAutoOpenAttributes: AssemblyAutoOpen list
         AssemblyInternalsVisibleToAttributes: string list
 #if !NO_TYPEPROVIDERS
         IsProviderGenerated: bool
@@ -1134,7 +1135,32 @@ let GetCustomAttributesOfILModule (ilModule: ILModuleDef) =
     attrs.AsList()
 
 let GetAutoOpenAttributes ilModule =
-    ilModule |> GetCustomAttributesOfILModule |> List.choose TryFindAutoOpenAttr
+    ilModule
+    |> GetCustomAttributesOfILModule
+    |> List.choose (fun attr ->
+        match attr.Method.DeclaringType.TypeSpec.Name with
+        | ConditionalAutoOpenAttribute create ->
+            match decodeILAttribData attr with
+            | [ ILAttribElem.String(Some path); ILAttribElem.String(Some condition) ], _ -> Some(create (path, condition))
+            | _ -> None
+        | _ -> TryFindAutoOpenAttr attr |> Option.map OrdinaryAutoOpen)
+
+let SelectAssemblyAutoOpens (config: TcConfig) attributes =
+    let matches condition =
+        config.langVersion.SupportsFeature LanguageFeature.ConditionalAutoOpen
+        && Set.contains condition config.commandLineOptions
+
+    let retracted =
+        attributes
+        |> List.choose (function
+            | RetractAutoOpen(path, condition) when matches condition -> Some path
+            | _ -> None)
+
+    attributes
+    |> List.choose (function
+        | OrdinaryAutoOpen path when not (List.contains path retracted) -> Some path
+        | ConditionalAutoOpen(path, condition) when matches condition -> Some path
+        | _ -> None)
 
 let GetInternalsVisibleToAttributes ilModule =
     ilModule
@@ -1541,6 +1567,8 @@ and [<Sealed>] TcImports
     member _.Stamp = stamp
 
     member _.GetImportReuseKey ctok = (tcConfigP.Get ctok).importReuseKey
+
+    member _.GetTcConfig ctok = tcConfigP.Get ctok
 
     member tcImports.KeyPinnedLayer =
         match importsBase with
@@ -3125,7 +3153,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
                 tcEnv,
                 thisAssemblyName,
                 asm.FSharpViewOfMetadata,
-                asm.AssemblyAutoOpenAttributes,
+                SelectAssemblyAutoOpens (tcImports.GetTcConfig ctok) asm.AssemblyAutoOpenAttributes,
                 asm.AssemblyInternalsVisibleToAttributes
             ))
 

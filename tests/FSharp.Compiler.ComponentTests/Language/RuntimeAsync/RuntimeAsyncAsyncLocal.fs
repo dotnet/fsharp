@@ -4,7 +4,7 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+let private runtimeTask = Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions.task
 
 let private context = AsyncLocal<string>()
 

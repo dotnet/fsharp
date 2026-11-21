@@ -128,6 +128,8 @@
                                          default)
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
+--features:<string>                      Enable an opt-in feature of
+                                         referenced assemblies
 --always-inline[+|-]                     Always inline 'inline' functions
 
 

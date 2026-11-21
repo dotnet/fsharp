@@ -255,7 +255,7 @@ module ResponseFile =
         with e ->
             Choice2Of2 e
 
-let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
+let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args, collectOption) =
     use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
@@ -361,6 +361,9 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             processArg (responseFileOptions @ t)
         | opt :: t ->
             let option, optToken, argString = parseOption opt
+
+            if option <> "" then
+                collectOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
@@ -1198,6 +1201,8 @@ let languageFlags tcConfigB =
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
+
+        CompilerOption("features", tagString, OptionString ignore, None, Some(FSComp.SR.optsFeatures ()))
 
         CompilerOption(
             "always-inline",
@@ -2371,7 +2376,7 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
             if not (FileSystemUtils.isDll name) then
                 sourceFilesAcc.Add name
 
-        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
+        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv, tcConfigB.RecordCommandLineOption)
         sourceFilesAcc |> CheckAndReportSourceFileDuplicates
     with RecoverableException e ->
         errorRecovery e range0

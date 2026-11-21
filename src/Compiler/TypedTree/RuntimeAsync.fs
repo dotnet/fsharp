@@ -81,7 +81,9 @@ let private runtimeAsyncSuspensionMethodNames =
 let IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
     let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
 
-    ilMethRef.DeclaringTypeRef.Scope = coreLibScope
+    (match ilMethRef.DeclaringTypeRef.Scope, coreLibScope with
+     | ILScopeRef.Assembly actual, ILScopeRef.Assembly expected -> actual.EqualsIgnoringVersion expected
+     | actual, expected -> actual = expected)
     && ilMethRef.DeclaringTypeRef.FullName = runtimeAsyncHelpersTypeName
     && List.contains ilMethRef.Name runtimeAsyncSuspensionMethodNames
 
