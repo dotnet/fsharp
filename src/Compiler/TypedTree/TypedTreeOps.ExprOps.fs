@@ -1819,7 +1819,7 @@ module internal ExprTransforms =
 
     let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, argsl: Expr list, m) =
         match f with
-        | Expr.Let(bind, body, mLet, _) ->
+        | Expr.Let(bind, body, mLet, _) when not bind.Var.IsDecisionTreeJoin ->
             // Lift bindings out, i.e. (let x = e in f) y --> let x = e in f y
             // This increases the scope of 'x', which I don't like as it mucks with debugging
             // scopes of variables, but this is an important optimization, especially when the '|>'
@@ -1920,7 +1920,7 @@ module internal ExprTransforms =
 
     let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
         match delExpr with
-        | Expr.Let(bind, body, mLet, _) ->
+        | Expr.Let(bind, body, mLet, _) when not bind.Var.IsDecisionTreeJoin ->
             mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, tyargs, delInvokeArg, m))
         | NewDelegateExpr g (_, argvs & _ :: _, body, m, _) ->
             let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body

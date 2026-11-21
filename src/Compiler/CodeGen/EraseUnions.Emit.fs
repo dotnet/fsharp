@@ -414,6 +414,12 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
     | DiscriminateByTagField _ ->
         match cases with
         | [] -> cg.EmitInstr AI_pop
+        | _ when cases.Length <= 4 && 2 * cases.Length < 1 + List.max (List.map fst cases) ->
+            let tag = cg.GenLocal ilg.typ_Int32
+            cg.EmitInstrs [ mkGetTag ilg cuspec; mkStloc tag ]
+
+            for cidx, tg in cases do
+                cg.EmitInstrs [ mkLdloc tag; mkLdcInt32 cidx; I_brcmp(BI_beq, tg) ]
         | _ ->
             let dict = Dictionary<int, _>()
 
@@ -422,12 +428,12 @@ let private emitCaseSwitch ilg (cg: ICodeGen<'Mark>) access cuspec (layout: Unio
 
             let failLab = cg.GenerateDelayMark()
 
-            let emitCase i _ =
+            let emitCase i =
                 match dict.TryGetValue i with
                 | true, res -> res
                 | _ -> cg.CodeLabel failLab
 
-            let dests = Array.mapi emitCase cuspec.AlternativesArray
+            let dests = Array.init (1 + Seq.max dict.Keys) emitCase
             cg.EmitInstr(mkGetTag ilg cuspec)
             cg.EmitInstr(I_switch(Array.toList dests))
             cg.SetMarkToHere failLab

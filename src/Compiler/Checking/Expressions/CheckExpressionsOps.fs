@@ -96,6 +96,7 @@ let CompilePatternForMatch
             mExpr
             mMatch
             warnOnUnused
+            env.ePreserveMatchShape
             actionOnFailure
             (inputVal, generalizedTypars, inputExprOpt)
             clauses
@@ -334,13 +335,22 @@ let mkSeqTryWith (cenv: TcFileState) env m genTy origSeq exnFilter exnHandler =
 let inline mkSeqExprMatchClauses (pat, vspecs) innerExpr =
     [ MatchClause(pat, None, TTarget(vspecs, innerExpr, None), pat.Range) ]
 
-let compileSeqExprMatchClauses (cenv: TcFileState) env inputExprMark (pat: Pattern, vspecs) innerExpr inputExprOpt bindPatTy genInnerTy =
+let compileSeqExprMatchClauses
+    (cenv: TcFileState)
+    (env: TcEnv)
+    inputExprMark
+    (pat: Pattern, vspecs)
+    innerExpr
+    inputExprOpt
+    bindPatTy
+    genInnerTy
+    =
     let patMark = pat.Range
     let tclauses = mkSeqExprMatchClauses (pat, vspecs) innerExpr
 
     CompilePatternForMatchClauses
         cenv
-        env
+        env.WithPreservedMatchShape
         inputExprMark
         patMark
         false

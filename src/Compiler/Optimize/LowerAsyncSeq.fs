@@ -201,7 +201,7 @@ let TryConvert g amap (expr: Expr) =
         primMkApp (exprForValRef m value, value.Type) [ elementTy ] [ recipe ] m
 
     match stripDebugPoints recipe with
-    | Expr.Let(binding, body, range, _) -> Some(Evaluate(mkLetBind range binding (rebuild body)))
+    | Expr.Let(binding, body, range, _) when not binding.Var.IsDecisionTreeJoin -> Some(Evaluate(mkLetBind range binding (rebuild body)))
     | Expr.Sequential(first, rest, kind, range) -> Some(Evaluate(Expr.Sequential(first, rebuild rest, kind, range)))
     | Expr.Lambda(_, _, _, [ parameter ], _, _, _) as recipe when isUnitTy g parameter.Type ->
         let cancellationTokenVar, cancellationTokenExpr =
@@ -211,7 +211,7 @@ let TryConvert g amap (expr: Expr) =
         let rec stripRoot expr =
             match expr with
             | Seq g (inner, _) -> inner
-            | Expr.Let(binding, rest, range, _) -> mkLetBind range binding (stripRoot rest)
+            | Expr.Let(binding, rest, range, _) when not binding.Var.IsDecisionTreeJoin -> mkLetBind range binding (stripRoot rest)
             | Expr.Sequential(first, rest, kind, range) -> Expr.Sequential(first, stripRoot rest, kind, range)
             | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, stripRoot inner)
             | _ -> expr

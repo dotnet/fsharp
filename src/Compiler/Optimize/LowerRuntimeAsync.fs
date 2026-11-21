@@ -150,10 +150,10 @@ let private tryDefunctionalizeCallback (g: TcGlobals) (stackGuard: StackGuard) m
     let branches = ResizeArray<CallbackBranch>()
     let captures = Dictionary<Stamp, Val * Val>()
 
-    let rec defunctionalize expr =
-        stackGuard.Guard(fun () -> defunctionalizeCore expr)
+    let rec defunctionalize joins expr =
+        stackGuard.Guard(fun () -> defunctionalizeCore joins expr)
 
-    and defunctionalizeCore expr =
+    and defunctionalizeCore joins expr =
         match expr with
         | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
         | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
@@ -204,12 +204,13 @@ let private tryDefunctionalizeCallback (g: TcGlobals) (stackGuard: StackGuard) m
                     }
 
                 Some(List.foldBack (mkCompGenSequential m) assignments select)
-        | RuntimeAsyncConstructionPrefix(body, rebuild) -> defunctionalize body |> Option.map rebuild
+        | RuntimeAsyncDecisionJoin g joins (nextJoins, expanded) -> defunctionalize nextJoins expanded
+        | RuntimeAsyncConstructionPrefix(body, rebuild) -> defunctionalize joins body |> Option.map rebuild
         | Expr.Match(point, matchRange, tree, targets, m, _) ->
-            TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> defunctionalize)
+            TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> defunctionalize joins)
         | _ -> None
 
-    defunctionalize construction
+    defunctionalize ValMap.Empty construction
     |> Option.bind (fun construction ->
         let captures = List.ofSeq captures.Values
 

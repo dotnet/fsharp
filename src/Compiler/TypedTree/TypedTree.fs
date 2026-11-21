@@ -260,6 +260,14 @@ type ValFlags(flags: int64) =
 
     member x.WithOptimizeClosureIfNotInlined           = ValFlags(flags ||| 0b100000000000000000000000L)
 
+    member x.IsDecisionTreeJoin = (flags &&& 0x2000000L) <> 0L
+
+    member x.WithIsDecisionTreeJoin = ValFlags(flags ||| 0x2000000L)
+
+    member x.IsMatchJoinParameter = (flags &&& 0x4000000L) <> 0L
+
+    member x.WithIsMatchJoinParameter = ValFlags(flags ||| 0x4000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
@@ -268,7 +276,7 @@ type ValFlags(flags: int64) =
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
         // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
         // Clear the IsPinning, only used during compilation to track bindings that keep a fixed value pinned
-        let bits =                                    (flags       &&&   ~~~(0b10010011001100000000000L ||| 0b1000000000000000000000000L))
+        let bits =                                    (flags       &&&   ~~~(0b10010011001100000000000L ||| 0b1000000000000000000000000L ||| 0x6000000L))
         // Pickle ValInline.InlinedDefinition as ValInline.Always.
         if bits &&& 0b00000000000000110000L = 0L then
             bits ||| 0b00000000000000010000L
@@ -281,6 +289,7 @@ type ValFlags(flags: int64) =
     /// are therefore legacy metadata from compilers older than PR #19548, which used the same
     /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
     static member OfPickledBits(bits: int64) =
+        let bits = bits &&& ~~~0x6000000L
         if bits &&& 0b00000000000000110000L = 0L then
             ValFlags(bits ||| 0b00000000000000010000L)
         else
@@ -3206,6 +3215,10 @@ type Val =
 
     member x.OptimizeClosureIfNotInlined = x.val_flags.OptimizeClosureIfNotInlined
 
+    member x.IsDecisionTreeJoin = x.val_flags.IsDecisionTreeJoin
+
+    member x.IsMatchJoinParameter = x.val_flags.IsMatchJoinParameter
+
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
@@ -3462,6 +3475,11 @@ type Val =
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
     member x.SetOptimizeClosureIfNotInlined() = x.val_flags <- x.val_flags.WithOptimizeClosureIfNotInlined
+
+    member x.SetIsDecisionTreeJoin() =
+        x.val_flags <- x.val_flags.WithIsDecisionTreeJoin.WithInlineInfo ValInline.Never
+
+    member x.SetIsMatchJoinParameter() = x.val_flags <- x.val_flags.WithIsMatchJoinParameter
 
     member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
 

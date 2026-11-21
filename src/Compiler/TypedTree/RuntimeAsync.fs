@@ -26,8 +26,17 @@ let RebuildRuntimeAsyncDebugWrapper wrapper body =
 let (|RuntimeAsyncConstructionPrefix|_|) expr =
     match expr with
     | RuntimeAsyncDebugWrapper body -> ValueSome(body, RebuildRuntimeAsyncDebugWrapper expr)
-    | Expr.Let(binding, body, m, _) -> ValueSome(body, mkLetBind m binding)
+    | Expr.Let(binding, body, m, _) when not binding.Var.IsDecisionTreeJoin -> ValueSome(body, mkLetBind m binding)
     | Expr.Sequential(first, body, NormalSeq, m) -> ValueSome(body, fun body -> Expr.Sequential(first, body, NormalSeq, m))
+    | _ -> ValueNone
+
+[<return: Struct>]
+let (|RuntimeAsyncDecisionJoin|_|) g (joins: ValMap<Expr>) expr =
+    match expr with
+    | Expr.Let(binding, body, _, _) when binding.Var.IsDecisionTreeJoin -> ValueSome(joins.Add binding.Var binding.Expr, body)
+    | Expr.App(Expr.Val(value, _, _), _, [], args, m) when value.IsLocalRef && joins.ContainsVal value.Deref ->
+        let lambda = copyExprForExecutableSharing g joins[value.Deref]
+        ValueSome(joins, MakeApplicationAndBetaReduce g (lambda, tyOfExpr g lambda, [], args, m))
     | _ -> ValueNone
 
 let TryMapRuntimeAsyncMatchTargets (g: TcGlobals) matchInfo mapTarget =

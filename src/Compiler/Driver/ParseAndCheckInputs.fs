@@ -584,26 +584,9 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 let tokenizer, tokenizeOnly =
                     match tcConfig.tokenize with
                     | TokenizeOption.Unfiltered -> (fun () -> Lexer.token lexargs skipWhitespaceTokens lexbuf), true
-                    | TokenizeOption.Only ->
-                        LexFilter
-                            .LexFilter(
-                                tcConfig.compilingFSharpCore,
-                                Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf,
-                                tcConfig.tokenize = TokenizeOption.Debug
-                            )
-                            .GetToken,
-                        true
-                    | _ ->
-                        LexFilter
-                            .LexFilter(
-                                tcConfig.compilingFSharpCore,
-                                Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf,
-                                tcConfig.tokenize = TokenizeOption.Debug
-                            )
-                            .GetToken,
-                        false
+                    | tokenize ->
+                        LexFilter.LexFilter(tcConfig.compilingFSharpCore, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken,
+                        (tokenize = TokenizeOption.Only)
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then

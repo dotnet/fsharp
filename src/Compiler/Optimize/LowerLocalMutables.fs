@@ -76,6 +76,11 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 let DecideExpr cenv exprF noInterceptF z expr  =
     let g = cenv.g
     match stripDebugPoints expr with
+    | Expr.Let(bind, rest, _, _) when bind.Var.IsDecisionTreeJoin ->
+        match bind.Expr with
+        | SharedMatchFunction(_, body, _) -> exprF (exprF z body) rest
+        | _ -> error (InternalError("malformed decision-tree join", expr.Range))
+
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, bodyTy) ->
         let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
         let ty = mkMultiLambdaTy g m argvs bodyTy

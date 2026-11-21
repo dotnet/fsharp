@@ -294,7 +294,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let matchv, matchExpr =
                 CompilePatternForMatchClauses
                     cenv
-                    env
+                    env.WithPreservedMatchShape
                     inputExprMark
                     inputExprMark
                     true
@@ -356,7 +356,17 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty g.int_ty filterClauses
 
             let v2, handlerExpr =
-                CompilePatternForMatchClauses cenv env withRange withRange true FailFilter None g.exn_ty genOuterTy handlers
+                CompilePatternForMatchClauses
+                    cenv
+                    env.WithPreservedMatchShape
+                    withRange
+                    withRange
+                    true
+                    FailFilter
+                    None
+                    g.exn_ty
+                    genOuterTy
+                    handlers
 
             // The 'when' guards are compiled into both lambdas, so bind the value in whichever one rethrows it,
             // and in neither when nothing does - a handler without 'reraise()' then compiles exactly as before.
@@ -379,7 +389,9 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
-            let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
+
+            let resultExpr, genExprTy, tpenv =
+                TcExprOfUnknownType cenv env.WithPreservedMatchShape tpenv synYieldExpr
 
             if not isYield then
                 errorR (Error(FSComp.SR.tcUseYieldBangForMultipleResults (), m))

@@ -173,6 +173,9 @@ module internal ExprRemapping =
     /// Given a (curried) lambda expression, pull off its arguments
     val stripTopLambda: Expr * TType -> Typars * Val list list * Expr * TType
 
+    [<return: Struct>]
+    val (|SharedMatchFunction|_|): Expr -> (Val list * Expr * TType) voption
+
     /// A flag to govern whether ValReprInfo inference should be type-directed or syntax-directed when
     /// inferring from a lambda expression.
     [<RequireQualifiedAccess>]
@@ -231,6 +234,9 @@ module internal ExprRemapping =
     /// links to recursive-value uses still within their letrec scope so the copy also receives the inferred
     /// type arguments applied later by AdjustAndForgetUsesOfRecValue. See issue #20379.
     val copyExprKeepingRecursiveValLinks: TcGlobals -> ValCopyFlag -> Expr -> Expr
+
+    /// Freshen executable binders without losing pending generalization or initialization fixups.
+    val copyExprForExecutableSharing: TcGlobals -> Expr -> Expr
 
     /// Copy an entire implementation file using the given copying flags
     val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile

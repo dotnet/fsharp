@@ -7,6 +7,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 type RuntimeAsyncReturnInfo = { Body: Expr; TypeArgs: TType list }
 
@@ -17,6 +18,8 @@ val RebuildRuntimeAsyncDebugWrapper: wrapper: Expr -> body: Expr -> Expr
 
 /// Exposes one construction prefix and a rebuilder retaining its bindings, effects, or debug scope.
 val (|RuntimeAsyncConstructionPrefix|_|): expr: Expr -> (Expr * (Expr -> Expr)) voption
+
+val (|RuntimeAsyncDecisionJoin|_|): g: TcGlobals -> joins: ValMap<Expr> -> expr: Expr -> (ValMap<Expr> * Expr) voption
 
 /// Rebuilds a match with every target rewritten, or returns None if any target cannot be.
 val TryMapRuntimeAsyncMatchTargets:

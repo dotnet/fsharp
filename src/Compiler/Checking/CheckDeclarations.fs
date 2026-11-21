@@ -1380,7 +1380,9 @@ module MutRecBindingChecking =
                             let envInstance =
                                 match incrCtorInfoOpt with
                                 | None -> envInstance
-                                | Some incrCtorInfo -> List.foldBack (AddLocalValPrimitive g) incrCtorInfo.InstanceCtorArgs envInstance
+                                | Some incrCtorInfo ->
+                                    let envInstance = envInstance.WithReflectedDefinition(incrCtorInfo.InstanceCtorVal)
+                                    List.foldBack (AddLocalValPrimitive g) incrCtorInfo.InstanceCtorArgs envInstance
                             let envNonRec =
                                 match incrCtorInfoOpt with
                                 | None -> envNonRec
@@ -1797,7 +1799,8 @@ module MutRecBindingChecking =
         let g = cenv.g
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs
             (fun envAbove (MutRecDefnsPhase2DataForModule (moduleTyAcc, moduleEntity)) ->
-                MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+                let env = MakeInnerEnvWithAcc true envAbove moduleEntity.Id moduleTyAcc moduleEntity.ModuleOrNamespaceType.ModuleOrNamespaceKind
+                env.WithReflectedDefinition(moduleEntity))
 
             (fun envAbove decls ->
 
@@ -5958,6 +5961,10 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
+    let env =
+        match parent with
+        | Parent entity -> env.WithReflectedDefinition(entity.Deref)
+        | _ -> env
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds
     if cenv.compilingCanonicalFslibModuleType then
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -6055,6 +6062,7 @@ let emptyTcEnv g =
       eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
+      ePreserveMatchShape = false
       eInObjectExpr = false
       eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)

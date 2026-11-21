@@ -283,6 +283,10 @@ and CheckExprLinear (cenv: cenv) expr (ctxt: PermitByRefExpr) (tailCall: TailCal
         // tailcall
         CheckExprLinear cenv e2 ctxt tailCall
 
+    | Expr.Let(TBind(v, SharedMatchFunction(_, joinBody, _), _), body, _, _) when v.IsDecisionTreeJoin ->
+        CheckExpr cenv joinBody ctxt tailCall
+        CheckExprLinear cenv body ctxt tailCall
+
     | Expr.Let(TBind(v, _bindRhs, _) as bind, body, _, _) ->
         let isByRef = isByrefTy cenv.g v.Type
 
@@ -785,6 +789,9 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
             | Expr.Link exprRef -> checkTailCall insideSubBindingOrTry exprRef.Value
             | Expr.Lambda(bodyExpr = bodyExpr) -> checkTailCall insideSubBindingOrTry bodyExpr
             | Expr.DebugPoint(_debugPointAtLeafExpr, expr) -> checkTailCall insideSubBindingOrTry expr
+            | Expr.Let(binding = binding; bodyExpr = bodyExpr) when binding.Var.IsDecisionTreeJoin ->
+                checkTailCall insideSubBindingOrTry binding.Expr
+                checkTailCall insideSubBindingOrTry bodyExpr
             | Expr.Let(binding = binding; bodyExpr = bodyExpr) ->
                 // detect continuation shapes like MakeAsync
                 let isContinuation =

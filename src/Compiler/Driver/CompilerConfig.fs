@@ -361,7 +361,6 @@ type LStatus =
 type TokenizeOption =
     | AndCompile
     | Only
-    | Debug
     | Unfiltered
 
 type PackageManagerLine =

@@ -72,6 +72,7 @@ val internal CompilePattern:
     range ->
     // warn on unused?
     bool ->
+    preserveMatchShape: bool ->
     ActionOnFailure ->
     Val * Typars * Expr option ->
         // input type-checked syntax of pattern matching

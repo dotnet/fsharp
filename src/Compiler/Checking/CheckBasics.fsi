@@ -137,6 +137,9 @@ type TcEnv =
         /// Resolving a nameof operand, rather than an executable expression.
         eInNameOf: bool
 
+        /// Keep the existing match representation for quotation consumers.
+        ePreserveMatchShape: bool
+
         /// Are we checking the body of an object expression? Such a body has family access to the
         /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
         eInObjectExpr: bool
@@ -160,6 +163,14 @@ type TcEnv =
     member NameEnv: NameResolutionEnv
 
     member AccessRights: AccessorDomain
+
+    member WithPreservedMatchShape: TcEnv
+
+    member WithReflectedDefinition: flags: WellKnownValAttributes -> TcEnv
+
+    member WithReflectedDefinition: entity: Entity -> TcEnv
+
+    member WithReflectedDefinition: value: Val -> TcEnv
 
     /// Makes this environment available in a form that can be stored into a trait during solving.
     member TraitContext: ITraitContext option
