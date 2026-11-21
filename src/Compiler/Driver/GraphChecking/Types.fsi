@@ -83,6 +83,7 @@ type internal FileContent =
 type internal FileContentQueryState =
     { OwnNamespace: LongIdentifier option
       OpenedNamespaces: Set<LongIdentifier>
+      NamespacesOpenedInNestedModules: Set<LongIdentifier>
       FoundDependencies: Set<FileIndex> }
 
     static member Create: filesAtRoot: Set<FileIndex> -> FileContentQueryState
