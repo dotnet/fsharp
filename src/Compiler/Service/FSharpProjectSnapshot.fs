@@ -35,30 +35,6 @@ module internal Helpers =
         // TODO: is this robust enough?
         fileName[fileName.Length - 1] = 'i'
 
-    let addFileName (file: IFileSnapshot) = Md5Hasher.addString file.FileName
-
-    let addFileNameAndVersion (file: IFileSnapshot) =
-        addFileName file >> Md5Hasher.addBytes file.Version
-
-    let signatureHash projectBaseVersion (sourceFiles: IFileSnapshot seq) =
-        let mutable lastFile = ""
-
-        ((projectBaseVersion, Set.empty), sourceFiles)
-        ||> Seq.fold (fun (res, sigs) file ->
-            if file.IsSignatureFile then
-                lastFile <- file.FileName
-                res |> addFileNameAndVersion file, sigs |> Set.add file.FileName
-            else
-                let sigFileName = $"{file.FileName}i"
-
-                if sigs.Contains sigFileName then
-                    res |> addFileName file, sigs |> Set.remove sigFileName
-                else
-                    lastFile <- file.FileName
-                    res |> addFileNameAndVersion file, sigs)
-        |> fst,
-        lastFile
-
     let findOutputFileName options =
         options
         |> Seq.tryFind (fun (x: string) -> x.StartsWith("-o:"))
@@ -168,6 +144,17 @@ type internal FSharpParsedFile
 type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
+/// A file hashed by ProjectSnapshotBase: its key hash (the signature hash before it plus its name and version) and the fold
+/// state after it: the signature hash and the implementation files whose signature came before them, which add only their
+/// name to the signature hash. A named type rather than an anonymous record, which FCS metadata cannot carry.
+[<Struct; NoEquality; NoComparison>]
+type internal FileHashEntry =
+    {
+        KeyHash: byte array
+        SignatureHash: byte array
+        Signed: Set<string>
+    }
+
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot[], sourceFiles: 'T[]) =
@@ -223,32 +210,61 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
                 member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
             }
 
+    // Each file up to the largest requested index, hashed once.
+    let fileHashes = ResizeArray()
+
+    let rec addFileHashes index sigHash (signed: Set<string>) =
+        if fileHashes.Count <= index then
+            let file = sourceFiles[fileHashes.Count]
+            let nameHash = sigHash |> Md5Hasher.addString file.FileName
+            let keyHash = nameHash |> Md5Hasher.addBytes file.Version
+
+            let sigHash, signed =
+                if file.IsSignatureFile then
+                    keyHash, signed.Add(file.FileName.Substring(0, file.FileName.Length - 1))
+                elif signed.Contains file.FileName then
+                    nameHash, signed.Remove file.FileName
+                else
+                    keyHash, signed
+
+            fileHashes.Add
+                {
+                    KeyHash = keyHash
+                    SignatureHash = sigHash
+                    Signed = signed
+                }
+
+            addFileHashes index sigHash signed
+
+    let fileHash index =
+        lock fileHashes (fun () ->
+            match fileHashes.Count with
+            | 0 -> addFileHashes index baseVersion.Value Set.empty
+            | count ->
+                let last = fileHashes[count - 1]
+                addFileHashes index last.SignatureHash last.Signed
+
+            fileHashes[index])
+
     let signatureHash =
-        lazy (signatureHash baseVersion.Value (sourceFiles |> Seq.map (fun x -> x :> IFileSnapshot)))
+        lazy
+            (if sourceFiles.Length = 0 then
+                 baseVersion.Value
+             else
+                 (fileHash (sourceFiles.Length - 1)).SignatureHash)
 
     let signatureKey =
-        lazy (baseCacheKeyWith ("Signature", signatureHash.Value |> fst |> Md5Hasher.toString))
+        lazy (baseCacheKeyWith ("Signature", signatureHash.Value |> Md5Hasher.toString))
 
-    let lastFileHash =
-        lazy
-            (let lastFile = sourceFiles |> Array.last
-             let sigHash, f = signatureHash.Value
+    let fileKey index =
+        let entry = fileHash index
+        let fileName = sourceFiles[index].FileName
 
-             (if f = lastFile.FileName then
-                  sigHash
-              else
-                  sigHash |> Md5Hasher.addBytes lastFile.Version),
-             lastFile)
-
-    let lastFileKey =
-        lazy
-            (let hash, f = lastFileHash.Value
-
-             { new ICacheKey<_, _> with
-                 member _.GetLabel() = $"{f.FileName} ({projectConfig.Label})"
-                 member _.GetKey() = f.FileName, projectConfig.Identifier
-                 member _.GetVersion() = hash |> Md5Hasher.toString
-             })
+        { new ICacheKey<_, _> with
+            member _.GetLabel() = $"{fileName} ({projectConfig.Label})"
+            member _.GetKey() = fileName, projectConfig.Identifier
+            member _.GetVersion() = entry.KeyHash |> Md5Hasher.toString
+        }
 
     let sourceFileNames = lazy [ for x in sourceFiles -> x.FileName ]
 
@@ -334,8 +350,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
         |> Seq.max
 
     member _.FullVersion = fullHash.Value
-    member _.SignatureVersion = signatureHash.Value |> fst
-    member _.LastFileVersion = lastFileHash.Value |> fst
+    member _.SignatureVersion = signatureHash.Value
+    member _.LastFileVersion = (fileHash (sourceFiles.Length - 1)).KeyHash
 
     /// Version for parsing - doesn't include any references because they don't affect parsing (...right?)
     member _.ParsingVersion = projectConfig.VersionForParsing |> Md5Hasher.toString
@@ -350,11 +366,10 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     member _.SignatureKey = signatureKey.Value
 
     /// A key including the public surface or signature for this snapshot and the last file (even if it's not a signature file)
-    member _.LastFileKey = lastFileKey.Value
+    member _.LastFileKey = fileKey (sourceFiles.Length - 1)
 
-    //TODO: cache it here?
-    member this.FileKey(fileName: string) = this.UpTo(fileName).LastFileKey
-    member this.FileKey(index: FileIndex) = this.UpTo(index).LastFileKey
+    member this.FileKey(fileName: string) = fileKey (this.IndexOf fileName)
+    member _.FileKey(index: FileIndex) = fileKey index
 
     member this.FileKeyWithExtraFileSnapshotVersion(fileName: string) =
         let fileKey = this.FileKey fileName
