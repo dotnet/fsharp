@@ -3,6 +3,7 @@
 
 open FSharp.Compiler.CodeAnalysis
 open Xunit
+open FSharp.Test.Compiler
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.Symbols
 
@@ -94,3 +95,39 @@ module IsPrivateToFile =
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(6, 14, "let private f3 x = x + 1", ["f3"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
                 Assert.False(symbolUse.IsPrivateToFile))
         }
+
+module UnresolvedReferences =
+
+    let private compileLibrary name (cUnit: CompilationUnit) =
+        cUnit
+        |> withName name
+        |> withOutputDirectory (Some(TestFramework.createTemporaryDirectory ()))
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+        |> _.OutputPath.Value
+
+    [<Fact>]
+    let ``Type from a missing transitive reference is unresolved`` () =
+        let dependencyPath =
+            FSharp "module Dependency\ntype Gone() = class end"
+            |> compileLibrary "Dependency"
+
+        let libraryPath =
+            FSharp "module ModuleApi\nlet missing = Dependency.Gone()"
+            |> withOptions [ $"-r:{dependencyPath}" ]
+            |> compileLibrary "Library"
+
+        let checkResults =
+            FSharp "module Consumer"
+            |> withOptions [ $"-r:{libraryPath}" ]
+            |> typecheckResults
+
+        let library =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> List.find (fun assembly -> assembly.SimpleName = "Library")
+
+        let api = library.Contents.Entities |> Seq.find (fun entity -> entity.DisplayName = "ModuleApi")
+        let value = api.MembersFunctionsAndValues |> Seq.find (fun value -> value.DisplayName = "missing")
+
+        Assert.True(value.FullType.TypeDefinition.IsUnresolved)

@@ -2,6 +2,7 @@
 
 namespace rec FSharp.Compiler.Symbols
 
+open System.Collections.Concurrent
 open System.Collections.Generic
 
 open FSharp.Compiler
@@ -35,6 +36,12 @@ type internal SymbolEnv =
     member g: TcGlobals
 
     member tcValF: ConstraintSolver.TcValF
+
+    /// Symbols for values and members, shared by stamp
+    member MemberSymbolCache: ConcurrentDictionary<Stamp, obj>
+
+    /// Symbols for non-generic entities, shared by stamp
+    member EntitySymbolCache: ConcurrentDictionary<Stamp, obj>
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
 type FSharpAccessibility =
@@ -213,6 +220,9 @@ type FSharpEntity =
     inherit FSharpSymbol
 
     internal new: SymbolEnv * EntityRef -> FSharpEntity
+
+    /// The symbol for a non-generic entity, shared through the SymbolEnv
+    static member internal Shared: SymbolEnv * EntityRef -> FSharpEntity
 
     /// Get the enclosing entity for the definition
     member DeclaringEntity: FSharpEntity option
@@ -797,6 +807,9 @@ type FSharpMemberOrFunctionOrValue =
     inherit FSharpSymbol
     internal new: SymbolEnv * ValRef -> FSharpMemberOrFunctionOrValue
     internal new: SymbolEnv * Infos.MethInfo -> FSharpMemberOrFunctionOrValue
+
+    /// The symbol for a value or member, shared through the SymbolEnv
+    static member internal Shared: SymbolEnv * ValRef -> FSharpMemberOrFunctionOrValue
 
     /// Indicates if the member, function or value is in an unresolved assembly
     member IsUnresolved: bool
