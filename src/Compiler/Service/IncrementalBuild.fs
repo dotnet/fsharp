@@ -567,32 +567,7 @@ type FrameworkImportsCache(size) =
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
 
-        // If the tcGlobals was loaded from a different project, langVersion, realsig and pathMap may be
-        // different for each cached project.  So here we create a new tcGlobals, with the existing framework
-        // values and the updated realsig, langversion and pathMap
-        let tcGlobals =
-            if tcGlobals.langVersion <> tcConfig.langVersion
-                || tcGlobals.realsig <> tcConfig.realsig
-                || tcGlobals.pathMap <> tcConfig.pathMap then
-                    TcGlobals(
-                        tcGlobals.compilingFSharpCore,
-                        tcGlobals.ilg,
-                        tcGlobals.fslibCcu,
-                        tcGlobals.directoryToResolveRelativePaths,
-                        tcGlobals.isInteractive,
-                        tcGlobals.checkNullness,
-                        tcGlobals.useReflectionFreeCodeGen,
-                        tcGlobals.tryFindSysTypeCcuHelper,
-                        tcGlobals.emitDebugInfoInQuotations,
-                        tcGlobals.noDebugAttributes,
-                        tcConfig.pathMap,
-                        tcConfig.langVersion,
-                        tcConfig.realsig,
-                        tcConfig.compilationMode
-                    )
-
-            else
-                tcGlobals
+        let tcGlobals = TcGlobalsForTcConfig tcConfig tcGlobals
 
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
