@@ -108,14 +108,6 @@ module internal Adapters =
 
     let anonObjectTypes = tupleTypes |> Array.map snd
 
-    let tupleToAnonTypeMap =
-        let t = Dictionary<Type, Type>()
-
-        for k, v in tupleTypes do
-            t.[k] <- v
-
-        t
-
     let anonToTupleTypeMap =
         let t = Dictionary<Type, Type>()
 
@@ -173,18 +165,13 @@ module internal Adapters =
 
         walk i e e.Type
 
+    /// Reference and struct tuples of the same arity share one anonymous object type.
     let RewriteTupleType (ty: Type) conv =
-        // Tuples are generic, so lookup only for generic types
-        assert ty.IsGenericType
-        let generic = ty.GetGenericTypeDefinition()
-
-        match tupleToAnonTypeMap.TryGetValue generic with
-        | true, mutableTupleType ->
-            // Recursively transform type arguments
-            mutableTupleType.MakeGenericType(ty.GetGenericArguments() |> Array.toList |> conv |> Array.ofList)
-        | _ ->
-            assert false
-            failwith "unreachable"
+        assert (FSharpType.IsTuple ty)
+        let elementTypes = ty.GetGenericArguments()
+        let mutableTupleType = anonObjectTypes.[elementTypes.Length - 1]
+        // Recursively transform type arguments
+        mutableTupleType.MakeGenericType(elementTypes |> Array.toList |> conv |> Array.ofList)
 
     let (|RecordFieldGetSimplification|_|) (expr: Expr) =
         match expr with
@@ -206,7 +193,7 @@ module internal Adapters =
     /// that we can invert the process in final query results.
     [<NoComparison; NoEquality>]
     type ConversionDescription =
-        | TupleConv of ConversionDescription list
+        | TupleConv of isStruct: bool * ConversionDescription list
         | RecordConv of Type * ConversionDescription list
         | GroupingConv (* origKeyType: *) of Type (* origElemType: *) * Type * ConversionDescription
         | SeqConv of ConversionDescription
@@ -216,18 +203,18 @@ module internal Adapters =
     /// "yield" or "select", convert it to a type involving anonymous objects according to the conversion data.
     let rec ConvImmutableTypeToMutableType conv ty =
         match conv with
-        | TupleConv convs ->
+        | TupleConv(isStruct, convs) ->
             assert (FSharpType.IsTuple ty)
 
             match convs with
             | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
-                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ]
+                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(isStruct, x8 :: tail) ]
                 RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType els)
             | _ -> RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
         | RecordConv(_, convs) ->
             assert (isPartiallyImmutableRecord ty)
             let types = [| for f in FSharpType.GetRecordFields ty -> f.PropertyType |]
-            ConvImmutableTypeToMutableType (TupleConv convs) (FSharpType.MakeTupleType types)
+            ConvImmutableTypeToMutableType (TupleConv(false, convs)) (FSharpType.MakeTupleType types)
         | GroupingConv(_keyTy, _elemTy, conv) ->
             assert ty.IsGenericType
             assert (ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
@@ -324,7 +311,7 @@ module internal Adapters =
             let argExprsNow, argScripts =
                 exprs |> List.map (ProduceMoreMutables tipf) |> List.unzip
 
-            NewAnonymousObject argExprsNow, TupleConv argScripts
+            NewAnonymousObject argExprsNow, TupleConv(expr.Type.IsValueType, argScripts)
 
         // Replace immutable records by anonymous objects
         | Patterns.NewRecord(typ, args) when isPartiallyImmutableRecord typ ->
