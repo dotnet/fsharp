@@ -558,7 +558,9 @@ let EmptyParsedInput (fileName, isLastCompiland) =
         )
 
 /// Parse an input, drawing tokens from the LexBuffer
-let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger) =
+let private parseOneInputLexbuf
+    (tcConfig: TcConfig, diagnosticOptions, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    =
     use unwindbuildphase = UseBuildPhase BuildPhase.Parse
 
     try
@@ -617,7 +619,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 let res =
                     ParseInput(
                         (fun _ -> tokenizer ()),
-                        tcConfig.diagnosticsOptions,
+                        diagnosticOptions,
                         diagnosticsLogger,
                         lexbuf,
                         None,
@@ -638,6 +640,9 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
     with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
+
+let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger) =
+    parseOneInputLexbuf (tcConfig, tcConfig.diagnosticsOptions, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 let ValidSuffixes = FSharpSigFileSuffixes @ FSharpImplFileSuffixes
 
@@ -663,14 +668,14 @@ let parseInputStreamAux
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 let parseInputSourceTextAux
-    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    (tcConfig: TcConfig, diagnosticOptions, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
     =
     // Set up the LexBuffer for the file
     let lexbuf =
         UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, sourceText)
 
     // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    parseOneInputLexbuf (tcConfig, diagnosticOptions, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked) =
     // Get a stream reader for the file
@@ -696,10 +701,10 @@ let ParseOneInputStream
 
 /// Parse an input from source text
 let ParseOneInputSourceText
-    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    (tcConfig: TcConfig, diagnosticOptions, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
     =
     try
-        parseInputSourceTextAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
+        parseInputSourceTextAux (tcConfig, diagnosticOptions, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
     with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)

@@ -148,13 +148,22 @@ type internal FSharpFileSnapshotWithSource
 
 /// A source file snapshot with parsed syntax tree
 type internal FSharpParsedFile
-    (FileName: string, SyntaxTreeHash: byte array, SourceText: ISourceText, ParsedInput: ParsedInput, ParseDiagnostics: PhasedDiagnostic[])
-    =
+    (
+        FileName: string,
+        SyntaxTreeHash: byte array,
+        SourceText: ISourceText,
+        ParsedInput: ParsedInput,
+        ParseDiagnostics: PhasedDiagnostic[],
+        WarnScopes: FSharp.Compiler.WarnScopes.FileWarnScopes option
+    ) =
 
     member _.FileName = FileName
     member _.SourceText = SourceText
     member _.ParsedInput = ParsedInput
     member _.ParseDiagnostics = ParseDiagnostics
+
+    /// The warn scopes of the #nowarn and #warnon directives of the file, or None if the parse stored none.
+    member _.WarnScopes = WarnScopes
 
     member val IsSignatureFile = FileName |> isSignatureFile
 
