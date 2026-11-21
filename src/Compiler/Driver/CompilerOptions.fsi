@@ -49,6 +49,14 @@ val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
 val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
+/// Split a single command-line argument into the option without switch chars, the option token and the option argument.
+/// The token is empty when the argument is not an option.
+val ParseCompilerOption: option: string -> string * string * string
+
+/// Read the options listed in the response file named by an '@file' argument.
+/// On failure, returns the error to report instead.
+val ReadResponseFileOptions: arg: string -> Result<string list, exn>
+
 /// Parse and process a set of compiler options
 val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit
 
