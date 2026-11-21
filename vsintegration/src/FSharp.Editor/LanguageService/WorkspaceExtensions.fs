@@ -564,6 +564,13 @@ type Document with
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesAndLangVersionForEditingDocument(this)
 
+    /// A non-async call that gets the defines and F# language version of the given F# document, and nothing
+    /// where its project has not produced its options yet: a guess names what the project never asked for,
+    /// which a parse must not be kept under.
+    member this.TryGetFSharpParsingOptionsData() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.FSharpProjectOptionsManager.TryGetCompilationDefinesAndLangVersionForEditingDocument(this)
+
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
@@ -580,6 +587,12 @@ type Document with
             else
                 return! checker.ParseDocument(this, parsingOptions, userOpName)
         }
+
+    /// Parses the given F# document with the parsing options its project has already produced, or with defaults when
+    /// it has none yet: the only parse available while the project system is still loading. The defines can be the
+    /// wrong ones, so the tree describes a compilation that may never happen.
+    member this.GetFSharpQuickParseResultsAsync(userOpName) =
+        this.GetFSharpChecker().ParseDocument(this, this.GetFSharpQuickParsingOptions(), userOpName)
 
     /// Parses and checks the given F# document.
     member this.GetFSharpParseAndCheckResultsAsync(userOpName) =
