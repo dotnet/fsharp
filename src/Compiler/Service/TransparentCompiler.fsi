@@ -98,7 +98,7 @@ type internal Extensions =
     [<System.Runtime.CompilerServices.Extension>]
     static member Key:
         fileSnapshots: #IFileSnapshot array * ?extraKeyFlag: DependencyGraphType ->
-            ICacheKey<DependencyGraphType option * byte array, string>
+            ICacheKey<DependencyGraphType option * string, string>
 
 [<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
 type CacheSizes =
@@ -151,7 +151,7 @@ type internal CompilerCaches =
         AsyncMemoize<FSharpProjectIdentifier, string * string, int * TcImports * TcGlobals * TcInfo * Event<unit>>
 
     member DependencyGraph:
-        AsyncMemoize<DependencyGraphType option * byte array, string, Graph<NodeToTypeCheck> * Graph<FileIndex>>
+        AsyncMemoize<DependencyGraphType option * string, string, Graph<NodeToTypeCheck> * Graph<FileIndex>>
 
     member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, TcGlobals * TcImports>
 
