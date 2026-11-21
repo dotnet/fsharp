@@ -547,6 +547,41 @@ let ``Changing impl file doesn't invalidate an in-memory referenced project`` ()
 
     Assert.Equal(0, count)
 
+[<Fact>]
+let ``Recomputing a collected upstream file result does not mix it with cached downstream results`` () =
+    let project =
+        SyntheticProject.Create(
+            { sourceFile "A" [] with Source = "type T = { X: int }" },
+            { sourceFile "B" [ "A" ] with Source = "let value : ModuleA.T = { X = 1 }" },
+            { sourceFile "C" [ "A"; "B" ] with Source = "let ok : ModuleA.T = ModuleB.value" })
+
+    // Only the most recently used file result is held strongly, so the result for A can be collected
+    // while the result for B, which was checked against it, stays cached.
+    let cacheSizes =
+        { CacheSizes.Create 100 with
+            TcIntermediateKeepStrongly = 1
+            TcIntermediateKeepWeakly = 100 }
+
+    let checker =
+        FSharpChecker.Create(useTransparentCompiler = true, transparentCompilerCacheSizes = cacheSizes)
+
+    // Start from an unchecked project, so that checking B is what fills the cache.
+    let initialContext = { Project = project; Signatures = Map.empty; Cursor = None }
+    let builder = ProjectWorkflowBuilder(project, initialContext, checker = checker, useTransparentCompiler = true)
+
+    try
+        builder {
+            saveAll
+            checkFile "B" expectOk
+            withChecker (fun _ ->
+                GC.Collect()
+                GC.WaitForPendingFinalizers()
+                GC.Collect())
+            checkFile "C" expectOk
+        } |> ignore
+    finally
+        builder.DeleteProjectDir()
+
 [<Theory>]
 [<InlineData true>]
 [<InlineData false>]

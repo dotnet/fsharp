@@ -70,6 +70,9 @@ type internal TcInfo =
 
         stateContainsNodes: Set<NodeToTypeCheck>
 
+        /// Ids of the TcIntermediate results that were used to build this state
+        tcIntermediateIds: Set<int>
+
         sink: TcResultsSinkImpl list
     }
 
@@ -78,6 +81,9 @@ type internal TcInfo =
 [<NoEquality; NoComparison>]
 type internal TcIntermediate =
     {
+        /// Unique for each computation, so results computed from different upstream results can be told apart
+        id: int
+
         finisher: Finisher<NodeToTypeCheck, TcState, PartialResult>
         //tcEnvAtEndOfFile: TcEnv
 
@@ -749,6 +755,7 @@ type internal TransparentCompiler
                     sigNameOpt = None
                     graphNode = None
                     stateContainsNodes = Set.empty
+                    tcIntermediateIds = Set.empty
                     sink = []
                 }
 
@@ -959,6 +966,8 @@ type internal TransparentCompiler
         }
 
     let mutable BootstrapInfoIdCounter = 0
+
+    let mutable TcIntermediateIdCounter = 0
 
     /// Bootstrap info that does not depend source files
     let ComputeBootstrapInfoStatic (projectSnapshot: ProjectSnapshotBase<_>, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
@@ -1440,7 +1449,10 @@ type internal TransparentCompiler
 
         ignore dependencyGraph
 
-        let key = projectSnapshot.FileKey(index).WithExtraVersion(bootstrapInfo.Id)
+        // The upstream results are part of the key. If one of them is collected and recomputed, it declares new
+        // entities, and a result computed from the old one must not be combined with it.
+        let key =
+            projectSnapshot.FileKey(index).WithExtraVersion((bootstrapInfo.Id, prevTcInfo.tcIntermediateIds))
 
         let _label, _k, _version = key.GetLabel(), key.GetKey(), key.GetVersion()
 
@@ -1526,6 +1538,7 @@ type internal TransparentCompiler
 
                     return
                         {
+                            id = Interlocked.Increment &TcIntermediateIdCounter
                             finisher = finisher
                             moduleNamesDict = moduleNamesDict
                             tcDiagnosticsRev = [ errHandler.CollectedPhasedDiagnostics ]
@@ -1574,6 +1587,7 @@ type internal TransparentCompiler
                                 latestCcuSigForFile = Some ccuSigForFile
                                 graphNode = Some node
                                 stateContainsNodes = tcInfo.stateContainsNodes |> Set.add node
+                                tcIntermediateIds = tcInfo.tcIntermediateIds |> Set.add tcIntermediate.id
                                 sink =
                                     if collectSinks then
                                         tcIntermediate.sink :: tcInfo.sink
