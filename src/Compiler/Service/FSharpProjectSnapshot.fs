@@ -151,10 +151,17 @@ type internal FSharpParsedFile
     (FileName: string, SyntaxTreeHash: byte array, SourceText: ISourceText, ParsedInput: ParsedInput, ParseDiagnostics: PhasedDiagnostic[])
     =
 
+    let fileContent =
+        lazy (FSharp.Compiler.GraphChecking.FileContentMapping.mkFileContent ParsedInput)
+
     member _.FileName = FileName
     member _.SourceText = SourceText
     member _.ParsedInput = ParsedInput
     member _.ParseDiagnostics = ParseDiagnostics
+
+    /// What the dependency graph needs of the file. A parsed file is cached while its source does not change, so the
+    /// content is computed once, not for every graph the file is part of.
+    member _.FileContent = fileContent.Value
 
     member val IsSignatureFile = FileName |> isSignatureFile
 
