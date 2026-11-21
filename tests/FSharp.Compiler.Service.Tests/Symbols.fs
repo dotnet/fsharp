@@ -2039,3 +2039,36 @@ module Hidden =
             let secret = hidden.NestedEntities |> Seq.exactlyOne
             stampOf (Option.get hidden.DeclaringEntity) |> shouldEqual (stampOf test)
             stampOf (Option.get secret.DeclaringEntity) |> shouldEqual (stampOf hidden)
+
+module PropertyCollectorDeterminism =
+
+    [<Fact>]
+    let ``Entity property members are returned in deterministic declaration order`` () =
+        let source = """
+module PropertyOrderTest
+
+type Sample() =
+    member _.Zebra = 1
+    member _.Alpha with get () = 2 and set (_: int) = ()
+    member _.Middle = 3
+    member val Omega = 4 with get, set
+    static member Beta = 5
+    member _.Gamma = 6
+    member _.Delta with set (_: int) = ()
+    member _.Theta = 7
+    member _.Sigma = 8
+    member _.Kappa = 9
+    member _.Lambda = 10
+    member _.Epsilon = 11
+"""
+        let _, checkResults = getParseAndCheckResults source
+        let entity = checkResults.PartialAssemblySignature.FindEntityByPath [ "PropertyOrderTest"; "Sample" ] |> Option.get
+
+        let propertyNames =
+            entity.MembersFunctionsAndValues
+            |> Seq.filter (fun m -> m.IsProperty && not m.IsPropertyGetterMethod && not m.IsPropertySetterMethod)
+            |> Seq.map (fun m -> m.DisplayName)
+            |> Seq.toList
+
+        propertyNames
+        |> shouldEqual [ "Zebra"; "Alpha"; "Middle"; "Omega"; "Beta"; "Gamma"; "Delta"; "Theta"; "Sigma"; "Kappa"; "Lambda"; "Epsilon" ]
