@@ -87,6 +87,10 @@ module Impl =
     let makeReadOnlyCollection (arr: seq<'T>) =
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
 
+    // For a fresh array nothing else holds, wrap without copying as makeReadOnlyCollection does.
+    let wrapReadOnly (arr: 'T[]) =
+        System.Collections.ObjectModel.ReadOnlyCollection<_>(arr) :> IList<_>
+
     let makeXmlDoc (doc: XmlDoc) =
         FSharpXmlDoc.FromXmlText doc
 
@@ -455,14 +459,19 @@ module Impl =
         | ValueNone -> mkLocalEntityRef entity
         | ValueSome eref -> eref
 
+    // Check IsLocalRef instead of matching | ERefLocal | ERefNonLocal | to avoid Choice allocations on every call.
     let entityIsUnresolved(entity:EntityRef) =
-        match entity with
-        | ERefNonLocal(NonLocalEntityRef(ccu, _)) ->
-            ccu.IsUnresolvedReference && entity.TryDeref.IsNone
-        | _ -> false
+        not entity.IsLocalRef && entity.nlr.Ccu.IsUnresolvedReference && entity.TryDeref.IsNone
 
-    let checkEntityIsResolved(entity:EntityRef) =
-        if entityIsUnresolved entity then
+    // Equivalent to FSharpEntity's isResolvedAndFSharp for callers holding only an EntityRef.
+    let entityIsResolvedAndFSharp (cenv: SymbolEnv) (entity:EntityRef) =
+        if entity.IsLocalRef then cenv.thisCcu.IsFSharp
+        else
+            let ccu = entity.nlr.Ccu
+            not ccu.IsUnresolvedReference && ccu.IsFSharp
+
+    let checkEntityIsResolved(entity:EntityRef) = 
+        if entityIsUnresolved entity then 
             let poorQualifiedName =
                 if entity.nlr.AssemblyName = "mscorlib" then
                     entity.nlr.DisplayName + ", mscorlib"
@@ -750,10 +759,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     // If an entity is in an assembly not available to us in the resolution set,
     // we generally return "false" from predicates like IsClass, since we know
     // nothing about that type.
-    let isResolvedAndFSharp() =
-        match entity with
-        | ERefNonLocal(NonLocalEntityRef(ccu, _)) -> not ccu.IsUnresolvedReference && ccu.IsFSharp
-        | _ -> cenv.thisCcu.IsFSharp
+    let isResolvedAndFSharp() = entityIsResolvedAndFSharp cenv entity
 
     let isUnresolved() = entityIsUnresolved entity
     let isResolved() = not (isUnresolved())
@@ -2055,6 +2061,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let mkMethSym minfo = FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
     let mkEventSym einfo = FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
 
+    // Cached per instance so repeated inspections do not recompute parameter wrapper lists.
+    let mutable curriedParameterGroups: IList<IList<FSharpParameter>> | null = null
+
     new (cenv, vref) = FSharpMemberFunctionOrValue(cenv, V vref, Item.Value vref)
 
     new (cenv, minfo: MethInfo) =
@@ -2532,9 +2541,17 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.CurriedParameterGroups =
         checkIsResolved()
+        match curriedParameterGroups with
+        | null ->
+            let groups = x.ComputeCurriedParameterGroups()
+            curriedParameterGroups <- groups
+            groups
+        | groups -> groups
+
+    member private x.ComputeCurriedParameterGroups() : IList<IList<FSharpParameter>> =
         match d with
         | P p ->
-            [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do
+            [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
                     let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
@@ -2554,8 +2571,8 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             [ for argTys in m.GetParamDatas(cenv.amap, range0, m.FormalMethodInst) do
                  yield
                    [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argTys do
-                // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
-                // either .NET or F# parameters
+                        // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
+                        // either .NET or F# parameters
                         let argInfo: ArgReprInfo = { Name=nmOpt; Attribs=WellKnownValAttribs.Empty; OtherRange=None }
                         let m =
                             match nmOpt with
@@ -2953,15 +2970,29 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
 type FSharpType(cenv, ty:TType) =
 
-    let isUnresolved() =
-       DiagnosticsLogger.protectAssemblyExploration true <| fun () ->
+    // Resolve the type definition reference directly without constructing an FSharpEntity wrapper.
+    let tryTypeDefinitionRef() =
         match stripTyparEqns ty with
-        | TType_app (tcref, tyargs, _) -> FSharpEntity(cenv, tcref, tyargs).IsUnresolved
-        | TType_measure (Measure.Const(tyconRef= tcref)) ->  FSharpEntity(cenv, tcref).IsUnresolved
-        | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr).IsUnresolved
-        | TType_measure (Measure.One _) ->  FSharpEntity(cenv, cenv.g.measureone_tcr).IsUnresolved
-        | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv, cenv.g.measureinverse_tcr).IsUnresolved
-        | _ -> false
+        | TType_app (tcref, _, _)
+        | TType_measure (Measure.Const(tyconRef= tcref)) -> ValueSome tcref
+        | TType_measure (Measure.Prod _) -> ValueSome cenv.g.measureproduct_tcr
+        | TType_measure (Measure.One _) -> ValueSome cenv.g.measureone_tcr
+        | TType_measure (Measure.Inv _) -> ValueSome cenv.g.measureinverse_tcr
+        | _ -> ValueNone
+
+    // Cached per instance, as every type predicate checks resolution first. 0 = uncomputed, 1 = resolved, 2 = unresolved.
+    let mutable unresolvedState = 0
+    let mutable genericArguments: IList<FSharpType> | null = null
+
+    let isUnresolved() =
+        if unresolvedState = 0 then
+            let unresolved =
+                DiagnosticsLogger.protectAssemblyExploration true <| fun () ->
+                    match tryTypeDefinitionRef() with
+                    | ValueSome tcref -> entityIsUnresolved tcref
+                    | ValueNone -> false
+            unresolvedState <- if unresolved then 2 else 1
+        unresolvedState = 2
 
     let isResolved() = not (isUnresolved())
 
@@ -3060,17 +3091,24 @@ type FSharpType(cenv, ty:TType) =
         | _ -> false
 
     member _.GenericArguments =
-       protect <| fun () ->
-        match stripTyparEqns ty with
-        | TType_anon (_, tyargs)
-        | TType_app (_, tyargs, _)
-        | TType_tuple (_, tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection)
-        | TType_fun(domainTy, rangeTy, _) -> [| FSharpType(cenv, domainTy); FSharpType(cenv, rangeTy) |] |> makeReadOnlyCollection
-        | TType_measure (Measure.Const _) ->  [| |] |> makeReadOnlyCollection
-        | TType_measure (Measure.Prod(measure1= t1; measure2 = t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> makeReadOnlyCollection
-        | TType_measure (Measure.One _) ->  [| |] |> makeReadOnlyCollection
-        | TType_measure (Measure.Inv t1) ->  [| FSharpType(cenv, TType_measure t1) |] |> makeReadOnlyCollection
-        | _ -> invalidOp "not a named type"
+       match genericArguments with
+       | null ->
+           protect <| fun () ->
+            let args =
+             match stripTyparEqns ty with
+             | TType_anon (_, tyargs)
+             | TType_app (_, tyargs, _)
+             | TType_tuple (_, tyargs) -> System.Collections.ObjectModel.ReadOnlyCollection<_>([| for ty in tyargs -> FSharpType(cenv, ty) |]) :> IList<_>
+             // Wrap fresh arrays directly since makeReadOnlyCollection would copy them.
+             | TType_fun(domainTy, rangeTy, _) -> [| FSharpType(cenv, domainTy); FSharpType(cenv, rangeTy) |] |> wrapReadOnly
+             | TType_measure (Measure.Const _) ->  [| |] |> wrapReadOnly
+             | TType_measure (Measure.Prod(measure1= t1; measure2 = t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> wrapReadOnly
+             | TType_measure (Measure.One _) ->  [| |] |> wrapReadOnly
+             | TType_measure (Measure.Inv t1) ->  [| FSharpType(cenv, TType_measure t1) |] |> wrapReadOnly
+             | _ -> invalidOp "not a named type"
+            genericArguments <- args
+            args
+       | args -> args
 
 (*
     member _.ProvidedArguments =
@@ -3081,8 +3119,13 @@ type FSharpType(cenv, ty:TType) =
                 error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText(piece), range0))
 *)
 
-    member ty.IsAbbreviation =
-       isResolved() && ty.HasTypeDefinition && ty.TypeDefinition.IsFSharpAbbreviation
+    member _.IsAbbreviation =
+       // Equivalent to HasTypeDefinition && TypeDefinition.IsFSharpAbbreviation without allocating FSharpEntity.
+       isResolved() &&
+       protect <| fun () ->
+        match tryTypeDefinitionRef() with
+        | ValueSome tcref -> entityIsResolvedAndFSharp cenv tcref && tcref.IsTypeAbbrev
+        | ValueNone -> false
 
     member _.AbbreviatedType =
        protect <| fun () -> FSharpType(cenv, stripTyEqns cenv.g ty)

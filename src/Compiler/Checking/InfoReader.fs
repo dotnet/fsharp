@@ -1003,6 +1003,17 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member infoReader.GetIntrinsicMethInfosOfType optFilter ad allowMultiIntfInst findFlag m ty =
         infoReader.GetIntrinsicMethInfoSetsOfType optFilter ad allowMultiIntfInst findFlag m ty |> List.concat
 
+    /// Avoid override and hiding comparisons when no raw method can be a static abstract slot.
+    member infoReader.HasIntrinsicStaticAbstractMethod ad m ty =
+        let isStaticAbstract (meth: MethInfo) = not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember
+        let methodSets = infoReader.GetRawIntrinsicMethodSetsOfType(None, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+
+        methodSets |> List.exists (List.exists isStaticAbstract) &&
+        (methodSets
+         |> FilterOverridesOfMethInfos IgnoreOverrides g amap m
+         |> ExcludeHiddenOfMethInfosImpl g amap m
+         |> List.exists isStaticAbstract)
+
     /// Get the flattened list of intrinsic properties in the hierarchy
     member infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty =
         infoReader.GetIntrinsicPropInfoSetsOfType optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat

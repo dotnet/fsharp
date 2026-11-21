@@ -4740,9 +4740,7 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let ty = generalizedTyconRef g tcref
 
     if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
-        let meths = IntrinsicMethInfosOfType cenv.infoReader None env.eAccessRights AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
-
-        if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
+        if cenv.infoReader.HasIntrinsicStaticAbstractMethod env.eAccessRights m ty then
             let tcref = tcrefOfAppTy g ty
             warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(richTextOfEntityRefName tcref tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 

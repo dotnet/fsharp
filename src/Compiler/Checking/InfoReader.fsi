@@ -119,6 +119,10 @@ type FindMemberFlag =
 /// We create one of these for each file we typecheck.
 type InfoReader =
 
+    /// Tests for a visible intrinsic static abstract method, including inherited methods.
+    /// Override and hiding checks are skipped when the raw hierarchy has no candidate slots.
+    member HasIntrinsicStaticAbstractMethod: ad: AccessorDomain -> m: range -> ty: TType -> bool
+
     /// Get the declared IL fields of a type, not including inherited fields
     new: g: TcGlobals * amap: ImportMap -> InfoReader
 
