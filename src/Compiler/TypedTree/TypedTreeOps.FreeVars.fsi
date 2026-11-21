@@ -278,6 +278,10 @@ module internal MemberRepresentation =
             showMemberContainers: bool
             shortConstraints: bool
             useColonForReturnType: bool
+            /// If set, functions, methods and constructors with more than one parameter are rendered with one parameter per line
+            multilineParameters: bool
+            /// If set, attributes of parameters and .NET code analysis attributes of methods and their return values are not rendered
+            suppressAttributesInSignatures: bool
             showAttributes: bool
             showCsharpCodeAnalysisAttributes: bool
             showOverrides: bool

@@ -193,6 +193,7 @@
     <Compile Include="Tooltip\TooltipTests.Generics.fs" />
     <Compile Include="Tooltip\TooltipTests.Members.fs" />
     <Compile Include="Tooltip\TooltipTests.Modules.fs" />
+    <Compile Include="Tooltip\TooltipTests.Options.fs" />
     <Compile Include="Tooltip\TooltipTests.Properties.fs" />
     <Compile Include="Tooltip\TooltipTests.Queries.fs" />
     <Compile Include="Tooltip\TooltipTests.Records.fs" />

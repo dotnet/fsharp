@@ -196,6 +196,9 @@ module CheckResultsExtensions =
         member this.GetTooltip(context: ResolveContext, width) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, width)
 
+        member this.GetTooltip(context: ResolveContext, options: FSharpToolTipOptions) =
+            this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, options = options)
+
         member this.GetDeclarationLocation(context: ResolveContext) =
             this.GetDeclarationLocation(context.Pos.Line, context.Pos.Column, context.LineText, context.Names)
 

@@ -2124,7 +2124,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetKeywordTooltip(Microsoft.FSharp.Collections.FSharpList`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature FileSignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_FileSignature()
@@ -2401,6 +2401,23 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Microsoft.FSharp.Collections.FShar
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String get_FileName()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean MultilineParameters
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean ShowAttributes
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean get_MultilineParameters()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Boolean get_ShowAttributes()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions Default
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions get_Default()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpToolTipOptions: Void .ctor(Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(System.Object)
