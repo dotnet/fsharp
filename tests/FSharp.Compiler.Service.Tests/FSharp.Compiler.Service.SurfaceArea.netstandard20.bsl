@@ -2501,6 +2501,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjec
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromCommandLineArgs(System.String[], System.String, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromResponseFile(System.IO.FileInfo, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(FSharpFileSnapshot[])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(FSharpReferencedProjectSnapshot[])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpReferencedProjectSnapshot[] ReferencedProjects
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpReferencedProjectSnapshot[] get_ReferencedProjects()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
