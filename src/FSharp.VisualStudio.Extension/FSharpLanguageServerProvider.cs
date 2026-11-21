@@ -12,7 +12,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Compiler.CodeAnalysis.Workspace;
-using FSharp.Compiler.Diagnostics;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
@@ -47,31 +46,8 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true,
             ProjectContextProvider = true,
-            DiagnosticProvider =
-                config.EnabledFeatures.Diagnostics ?
-
-            new()
-            {
-                SupportsMultipleContextsDiagnostics = true,
-                DiagnosticKinds = [
-                        // Support a specialized requests dedicated to task-list items.  This way the client can ask just
-                        // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
-                        // the task list would not be visible.
-                        //VSInternalDiagnosticKind.Task,
-                        // Dedicated request for workspace-diagnostics only.  We will only respond to these if FSA is on.
-                        VSInternalDiagnosticKind.Syntax,
-                        // Fine-grained diagnostics requests.  Importantly, this separates out syntactic vs semantic
-                        // requests, allowing the former to quickly reach the user without blocking on the latter.  In a
-                        // similar vein, compiler diagnostics are explicitly distinct from analyzer-diagnostics, allowing
-                        // the former to appear as soon as possible as they are much more critical for the user and should
-                        // not be delayed by a slow analyzer.
-                        //new("Semantic"),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
-                        //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
-                    ]
-            } : null,
+            DiagnosticOptions = value.DiagnosticOptions,
             SemanticTokensOptions = config.EnabledFeatures.SemanticHighlighting ? new()
             {
                 Legend = new()
@@ -95,27 +71,10 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
     }
 }
 
-internal class VsDiagnosticsHandler
-    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
-      IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
+internal class VsProjectContextHandler
+    : IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
-
-    [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
-    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDiagnosticParams request, FSharpRequestContext context, CancellationToken cancellationToken)
-    {
-        var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
-
-        var vsReport = new VSInternalDiagnosticReport
-        {
-            ResultId = report.ResultId,
-            //Identifier = 1,
-            //Version = 1,
-            Diagnostics = [.. report.Diagnostics.Select(FSharpDiagnosticExtensions.ToLspDiagnostic)]
-        };
-
-        return [vsReport];
-    }
 
     [LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)]
     public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
@@ -375,7 +334,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, serverConfig, (serviceCollection) =>
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
-            serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
+            serviceCollection.AddSingleton<IMethodHandler, VsProjectContextHandler>();
         });
 
         var solutions = await ws.QuerySolutionAsync(
