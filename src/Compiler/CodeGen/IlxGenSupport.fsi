@@ -17,7 +17,8 @@ val mkLdfldMethodDef:
     customAttrs: ILAttribute list ->
         ILMethodDef
 
-val GetDynamicDependencyAttribute: g: TcGlobals -> memberTypes: int32 -> ilType: ILType -> ILAttribute
+/// Empty under --reflectionfree.
+val GetDynamicDependencyAttributes: g: TcGlobals -> memberTypes: int32 -> ilType: ILType -> ILAttribute list
 val GenReadOnlyModReqIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ilTy: ILType -> ILType
 val GenAdditionalAttributesForTy: g: TcGlobals -> ty: TypedTree.TType -> ILAttribute list
 val GetReadOnlyAttribute: g: TcGlobals -> ILAttribute

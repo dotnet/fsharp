@@ -210,7 +210,7 @@ let private emitDebugProxyType (ctx: TypeDefContext) (altTy: ILType) (fields: Il
             [ mkILParamNamed ("obj", altTy) ],
             mkMethodBody (false, [], 3, debugProxyCode, None, imports)
         ))
-            .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ])
+            .With(customAttrs = mkILCustomAttrs (GetDynamicDependencyAttributes g DynamicDependencyPublicMembers baseTy))
         |> ctx.stamping.stampMethodAsGenerated
 
     let debugProxyGetterMeths =
@@ -594,7 +594,7 @@ let private emitNestedAlternativeType (ctx: TypeDefContext) (num: int) (alt: Ilx
 
             let basicCtorMeth =
                 (mkILStorageCtor (basicCtorInstrs, altTy, basicCtorFields, basicCtorAccess, attr, imports))
-                    .With(customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ])
+                    .With(customAttrs = mkILCustomAttrs (GetDynamicDependencyAttributes g DynamicDependencyPublicMembers baseTy))
                 |> ctx.stamping.stampMethodAsGenerated
 
             let attrs =
@@ -791,7 +791,7 @@ let private emitRootClassFields (ctx: TypeDefContext) (tagFieldsInObject: (strin
                                 cud.DebugImports
                             ))
                                 .With(
-                                    customAttrs = mkILCustomAttrs [ GetDynamicDependencyAttribute g DynamicDependencyPublicMembers baseTy ]
+                                    customAttrs = mkILCustomAttrs (GetDynamicDependencyAttributes g DynamicDependencyPublicMembers baseTy)
                                 )
                             |> ctx.stamping.stampMethodAsGenerated
                         ]
@@ -854,13 +854,7 @@ let private emitRootConstructors (ctx: TypeDefContext) rootCaseFields tagFieldsI
                 cud.DebugPoint,
                 cud.DebugImports
             ))
-                .With(
-                    customAttrs =
-                        mkILCustomAttrs
-                            [
-                                GetDynamicDependencyAttribute g DynamicDependencyAllCtorsAndPublicMembers baseTy
-                            ]
-                )
+                .With(customAttrs = mkILCustomAttrs (GetDynamicDependencyAttributes g DynamicDependencyAllCtorsAndPublicMembers baseTy))
             |> ctx.stamping.stampMethodAsGenerated
         ]
 

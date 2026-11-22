@@ -332,3 +332,30 @@ let ``No debug display attribute`` () =
     |> compile
     |> shouldSucceed
     |> verifyILNotPresent [ "[runtime]System.Diagnostics.DebuggerDisplayAttribute" ]
+
+let private trimmableTypes =
+    FSharp """
+module Test
+type MyRecord = { A: int }
+[<Struct>] type MyStructRecord = { SA: int }
+type MyUnion = | A of int | B of string
+type MyNullaryUnion = | N1 | N2
+[<Struct>] type MyStructUnion = | SU1 of a: int | SU2 of b: string | SU3
+let anon = {| X = 1 |}
+let structAnon = struct {| Y = 1 |}
+    """
+
+[<Fact>]
+let ``No DynamicDependency attributes on record, union and anonymous record constructors`` () =
+    trimmableTypes
+    |> withOptions [ "--reflectionfree" ]
+    |> compile
+    |> shouldSucceed
+    |> verifyILNotPresent [ "DynamicDependencyAttribute" ]
+
+[<Fact>]
+let ``DynamicDependency attributes are kept without --reflectionfree`` () =
+    trimmableTypes
+    |> compile
+    |> shouldSucceed
+    |> verifyILPresent [ "DynamicDependencyAttribute" ]
