@@ -923,7 +923,7 @@ module QueryExecutionOverIQueryable =
         (query { for i in db do 
                  join j in db on (i.Name = j.Name)
                  select (i.Cost + j.Cost) }) 
-        "db.Join(db, i => i.Name, j => j.Name, (i, j) => new AnonymousObject`2(Item1 = i, Item2 = j)).Select(_arg1 => new AnonymousObject`2(Item1 = _arg1.Item1, Item2 = _arg1.Item2)).Select(tupledArg => (tupledArg.Item1.Cost + tupledArg.Item2.Cost))"
+        "db.Join(db, i => i.Name, j => j.Name, (i, j) => new AnonymousObject`2(Item1 = i, Item2 = j)).Select(tupledArg => (tupledArg.Item1.Cost + tupledArg.Item2.Cost))"
 
 
     checkLinqQueryText "lqtcnewnc06yh9Q1b" 
@@ -931,7 +931,7 @@ module QueryExecutionOverIQueryable =
                  let icost = i.Cost
                  join j in db on (i.Name = j.Name)
                  select (icost + j.Cost) }) 
-          "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Cost)).Join(db, tupledArg => tupledArg.Item1.Name, j => j.Name, (tupledArg, j) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = j)).Select(_arg2 => new AnonymousObject`3(Item1 = _arg2.Item1, Item2 = _arg2.Item2, Item3 = _arg2.Item3)).Select(tupledArg => (tupledArg.Item2 + tupledArg.Item3.Cost))",
+          "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Cost)).Join(db, tupledArg => tupledArg.Item1.Name, j => j.Name, (tupledArg, j) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = j)).Select(tupledArg => (tupledArg.Item2 + tupledArg.Item3.Cost))",
   
 //"db.Join(db, i => i.Name, j => j.Name, (i, j) => new MutableTuple`2() {Item1 = i, Item2 = j}).Select(_arg => new MutableTuple`2() {Item1 = _arg.Item1, Item2 = _arg.Item2}).Select(tupledArg => (tupledArg.Item1.Cost + tupledArg.Item2.Cost))"
 

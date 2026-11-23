@@ -475,7 +475,14 @@ module LeafExpressionConverter =
 
         | TupleGet(arg, n) ->
              let argP = ConvExprToLinqInContext env arg
-             let rec build ty argP n =
+             let rec build (ty: Type) argP n =
+                 // A struct tuple holds its elements in fields, which PreComputeTuplePropertyInfo cannot return
+                 if ty.IsValueType then
+                     if n < 7 then
+                         Expression.Field(argP, ty.GetField("Item" + string (n + 1))) |> asExpr
+                     else
+                         build (ty.GetGenericArguments().[7]) (Expression.Field(argP, ty.GetField "Rest") |> asExpr) (n - 7)
+                 else
                  match FSharpValue.PreComputeTuplePropertyInfo(ty, n) with
                  | propInfo, None ->
                      Expression.Property(argP, propInfo) |> asExpr
