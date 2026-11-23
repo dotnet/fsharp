@@ -38,49 +38,52 @@ let copyHelloWorld cfgDirectory =
         DirectoryInfo(cfgDirectory + "\\..").CreateSubdirectory(helloDir.Name).FullName
         |> copyFilesToDest helloDir.FullName
 
-[<Fact>]
-let diamondAssembly () =
-    let cfg = testConfig "typeProviders/diamondAssembly"
+// Each module below is its own xUnit test collection, so the modules run in parallel with each other.
+module DiamondAssembly =
 
-    copyHelloWorld cfg.Directory
+    [<Fact>]
+    let diamondAssembly () =
+        let cfg = testConfig "typeProviders/diamondAssembly"
 
-    rm cfg "provider.dll"
+        copyHelloWorld cfg.Directory
 
-    // Add a version flag to make this generate native resources. The native resources aren't important and
-    // can be dropped when the provided.dll is linked but we need to tolerate generated DLLs that have them
-    fsc cfg "%s" "--out:provided.dll -a --version:0.0.0.1" [".." ++ "helloWorld" ++ "provided.fs"]
+        rm cfg "provider.dll"
 
-    fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+        // Add a version flag to make this generate native resources. The native resources aren't important and
+        // can be dropped when the provided.dll is linked but we need to tolerate generated DLLs that have them
+        fsc cfg "%s" "--out:provided.dll -a --version:0.0.0.1" [".." ++ "helloWorld" ++ "provided.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test1.dll -a" cfg.fsc_flags ["test1.fsx"]
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a -r:test1.dll" cfg.fsc_flags ["test2a.fsx"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test1.dll -a" cfg.fsc_flags ["test1.fsx"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a -r:test1.dll" cfg.fsc_flags ["test2b.fsx"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a -r:test1.dll" cfg.fsc_flags ["test2a.fsx"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe -r:test1.dll -r:test2a.dll -r:test2b.dll" cfg.fsc_flags ["test3.fsx"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a -r:test1.dll" cfg.fsc_flags ["test2b.fsx"]
 
-    peverify cfg "test1.dll"
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe -r:test1.dll -r:test2a.dll -r:test2b.dll" cfg.fsc_flags ["test3.fsx"]
 
-    peverify cfg "test2a.dll"
+        peverify cfg "test1.dll"
 
-    peverify cfg "test2b.dll"
+        peverify cfg "test2a.dll"
 
-    peverify cfg "test3.exe"
+        peverify cfg "test2b.dll"
 
-    exec cfg ("." ++ "test3.exe") ""
+        peverify cfg "test3.exe"
+
+        exec cfg ("." ++ "test3.exe") ""
 
 
 
-    fsiCheckPassed cfg "%s" cfg.fsi_flags ["test3.fsx"]
+        fsiCheckPassed cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
-[<Fact>]
-let globalNamespace () =
-    let cfg = testConfig "typeProviders/globalNamespace"
+    [<Fact>]
+    let globalNamespace () =
+        let cfg = testConfig "typeProviders/globalNamespace"
 
-    csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:netstandard.dll /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
+        csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:netstandard.dll /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
 
-    fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 
 let helloWorld p =
     let cfg = testConfig "typeProviders/helloWorld"
@@ -148,35 +151,68 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Fact>]
-let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
+module HelloWorldFsc =
+
+    [<Fact>]
+    let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
-[<Fact>]
-let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
+module HelloWorldFsi =
+
+    [<Fact>]
+    let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
+
 #endif
 
-[<Fact>]
-let helloWorldCSharp () =
-    let cfg = testConfig "typeProviders/helloWorldCSharp"
+module HelloWorldCSharp =
 
-    rm cfg "magic.dll"
+    [<Fact>]
+    let helloWorldCSharp () =
+        let cfg = testConfig "typeProviders/helloWorldCSharp"
 
-    fsc cfg "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
+        rm cfg "magic.dll"
 
-    rm cfg "provider.dll"
+        fsc cfg "%s" "--out:magic.dll -a --keyfile:magic.snk" ["magic.fs "]
 
-    csc cfg """/out:provider.dll /target:library "/r:%s" /r:netstandard.dll /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
+        rm cfg "provider.dll"
 
-    fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
+        csc cfg """/out:provider.dll /target:library "/r:%s" /r:netstandard.dll /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
 
-    peverify cfg "magic.dll"
+        fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 
-    peverify cfg "provider.dll"
+        peverify cfg "magic.dll"
 
-    peverify cfg "test.exe"
+        peverify cfg "provider.dll"
 
-    exec cfg ("." ++ "test.exe") ""
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+/// The providers that all negative test cases use do not depend on the test case.
+/// Compile them one time and copy them into the directory of each test case.
+let private negTestSharedProviders =
+    lazy
+        let cfg = testConfig "typeProviders/negTests"
+
+        copyHelloWorld cfg.Directory
+
+        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+
+        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+
+        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+
+        fsc cfg "--out:provider.dll -g --optimize- -a" ["provider.fsx"]
+
+        fsc cfg "--out:provider_providerAttributeErrorConsume.dll -a" ["providerAttributeError.fsx"]
+
+        fsc cfg "--out:provider_ProviderAttribute_EmptyConsume.dll -a" ["providerAttribute_Empty.fsx"]
+
+        fsc cfg "--out:helloWorldProvider.dll -g --optimize- -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+
+        fsc cfg "--out:MostBasicProvider.dll -g --optimize- -a" ["MostBasicProvider.fsx"]
+
+        cfg.Directory
 
 let singleNegTest name =
     let cfg = testConfig "typeProviders/negTests"
@@ -187,33 +223,11 @@ let singleNegTest name =
 
         let fileExists = Commands.fileExists cfg.Directory >> Option.isSome
 
-        rm cfg "provided.dll"
+        let sharedDirectory = negTestSharedProviders.Force()
 
-        fsc cfg "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
-
-        rm cfg "providedJ.dll"
-
-        fsc cfg "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
-
-        rm cfg "providedK.dll"
-
-        fsc cfg "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
-
-        rm cfg "provider.dll"
-
-        fsc cfg "--out:provider.dll -g --optimize- -a" ["provider.fsx"]
-
-        fsc cfg "--out:provider_providerAttributeErrorConsume.dll -a" ["providerAttributeError.fsx"]
-
-        fsc cfg "--out:provider_ProviderAttribute_EmptyConsume.dll -a" ["providerAttribute_Empty.fsx"]
-
-        rm cfg "helloWorldProvider.dll"
-
-        fsc cfg "--out:helloWorldProvider.dll -g --optimize- -a" [".." ++ "helloWorld" ++ "provider.fsx"]
-
-        rm cfg "MostBasicProvider.dll"
-
-        fsc cfg "--out:MostBasicProvider.dll -g --optimize- -a" ["MostBasicProvider.fsx"]
+        for file in Directory.EnumerateFiles(sharedDirectory) do
+            if Path.GetExtension(file) = ".dll" || Path.GetExtension(file) = ".pdb" then
+                File.Copy(file, cfg.Directory ++ Path.GetFileName(file), true)
 
         let preprocess name pref =
             let dirp = (cfg.Directory |> Commands.pathAddBackslash)
@@ -234,35 +248,48 @@ let singleNegTest name =
 
         SingleTest.singleNegTest cfg name
 
-[<Theory>]
-[<InlineData("neg1")>]
-[<InlineData("neg2")>]
-[<InlineData("neg2c")>]
-[<InlineData("neg2e")>]
-[<InlineData("neg2g")>]
-[<InlineData("neg2h")>]
-[<InlineData("neg4")>]
-[<InlineData("neg6")>]
-[<InlineData("InvalidInvokerExpression")>]
-[<InlineData("providerAttributeErrorConsume")>]
-[<InlineData("ProviderAttribute_EmptyConsume")>]
-[<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
-[<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
-[<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
-[<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
-[<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
-[<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
-[<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
-[<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
-[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
-[<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
-[<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
-[<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
-let ``negative type provider tests`` (name:string) = singleNegTest name
+// The negative test cases are in three modules, so that they run in parallel.
+module NegativeTests =
+
+    [<Theory>]
+    [<InlineData("neg1")>]
+    [<InlineData("neg2")>]
+    [<InlineData("neg2c")>]
+    [<InlineData("neg2e")>]
+    [<InlineData("neg2g")>]
+    [<InlineData("neg2h")>]
+    [<InlineData("neg4")>]
+    [<InlineData("neg6")>]
+    [<InlineData("InvalidInvokerExpression")>]
+    [<InlineData("providerAttributeErrorConsume")>]
+    [<InlineData("ProviderAttribute_EmptyConsume")>]
+    let ``negative type provider tests`` (name:string) = singleNegTest name
+
+module NegativeTestsEvilProviderExceptions =
+
+    [<Theory>]
+    [<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
+    [<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
+    [<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
+    [<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
+    [<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
+    let ``negative type provider tests`` (name:string) = singleNegTest name
+
+module NegativeTestsEvilProviderNulls =
+
+    [<Theory>]
+    [<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
+    [<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
+    [<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
+    [<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
+    [<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
+    [<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
+    [<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
+    [<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
+    let ``negative type provider tests`` (name:string) = singleNegTest name
 
 let splitAssembly subdir project =
     let cfg = testConfig project
@@ -337,57 +364,63 @@ let splitAssembly subdir project =
 
     clean()
 
-[<Fact>]
-let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
+module SplitAssemblyTools =
 
-[<Fact>]
-let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+    [<Fact>]
+    let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
-[<Fact>]
-let wedgeAssembly () =
-    let cfg = testConfig "typeProviders/wedgeAssembly"
+module SplitAssemblyTypeProviders =
 
-    copyHelloWorld cfg.Directory
+    [<Fact>]
+    let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
-    rm cfg "provider.dll"
+module WedgeAssembly =
 
-    rm cfg "provided.dll"
+    [<Fact>]
+    let wedgeAssembly () =
+        let cfg = testConfig "typeProviders/wedgeAssembly"
 
-    fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
+        copyHelloWorld cfg.Directory
 
-    rm cfg "providedJ.dll"
+        rm cfg "provider.dll"
 
-    fsc cfg "%s" "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
+        rm cfg "provided.dll"
 
-    rm cfg "providedK.dll"
+        fsc cfg "%s" "--out:provided.dll -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
-    fsc cfg "%s" "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
+        rm cfg "providedJ.dll"
 
-    fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+        fsc cfg "%s" "--out:providedJ.dll -a" [".." ++ "helloWorld" ++ "providedJ.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a" cfg.fsc_flags ["test2a.fs"]
+        rm cfg "providedK.dll"
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a" cfg.fsc_flags ["test2b.fs"]
+        fsc cfg "%s" "--out:providedK.dll -a" [".." ++ "helloWorld" ++ "providedK.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe" cfg.fsc_flags ["test3.fsx"]
+        fsc cfg "%s" "--out:provider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig.dll -a" cfg.fsc_flags ["test2a.fsi"; "test2a.fs"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a.dll -a" cfg.fsc_flags ["test2a.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig.dll -a" cfg.fsc_flags ["test2b.fsi"; "test2b.fs"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b.dll -a" cfg.fsc_flags ["test2b.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig.exe --define:SIGS" cfg.fsc_flags ["test3.fsx"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3.exe" cfg.fsc_flags ["test3.fsx"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig-restricted.dll -a" cfg.fsc_flags ["test2a-restricted.fsi"; "test2a.fs"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig.dll -a" cfg.fsc_flags ["test2a.fsi"; "test2a.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig-restricted.dll -a"cfg.fsc_flags ["test2b-restricted.fsi"; "test2b.fs"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig.dll -a" cfg.fsc_flags ["test2b.fsi"; "test2b.fs"]
 
-    fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig-restricted.exe --define:SIGS_RESTRICTED" cfg.fsc_flags ["test3.fsx"]
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig.exe --define:SIGS" cfg.fsc_flags ["test3.fsx"]
 
-    peverify cfg "test2a.dll"
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2a-with-sig-restricted.dll -a" cfg.fsc_flags ["test2a-restricted.fsi"; "test2a.fs"]
 
-    peverify cfg "test2b.dll"
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test2b-with-sig-restricted.dll -a"cfg.fsc_flags ["test2b-restricted.fsi"; "test2b.fs"]
 
-    peverify cfg "test3.exe"
+        fsc cfg "%s --debug+ -r:provider.dll --optimize- -o:test3-with-sig-restricted.exe --define:SIGS_RESTRICTED" cfg.fsc_flags ["test3.fsx"]
 
-    exec cfg ("." ++ "test3.exe") ""
+        peverify cfg "test2a.dll"
+
+        peverify cfg "test2b.dll"
+
+        peverify cfg "test3.exe"
+
+        exec cfg ("." ++ "test3.exe") ""
 #endif

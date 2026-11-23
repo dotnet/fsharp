@@ -163,11 +163,23 @@ type FsiServerHarness
                 PipeOptions.Asynchronous ||| PipeOptions.CurrentUserOnly
             )
 
+        // Connect in short steps and stop when the session exits. A session that fails at startup
+        // then fails the test immediately, not after the full timeout.
+        let deadline = DateTime.UtcNow + TimeSpan.FromSeconds 60.0
+        let mutable connected = false
+
         try
-            pipe.Connect 60_000
+            while not connected do
+                try
+                    pipe.Connect 250
+                    connected <- true
+                with :? TimeoutException when not session.HasExited && DateTime.UtcNow < deadline ->
+                    ()
         with e ->
             let detail =
                 if session.HasExited then
+                    // Let the asynchronous readers collect the rest of the output.
+                    session.WaitForExit()
                     $"The session exited with code {session.ExitCode}."
                 else
                     "The session is still running."
