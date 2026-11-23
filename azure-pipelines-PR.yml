@@ -260,7 +260,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -testUsingModules -configuration Release
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
@@ -367,7 +367,7 @@ stages:
             displayName: Setup VS Hive
             condition: eq(variables.setupVsHive, 'true')
 
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind) -testUsingModules
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
