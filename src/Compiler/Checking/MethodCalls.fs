@@ -1323,12 +1323,12 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     if isInterfaceTy g finfo.ApparentEnclosingType then
         checkRuntimeSupportForDefaultInterfaceMembersAndRecover infoReader m
 
-    CheckILFieldAttributes g finfo m
+    CheckILFieldAttributes g finfo m |> CommitOperationResult
 
 let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
     if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
     CheckILFieldInfoAccessible g amap m ad finfo
-    CheckILFieldAttributes g finfo m
+    CheckILFieldAttributes g finfo m |> CommitOperationResult
 
 let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
     if minfo.IsInstance <> isInstance then
@@ -2204,13 +2204,69 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
     if not rfinfo.RecdField.IsMutable then
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
-/// Generate a witness for the given (solved) constraint.  Five possibilities are taken
+/// Create a TAST const value from an IL-initialized field read from .NET metadata
+let ilFieldToTastConst lit =
+    match lit with
+    | ILFieldInit.String s -> Const.String s
+    | ILFieldInit.Null -> Const.Zero
+    | ILFieldInit.Bool b -> Const.Bool b
+    | ILFieldInit.Char c -> Const.Char (char (int c))
+    | ILFieldInit.Int8 x -> Const.SByte x
+    | ILFieldInit.Int16 x -> Const.Int16 x
+    | ILFieldInit.Int32 x -> Const.Int32 x
+    | ILFieldInit.Int64 x -> Const.Int64 x
+    | ILFieldInit.UInt8 x -> Const.Byte x
+    | ILFieldInit.UInt16 x -> Const.UInt16 x
+    | ILFieldInit.UInt32 x -> Const.UInt32 x
+    | ILFieldInit.UInt64 x -> Const.UInt64 x
+    | ILFieldInit.Single f -> Const.Single f
+    | ILFieldInit.Double f -> Const.Double f
+
+/// Generate the expression that reads or writes the .NET field solving a trait.
+let private GenILFieldWitnessExpr amap g m enclTy (fref: ILFieldRef) isSet argExprs =
+    let tinfo = ILTypeInfo.FromType g enclTy
+    match tinfo.RawMetadata.Fields.LookupByName fref.Name with
+    | [] -> None
+    | fdef :: _ ->
+    let finfo = ILFieldInfo(tinfo, fdef)
+    let fieldTy = finfo.FieldType(amap, m)
+    let tinst = finfo.TypeInst
+    let isStruct = finfo.IsValueType
+    let fspec = mkILFieldSpec (fref, mkILNamedTy (if isStruct then AsValue else AsObject) fref.DeclaringTypeRef [])
+    let vol = if finfo.IsVolatile then Volatile else Nonvolatile
+    // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr.
+    let initOnlyNop = if finfo.IsInitOnly then [ AI_nop ] else []
+
+    let mkObjAddr mut objExpr =
+        if isStruct && not (isByrefTy g (tyOfExpr g objExpr)) then
+            let wrap, objAddr, _readonly, _writeonly = mkExprAddrOfExpr g true false mut objExpr None m
+            wrap, objAddr
+        else
+            id, objExpr
+
+    match finfo.IsStatic, isSet, argExprs with
+    | true, false, [] ->
+        match finfo.LiteralValue with
+        | Some lit -> Some (Expr.Const (ilFieldToTastConst lit, m, fieldTy))
+        | None -> Some (mkAsmExpr (I_ldsfld (vol, fspec) :: initOnlyNop, tinst, [], [ fieldTy ], m))
+    | true, true, [ argExpr ] ->
+        Some (mkAsmExpr ([ I_stsfld (vol, fspec) ], tinst, [ argExpr ], [], m))
+    | false, false, [ objExpr ] ->
+        let wrap, objExpr = mkObjAddr NeverMutates objExpr
+        Some (wrap (mkAsmExpr (I_ldfld (Aligned, vol, fspec) :: initOnlyNop, tinst, [ objExpr ], [ fieldTy ], m)))
+    | false, true, [ objExpr; argExpr ] ->
+        let wrap, objExpr = mkObjAddr DefinitelyMutates objExpr
+        Some (wrap (mkAsmExpr ([ I_stfld (Aligned, vol, fspec) ], tinst, [ objExpr; argExpr ], [], m)))
+    | _ -> None
+
+/// Generate a witness for the given (solved) constraint.  Six possibilities are taken
 /// into account.
 ///   1. The constraint is solved by a .NET-declared method or an F#-declared method
 ///   2. The constraint is solved by an F# record field
 ///   3. The constraint is solved by an F# anonymous record field
 ///   4. The constraint is considered solved by a "built in" solution
 ///   5. The constraint is solved by a closed expression given by a provided method from a type provider
+///   6. The constraint is solved by a .NET field
 ///
 /// In each case an expression is returned where the method is applied to the given arguments, or the
 /// field is dereferenced.
@@ -2221,7 +2277,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     let sln =
         match traitInfo.Solution with
-        | None -> Choice5Of5()
+        | None -> Choice6Of6()
         | Some sln ->
 
             // Given the solution information, reconstruct the MethInfo for the solution
@@ -2278,25 +2334,28 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                         let actualTyconRef = ImportILTypeRef amap m ilActualTypeRef
                         let mdef = resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, Some 0UL, mdef)
-                Choice1Of5 (ilMethInfo, minst, staticTyOpt)
+                Choice1Of6 (ilMethInfo, minst, staticTyOpt)
 
             | FSMethSln(ty, vref, minst, staticTyOpt) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
+                Choice1Of6  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                Choice2Of5  (tinst, rfref, isSetProp)
+                Choice2Of6  (tinst, rfref, isSetProp)
 
             | FSAnonRecdFieldSln(anonInfo, tinst, i) ->
-                Choice3Of5  (anonInfo, tinst, i)
+                Choice3Of6  (anonInfo, tinst, i)
 
             | ClosedExprSln expr ->
-                Choice4Of5 expr
+                Choice4Of6 expr
+
+            | ILFieldSln(ty, fref, isSet) ->
+                Choice5Of6 (ty, fref, isSet)
 
             | BuiltInSln ->
-                Choice5Of5 ()
+                Choice6Of6 ()
 
     match sln with
-    | Choice1Of5(minfo, methArgTys, staticTyOpt) ->
+    | Choice1Of6(minfo, methArgTys, staticTyOpt) ->
         let argExprs =
             // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
             // calls arguments but codegen doesn't emit coercion operations
@@ -2365,7 +2424,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         else
             Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
-    | Choice2Of5 (tinst, rfref, isSet) ->
+    | Choice2Of6 (tinst, rfref, isSet) ->
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with
         // static setter
         | true, true, 1 ->
@@ -2395,17 +2454,20 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         | _ -> None
 
-    | Choice3Of5 (anonInfo, tinst, i) ->
+    | Choice3Of6 (anonInfo, tinst, i) ->
         let tupInfo = anonInfo.TupInfo
         if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then
             Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else
             Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
-    | Choice4Of5 expr ->
+    | Choice4Of6 expr ->
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
-    | Choice5Of5 () ->
+    | Choice5Of6 (ty, fref, isSet) ->
+        GenILFieldWitnessExpr amap g m ty fref isSet argExprs
+
+    | Choice6Of6 () ->
         match traitInfo.Solution with
         | None -> None // the trait has been generalized
         | Some _->

@@ -118,7 +118,7 @@ val CheckPropInfoAttributes: pinfo: PropInfo -> m: range -> OperationResult<unit
 
 val TryGetPropObsoleteInfo: pinfo: PropInfo -> ObsoleteDiagnosticInfo option
 
-val CheckILFieldAttributes: g: TcGlobals -> finfo: ILFieldInfo -> m: range -> unit
+val CheckILFieldAttributes: g: TcGlobals -> finfo: ILFieldInfo -> m: range -> OperationResult<unit>
 
 val TryGetILFieldObsoleteInfo: g: TcGlobals -> finfo: ILFieldInfo -> ObsoleteDiagnosticInfo option
 
