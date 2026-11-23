@@ -308,8 +308,6 @@ stages:
                 batchNumber: 1
               Batch2:
                 batchNumber: 2
-              Batch3:
-                batchNumber: 3
           steps:
           - template: /eng/templates/batched-test-steps.yml
             parameters:
@@ -439,7 +437,7 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata Desktop (split into 3 batches)
+          # Windows With Compressed Metadata Desktop (split into 2 batches)
         - job: WindowsCompressedMetadata_Desktop
           strategy:
             matrix:
@@ -447,8 +445,6 @@ stages:
                 batchNumber: 1
               Batch2:
                 batchNumber: 2
-              Batch3:
-                batchNumber: 3
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -486,7 +482,7 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
+        # Linux (split into 2 batches; FSharpSuite runs only in the desktop batches)
         - job: Linux
           strategy:
             matrix:
@@ -509,22 +505,22 @@ stages:
               artifactNamePrefix: 'Linux'
               publishBinLog: true
               binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
-          # Run the SDK integration once, not once per test batch.
+          # Run the SDK integration once, not once per test batch. Batch 2 has less test work on Linux.
           - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
             displayName: Real SDK MP / MT integration
-            condition: and(succeeded(), eq(variables['batchNumber'], '1'))
+            condition: and(succeeded(), eq(variables['batchNumber'], '2'))
           - pwsh: |
               $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
               Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
             displayName: Check SDK MT evidence
-            condition: and(always(), eq(variables['batchNumber'], '1'))
+            condition: and(always(), eq(variables['batchNumber'], '2'))
           - task: PublishPipelineArtifact@1
-            condition: and(always(), eq(variables['batchNumber'], '1'), eq(variables['SdkMtEvidenceAvailable'], 'true'))
+            condition: and(always(), eq(variables['batchNumber'], '2'), eq(variables['SdkMtEvidenceAvailable'], 'true'))
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Linux SDK MT evidence
 
-        # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
+        # MacOS (split into 2 batches; FSharpSuite runs only in the desktop batches)
         - job: MacOS
           strategy:
             matrix:
