@@ -13,6 +13,7 @@ This file should be imported by eng/Versions.props
     <SystemDiagnosticsDiagnosticSourcePackageVersion>10.0.14</SystemDiagnosticsDiagnosticSourcePackageVersion>
     <SystemReflectionMetadataPackageVersion>10.0.14</SystemReflectionMetadataPackageVersion>
     <SystemSecurityCryptographyXmlPackageVersion>10.0.14</SystemSecurityCryptographyXmlPackageVersion>
+    <SystemTextJsonPackageVersion>10.0.14</SystemTextJsonPackageVersion>
     <!-- dotnet-msbuild dependencies -->
     <MicrosoftBuildPackageVersion>18.13.0-1.26523.4</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>18.13.0-1.26523.4</MicrosoftBuildFrameworkPackageVersion>
