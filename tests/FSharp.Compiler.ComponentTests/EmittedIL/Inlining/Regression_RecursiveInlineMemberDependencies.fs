@@ -90,7 +90,10 @@ let run () =
    and inline b x = x * 2
    a 3
 
-exit (if run () = 7 then 0 else 1)
+[<EntryPoint>]
+let main _ =
+   if run () <> 7 then failwith "unexpected result"
+   0
 """
        |> assertRuns optimize
 
