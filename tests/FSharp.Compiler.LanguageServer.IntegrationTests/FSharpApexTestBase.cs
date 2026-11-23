@@ -10,7 +10,8 @@ namespace FSharp.Compiler.LanguageServer.IntegrationTests;
 
 /// <summary>
 /// Base class for F# LSP integration tests that run inside Visual Studio.
-/// Uses Apex to launch VS experimental instance with the F# extension deployed.
+/// Uses Apex to launch the RoslynDev experimental instance, where the locally-built F# VSIX is
+/// deployed (build with -deployExtensions), matching FSharp.Editor.Apex.IntegrationTests.
 /// </summary>
 [TestClass]
 public class FSharpApexTestBase : ApexTest
@@ -22,7 +23,10 @@ public class FSharpApexTestBase : ApexTest
     {
         return new VisualStudioHostConfiguration
         {
-            RootSuffix = "Exp",
+            RootSuffix = "RoslynDev",
+            // A fresh hive (e.g. on CI) shows a blocking "Sign in to Visual Studio" dialog, so devenv
+            // never registers its DTE and Apex times out waiting for it.
+            CommandLineArguments = "/NoSigninPrompt",
             SkipCodeMarkerInitialization = true,
             EnableUnifiedSettings = true,
             // Automatically dismiss unexpected dialogs (e.g., the file
