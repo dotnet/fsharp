@@ -52,6 +52,20 @@ a.Equals(b)  // Was: false, Now: true
 // New: if (node.NodeType == ExpressionType.ArrayIndex)
 ```
 
+### A `for` or join after two `for`s continues the chain
+
+Over an `IQueryable`, a query that goes on after two `for`s no longer nests the rest inside the collection selector of the
+first `SelectMany`; like C#, it pairs the elements of the first two sources and continues from the pairs.
+
+```fsharp
+query { for c in db.Customers do for o in c.Orders do for l in o.Lines do select (c.Name, l.Id) }
+// Was: Customers.SelectMany(c => c.Orders.SelectMany(o => o.Lines, ...), (c, x) => x)
+// Now: Customers.SelectMany(c => c.Orders, (c, o) => new AnonymousObject(c, o)).SelectMany(pair => pair.Item2.Lines, ...)
+```
+
+**Impact:** Code that walks the expression tree of such a query sees a longer chain and no nested `SelectMany`, `Join`
+or `GroupJoin`. The rows are the same.
+
 ---
 
 ## IQueryable Type Preservation 🟡
