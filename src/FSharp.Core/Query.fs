@@ -443,7 +443,7 @@ module Query =
 
     /// Project F# function expressions to Linq LambdaExpression nodes
     let FuncExprToLinqFunc2Expression (srcTy, targetTy, v, body) =
-        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> QuotationToExpression
+        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> MakeImplicitExpressionConversion |> QuotationToExpression
 
     let FuncExprToLinqFunc2 (srcTy, targetTy, v, body) =
         FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> EvaluateQuotation
@@ -1156,8 +1156,9 @@ module Query =
     /// immutable-to-mutable conversion information, convert it back to an expression involving immutable tuples or records.
     let rec ConvMutableToImmutable conv mutExpr =
         match conv with
-        | TupleConv convs ->
-            Expr.NewTuple (convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
+        | TupleConv (isStruct, convs) ->
+            let elements = convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i)))
+            if isStruct then Expr.NewStructTuple elements else Expr.NewTuple elements
         | RecordConv (typ, convs) ->
             Expr.NewRecord (typ, convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
 
@@ -1645,9 +1646,18 @@ module Query =
         let mutInnerKeyVar, mutInnerKeySelector = ConvertImmutableConsumerToMutableConsumer innerSourceConv (immutInnerKeyVar, MacroExpand immutInnerKeySelector)
 
         // Keys may be composite tuples - convert them to be mutables. Note, if there is a tuple on one side, there must be a tuple on the other side.
-        let mutOuterKeySelector, _ = ProduceMoreMutables TransNone mutOuterKeySelector
+        let mutOuterKey, _ = ProduceMoreMutables TransNone mutOuterKeySelector
+        let mutInnerKey, _ = ProduceMoreMutables TransNone mutInnerKeySelector
+
+        // A key that one side builds and the other gets ready-made changes its type on one side only. Both keep
+        // the type they were written with then.
+        let mutOuterKeySelector, mutInnerKeySelector =
+            if mutOuterKey.Type = mutInnerKey.Type then
+                mutOuterKey, mutInnerKey
+            else
+                mutOuterKeySelector, mutInnerKeySelector
+
         let mutOuterKeySelector = CleanupLeaf mutOuterKeySelector
-        let mutInnerKeySelector, _ = ProduceMoreMutables TransNone mutInnerKeySelector
         let mutInnerKeySelector = CleanupLeaf mutInnerKeySelector
         mutOuterSource, outerSourceConv, mutInnerSource, innerSourceConv, mutOuterKeyVar, mutOuterKeySelector, mutInnerKeyVar, mutInnerKeySelector
 
