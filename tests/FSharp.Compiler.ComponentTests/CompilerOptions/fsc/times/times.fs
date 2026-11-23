@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 open System
 open System.IO
 
-// reportTime uses global state.
+// --times reports through process-wide listeners.
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module Times =
 
