@@ -66,6 +66,14 @@ query { for p in db.Products do select (p.Id, p.Name) }
 
 **Impact:** Code checking `is EnumerableQuery<_>` may need adjustment.
 
+When the last operator of a query selects a tuple or record, the provider now gets one `Select` that builds it directly:
+
+```fsharp
+query { for p in db.Products do select (p.Id, p.Name) }
+// Was: Products.Select(p => new AnonymousObject`2(Item1 = p.Id, Item2 = p.Name)).Select(after => new Tuple`2(after.Item1, after.Item2))
+// Now: Products.Select(p => new Tuple`2(p.Id, p.Name))
+```
+
 ---
 
 ## FCS API: Query Variables 🟢

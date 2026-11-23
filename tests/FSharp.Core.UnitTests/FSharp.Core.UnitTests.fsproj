@@ -92,6 +92,15 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\NullableOperators.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryProviderShape.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryScenarioDomain.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryScenario.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryProjectionScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryOperatorScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryKeyScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryStructureScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryMethodSyntaxScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryShapeTests.fs" />
     <Compile Include="FSharp.Core\XmlDocumentationValidation.fs" />
     <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />
