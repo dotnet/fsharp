@@ -6,7 +6,11 @@
 
 description: "Shared body for FSharp build-failure-analysis workflows"
 
-model: gpt-5.6-sol
+model: gpt-6.1-sol
+
+# AWF does not automatically select Responses for GPT-6.
+env:
+  COPILOT_PROVIDER_WIRE_API: responses
 
 checkout:
   ref: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
