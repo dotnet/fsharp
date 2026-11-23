@@ -57,5 +57,16 @@ module internal Activity =
         val startAndMeasureEnvironmentStats: name: string -> System.IDisposable | null
         val addConsoleListener: unit -> IDisposable
 
+        /// A sequence of profiled phases, where starting a phase disposes the one before it
+        /// and disposing ends the last. Not thread-safe.
+        [<Sealed>]
+        type PhaseTimer =
+            new: unit -> PhaseTimer
+
+            /// <summary>Ends the current phase (if any) and starts one named <paramref name="name"/>.</summary>
+            member Next: name: string -> unit
+
+            interface IDisposable
+
     module CsvExport =
         val addCsvFileListener: pathToFile: string -> IDisposable

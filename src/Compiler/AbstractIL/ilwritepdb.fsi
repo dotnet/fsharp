@@ -5,6 +5,7 @@ module internal FSharp.Compiler.AbstractIL.ILPdbWriter
 
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Diagnostics
 open System.IO
 open System.Reflection.Metadata
 
@@ -114,6 +115,7 @@ type HashAlgorithm =
     | Sha256
 
 val generatePortablePdb:
+    phaseTimer: Activity.Profiling.PhaseTimer ->
     embedAllSource: bool ->
     embedSourceList: string list ->
     sourceLink: string ->
