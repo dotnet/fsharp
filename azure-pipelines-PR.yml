@@ -349,6 +349,9 @@ stages:
                 setupVsHive: true
                 FSharp_CacheEvictionImmediate: true
                 transparentCompiler:
+                # The shortest job in this matrix runs the SDK integration. Thus EndToEndBuildTests,
+                # which the regression tests wait for, finishes earlier.
+                runSdkMtIntegration: true
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
@@ -373,6 +376,20 @@ stages:
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
+
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration $(_configuration) --repetitions 3
+            displayName: Real SDK MP / MT integration
+            condition: and(succeeded(), eq(variables['runSdkMtIntegration'], 'true'))
+          - pwsh: |
+              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
+              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
+            displayName: Check SDK MT evidence
+            condition: and(always(), eq(variables['runSdkMtIntegration'], 'true'))
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['runSdkMtIntegration'], 'true'), eq(variables['SdkMtEvidenceAvailable'], 'true'))
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
 
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -547,18 +564,8 @@ stages:
             displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
-            displayName: Real SDK MP / MT integration
-          - pwsh: |
-              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
-              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
-            displayName: Check SDK MT evidence
-            condition: always()
-          - task: PublishPipelineArtifact@1
-            condition: and(always(), eq(variables['SdkMtEvidenceAvailable'], 'true'))
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
-              artifact: Windows SDK MT evidence
+          # The real SDK MP / MT integration runs in the WindowsCompressedMetadata vs_release job,
+          # so that this job, which the regression tests wait for, finishes earlier.
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
