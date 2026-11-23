@@ -1156,8 +1156,9 @@ module Query =
     /// immutable-to-mutable conversion information, convert it back to an expression involving immutable tuples or records.
     let rec ConvMutableToImmutable conv mutExpr =
         match conv with
-        | TupleConv convs ->
-            Expr.NewTuple (convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
+        | TupleConv (isStruct, convs) ->
+            let elements = convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i)))
+            if isStruct then Expr.NewStructTuple elements else Expr.NewTuple elements
         | RecordConv (typ, convs) ->
             Expr.NewRecord (typ, convs |> List.mapi (fun i conv -> ConvMutableToImmutable conv (AnonymousObjectGet (mutExpr, i))))
 
