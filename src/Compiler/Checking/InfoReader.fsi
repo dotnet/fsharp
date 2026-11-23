@@ -237,6 +237,20 @@ type InfoReader =
     /// Find the op_Implicit for a type
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list
 
+    /// The number of lookups so far whose result depended on the caller's access rights or on signatures not inferred yet
+    member NonReusableLookupCount: int
+
+    /// The number of members and interfaces published so far by the types of the file being checked
+    member PublishedDeclarationCount: int
+
+    member NotePublishedDeclaration: unit -> unit
+
+    /// Whether the type definitions of the file being checked are still being established
+    member IsEstablishingTypeDefinitions: bool
+
+    /// Marks the type definitions of the file being checked as not established until the result is disposed
+    member BeginEstablishingTypeDefinitions: unit -> System.IDisposable
+
     /// Determine if a type has a static abstract method with the given name somewhere in its hierarchy
     member IsInterfaceTypeWithMatchingStaticAbstractMember:
         m: range -> nm: string -> ad: AccessorDomain -> ty: TType -> bool

@@ -690,6 +690,7 @@ let PublishInterface (cenv: cenv) denv (tcref: TyconRef) m isCompGen interfaceTy
     let tcaug = tcref.TypeContents
 
     tcaug.tcaug_interfaces <- (interfaceTy, isCompGen, m) :: tcaug.tcaug_interfaces
+    cenv.infoReader.NotePublishedDeclaration()
 
 let TcAndPublishMemberSpec cenv env containerInfo declKind tpenv memb =
     match memb with
@@ -4332,6 +4333,8 @@ module EstablishTypeDefinitionCores =
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
+        use _ = cenv.infoReader.BeginEstablishingTypeDefinitions()
+
         // Pre-process top-level opens so they are available during attribute checking in Phase1A.
         // In recursive scopes (namespace rec / module rec), opens are normally processed in Phase1AB
         // after module entities are built, but module attributes need access to opened namespaces.

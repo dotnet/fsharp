@@ -61,6 +61,9 @@ module internal HashingPrimitives =
     [<Literal>]
     let MaxTokenCount = 256
 
+    [<Literal>]
+    let MaxExactStructureTokenCount = 1024
+
 [<AutoOpen>]
 module internal HashUtilities =
 
@@ -382,23 +385,21 @@ module HashTastMemberOrVals =
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
 
 /// <summary>
-/// StructuralUtilities: produce a conservative structural fingerprint of <c>TType</c>.
+/// StructuralUtilities: structural fingerprints of <c>TType</c>, used as cache keys.
 ///
-/// Current (sole) usage:
-///   Key in the typeSubsumptionCache. The key must never give a false positive
-///   (two non-subsuming types producing identical token sequences). False negatives
-///   are acceptable and simply reduce cache hit rate.
+/// A fingerprint is a sequence of tokens in which every node of a type writes a token fixing its number of
+/// children before the children themselves, so that two different types never write the same sequence.
+/// The same type can write different sequences (an abbreviation is not expanded below the root, a measure is
+/// not normalised); that only costs a cache hit.
 ///
-/// Properties:
-///   * Uses per-compilation stamps (entities, typars, anon records, measures).
-///   * Emits shape for union cases (declaring type stamp + case name), tuple structness,
-///     function arrows, forall binders, nullness, measures, generic arguments.
-///   * Does not include type constraints.
+/// Entities, anonymous records and measure constants are identified by stamp. Type parameters are written in
+/// one of two ways:
+///   * by the position of their first appearance, for the typeSubsumptionCache: feasible subsumption treats any
+///     type parameter as a wildcard, so 'a list and 'b list may share an entry.
+///   * exactly, for keys that must tell apart everything a type means: a rigid type parameter by stamp, and
+///     nothing at all for a type with an unsolved inference variable, whose meaning can still change.
 ///
-/// Non-goals:
-///   * Cross-compilation stability.
-///   * Perfect canonicalisation or alpha-equivalence collapsing.
-///
+/// Type constraints are never written. Nullness is written only on request.
 /// </summary>
 module StructuralUtilities =
     open Internal.Utilities.Library.Extras
@@ -406,17 +407,21 @@ module StructuralUtilities =
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
         | Stamp of int
+        | StampHigh of int
         | UCase of int
         | Nullness of int
-        | NullnessUnsolved
-        | TupInfo of int
+        | StructTuple of int
+        | RefTuple of int
+        | Fun
         | Forall of int
         | MeasureOne
-        | MeasureDenominator of int
+        | MeasureProduct
+        | MeasureInverse
         | MeasureNumerator of int
-        | Solved of int
+        | MeasureDenominator of int
         | Unsolved of int
         | Rigid of int
+        | Number of int
 
     let private hashTokenArray (tokens: TypeToken[]) : int =
         let mutable acc = 0L
@@ -449,95 +454,136 @@ module StructuralUtilities =
                 | _ -> false
             | _ -> false
 
-    type private GenerationContext() =
+    type private GenerationContext(maxTokenCount: int) =
         member val TyparMap = System.Collections.Generic.Dictionary<Stamp, int>(4)
-        member val Tokens = ResizeArray<TypeToken>(MaxTokenCount)
-        member val EmitNullness = false with get, set
+        member val Tokens = ResizeArray<TypeToken>(maxTokenCount)
         member val Stable = true with get, set
+        member val IsExact = false with get, set
+        member val EmitNullness = false with get, set
+
+        /// Set in exact mode once something was met that tokens cannot identify.
+        member val IsRejected = false with get, set
+
+        member val DependsOnFileBeingChecked = false with get, set
+
+        member this.IsFull = this.Tokens.Count >= maxTokenCount
 
         member this.Reset() =
             this.TyparMap.Clear()
             this.Tokens.Clear()
-            this.EmitNullness <- false
             this.Stable <- true
+            this.IsExact <- false
+            this.EmitNullness <- false
+            this.IsRejected <- false
+            this.DependsOnFileBeingChecked <- false
 
-    let private context =
-        new System.Threading.ThreadLocal<GenerationContext>(fun () -> GenerationContext())
+        member this.Add(token: TypeToken) =
+            if not this.IsFull then
+                this.Tokens.Add token
 
-    let private getContext () =
-        let ctx = context.Value
-        ctx.Reset()
-        ctx
+        member this.GetOrAddTyparPosition(stamp: Stamp) =
+            match this.TyparMap.TryGetValue stamp with
+            | true, position -> position
+            | _ ->
+                let position = this.TyparMap.Count
+                this.TyparMap[stamp] <- position
+                position
 
-    let inline private encodeNullness (n: NullnessInfo) =
-        match n with
-        | NullnessInfo.AmbivalentToNull -> 0
-        | NullnessInfo.WithNull -> 1
-        | NullnessInfo.WithoutNull -> 2
+    [<RequireQualifiedAccess>]
+    module private NullnessTag =
+        [<Literal>]
+        let Ambivalent = 0
 
-    let private emitNullness (ctx: GenerationContext) (n: Nullness) =
+        [<Literal>]
+        let WithNull = 1
+
+        [<Literal>]
+        let WithoutNull = 2
+
+        // Checked like WithoutNull, except that it is never warned about.
+        [<Literal>]
+        let FromConstructor = 3
+
+    let rec private emitNullness (ctx: GenerationContext) (n: Nullness) =
         if ctx.EmitNullness then
-            ctx.Stable <- false
+            match n with
+            | Nullness.Known NullnessInfo.AmbivalentToNull -> ctx.Add(TypeToken.Nullness NullnessTag.Ambivalent)
+            | Nullness.Known NullnessInfo.WithNull -> ctx.Add(TypeToken.Nullness NullnessTag.WithNull)
+            | Nullness.Known NullnessInfo.WithoutNull -> ctx.Add(TypeToken.Nullness NullnessTag.WithoutNull)
+            | Nullness.KnownFromConstructor -> ctx.Add(TypeToken.Nullness NullnessTag.FromConstructor)
+            | Nullness.Variable v when v.IsSolved -> emitNullness ctx v.Solution
+            | Nullness.Variable _ -> ctx.IsRejected <- true
 
-            let out = ctx.Tokens
+    let private emitStamp (ctx: GenerationContext) (stamp: Stamp) =
+        ctx.Add(TypeToken.Stamp(int (stamp &&& 0xFFFFFFFFL)))
 
-            if out.Count < MaxTokenCount then
-                match n.TryEvaluate() with
-                | ValueSome k -> out.Add(TypeToken.Nullness(encodeNullness k))
-                | ValueNone -> out.Add(TypeToken.NullnessUnsolved)
+        let high = stamp >>> 32
 
-    let inline private emitStamp (ctx: GenerationContext) (stamp: Stamp) =
-        let out = ctx.Tokens
-
-        if out.Count < MaxTokenCount then
-            // Emit low 32 bits first
-            let lo = int (stamp &&& 0xFFFFFFFFL)
-            out.Add(TypeToken.Stamp lo)
-            // If high 32 bits are non-zero, emit them as another token
-            let hi64 = stamp >>> 32
-
-            if hi64 <> 0L && out.Count < MaxTokenCount then
-                out.Add(TypeToken.Stamp(int hi64))
+        if high <> 0L then
+            ctx.Add(TypeToken.StampHigh(int high))
 
     let rec private emitMeasure (ctx: GenerationContext) (m: Measure) =
-        let out = ctx.Tokens
-
-        if out.Count >= MaxTokenCount then
-            ()
-        else
+        if not ctx.IsFull then
             match m with
-            | Measure.Var mv -> emitStamp ctx mv.Stamp
-            | Measure.Const(tcref, _) -> emitStamp ctx tcref.Stamp
+            | Measure.Var typar ->
+                ctx.Stable <- false
+
+                match typar.Solution with
+                | Some ty -> emitTType ctx ty
+                | None when ctx.IsExact && typar.Rigidity <> TyparRigidity.Rigid -> ctx.IsRejected <- true
+                | None ->
+                    if ctx.IsExact then
+                        ctx.DependsOnFileBeingChecked <- true
+
+                    emitStamp ctx typar.Stamp
+            | Measure.Const(tcref, _) ->
+                emitStamp ctx tcref.Stamp
+
+                if ctx.IsExact && not tcref.IsAugmentationClosed then
+                    ctx.DependsOnFileBeingChecked <- true
             | Measure.Prod(m1, m2, _) ->
+                ctx.Add TypeToken.MeasureProduct
                 emitMeasure ctx m1
                 emitMeasure ctx m2
-            | Measure.Inv m1 -> emitMeasure ctx m1
-            | Measure.One _ -> out.Add(TypeToken.MeasureOne)
+            | Measure.Inv m1 ->
+                ctx.Add TypeToken.MeasureInverse
+                emitMeasure ctx m1
+            | Measure.One _ -> ctx.Add TypeToken.MeasureOne
             | Measure.RationalPower(m1, r) ->
+                ctx.Add(TypeToken.MeasureNumerator(GetNumerator r))
+                ctx.Add(TypeToken.MeasureDenominator(GetDenominator r))
                 emitMeasure ctx m1
 
-                if out.Count < MaxTokenCount then
-                    out.Add(TypeToken.MeasureNumerator(GetNumerator r))
-                    out.Add(TypeToken.MeasureDenominator(GetDenominator r))
+    and private emitTypar (ctx: GenerationContext) (typar: Typar) =
+        // Solved may become unsolved, in case of Trace.Undo.
+        if not typar.IsFromError then
+            ctx.Stable <- false
 
-    let rec private emitTType (ctx: GenerationContext) (ty: TType) =
-        let out = ctx.Tokens
+        match typar.Solution with
+        | Some ty -> emitTType ctx ty
+        | None ->
+            let isRigid = typar.Rigidity = TyparRigidity.Rigid
 
-        if out.Count >= MaxTokenCount then
-            ()
-        else
+            if ctx.IsExact then
+                if isRigid && not typar.IsFromError then
+                    ctx.DependsOnFileBeingChecked <- true
+                    emitStamp ctx typar.Stamp
+                else
+                    ctx.IsRejected <- true
+            elif isRigid then
+                ctx.Add(TypeToken.Rigid(ctx.GetOrAddTyparPosition typar.Stamp))
+            else
+                ctx.Add(TypeToken.Unsolved(ctx.GetOrAddTyparPosition typar.Stamp))
+
+    and private emitTType (ctx: GenerationContext) (ty: TType) =
+        if not ctx.IsFull then
             match ty with
-            | TType_ucase(u, tinst) ->
-                emitStamp ctx u.TyconRef.Stamp
-
-                if out.Count < MaxTokenCount then
-                    out.Add(TypeToken.UCase(int (hashText u.CaseName)))
-
-                for arg in tinst do
-                    emitTType ctx arg
-
             | TType_app(tcref, tinst, n) ->
                 emitStamp ctx tcref.Stamp
+
+                if ctx.IsExact && not tcref.IsAugmentationClosed then
+                    ctx.DependsOnFileBeingChecked <- true
+
                 emitNullness ctx n
 
                 for arg in tinst do
@@ -550,61 +596,57 @@ module StructuralUtilities =
                     emitTType ctx arg
 
             | TType_tuple(tupInfo, tys) ->
-                out.Add(TypeToken.TupInfo(if evalTupInfoIsStruct tupInfo then 1 else 0))
+                if evalTupInfoIsStruct tupInfo then
+                    ctx.Add(TypeToken.StructTuple tys.Length)
+                else
+                    ctx.Add(TypeToken.RefTuple tys.Length)
 
                 for arg in tys do
                     emitTType ctx arg
 
-            | TType_forall(tps, tau) ->
-                for tp in tps do
-                    ctx.TyparMap.[tp.Stamp] <- ctx.TyparMap.Count
-
-                out.Add(TypeToken.Forall tps.Length)
-
-                emitTType ctx tau
-
             | TType_fun(d, r, n) ->
+                ctx.Add TypeToken.Fun
+                emitNullness ctx n
                 emitTType ctx d
                 emitTType ctx r
+
+            | TType_var(typar, n) ->
                 emitNullness ctx n
-
-            | TType_var(r, n) ->
-                emitNullness ctx n
-
-                let typarId =
-                    match ctx.TyparMap.TryGetValue r.Stamp with
-                    | true, idx -> idx
-                    | _ ->
-                        let idx = ctx.TyparMap.Count
-                        ctx.TyparMap.[r.Stamp] <- idx
-                        idx
-
-                // Solved may become unsolved, in case of Trace.Undo.
-                if not r.IsFromError then
-                    ctx.Stable <- false
-
-                match r.Solution with
-                | Some ty -> emitTType ctx ty
-                | None ->
-                    if out.Count < MaxTokenCount then
-                        if r.Rigidity = TyparRigidity.Rigid then
-                            out.Add(TypeToken.Rigid typarId)
-                        else
-                            out.Add(TypeToken.Unsolved typarId)
+                emitTypar ctx typar
 
             | TType_measure m -> emitMeasure ctx m
 
+            // The two below are written by a hash of a name and by position: neither identifies exactly.
+            | TType_ucase _
+            | TType_forall _ when ctx.IsExact -> ctx.IsRejected <- true
+
+            | TType_ucase(u, tinst) ->
+                emitStamp ctx u.TyconRef.Stamp
+                ctx.Add(TypeToken.UCase(int (hashText u.CaseName)))
+
+                for arg in tinst do
+                    emitTType ctx arg
+
+            | TType_forall(tps, tau) ->
+                for tp in tps do
+                    ctx.TyparMap[tp.Stamp] <- ctx.TyparMap.Count
+
+                ctx.Add(TypeToken.Forall tps.Length)
+                emitTType ctx tau
+
+    let private context =
+        new System.Threading.ThreadLocal<GenerationContext>(fun () -> GenerationContext MaxTokenCount)
+
     let private getTypeStructureOfStrippedTypeUncached (ty: TType) =
-        let ctx = getContext ()
+        let ctx = context.Value
+        ctx.Reset()
         emitTType ctx ty
 
-        let out = ctx.Tokens
-
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if out.Count >= MaxTokenCount then
+        if ctx.IsFull then
             PossiblyInfinite
         else
-            let tokens = out.ToArray()
+            let tokens = ctx.Tokens.ToArray()
             let h = hashTokenArray tokens
 
             if not ctx.Stable then
@@ -624,3 +666,45 @@ module StructuralUtilities =
         match getTypeStructureOfStrippedType ty with
         | PossiblyInfinite -> ValueNone
         | ts -> ValueSome ts
+
+    /// Writes several types, and the stamps and numbers that go with them, as one exact structure.
+    /// Not thread-safe: use the builder of the current thread, and finish with it before asking for another.
+    [<Sealed>]
+    type ExactStructureBuilder private (ctx: GenerationContext) =
+
+        static let builderOfThread =
+            new System.Threading.ThreadLocal<ExactStructureBuilder>(fun () ->
+                ExactStructureBuilder(GenerationContext MaxExactStructureTokenCount))
+
+        /// True once something was added that tokens cannot identify, or once the structure got too long.
+        member _.IsRejected = ctx.IsRejected || ctx.IsFull
+
+        /// Whether something added so far is declared in the file being checked: a type, or a type parameter in scope
+        member _.DependsOnFileBeingChecked = ctx.DependsOnFileBeingChecked
+
+        member _.AddType(ty: TType) =
+            if not ctx.IsRejected then
+                emitTType ctx ty
+
+        member _.AddStamp(stamp: Stamp) = emitStamp ctx stamp
+
+        member _.AddNumber(number: int) = ctx.Add(TypeToken.Number number)
+
+        member _.Reject() = ctx.IsRejected <- true
+
+        member this.TryGetStructure() =
+            if this.IsRejected then
+                ValueNone
+            else
+                let tokens = ctx.Tokens.ToArray()
+                ValueSome(Stable(hashTokenArray tokens, tokens))
+
+        static member Start(emitNullness: bool) =
+            let builder = builderOfThread.Value
+            builder.Restart emitNullness
+            builder
+
+        member private _.Restart(emitNullness: bool) =
+            ctx.Reset()
+            ctx.IsExact <- true
+            ctx.EmitNullness <- emitNullness

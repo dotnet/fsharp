@@ -1,238 +1,325 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Caching infrastructure for overload resolution results
 module internal FSharp.Compiler.OverloadResolutionCache
 
+open System.Runtime.CompilerServices
+open System.Threading
+
 open Internal.Utilities.Library
-open Internal.Utilities.TypeHashing
 open Internal.Utilities.TypeHashing.StructuralUtilities
 
-open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Caches
-open FSharp.Compiler.Features
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_TYPEPROVIDERS
-open FSharp.Compiler.TypeProviders
-#endif
+[<Struct; RequireQualifiedAccess>]
+type ExpectedReturnType =
+    | NotConsidered
+    | Unknown
+    | MustEqual of equalTy: TType
+    | MustConvertTo of isMethodArg: bool * convertibleTy: TType
 
-/// Cache key for overload resolution: combines method group identity with caller argument types and return type
-type OverloadResolutionCacheKey =
+[<Struct>]
+type OverloadResolutionCacheKey = OverloadResolutionCacheKey of callStructure: TypeStructure
+
+type OverloadResolutionCacheResult =
     {
-        /// Hash combining all method identities in the method group
-        MethodGroupHash: int64
-        /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
-        /// This is critical for extension methods where the 'this' type determines the overload
-        ObjArgTypeStructures: TypeStructure[]
-        /// Type structures for each caller argument (only used when all types are stable)
-        ArgTypeStructures: TypeStructure[]
-        /// Type structure for expected return type (if any), to differentiate calls with different expected types
-        ReturnTypeStructure: TypeStructure voption
-        /// Number of caller-provided type arguments (to distinguish calls with different type instantiations)
-        CallerTyArgCount: int
+        WinnerIndex: int
+        IsExactMatch: bool
+        LessConcreteLoserIndexes: int list
     }
 
-/// Result of cached overload resolution
-[<Struct>]
-type OverloadResolutionCacheResult =
-    /// Resolution succeeded - index of the resolved method in the original calledMethGroup list
-    | CachedResolved of methodIndex: int
-
-/// Gets a per-TcGlobals overload resolution cache.
-/// Uses WeakMap to tie cache lifetime to TcGlobals (per-compilation isolation).
 let getOverloadResolutionCache =
     let factory (g: TcGlobals) =
         let options =
             match g.compilationMode with
-            | CompilationMode.OneOff ->
-                Caches.CacheOptions.getDefault HashIdentity.Structural
-                |> Caches.CacheOptions.withNoEviction
-            | _ ->
-                { Caches.CacheOptions.getDefault HashIdentity.Structural with
+            | CompilationMode.OneOff -> CacheOptions.getDefault HashIdentity.Structural |> CacheOptions.withNoEviction
+            | CompilationMode.Unset
+            | CompilationMode.Service
+            | CompilationMode.Interactive ->
+                { CacheOptions.getDefault HashIdentity.Structural with
                     TotalCapacity = 4096
                     HeadroomPercentage = 50
                 }
 
-        new Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
+        new Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>(options, "overloadResolutionCache")
 
-    Internal.Utilities.Library.Extras.WeakMap.getOrCreate factory
+    Extras.WeakMap.getOrCreate factory
 
-/// Check if a token array contains any Unsolved tokens (flexible unsolved typars)
-let private hasUnsolvedTokens (tokens: TypeToken[]) =
-    tokens
-    |> Array.exists (function
-        | TypeToken.Unsolved _ -> true
-        | _ -> false)
+let private methodDefIds = ConditionalWeakTable<ILMethodDef, StrongBox<int64>>()
 
-/// Try to get a type structure for caching in the overload resolution context.
-///
-/// In this context, we accept Unstable structures that are unstable ONLY because
-/// of solved typars (not unsolved flexible typars). This is safe because:
-/// 1. The cache key is computed BEFORE FilterEachThenUndo runs
-/// 2. Caller argument types were resolved before overload resolution
-/// 3. Solved typars in those types won't be reverted by Trace.Undo
-///
-/// We reject structures containing Unsolved tokens because unsolved flexible typars
-/// could resolve to different types in different contexts, leading to wrong cache hits.
-let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructure voption =
-    let ty = stripTyEqns g ty
+let mutable private lastMethodDefId = 0L
 
-    match tryGetTypeStructureOfStrippedType ty with
-    | ValueSome(Stable(h, tokens)) -> ValueSome(Stable(h, tokens))
-    | ValueSome(Unstable(h, tokens)) ->
-        if hasUnsolvedTokens tokens then
-            ValueNone
+let private createMethodDefId =
+    ConditionalWeakTable<ILMethodDef, StrongBox<int64>>.CreateValueCallback(fun _ -> StrongBox(Interlocked.Increment &lastMethodDefId))
+
+// IL method definitions have no stamp: two are the same method only when they are the same object.
+let private getMethodDefId (methodDef: ILMethodDef) =
+    methodDefIds.GetValue(methodDef, createMethodDefId).Value
+
+[<RequireQualifiedAccess>]
+module private ExpectedReturnTag =
+    [<Literal>]
+    let NotConsidered = 0
+
+    [<Literal>]
+    let Unknown = 1
+
+    [<Literal>]
+    let MustEqual = 2
+
+    [<Literal>]
+    let MethodArgMustConvertTo = 3
+
+    [<Literal>]
+    let MustConvertTo = 4
+
+[<RequireQualifiedAccess>]
+module private TypeArgTag =
+    [<Literal>]
+    let Unsolved = 0
+
+    [<Literal>]
+    let Solved = 1
+
+[<RequireQualifiedAccess>]
+module private MethodTag =
+    [<Literal>]
+    let FSharpMethod = 0
+
+    [<Literal>]
+    let ILMethod = 1
+
+    [<Literal>]
+    let DefaultStructCtor = 2
+
+    [<Literal>]
+    let RecdCtor = 3
+
+    [<Literal>]
+    let ModifiedReturnType = 4
+
+[<RequireQualifiedAccess>]
+module private CandidateFlag =
+    [<Literal>]
+    let UsesParamArrayConversion = 1
+
+    [<Literal>]
+    let HasAssociatedProperty = 2
+
+    [<Literal>]
+    let IsExtensionMember = 4
+
+    [<Literal>]
+    let DeclaringTypeChanged = 8
+
+    [<Literal>]
+    let ExtensionRankShift = 4
+
+let inline private flagIf (isSet: bool) (value: int) = if isSet then value else 0
+
+let private addType (g: TcGlobals) (builder: ExactStructureBuilder) (ty: TType) = builder.AddType(stripTyEqns g ty)
+
+let private addTypes (g: TcGlobals) (builder: ExactStructureBuilder) (tys: TType list) =
+    builder.AddNumber tys.Length
+
+    for ty in tys do
+        addType g builder ty
+
+let private addCallerArgs (g: TcGlobals) (builder: ExactStructureBuilder) (callerArgs: CallerArgs<'T>) =
+    // The result of a call with named arguments also depends on the properties and fields they can set.
+    if not (callerArgs.Named |> List.forall List.isEmpty) then
+        builder.Reject()
+
+    builder.AddNumber callerArgs.Unnamed.Length
+
+    for argGroup in callerArgs.Unnamed do
+        builder.AddNumber argGroup.Length
+
+        for callerArg in argGroup do
+            if callerArg.IsExplicitOptional then
+                builder.Reject()
+
+            addType g builder callerArg.CallerArgumentType
+
+let private addExpectedReturnType (g: TcGlobals) (builder: ExactStructureBuilder) (expectedReturnType: ExpectedReturnType) =
+    match expectedReturnType with
+    | ExpectedReturnType.NotConsidered -> builder.AddNumber ExpectedReturnTag.NotConsidered
+    | ExpectedReturnType.Unknown -> builder.AddNumber ExpectedReturnTag.Unknown
+    | ExpectedReturnType.MustEqual ty ->
+        builder.AddNumber ExpectedReturnTag.MustEqual
+        addType g builder ty
+    | ExpectedReturnType.MustConvertTo(isMethodArg, ty) ->
+        builder.AddNumber(
+            if isMethodArg then
+                ExpectedReturnTag.MethodArgMustConvertTo
+            else
+                ExpectedReturnTag.MustConvertTo
+        )
+
+        addType g builder ty
+
+let private isSameTypar (g: TcGlobals) (typar: Typar) (ty: TType) =
+    match tryDestTyparTy g ty with
+    | ValueSome other -> other === typar
+    | ValueNone -> false
+
+// Checking the arguments of a call can solve or constrain the type arguments of a method before it is resolved.
+let private addCalledTyArgs (g: TcGlobals) (builder: ExactStructureBuilder) (candidate: CalledMeth<'T>) =
+    let tyArgs = candidate.CalledTyArgs
+    builder.AddNumber tyArgs.Length
+
+    if not tyArgs.IsEmpty then
+        let formalTypars = candidate.Method.FormalMethodTypars
+
+        if formalTypars.Length <> tyArgs.Length then
+            builder.Reject()
         else
-            ValueSome(Stable(h, tokens))
-    | ValueSome PossiblyInfinite -> ValueNone
-    | ValueNone -> ValueNone
+            (formalTypars, tyArgs)
+            ||> List.iter2 (fun formalTypar tyArg ->
+                match tryDestTyparTy g tyArg with
+                | ValueSome typar when typar.Rigidity <> TyparRigidity.Rigid ->
+                    let isConstrainedByCall = typar.Constraints.Length <> formalTypar.Constraints.Length
 
-let rec computeMethInfoHash (minfo: MethInfo) : int64 =
+                    // The solution of a member constraint can come from the extension members in scope at the call.
+                    if isConstrainedByCall || typar.Constraints |> List.exists _.IsMayResolveMember then
+                        builder.Reject()
+
+                    builder.AddNumber TypeArgTag.Unsolved
+                    builder.AddNumber(tyArgs |> List.findIndex (isSameTypar g typar))
+                | _ ->
+                    builder.AddNumber TypeArgTag.Solved
+                    addType g builder tyArg)
+
+let rec private addMethod (g: TcGlobals) (builder: ExactStructureBuilder) (returnTypeIsConsidered: bool) (minfo: MethInfo) =
     match minfo with
-    | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (int64 (hash vref.Stamp)) (int64 (hash vref.LogicalName))
-    | ILMeth(_, ilMethInfo, _) ->
-        HashingPrimitives.combineHash (int64 (hash ilMethInfo.ILName)) (int64 (hash ilMethInfo.DeclaringTyconRef.Stamp))
-    | DefaultStructCtor(_, _) -> int64 (hash "DefaultStructCtor")
-    | RecdCtor(_, _) -> int64 (hash "RecdCtor")
-    | MethInfoWithModifiedReturnType(original, _) -> computeMethInfoHash original
-#if !NO_TYPEPROVIDERS
-    | ProvidedMeth(_, mb, _, _) ->
-        let name, declTypeName =
-            mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), Range.range0)
+    | FSMeth(_, _, vref, _) ->
+        builder.AddNumber MethodTag.FSharpMethod
+        builder.AddStamp vref.Stamp
 
-        HashingPrimitives.combineHash (int64 (hash name)) (int64 (hash declTypeName))
+        // The signature of a method is only final once the file declaring it has been checked:
+        // until then the signature it has at the call is part of the call.
+        match vref.TryDeclaringEntity with
+        | Parent declaringEntity when declaringEntity.IsAugmentationClosed -> ()
+        | Parent _
+        | ParentNone ->
+            let _, signatureTy = tryDestForallTy g vref.Type
+            addType g builder signatureTy
+    | ILMeth(_, ilMethInfo, _) ->
+        builder.AddNumber MethodTag.ILMethod
+        // The same definition can be imported more than once, with its types standing for different assemblies.
+        builder.AddStamp ilMethInfo.DeclaringTyconRef.Stamp
+        builder.AddStamp(getMethodDefId ilMethInfo.RawMetadata)
+    | DefaultStructCtor _ -> builder.AddNumber MethodTag.DefaultStructCtor
+    | RecdCtor _ -> builder.AddNumber MethodTag.RecdCtor
+    | MethInfoWithModifiedReturnType(original, returnTy) ->
+        builder.AddNumber MethodTag.ModifiedReturnType
+
+        if returnTypeIsConsidered then
+            addType g builder returnTy
+
+        addMethod g builder returnTypeIsConsidered original
+#if !NO_TYPEPROVIDERS
+    | ProvidedMeth _ -> builder.Reject()
 #endif
 
-/// Try to compute a cache key for overload resolution.
-/// Returns None if the resolution cannot be cached (e.g., unresolved type variables, named arguments).
+// Extension members are ranked against each other and against other members by their priority alone.
+let private getExtensionRank (candidates: CalledMeth<'T> list) (priority: ExtensionMethodPriority) =
+    let mutable rank = 0
+
+    for other in candidates do
+        if other.Method.ExtensionMemberPriority < priority then
+            rank <- rank + 1
+
+    rank
+
+let private addCandidates (g: TcGlobals) (builder: ExactStructureBuilder) (returnTypeIsConsidered: bool) (candidates: CalledMeth<'T> list) =
+    builder.AddNumber candidates.Length
+
+    let haveSameExtensionPriority =
+        match candidates with
+        | [] -> true
+        | first :: rest ->
+            let priority = first.Method.ExtensionMemberPriority
+
+            rest
+            |> List.forall (fun candidate -> candidate.Method.ExtensionMemberPriority = priority)
+
+    let mutable previousDeclaringTy = ValueNone
+
+    for candidate in candidates do
+        if not builder.IsRejected then
+            let minfo = candidate.Method
+            let declaringTy = minfo.ApparentEnclosingType
+
+            let declaringTyChanged =
+                match previousDeclaringTy with
+                | ValueSome previous -> not (previous === declaringTy)
+                | ValueNone -> true
+
+            previousDeclaringTy <- ValueSome declaringTy
+
+            let extensionRank =
+                if haveSameExtensionPriority then
+                    0
+                else
+                    getExtensionRank candidates minfo.ExtensionMemberPriority
+
+            builder.AddNumber(
+                flagIf candidate.UsesParamArrayConversion CandidateFlag.UsesParamArrayConversion
+                ||| flagIf candidate.AssociatedPropertyInfo.IsSome CandidateFlag.HasAssociatedProperty
+                ||| flagIf minfo.IsExtensionMember CandidateFlag.IsExtensionMember
+                ||| flagIf declaringTyChanged CandidateFlag.DeclaringTypeChanged
+                ||| (extensionRank <<< CandidateFlag.ExtensionRankShift)
+            )
+
+            if declaringTyChanged then
+                addType g builder declaringTy
+
+            // An override of a property is preferred by the type that declares the property.
+            match candidate.AssociatedPropertyInfo with
+            | Some pinfo -> addType g builder pinfo.ApparentEnclosingType
+            | None -> ()
+
+            addCalledTyArgs g builder candidate
+            addMethod g builder returnTypeIsConsidered minfo
+
 let tryComputeOverloadCacheKey
     (g: TcGlobals)
-    (calledMethGroup: CalledMeth<'T> list)
+    (infoReader: InfoReader)
+    (candidates: CalledMeth<'T> list)
+    (explicitTyArgs: TType list)
     (callerArgs: CallerArgs<'T>)
-    (reqdRetTyOpt: TType option)
-    (anyHasOutArgs: bool)
+    (expectedReturnType: ExpectedReturnType)
     : OverloadResolutionCacheKey voption =
 
-    let hasNamedArgs =
-        callerArgs.Named |> List.exists (fun namedList -> not (List.isEmpty namedList))
+    let builder = ExactStructureBuilder.Start g.checkNullness
 
-    if hasNamedArgs then
-        ValueNone
-    else
+    addCallerArgs g builder callerArgs
 
-        let mutable methodGroupHash = 0L
-
-        for cmeth in calledMethGroup do
-            let methHash = computeMethInfoHash cmeth.Method
-            methodGroupHash <- HashingPrimitives.combineHash methodGroupHash methHash
-
-        let objArgStructures = ResizeArray()
-        let mutable allStable = true
-
-        match calledMethGroup with
-        | cmeth :: _ ->
-            for objArgTy in cmeth.CallerObjArgTys do
-                match tryGetTypeStructureForOverloadCache g objArgTy with
-                | ValueSome ts -> objArgStructures.Add(ts)
-                | ValueNone -> allStable <- false
+    if not builder.IsRejected then
+        match candidates with
         | [] -> ()
+        | first :: _ ->
+            addTypes g builder first.CallerObjArgTys
+            addTypes g builder (Option.toList first.OptionalStaticType)
 
-        if not allStable then
-            ValueNone
-        else
+        addTypes g builder explicitTyArgs
+        addExpectedReturnType g builder expectedReturnType
+        addCandidates g builder (not expectedReturnType.IsNotConsidered) candidates
 
-            let argStructures = ResizeArray()
+    if builder.DependsOnFileBeingChecked then
+        // Until established, a type can still change its kind, base type, abbreviation and constraints.
+        if infoReader.IsEstablishingTypeDefinitions then
+            builder.Reject()
 
-            for argList in callerArgs.Unnamed do
-                for callerArg in argList do
-                    let argTy = callerArg.CallerArgumentType
+        // Until its file has been checked a type can gain members and interfaces, and so can its base types
+        // and the types it is constrained to, whether or not they are part of the call.
+        builder.AddNumber infoReader.PublishedDeclarationCount
 
-                    match tryGetTypeStructureForOverloadCache g argTy with
-                    | ValueSome ts -> argStructures.Add(ts)
-                    | ValueNone -> allStable <- false
-
-            if not allStable then
-                ValueNone
-            else
-                let retTyStructure =
-                    match reqdRetTyOpt with
-                    | Some retTy ->
-                        match tryGetTypeStructureForOverloadCache g retTy with
-                        | ValueSome ts -> ValueSome ts
-                        | ValueNone ->
-                            if anyHasOutArgs then
-                                ValueNone
-                            else
-                                ValueSome(Stable(0, [||]))
-                    | None -> ValueSome(Stable(0, [||]))
-
-                match retTyStructure with
-                | ValueNone -> ValueNone
-                | retStruct ->
-                    let callerTyArgCount =
-                        match calledMethGroup with
-                        | cmeth :: _ -> cmeth.NumCallerTyArgs
-                        | [] -> 0
-
-                    ValueSome
-                        {
-                            MethodGroupHash = methodGroupHash
-                            ObjArgTypeStructures = objArgStructures.ToArray()
-                            ArgTypeStructures = argStructures.ToArray()
-                            ReturnTypeStructure = retStruct
-                            CallerTyArgCount = callerTyArgCount
-                        }
-
-/// Compute cache result from resolution outcome
-let computeCacheResult
-    (calledMethGroup: CalledMeth<'T> list)
-    (calledMethOpt: CalledMeth<'T> voption)
-    : OverloadResolutionCacheResult option =
-    match calledMethOpt with
-    | ValueSome calledMeth ->
-        calledMethGroup
-        |> List.tryFindIndex (fun cm -> obj.ReferenceEquals(cm, calledMeth))
-        |> Option.map CachedResolved
-    | ValueNone -> None
-
-/// Stores an overload resolution result in the cache.
-/// For successful resolutions, finds the method's index in calledMethGroup and stores CachedResolved.
-/// Failed resolutions are not cached.
-///
-/// Also computes and stores under an "after" key if types were solved during resolution.
-/// This allows future calls with already-solved types to hit the cache directly.
-let storeCacheResult
-    (g: TcGlobals)
-    (cache: Caches.Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
-    (cacheKeyOpt: OverloadResolutionCacheKey voption)
-    (calledMethGroup: CalledMeth<'T> list)
-    (callerArgs: CallerArgs<'T>)
-    (reqdRetTyOpt: TType option)
-    (anyHasOutArgs: bool)
-    (calledMethOpt: CalledMeth<'T> voption)
-    =
-    if not (g.langVersion.SupportsFeature LanguageFeature.MethodOverloadsCache) then
-        ()
-    else
-        match cacheKeyOpt with
-        | ValueSome cacheKey ->
-            match computeCacheResult calledMethGroup calledMethOpt with
-            | Some res ->
-                cache.TryAdd(cacheKey, res) |> ignore
-
-                match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
-                | ValueSome afterKey when afterKey <> cacheKey -> cache.TryAdd(afterKey, res) |> ignore
-                | _ -> ()
-            | None -> ()
-        | ValueNone ->
-            match tryComputeOverloadCacheKey g calledMethGroup callerArgs reqdRetTyOpt anyHasOutArgs with
-            | ValueSome afterKey ->
-                match computeCacheResult calledMethGroup calledMethOpt with
-                | Some res -> cache.TryAdd(afterKey, res) |> ignore
-                | None -> ()
-            | ValueNone -> ()
+    builder.TryGetStructure() |> ValueOption.map OverloadResolutionCacheKey
