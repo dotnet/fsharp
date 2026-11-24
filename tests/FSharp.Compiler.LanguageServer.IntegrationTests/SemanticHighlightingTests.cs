@@ -43,11 +43,11 @@ public class SemanticHighlightingTests : FSharpApexTestBase
 
         AssertClassification(editor, "Sample", ["namespace name"]);
         AssertClassification(editor, "Test", ["class name"]);
-        AssertClassification(editor, "hello", ["method name"]);
+        AssertClassification(editor, "hello", ["FSharp.Function"]);
         AssertClassification(editor, "name", ["local name"], occurrence: 2);
-        AssertClassification(editor, "printfn", ["method name"]);
+        AssertClassification(editor, "printfn", ["FSharp.Function"]);
         AssertClassification(editor, "name", ["local name"], occurrence: 3);
-        AssertClassification(editor, "%s", ["string - escape character"]);
+        AssertClassification(editor, "%s", ["FSharp.Printf"]);
     }
 
     private void SetSemanticClassificationProvider(string provider)
