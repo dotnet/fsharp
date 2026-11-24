@@ -376,3 +376,52 @@ module Determinism
             Assert.False(File.ReadAllBytes first = File.ReadAllBytes changed, "A real source change must still change the binary")
         finally
             if Directory.Exists tempRoot then Directory.Delete(tempRoot, true)
+
+    /// Each source makes the compiler put a source file name into the assembly as data.
+    /// `{0}` is replaced with a directory that is the same for each compilation and is path-mapped.
+    let pathMappedLiteralSources: obj array seq =
+        [ // https://github.com/dotnet/fsharp/issues/21020
+          "quotation", "let q = <@ 1 + 1 @>"
+          "reflected definition", "[<ReflectedDefinition>]\nlet f x = x + 1"
+          // https://github.com/dotnet/fsharp/issues/21021
+          "incomplete match", "let f (x: int option) =\n    match x with\n    | Some y -> y"
+          "source directory after #line", "#line 1 @\"{0}/Other.fs\"\nlet d = __SOURCE_DIRECTORY__" ]
+        |> Seq.map (fun (name, body) -> [| box name; box body |])
+
+    [<Theory>]
+    [<MemberData(nameof pathMappedLiteralSources)>]
+    let ``Path mapping applies to source file names compiled into the assembly`` (_name: string) (body: string) =
+        let marker = Guid.NewGuid().ToString("N")
+        let tempRoot = Path.Combine(Path.GetTempPath(), "fsharp-pathmap-literals-" + marker)
+        let lineDirectiveDir = Path.Combine(tempRoot, "lines")
+        try
+            let compileIn directory =
+                let workDir = Path.Combine(tempRoot, directory)
+                Directory.CreateDirectory workDir |> ignore
+                let source = Path.Combine(workDir, "Library.fs")
+                let output = Path.Combine(workDir, "Library.dll")
+                File.WriteAllText(source, "module Library\n#nowarn \"25\"\n" + body.Replace("{0}", lineDirectiveDir) + "\n")
+                let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+                let result = runFscProcess [
+                    yield! defaultOpts |> Array.toList
+                    yield "--target:library"
+                    yield "--deterministic+"
+                    yield "--debug:portable"
+                    yield $"--pathmap:{workDir}=/mapped,{lineDirectiveDir}=/lines"
+                    yield $"-o:{output}"
+                    yield source
+                ]
+                if result.ExitCode <> 0 then
+                    failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
+                let bytes = File.ReadAllBytes output
+                // Search the raw bytes: a UTF-16 string can start at an odd offset.
+                let contains (encoding: Text.Encoding) =
+                    MemoryExtensions.IndexOf(ReadOnlySpan bytes, ReadOnlySpan(encoding.GetBytes marker)) >= 0
+                Assert.False(contains Text.Encoding.UTF8 || contains Text.Encoding.Unicode, $"The assembly contains an unmapped path under '{tempRoot}'")
+                bytes
+
+            let first = compileIn "first"
+            let second = compileIn "a-longer-second-directory"
+            Assert.True((first = second), "Mapped DLL bytes must agree")
+        finally
+            if Directory.Exists tempRoot then Directory.Delete(tempRoot, true)

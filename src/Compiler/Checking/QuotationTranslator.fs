@@ -225,7 +225,7 @@ let rec EmitDebugInfoIfNecessary cenv env (m: range) astExpr : ExprData =
             let rangeExpr =
                 let mm = m.ApplyLineDirectives() // LineDirectives: map ranges for the debugger
                 mk_tuple cenv.g m
-                    [ mkString cenv.g m mm.FileName
+                    [ mkString cenv.g m (PathMap.apply cenv.g.pathMap mm.FileName)
                       mkInt cenv.g m mm.StartLine
                       mkInt cenv.g m mm.StartColumn
                       mkInt cenv.g m mm.EndLine

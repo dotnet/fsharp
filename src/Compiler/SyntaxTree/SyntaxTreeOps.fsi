@@ -346,7 +346,7 @@ val stdinMockFileName: string
 
 val getSourceIdentifierValue: PathMap -> string -> range -> string
 
-val applyLineDirectivesToSourceIdentifier: string -> string -> range -> string
+val applyLineDirectivesToSourceIdentifier: PathMap -> string -> string -> range -> string
 
 val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 

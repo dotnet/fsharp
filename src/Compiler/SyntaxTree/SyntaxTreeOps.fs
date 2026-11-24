@@ -1100,19 +1100,19 @@ let getSourceIdentifierValue pathMap s (m: range) =
     | "__LINE__" -> string m.StartLine
     | _ -> failwith "getSourceIdentifierValue: unexpected identifier"
 
-let applyLineDirectivesToSourceIdentifier s value (m: range) =
+let applyLineDirectivesToSourceIdentifier pathMap s value (m: range) =
     let mm = m.ApplyLineDirectives()
 
     if mm = m then
         value // keep the value that was assigned during lexing (when line directives were not yet evaluated)
     else
-        getSourceIdentifierValue PathMap.empty s mm // update because of line directive
+        getSourceIdentifierValue pathMap s mm // update because of line directive
 
 let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (langVersion: LanguageVersion) =
     List.choose
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
-        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier PathMap.empty s v m)
         | ParsedHashDirectiveArgument.Int32(n, m) ->
             match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
             | true -> Some(string n)
@@ -1131,7 +1131,7 @@ let parsedHashDirectiveArgumentsNoCheck (input: ParsedHashDirectiveArgument list
     List.map
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> s
-        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> applyLineDirectivesToSourceIdentifier s v m
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> applyLineDirectivesToSourceIdentifier PathMap.empty s v m
         | ParsedHashDirectiveArgument.Int32(n, _) -> string n
         | ParsedHashDirectiveArgument.Ident(ident, _) -> ident.idText
         | ParsedHashDirectiveArgument.LongIdent(ident, _) -> longIdentToString ident)
@@ -1144,7 +1144,7 @@ let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list)
         | ParsedHashDirectiveArgument.Int32(n, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger n, m))
             None
-        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier PathMap.empty s v m)
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier ident.idText, m))
             None
