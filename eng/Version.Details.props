@@ -7,6 +7,7 @@ This file should be imported by eng/Versions.props
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkPackageVersion>10.0.0-beta.26515.1</MicrosoftDotNetArcadeSdkPackageVersion>
+    <MicrosoftDotNetHelixSdkPackageVersion>10.0.0-beta.26515.1</MicrosoftDotNetHelixSdkPackageVersion>
     <!-- dotnet-dotnet dependencies -->
     <SystemCollectionsImmutablePackageVersion>10.0.14</SystemCollectionsImmutablePackageVersion>
     <SystemCompositionPackageVersion>10.0.14</SystemCompositionPackageVersion>
@@ -38,6 +39,7 @@ This file should be imported by eng/Versions.props
   <PropertyGroup>
     <!-- dotnet-arcade dependencies -->
     <MicrosoftDotNetArcadeSdkVersion>$(MicrosoftDotNetArcadeSdkPackageVersion)</MicrosoftDotNetArcadeSdkVersion>
+    <MicrosoftDotNetHelixSdkVersion>$(MicrosoftDotNetHelixSdkPackageVersion)</MicrosoftDotNetHelixSdkVersion>
     <!-- dotnet-dotnet dependencies -->
     <SystemCollectionsImmutableVersion>$(SystemCollectionsImmutablePackageVersion)</SystemCollectionsImmutableVersion>
     <SystemCompositionVersion>$(SystemCompositionPackageVersion)</SystemCompositionVersion>
