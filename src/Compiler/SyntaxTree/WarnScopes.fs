@@ -187,6 +187,48 @@ module internal WarnScopes =
     let private setWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) data =
         diagnosticOptions.WarnScopeData <- Some data
 
+    type FileWarnScopes =
+        private
+            {
+                FileIndex: FileIndex
+                ScopedNowarnFeatureIsSupported: bool
+                ScriptNowarns: WarningNumber list
+                WarnScopes: Map<WarningNumber, WarnScope list>
+            }
+
+    let TryGetFileWarnScopes (diagnosticOptions: FSharpDiagnosticOptions) fileName =
+        let fileIndex = FileIndex.fileIndexOfFile fileName
+
+        match diagnosticOptions.WarnScopeData with
+        | None -> None
+        | Some data ->
+            let data = data :?> WarnScopeData
+
+            data.WarnScopes.TryFind fileIndex
+            |> Option.map (fun warnScopes ->
+                {
+                    FileIndex = fileIndex
+                    ScopedNowarnFeatureIsSupported = data.ScopedNowarnFeatureIsSupported
+                    ScriptNowarns = data.ScriptNowarns
+                    WarnScopes = warnScopes
+                })
+
+    let MergeFileWarnScopes (diagnosticOptions: FSharpDiagnosticOptions) (file: FileWarnScopes) =
+        let merge () =
+            let projectData = getWarnScopeData diagnosticOptions
+
+            // If the same file is parsed again (same fileIndex), we replace the warn scopes.
+            let newWarnScopeData: WarnScopeData =
+                {
+                    ScopedNowarnFeatureIsSupported = file.ScopedNowarnFeatureIsSupported
+                    ScriptNowarns = List.distinct (projectData.ScriptNowarns @ file.ScriptNowarns)
+                    WarnScopes = projectData.WarnScopes.Add(file.FileIndex, file.WarnScopes)
+                }
+
+            setWarnScopeData diagnosticOptions newWarnScopeData
+
+        lock diagnosticOptions merge
+
     // *************************************
     // Create the warn scopes from the directives and store them in diagnosticOptions.
     // *************************************
@@ -259,22 +301,14 @@ module internal WarnScopes =
 
         let fileWarnScopes = fileWarnCmds |> List.fold processWarnCmd Map.empty
 
-        let merge () =
-            let projectData = getWarnScopeData diagnosticOptions
-
-            // If the same file is parsed again (same fileIndex), we replace the warn scopes.
-            let projectWarnScopes = projectData.WarnScopes.Add(fileIndex, fileWarnScopes)
-
-            let newWarnScopeData =
-                {
-                    ScopedNowarnFeatureIsSupported = scopedNowarnFeatureIsSupported
-                    ScriptNowarns = List.distinct (projectData.ScriptNowarns @ fileScriptNowarns)
-                    WarnScopes = projectWarnScopes
-                }
-
-            setWarnScopeData diagnosticOptions newWarnScopeData
-
-        lock diagnosticOptions merge
+        MergeFileWarnScopes
+            diagnosticOptions
+            {
+                FileIndex = fileIndex
+                ScopedNowarnFeatureIsSupported = scopedNowarnFeatureIsSupported
+                ScriptNowarns = fileScriptNowarns
+                WarnScopes = fileWarnScopes
+            }
 
     let getDirectiveTrivia (lexbuf: Lexbuf) =
         let mkTrivia d =
