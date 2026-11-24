@@ -49,8 +49,6 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     val LOH_SIZE_THRESHOLD_BYTES: int
 
-    val reportTime: (string -> unit)
-
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
 
