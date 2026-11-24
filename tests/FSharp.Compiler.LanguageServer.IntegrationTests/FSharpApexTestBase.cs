@@ -23,10 +23,12 @@ public class FSharpApexTestBase : ApexTest
     {
         return new VisualStudioHostConfiguration
         {
-            RootSuffix = "RoslynDev",
             // A fresh hive (e.g. on CI) shows a blocking "Sign in to Visual Studio" dialog, so devenv
             // never registers its DTE and Apex times out waiting for it.
+            // Must precede RootSuffix: setting RootSuffix splices "/rootSuffix <hive>" into
+            // CommandLineArguments, which a later assignment would overwrite.
             CommandLineArguments = "/NoSigninPrompt",
+            RootSuffix = "RoslynDev",
             SkipCodeMarkerInitialization = true,
             EnableUnifiedSettings = true,
             // Automatically dismiss unexpected dialogs (e.g., the file
