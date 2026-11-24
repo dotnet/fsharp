@@ -7,6 +7,7 @@ open System.Threading.Tasks
 open Microsoft.Internal.VisualStudio.Services.UnifiedSettings
 open Microsoft.VisualStudio.Settings
 open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio.Threading
 open Microsoft.VisualStudio.Utilities.UnifiedSettings
 
 open Newtonsoft.Json.Linq
@@ -217,71 +218,72 @@ module internal UnifiedSettingsMigration =
 
     #nowarn "57"
 
-    let startAsync
+    let start
+        (joinableTaskFactory: JoinableTaskFactory)
         (manager: Microsoft.VisualStudio.Utilities.UnifiedSettings.ISettingsManager)
         (legacy: ISettingsManager5)
         (metadata: IUnifiedSettingsMetadata)
         (cancellationToken: CancellationToken)
-        =
-        task {
-            let legacyBase = legacy :> Microsoft.VisualStudio.Settings.ISettingsManager
-            let gate = new SemaphoreSlim(1, 1)
+        : IDisposable =
+        let legacyBase = legacy :> Microsoft.VisualStudio.Settings.ISettingsManager
+        let gate = new SemaphoreSlim(1, 1)
 
-            let logError (error: exn) =
-                ActivityLog.LogError("F# Unified Settings migration", error.ToString())
+        let logError (error: exn) =
+            ActivityLog.LogError("F# Unified Settings migration", error.ToString())
 
-            let tryRead name =
-                match legacyBase.TryGetValue<obj>(name) with
-                | GetValueResult.Success, value -> ValueSome value
-                | GetValueResult.Missing, _ -> ValueNone
-                | result, _ -> invalidOp $"Cannot read legacy F# setting {name}: {result}."
+        let tryRead name =
+            match legacyBase.TryGetValue<obj>(name) with
+            | GetValueResult.Success, value -> ValueSome value
+            | GetValueResult.Missing, _ -> ValueNone
+            | result, _ -> invalidOp $"Cannot read legacy F# setting {name}: {result}."
 
-            let hasNativeCustomizations () =
-                legacyBase.NamesStartingWith("UnifiedSettings.languages.fsharp.").Length > 0
-                || metadata.GetMonikersMatchingPattern("languages.fsharp.*")
-                   |> Seq.exists (fun moniker -> metadata.GetProvenance(moniker).Source = SettingValueSource.UserCustomization)
+        let hasNativeCustomizations () =
+            legacyBase.NamesStartingWith("UnifiedSettings.languages.fsharp.").Length > 0
+            || metadata.GetMonikersMatchingPattern("languages.fsharp.*")
+               |> Seq.exists (fun moniker -> metadata.GetProvenance(moniker).Source = SettingValueSource.UserCustomization)
 
-            let migration =
-                new ImportSession(
-                    manager,
-                    tryRead,
-                    (fun () -> legacyBase.SetValueAsync(CompletionKey, true, true)),
-                    hasNativeCustomizations,
-                    logError
-                )
+        let migration =
+            new ImportSession(
+                manager,
+                tryRead,
+                (fun () -> legacyBase.SetValueAsync(CompletionKey, true, true)),
+                hasNativeCustomizations,
+                logError
+            )
 
-            let run roamingSyncComplete : Task =
-                task {
+        let run roamingSyncComplete : Task =
+            task {
+                try
+                    do! gate.WaitAsync(cancellationToken)
+
                     try
-                        do! gate.WaitAsync(cancellationToken)
+                        do! metadata.WaitForRefreshAsync(cancellationToken)
 
-                        try
-                            do! metadata.WaitForRefreshAsync(cancellationToken)
+                        do! migration.RunAsync(roamingSyncComplete, cancellationToken)
+                    finally
+                        gate.Release() |> ignore
+                with
+                | :? OperationCanceledException when cancellationToken.IsCancellationRequested -> ()
+                | error -> logError error
+            }
 
-                            do! migration.RunAsync(roamingSyncComplete, cancellationToken)
-                        finally
-                            gate.Release() |> ignore
-                    with
-                    | :? OperationCanceledException when cancellationToken.IsCancellationRequested -> ()
-                    | error -> logError error
-                }
+        let mutable handler = Unchecked.defaultof<EventHandler>
 
-            let mutable handler = Unchecked.defaultof<EventHandler>
+        handler <-
+            EventHandler(fun _ _ ->
+                legacy.RoamingSyncComplete.RemoveHandler handler
+                joinableTaskFactory.RunAsync(fun () -> run true) |> ignore)
 
-            handler <-
-                EventHandler(fun _ _ ->
-                    legacy.RoamingSyncComplete.RemoveHandler handler
-                    ThreadHelper.JoinableTaskFactory.RunAsync(fun () -> run true) |> ignore)
+        legacy.RoamingSyncComplete.AddHandler handler
 
-            legacy.RoamingSyncComplete.AddHandler handler
-            do! run false
+        // Not awaited: the refresh can wait for a package load on the UI thread,
+        // which a synchronous load of the F# package keeps blocked.
+        joinableTaskFactory.RunAsync(fun () -> run false) |> ignore
 
-            return
-                { new IDisposable with
-                    member _.Dispose() =
-                        legacy.RoamingSyncComplete.RemoveHandler handler
-                        (migration :> IDisposable).Dispose()
-                }
+        { new IDisposable with
+            member _.Dispose() =
+                legacy.RoamingSyncComplete.RemoveHandler handler
+                (migration :> IDisposable).Dispose()
         }
 
     #warnon "57"

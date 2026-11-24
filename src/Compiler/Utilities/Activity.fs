@@ -252,6 +252,24 @@ module internal Activity =
                     Console.WriteLine(String('-', header.Length))
             }
 
+        [<Sealed>]
+        type PhaseTimer() =
+            let mutable current: Activity | null = null
+
+            let stopCurrent () =
+                match current with
+                | null -> ()
+                | previous ->
+                    previous.Dispose()
+                    current <- null
+
+            member _.Next(name: string) =
+                stopCurrent ()
+                current <- profiledSource.StartActivity name
+
+            interface IDisposable with
+                member _.Dispose() = stopCurrent ()
+
     module CsvExport =
 
         let private escapeStringForCsv (o: (obj | null)) =
