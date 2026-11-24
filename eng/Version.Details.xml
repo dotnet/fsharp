@@ -101,5 +101,9 @@
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
       <Sha>06d09f3116a8ce9eed58e97ab167a3d1f4e1f151</Sha>
     </Dependency>
+    <Dependency Name="Microsoft.DotNet.Helix.Sdk" Version="10.0.0-beta.26515.1">
+      <Uri>https://github.com/dotnet/arcade</Uri>
+      <Sha>ed9b62fbe0647cadb40b25793463110495e19984</Sha>
+    </Dependency>
   </ToolsetDependencies>
 </Dependencies>
