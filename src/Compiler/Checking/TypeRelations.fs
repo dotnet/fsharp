@@ -30,14 +30,11 @@ type CanCoerce =
 type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
     static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
-        let tryGetTypeStructure ty =
-            match ty with
-            | TType_app _ ->
-                tryGetTypeStructureOfStrippedType ty
-            | _ -> ValueNone
-
-        (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
-        ||> ValueOption.map2(fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
+        match ty1, ty2 with
+        | TType_app _, TType_app(tcref2, _, _) when tcref2.IsAugmentationClosed ->
+            (tryGetTypeStructureOfStrippedType ty1, tryGetTypeStructureOfStrippedType ty2)
+            ||> ValueOption.map2 (fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
+        | _ -> ValueNone
 
 let getTypeSubsumptionCache =
     let factory (g: TcGlobals) =

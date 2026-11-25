@@ -10,6 +10,7 @@ open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -153,3 +154,24 @@ let ``Extension scope remapping preserves composition and rejects collisions`` l
     let collapsingRemap stamp =
         if stamp = original[0].Stamp then renameFirst original[2].Stamp else renameFirst stamp
     Assert.Throws<InvalidOperationException>(fun () -> scope.Remap(collapsingRemap, id) |> ignore) |> ignore
+
+[<Fact>]
+let ``Interface added to a type after a subsumption check`` () =
+    let source =
+        """module Test
+
+type Overloaded =
+    static member Pick(x: System.IEquatable<Item>) = 1
+    static member Pick(x: obj) = "obj"
+
+and Item =
+    { Value: int }
+
+    static member Inside() = Overloaded.Pick({ Value = 1 })
+"""
+
+    let withoutOverloadCache = [ "--langversion:10.0" ]
+    let options = createProjectOptions [ source ] withoutOverloadCache
+    let results = checker.ParseAndCheckProject options |> Async.RunSynchronouslyImmediate
+
+    results.Diagnostics |> shouldBeEmpty
