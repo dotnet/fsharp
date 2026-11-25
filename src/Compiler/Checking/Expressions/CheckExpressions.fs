@@ -910,7 +910,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         Const.String s
     | SynConst.SourceIdentifier (i, s, m) ->
         unif g.string_ty
-        let s = applyLineDirectivesToSourceIdentifier i s m
+        let s = applyLineDirectivesToSourceIdentifier g.pathMap i s m
         Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
     | SynConst.Measure _ -> error (Error(FSComp.SR.tcInvalidTypeForUnitsOfMeasure(), m))
@@ -5084,7 +5084,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _) when typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.SourceIdentifier (i, s, m) when typeEquiv g g.string_ty kind ->
-                let s = applyLineDirectivesToSourceIdentifier i s m
+                let s = applyLineDirectivesToSourceIdentifier g.pathMap i s m
                 record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()

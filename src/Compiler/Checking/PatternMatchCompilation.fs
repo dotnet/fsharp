@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
+open Internal.Utilities
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
@@ -1139,7 +1140,7 @@ let private CompilePatternBasic
                 let mmMatch = mMatch.ApplyLineDirectives()
                 mkThrow mMatch resultTy
                     (mkExnExpr(g.MatchFailureException_tcr,
-                                [ mkString g mMatch mmMatch.FileName
+                                [ mkString g mMatch (PathMap.apply g.pathMap mmMatch.FileName)
                                   mkInt g mMatch mmMatch.StartLine
                                   mkInt g mMatch mmMatch.StartColumn], mMatch))
 
