@@ -1202,6 +1202,7 @@ let PublishValueDefnMaybeInclCompilerGenerated (cenv: cenv) env inclCompilerGene
         let vref = mkLocalValRef vspec
         tcaug.tcaug_adhoc <- NameMultiMap.add vspec.LogicalName vref tcaug.tcaug_adhoc
         tcaug.AddAdhocMember(ValRefIsExplicitImpl g vref, vref)
+        cenv.infoReader.NotePublishedDeclaration()
     | _ -> ()
 
 let PublishValueDefn cenv env declKind vspec =
@@ -10874,7 +10875,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr objArgInfo methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr objArgInfo methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup (Option.defaultValue [] tyArgsOpt) true returnTy
 
         // #14284 - mItem already carries the narrow terminal-identifier range, so rewrap to it
         let errors =

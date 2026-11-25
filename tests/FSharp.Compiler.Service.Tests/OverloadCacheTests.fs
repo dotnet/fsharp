@@ -314,3 +314,329 @@ let d4 = Assert.Equal<string>("z", "w")
 """
 
     checkSourceHasNoErrors source |> ignore
+
+let checkProject (otherOptions: string list) (sources: string list) =
+    let options = createProjectOptions sources otherOptions
+    let results = checker.ParseAndCheckProject options |> Async.RunSynchronouslyImmediate
+    results.Diagnostics
+
+let errorLines (diagnostics: FSharpDiagnostic[]) =
+    diagnostics
+    |> Seq.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+    |> Seq.map _.StartLine
+    |> Seq.distinct
+    |> Seq.toList
+
+// The calls of a case differ only in what the case names and must choose different overloads.
+// The first call chooses an overload that also applies to the second, so that reusing it is not caught
+// when it is checked again. A wrong overload is a type error in the last line.
+let callsDifferingInOneWayTestCases () : obj[] seq =
+    seq {
+        [| "explicit type arguments" :> obj;
+           """
+type Overloaded =
+    static member Pick<'T>(x: 'T) = 1
+    static member Pick<'T>(x: obj, ?y: 'T) = "obj"
+""" :> obj;
+           """
+let asInt = Overloaded.Pick<int>("a")
+let asString = Overloaded.Pick<string>("a")
+
+let expected: string * int = asInt, asString
+""" :> obj |]
+
+        [| "type arguments of the declaring type" :> obj;
+           """
+type Overloaded<'T> =
+    static member Pick(x: 'T) = 1
+    static member Pick(x: obj) = "obj"
+""" :> obj;
+           """
+let other = Overloaded<string>.Pick(1)
+let matching = Overloaded<int>.Pick(1)
+let otherAgain = Overloaded<string>.Pick(1)
+
+let expected: string * int * string = other, matching, otherAgain
+""" :> obj |]
+
+        [| "type arguments solved by a lambda argument" :> obj;
+           """
+type Overloaded =
+    static member Pick<'T>(x: 'T, f: 'T -> int) = "generic"
+    static member Pick(x: System.IComparable, f: int -> int) = 1
+
+let increment (x: int) = x + 1
+""" :> obj;
+           """
+let fromFunction = Overloaded.Pick(1, increment)
+let fromLambda = Overloaded.Pick(1, (fun x -> x + 1))
+
+let expected: int * string = fromFunction, fromLambda
+""" :> obj |]
+
+        [| "function types" :> obj;
+           """
+type Overloaded =
+    static member Pick(f: int -> int -> int) = 1
+    static member Pick(f: obj) = "obj"
+
+let higherOrder: (int -> int) -> int = fun f -> f 1
+let curried: int -> int -> int = fun a b -> a + b
+""" :> obj;
+           """
+let a = Overloaded.Pick(higherOrder)
+let b = Overloaded.Pick(curried)
+
+let expected: string * int = a, b
+""" :> obj |]
+
+        [| "nested tuples" :> obj;
+           """
+type Overloaded =
+    static member Pick(x: ((int * int) * int * int) list) = 1
+    static member Pick(x: obj) = "obj"
+
+let tripleFirst = [ ((1, 2, 3), 4) ]
+let pairFirst = [ ((1, 2), 3, 4) ]
+""" :> obj;
+           """
+let a = Overloaded.Pick(tripleFirst)
+let b = Overloaded.Pick(pairFirst)
+
+let expected: string * int = a, b
+""" :> obj |]
+
+        [| "type parameters" :> obj;
+           """
+type Overloaded =
+    static member Same<'T>(x: 'T, y: 'T, z: int) = 1
+    static member Same(x: obj, y: obj, z: obj) = "obj"
+""" :> obj;
+           """
+let calls<'a, 'b> (a: 'a) (b: 'b) =
+    let different = Overloaded.Same(a, b, 1)
+    let same = Overloaded.Same(a, a, 1)
+    let expected: string * int = different, same
+    ()
+""" :> obj |]
+
+        [| "measure type parameters" :> obj;
+           """
+type Overloaded =
+    static member Same<[<Measure>] 'w>(x: float<'w>, y: float<'w>) = 1
+    static member Same(x: obj, y: obj) = "obj"
+""" :> obj;
+           """
+let calls<[<Measure>] 'u, [<Measure>] 'v> (a: float<'u>) (b: float<'v>) =
+    let different = Overloaded.Same(a, b)
+    let same = Overloaded.Same(a, a)
+    let expected: string * int = different, same
+    ()
+""" :> obj |]
+
+        [| "units of measure" :> obj;
+           """
+[<Measure>] type m
+[<Measure>] type s
+
+type Overloaded =
+    static member Pick(x: float<s/m>) = "per metre"
+    static member Pick(x: float<'u>, ?y: int) = 1
+""" :> obj;
+           """
+let product: float<s m> = 1.0<_>
+let quotient: float<s/m> = 1.0<_>
+let a = Overloaded.Pick(product)
+let b = Overloaded.Pick(quotient)
+
+let expected: int * string = a, b
+""" :> obj |]
+
+        [| "expected type of out arguments" :> obj;
+           """
+open System.Runtime.InteropServices
+
+type Overloaded =
+    static member TryGet(key: string, [<Out>] value: byref<int>) : bool =
+        value <- 1
+        true
+
+    static member TryGet(key: string, [<Out>] value: byref<string>) : bool =
+        value <- ""
+        true
+""" :> obj;
+           """
+let asInt: bool * int = Overloaded.TryGet("key")
+let asString: bool * string = Overloaded.TryGet("key")
+let asIntAgain: bool * int = Overloaded.TryGet("key")
+""" :> obj |]
+    }
+
+[<Theory>]
+[<MemberData(nameof callsDifferingInOneWayTestCases)>]
+let ``Calls differing in one way`` (_scenario: string, declarations: string, calls: string) =
+    checkSourceHasNoErrors (declarations + calls) |> ignore
+
+    // A type of the file being checked is not cached the way a type of an earlier file is.
+    checkProject
+        []
+        [
+            "module Declarations\n" + declarations
+            "module Calls\nopen Declarations\n" + calls
+        ]
+    |> errorLines
+    |> shouldBeEmpty
+
+[<Fact>]
+let ``Calls differing in nullness`` () =
+    checkProject
+        [ "--checknulls+" ]
+        [
+            """module Declarations
+
+type Overloaded =
+    static member Pick(x: System.IComparable) = "comparable"
+    static member Pick(x: obj | null) = 1
+"""
+            """module Calls
+
+open Declarations
+
+let calls (notNull: string) (maybeNull: string | null) =
+    let a = Overloaded.Pick(notNull)
+    let b = Overloaded.Pick(maybeNull)
+    let c = Overloaded.Pick(notNull)
+    let expected: string * int * string = a, b, c
+    ()
+"""
+        ]
+    |> errorLines
+    |> shouldBeEmpty
+
+[<Fact>]
+let ``Conversion declared after a call`` () =
+    let source =
+        """
+open System
+
+type Target = { Value: int }
+type Source() = class end
+
+type Overloaded =
+    static member Pick(x: Target, y: DateTimeOffset) = 1
+    static member Pick(x: obj, y: DateTimeOffset) = "obj"
+
+let now = DateTime.Now
+let before = Overloaded.Pick(Source(), now)
+
+type Source with
+    static member op_Implicit(source: Source) : Target = { Value = 1 }
+
+let after = Overloaded.Pick(Source(), now)
+
+let expected: string * int = before, after
+"""
+
+    checkSourceHasNoErrors source |> ignore
+
+[<Fact>]
+let ``Conversion private to one of the callers`` () =
+    let source =
+        """
+type Target = { Value: int }
+
+type Outside =
+    static member Call() : string = Overloaded.Pick(Source(), 1)
+
+and Source() =
+    static member private op_Implicit(source: Source) : Target = { Value = 1 }
+    static member Call() : int = Overloaded.Pick(Source(), 1)
+
+and Overloaded =
+    static member Pick(x: Target, y: int) : int = 1
+    static member Pick(x: obj, y: int64) : string = "obj"
+"""
+
+    checkSourceHasNoErrors source |> ignore
+
+[<Fact>]
+let ``Repeated call reports the same error`` () =
+    let diagnostics =
+        checkProject
+            []
+            [
+                """module Calls
+
+type Inner =
+    static member Pick(x: obj) = 1
+    static member Pick(x: System.Uri) = ""
+
+type Outer =
+    static member Take(x: int64) = ()
+
+let first = Outer.Take(Inner.Pick("a"))
+let second = Outer.Take(Inner.Pick("a"))
+"""
+            ]
+
+    Assert.Equal<int list>([ 10; 11 ], errorLines diagnostics)
+
+[<Fact>]
+let ``Repeated call reports the same tiebreak warning`` () =
+    let diagnostics =
+        checkProject
+            [ "--warnon:3575" ]
+            [
+                """module Declarations
+
+type Overloaded =
+    static member Take<'T>(x: 'T option) = 1
+    static member Take<'T>(x: 'T list option) = "list"
+"""
+                """module Calls
+
+open Declarations
+
+let first = Overloaded.Take(Some [ 1 ])
+let second = Overloaded.Take(Some [ 1 ])
+"""
+            ]
+
+    let warningLines =
+        diagnostics
+        |> Seq.filter (fun d -> d.ErrorNumber = 3575)
+        |> Seq.map _.StartLine
+        |> Seq.toList
+
+    Assert.Equal<int list>([ 5; 6 ], warningLines)
+
+[<Fact>]
+let ``Call in an attribute of a type being defined`` () =
+    let diagnostics =
+        checkProject
+            []
+            [
+                """module Declarations
+
+type Overloaded =
+    static member Pick(x: System.IDisposable) : int = 1
+    static member Pick(x: obj) : string = "obj"
+"""
+                """module Calls
+
+open System
+open Declarations
+
+[<Obsolete(Overloaded.Pick(Unchecked.defaultof<Derived>))>]
+type Marked = interface end
+
+and Derived =
+    class
+        inherit System.IO.MemoryStream
+    end
+
+let expected: int = Overloaded.Pick(Unchecked.defaultof<Derived>)
+"""
+            ]
+
+    Assert.DoesNotContain(14, errorLines diagnostics)

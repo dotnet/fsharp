@@ -844,6 +844,10 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             GetUnimplementedStaticAbstractMemberOfTypeUncached
             hashFlags0
 
+    let mutable nonReusableLookupCount = 0
+    let mutable publishedDeclarationCount = 0
+    let mutable isEstablishingTypeDefinitions = false
+
     // Runtime feature support
 
     let isRuntimeFeatureSupported runtimeFeature =
@@ -1034,8 +1038,44 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member infoReader.TryFindIntrinsicPropInfo m ad nm ty =
         infoReader.GetIntrinsicPropInfosOfType (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty
 
+    member _.NonReusableLookupCount = nonReusableLookupCount
+
+    member _.PublishedDeclarationCount = publishedDeclarationCount
+
+    member _.NotePublishedDeclaration() =
+        publishedDeclarationCount <- publishedDeclarationCount + 1
+
+    member _.IsEstablishingTypeDefinitions = isEstablishingTypeDefinitions
+
+    member _.BeginEstablishingTypeDefinitions() : System.IDisposable =
+        let wasEstablishing = isEstablishingTypeDefinitions
+        isEstablishingTypeDefinitions <- true
+
+        { new System.IDisposable with
+            member _.Dispose() = isEstablishingTypeDefinitions <- wasEstablishing
+        }
+
     member _.FindImplicitConversions m ad ty =
-        implicitConversionCache.Apply((ad, m, ty))
+        let allConversions = implicitConversionCache.Apply((AccessibleFromSomewhere, m, ty))
+
+        if allConversions.IsEmpty then
+            []
+        else
+            let areSignaturesFinal =
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref -> tcref.IsAugmentationClosed
+                | ValueNone -> false
+
+            let areAllPublic =
+                allConversions |> List.forall (IsMethInfoAccessible amap m AccessibleFromEverywhere)
+
+            if not (areSignaturesFinal && areAllPublic) then
+                nonReusableLookupCount <- nonReusableLookupCount + 1
+
+            if areAllPublic then
+                allConversions
+            else
+                implicitConversionCache.Apply((ad, m, ty))
 
     member _.IsInterfaceTypeWithMatchingStaticAbstractMember m nm ad ty =
         isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)

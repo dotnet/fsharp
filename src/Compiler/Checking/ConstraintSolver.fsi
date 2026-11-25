@@ -295,6 +295,7 @@ val ResolveOverloadingForCall:
     callerArgs: CallerArgs<Expr> ->
     AccessorDomain ->
     calledMethGroup: CalledMeth<Expr> list ->
+    explicitTyArgs: TType list ->
     permitOptArgs: bool ->
     reqdRetTy: OverallTy ->
         CalledMeth<Expr> option * OperationResult<unit>
