@@ -30,6 +30,20 @@ type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
 
+/// Records how to undo mutations of inference state (type variables, augmentation closing) made on this thread
+/// while a log is active, so a pass that mutates shared typed trees can be undone and run again.
+[<Sealed; AbstractClass>]
+type MutationLog =
+
+    /// The active log of this thread, or null.
+    static member Current: (ResizeArray<unit -> unit> | null) with get, set
+
+    /// Runs `f` with no log active, for what has no earlier state an undo should go back to.
+    static member Unlogged: f: (unit -> 'T) -> 'T
+
+    /// Runs undo actions, latest first.
+    static member Undo: log: ResizeArray<unit -> unit> -> unit
+
 [<RequireQualifiedAccess>]
 type ValInline =
 
@@ -161,6 +175,8 @@ type ValFlags =
     member RecursiveValInfo: ValRecursiveScopeInfo
 
     member WithHasBeenReferenced: ValFlags
+
+    member WithHasBeenReferencedSetTo: referenced: bool -> ValFlags
 
     member WithIgnoresByrefScope: ValFlags
 
@@ -1201,7 +1217,7 @@ type UnionCase =
         mutable XmlDocSig: string
 
         /// Name/range of the case
-        Id: Ident
+        mutable Id: Ident
 
         /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is
         /// the signature range for an item in an implementation
@@ -1312,7 +1328,7 @@ type RecdField =
         mutable rfield_fattribs: Attribs
 
         /// Name/declaration-location of the field
-        rfield_id: Ident
+        mutable rfield_id: Ident
         rfield_name_generated: bool
 
         /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is
@@ -1625,6 +1641,12 @@ type Typar =
 
     /// Sets the identifier associated with a type variable
     member SetIdent: id: Ident -> unit
+
+    /// Sets the solution of an inference variable
+    member SetSolution: solution: TType option -> unit
+
+    /// Records how to restore this type variable's state in the active mutation log, if any
+    member RecordUndo: unit -> unit
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member SetIsCompatFlex: b: bool -> unit
@@ -2071,6 +2093,9 @@ type Val =
 
     member SetHasBeenReferenced: unit -> unit
 
+    /// Sets or clears whether the value has been referenced, recording how to restore it in the active mutation log
+    member SetHasBeenReferencedTo: referenced: bool -> unit
+
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
@@ -2417,6 +2442,12 @@ type ValMemberInfo =
         mutable IsImplemented: bool
         MemberFlags: SynMemberFlags
     }
+
+    /// Sets ImplementedSlotSigs, recording how to restore it in the active mutation log
+    member SetImplementedSlotSigs: slotsigs: SlotSig list -> unit
+
+    /// Sets IsImplemented, recording how to restore it in the active mutation log
+    member SetIsImplemented: isImplemented: bool -> unit
 
     override ToString: unit -> string
 

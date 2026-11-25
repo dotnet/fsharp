@@ -385,10 +385,11 @@ module internal TypeRemapping =
                     tpinst = bindTypars tps (generalizeTypars tpsR) tyenv.tpinst
                 }
 
-            (tps, tpsR)
-            ||> List.iter2 (fun tporig tp ->
-                tp.SetConstraints(remapTyparConstraintsAux tyenv tporig.Constraints)
-                tp.SetAttribs(tporig.Attribs |> remapAttrib))
+            MutationLog.Unlogged(fun () ->
+                (tps, tpsR)
+                ||> List.iter2 (fun tporig tp ->
+                    tp.SetConstraints(remapTyparConstraintsAux tyenv tporig.Constraints)
+                    tp.SetAttribs(tporig.Attribs |> remapAttrib)))
 
             tpsR, tyenv
 
@@ -760,7 +761,7 @@ module internal MeasureOps =
         | TType_measure(Measure.Var v) ->
             match v.Solution with
             | Some(TType_measure ms) ->
-                v.typar_solution <- Some(TType_measure(normalizeMeasure g ms))
+                v.SetSolution(Some(TType_measure(normalizeMeasure g ms)))
                 ty
             | _ -> ty
         | _ -> ty

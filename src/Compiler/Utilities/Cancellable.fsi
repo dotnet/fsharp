@@ -7,6 +7,9 @@ open System.Threading
 type Cancellable =
     static member internal UseToken: unit -> Async<IDisposable>
 
+    /// Makes ct the token CheckAndThrow checks until the result is disposed
+    static member internal UsingToken: ct: CancellationToken -> IDisposable
+
     static member HasCancellationToken: bool
     static member Token: CancellationToken
 
