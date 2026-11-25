@@ -16,6 +16,7 @@
     <Compile Include="ComputationExpressionBenchmarks.fs" />
     <Compile Include="ProjectProbes.fs" />
     <Compile Include="NamespaceImportBenchmarks.fs" />
+    <Compile Include="TypeHierarchyBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
