@@ -459,6 +459,9 @@ val AdjustCallerArgs:
 val RecdFieldInstanceChecks:
     g: TcGlobals -> amap: ImportMap -> ad: AccessorDomain -> m: range -> rfinfo: RecdFieldInfo -> unit
 
+/// Create a TAST const value from an IL-initialized field read from .NET metadata
+val ilFieldToTastConst: AbstractIL.IL.ILFieldInit -> Const
+
 val ILFieldStaticChecks:
     g: TcGlobals ->
     amap: ImportMap ->
@@ -486,13 +489,14 @@ exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 
 val CheckRecdFieldMutation: m: range -> denv: DisplayEnv -> rfinfo: RecdFieldInfo -> unit
 
-/// Generate a witness for the given (solved) constraint.  Five possibilities are taken
+/// Generate a witness for the given (solved) constraint.  Six possibilities are taken
 /// into account.
 ///   1. The constraint is solved by a .NET-declared method or an F#-declared method
 ///   2. The constraint is solved by an F# record field
 ///   3. The constraint is solved by an F# anonymous record field
 ///   4. The constraint is considered solved by a "built in" solution
 ///   5. The constraint is solved by a closed expression given by a provided method from a type provider
+///   6. The constraint is solved by a .NET field
 ///
 /// In each case an expression is returned where the method is applied to the given arguments, or the
 /// field is dereferenced.

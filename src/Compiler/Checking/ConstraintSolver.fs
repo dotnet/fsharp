@@ -499,6 +499,13 @@ type TraitConstraintSolution =
     | TTraitSolved of minfo: MethInfo * minst: TypeInst * staticTyOpt: TType option
     | TTraitSolvedRecdProp of fieldInfo: RecdFieldInfo * isSetProp: bool
     | TTraitSolvedAnonRecdProp of anonRecdTypeInfo: AnonRecdTypeInfo * typeInst: TypeInst * index: int
+    | TTraitSolvedILField of fieldInfo: ILFieldInfo * isSet: bool
+
+/// Matches the logical name of a property getter or setter trait, giving the property name and whether it is a setter.
+let (|PropertyAccessorTraitName|_|) (nm: string) =
+    if nm.StartsWithOrdinal("get_") then ValueSome(nm[4..], false)
+    elif nm.StartsWithOrdinal("set_") then ValueSome(nm[4..], true)
+    else ValueNone
 
 let BakedInTraitConstraintNames =
     [ "op_Division" ; "op_Multiply"; "op_Addition"
@@ -2089,10 +2096,9 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
 
                         // First look for a solution by a record property
                         let recdPropSearch =
-                            let isGetProp = nm.StartsWithOrdinal("get_")
-                            let isSetProp = nm.StartsWithOrdinal("set_")
-                            if not isRigid && ((argTys.IsEmpty && isGetProp) || isSetProp) then
-                                let propName = nm[4..]
+                            match nm with
+                            | PropertyAccessorTraitName(propName, isSetProp) when not isRigid && (isSetProp || argTys.IsEmpty) ->
+                                let isGetProp = not isSetProp
                                 let props =
                                     supportTys |> List.choose (fun ty ->
                                         match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, traitAD, false) FindMemberFlag.IgnoreOverrides m ty with
@@ -2107,13 +2113,11 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
                                 match props with
                                 | [ prop ] -> Some prop
                                 | _ -> None
-                            else
-                                None
+                            | _ -> None
 
                         let anonRecdPropSearch =
-                            let isGetProp = nm.StartsWithOrdinal("get_")
-                            if not isRigid && isGetProp && memFlags.IsInstance  then
-                                let propName = nm[4..]
+                            match nm with
+                            | PropertyAccessorTraitName(propName, false) when not isRigid && memFlags.IsInstance ->
                                 let props =
                                     supportTys |> List.choose (fun ty ->
                                         match TryFindAnonRecdFieldOfType g ty propName with
@@ -2122,12 +2126,35 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
                                 match props with
                                 | [ prop ] -> Some prop
                                 | _ -> None
-                            else
-                                None
+                            | _ -> None
+
+                        // Fields of .NET types are a solution of last resort for property traits
+                        let ilFieldSearch =
+                            match nm with
+                            | PropertyAccessorTraitName(fieldName, isSet) when
+                                not isRigid
+                                && argTys.Length = (if isSet then 1 else 0)
+                                && g.langVersion.SupportsFeature LanguageFeature.SupportILFieldsInSRTP
+                                // Field solutions use a trait solution format older compilers cannot read
+                                && not g.compilingFSharpCore
+                                ->
+                                let fields =
+                                    supportTys |> List.choose (fun ty ->
+                                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (fieldName, traitAD, false) FindMemberFlag.IgnoreOverrides m ty with
+                                        | Some (ILFieldItem [ ILFieldInfo _ as finfo ])
+                                            when finfo.IsStatic = not memFlags.IsInstance &&
+                                                not finfo.IsSpecialName &&
+                                                IsILFieldInfoAccessible g amap m traitAD finfo ->
+                                            Some finfo
+                                        | _ -> None)
+                                match fields with
+                                | [ finfo ] -> Some (finfo, isSet)
+                                | _ -> None
+                            | _ -> None
 
                         // Now check if there are no feasible solutions at all
-                        match minfos, recdPropSearch, anonRecdPropSearch with
-                        | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
+                        match minfos, recdPropSearch, anonRecdPropSearch, ilFieldSearch with
+                        | [], None, None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
                             if supportTys |> List.exists (isFunTy g) then
                                 return! ErrorD (ConstraintSolverError(RichText.mkText (FSComp.SR.csExpectTypeWithOperatorButGivenFunction(ConvertValLogicalNameToDisplayNameCore nm)), m, m2))
                             elif supportTys |> List.exists (isAnyTupleTy g) then
@@ -2216,20 +2243,20 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
                                     canCommitOverloadResult
                                     (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty traitAD calledMethGroup false (Some (MustEqual retTy)))
 
-                            match anonRecdPropSearch, recdPropSearch, methOverloadResult with
-                            | Some (anonInfo, tinst, i), None, None ->
+                            match anonRecdPropSearch, recdPropSearch, methOverloadResult, ilFieldSearch with
+                            | Some (anonInfo, tinst, i), None, None, _ ->
                                 // OK, the constraint is solved by a record property. Assert that the return types match.
                                 let rty2 = List.item i tinst
                                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
                                 return TTraitSolvedAnonRecdProp(anonInfo, tinst, i)
 
-                            | None, Some (rfinfo, isSetProp), None ->
+                            | None, Some (rfinfo, isSetProp), None, _ ->
                                 // OK, the constraint is solved by a record property. Assert that the return types match.
                                 let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
                                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy rty2
                                 return TTraitSolvedRecdProp(rfinfo, isSetProp)
 
-                            | None, None, Some (calledMeth: CalledMeth<_>) when canCommitOverloadResult (methOverloadResult, errors) ->
+                            | None, None, Some (calledMeth: CalledMeth<_>), _ when canCommitOverloadResult (methOverloadResult, errors) ->
                                 // OK, the constraint is solved.
                                 let minfo = calledMeth.Method
 
@@ -2244,6 +2271,18 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
                                 else
                                     do! CheckMethInfoAttributes g m None minfo
                                     return TTraitSolved (minfo, calledMeth.CalledTyArgs, calledMeth.OptionalStaticType)
+
+                            | None, None, None, Some (finfo, isSet) ->
+                                if isSet && (finfo.IsInitOnly || finfo.LiteralValue.IsSome) then
+                                    return! ErrorD(ConstraintSolverError(FSComp.SR.csFieldFoundButIsReadOnly(NicePrint.minimalRichTextOfType denv finfo.ApparentEnclosingType, RichText.mkField finfo.FieldName), m, m2))
+                                else
+                                    let fieldTy = finfo.FieldType(amap, m)
+                                    match argTys with
+                                    | [ argTy ] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy fieldTy
+                                    | _ -> ()
+                                    do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (if isSet then g.unit_ty else fieldTy)
+                                    do! CheckILFieldAttributes g finfo m
+                                    return TTraitSolvedILField(finfo, isSet)
 
                             | _ ->
                                 do! AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors
@@ -2308,6 +2347,11 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
 
     | TTraitSolvedAnonRecdProp (anonInfo, tinst, i) ->
         let sln = FSAnonRecdFieldSln(anonInfo, tinst, i)
+        TransactMemberConstraintSolution traitInfo trace sln
+        ResultD true
+
+    | TTraitSolvedILField (finfo, isSet) ->
+        let sln = ILFieldSln(finfo.ApparentEnclosingType, finfo.ILFieldRef, isSet)
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 

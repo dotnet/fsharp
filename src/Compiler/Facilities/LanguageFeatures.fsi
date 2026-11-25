@@ -56,6 +56,9 @@ type LanguageFeature =
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
     | ReraiseInComputationExpressions
+    | SupportILFieldsInSRTP
+    | VolatileILFieldAccess
+    | SrtpPropertySetterAssignment
 
 /// LanguageVersion management
 type LanguageVersion =

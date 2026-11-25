@@ -118,3 +118,12 @@ module Library =
 #else
         { RecordCtorPoint.A = a; RecordCtorPoint.B = b }
 #endif
+
+    /// Reads the .NET field Vector2.X. With a preview compiler the field solves an SRTP property constraint.
+#if USES_PREVIEW_COMPILER
+    let inline getX (v: ^T) : float32 = (^T: (member X: float32) v)
+#else
+    let inline getX (v: System.Numerics.Vector2) : float32 = v.X
+#endif
+
+    let inline vectorX (v: System.Numerics.Vector2) = getX v
