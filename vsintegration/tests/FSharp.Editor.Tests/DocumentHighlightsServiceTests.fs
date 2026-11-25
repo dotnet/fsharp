@@ -82,3 +82,24 @@ module DocumentHighlightsServiceTests =
         let expected = [| span sourceText false (2, 28) (2, 31) |]
 
         Assert.Equal<FSharpHighlightSpan array>(expected, spans)
+
+    [<Fact>]
+    let ``Highlights the parameter name inside its param tag`` () =
+        let fileContents =
+            """
+/// <param name="x">The addend.</param>
+let addOne x = x + 1
+"""
+
+        let sourceText = SourceText.From(fileContents)
+        let caretPosition = fileContents.IndexOf("x = x") + 1
+        let spans = getSpans fileContents caretPosition |> Array.sortBy _.TextSpan.Start
+
+        let expected =
+            [|
+                span sourceText false (2, 17) (2, 18)
+                span sourceText true (3, 11) (3, 12)
+                span sourceText false (3, 15) (3, 16)
+            |]
+
+        Assert.Equal<FSharpHighlightSpan array>(expected, spans)
