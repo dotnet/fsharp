@@ -53,6 +53,11 @@ let ``Async.map propagates Cancellation (sync)`` () =
     Assert.Equal(ct, e.CancellationToken)
 
 [<Fact>]
+let ``Async.map propagates return! Cancellation as TaskCanceledException (sync)`` () =
+    let a = async { return! Async.Await(Task.FromCanceled<int>(CancellationToken(true))) }
+    Assert.Throws<TaskCanceledException>(fun () -> Async.map id a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
+
+[<Fact>]
 let ``Async.map propagates Cancellation (async)`` () =
     let mutable mapperWasCalled = false
     let cts = new CancellationTokenSource()
@@ -92,6 +97,11 @@ let ``Async.bind propagates Cancellation (sync)`` () =
     let a = Async.result 2 |> Async.bind Async.result
     let e = Assert.Throws<OperationCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
     Assert.Equal(ct, e.CancellationToken)
+
+[<Fact>]
+let ``Async.bind propagates return! Cancellation as TaskCanceledException (sync)`` () =
+    let a = async { return! Async.Await(Task.FromCanceled<int>(CancellationToken(true))) }
+    Assert.Throws<TaskCanceledException>(fun () -> Async.bind Async.result a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
 
 [<Fact>]
 let ``Async.bind propagates Cancellation (async)`` () =
@@ -141,6 +151,11 @@ let ``Async.ignore propagates Cancellation (sync)`` () =
     Assert.Equal(ct, e.CancellationToken)
 
 [<Fact>]
+let ``Async.ignore propagates return! Cancellation as TaskCanceledException (sync)`` () =
+    let a = async { return! Async.Await(Task.FromCanceled<int>(CancellationToken(true))) }
+    Assert.Throws<TaskCanceledException>(fun () -> Async.ignore<int> a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
+
+[<Fact>]
 let ``Async.ignore propagates Cancellation (async)`` () =
     let mutable cancellationFailed = false
     let cts = new CancellationTokenSource()
@@ -154,6 +169,25 @@ let ``Async.ignore propagates Cancellation (async)`` () =
     let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
     Assert.NotEqual(cts.Token, e.CancellationToken)
     Assert.False cancellationFailed
+    
+
+let cancelledAsync<'T> : Async<'T> =
+    Async.FromContinuations(fun (_, _, cancel) ->
+        cancel (OperationCanceledException()))
+
+// In contrast to Task.catch+catchWith (and Async.catch/catchWith after it was corrected post 11.0.101), Async.Catch *will* trap a Canceled awaited Task
+[<Fact>]
+let ``Async.Catch treats Task Cancellation as Choice2Of2`` () =
+    let a = async { return! Async.Await(Task.FromCanceled(CancellationToken(true))) }
+    let res = Async.Catch a |> Async.RunSynchronouslyImmediate
+    match res with
+    | Choice2Of2 e -> Assert.IsType<TaskCanceledException> e
+    | Choice1Of2 () -> failwith "unexpected success"
+
+[<Fact>]
+let ``Async.Catch treats Canceled Async as OperationCanceledException (sync)`` () =
+    let a = cancelledAsync<int>
+    Assert.Throws<OperationCanceledException>(fun () -> Async.Catch a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
 
 
 [<Fact>]
@@ -186,6 +220,11 @@ let ``Async.catchWith recovers from exception (async)`` () = async {
     Assert.Equal(-1, result) }
 
 [<Fact>]
+let ``Async.catchWith propagates Canceled Async as OperationCanceledException (sync)`` () =
+    let a = cancelledAsync<int>
+    Assert.Throws<OperationCanceledException>(fun () -> Async.catchWith (fun _ -> -1) a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
+
+[<Fact>]
 let ``Async.catchWith propagates Cancellation (sync)`` () =
     let mutable cancellationFailed = false
     let ct = CancellationToken true
@@ -211,6 +250,11 @@ let ``Async.catchWith propagates Cancellation (async)`` () =
     let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
     Assert.NotEqual(cts.Token, e.CancellationToken)
 
+// Aligns with Task, deviates from Async.Catch and 11.0.101
+[<Fact>]
+let ``Async.catchWith propagates return! Cancellation as TaskCanceledException (sync)`` () =
+    let a = async { return! Async.Await (Task.FromCanceled<int>(CancellationToken(true))) } 
+    Assert.Throws<TaskCanceledException>(fun () -> Async.catchWith (fun _ -> -1) a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
 
 [<Fact>]
 let ``Async.catch returns Ok on success (sync)`` () =
@@ -245,6 +289,17 @@ let ``Async.catch propagates Cancellation (sync)`` () =
     let a = async { do! Async.Sleep 5000 } |> Async.catch
     let e = Assert.Throws<OperationCanceledException>(fun () -> a |> asyncWaitWithCt ct |> ignore)
     Assert.Equal(ct, e.CancellationToken)
+
+// Aligns with Task, deviates from Async.Catch and 11.0.101
+[<Fact>]
+let ``Async.catch propagates return! Cancellation as TaskCanceledException (sync)`` () =
+    let a = async { return! Async.Await(Task.FromCanceled<int>(CancellationToken(true))) }
+    Assert.Throws<TaskCanceledException>(fun () -> Async.catch a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
+
+[<Fact>]
+let ``Async.catch propagates Canceled Async as OperationCanceledException (sync)`` () =
+    let a = cancelledAsync<int>
+    Assert.Throws<OperationCanceledException>(fun () -> Async.catch a |> Async.RunSynchronouslyImmediate :> obj) |> ignore
 
 [<Fact>]
 let ``Async.catch propagates Cancellation (async)`` () =
@@ -311,7 +366,7 @@ let ``Async.parallelLimit limits concurrency`` () =
                         if concurrent > maxConcurrent then maxConcurrent <- concurrent
                         concurrent)
                 do! Async.Sleep 1
-                lock lockObj (fun () -> concurrent <- concurrent - 1) |> ignore
+                lock lockObj (fun () -> concurrent <- concurrent - 1)
                 return n
             }]
         |> Async.parallelLimit 3

@@ -2026,9 +2026,9 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation that yields the original result on success, or the result of
         /// <c>handler exn</c> for non-cancellation exceptions.</summary>
-        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged,
-        /// and therefore are never passed to <c>handler</c>.
-        /// </remarks>
+        /// <remarks><p><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged,
+        /// and therefore are never passed to <c>handler</c>.</p>
+        /// <p>In contrast, <c>Async.Catch</c> will trap Cancellation conditions as <c>Choice2Of2</c></p>.</remarks>
         /// <param name="handler">A function to handle (non-cancellation) exceptions, yielding a recovery value based on the exception.
         /// Any exception thrown by <c>handler</c> will propagate.</param>
         /// <param name="computation">The input computation.</param>
@@ -2048,7 +2048,8 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation that reifies the outcome of the given <c>computation</c> as a <c>Result</c>:
         /// <c>Ok</c> on success, <c>Error</c> on failure, so exceptions become values. Cancellation still propagates.</summary>
-        /// <remarks><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged.</remarks>
+        /// <remarks><p><c>OperationCanceledException</c> and derived types such as <c>TaskCanceledException</c> propagate unchanged.</p>
+        /// <p>In contrast, <c>Async.Catch</c> will trap Cancellation conditions as <c>Choice2Of2</c></p>.</remarks>
         /// <param name="computation">The input computation.</param>
         /// <returns>An asynchronous computation that yields a <c>Result</c>: <c>Ok</c> with the outcome on success,
         /// or <c>Error</c> with the exception on failure.

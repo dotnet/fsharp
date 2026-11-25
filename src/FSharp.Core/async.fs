@@ -2479,8 +2479,9 @@ module Async =
         async {
             try
                 return! computation
-            with e ->
-                return handler e
+            with
+            | :? OperationCanceledException as e -> return! raise e
+            | e -> return handler e
         }
 
     [<CompiledName("Catch")>]
@@ -2489,8 +2490,9 @@ module Async =
             try
                 let! v = computation
                 return Result.Ok v
-            with e ->
-                return Result.Error e
+            with
+            | :? OperationCanceledException as e -> return! raise e
+            | e -> return Result.Error e
         }
 
     [<CompiledName("Empty")>]
