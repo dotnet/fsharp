@@ -1262,6 +1262,32 @@ type RawFSharpAssemblyData(ilModule: ILModuleDef, ilAssemblyRefs) =
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr(parseILVersion FSharpBinaryMetadataFormatRevision)) attrs
 
+/// The options a TcGlobals takes from tcConfig. A record expression must assign every field, so an option
+/// added to TcGlobalsOptions does not compile until it is taken from tcConfig here.
+let private tcGlobalsOptionsOf (tcConfig: TcConfig) : TcGlobalsOptions =
+    {
+        TcGlobalsOptions.isInteractive = tcConfig.isInteractive
+        TcGlobalsOptions.checkNullness = tcConfig.checkNullness
+        TcGlobalsOptions.useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
+        TcGlobalsOptions.emitDebugInfoInQuotations = tcConfig.emitDebugInfoInQuotations
+        TcGlobalsOptions.noDebugAttributes = tcConfig.noDebugAttributes
+        TcGlobalsOptions.pathMap = tcConfig.pathMap
+        TcGlobalsOptions.langVersion = tcConfig.langVersion
+        TcGlobalsOptions.realsig = tcConfig.realsig
+        TcGlobalsOptions.compilationMode = tcConfig.compilationMode
+    }
+
+/// The rebuilt TcGlobals keeps the framework values, directoryToResolveRelativePaths included: that is the one
+/// of the project that built the framework imports. Only code generation reads it.
+let TcGlobalsForTcConfig (tcConfig: TcConfig) (frameworkTcGlobals: TcGlobals) =
+    let g = frameworkTcGlobals
+    let options = tcGlobalsOptionsOf tcConfig
+
+    if g.options = options then
+        g
+    else
+        TcGlobals(g.compilingFSharpCore, g.ilg, g.fslibCcu, g.directoryToResolveRelativePaths, g.tryFindSysTypeCcuHelper, options)
+
 //----------------------------------------------------------------------------
 // TcImports
 //--------------------------------------------------------------------------
@@ -3019,16 +3045,8 @@ and [<Sealed>] TcImports
                     ilGlobals,
                     fslibCcu,
                     tcConfig.implicitIncludeDir,
-                    tcConfig.isInteractive,
-                    tcConfig.checkNullness,
-                    tcConfig.useReflectionFreeCodeGen,
                     tryFindSysTypeCcu,
-                    tcConfig.emitDebugInfoInQuotations,
-                    tcConfig.noDebugAttributes,
-                    tcConfig.pathMap,
-                    tcConfig.langVersion,
-                    tcConfig.realsig,
-                    tcConfig.compilationMode
+                    tcGlobalsOptionsOf tcConfig
                 )
 
 #if DEBUG

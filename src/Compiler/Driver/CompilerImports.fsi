@@ -154,6 +154,11 @@ type RawFSharpAssemblyData =
 
     interface IRawFSharpAssemblyData
 
+/// The TcGlobals for tcConfig, given the TcGlobals cached with its framework imports, which may have been
+/// built for another project: that one when it carries tcConfig's options, otherwise a new one built from
+/// its framework values and tcConfig's options.
+val TcGlobalsForTcConfig: tcConfig: TcConfig -> frameworkTcGlobals: TcGlobals -> TcGlobals
+
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
