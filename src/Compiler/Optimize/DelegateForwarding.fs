@@ -100,7 +100,15 @@ let private matchForwarding g (aliases: ValMap<Expr>) (invokeParams: Val list) (
                     | Expr.Op(TOp.LValueOp(LAddrOf _, vref), _, _, m) -> resolveAliases aliases (exprForValRef m vref)
                     | _ -> a)
 
-            Some leadingArgs
+            // The construction site does not bind the peeled values. A receiver that uses one, for example a
+            // closure over a local function, cannot be evaluated there.
+            let usesPeeledBinding (a: Expr) =
+                (freeInExpr CollectLocals a).FreeLocals |> Zset.exists aliases.ContainsVal
+
+            if List.exists usesPeeledBinding leadingArgs then
+                None
+            else
+                Some leadingArgs
         else
             None
     else

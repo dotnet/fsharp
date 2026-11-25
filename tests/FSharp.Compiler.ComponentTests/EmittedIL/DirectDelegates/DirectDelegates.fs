@@ -682,6 +682,28 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// The receiver of a partial application closes over a local function bound inside the delegate body. That
+// binding does not exist at the construction site, so a direct delegate fails with FS0971.
+[<Fact>]
+let ``Issue 21032 - receiver capturing a local of the delegate body compiles (preview)`` () =
+    FSharp """
+module ReceiverCapturesBodyLocal
+
+open System
+
+let call (f: unit -> unit) : unit = f ()
+
+let mk () =
+    Action(fun () ->
+        let conv (a, b, c, d) = a + b + c + d
+        call (fun () -> printfn "%d" (conv (1, 2, 3, 4))))
+        """
+    |> asLibrary
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compile
+    |> shouldSucceed
+
 let private crossAssemblyLibrary =
     FSharp """
 module DelegateLib
