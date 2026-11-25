@@ -175,7 +175,9 @@ type internal CompilerCaches =
 
     member CacheSizes: CacheSizes
 
-    member TcIntermediate: AsyncMemoize<string * FSharpProjectIdentifier, string * int, TcIntermediate>
+    /// The version is the file key's, the bootstrap info's id, and whether the file was checked against its dependencies
+    /// only rather than all the files before it.
+    member TcIntermediate: AsyncMemoize<string * FSharpProjectIdentifier, (string * int) * bool, TcIntermediate>
 
     member ScriptClosure: AsyncMemoize<string * FSharpProjectIdentifier, string, LoadClosure>
 
