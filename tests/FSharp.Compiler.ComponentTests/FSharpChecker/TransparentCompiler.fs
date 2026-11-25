@@ -926,6 +926,27 @@ let ``Parsing a file does not type check the referenced projects`` () =
 
     Assert.Empty checkedFiles
 
+[<Fact>]
+let ``Clearing the caches invalidated by a type provider keeps the parse results`` () =
+    let observeParsing, getParsingEvents = recordAllEvents (fun (_, (_, f: string), _) -> f)
+    let observeChecking, getCheckingEvents = recordAllEvents getFileNameKey
+
+    async {
+        let! fileName, snapshot, checker = singleFileChecker "module M\n\nlet x = 1"
+        let! _ = checker.ParseAndCheckFileInProject(fileName, snapshot)
+
+        observeParsing _.ParseFile checker
+        observeChecking _.TcIntermediate checker
+        checker.Caches.ClearInvalidatedByTypeProvider(Set.singleton snapshot.Identifier)
+
+        let! _ = checker.ParseAndCheckFileInProject(fileName, snapshot)
+        ()
+    }
+    |> Async.RunSynchronously
+
+    Assert.Empty(typeCheckedFiles getParsingEvents)
+    Assert.NotEmpty(typeCheckedFiles getCheckingEvents)
+
 module ParsedInputHashing =
 
     let source = """

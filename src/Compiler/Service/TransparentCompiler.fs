@@ -412,20 +412,41 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member val ScriptClosure = AsyncMemoize(cs.ScriptClosureKeepStrongly, cs.ScriptClosureKeepWeakly, name = "ScriptClosure")
 
-    member this.Clear(projects: Set<FSharpProjectIdentifier>) =
-        let shouldClear project = projects |> Set.contains project
+    member private this.ClearParsing(projects: Set<FSharpProjectIdentifier>) =
+        let inline shouldClear project = projects |> Set.contains project
 
+        this.ParsingTcConfig.Clear(shouldClear)
         this.ParseFile.Clear(fst >> shouldClear)
-        this.ParseAndCheckFileInProject.Clear(snd >> shouldClear)
-        this.ParseAndCheckProject.Clear(shouldClear)
+
+    member private this.ClearBootstrap(projects: Set<FSharpProjectIdentifier>) =
+        let inline shouldClear project = projects |> Set.contains project
+
         this.BootstrapInfoStatic.Clear(shouldClear)
         this.BootstrapInfo.Clear(shouldClear)
-        this.ParsingTcConfig.Clear(shouldClear)
+
+    member private this.ClearTypeCheck(projects: Set<FSharpProjectIdentifier>) =
+        let inline shouldClear project = projects |> Set.contains project
+
         this.TcIntermediate.Clear(snd >> shouldClear)
+        this.ParseAndCheckFileInProject.Clear(snd >> shouldClear)
+        this.ParseAndCheckProject.Clear(shouldClear)
         this.AssemblyData.Clear(shouldClear)
         this.SemanticClassification.Clear(snd >> shouldClear)
         this.ItemKeyStore.Clear(snd >> shouldClear)
+
+    member this.Clear(projects: Set<FSharpProjectIdentifier>) =
+        let inline shouldClear project = projects |> Set.contains project
+
+        this.ClearParsing(projects)
         this.ScriptClosure.Clear(snd >> shouldClear)
+        this.ClearBootstrap(projects)
+        this.ClearTypeCheck(projects)
+
+    member this.ClearInvalidatedByTypeProvider(projects: Set<FSharpProjectIdentifier>) =
+        // TODO: Ideally the bootstrap info would stay. It goes because its TcImports owns the type provider instances
+        // and interns the entities of the types they provided, so a kept TcImports would keep answering with those.
+        this.ClearBootstrap(projects)
+        this.ClearTypeCheck(projects)
 
 type internal TransparentCompiler
     (
@@ -1068,7 +1089,8 @@ type internal TransparentCompiler
                 // TODO: In the future it might make sense to expose the event on the ProjectSnapshot and let the consumer deal with this.
                 // We could include a timestamp as part of the ProjectSnapshot key that represents the last time since the TypeProvider assembly was invalidated.
                 // When the event trigger, the consumer could then create a new snapshot based on the updated time.
-                importsInvalidatedByTypeProvider.Publish.Add(fun () -> caches.Clear(Set.singleton projectSnapshot.Identifier))
+                importsInvalidatedByTypeProvider.Publish.Add(fun () ->
+                    caches.ClearInvalidatedByTypeProvider(Set.singleton projectSnapshot.Identifier))
 
                 return bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider
             }
