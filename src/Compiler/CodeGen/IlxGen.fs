@@ -10350,6 +10350,8 @@ and GenMethodForBinding
             // Replace the body of ValInline.PseudoVal "must inline" methods with a 'throw'
             // For witness-passing methods, don't do this if `isLegacy` flag specified
             // on the attribute. Older compilers
+            // An inline template that suspends outside a runtime-async body would run the suspension
+            // in an ordinary method when called directly, so it throws as well.
             let bodyExpr =
                 let hasNoDynInvocTrue =
                     ValHasWellKnownAttribute cenv.g WellKnownValAttributes.NoDynamicInvocationAttribute_True v
@@ -10357,9 +10359,15 @@ and GenMethodForBinding
                 let hasNoDynInvocFalse =
                     ValHasWellKnownAttribute cenv.g WellKnownValAttributes.NoDynamicInvocationAttribute_False v
 
+                let isSuspendingInlineTemplate =
+                    eenvForMeth.inInlineMethod
+                    && not isRuntimeAsync
+                    && ContainsSuspensionOutsideMarkers g body
+
                 if
                     (not generateWitnessArgs && (hasNoDynInvocTrue || hasNoDynInvocFalse))
                     || (generateWitnessArgs && hasNoDynInvocFalse)
+                    || isSuspendingInlineTemplate
                 then
                     let exnArg =
                         mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported (v.CompiledName g.CompilerGlobalState))

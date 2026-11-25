@@ -363,6 +363,92 @@ let f : Task<int> =
         |> shouldFail
         |> withErrorCode 3350
 
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``Issue 21001 - imported runtime async builder is unavailable in FSharp 11.0`` (optimize: bool) =
+        let library =
+            FSharp """
+namespace RuntimeAsyncBuilderLibrary
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type B() =
+    member inline _.Delay([<InlineIfLambda>] f: unit -> 'T) = f
+    member inline _.Return(x) = x
+    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] k: 'T -> 'U) = k (AsyncHelpers.Await t)
+    member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> = StateMachineHelpers.__runtimeAsyncReturn (code ())
+
+[<AutoOpen>]
+module M =
+    let b = B()
+"""
+            |> asLibrary
+            |> withName "RuntimeAsyncBuilderLibrary"
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+
+        FSharp """
+module RuntimeAsyncBuilderConsumer
+
+open System.Threading.Tasks
+open RuntimeAsyncBuilderLibrary
+
+let work () =
+    b {
+        let! x = Task.FromResult 20
+        return x + 22
+    }
+"""
+        |> withLangVersion11
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> withReferences [ library ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3350
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``Issue 21001 - inline members that suspend outside a runtime async body throw when called directly`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncInlineTemplateTest
+
+open System
+open System.Reflection
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type B() =
+    member inline _.Bind(t: Task<'T>, [<InlineIfLambda>] k: 'T -> 'U) = k (AsyncHelpers.Await t)
+    member inline _.Started(t: Task<int>) : Task<int> =
+        let started = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await t + 1)
+        started
+
+let invoke name (tyargs: Type[]) (args: obj[]) =
+    let m = typeof<B>.GetMethod(name)
+    let m = if tyargs.Length = 0 then m else m.MakeGenericMethod tyargs
+    try Ok(m.Invoke(B(), args)) with :? TargetInvocationException as e -> Error(e.InnerException.GetType())
+
+match invoke "Bind" [| typeof<int>; typeof<int> |] [| box (Task.FromResult 1); box (fun (x: int) -> x) |] with
+| Error t when t = typeof<NotSupportedException> -> ()
+| r -> failwith $"Bind: %A{r}"
+
+match invoke "Started" [||] [| box (Task.FromResult 41) |] with
+| Ok(:? Task<int> as t) when t.Result = 42 -> ()
+| r -> failwith $"Started: %A{r}"
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``runtime async suspension outside runtime async is rejected`` () =
         FSharp """

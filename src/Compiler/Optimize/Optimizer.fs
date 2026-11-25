@@ -3974,19 +3974,10 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         | CurriedLambdaValue (_, _, _, body, _) -> Some body
         | _ -> None
 
-    let runtimeAsyncAnalyzer =
-        if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
-            Some(RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody))
-        else
-            None
-
-    let containsRuntimeAsyncCode expr =
-        match runtimeAsyncAnalyzer with
-        | Some analyzer -> analyzer.ContainsRuntimeAsyncCode expr
-        | None -> false
+    let runtimeAsyncAnalyzer = RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody)
 
     let reoptimizeRuntimeAsync reduced =
-        if containsRuntimeAsyncCode reduced then
+        if runtimeAsyncAnalyzer.ContainsRuntimeAsyncCode reduced then
             let preserveCallSite = not cenv.settings.LocalOptimizationsEnabled
             let cenv =
                 { cenv with
@@ -3995,18 +3986,15 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             alwaysInline = true
                             localOptUser = Some true } }
             let result = fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-            match runtimeAsyncAnalyzer with
-            | Some analyzer ->
-                let result = ReduceRuntimeAsyncReturnedClosureApplications g analyzer result
-                if preserveCallSite then PreserveRuntimeAsyncCallSiteDebugPoint g m result else result
-            | None -> result
+            let result = ReduceRuntimeAsyncReturnedClosureApplications g runtimeAsyncAnalyzer result
+            if preserveCallSite then PreserveRuntimeAsyncCallSiteDebugPoint g m result else result
         else
             reduced
 
     let mustInlineRuntimeAsync =
-        match runtimeAsyncAnalyzer, stripExpr valExpr with
-        | Some analyzer, Expr.Val(vref, _, _) ->
-            ShouldForceRuntimeAsyncApplication analyzer env.runtimeAsyncContext vref inlineBody args
+        match stripExpr valExpr with
+        | Expr.Val(vref, _, _) ->
+            ShouldForceRuntimeAsyncApplication runtimeAsyncAnalyzer env.runtimeAsyncContext vref inlineBody args
         | _ -> false
 
     match cenv.settings.alwaysInline, stripExpr valExpr with

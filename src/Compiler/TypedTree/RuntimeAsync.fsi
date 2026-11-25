@@ -40,3 +40,6 @@ val IsRuntimeAsyncSuspensionExpr: g: TcGlobals -> expr: Expr -> bool
 val IsRuntimeAsyncBoundary: g: TcGlobals -> expr: Expr -> bool
 
 val ExistsExpr: predicate: (Expr -> bool) -> expr: Expr -> bool
+
+/// A suspension that does not run inside the body or recipe of a marker in the same expression.
+val ContainsSuspensionOutsideMarkers: g: TcGlobals -> expr: Expr -> bool
