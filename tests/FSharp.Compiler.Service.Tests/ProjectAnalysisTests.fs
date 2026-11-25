@@ -4946,6 +4946,21 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     printfn "Attributes found in FSharp.Core: %A" fsharpCoreAsm.Contents.Attributes
     shouldEqual (fsharpCoreAsm.Contents.Attributes.Count > 0) true
 
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Test project37 assembly attributes from all files`` (useTransparentCompiler: bool) =
+    // Each file of the project declares an assembly attribute, both must be in the assembly signature.
+    let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(Project37.options)
+        |> Async.RunSynchronouslyImmediate
+    wholeProjectResults.AssemblySignature.Attributes
+    |> Seq.map (fun a -> a.AttributeType.DisplayName)
+    |> Seq.filter (fun n -> n.StartsWith "AttrTest")
+    |> set
+    |> shouldEqual (set [ "AttrTestAttribute"; "AttrTest2Attribute" ])
+
 [<Fact>]
 let ``Test project37 DeclaringEntity`` () =
     let wholeProjectResults =
