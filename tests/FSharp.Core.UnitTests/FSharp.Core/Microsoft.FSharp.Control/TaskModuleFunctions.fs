@@ -239,6 +239,14 @@ module TaskModuleFunctionsTests =
         Assert.True t.IsCanceled
 
     [<Fact>]
+    let ``Task.catchWith propagates return! Cancellation (sync)`` () =
+        let ct = CancellationToken true
+        let t = task { return! Task.FromCanceled<int>(ct) } |> Task.catchWith (fun _ -> -1)
+        let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+        Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
+
+    [<Fact>]
     let ``Task.catchWith propagates Cancellation (async)`` () =
         let tcs = TaskCompletionSource<int>()
         let t = tcs.Task |> Task.catchWith (fun _ -> -1)
@@ -306,6 +314,14 @@ module TaskModuleFunctionsTests =
     let ``Task.catch propagates cancellation (sync)`` () =
         let ct = CancellationToken true
         let t = Task.FromCanceled<int>(ct) |> Task.catch
+        let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
+        Assert.Equal(ct, e.CancellationToken)
+        Assert.True t.IsCanceled
+
+    [<Fact>]
+    let ``Task.catch propagates return! Cancellation (sync)`` () =
+        let ct = CancellationToken true
+        let t = task { return! Task.FromCanceled<int>(ct) } |> Task.catch
         let e = Assert.ThrowsAsync<TaskCanceledException>(fun () -> t).Result
         Assert.Equal(ct, e.CancellationToken)
         Assert.True t.IsCanceled
