@@ -402,11 +402,6 @@
         <target state="translated">리소스를 저장하는 파일입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="6000">
-        <source>F# Tools</source>
-        <target state="translated">F# 도구</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
         <target state="translated">F# 대화형</target>
@@ -420,11 +415,6 @@
       <trans-unit id="6003">
         <source>Visual F# Files (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</source>
         <target state="translated">Visual F# 파일 (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6015">
-        <source>Compiler</source>
-        <target state="new">Compiler</target>
         <note />
       </trans-unit>
       <trans-unit id="7000">
@@ -510,16 +500,6 @@
       <trans-unit id="AddReferenceDialogTitle">
         <source>Add Reference</source>
         <target state="translated">참조 추가</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6005">
-        <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">F# Interactive에 전달된 경로 및 명령줄 인수를 변경합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6006">
-        <source>Enable or disable Type Providers</source>
-        <target state="translated">형식 공급자의 사용 여부를 설정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="6007">
