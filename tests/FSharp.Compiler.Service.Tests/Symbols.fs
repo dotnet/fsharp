@@ -568,6 +568,15 @@ let f2 b1 b2 b3 b4 b5 =
                 | _ -> ()
             | _ -> ()
 
+    [<Fact>]
+    let ``Type checking continues after an incomplete member in an object expression``() =
+        let _, checkResults = getParseAndCheckResults """
+{ new System.IDisposable with
+    member this.Dispose() = ()
+    member this. }
+"""
+        findSymbolUseByName "Dispose" checkResults |> ignore
+
     [<Theory>]
     [<InlineData("(string | null) list", "(string | null) list")>]
     [<InlineData("(string | null)", "string | null")>]
