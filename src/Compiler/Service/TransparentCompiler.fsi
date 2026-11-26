@@ -181,6 +181,8 @@ type internal CompilerCaches =
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 
+    member ClearInvalidatedByTypeProvider: projects: Set<FSharpProjectIdentifier> -> unit
+
 type internal TransparentCompiler =
     interface IBackgroundCompiler
 
