@@ -429,6 +429,10 @@ type cenv =
 
       localInternalVals: Dictionary<Stamp, ValInfo>
 
+      /// Inline vals of recursive groups whose defining element is not optimized yet, mapped to the
+      /// action that optimizes that element. See OptimizeRecGroup.
+      pendingRecGroupVals: Dictionary<Stamp, unit -> unit>
+
       settings: OptimizationSettings
 
       emitTailcalls: bool
@@ -641,6 +645,8 @@ let inline BindInternalValsToUnknown cenv vs env =
     ignore vs
     env
 
+let AddDontSplitVar (v: Val) env = { env with dontSplitVars = env.dontSplitVars.Add v () }
+
 let BindTypar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos }
 
 let BindTyparsToUnknown (tps: Typar list) env =
@@ -658,13 +664,53 @@ let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) =
         referencedCcus = ccu :: env.referencedCcus }
 
 /// Lookup information about values, without reporting values that are not bound yet
-let TryGetInfoForLocalValue cenv env (v: Val) =
+let rec TryGetInfoForLocalValue cenv env (v: Val) =
     // Abstract slots do not have values
     if v.IsDispatchSlot then None
     else
         match cenv.localInternalVals.TryGetValue v.Stamp with
         | true, res -> Some res
-        | _ -> env.localExternalVals.TryFind v.Stamp
+        | _ ->
+            match cenv.pendingRecGroupVals.TryGetValue v.Stamp with
+            | true, optimizeDefiningElement ->
+                optimizeDefiningElement ()
+                TryGetInfoForLocalValue cenv env v
+            | _ -> env.localExternalVals.TryFind v.Stamp
+
+/// Optimizes the elements of a recursive group and commits their effects on the optimization state in
+/// source order. An element can use an inline val of a later element, also through a trait call that
+/// only an inlined body exposes, but a val is published only once its element is optimized. So the inline
+/// vals of the elements not optimized yet stay in cenv.pendingRecGroupVals, and the first lookup of one
+/// optimizes its element on demand. A cycle of inline vals is not resolved: an element is removed from
+/// the pending vals before it is optimized.
+let OptimizeRecGroup cenv (inlineValsOf: 'T -> Val list) (optimize: 'State -> 'T -> 'R * ('State -> 'State)) (state: 'State) xs =
+    let xs = List.toArray xs
+    let inlineVals = Array.map inlineValsOf xs
+    let optimized = Array.zeroCreate<('R * ('State -> 'State)) voption> xs.Length
+    let state = ref state
+
+    let optimizeElement idx =
+        match optimized[idx] with
+        | ValueSome resultAndCommit -> resultAndCommit
+        | ValueNone ->
+            for v in inlineVals[idx] do
+                cenv.pendingRecGroupVals.Remove v.Stamp |> ignore
+
+            let resultAndCommit = optimize state.Value xs[idx]
+            optimized[idx] <- ValueSome resultAndCommit
+            resultAndCommit
+
+    inlineVals |> Array.iteri (fun idx vs ->
+        for v in vs do
+            cenv.pendingRecGroupVals[v.Stamp] <- fun () -> optimizeElement idx |> ignore)
+
+    let results =
+        [ for idx in 0 .. xs.Length - 1 do
+            let result, commit = optimizeElement idx
+            state.Value <- commit state.Value
+            result ]
+
+    results, state.Value
 
 /// Lookup information about values
 let GetInfoForLocalValue cenv env (v: Val) m =
@@ -3295,7 +3341,7 @@ and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, m) =
 and OptimizeLetRec cenv env (binds, bodyExpr, m) =
     let vs = binds |> List.map (fun v -> v.Var)
     let env = BindInternalValsToUnknown cenv vs env
-    let bindsR, env = OptimizeBindings cenv true env binds
+    let bindsR, env = OptimizeRecBindings cenv env binds
     let bodyExprR, einfo = OptimizeExpr cenv env bodyExpr
     // REVIEW: graph analysis to determine which items are unused
     // Eliminate any unused bindings, as in let case
@@ -4937,9 +4983,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         // occurs in the body of recursively defined values RVS, then we refuse to split
         // any expression that contains a reference to any value in RVS.
         // This doesn't prevent splitting for mutually recursive references. See FSharp 1.0 bug 2892.
-        let env =
-            if isRec then { env with dontSplitVars = env.dontSplitVars.Add vref () }
-            else env
+        let env = if isRec then AddDontSplitVar vref env else env
         
         let exprOptimized, einfo =
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
@@ -5061,31 +5105,15 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         errorRecovery exn vref.Range
         raise (ReportedError (Some exn))
           
-/// Optimize a group in dependency order, then restore source order so downstream consumers retain
-/// the original binding layout.
-and OptimizeInDependencyOrder xs order processOne state =
-    let xsArray = List.toArray xs
-    let results, state =
-        (state, order)
-        ||> List.mapFold (fun state idx ->
-            let result, state = processOne state xsArray[idx]
-            (idx, result), state)
+and OptimizeRecBindings cenv env binds =
+    let inlineVals (TBind(v, _, _)) = if v.ShouldInline then [ v ] else []
 
-    // The order is a permutation of the indexes, so scatter the results back to source order.
-    let resultsByIndex = Array.zeroCreate xs.Length
+    let optimize env bind =
+        let bindInfo, _ = OptimizeBinding cenv true env bind
+        bindInfo, AddDontSplitVar bind.Var
 
-    for idx, result in results do
-        resultsByIndex[idx] <- result
+    OptimizeRecGroup cenv inlineVals optimize env binds
 
-    List.ofArray resultsByIndex, state
-
-and OptimizeBindings cenv isRec env xs =
-    if isRec && xs |> List.exists (fun (TBind(vref, _, _)) -> vref.ShouldInline) then
-        let order = GetBindingOptimizationOrder cenv false true xs
-        OptimizeInDependencyOrder xs order (OptimizeBinding cenv isRec) env
-    else
-        List.mapFold (OptimizeBinding cenv isRec) env xs
-    
 and OptimizeModuleExprWithSig cenv env mty def  = 
         let g = cenv.g
 
@@ -5174,150 +5202,6 @@ and OptimizeModuleExprWithSig cenv env mty def  =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-/// Used before optimization to publish dependencies before a binding that may inline them.
-/// Cycle-tolerant depth-first post-order over dependency indexes: each node appears exactly
-/// once, after all of its dependencies. Nodes are marked on entry, so cyclic back-edges
-/// into nodes still being processed are skipped.
-and TopologicalPostOrder guard (dependencies: int array array) (roots: int list) =
-    let ordered = ResizeArray()
-    let visited = HashSet<int>()
-
-    let rec visit idx =
-        if visited.Add idx then
-            guard (fun () ->
-                for depIdx in dependencies[idx] do
-                    if depIdx <> idx then
-                        visit depIdx)
-
-            ordered.Add idx
-
-    for root in roots do
-        visit root
-
-    List.ofSeq ordered
-
-/// Route recursive bindings through the dependency scheduler so inline callers see optimized siblings.
-and GetBindingOptimizationOrder cenv inlineDependenciesOnly preferLowArity (binds: Binding list) =
-    GetGroupOptimizationOrder cenv inlineDependenciesOnly preferLowArity [
-        for bind in binds ->
-            let arity =
-                bind.Var.ValReprInfo
-                |> Option.map (fun repr -> repr.TotalArgCount)
-                |> Option.defaultValue 0
-
-            [ bind.Var ], arity, Choice1Of2 bind.Expr
-    ]
-
-/// Compute a dependency-first processing schedule for the elements of a recursive group: each
-/// element publishes its vals to the optimization environment only once processed, so a caller
-/// optimized before an element it depends on can observe an incomplete optimization environment.
-/// Elements are (vals defined, arity, dependency source): a binding defines its own val,
-/// a nested module defines every val in its contents.
-and GetGroupOptimizationOrder
-    cenv
-    inlineDependenciesOnly
-    preferLowArity
-    (elements: (Val list * int * Choice<Expr, ModuleOrNamespaceContents>) list)
-    =
-    let elemsArray = elements |> List.toArray
-
-    let elemIndexByStamp =
-        elements
-        |> List.indexed
-        |> List.collect (fun (idx, (definedVals, _, _)) ->
-            definedVals |> List.map (fun (v: Val) -> v.Stamp, idx))
-        |> Map.ofList
-
-    let addDependency depIdxs (v: Val) =
-        match elemIndexByStamp |> Map.tryFind v.Stamp with
-        | Some depIdx when not inlineDependenciesOnly || v.ShouldInline ->
-            Set.add depIdx depIdxs
-        | _ -> depIdxs
-
-    let inlineDependencyIndexes =
-        if inlineDependenciesOnly then
-            elements
-            |> List.mapi (fun idx (definedVals, _, _) ->
-                if definedVals |> List.exists (fun (v: Val) -> v.ShouldInline) then Some idx else None)
-            |> List.choose id
-            |> Set.ofList
-        else
-            Set.empty
-
-    let addFreeVars depIdxs (fvs: FreeVars) =
-        let depIdxs =
-            (depIdxs, fvs.FreeLocals |> Zset.elements)
-            ||> Seq.fold (fun depIdxs v -> addDependency depIdxs v)
-
-        (depIdxs, fvs.FreeTyvars.FreeTraitSolutions |> Zset.elements)
-        ||> Seq.fold (fun depIdxs v -> addDependency depIdxs v)
-
-    let rec addBindingDependencies includeUnresolvedTraitDependencies depIdxs expr =
-        cenv.stackGuard.Guard(fun () ->
-            let depIdxs =
-                addFreeVars depIdxs (freeInExpr (CollectLocalsWithStackGuard()) expr)
-
-            let folder =
-                { ExprFolder0 with
-                    exprIntercept =
-                        (fun _exprF noInterceptF depIdxs expr ->
-                            let depIdxs =
-                                match expr with
-                                // Member-constraint calls can hide the real sibling dependency behind
-                                // a witness expression, so fold over the resolved witness as well.
-                                | Expr.Op(TOp.TraitCall traitInfo, _, args, m) ->
-                                    let depIdxs =
-                                        match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
-                                        | OkResult (_, Some witnessExpr) -> addBindingDependencies includeUnresolvedTraitDependencies depIdxs witnessExpr
-                                        | _ -> depIdxs
-
-                                    match traitInfo.Solution with
-                                    | Some (FSMethSln(_, vref, _, _)) -> addDependency depIdxs vref.Deref
-                                    | _ when includeUnresolvedTraitDependencies -> Set.union depIdxs inlineDependencyIndexes
-                                    | _ -> depIdxs
-                                | _ -> depIdxs
-
-                            noInterceptF depIdxs expr) }
-
-            FoldExpr folder depIdxs expr)
-
-    let rec addModuleOrNamespaceDependencies depIdxs mdef =
-        match mdef with
-        | TMDefRec(_, _, _, mbinds, _) ->
-            (depIdxs, mbinds)
-            ||> List.fold addModuleOrNamespaceBindingDependencies
-        | TMDefLet(bind, _) -> addBindingDependencies true depIdxs bind.Expr
-        | TMDefDo(expr, _) -> addBindingDependencies true depIdxs expr
-        | TMDefOpens _ -> depIdxs
-        | TMDefs defs ->
-            (depIdxs, defs)
-            ||> List.fold addModuleOrNamespaceDependencies
-
-    and addModuleOrNamespaceBindingDependencies depIdxs mbind =
-        match mbind with
-        | ModuleOrNamespaceBinding.Binding bind -> addBindingDependencies true depIdxs bind.Expr
-        | ModuleOrNamespaceBinding.Module(_, def) -> addModuleOrNamespaceDependencies depIdxs def
-
-    let dependencyIndexes =
-        elements
-        |> List.map (fun (_, _, source) ->
-            (match source with
-             | Choice1Of2 expr -> addBindingDependencies false Set.empty expr
-             | Choice2Of2 mdef -> addModuleOrNamespaceDependencies Set.empty mdef)
-            |> Set.toArray)
-        |> List.toArray
-
-    let rootOrder =
-        [ 0 .. elements.Length - 1 ]
-        |> (if preferLowArity then
-                List.sortBy (fun idx ->
-                    let _, arity, _ = elemsArray[idx]
-                    arity, -idx)
-            else
-                id)
-
-    TopologicalPostOrder cenv.stackGuard.Guard dependencyIndexes rootOrder
-
 and OptimizeModuleContents cenv (env, bindInfosColl) input = 
     match input with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
@@ -5352,60 +5236,25 @@ and OptimizeModuleContents cenv (env, bindInfosColl) input =
         let (defs, info), (env, bindInfosColl) = OptimizeModuleDefs cenv (env, bindInfosColl) defs
         (TMDefs defs, info), (env, bindInfosColl)
 
-and OptimizeModuleBindings cenv isRec (env, bindInfosColl) xs =
-    let (|DependencyOrder|_|) =
-        function
-        | [] | [ _ ] -> None
-        | xs when isRec ->
-            let elements =
-                xs
-                |> List.map (function
-                    | ModuleOrNamespaceBinding.Binding bind ->
-                        let arity =
-                            bind.Var.ValReprInfo
-                            |> Option.map (fun repr -> repr.TotalArgCount)
-                            |> Option.defaultValue 0
+and OptimizeModuleBindings cenv isRec state mbinds =
+    let inlineVals mbind =
+        match mbind with
+        | _ when not isRec -> []
+        | ModuleOrNamespaceBinding.Binding bind -> if bind.Var.ShouldInline then [ bind.Var ] else []
+        | ModuleOrNamespaceBinding.Module(_, def) -> allValsOfModDef def |> Seq.filter _.ShouldInline |> Seq.toList
 
-                        [ bind.Var ], arity, Choice1Of2 bind.Expr
-                    | ModuleOrNamespaceBinding.Module(_, def) ->
-                        List.ofSeq (allValsOfModDef def), 0, Choice2Of2 def)
+    OptimizeRecGroup cenv inlineVals (fun (env, _) mbind -> OptimizeModuleBinding cenv env mbind) state mbinds
 
-            let hasInlineVal =
-                elements
-                |> List.exists (fun (definedVals, _, _) ->
-                    definedVals |> List.exists (fun (v: Val) -> v.ShouldInline))
-
-            if hasInlineVal then
-                let preferLowArity =
-                    xs
-                    |> List.forall (function
-                        | ModuleOrNamespaceBinding.Binding bind -> bind.Var.IsMember
-                        | ModuleOrNamespaceBinding.Module _ -> true)
-
-                let order = GetGroupOptimizationOrder cenv true preferLowArity elements
-                Some order
-            else 
-                None
-        | _ -> None
-
-    match xs with
-    | DependencyOrder order ->
-        // Keep the emitted binding list in source order; only the optimization schedule changes.
-        OptimizeInDependencyOrder xs order (OptimizeModuleBinding cenv) (env, bindInfosColl)
-    | _ ->
-        List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
-
-and OptimizeModuleBinding cenv (env, bindInfosColl) x =
-    match x with
+and OptimizeModuleBinding cenv env mbind =
+    match mbind with
     | ModuleOrNamespaceBinding.Binding bind ->
-        let bindR, binfo as bindInfo, env = OptimizeBinding cenv true env bind
-        (ModuleOrNamespaceBinding.Binding bindR, Choice1Of2 (bindR, binfo)), (env, [ bindInfo ] :: bindInfosColl)
+        let (bindR, binfo as bindInfo), _ = OptimizeBinding cenv true env bind
+        let commit (env, bindInfosColl) = AddDontSplitVar bind.Var env, [ bindInfo ] :: bindInfosColl
+        (ModuleOrNamespaceBinding.Binding bindR, Choice1Of2 (bindR, binfo)), commit
     | ModuleOrNamespaceBinding.Module(mspec, def) ->
-        let id = mspec.Id
-        let (def, info), (_, bindInfosColl) = OptimizeModuleContents cenv (env, bindInfosColl) def
-        let env = BindValsInModuleOrNamespace cenv info env
-        (ModuleOrNamespaceBinding.Module(mspec, def), Choice2Of2 (id.idText, info)),
-        (env, bindInfosColl)
+        let (def, info), (_, moduleBindInfosColl) = OptimizeModuleContents cenv (env, []) def
+        let commit (env, bindInfosColl) = BindValsInModuleOrNamespace cenv info env, [ yield! moduleBindInfosColl; yield! bindInfosColl ]
+        (ModuleOrNamespaceBinding.Module(mspec, def), Choice2Of2 (mspec.Id.idText, info)), commit
 
 and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, (env, bindInfosColl) = List.mapFold (OptimizeModuleContents cenv) (env, bindInfosColl) defs
@@ -5458,6 +5307,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           optimizing=true
           inlineBaseCallsForExport=false
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
+          pendingRecGroupVals=Dictionary<Stamp, unit -> unit>()
           emitTailcalls=emitTailcalls
           traitCtxt=traitCtxt
           casApplied=Dictionary<Stamp, bool>()
