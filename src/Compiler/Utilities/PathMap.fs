@@ -17,6 +17,8 @@ module internal PathMap =
 
     let empty = PathMap Map.empty
 
+    let isEmpty (PathMap map) = map.IsEmpty
+
     let addMapping (src: string) (dst: string) (PathMap map) : PathMap =
         // Normalise the path
         let normalSrc = FileSystem.GetFullPathShim src
