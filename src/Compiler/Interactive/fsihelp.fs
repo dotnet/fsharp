@@ -105,10 +105,10 @@ module Parser =
                     yield child.InnerText
 
                 if child.Name = "see" then
-                    let cref = child.Attributes.GetNamedItem("cref")
-
-                    if not (isNull cref) then
-                        yield cref.Value |> trimDotNet
+                    match child.Attributes.GetNamedItem("cref"), child.Attributes.GetNamedItem("langword") with
+                    | null, null -> ()
+                    | null, langword -> yield langword.Value
+                    | cref, _ -> yield cref.Value |> trimDotNet
         }
         |> String.concat ""
 
