@@ -1112,6 +1112,31 @@ let rec private testsMutableData inpPat =
     | TPat_null _
     | TPat_error _ -> false
 
+/// The stamps of the named active patterns the pattern applies. The decision tree can share one call of such a
+/// pattern between clauses, so a cut must not separate clauses that apply the same one. A generic pattern, or one
+/// applied to a different input, counts as shared too, which only forbids cuts that would be safe.
+let rec private activePatternStamps acc inpPat =
+    match inpPat with
+    | TPat_query ((_, _, _, apatVrefOpt, _, _), subPat, _) ->
+        let acc =
+            match apatVrefOpt with
+            | Some (vref, _) -> Set.add vref.Stamp acc
+            | None -> acc
+        activePatternStamps acc subPat
+    | TPat_as (subPat, _, _) -> activePatternStamps acc subPat
+    | TPat_disjs (subPats, _)
+    | TPat_conjs (subPats, _)
+    | TPat_tuple (_, subPats, _, _)
+    | TPat_exnconstr (_, subPats, _)
+    | TPat_recd (_, _, subPats, _)
+    | TPat_unioncase (_, _, subPats, _)
+    | TPat_array (subPats, _, _) -> List.fold activePatternStamps acc subPats
+    | TPat_isinst (_, _, subPatOpt, _) -> Option.fold activePatternStamps acc subPatOpt
+    | TPat_const _
+    | TPat_wild _
+    | TPat_null _
+    | TPat_error _ -> acc
+
 [<Struct; NoEquality; NoComparison>]
 type private CompiledMatch =
     { Tree: DecisionTree
@@ -1947,7 +1972,9 @@ let CompilePattern g denv amap tcVal infoReader mExpr mMatch warnOnUnused action
         with GuardCopyBudgetExceeded ->
             false
 
-    // The longest prefix of the group that fits the budget, at least one clause.
+    // The longest prefix of the group that fits the budget, at least one clause. A cut between two clauses
+    // that apply the same active pattern would call it a second time, after the guards before the cut ran,
+    // so the cut moves back to a point where no active pattern is shared. Without one, the group stays whole.
     let cutToBudget (group: MatchClause list) rest =
         let rec search lo hi =
             if lo >= hi then
@@ -1959,8 +1986,19 @@ let CompilePattern g denv amap tcVal infoReader mExpr mMatch warnOnUnused action
         if fitsBudget group then
             group, rest
         else
-            let k = search 1 (group.Length - 1)
-            List.take k group, List.skip k group @ rest
+            let stamps = group |> List.map (fun clause -> activePatternStamps Set.empty clause.Pattern)
+            let before = List.scan Set.union Set.empty stamps |> List.toArray
+            let after = List.scanBack Set.union stamps Set.empty |> List.toArray
+            let canCutAt k = Set.isEmpty (Set.intersect before[k] after[k])
+
+            let rec lastCut k =
+                if k < 1 then ValueNone
+                elif canCutAt k then ValueSome k
+                else lastCut (k - 1)
+
+            match lastCut (search 1 (group.Length - 1)) with
+            | ValueSome k -> List.take k group, List.skip k group @ rest
+            | ValueNone -> group, rest
 
     // Partial patterns and 'when' clauses cause major code explosion if treated naively, as every
     // path that falls through a group would get its own copy of the clauses after it. So each group

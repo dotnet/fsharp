@@ -202,17 +202,26 @@ let main _ =
         let record =
             matchOn "let record (r: R) col =\n    match r with" "r.T <- 7; r.C <- 7" (fun t c -> $"{{ T = %s{t}; C = %s{c} }}")
 
+        let activePattern =
+            matchOn "let activePattern (arr: int[]) col =\n    match arr with" "arr.[0] <- 7; arr.[1] <- 7" (fun t c -> $"Elems (%s{t}, %s{c})")
+
         $"""module Test
 [<Struct>]
 type Pair = Pair of token: int * context: int
 type R = {{ mutable T: int; mutable C: int }}
+let mutable elemsCalls = 0
+let (|Elems|) (a: int[]) =
+    elemsCalls <- elemsCalls + 1
+    a.[0], a.[1]
 {pair}
 {array}
 {record}
+{activePattern}
 [<EntryPoint>]
 let main _ =
     let mutable input = Pair (0, 0)
     printfn "pair=%%d array=%%d record=%%d" (pair &input 100) (array [| 0; 0 |] 100) (record {{ T = 0; C = 0 }} 100)
+    printfn "activePattern=%%d calls=%%d" (activePattern [| 0; 0 |] 100) elemsCalls
     0
 """
 
@@ -226,3 +235,4 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "pair=-1 array=-1 record=-1"
+        |> withStdOutContains "activePattern=-1 calls=1"
