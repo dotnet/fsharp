@@ -412,20 +412,20 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member val ScriptClosure = AsyncMemoize(cs.ScriptClosureKeepStrongly, cs.ScriptClosureKeepWeakly, name = "ScriptClosure")
 
-    member private this.ClearParsing(projects: Set<FSharpProjectIdentifier>) =
-        let inline shouldClear project = projects |> Set.contains project
+    member private this.ClearParsingResults(projects: Set<FSharpProjectIdentifier>) =
+        let shouldClear project = projects |> Set.contains project
 
         this.ParsingTcConfig.Clear(shouldClear)
         this.ParseFile.Clear(fst >> shouldClear)
 
-    member private this.ClearBootstrap(projects: Set<FSharpProjectIdentifier>) =
-        let inline shouldClear project = projects |> Set.contains project
+    member private this.ClearBootstrapInfo(projects: Set<FSharpProjectIdentifier>) =
+        let shouldClear project = projects |> Set.contains project
 
         this.BootstrapInfoStatic.Clear(shouldClear)
         this.BootstrapInfo.Clear(shouldClear)
 
-    member private this.ClearTypeCheck(projects: Set<FSharpProjectIdentifier>) =
-        let inline shouldClear project = projects |> Set.contains project
+    member private this.ClearTypeCheckResults(projects: Set<FSharpProjectIdentifier>) =
+        let shouldClear project = projects |> Set.contains project
 
         this.TcIntermediate.Clear(snd >> shouldClear)
         this.ParseAndCheckFileInProject.Clear(snd >> shouldClear)
@@ -435,18 +435,18 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
         this.ItemKeyStore.Clear(snd >> shouldClear)
 
     member this.Clear(projects: Set<FSharpProjectIdentifier>) =
-        let inline shouldClear project = projects |> Set.contains project
+        let shouldClear project = projects |> Set.contains project
 
-        this.ClearParsing(projects)
+        this.ClearParsingResults(projects)
         this.ScriptClosure.Clear(snd >> shouldClear)
-        this.ClearBootstrap(projects)
-        this.ClearTypeCheck(projects)
+        this.ClearBootstrapInfo(projects)
+        this.ClearTypeCheckResults(projects)
 
     member this.ClearInvalidatedByTypeProvider(projects: Set<FSharpProjectIdentifier>) =
         // TODO: Ideally the bootstrap info would stay. It goes because its TcImports owns the type provider instances
         // and interns the entities of the types they provided, so a kept TcImports would keep answering with those.
-        this.ClearBootstrap(projects)
-        this.ClearTypeCheck(projects)
+        this.ClearBootstrapInfo(projects)
+        this.ClearTypeCheckResults(projects)
 
 type internal TransparentCompiler
     (
