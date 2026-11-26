@@ -363,6 +363,9 @@
   <data name="stepCannotBeZero" xml:space="preserve">
     <value>The step of a range cannot be zero.</value>
   </data>
+  <data name="structTupleNoProperties" xml:space="preserve">
+    <value>Struct tuples store their elements in fields, not properties. Use FSharpValue.PreComputeTupleReader or FSharpValue.GetTupleField instead.</value>
+  </data>
   <data name="syncContextNull" xml:space="preserve">
     <value>The System.Threading.SynchronizationContext.Current of the calling thread is null.</value>
   </data>

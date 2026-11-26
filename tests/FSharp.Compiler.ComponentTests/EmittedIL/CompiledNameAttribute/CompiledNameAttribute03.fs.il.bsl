@@ -41,8 +41,9 @@
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.1
     IL_0002:  sub
-    IL_0003:  starg.s    x
-    IL_0005:  br.s       IL_0000
+    IL_0003:  tail.
+    IL_0005:  call       !!0 Program::SomeCompiledName<!!0>(int32)
+    IL_000a:  ret
   } 
 
 } 

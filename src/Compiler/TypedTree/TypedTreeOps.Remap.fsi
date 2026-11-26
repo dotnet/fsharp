@@ -519,6 +519,9 @@ module internal TypeEquivalence =
 
     val traitsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
 
+    val traitSlnAEquivAux:
+        Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintSln option -> TraitConstraintSln option -> bool
+
     val traitKeysAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
 
     val returnTypesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool
@@ -550,6 +553,8 @@ module internal TypeEquivalence =
     val typeEquiv: TcGlobals -> TType -> TType -> bool
 
     val traitsAEquiv: TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
+
+    val traitSlnAEquiv: TcGlobals -> TypeEquivEnv -> TraitConstraintSln option -> TraitConstraintSln option -> bool
 
     val traitKeysAEquiv: TcGlobals -> TypeEquivEnv -> TraitWitnessInfo -> TraitWitnessInfo -> bool
 

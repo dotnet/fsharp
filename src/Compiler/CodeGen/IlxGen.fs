@@ -649,6 +649,12 @@ type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
 
+/// The generated state machine struct stands in for the template struct only at the template's own instantiation.
+/// Other instantiations, e.g. a user field of type ResumableStateMachine<string>, keep their own type.
+let isStateMachineTemplate g (templateTcref, templateTypeInst: TyparInstantiation) tcref tinst =
+    tyconRefEq g tcref templateTcref
+    && typesAEquivAux EraseMeasures g TypeEquivEnv.EmptyIgnoreNulls (List.map snd templateTypeInst) tinst
+
 let rec GenTypeArgAux cenv m tyenv tyarg =
     GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
 
@@ -675,7 +681,7 @@ and GenNamedTyAppAux (cenv: cenv) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = cenv.g
 
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when isStateMachineTemplate g (tcref2, templateTypeInst) tcref tinst ->
         let cloInst = List.map mkTyparTy cloFreeTyvars
         let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
         mkILValueTy ilCloTyRef ilTypeInst
@@ -911,7 +917,9 @@ let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspe
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     match tyenv.TemplateReplacement with
-    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
+    | Some(tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when
+        isStateMachineTemplate cenv.g (tcref2, templateTypeInst) rfref.TyconRef tyargs
+        ->
         // Fixup references to the fields of a struct machine template
         //     templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
         //     templateTyconRef = ResumableStateMachine<'Data>
@@ -4617,7 +4625,10 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
     match (stripDebugPoints f, tyargs, curriedArgs) with
     // Look for tailcall to turn into branch
-    | Expr.Val(v, _, _), _, _ when IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel ->
+    | Expr.Val(v, _, _), _, _ when
+        cenv.options.localOptimizationsEnabled
+        && IsBranchTailcall cenv eenv (v, tyargs, curriedArgs) sequel
+        ->
         let kind, mark = ListAssoc.find g.valRefEq v eenv.innerVals // already checked above in when guard
 
         // Generate the arguments for the direct tail call.
@@ -4814,7 +4825,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 if isNil laterArgs && not isSelfInit then
                     let isDllImport = IsValRefIsDllImport g vref
                     let hasByrefArg = mspec.FormalArgTypes |> List.exists IsILTypeByref
-                    let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
+
+                    let makesNoCriticalTailcalls =
+                        vref.MakesNoCriticalTailcalls
+                        && not (IsBranchTailcall cenv eenv (vref, tyargs, curriedArgs) sequel)
+
                     let hasStructObjArg = (boxity = AsValue) && takesInstanceArg
 
                     CanTailcall(

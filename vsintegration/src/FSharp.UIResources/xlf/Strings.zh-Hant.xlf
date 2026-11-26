@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
-        <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="translated">將分析整個解決方案以進行診斷保持為低優先順序背景工作 (需要重新開機)</target>
+        <source>Keep analyzing the entire solution for diagnostics as a low priority background task</source>
+        <target state="needs-review-translation">將分析整個解決方案以進行診斷保持為低優先順序背景工作</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
@@ -33,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for analysis (restart required)</source>
-        <target state="translated">使用即時 (未儲存) 緩衝區進行分析 (需要重新啟動)</target>
+        <source>Use live (unsaved) buffers for analysis</source>
+        <target state="needs-review-translation">使用即時 (未儲存) 緩衝區進行分析</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -72,11 +72,6 @@
         <target state="translated">完成清單</target>
         <note />
       </trans-unit>
-      <trans-unit id="Diagnostics">
-        <source>Diagnostics</source>
-        <target state="translated">診斷</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
         <source>Enable parallel reference resolution</source>
         <target state="translated">啟用平行參考解析</target>
@@ -97,16 +92,6 @@
         <target state="translated">效能</target>
         <note />
       </trans-unit>
-      <trans-unit id="Dash_underline">
-        <source>D_ash underline</source>
-        <target state="translated">虛點底線(_A)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Dot_underline">
-        <source>D_ot underline</source>
-        <target state="translated">點線底線(_O)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
         <target state="translated">語言服務設定 (進階)</target>
@@ -123,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Parallelization">
-        <source>Parallelization (requires restart)</source>
-        <target state="translated">平行處理 (需要重新開機)</target>
+        <source>Parallelization</source>
+        <target state="needs-review-translation">平行處理</target>
         <note />
       </trans-unit>
       <trans-unit id="Preferred_description_width_in_characters">
@@ -157,31 +142,6 @@
         <target state="translated">顯示傳回類型提示 (預覽)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Show_all_symbols">
-        <source>Show s_ymbols in unopened namespaces</source>
-        <target state="translated">顯示未開啟之命名空間中的符號(_Y)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Show_completion_list_after_a_character_is_deleted">
-        <source>Show completion list after a character is _deleted</source>
-        <target state="translated">刪除一個字元後顯示完成清單(_D)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Show_completion_list_after_a_character_is_typed">
-        <source>_Show completion list after a character is typed</source>
-        <target state="translated">輸入一個字元後顯示完成清單(_S)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Enable_in_memory_cross_project_references">
-        <source>_Enable in-memory cross project references</source>
-        <target state="translated">允許記憶體內跨專案參考(_E)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Show_navigation_links_as">
-        <source>S_how navigation links as</source>
-        <target state="translated">顯示導覽連結為(_H)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_remarks_in_Quick_Info">
         <source>Show remarks in Quick Info</source>
         <target state="translated">在快速諮詢中顯示備註</target>
@@ -192,49 +152,14 @@
         <target state="translated">簡化名稱 (移除不必要的限定詞)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Solid_underline">
-        <source>_Solid underline</source>
-        <target state="translated">實線底線(_S)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Text_hover">
-        <source>Text hover</source>
-        <target state="translated">文字暫留</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_preferred_description_width_in_characters">
-        <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
-        <target state="translated">透過新增符合 F# 語法規則的分行符號，將簽章格式設定為指定寬度。 </target>
-        <note />
-      </trans-unit>
       <trans-unit id="TransparentCompiler">
         <source>Transparent Compiler (experimental)</source>
         <target state="translated">透明編譯器 (實驗性)</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Disclaimer1">
-        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TransparentCompiler_Disclaimer2">
-        <source>Use at your own risk!</source>
-        <target state="new">Use at your own risk!</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TransparentCompiler_Disclaimer3">
-        <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
         <source>Transparent Compiler Cache Factor</source>
         <target state="translated">透明編譯程式快取因數</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
-        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
-        <target state="translated">較高的數目表示將使用更多的記憶體來快取。變更值抹除快取。</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
@@ -328,8 +253,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Use_Transparent_Compiler">
-        <source>Use Transparent Compiler (restart required)</source>
-        <target state="translated">使用透明編譯器 (需要重新啟動)</target>
+        <source>Use Transparent Compiler</source>
+        <target state="needs-review-translation">使用透明編譯器</target>
         <note />
       </trans-unit>
     </body>

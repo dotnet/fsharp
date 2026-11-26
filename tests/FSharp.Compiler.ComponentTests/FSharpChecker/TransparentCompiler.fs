@@ -1277,7 +1277,7 @@ let private getLoadedFile (checker: FSharpChecker) (documentSource: DocumentSour
     async {
         let! snapshot, _ =
             checker.GetProjectSnapshotFromScript(script, SourceTextNew.ofString (File.ReadAllText script), ?documentSource = documentSource)
-        return snapshot.SourceFiles |> List.find (fun file -> file.FileName = loadedFile)
+        return snapshot.SourceFiles |> Array.find (fun file -> file.FileName = loadedFile)
     }
 
 let private getText (file: ProjectSnapshot.FSharpFileSnapshot) =
