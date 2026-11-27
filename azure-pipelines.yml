@@ -25,6 +25,8 @@ trigger:
     - TESTGUIDE.md
 
 variables:
+  - name: VSBuildDateUtc
+    value: $[ format('{0:yyyy-MM-dd}', pipeline.startTime) ]
   # Release branch for F#
   # The future "product" gets developed in main, so should be main in main.
   # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
@@ -232,4 +234,3 @@ extends:
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
-
