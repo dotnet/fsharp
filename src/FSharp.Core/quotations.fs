@@ -95,7 +95,7 @@ module Helpers =
 
 open Helpers
 
-// Keep stamp allocation in an explicit type initializer, independent of this file's initialization order.
+// Avoid a nullable stamp-allocation closure during concurrent initialization.
 [<AbstractClass; Sealed>]
 type private VarStampHolder() =
     static let mutable lastStamp = 0L
