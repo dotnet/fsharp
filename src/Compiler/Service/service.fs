@@ -421,10 +421,11 @@ type FSharpChecker
 
         backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
 
-    member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
+    member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?userOpName: string, ?checkDependenciesOnly: bool) =
         let userOpName = defaultArg userOpName "Unknown"
+        let checkDependenciesOnly = defaultArg checkDependenciesOnly false
 
-        backgroundCompiler.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
+        backgroundCompiler.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName, checkDependenciesOnly)
 
     member _.ParseAndCheckProject(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
