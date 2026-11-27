@@ -84,4 +84,23 @@
       </Content>
     </ItemGroup>
   </Target>
+
+  <!--
+    Generate a catalog (.cat) file covering non-PE content files (XML templates)
+    so the VS signing scan does not flag them as unsigned.
+    Only runs on Windows (makecat.exe is a Windows SDK tool).
+  -->
+  <Target Name="GenerateCatalogFiles" AfterTargets="CreateVsixContainer"
+          Condition="$([MSBuild]::IsOSPlatform('Windows')) and Exists('$(TargetVsixContainer)')">
+    <PropertyGroup>
+      <_ContentRoot>$(TargetVsixContainerIntermediateOutputPath)</_ContentRoot>
+      <_CatOutputPath>$(TargetVsixContainerIntermediateOutputPath)FSharpDebugContent.cat</_CatOutputPath>
+      <_ErrorFlag Condition="'$(ContinuousIntegrationBuild)' == 'true' or '$(OfficialBuild)' == 'true'">-ErrorIfMakecatNotFound</_ErrorFlag>
+    </PropertyGroup>
+
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;&amp; '$(RepoRoot)eng\generate-catalog.ps1' -RootPath '$(_ContentRoot)' -CatOutputPath '$(_CatOutputPath)' -Filter '*.xml' -RunMakecat -WindowsSdkDir '$(WindowsSdkDir)' $(_ErrorFlag)&quot;"
+          StandardOutputImportance="High"
+          IgnoreExitCode="true"
+          Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+  </Target>
 </Project>
