@@ -40,7 +40,7 @@ let z : unit =
         |> compileAndRun
         |> shouldSucceed
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Issue 14225 - concurrent quotation deserialization`` () =
         FSharp """
 open System
