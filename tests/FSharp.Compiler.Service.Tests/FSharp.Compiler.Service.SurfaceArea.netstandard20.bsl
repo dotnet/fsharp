@@ -6751,6 +6751,18 @@ FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode(System.Collections.IEquality
 FSharp.Compiler.Syntax.SynAccess: Int32 Tag
 FSharp.Compiler.Syntax.SynAccess: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynAccess: System.String ToString()
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Syntax.SynAnonUnionCase NewSynAnonUnionCase(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Syntax.SynType get_typ()
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Syntax.SynType typ
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
+FSharp.Compiler.Syntax.SynAnonUnionCase: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
+FSharp.Compiler.Syntax.SynAnonUnionCase: Int32 Tag
+FSharp.Compiler.Syntax.SynAnonUnionCase: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynAnonUnionCase: System.String ToString()
 FSharp.Compiler.Syntax.SynArgInfo: Boolean get_optional()
 FSharp.Compiler.Syntax.SynArgInfo: Boolean optional
 FSharp.Compiler.Syntax.SynArgInfo: FSharp.Compiler.Syntax.SynArgInfo NewSynArgInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident])
@@ -9510,6 +9522,10 @@ FSharp.Compiler.Syntax.SynType+AnonRecd: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+AnonRecd: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+AnonRecd: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,FSharp.Compiler.Syntax.SynType]] fields
 FSharp.Compiler.Syntax.SynType+AnonRecd: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,FSharp.Compiler.Syntax.SynType]] get_fields()
+FSharp.Compiler.Syntax.SynType+AnonUnion: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynType+AnonUnion: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynType+AnonUnion: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAnonUnionCase] anonUnionCases
+FSharp.Compiler.Syntax.SynType+AnonUnion: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAnonUnionCase] get_anonUnionCases()
 FSharp.Compiler.Syntax.SynType+App: Boolean get_isPostfix()
 FSharp.Compiler.Syntax.SynType+App: Boolean isPostfix
 FSharp.Compiler.Syntax.SynType+App: FSharp.Compiler.Syntax.SynType get_typeName()
@@ -9614,6 +9630,7 @@ FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range ge
 FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Anon
 FSharp.Compiler.Syntax.SynType+Tags: Int32 AnonRecd
+FSharp.Compiler.Syntax.SynType+Tags: Int32 AnonUnion
 FSharp.Compiler.Syntax.SynType+Tags: Int32 App
 FSharp.Compiler.Syntax.SynType+Tags: Int32 Array
 FSharp.Compiler.Syntax.SynType+Tags: Int32 FromParseError
@@ -9660,6 +9677,7 @@ FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType: Boolean IsAnon
 FSharp.Compiler.Syntax.SynType: Boolean IsAnonRecd
+FSharp.Compiler.Syntax.SynType: Boolean IsAnonUnion
 FSharp.Compiler.Syntax.SynType: Boolean IsApp
 FSharp.Compiler.Syntax.SynType: Boolean IsArray
 FSharp.Compiler.Syntax.SynType: Boolean IsFromParseError
@@ -9682,6 +9700,7 @@ FSharp.Compiler.Syntax.SynType: Boolean IsWithGlobalConstraints
 FSharp.Compiler.Syntax.SynType: Boolean IsWithNull
 FSharp.Compiler.Syntax.SynType: Boolean get_IsAnon()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsAnonRecd()
+FSharp.Compiler.Syntax.SynType: Boolean get_IsAnonUnion()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsApp()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsArray()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsFromParseError()
@@ -9704,6 +9723,7 @@ FSharp.Compiler.Syntax.SynType: Boolean get_IsWithGlobalConstraints()
 FSharp.Compiler.Syntax.SynType: Boolean get_IsWithNull()
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewAnon(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewAnonRecd(Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Syntax.Ident,FSharp.Compiler.Syntax.SynType]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewAnonUnion(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAnonUnionCase], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewApp(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewArray(Int32, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewFromParseError(FSharp.Compiler.Text.Range)
@@ -9726,6 +9746,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithGlobalCons
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Anon
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+AnonRecd
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+AnonUnion
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+App
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Array
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+FromParseError

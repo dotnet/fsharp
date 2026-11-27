@@ -46,6 +46,9 @@ module ItemKeyTags =
     let typeUnionCase = "#U#"
 
     [<Literal>]
+    let typeAnonUnionCase = "#G#"
+
+    [<Literal>]
     let typeMeasureVar = "#p#"
 
     [<Literal>]
@@ -355,6 +358,10 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
                 writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
+
+        | TType_anon_union(_, tinst, _) ->
+            writeString ItemKeyTags.typeAnonUnionCase
+            tinst |> List.iter (writeType false)
 
     and writeMeasure isStandalone (ms: Measure) =
         debug.WriteMeasure isStandalone ms
