@@ -13,6 +13,90 @@ module Regression_RecursiveInlineMemberDependencies =
        |> shouldSucceed
        |> ignore
 
+   let private assertRuns optimize source =
+       source
+       |> (if optimize then withOptimize else withNoOptimize)
+       |> compileExeAndRun
+       |> shouldSucceed
+       |> ignore
+
+   [<Theory; InlineData(true); InlineData(false)>]
+   let ``Issue 21016 - member uses inline operator through FSharp.Core operator`` optimize =
+       FSharp """
+module Issue21016
+
+type X(y: int) =
+   member x.Y = y
+   static member inline (*) ((a: int), (b: X)) = X(a * b.Y)
+   member x.multiply (a: int) = a * x
+
+if (X(3).multiply 2).Y <> 6 then failwith "unexpected result"
+"""
+       |> assertRuns optimize
+
+   [<Theory; InlineData(true); InlineData(false)>]
+   let ``Member uses inline operator declared after it`` optimize =
+       FSharp """
+module InlineOperatorDeclaredLater
+
+type Y(v: int) =
+   member x.Twice() : Y = x + x
+   member x.V = v
+   static member inline (+) (a: Y, b: Y) = Y(a.V + b.V)
+
+if (Y(4).Twice()).V <> 8 then failwith "unexpected result"
+"""
+       |> assertRuns optimize
+
+   [<Theory; InlineData(true); InlineData(false)>]
+   let ``Member uses inline operator of its base type`` optimize =
+       FSharp """
+module InlineOperatorOfBaseType
+
+type Base(v: int) =
+   member x.V = v
+   static member inline (+) (a: Base, b: Base) = Derived(a.V + b.V)
+
+and Derived(v: int) =
+   inherit Base(v)
+   member x.Plus(o: Derived) = x + o
+
+if (Derived(1).Plus(Derived 2)).V <> 3 then failwith "unexpected result"
+"""
+       |> assertRuns optimize
+
+   [<Theory; InlineData(true); InlineData(false)>]
+   let ``Member uses inline operators through a generic collection function`` optimize =
+       FSharp """
+module InlineOperatorsThroughCollection
+
+type Z(v: int) =
+   member x.V = v
+   static member Sum(xs: Z list) = List.sum xs
+   static member inline (+) (a: Z, b: Z) = Z(a.V + b.V)
+   static member inline Zero = Z 0
+
+if (Z.Sum [ Z 1; Z 2; Z 3 ]).V <> 6 then failwith "unexpected result"
+"""
+       |> assertRuns optimize
+
+   [<Theory; InlineData(true); InlineData(false)>]
+   let ``Local let rec binding uses later inline binding`` optimize =
+       FSharp """
+module LocalLetRec
+
+let run () =
+   let rec a x = b x + 1
+   and inline b x = x * 2
+   a 3
+
+[<EntryPoint>]
+let main _ =
+   if run () <> 7 then failwith "unexpected result"
+   0
+"""
+       |> assertRuns optimize
+
    [<Fact>]
    let ``Inline members that depend on sibling member access compile`` () =
         FSharp """

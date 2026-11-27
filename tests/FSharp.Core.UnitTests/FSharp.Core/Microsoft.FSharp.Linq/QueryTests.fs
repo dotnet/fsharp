@@ -411,6 +411,36 @@ type EvaluateQuotationEdgeCaseTests() =
             v15 @>
         Assert.Equal(15, result :?> int)
 
+type StructTupleConversionTests() =
+
+    [<Fact>]
+    member _.``EvaluateQuotation reads a struct tuple pattern``() =
+        let result = LeafExpressionConverter.EvaluateQuotation <@ let struct (a, b) = struct (1, 20) in a + b @>
+        Assert.Equal(21, result :?> int)
+
+    [<Fact>]
+    member _.``EvaluateQuotation reads struct tuple elements stored in Rest``() =
+        let result =
+            LeafExpressionConverter.EvaluateQuotation
+                <@ let struct (_, _, _, _, _, _, g, h, i) = struct (1, 2, 3, 4, 5, 6, 7, 8, 9) in g * 100 + h * 10 + i @>
+        Assert.Equal(789, result :?> int)
+
+    [<Fact>]
+    member _.``EvaluateQuotation reads struct tuple elements nested twice in Rest``() =
+        let result =
+            LeafExpressionConverter.EvaluateQuotation
+                <@ let struct (_, _, _, _, _, _, _, _, _, _, _, _, _, _, o, p) =
+                       struct (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+                   o * 100 + p @>
+        Assert.Equal(1516, result :?> int)
+
+    [<Fact>]
+    member _.``QuotationToLambdaExpression converts a struct tuple pattern on a parameter``() =
+        let lambda =
+            LeafExpressionConverter.QuotationToLambdaExpression
+                <@ Func<struct (int * string), int>(fun t -> let struct (n, s) = t in n + s.Length) @>
+        Assert.Equal(13, lambda.Compile().Invoke(struct (10, "abc")))
+
 
 /// Tests for conditional without else branch in queries - Issue #3445
 type QueryConditionalTests() =
