@@ -32,20 +32,25 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                         Identifier = "potato",
                         WorkspaceDiagnostics = true
                     )),
-            //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
-            //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
+            CodeActionProvider =
+                (if config.EnabledFeatures.CodeActions then
+                     System.Nullable(
+                         SumType<bool, CodeActionOptions>(
+                             CodeActionOptions(CodeActionKinds = [| CodeActionKind.QuickFix |], ResolveProvider = false)
+                         )
+                     )
+                 else
+                     System.Nullable()),
             SemanticTokensOptions =
                 addIf
-                    config.EnabledFeatures.SemanticHighlighting
-
+                    config.EnabledFeatures.SemanticTokens
                     (SemanticTokensOptions(
-                        Legend =
-                            SemanticTokensLegend(
-                                TokenTypes = (SemanticTokenTypes.AllTypes |> Seq.toArray), // XXX should be extended
-                                TokenModifiers = (SemanticTokenModifiers.AllModifiers |> Seq.toArray)
-                            ),
-                        Range = false
+                        Legend = LspSemanticTokens.legend (),
+                        Full = System.Nullable(SumType<bool, SemanticTokensFullOptions>(true)),
+                        Range = System.Nullable(SumType<bool, obj>(true))
                     ))
+        //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
+        //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
         )
 
     interface IInitializeManager<InitializeParams, InitializeResult> with

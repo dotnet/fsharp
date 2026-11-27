@@ -25,6 +25,29 @@ let private substringOfRange (source: string) (r: Range) =
     let line = lines[r.StartLine - 1]
     line.Substring(r.StartColumn, r.EndColumn - r.StartColumn)
 
+[<Theory>]
+[<InlineData("let", "member _.MyEvent", "t.MyEvent")>]
+[<InlineData("static let", "static member MyEvent", "T.MyEvent")>]
+let ``CLI event declarations and uses are classified as events`` (binding: string) (memberDeclaration: string) (eventUse: string) =
+    task {
+        let source =
+            $"""module Test
+open System
+type T() =
+    {binding} ev = new Event<EventHandler, EventArgs>()
+    [<CLIEvent>]
+    {memberDeclaration} = ev.Publish
+let subscribe (t: T) = {eventUse}.Add(fun _ -> ())
+"""
+        let! items = getClassifications source
+        let events =
+            items
+            |> Array.filter (fun item -> (substringOfRange source item.Range).EndsWith("MyEvent", System.StringComparison.Ordinal))
+        Assert.Equal(2, events.Length)
+        for item in events do
+            Assert.Equal(SemanticClassificationType.Event, item.Type)
+    }
+
 /// (#15290 regression) Copy-and-update record fields must not be classified as type names.
 /// Before the fix, Item.Types was registered with mWholeExpr and ItemOccurrence.Use, producing
 /// a wide type classification that overshadowed the correct RecordField classification.
@@ -863,4 +886,47 @@ let () = r.Count <- r.Count + 1
             mutableFieldHits.Length > 0,
             sprintf "Expected MutableRecordField classification for `Count`, found: %A"
                 (items |> Array.map (fun i -> i.Range.StartLine, i.Range.StartColumn, i.Range.EndColumn, i.Type)))
+    }
+/// Computation expression builders like `async { }` are captured by FCS as BOTH
+/// `Item.Value` (the identifier resolution) and `Item.CustomBuilder` (the builder usage)
+/// at the same range. `takeCustomBuilder` deduplicates them in favor of the
+/// `Item.CustomBuilder` so the identifier shows up as a `ComputationExpression` (rendered
+/// as a keyword by editors). Before the fix, the deduplication only ran when callers
+/// passed a `Some range`; whole-file callers (`None` range, used by the LSP background
+/// classifier) saw `Item.Value` win and `async` rendered as a regular value.
+[<Fact>]
+let ``Computation expression builder is classified as ComputationExpression (whole-file)`` () =
+    task {
+        let source =
+            """
+module Test
+
+let _ =
+    async {
+        let! v = async.Return 1
+        return v
+    }
+"""
+
+        let! items = getClassifications source
+
+        // Line 5 contains "    async {". Look for a classification covering 'async' (col 4..9).
+        let asyncBuilderItems =
+            items
+            |> Array.filter (fun item ->
+                item.Range.StartLine = 5
+                && item.Range.StartColumn = 4
+                && item.Range.EndColumn = 9)
+
+        let computationExpressionItems =
+            asyncBuilderItems
+            |> Array.filter (fun item -> item.Type = SemanticClassificationType.ComputationExpression)
+
+        Assert.True(
+            computationExpressionItems.Length = 1,
+            sprintf
+                "Expected exactly one ComputationExpression classification for 'async' on line 5, got %d. All classifications at that span: %A"
+                computationExpressionItems.Length
+                (asyncBuilderItems |> Array.map (fun i -> i.Type))
+        )
     }

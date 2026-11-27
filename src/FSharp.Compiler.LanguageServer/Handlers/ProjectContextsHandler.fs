@@ -1,0 +1,185 @@
+namespace FSharp.Compiler.LanguageServer.Handlers
+
+open System.IO
+open System
+open System.Text.Json
+open System.Text.Json.Serialization
+
+open Microsoft.CommonLanguageServerProtocol.Framework
+open Microsoft.VisualStudio.LanguageServer.Protocol
+open FSharp.Compiler.LanguageServer
+open FSharp.Compiler.LanguageServer.Common
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open StreamJsonRpc
+
+open System.Threading
+open System.Threading.Tasks
+
+#nowarn "57"
+#nowarn "3261"
+
+/// Encodes a document as a file URI. The default converter round-trips a Unix path as a relative Uri.
+type AbsoluteUriConverter() =
+    inherit JsonConverter<Uri>()
+
+    override _.Read(reader, _, _) =
+        Uri(reader.GetString() |> nonNull, UriKind.Absolute)
+
+    override _.Write(writer, value, _) =
+        writer.WriteStringValue(
+            if value.IsAbsoluteUri then
+                value.AbsoluteUri
+            else
+                value.OriginalString
+        )
+
+[<CLIMutable>]
+type ActiveProjectContextParams =
+    {
+        [<JsonConverter(typeof<AbsoluteUriConverter>)>]
+        Uri: Uri
+        ProjectFileName: string
+        OutputFileName: string
+    }
+
+type ActiveProjectContextHandler() =
+
+    interface IMethodHandler with
+        member _.MutatesSolutionState = true
+
+    interface IRequestHandler<ActiveProjectContextParams, bool, FSharpRequestContext> with
+        [<LanguageServerEndpoint("textDocument/fsharp/setActiveProjectContext", LanguageServerConstants.DefaultLanguageName)>]
+        member _.HandleRequestAsync
+            (request: ActiveProjectContextParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
+            =
+            task {
+                let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+
+                let report outcome =
+                    Telemetry.reportEvent telemetry TelemetryEvents.SetActiveProjectContext [| "outcome", outcome :> obj |]
+
+                if
+                    isNull request.Uri
+                    || not request.Uri.IsAbsoluteUri
+                    || not request.Uri.IsFile
+                    || String.IsNullOrWhiteSpace request.ProjectFileName
+                    || String.IsNullOrWhiteSpace request.OutputFileName
+                then
+                    context.Logger.LogWarning("Invalid active project context.", [||])
+                    report "invalid"
+                    return false
+                else
+                    let comparison =
+                        if OperatingSystem.IsWindows() then
+                            StringComparison.OrdinalIgnoreCase
+                        else
+                            StringComparison.Ordinal
+
+                    let normalize projectFileName outputFileName =
+                        Path.GetFullPath(outputFileName, Path.GetDirectoryName(Path.GetFullPath(projectFileName)))
+
+                    let outputPath = normalize request.ProjectFileName request.OutputFileName
+                    let projectPath = Path.GetFullPath request.ProjectFileName
+
+                    let snapshot =
+                        context.Workspace.Query.GetProjectSnapshotsForFile(request.Uri)
+                        |> Array.tryFind (fun snapshot ->
+                            let compilerOutput = snapshot.ProjectConfig.CommandLineOptions |> findOutputFileName
+
+                            String.Equals(Path.GetFullPath(snapshot.ProjectFileName), projectPath, comparison)
+                            && (String.Equals(
+                                    normalize snapshot.ProjectFileName snapshot.Identifier.OutputFileName,
+                                    outputPath,
+                                    comparison
+                                )
+                                || (compilerOutput
+                                    |> Option.exists (fun output ->
+                                        String.Equals(normalize snapshot.ProjectFileName output, outputPath, comparison)))))
+
+                    match snapshot with
+                    | None ->
+                        report "not_found"
+
+                        context.Logger.LogWarning(
+                            "Active project context does not match a workspace snapshot.",
+                            [| request.ProjectFileName :> obj; request.OutputFileName :> obj |]
+                        )
+
+                        return false
+                    | Some snapshot ->
+                        let changed =
+                            context.TryGetActiveProjectContext(request.Uri) <> Some snapshot.Identifier
+
+                        let config = context.LspServices.GetRequiredService<FSharpLanguageServerConfig>()
+
+                        let initialize =
+                            context.LspServices.GetRequiredService<IInitializeManager<InitializeParams, InitializeResult>>()
+
+                        let capabilities = initialize.GetInitializeParams().Capabilities
+
+                        let supportsRefresh =
+                            not (isNull capabilities)
+                            && not (isNull capabilities.Workspace)
+                            && not (isNull capabilities.Workspace.SemanticTokens)
+                            && capabilities.Workspace.SemanticTokens.RefreshSupport
+
+                        if changed && config.EnabledFeatures.SemanticTokens && supportsRefresh then
+                            let server = context.LspServices.GetRequiredService<JsonRpc>()
+
+                            try
+                                do! server.InvokeWithParameterObjectAsync("workspace/semanticTokens/refresh", null, cancellationToken)
+                                context.SetActiveProjectContext(request.Uri, snapshot.Identifier)
+                                report "refreshed"
+                                return true
+                            with error when (error :? RemoteInvocationException) || (error :? ConnectionLostException) ->
+                                context.Logger.LogException(
+                                    error,
+                                    "Unable to refresh semantic tokens after a project context change.",
+                                    [||]
+                                )
+
+                                report "refresh_failed"
+
+                                Telemetry.reportFault
+                                    telemetry
+                                    TelemetryEvents.SetActiveProjectContext
+                                    "Semantic token refresh failed."
+                                    error
+
+                                return false
+                        else
+                            context.SetActiveProjectContext(request.Uri, snapshot.Identifier)
+                            report (if changed then "selected" else "unchanged")
+                            return true
+            }
+
+type ProjectContextsHandler() =
+    interface IMethodHandler with
+        member _.MutatesSolutionState = false
+
+    interface IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext> with
+        [<LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)>]
+        member _.HandleRequestAsync
+            (request: VSGetProjectContextsParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
+            =
+            let telemetry = context.LspServices.GetRequiredService<ILspTelemetry>()
+            let empty = VSProjectContextList(ProjectContexts = [||], DefaultIndex = 0)
+
+            match request.TextDocument with
+            | null -> Task.FromResult(empty)
+            | textDoc when isNull textDoc.Uri -> Task.FromResult(empty)
+            | textDoc ->
+                let snapshots = context.Workspace.Query.GetProjectSnapshotsForFile(textDoc.Uri)
+
+                let projectContexts =
+                    snapshots
+                    |> Array.map (fun snapshot ->
+                        VSProjectContext(
+                            Label = Path.GetFileNameWithoutExtension(snapshot.ProjectFileName),
+                            Id = makeProjectContextId snapshot.Identifier,
+                            Kind = VSProjectKind.FSharp
+                        ))
+
+                telemetry.ReportEvent(TelemetryEvents.GetProjectContexts, [| "project_count", projectContexts.Length :> obj |])
+
+                Task.FromResult(VSProjectContextList(ProjectContexts = projectContexts, DefaultIndex = 0))
