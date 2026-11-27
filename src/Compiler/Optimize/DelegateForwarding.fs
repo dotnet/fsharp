@@ -148,7 +148,9 @@ let classifyForwardingTarget exprHasEffect g (invokeParams: Val list) expr =
     match call with
     | Expr.App(f, _, tyargs, args, _) ->
         match stripDebugPoints f with
-        | Expr.Val(vref, valUseFlags, _) ->
+        // The construction site does not bind a peeled value, for example the local '<f>__debug' function of
+        // an inline call in a Debug build, so it cannot be the target.
+        | Expr.Val(vref, valUseFlags, _) when not (aliases.ContainsVal vref.Deref) ->
             match
                 tryFlattenTupledArgs vref args
                 |> Option.bind (matchForwarding g aliases invokeParams)

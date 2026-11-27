@@ -704,6 +704,29 @@ let mk () =
     |> compile
     |> shouldSucceed
 
+[<Fact>]
+let ``Issue 21031 - delegate over a debug inline specialization compiles and runs (preview)`` () =
+    FSharp """
+module DebugInlineSrtpTarget
+
+open System.Linq
+
+let inline contains<'a, 'b when 'b: (member Contains: 'a -> bool)> (item: 'a) (coll: 'b) : bool = coll.Contains(item)
+
+let inline containedIn coll item = contains item coll
+
+let filterFoo (words: seq<string>) =
+    let foobarbaz = Set.ofList [ "foo"; "bar"; "baz" ]
+    words.Where(containedIn foobarbaz)
+
+if List.ofSeq (filterFoo [ "foo"; "qux"; "baz" ]) <> [ "foo"; "baz" ] then failwith "wrong result"
+        """
+    |> asExe
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize-"; "--debug+" ]
+    |> compileAndRun
+    |> shouldSucceed
+
 let private crossAssemblyLibrary =
     FSharp """
 module DelegateLib
