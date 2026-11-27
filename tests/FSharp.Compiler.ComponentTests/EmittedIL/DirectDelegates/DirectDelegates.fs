@@ -152,6 +152,29 @@ let ``DelegateCustomType_fs preview`` compilation =
     compilation |> getCompilation |> verifyPreviewCompilation
 
 [<Fact>]
+let ``Issue 21032 - a delegate callback can capture a local function`` () =
+    FSharp """
+module DelegateLocalCapture
+
+let call (f: unit -> unit) = f ()
+
+let mk () =
+    System.Action(fun () ->
+        let conv (a, b, c, d) = a + b + c + d
+        call (fun () -> printfn "%d" (conv (1, 2, 3, 4))))
+
+[<EntryPoint>]
+let main _ =
+    (mk ()).Invoke()
+    0
+        """
+    |> withLangVersion11
+    |> withOptions [ "--optimize+" ]
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "10"
+
+[<Fact>]
 let ``Direct delegates target the real method and dispatch correctly (preview)`` () =
     FSharp """
 module DirectDelegateExecution

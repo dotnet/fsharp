@@ -100,7 +100,15 @@ let private matchForwarding g (aliases: ValMap<Expr>) (invokeParams: Val list) (
                     | Expr.Op(TOp.LValueOp(LAddrOf _, vref), _, _, m) -> resolveAliases aliases (exprForValRef m vref)
                     | _ -> a)
 
-            Some leadingArgs
+            // The leading arguments move to the construction site, outside the scope of the peeled bindings.
+            let capturesPeeledBinding arg =
+                let freeLocals = (freeInExpr CollectLocals arg).FreeLocals
+                Zset.exists aliases.ContainsVal freeLocals
+
+            if not aliases.IsEmpty && List.exists capturesPeeledBinding leadingArgs then
+                None
+            else
+                Some leadingArgs
         else
             None
     else
