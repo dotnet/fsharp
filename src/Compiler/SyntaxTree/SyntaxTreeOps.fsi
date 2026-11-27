@@ -397,3 +397,6 @@ val getGetterSetterAccess: SynValSigAccess -> SynMemberKind -> LanguageVersion -
 
 /// Adds SynPat.Or pattern for unfinished empty clause above
 val addEmptyMatchClause: mBar1: range -> mBar2: range -> clauses: SynMatchClause list -> SynMatchClause list
+
+/// The module whose functions a numeric literal with this suffix calls, like `NumericLiteralZ` for `1Z`
+val numericLiteralModuleName: suffix: string -> string
