@@ -32,11 +32,13 @@ let visitIdentAsPotentialModuleName (moduleNameIdent: Ident) =
 
 let visitSynLongIdent (lid: SynLongIdent) : FileContentEntry list = visitLongIdent lid.LongIdent
 
-let visitLongIdent (lid: LongIdent) =
+let visitLongIdent (lid: LongIdent) = prependLongIdent lid []
+
+let prependLongIdent (lid: LongIdent) (entries: FileContentEntry list) =
     match lid with
     | []
-    | [ _ ] -> []
-    | lid -> [ FileContentEntry.PrefixedIdentifier(longIdentToPath true lid) ]
+    | [ _ ] -> entries
+    | lid -> FileContentEntry.PrefixedIdentifier(longIdentToPath true lid) :: entries
 
 let visitLongIdentForModuleAbbrev (lid: LongIdent) =
     match lid with
@@ -114,7 +116,34 @@ let visitSynUnionCase (SynUnionCase(attributes = attributes; caseType = caseType
         | SynUnionCaseKind.FullType(fullType = fullType) -> yield! visitSynType fullType
     ]
 
-let visitSynEnumCase (SynEnumCase(attributes = attributes)) = visitSynAttributes attributes
+let visitSynEnumCase (SynEnumCase(attributes = attributes; valueExpr = valueExpr)) =
+    [ yield! visitSynAttributes attributes; yield! visitSynExpr valueExpr ]
+
+let visitSynMeasure (measure: SynMeasure) : FileContentEntry list =
+    let rec prependEntries (measure: SynMeasure) (entries: FileContentEntry list) =
+        match measure with
+        | SynMeasure.Named(longId = longId) -> prependLongIdent longId entries
+        | SynMeasure.Product(measure1 = measure1; measure2 = measure2) -> prependEntries measure1 (prependEntries measure2 entries)
+        | SynMeasure.Seq(measures = measures) -> List.foldBack prependEntries measures entries
+        | SynMeasure.Divide(measure1 = measure1; measure2 = measure2) ->
+            let entries = prependEntries measure2 entries
+
+            match measure1 with
+            | Some measure1 -> prependEntries measure1 entries
+            | None -> entries
+        | SynMeasure.Power(measure = measure)
+        | SynMeasure.Paren(measure = measure) -> prependEntries measure entries
+        | SynMeasure.One _
+        | SynMeasure.Anon _
+        | SynMeasure.Var _ -> entries
+
+    prependEntries measure []
+
+let visitSynConst (constant: SynConst) : FileContentEntry list =
+    match constant with
+    | SynConst.UserNum(suffix = suffix) -> [ FileContentEntry.PrefixedIdentifier [ numericLiteralModuleName suffix ] ]
+    | SynConst.Measure(constant = constant; synMeasure = measure) -> visitSynConst constant @ visitSynMeasure measure
+    | _ -> []
 
 let visitSynTypeDefn (SynTypeDefn(typeInfo = typeInfo; typeRepr = typeRepr; members = members)) : FileContentEntry list =
     let (SynComponentInfo(attributes = attributes; typeParams = typeParams; constraints = constraints)) =
@@ -287,7 +316,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
             visit typeName (fun nodes -> nodes @ List.collect visitSynTypeConstraint constraints |> continuation)
         | SynType.HashConstraint(innerType, _) -> visit innerType continuation
         | SynType.MeasurePower(baseMeasure = baseMeasure) -> visit baseMeasure continuation
-        | SynType.StaticConstant _ -> continuation []
+        | SynType.StaticConstant(constant = constant) -> continuation (visitSynConst constant)
         | SynType.StaticConstantNull _ -> continuation []
         | SynType.StaticConstantExpr(expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed(ident, value, _) ->
@@ -391,7 +420,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
 #endif
             match e with
             | NameofExpr nameofResult -> continuation [ visitNameofResult nameofResult ]
-            | SynExpr.Const _ -> continuation []
+            | SynExpr.Const(constant = constant) -> continuation (visitSynConst constant)
             | SynExpr.Paren(expr = expr) -> visit expr continuation
             | SynExpr.Quote(operator = operator; quotedExpr = quotedExpr) ->
                 visit operator (fun operatorNodes -> visit quotedExpr (fun quotedNodes -> operatorNodes @ quotedNodes |> continuation))
@@ -636,7 +665,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
         | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
         | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t |> continuation)
-        | SynPat.Const _ -> continuation []
+        | SynPat.Const(constant = constant) -> continuation (visitSynConst constant)
         | SynPat.Wild _ -> continuation []
         | SynPat.Named _ -> continuation []
         | SynPat.Attrib(pat, attributes, _) -> visit pat (fun nodes -> visitSynAttributes attributes @ nodes |> continuation)

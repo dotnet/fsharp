@@ -802,6 +802,119 @@ printfn "Hello"
                     Set.empty
             ]
         scenario
+            "Numeric literal module"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Product
+
+module NumericLiteralZ =
+    let FromZero () = "zero"
+    let FromOne () = "one"
+    let FromInt32 (x: int) = string x
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a: string = 5Z
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Numeric literal top-level module"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Product.NumericLiteralZ
+
+let FromZero () = "zero"
+let FromOne () = "one"
+let FromInt32 (x: int) = string x
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Product.Feature
+
+let a: string = 5Z
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Measure in literal"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Units
+
+[<Measure>]
+type kg
+
+[<Measure>]
+type m
+
+[<Measure>]
+type s
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Feature
+
+let a = 1.0<Units.kg>
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Compound.fs"
+                    """
+module Compound
+
+let a = 1.0<Units.kg Units.m / (Units.s ^ 2)>
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "C.fs"
+                    """
+module Other
+
+let f x =
+    match x with
+    | 1.0<Units.kg> -> 1
+    | _ -> 0
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Enum case value"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Constants
+
+[<Literal>]
+let One = 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Feature
+
+type E =
+    | A = Constants.One
+"""
+                    (set [| 0 |])
+            ]
+        scenario
             "Nameof module with namespace"
             [
                 sourceFile
