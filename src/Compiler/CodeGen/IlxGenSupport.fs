@@ -290,7 +290,7 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
 
     ILType.Value(mkILNonGenericTySpec tref)
 
-let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
+let private mkDynamicDependencyAttribute (g: TcGlobals, memberTypes: int32, ilType: ILType) =
     let tref = g.attrib_DynamicDependencyAttribute.TypeRef
 
     g.TryEmbedILType(
@@ -311,6 +311,12 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
         [ ILAttribElem.Int32 memberTypes; ILAttribElem.TypeRef(Some ilType.TypeRef) ],
         []
     )
+
+let GetDynamicDependencyAttributes (g: TcGlobals) memberTypes (ilType: ILType) =
+    if g.useReflectionFreeCodeGen then
+        []
+    else
+        [ mkDynamicDependencyAttribute (g, memberTypes, ilType) ]
 
 /// Generates NullableContextAttribute[1], which has the meaning of:
 /// Nested items not being annotated with Nullable attribute themselves are interpreted as being withoutnull
