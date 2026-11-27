@@ -1272,7 +1272,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     PostProcessCompilerArgs abbrevArgs prefix @ List.ofArray suffix
                 | None -> PostProcessCompilerArgs abbrevArgs argv
 
-            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail processedArgs)
+            ParseCompilerOptions(collect, fsiCompilerOptions, List.tail processedArgs, tcConfigB.RecordCommandLineOption)
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e

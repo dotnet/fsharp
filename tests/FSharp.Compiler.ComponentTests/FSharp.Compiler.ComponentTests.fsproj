@@ -129,6 +129,7 @@
     <Compile Include="Conformance\InferenceProcedures\Generalization\Generalization.fs" />
     <Compile Include="Conformance\InferenceProcedures\MethodApplicationResolution\MethodApplicationResolution.fs" />
     <Compile Include="Conformance\InferenceProcedures\NameResolution\AutoOpen\AutoOpen.fs" />
+    <Compile Include="Conformance\InferenceProcedures\NameResolution\AutoOpen\ConditionalAutoOpen.fs" />
     <Compile Include="Conformance\InferenceProcedures\NameResolution\Misc\NameResolutionMisc.fs" />
     <Compile Include="Conformance\InferenceProcedures\NameResolution\RequireQualifiedAccess\RequireQualifiedAccess.fs" />
     <Compile Include="Conformance\InferenceProcedures\ResolvingApplicationExpressions\ResolvingApplicationExpressions.fs" />

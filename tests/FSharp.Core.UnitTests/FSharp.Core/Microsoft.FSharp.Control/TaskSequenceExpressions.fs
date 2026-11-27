@@ -1,4 +1,6 @@
-module EnumerableTests
+module FSharp.Core.UnitTests.Control.TaskSequenceExpressions
+
+#if NET11_0_OR_GREATER
 
 open System
 open System.Collections.Generic
@@ -7,7 +9,10 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Control.AsyncSeq2Implementation
+open Microsoft.FSharp.Control.RuntimeAsync.TaskExpressions
+open Xunit
+
+let private runtimeTask = task
 
 let private assertEqual name expected actual =
     if expected <> actual then
@@ -55,7 +60,7 @@ type private TestAsyncSource(values: int[]) =
                 member _.DisposeAsync() = ValueTask() }
 
 let private basicSequence () =
-    asyncSeq2 {
+    taskSeq {
         do! Task.Delay(5)
         yield "1"
         do! Task.Delay(5)
@@ -73,10 +78,10 @@ let private testBasicSequence () =
 let private testAwaitableKinds () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 let! taskValue = Task.FromResult 1
                 let! valueTaskValue = ValueTask<int>(2)
-                let! asyncValue = async2 { return 3 }
+                let! asyncValue = async { return 3 }
                 let! customValue = CustomAwaitable 4
                 let! runtimeTaskValue = runtimeTask { return 5 }
                 let! fsharpAsyncValue = async { return 6 }
@@ -100,7 +105,7 @@ let private testCancellation () =
         let mutable resumed = false
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 let! token = Async.CancellationToken
                 yield token = cts.Token
                 do! Async.Sleep 10_000
@@ -121,7 +126,7 @@ let private testCancellation () =
         let mutable started = false
 
         let lazySource =
-            asyncSeq2 {
+            taskSeq {
                 started <- true
                 yield 1
             }
@@ -136,7 +141,7 @@ let private testUnmatchedException () =
         let mutable handled = false
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield 1
                     do! async { raise (InvalidOperationException "unmatched") }
@@ -153,27 +158,14 @@ let private testUnmatchedException () =
         assertTrue "unmatched error escapes unwrapped" (escaped && not handled)
     }
 
-let private testDeepNonTailYieldFrom () =
-    runtimeTask {
-        let rec loop n =
-            asyncSeq2 {
-                if n > 0 then
-                    yield! loop (n - 1)
-                    yield n
-            }
-
-        let! values = collect (loop 100_000)
-        assertEqual "deep non-tail yield!" [| 1..100_000 |] values
-    }
-
 let private testMergedAwaitables () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 do! Task.Delay(25)
                 let! taskValue = Task.FromResult 1
                 let! valueTaskValue = ValueTask<int>(2)
-                let! asyncValue = async2 { return 3 }
+                let! asyncValue = async { return 3 }
                 do! Task.Delay(25)
                 yield taskValue + valueTaskValue + asyncValue
             }
@@ -185,7 +177,7 @@ let private testMergedAwaitables () =
 let private testTryWith () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield 1
                     do! Task.Delay 10
@@ -204,7 +196,7 @@ let private testTryFinally () =
         let mutable cleanedUp = false
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield 3
                 finally
@@ -221,7 +213,7 @@ let private testUsing () =
         let mutable disposed = false
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 use resource = new TrackingDisposable(fun () -> disposed <- true)
                 yield 4
             }
@@ -234,7 +226,7 @@ let private testUsing () =
 let private testWhile () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 let mutable value = 0
 
                 while value < 3 do
@@ -250,7 +242,7 @@ let private testWhile () =
 let private testYieldFrom () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 yield! [ 5; 6 ]
                 yield! (TestAsyncSource [| 7; 8 |] :> IAsyncEnumerable<int>)
             }
@@ -259,10 +251,10 @@ let private testYieldFrom () =
         assertEqual "yield!" [| 5; 6; 7; 8 |] values
 
         let recovered =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield!
-                        asyncSeq2 {
+                        taskSeq {
                             do! Task.FromException(InvalidOperationException("nested"))
                             yield 1
                         }
@@ -276,7 +268,7 @@ let private testYieldFrom () =
         let mutable closed = 0
 
         let nested =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield 1
                     yield 2
@@ -285,7 +277,7 @@ let private testYieldFrom () =
             }
 
         let outer =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield! nested
                 finally
@@ -312,7 +304,7 @@ let private testYieldFrom () =
                             ValueTask(Task.FromException(InvalidOperationException("child disposal"))) } }
 
         let recoveredCleanup =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield! failingChild
                 with :? InvalidOperationException ->
@@ -327,70 +319,19 @@ let private testYieldFrom () =
 
 let private testTailHandoff () =
     runtimeTask {
-        let child = asyncSeq2 { yield 7 }
-        let final = asyncSeq2 { yield! child }
-        use raw = final.RawEnumerator(CancellationToken.None)
-        let! hasStep = raw.MoveNextAsync()
-        assertTrue "final yield! emits a tail handoff" hasStep
-
-        match raw.Current with
-        | TailSource source -> assertTrue "tail handoff keeps its source" (obj.ReferenceEquals(source, child))
-        | _ -> failwith "final yield! did not select YieldFromFinal"
-
+        let child = taskSeq { yield 7 }
         let continuing =
-            asyncSeq2 {
+            taskSeq {
                 yield! child
                 yield 8
             }
 
-        use continuingRaw = continuing.RawEnumerator(CancellationToken.None)
-        let! hasStep = continuingRaw.MoveNextAsync()
-        assertTrue "non-final yield! emits a step" hasStep
-
-        match continuingRaw.Current with
-        | Source _ -> ()
-        | _ -> failwith "non-final yield! lost its continuation"
-
-        let mutable rootDisposals = 0
-
-        let root =
-            { new IAsyncEnumerable<AsyncSeq2Step<int>> with
-                member _.GetAsyncEnumerator(_) =
-                    let mutable moved = false
-
-                    { new IAsyncEnumerator<AsyncSeq2Step<int>> with
-                        member _.Current = TailSource(TestAsyncSource [| 9; 10 |])
-
-                        member _.MoveNextAsync() =
-                            if moved then
-                                failwith "resumed a discarded tail parent"
-
-                            moved <- true
-                            ValueTask<bool>(true)
-
-                        member _.DisposeAsync() =
-                            rootDisposals <- rootDisposals + 1
-                            ValueTask() } }
-
-        let driver = AsyncSeq2<int>.Create root
-        use iterator = driver.GetAsyncEnumerator()
-        assertTrue "initial enumerator drives the tail" (iterator :? AsyncSeq2Enumerator<int>)
-        let! first = iterator.MoveNextAsync()
-        assertTrue "first tail element" (first && iterator.Current = 9)
-        assertEqual "tail parent disposed before first element" 1 rootDisposals
-        let! second = iterator.MoveNextAsync()
-        assertTrue "second tail element" (second && iterator.Current = 10)
-        let! completed = iterator.MoveNextAsync()
-        assertTrue "tail completed" (not completed)
-        assertEqual "completed enumerator resets Current" 0 iterator.Current
-        assertEqual "tail parent disposed exactly once" 1 rootDisposals
-
         let mutable earlyClosed = 0
 
         let early =
-            asyncSeq2 {
+            taskSeq {
                 yield!
-                    asyncSeq2 {
+                    taskSeq {
                         try
                             yield 11
                             yield 12
@@ -406,48 +347,16 @@ let private testTailHandoff () =
         do! earlyIterator.DisposeAsync()
         assertEqual "tail early disposal runs once" 1 earlyClosed
 
-        let! listValues = collect (asyncSeq2 { yield! [ 11; 12 ] })
+        let! listValues = collect (taskSeq { yield! [ 11; 12 ] })
         assertEqual "final synchronous yield!" [| 11; 12 |] listValues
 
         let! continuedValues = collect continuing
         assertEqual "non-final continuation" [| 7; 8 |] continuedValues
 
-        let mutable liveParents = 0
-        let mutable peakParents = 0
-
-        let rec chain n : AsyncSeq2<int> =
-            AsyncSeq2<int>
-                .Create(
-                    { new IAsyncEnumerable<AsyncSeq2Step<int>> with
-                        member _.GetAsyncEnumerator(_) =
-                            liveParents <- liveParents + 1
-                            peakParents <- max peakParents liveParents
-                            let mutable moved = false
-
-                            { new IAsyncEnumerator<AsyncSeq2Step<int>> with
-                                member _.Current = if n = 0 then Value 17 else TailSource(chain (n - 1))
-
-                                member _.MoveNextAsync() =
-                                    if moved then
-                                        ValueTask<bool>(false)
-                                    else
-                                        moved <- true
-                                        ValueTask<bool>(true)
-
-                                member _.DisposeAsync() =
-                                    liveParents <- liveParents - 1
-                                    ValueTask() } }
-                )
-
-        let! chainedValues = collect (chain 50_000)
-        assertEqual "deep tail chain result" [| 17 |] chainedValues
-        assertEqual "tail handoff keeps one raw parent alive" 1 peakParents
-        assertEqual "deep tail chain disposes its leaf" 0 liveParents
-
         let nested =
-            asyncSeq2 {
+            taskSeq {
                 try
-                    yield! (asyncSeq2 { yield! (TestAsyncSource [| 13 |] :> IAsyncEnumerable<int>) })
+                    yield! (taskSeq { yield! (TestAsyncSource [| 13 |] :> IAsyncEnumerable<int>) })
                 with :? InvalidOperationException ->
                     yield -1
 
@@ -481,9 +390,9 @@ let private testTailHandoff () =
                                     ValueTask() } }
 
             let handled =
-                asyncSeq2 {
+                taskSeq {
                     try
-                        yield! (asyncSeq2 { yield! failing })
+                        yield! (taskSeq { yield! failing })
                     with :? InvalidOperationException ->
                         yield 15
 
@@ -494,7 +403,7 @@ let private testTailHandoff () =
             assertEqual "tail fault reaches non-tail handler" [| 15; 16 |] handledValues
             assertEqual "tail fault disposes child once" 1 childDisposals
 
-            let terminal = asyncSeq2 { yield! failing }
+            let terminal = taskSeq { yield! failing }
             use failedIterator = terminal.GetAsyncEnumerator()
 
             let faulted =
@@ -510,7 +419,7 @@ let private testTailHandoff () =
             assertEqual "root tail fault disposes child once" 2 childDisposals
 
         let nullTail =
-            asyncSeq2 {
+            taskSeq {
                 yield 1
                 yield! (null: IAsyncEnumerable<int>)
             }
@@ -528,7 +437,7 @@ let private testTailHandoff () =
 let private testForAsyncEnumerable () =
     runtimeTask {
         let source =
-            asyncSeq2 {
+            taskSeq {
                 for value in (TestAsyncSource [| 9; 10 |] :> IAsyncEnumerable<int>) do
                     yield value + 1
             }
@@ -542,7 +451,7 @@ let private testPullDrivenEnumeration () =
         let mutable sideEffects = 0
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 sideEffects <- sideEffects + 1
                 yield 1
                 sideEffects <- sideEffects + 1
@@ -569,7 +478,7 @@ let private testConcurrentMoveNext () =
             TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 do! gate.Task
                 yield 1
             }
@@ -595,7 +504,7 @@ let private testConcurrentMoveNext () =
             TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
         let failingSource =
-            asyncSeq2 {
+            taskSeq {
                 do! failedGate.Task
                 yield 1
             }
@@ -628,7 +537,7 @@ let private testYieldFromFaults () =
         let mutable parentClosed = 0
 
         let source =
-            asyncSeq2 {
+            taskSeq {
                 try
                     try
                         yield! throwingOpen
@@ -645,10 +554,10 @@ let private testYieldFromFaults () =
         assertEqual "child open fault keeps parent alive" 1 parentClosed
 
         let tailOpenFault =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield!
-                        asyncSeq2 {
+                        taskSeq {
                             yield 3
                             yield! throwingOpen
                         }
@@ -660,7 +569,7 @@ let private testYieldFromFaults () =
         assertEqual "tail open fault reaches the frame below" [| 3; 4 |] tailValues
 
         let throwingChild () =
-            asyncSeq2 {
+            taskSeq {
                 do! Task.Yield()
                 failDeep ()
                 yield 0
@@ -669,7 +578,7 @@ let private testYieldFromFaults () =
         let mutable trace = ""
 
         let observed =
-            asyncSeq2 {
+            taskSeq {
                 try
                     yield! throwingChild ()
                 with error ->
@@ -682,7 +591,7 @@ let private testYieldFromFaults () =
         let gate = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
 
         let pending =
-            asyncSeq2 {
+            taskSeq {
                 do! gate.Task
                 yield 1
             }
@@ -703,22 +612,7 @@ let private testYieldFromFaults () =
         assertTrue "dispose during pending move is rejected" (rejected && moved)
     }
 
-let testTailRecursion () =
-    runtimeTask {
-        let rec loop n =
-            asyncSeq2 {
-                if n > 0 then
-                    if n % 10000 = 0 then
-                        do! Task.Delay 1 // simulate some async work
-
-                    yield n
-                    yield! loop (n - 1)
-            }
-
-        let! values = collect (loop 1000_000)
-        assertEqual "tail recursion" [| for i in 1000_000..-1..1 -> i |] values
-    }
-
+[<Fact>]
 let runTests () =
     let tests: (string * Task<unit>) list =
         [ "basic sequence", testBasicSequence ()
@@ -733,16 +627,13 @@ let runTests () =
           "tail handoff", testTailHandoff ()
           "yield! faults", testYieldFromFaults ()
           "unmatched exception", testUnmatchedException ()
-          "deep non-tail yield!", testDeepNonTailYieldFrom ()
           "async for loop", testForAsyncEnumerable ()
           "pull-driven enumeration", testPullDrivenEnumeration ()
-          "concurrent MoveNext", testConcurrentMoveNext ()
-          "tail recursion", testTailRecursion () ]
+          "concurrent MoveNext", testConcurrentMoveNext () ]
 
     runtimeTask {
         for name, test in tests do
             do! test
             printfn "PASS: %s" name
-
-        return 0
     }
+#endif

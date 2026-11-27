@@ -966,6 +966,35 @@ namespace Microsoft.FSharp.Core
         /// or an enclosing module opened.</summary>
         member Path: string
 
+    /// <summary>Opens a module or namespace in this assembly when the consuming compiler's
+    /// input contains the specified complete CLI token.</summary>
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=true)>]
+    [<Sealed>]
+    type ConditionalAutoOpenAttribute =
+        inherit Attribute
+
+        new: path: string * condition: string -> ConditionalAutoOpenAttribute
+
+        member Path: string
+
+        member Condition: string
+
+    /// <summary>Removes matching assembly-level AutoOpen entries when the consuming
+    /// compiler's input contains the specified complete CLI token.
+    /// Module-level AutoOpen attributes, explicit opens and qualified access are unchanged.</summary>
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=true)>]
+    [<Sealed>]
+    type RetractExistingAutoopenAttribute =
+        inherit Attribute
+
+        new: path: string * condition: string -> RetractExistingAutoopenAttribute
+
+        member Path: string
+
+        member Condition: string
+
     /// <summary>Indicates a value or a function that must not be inlined by the F# compiler,
     /// but may be inlined by the JIT compiler.</summary>
     ///

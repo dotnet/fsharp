@@ -371,6 +371,20 @@ namespace Microsoft.FSharp.Core
         member _.Path = path
         new() =  AutoOpenAttribute("")
 
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=true)>]
+    [<Sealed>]
+    type ConditionalAutoOpenAttribute(path: string, condition: string) =
+        inherit Attribute()
+        member _.Path = path
+        member _.Condition = condition
+
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple=true)>]
+    [<Sealed>]
+    type RetractExistingAutoopenAttribute(path: string, condition: string) =
+        inherit Attribute()
+        member _.Path = path
+        member _.Condition = condition
+
     /// This Attribute is used to make Value bindings like
     ///      let x = some code
     /// operate like static properties.

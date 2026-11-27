@@ -108,6 +108,7 @@
     <FSharpPropsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
     <FSharpTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
     <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+    <DefineConstants>$(DefineConstants);BUILDING_WITH_REPO_COMPILER</DefineConstants>
   </PropertyGroup>
 
   <!-- use this to enable good debugging in the Proto bootstrap compiler -->

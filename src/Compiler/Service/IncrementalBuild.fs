@@ -659,9 +659,16 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
         for attr in topAttrs.assemblyAttrs do
             let flag = classifyAssemblyAttrib tcGlobals attr
 
+            match attr with
+            | Attrib(tcref, _, [ AttribStringArg path; AttribStringArg condition ], _, _, _, _) ->
+                match tcref.CompiledRepresentationForNamedType.FullName with
+                | ConditionalAutoOpenAttribute create -> autoOpen <- create (path, condition) :: autoOpen
+                | _ -> ()
+            | _ -> ()
+
             if hasFlag flag WellKnownAssemblyAttributes.AutoOpenAttribute then
                 match attr with
-                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> autoOpen <- s :: autoOpen
+                | Attrib(_, _, [ AttribStringArg s ], _, _, _, _) -> autoOpen <- OrdinaryAutoOpen s :: autoOpen
                 | _ -> ()
             elif hasFlag flag WellKnownAssemblyAttributes.InternalsVisibleToAttribute then
                 match attr with
