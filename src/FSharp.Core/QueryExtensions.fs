@@ -69,7 +69,7 @@ module internal Adapters =
 
     /// Tests whether a list consists only of assignments of properties of the
     /// given variable, null values (ignored) and ends by returning the given variable
-    /// (pattern returns only property assignments)
+    /// (pattern returns only property assignments, in the order they are written)
     let (|PropSetList|_|) varArg (list: Expr list) =
         let rec propSetList acc x =
             match x with
@@ -79,7 +79,7 @@ module internal Adapters =
             // skip unit values
             | Patterns.Value(v, _) :: xs when isNull v -> propSetList acc xs
             // detect "v"
-            | [ Patterns.Var var ] when var = varArg -> Some acc
+            | [ Patterns.Var var ] when var = varArg -> Some(List.rev acc)
             | _ -> None
 
         propSetList [] list
