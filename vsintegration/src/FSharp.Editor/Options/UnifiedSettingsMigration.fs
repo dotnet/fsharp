@@ -34,6 +34,7 @@ module internal UnifiedSettingsMigration =
                 "UnusedDeclarations"
                 "SuggestNamesForErrors"
                 "RemoveParens"
+                "ExtractFunctionParameterAnnotations"
             |]
             "performance",
             "LanguageServicePerformanceOptions",
