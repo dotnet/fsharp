@@ -28,6 +28,13 @@ type DelegateEvent<'Delegate when 'Delegate :> Delegate and 'Delegate: not null>
     /// <example-tbd></example-tbd>
     member Publish: IDelegateEvent<'Delegate>
 
+    /// <summary>Returns <see langword="true"/> when the event has at least one handler, otherwise <see langword="false"/>.</summary>
+    ///
+    /// <remarks>The result is a snapshot. Another thread can add or remove a handler right after the read.</remarks>
+    ///
+    /// <example-tbd></example-tbd>
+    member HasSubscribers: bool
+
 /// <summary>Event implementations for a delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
 ///
 /// <category index="3">Events and Observables</category>
@@ -54,6 +61,13 @@ type Event<'Delegate, 'Args
     /// <example-tbd></example-tbd>
     member Publish: IEvent<'Delegate, 'Args>
 
+    /// <summary>Returns <see langword="true"/> when the event has at least one handler, otherwise <see langword="false"/>.</summary>
+    ///
+    /// <remarks>The result is a snapshot. Another thread can add or remove a handler right after the read.</remarks>
+    ///
+    /// <example-tbd></example-tbd>
+    member HasSubscribers: bool
+
 /// <summary>Event implementations for the IEvent&lt;_&gt; type.</summary>
 ///
 /// <category index="3">Events and Observables</category>
@@ -77,3 +91,10 @@ type Event<'T> =
     ///
     /// <example-tbd></example-tbd>
     member Publish: IEvent<'T>
+
+    /// <summary>Returns <see langword="true"/> when the event has at least one handler, otherwise <see langword="false"/>.</summary>
+    ///
+    /// <remarks>The result is a snapshot. Another thread can add or remove a handler right after the read.</remarks>
+    ///
+    /// <example-tbd></example-tbd>
+    member HasSubscribers: bool
