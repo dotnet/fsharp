@@ -322,6 +322,11 @@
         <target state="translated">Patrones activos parciales de devolución booleana y de tipo devuelto dirigido</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCaptureStructFieldReadsInQuotations">
+        <source>reading fields of a captured struct local in a quotation</source>
+        <target state="new">reading fields of a captured struct local in a quotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Genera advertencias si el atributo 'TailCall' se usa en funciones no recursivas.</target>

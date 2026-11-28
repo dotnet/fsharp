@@ -322,6 +322,11 @@
         <target state="translated">ブール値を返すパターンと、戻り値の型が指定された部分的アクティブパターン</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCaptureStructFieldReadsInQuotations">
+        <source>reading fields of a captured struct local in a quotation</source>
+        <target state="new">reading fields of a captured struct local in a quotation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">'TailCall' 属性が再帰関数以外で使用されている場合、警告が発せられます。</target>
