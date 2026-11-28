@@ -7,8 +7,8 @@ namespace FSharp.Compiler.Text
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Runtime.InteropServices
 open Internal.Utilities.Library
-
 open Internal.Utilities.Hashing
 
 type ISourceText =
@@ -154,9 +154,7 @@ type StringText(str: string) =
                     sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
 
         member _.GetChecksum() =
-            str
-            |> Md5Hasher.hashString
-            |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
+            ImmutableCollectionsMarshal.AsImmutableArray<byte>(Md5Hasher.hashString str)
 
 module SourceText =
 
@@ -193,9 +191,7 @@ module SourceTextNew =
                 member _.GetSubTextFromRange(x) = sourceText.GetSubTextFromRange(x)
 
                 member _.GetChecksum() =
-                    sourceText.GetSubTextString(0, sourceText.Length)
-                    |> Md5Hasher.hashString
-                    |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
+                    ImmutableCollectionsMarshal.AsImmutableArray<byte>(Md5Hasher.hashString (sourceText.GetSubTextString(0, sourceText.Length)))
             }
 
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository

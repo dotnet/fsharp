@@ -1,6 +1,7 @@
 namespace Internal.Utilities.Hashing
 
 open System
+open System.Security.Cryptography
 open System.Threading
 
 /// Tools for hashing things with MD5 into a string that can be used as a cache key.
@@ -43,19 +44,24 @@ module internal Md5StringHasher =
 
 module internal Md5Hasher =
 
-    let private md5 =
-        new ThreadLocal<_>(fun () -> System.Security.Cryptography.MD5.Create())
+    let private md5 = new ThreadLocal<_>(fun () -> MD5.Create())
 
-    let computeHash (bytes: byte array) =
-        // md5.Value.ComputeHash(bytes) TODO: the threadlocal is not working in new VS extension
-        ignore md5
-        let md5 = System.Security.Cryptography.MD5.Create()
-        md5.ComputeHash(bytes)
+    let computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
 
     let empty = Array.empty
 
     let hashString (s: string) =
-        s |> System.Text.Encoding.UTF8.GetBytes |> computeHash
+        let encoding = System.Text.Encoding.UTF8
+        let byteCount = encoding.GetByteCount(s)
+        let rented = System.Buffers.ArrayPool<byte>.Shared.Rent(byteCount)
+
+        try
+            encoding.GetBytes(s, 0, s.Length, rented, 0) |> ignore
+            md5.Value.ComputeHash(rented, 0, byteCount)
+        finally
+            System.Buffers.ArrayPool<byte>.Shared.Return(rented)
+
+    let hashStringToString (s: string) = hashString s |> BitConverter.ToString
 
     let addBytes (bytes: byte array) (s: byte array) =
 
