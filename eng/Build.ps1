@@ -128,7 +128,7 @@ function Print-Usage() {
     Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
     Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
-    Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
+    Write-Host "  -testDesktopBatch <1|2>         Run a specific batch of the desktop test split (implies -testDesktop)"
     Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testUsingModules             Run aggregate tests concurrently from already-built modules"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"

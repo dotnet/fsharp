@@ -8,7 +8,7 @@
 /// Validation mode (used in CI to catch unregistered test projects):
 ///   dotnet fsi eng/tests/TestSplit.fsx --validate
 
-let totalBatches = 3
+let totalBatches = 2
 let residualBatch = 1 // uses negation filter; catches unlisted atoms + future namespaces
 
 // MTP --filter-namespace uses starts-with matching on the test namespace.
@@ -38,20 +38,20 @@ let componentTestsAtoms =
         "Language",             2
         "Libraries",            2
         "XmlComments",          2
-
-        // Batch 3 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
     ]
 
 // Platforms: "all" = both, "desktop" = net472, "coreclr" = .NET only.
 // FSharpSuite runs on both runtimes unbatched, but only on desktop in batched CI.
+// Batch 2 has fewer component tests, so it also runs FSharpSuite (approximately 21 minutes on desktop).
+// FSharp.Core.UnitTests and FSharp.Compiler.Service.Tests are in batch 1 to balance the two batches.
 let otherProjects =
     [// project path                                                                         batch  batched platform, unbatched platform
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all",     "all"
-        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all",     "all"
-        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all",     "all"
+        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          1,     "all",     "all"
+        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          1,     "all",     "all"
         "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all", "all"
         "tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj",   2,     "coreclr", "coreclr"
-        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop", "all"
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             2,     "desktop", "all"
     ]
 
 // ── excluded projects ──

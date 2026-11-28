@@ -252,6 +252,8 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+// A separate module is a separate xUnit test collection, so it runs in parallel with the other parts.
+module CoreTestsPart2 =
 
     // Requires winforms will not run on coreclr
     [<Fact>]
@@ -723,6 +725,7 @@ module CoreTests =
 #endif
 
 #if !NETCOREAPP
+module CoreTestsPart3 =
     [<Fact>]
     let quotes () =
         let cfg = testConfig "core/quotes"
@@ -1085,6 +1088,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTestsPart4 =
     [<Fact>]
     let ``measures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
@@ -1251,6 +1255,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTestsPart5 =
     [<Fact>]
     let refnormalization () =
         let cfg = testConfig "core/refnormalization"

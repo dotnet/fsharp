@@ -40,11 +40,12 @@ for platform in [ "coreclr"; "desktop" ] do
     if aggregate <> (expected |> List.map (fun p -> p, "")) then
         failwith $"Incorrect unbatched selection for {platform}: {aggregate}"
 
-    let batches = [ for batch in 1..3 -> commands [ string batch; platform ] ]
+    let batches = [ for batch in 1..2 -> commands [ string batch; platform ] ]
     let expectedBatches =
-        [ [ componentTests; build ]
-          [ componentTests; core; service; scripting ] @ (if platform = "coreclr" then [ server ] else [])
-          if platform = "desktop" then [ legacy ] else [] ]
+        [ [ componentTests; build; core; service ]
+          [ componentTests; scripting ]
+          @ (if platform = "coreclr" then [ server ] else [])
+          @ (if platform = "desktop" then [ legacy ] else []) ]
     if (batches |> List.map (List.map fst)) <> expectedBatches then
         failwith $"Incorrect batch membership for {platform}: {batches}"
 
@@ -61,7 +62,7 @@ for platform in [ "coreclr"; "desktop" ] do
     if unbatchedOnly <> (if platform = "coreclr" then Set.singleton legacy else Set.empty) then
         failwith $"Unexpected unbatched-only coverage for {platform}: {unbatchedOnly}"
 
-for batch in 1..3 do
+for batch in 1..2 do
     let legacyCommands = commands [ string batch ]
     if legacyCommands <> commands [ string batch; "all" ] then
         failwith "The omitted platform must retain its all-platform behavior"
@@ -71,7 +72,7 @@ for batch in 1..3 do
 
 for arguments in
     [ []; [ "--all" ]; [ "--all"; "all" ]; [ "--all"; "unknown" ]
-      [ "0" ]; [ "4" ]; [ "-1" ]; [ "text" ]; [ "1"; "unknown" ]
+      [ "0" ]; [ "3" ]; [ "-1" ]; [ "text" ]; [ "1"; "unknown" ]
       [ "1"; "coreclr"; "extra" ]; [ "--validate"; "extra" ] ] do
     let code, _, errors = run arguments
     if code = 0 || String.IsNullOrWhiteSpace errors then

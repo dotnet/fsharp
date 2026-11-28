@@ -28,8 +28,9 @@ Run the SDK E2E from the repository root:
 ```
 
 On Windows, replace `./eng/common/dotnet.sh` with `.\eng\common\dotnet.cmd`.
-CI runs this harness as required steps in the existing `Linux` and Windows `EndToEndBuildTests` jobs.
-The Linux job runs the harness and publishes its evidence in Batch 1 only.
+CI runs this harness as required steps in the existing `Linux` and Windows `WindowsCompressedMetadata vs_release` jobs.
+The Windows harness is not in `EndToEndBuildTests`, because the regression test jobs wait until that job is complete.
+The Linux job runs the harness and publishes its evidence in Batch 2 only.
 Both reuse their built products and publish the SDK evidence. There are no separate MT jobs.
 The existing Linux and macOS build jobs use Arcade's `--mt true` option.
 The three `Plain_Build_*` SDK jobs pass `-mt` directly to MSBuild.

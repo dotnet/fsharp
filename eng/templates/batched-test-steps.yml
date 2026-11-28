@@ -7,7 +7,6 @@
 #       matrix:
 #         Batch1: { batchNumber: 1 }
 #         Batch2: { batchNumber: 2 }
-#         Batch3: { batchNumber: 3 }
 #     steps:
 #     - template: /eng/templates/batched-test-steps.yml
 #       parameters:
