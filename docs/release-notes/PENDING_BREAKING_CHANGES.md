@@ -52,6 +52,22 @@ a.Equals(b)  // Was: false, Now: true
 // New: if (node.NodeType == ExpressionType.ArrayIndex)
 ```
 
+### Nullary union cases use their static property
+
+```fsharp
+<@ Kind.Handle @>
+// Was: Call(null, Kind.get_Handle)
+// Now: MemberAccess(null, Kind.Handle)
+```
+
+Nullary cases of unions marked with `UseNullAsTrueValue`, including `None`, are still calls to the getter, and so are cases whose getter has no corresponding static property, which `[<DefaultAugmentation(false)>]` can cause.
+
+**Migration:**
+```csharp
+// Old: if (node is MethodCallExpression { Object: null, Method.Name: "get_Handle" })
+// New: if (node is MemberExpression { Expression: null, Member.Name: "Handle" })
+```
+
 ---
 
 ## IQueryable Type Preservation 🟡

@@ -47,6 +47,12 @@ module LeafExpressionConverter =
         else
             None
 
+    let usesNullAsTrueValue (unionType: Type) =
+        unionType.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false)
+        |> Array.exists (fun attr ->
+            let flags = (attr :?> CompilationRepresentationAttribute).Flags
+            (flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue)
+
     let equivHeadTypes (ty1:Type) (ty2:Type) =
         isNamedType(ty1) &&
         if ty1.IsGenericType then
@@ -716,8 +722,19 @@ module LeafExpressionConverter =
 
         | NewUnionCase(unionCaseInfo, args) ->
             let methInfo = FSharpValue.PreComputeUnionConstructorInfo(unionCaseInfo, showAll)
-            let argsR = ConvExprsToLinq env args
-            Expression.Call((null:Expression), methInfo, argsR) |> asExpr
+            // Read a nullary case through its static property, as C# does. UseNullAsTrueValue unions such as option
+            // keep the getter call, which F# LINQ providers match (get_None); so does a getter with no property.
+            let caseProperty =
+                match args with
+                | [] when not (usesNullAsTrueValue unionCaseInfo.DeclaringType) ->
+                    unionCaseInfo.DeclaringType.GetProperties(BindingFlags.Static ||| showAll)
+                    |> Array.tryFind (fun p -> methInfo.Equals(p.GetGetMethod(true)))
+                | _ -> None
+            match caseProperty with
+            | Some propInfo -> Expression.Property((null:Expression), propInfo) |> asExpr
+            | None ->
+                let argsR = ConvExprsToLinq env args
+                Expression.Call((null:Expression), methInfo, argsR) |> asExpr
 
 #if !NO_PATTERN_MATCHING_IN_INPUT_LANGUAGE
         | UnionCaseTest(e, unionCaseInfo) ->
