@@ -7,6 +7,8 @@ open FSharp.Compiler.Syntax
 
 open FSharp.Test
 
+let private checker = FSharpChecker.Create(captureIdentifiersWhenParsing = true)
+
 let parseSourceCode (name: string, code: string) =
     let sourceText = SourceText.ofString code
 
@@ -16,7 +18,7 @@ let parseSourceCode (name: string, code: string) =
         }
 
     let result =
-        CompilerAssert.Checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
+        checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
 
     result.ParseTree
 
