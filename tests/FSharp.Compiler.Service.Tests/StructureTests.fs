@@ -686,3 +686,87 @@ let x = 4
     (6, 0, 7, 9), (6, 0, 7, 9)
     (8, 0, 10, 6), (8, 0, 10, 6)
 ]
+
+let private sliceLinesOfOneBuffer (buffer: char[]) =
+    [| let mutable start = 0
+       while start <= buffer.Length do
+           let lineEnd =
+               match System.Array.IndexOf(buffer, '\n', start) with
+               | -1 -> buffer.Length
+               | lineBreak -> lineBreak
+           let length =
+               if lineEnd > start && buffer[lineEnd - 1] = '\r' then lineEnd - start - 1 else lineEnd - start
+           yield System.ReadOnlyMemory<char>(buffer, start, length)
+           start <- lineEnd + 1 |]
+
+[<Fact>]
+let ``Line slices of one string give the same ranges as a string per line``() =
+    let source =
+        seq {
+            "module M\r\n"
+            "open System\n"
+            "  \t \r\n"
+            "open System.IO\n"
+            "\r\n"
+            "    // an indented comment  \r\n"
+            "    // its second line \t \n"
+            "\n"
+            "/// Doc, first line\r\n"
+            "/// second line   \n"
+            "let f x =\r\n"
+            "    x\n"
+            "\r\n"
+            "#if DEBUG\n"
+            "let g = 1  \r\n"
+            "let h = 2\t \n"
+            "#else\r\n"
+            "let g = 2\n"
+            "let h = 3   \r\n"
+            "#endif\n"
+        }
+        |> String.concat ""
+
+    let slices = sliceLinesOfOneBuffer (source.ToCharArray())
+    let ast = parseSourceCode(fileName, source)
+
+    let describe (scopeRanges: seq<ScopeRange>) =
+        let getRange (r: range) = (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
+        [| for sr in scopeRanges -> sr.Scope, sr.Collapse, getRange sr.Range, getRange sr.CollapseRange |]
+
+    let fromSlices = getOutliningRangesFromLineSlices slices ast |> describe
+    let fromStrings = getOutliningRanges (slices |> Array.map string) ast |> describe
+
+    Assert.Equal<(Scope * Collapse * Range * Range)>(fromStrings, fromSlices)
+
+    let readOffTheText =
+        [| for scope, _, range, _ in fromSlices do
+            match scope with
+            | Scope.Open | Scope.Comment | Scope.XmlDocComment | Scope.HashDirective -> yield scope, range
+            | _ -> () |]
+
+    Assert.Equal<(Scope * Range)>(
+        [| Scope.Open, (2, 0, 4, 14)
+           Scope.HashDirective, (14, 0, 16, 11)
+           Scope.HashDirective, (17, 0, 20, 6)
+           Scope.Comment, (6, 4, 7, 22)
+           Scope.XmlDocComment, (9, 0, 10, 15) |],
+        readOffTheText)
+
+[<Fact>]
+let ``Outlining ranges do not read the line slices once the call has returned``() =
+    let source = "module M\nopen A\nopen B\n// one\n// two\n#if X\nlet a = 1\n#else\nlet a = 2\n#endif\n"
+    let buffer = source.ToCharArray()
+    let ast = parseSourceCode(fileName, source)
+
+    let ranges = getOutliningRangesFromLineSlices (sliceLinesOfOneBuffer buffer) ast
+    Array.fill buffer 0 buffer.Length 'x'
+
+    Assert.Equal<(Scope * int * int)>(
+        [| Scope.Open, 2, 3
+           Scope.HashDirective, 6, 7
+           Scope.HashDirective, 8, 10
+           Scope.Comment, 4, 5 |],
+        [| for r in ranges do
+            match r.Scope with
+            | Scope.Open | Scope.Comment | Scope.HashDirective -> yield r.Scope, r.Range.StartLine, r.Range.EndLine
+            | _ -> () |])

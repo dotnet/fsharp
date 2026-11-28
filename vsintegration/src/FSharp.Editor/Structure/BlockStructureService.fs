@@ -119,10 +119,8 @@ module internal BlockStructure =
     let ellipsis = "..."
 
     let createBlockSpans isBlockStructureEnabled (sourceText: SourceText) (parsedInput: ParsedInput) =
-        let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
-
-        Structure.getOutliningRanges linetext parsedInput
-        |> Seq.distinctBy (fun x -> x.Range.StartLine)
+        sourceText.WithLinesAsMemory(fun lines -> Structure.getOutliningRangesFromLineSlices lines parsedInput)
+        |> Seq.distinctBy _.Range.StartLine
         |> Seq.chooseV (fun scopeRange ->
             // the range of text to collapse
             let textSpan =
