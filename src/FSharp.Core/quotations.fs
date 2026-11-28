@@ -95,18 +95,24 @@ module Helpers =
 
 open Helpers
 
+// Avoid a nullable stamp-allocation closure during concurrent initialization.
+[<AbstractClass; Sealed>]
+type private VarStampHolder() =
+    static let mutable lastStamp = 0L
+
+    static do lastStamp <- -1L
+
+    static member Next() =
+        System.Threading.Interlocked.Increment(&lastStamp)
+
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
 type Var(name: string, typ: Type, ?isMutable: bool) =
     inherit obj()
 
-    static let getStamp =
-        let mutable lastStamp = -1L // first value retrieved will be 0
-        fun () -> System.Threading.Interlocked.Increment &lastStamp
-
     static let globals = Dictionary<string * Type, Var>(11)
 
-    let stamp = getStamp ()
+    let stamp = VarStampHolder.Next()
     let isMutable = defaultArg isMutable false
 
     member _.Name = name

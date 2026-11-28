@@ -40,6 +40,61 @@ let z : unit =
         |> compileAndRun
         |> shouldSucceed
 
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Issue 14225 - concurrent quotation deserialization`` () =
+        FSharp """
+open System
+open System.Collections.Concurrent
+open System.Reflection
+open System.Threading
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+
+[<EntryPoint>]
+let main _ =
+    let threadCount = 32
+    let barrier = new Barrier(threadCount)
+    let errors = ConcurrentQueue<exn>()
+    let stamps = Array.zeroCreate<int64> threadCount
+    let stampProperty = typeof<Var>.GetProperty("Stamp", BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+    let stampHolder = typeof<Var>.Assembly.GetType("Microsoft.FSharp.Quotations.VarStampHolder", false)
+
+    if isNull stampProperty then
+        failwith "Expected the implementation stamp property."
+
+    if isNull stampHolder || isNull stampHolder.TypeInitializer then
+        failwith "Expected a dedicated stamp holder with a type initializer."
+
+    let threads =
+        Array.init threadCount (fun i ->
+            Thread(ThreadStart(fun () ->
+                try
+                    barrier.SignalAndWait()
+                    match <@ fun x -> x @> with
+                    | Lambda (variable, _) -> stamps.[i] <- unbox<int64> (stampProperty.GetValue variable)
+                    | _ -> failwith "Expected a lambda quotation."
+                with ex ->
+                    errors.Enqueue ex)))
+
+    for thread in threads do
+        thread.Start()
+
+    for thread in threads do
+        thread.Join() |> ignore
+
+    if not errors.IsEmpty then
+        raise (AggregateException(errors))
+
+    if (stamps |> Array.distinct |> Array.length) <> threadCount then
+        failwith "Quotation variable stamps must be unique."
+
+    0
+        """
+        |> asExe
+        |> withFSharpCoreShippedNet
+        |> compileAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Delegate construction quotations are unaffected by the direct delegate optimization`` () =
         Fsx """
