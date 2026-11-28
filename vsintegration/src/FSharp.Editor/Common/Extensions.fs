@@ -110,11 +110,16 @@ let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKi
         match cpContainer.FindConnectionPoint(ref riid) with
         | null -> ValueNone
         | cp ->
-            ValueSome(
-                cp.Advise(handler, &cookie)
+            cp.Advise(handler, &cookie)
 
+            // `Unadvise` throws when called twice with the same cookie.
+            let unadvised = ref 0
+
+            ValueSome(
                 { new IDisposable with
-                    member _.Dispose() = cp.Unadvise(cookie)
+                    member _.Dispose() =
+                        if Interlocked.Exchange(&unadvised.contents, 1) = 0 then
+                            cp.Unadvise(cookie)
                 }
             )
     | _ -> ValueNone
