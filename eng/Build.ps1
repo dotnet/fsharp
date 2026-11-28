@@ -801,7 +801,7 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-    if (Test-Path variable:global:_MSBuildExe) {
+    if ($msbuildEngine -eq "dotnet" -or (Test-Path variable:global:_MSBuildExe)) {
         return
     }
     $vsInfo = LocateVisualStudio
