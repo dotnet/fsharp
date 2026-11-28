@@ -682,6 +682,51 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+// The receiver of a partial application closes over a local function bound inside the delegate body. That
+// binding does not exist at the construction site, so a direct delegate fails with FS0971.
+[<Fact>]
+let ``Issue 21032 - receiver capturing a local of the delegate body compiles (preview)`` () =
+    FSharp """
+module ReceiverCapturesBodyLocal
+
+open System
+
+let call (f: unit -> unit) : unit = f ()
+
+let mk () =
+    Action(fun () ->
+        let conv (a, b, c, d) = a + b + c + d
+        call (fun () -> printfn "%d" (conv (1, 2, 3, 4))))
+        """
+    |> asLibrary
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize+" ]
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 21031 - delegate over a debug inline specialization compiles and runs (preview)`` () =
+    FSharp """
+module DebugInlineSrtpTarget
+
+open System.Linq
+
+let inline contains<'a, 'b when 'b: (member Contains: 'a -> bool)> (item: 'a) (coll: 'b) : bool = coll.Contains(item)
+
+let inline containedIn coll item = contains item coll
+
+let filterFoo (words: seq<string>) =
+    let foobarbaz = Set.ofList [ "foo"; "bar"; "baz" ]
+    words.Where(containedIn foobarbaz)
+
+if List.ofSeq (filterFoo [ "foo"; "qux"; "baz" ]) <> [ "foo"; "baz" ] then failwith "wrong result"
+        """
+    |> asExe
+    |> withLangVersionPreview
+    |> withOptions [ "--optimize-"; "--debug+" ]
+    |> compileAndRun
+    |> shouldSucceed
+
 let private crossAssemblyLibrary =
     FSharp """
 module DelegateLib
