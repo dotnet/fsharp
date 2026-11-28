@@ -327,6 +327,11 @@
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstantInterpolatedStrings">
+        <source>interpolated strings in constant expressions</source>
+        <target state="new">interpolated strings in constant expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>

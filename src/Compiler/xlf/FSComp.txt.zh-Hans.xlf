@@ -327,6 +327,11 @@
         <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstantInterpolatedStrings">
+        <source>interpolated strings in constant expressions</source>
+        <target state="new">interpolated strings in constant expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
