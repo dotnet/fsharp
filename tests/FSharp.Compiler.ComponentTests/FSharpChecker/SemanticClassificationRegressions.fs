@@ -11,13 +11,15 @@ open FSharp.Test.ProjectGeneration.Helpers
 #nowarn "57"
 
 /// Get semantic classification items for a single-file source using the transparent compiler.
-let getClassifications (source: string) =
+let getClassificationsWith (relatedSymbolKinds: RelatedSymbolUseKind) (source: string) =
     async {
         let! fileName, snapshot, checker = singleFileChecker source
         let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
         let checkResults = getTypeCheckResult results
-        return checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        return checkResults.GetSemanticClassification(None, relatedSymbolKinds)
     }
+
+let getClassifications source = getClassificationsWith RelatedSymbolUseKind.AllInCode source
 
 /// Extract the source substring covered by a classification item's range (single-line ranges).
 let private substringOfRange (source: string) (r: Range) =
@@ -72,6 +74,56 @@ let updated = { x with ValidationErrors = [] }
                 "No type classification should cover the copy-and-update line, but found: %A"
                 (typeItemsCoveringField |> Array.map (fun i -> i.Range, i.Type))
         )
+    }
+
+/// (#20630)
+[<Fact>]
+let ``XML doc param names are not classified even for a caller that asks for every related kind`` () : Task =
+    task {
+        let source =
+            """
+module Test
+
+/// <param name="x">The first number.</param>
+/// <param name="y">Added to <paramref name="x"/>.</param>
+let add x y = x + y
+"""
+
+        let! items = getClassificationsWith RelatedSymbolUseKind.AllInCodeAndDocs source
+        let onDocLines = items |> Array.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
+        Assert.Empty onDocLines
+    }
+
+#nowarn "44"
+let private obsoleteClassificationsWith (checkResults: FSharpCheckFileResults) (relatedSymbolKinds: RelatedSymbolUseKind option) =
+    checkResults.GetSemanticClassification(None, relatedSymbolKinds)
+    |> Array.map (fun item -> item.Range, item.Type)
+#warnon "44"
+
+[<Fact>]
+let ``the obsolete option overload of GetSemanticClassification hands the kinds on like the struct option one`` () : Task =
+    task {
+        let source =
+            """
+module Test
+
+type Shape = Circle | Square
+let s = Circle
+let r1 = s.IsCircle
+"""
+
+        let! fileName, snapshot, checker = singleFileChecker source
+        let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
+        let checkResults = getTypeCheckResult results
+
+        let current (relatedSymbolKinds: RelatedSymbolUseKind voption) =
+            checkResults.GetSemanticClassification(None, ?relatedSymbolKinds = relatedSymbolKinds)
+            |> Array.map (fun item -> item.Range, item.Type)
+
+        let kinds = RelatedSymbolUseKind.AllInCode
+        Assert.Equal<(Range * SemanticClassificationType) array>(current ValueNone, obsoleteClassificationsWith checkResults None)
+        Assert.Equal<(Range * SemanticClassificationType) array>(current (ValueSome kinds), obsoleteClassificationsWith checkResults (Some kinds))
+        Assert.True((obsoleteClassificationsWith checkResults (Some kinds)).Length > (obsoleteClassificationsWith checkResults None).Length)
     }
 
 /// (#16621) Helper: assert UnionCase classifications on expected lines.

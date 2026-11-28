@@ -343,12 +343,12 @@ type BoundModel private (
                         if not r.IsSynthetic && preventDuplicates.Add struct(r.Start, r.End) then
                             builder.Write(cnr.Range, cnr.Item))
 
-                    sResolutions.CapturedRelatedSymbolUses
-                    |> Seq.iter (fun (m, item, _kind) ->
+                    sResolutions.CapturedRelatedSymbolUsesInCode
+                    |> Seq.iter (fun struct (m, item, _kind) ->
                         if not m.IsSynthetic then
                             builder.Write(m, item))
 
-                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)
+                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.AllInCode)
 
                     let sckBuilder = SemanticClassificationKeyStoreBuilder()
                     sckBuilder.WriteAll semanticClassification

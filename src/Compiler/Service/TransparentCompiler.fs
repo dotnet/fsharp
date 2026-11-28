@@ -2239,7 +2239,7 @@ type internal TransparentCompiler
                                 bootstrapInfo.TcImports.GetImportMap(),
                                 sink.GetFormatSpecifierLocations(),
                                 None,
-                                RelatedSymbolUseKind.All
+                                RelatedSymbolUseKind.AllInCode
                             )
 
                         let sckBuilder = SemanticClassificationKeyStoreBuilder()
@@ -2283,8 +2283,8 @@ type internal TransparentCompiler
                             if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
 
-                        sResolutions.CapturedRelatedSymbolUses
-                        |> Seq.iter (fun (m, item, _kind) ->
+                        sResolutions.CapturedRelatedSymbolUsesInCode
+                        |> Seq.iter (fun struct (m, item, _kind) ->
                             if not m.IsSynthetic then
                                 builder.Write(m, item))
 
