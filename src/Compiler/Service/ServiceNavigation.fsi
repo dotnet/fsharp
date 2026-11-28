@@ -112,12 +112,20 @@ type NavigableContainer =
     member Name: string
 
 type NavigableItem =
-    { Name: string
-      NeedsBackticks: bool
-      Range: range
-      IsSignature: bool
-      Kind: NavigableItemKind
-      Container: NavigableContainer }
+    {
+        Name: string
+        NeedsBackticks: bool
+        Range: range
+        IsSignature: bool
+        Kind: NavigableItemKind
+        Container: NavigableContainer
+        /// The number of parameters of the method the declaration compiles to, as C# and VB count them to order
+        /// equally good Navigate To matches: every curried and tupled argument, without the instance and without a
+        /// solitary unit argument.
+        ParameterCount: int
+        /// The number of explicitly declared type parameters.
+        TypeParameterCount: int
+    }
 
 [<RequireQualifiedAccess>]
 module public NavigateTo =
