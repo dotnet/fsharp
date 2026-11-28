@@ -35,6 +35,22 @@ type FSharpSymbol with
         | :? FSharpField -> not publicOrInternal
         | _ -> false
 
+    member this.DocumentationCommentId =
+        let struct (xmlDocSig, compilesToField) =
+            match this with
+            | :? FSharpMemberOrFunctionOrValue as value -> struct (value.XmlDocSig, value.LiteralValue.IsSome)
+            | :? FSharpEntity as entity -> struct (entity.XmlDocSig, false)
+            | :? FSharpField as field -> struct (field.XmlDocSig, field.IsLiteral)
+            | :? FSharpUnionCase as unionCase -> struct (unionCase.XmlDocSig, false)
+            | _ -> struct ("", false)
+
+        match xmlDocSig with
+        | null
+        | "" -> ValueNone
+        // Roslyn names a field F: where FCS says P:.
+        | docSig when compilesToField && docSig.StartsWith("P:", System.StringComparison.Ordinal) -> ValueSome $"F:{docSig.Substring 2}"
+        | docSig -> ValueSome docSig
+
 type FSharpSymbolUse with
 
     member this.GetSymbolScope(currentDocument: Document) : SymbolScope option =
