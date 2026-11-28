@@ -667,6 +667,22 @@ let ``the session exits when its host process exits`` () =
 
     Assert.True(session.WaitForExit 30_000, "the session outlived its host process")
 
+[<Fact>]
+let ``the last owner named on the command line is the one that counts`` () =
+    use earlier = new FsiServerHarness()
+
+    use session =
+        new FsiServerHarness(
+            serverSwitches = fun pipeName -> [ $"--fsi-server-client-pid:{earlier.ProcessId}"; $"--fsi-server-jsonrpc:{pipeName}" ]
+        )
+
+    session.Initialize() |> ignore
+
+    (earlier :> IDisposable).Dispose()
+
+    Assert.False(session.WaitForExit 5_000, "the session followed the owner named first")
+    Assert.True(succeeded (session.Execute "1 + 1"))
+
 //-------------------------------------------------------------------------
 // What ships
 //-------------------------------------------------------------------------
