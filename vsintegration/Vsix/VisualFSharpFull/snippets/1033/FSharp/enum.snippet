@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>enum</Title>
+      <Shortcut>enum</Shortcut>
+      <Description>Code snippet for an enum type</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>name</ID>
+          <ToolTip>Enum name</ToolTip>
+          <Default>MyEnum</Default>
+        </Literal>
+        <Literal>
+          <ID>case</ID>
+          <ToolTip>First value</ToolTip>
+          <Default>Value</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[type $name$ =
+    | $case$ = 0
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

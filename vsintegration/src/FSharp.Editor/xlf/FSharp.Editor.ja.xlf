@@ -104,6 +104,11 @@
         <target state="translated">型の注釈を指定しないでインターフェイスを実装する</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
         <target state="translated">'mutable' を宣言する</target>
@@ -192,6 +197,11 @@
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">未使用の Open 宣言を削除する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">

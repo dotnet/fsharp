@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>iface</Title>
+      <Shortcut>iface</Shortcut>
+      <Description>Code snippet for an interface implementation</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>interface</ID>
+          <ToolTip>Interface to implement</ToolTip>
+          <Default>IMyInterface</Default>
+        </Literal>
+        <Literal>
+          <ID>member</ID>
+          <ToolTip>Member name</ToolTip>
+          <Default>Member</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[interface $interface$ with
+    member this.$member$() =
+        $end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

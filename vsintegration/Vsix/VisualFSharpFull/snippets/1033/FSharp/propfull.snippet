@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>propfull</Title>
+      <Shortcut>propfull</Shortcut>
+      <Description>Code snippet for a property and its backing field</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>field</ID>
+          <ToolTip>The mutable value backing this property</ToolTip>
+          <Default>myField</Default>
+        </Literal>
+        <Literal>
+          <ID>value</ID>
+          <ToolTip>Initial value</ToolTip>
+          <Default>0</Default>
+        </Literal>
+        <Literal>
+          <ID>property</ID>
+          <ToolTip>Property name</ToolTip>
+          <Default>MyProperty</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[let mutable $field$ = $value$
+
+member this.$property$
+    with get () = $field$
+    and set value = $field$ <- value
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
