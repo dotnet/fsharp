@@ -307,6 +307,11 @@
         <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowMixedRangesAndValuesInSeqExpressions">
+        <source>Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}</source>
+        <target state="new">Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>
@@ -1595,6 +1600,11 @@
       <trans-unit id="tcPassingWithoutNullTononNullFunction">
         <source>You can remove this `nonNull` assertion.</source>
         <target state="new">You can remove this `nonNull` assertion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRangeIsNotASingleValue">
+        <source>A range expression cannot be used as a single value here. Use 'yield!' to splice the range, or wrap it in a list or sequence expression to use it as one value.</source>
+        <target state="new">A range expression cannot be used as a single value here. Use 'yield!' to splice the range, or wrap it in a list or sequence expression to use it as one value.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecordExplicitFieldShadowsSpreadField">

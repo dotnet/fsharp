@@ -16,7 +16,6 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
     let g = cenv.g
 
     // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
-    // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
     match RewriteRangeExpr comp with
@@ -99,7 +98,8 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 | _ -> SynExpr.ArrayOrList(isArray, elems, m)
 
             TcExprUndelayed cenv overallTy env tpenv replacementExpr
-        | _ ->
+        | SimpleSemicolonSequenceWithRanges cenv comp
+        | comp ->
 
             let genCollElemTy = NewInferenceType g
 
