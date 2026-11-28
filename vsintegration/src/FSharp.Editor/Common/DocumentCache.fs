@@ -18,17 +18,26 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
     let policy =
         defaultArg cacheItemPolicy (CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds defaultSlidingExpiration)))
 
+    // A document's own text is not the whole story: an edit elsewhere in the project can change what
+    // its names mean while its text stands still, so the key has to cover both versions.
+    static let currentVersion (doc: Document) (ct: CancellationToken) =
+        task {
+            let! textVersion = doc.GetTextVersionAsync ct
+            let! semanticVersion = doc.Project.GetDependentSemanticVersionAsync ct
+            return textVersion, semanticVersion
+        }
+
     static let tryGetCachedValueAsync (doc: Document, cache: MemoryCache, ct: CancellationToken) =
         if ct.IsCancellationRequested then
             Task.FromCanceled<'Value voption>(ct)
         else
             task {
-                let! currentVersion = doc.GetTextVersionAsync ct
+                let! version = currentVersion doc ct
 
                 match cache.Get(doc.Id.ToString()) with
                 | null -> return ValueNone
-                | :? (VersionStamp * 'Value) as value ->
-                    if fst value = currentVersion then
+                | :? ((VersionStamp * VersionStamp) * 'Value) as value ->
+                    if fst value = version then
                         return ValueSome(snd value)
                     else
                         return ValueNone
@@ -40,8 +49,8 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
             Task.FromCanceled<unit>(ct)
         else
             task {
-                let! currentVersion = doc.GetTextVersionAsync ct
-                do cache.Set(doc.Id.ToString(), (currentVersion, value), policy)
+                let! version = currentVersion doc ct
+                do cache.Set(doc.Id.ToString(), (version, value), policy)
             }
 
     new(name: string, slidingExpirationSeconds: float) =
