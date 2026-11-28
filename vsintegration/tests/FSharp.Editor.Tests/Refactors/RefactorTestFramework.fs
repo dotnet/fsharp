@@ -6,7 +6,13 @@ open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+
+open Xunit
+
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.ProjectGeneration
 
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
@@ -31,11 +37,19 @@ type TestContext(Solution: Solution) =
         new TestContext(solution)
 
     static member CreateWithCodeAndDependency (code: string) (codeForPreviousFile: string) =
-        let mutable solution = RoslynTestHelpers.CreateSolution(codeForPreviousFile)
+        let project =
+            { SyntheticProject.Create(
+                  { sourceFile "First" [] with
+                      Source = codeForPreviousFile
+                  },
+                  { sourceFile "Second" [ "First" ] with
+                      Source = code
+                  }
+              ) with
+                AutoAddModules = false
+            }
 
-        let firstProject = solution.Projects.First()
-        solution <- solution.AddDocument(DocumentId.CreateNewId(firstProject.Id), "test2.fs", code, filePath = "C:\\test2.fs")
-
+        let solution, _ = RoslynTestHelpers.CreateSolution project
         new TestContext(solution)
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
@@ -87,3 +101,62 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
     }
     |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result
+
+let caretAt (code: string) (marker: string) =
+    code.IndexOf(marker, StringComparison.Ordinal)
+
+let textOf (document: Document) =
+    (document.GetTextAsync() |> GetTaskResult).ToString()
+
+let errorsOf (document: Document) =
+    let _, checkResults =
+        document.GetFSharpParseAndCheckResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    checkResults.Diagnostics
+    |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+let private moduleHeader (body: string) =
+    let lineBreak = body[.. body.IndexOf('\n')]
+    lineBreak + "module M" + lineBreak
+
+let inModuleM (body: string) = moduleHeader body + body
+
+let refactorAt (provider: 'T :> CodeRefactoringProvider) (context: TestContext) (code: string) (marker: string) =
+    tryRefactor code (caretAt code marker) context provider
+
+let refactoredBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marker: string) =
+    let code = inModuleM body
+    use context = TestContext.CreateWithCode code
+    let document = refactorAt provider context code marker
+    Assert.Empty(errorsOf document)
+
+    let header = moduleHeader body
+    let text = textOf document
+    Assert.StartsWith(header, text, StringComparison.Ordinal)
+    text.Substring header.Length
+
+let convertsBothWaysBy (provider: 'T :> CodeRefactoringProvider) (markers: string seq) (reference: string) (structs: string) =
+    for marker in markers do
+        Assert.Equal(structs, refactoredBy provider reference marker)
+        Assert.Equal(reference, refactoredBy provider structs marker)
+
+let actionsBy (provider: 'T :> CodeRefactoringProvider) (body: string) (marker: string) =
+    let code = inModuleM body
+    use context = TestContext.CreateWithCode code
+    tryGetRefactoringActions code (caretAt code marker) context provider
+
+// The checker reads the other file of a synthetic project from disk, so the result is checked as a new project.
+let refactoredAcrossFiles (provider: 'T :> CodeRefactoringProvider) (dependency: string) (code: string) (marker: string) =
+    use context = TestContext.CreateWithCodeAndDependency code dependency
+    let document = refactorAt provider context code marker
+
+    let dependencyAfter =
+        (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
+
+    use checkContext =
+        TestContext.CreateWithCodeAndDependency (textOf document) dependencyAfter
+
+    Assert.Empty((checkContext.Solution.Projects |> Seq.head).Documents |> Seq.last |> errorsOf)
+
+    struct (textOf document, dependencyAfter)
