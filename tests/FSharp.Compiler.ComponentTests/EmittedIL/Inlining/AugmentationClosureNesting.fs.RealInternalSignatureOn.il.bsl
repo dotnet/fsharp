@@ -37,49 +37,6 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .class auto ansi serializable sealed nested assembly beforefieldinit h@9
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
-    {
-      .field static assembly initonly class Sample/C/h@9 @_instance
-      .method assembly specialname rtspecialname instance void  .ctor() cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::.ctor()
-        IL_0006:  ret
-      } 
-
-      .method public strict virtual instance int32 Invoke(int32 n) cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.1
-        IL_0001:  brtrue.s   IL_0009
-
-        IL_0003:  call       int32 Sample/C::Secret()
-        IL_0008:  ret
-
-        IL_0009:  ldarg.1
-        IL_000a:  ldc.i4.1
-        IL_000b:  sub
-        IL_000c:  starg.s    n
-        IL_000e:  br.s       IL_0000
-      } 
-
-      .method private specialname rtspecialname static void  .cctor() cil managed
-      {
-        
-        .maxstack  10
-        IL_0000:  newobj     instance void Sample/C/h@9::.ctor()
-        IL_0005:  stsfld     class Sample/C/h@9 Sample/C/h@9::@_instance
-        IL_000a:  ret
-      } 
-
-    } 
-
     .field static assembly int32 backing
     .field static assembly int32 init@2
     .method public specialname rtspecialname instance void  .ctor() cil managed
@@ -161,15 +118,27 @@
     .method public hidebysig instance int32 Run() cil managed
     {
       
-      .maxstack  4
-      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> V_0)
-      IL_0000:  ldsfld     class Sample/C/h@9 Sample/C/h@9::@_instance
-      IL_0005:  stloc.0
-      IL_0006:  ldloc.0
-      IL_0007:  ldc.i4.5
-      IL_0008:  tail.
-      IL_000a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
-      IL_000f:  ret
+      .maxstack  8
+      IL_0000:  ldc.i4.5
+      IL_0001:  call       int32 Sample/C::h@9(int32)
+      IL_0006:  ret
+    } 
+
+    .method assembly static int32  h@9(int32 n) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  brtrue.s   IL_0009
+
+      IL_0003:  call       int32 Sample/C::Secret()
+      IL_0008:  ret
+
+      IL_0009:  ldarg.0
+      IL_000a:  ldc.i4.1
+      IL_000b:  sub
+      IL_000c:  starg.s    n
+      IL_000e:  br.s       IL_0000
     } 
 
   } 

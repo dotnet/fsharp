@@ -42,6 +42,14 @@ module ILVerifierModule =
         | 0 -> {Outcome = NoExitCode; StdOut = outputText; StdErr = errorText }
         | _ -> {Outcome = ExitCode exitCode; StdOut = outputText; StdErr = errorText }
 
+    let private referenceDllReferences (compilationResult: CompilationResult) =
+        // The compiled F# references (from withReferences) are recorded as absolute
+        // paths in CompilationOutput.Dependencies. Surface them to the verifier so
+        // cross-assembly references (e.g. a realsig library) resolve at verification time.
+        compilationResult.Output.Dependencies
+        |> List.filter (fun p -> not (String.IsNullOrWhiteSpace p))
+        |> List.map (fun p -> $"--reference \"{p}\"")
+
     let private verifyPEFileAux (compilationResult: CompilationResult) args =
         let result =
             match compilationResult.Compilation with
@@ -66,4 +74,10 @@ module ILVerifierModule =
         verifyPEFileAux compilationResult (fsharpCoreReference :: args)
 
     let verifyPEFileWithSystemDlls compilationResult =
-        verifyPEFileAux compilationResult systemDllReferences
+        // Include the compilation's own F# references (e.g. a library built via
+        // withReferences) so cross-assembly resolution succeeds during verification.
+        verifyPEFileAux compilationResult (referenceDllReferences compilationResult @ systemDllReferences)
+
+    let verifyPEFileWithSystemDllsOn dllPath =
+        // Verify a specific PE file (e.g. a referenced library) with the system dlls + FSharp.Core on the reference path.
+        verifyPEFileCore (fsharpCoreReference :: systemDllReferences) dllPath

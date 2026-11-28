@@ -214,8 +214,8 @@ let main _ = if (make ()).ToString() = "protected-field" then 0 else 1
         |> runsPreview
 
     // Precision: the gate narrows to *protected* fields, not any IL field. A recursive closure reading a
-    // PUBLIC field (System.String.Empty) must still be lifted to a module-level static under --optimize+, so
-    // the lifted static `Test::f@` is present (a closure class would be `Test/f@`).
+    // With realsig+ all fields (System.String.Empty) must will be compiled to a class-level static under --optimize+, under realsig- it would be lifted to module level static
+    // the class-static `Test/Holder::f@` is present (a closure class would be `Test/Holder/f@`).
     [<Fact>]
     let ``Public field in a recursive closure is still lifted under the feature (issue 5302)`` () =
         FSharp """
@@ -229,7 +229,7 @@ type Holder() =
         |> withOptimize
         |> compile
         |> shouldSucceed
-        |> verifyILPresent ["Test::f@"]
+        |> verifyILPresent ["Test/Holder::f@"]
 
     // Fields only: a protected *method* call, and a closure inside an object expression, stay rejected even
     // with the feature on (methods could escape their object scope; objexpr closures are emitted beside the
