@@ -135,6 +135,9 @@ val internal tname_RuntimeArgumentHandle: string = "System.RuntimeArgumentHandle
 [<Literal>]
 val internal tname_IsByRefLikeAttribute: string = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
+[<Literal>]
+val internal tname_InlineArrayAttribute: string = "System.Runtime.CompilerServices.InlineArrayAttribute"
+
 type internal TcGlobals =
 
     new:

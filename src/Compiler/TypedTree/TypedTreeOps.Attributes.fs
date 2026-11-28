@@ -1459,6 +1459,12 @@ module internal ByrefAndSpanHelpers =
     let isSpanLikeTyconRef g m tcref =
         isByrefLikeTyconRef g m tcref && not (isByrefTyconRef g tcref)
 
+    // Name-based matching, for the same reason as IsByRefLikeAttribute above
+    let isInlineArrayTyconRef m (tcref: TyconRef) =
+        tcref.CanDeref
+        && isStructTyconRef tcref
+        && TyconRefHasAttributeByName m tname_InlineArrayAttribute tcref
+
     let isByrefLikeTy g m ty =
         ty
         |> stripTyEqns g

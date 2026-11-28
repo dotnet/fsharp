@@ -1098,6 +1098,16 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
     let m = tycon.Range
     let attribs = getAugmentationAttribs g tycon
 
+    // [<InlineArray>] replicas are invisible to the generated members, which enumerate declared fields only.
+    // Ask whether members were actually generated rather than whether attributes suppress them: a field type
+    // without equality (or a byref-like struct) generates nothing, and there is nothing to warn about.
+    let generatesStructuralMembers =
+        Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues
+        || Option.isSome tycon.GeneratedCompareToValues
+
+    if generatesStructuralMembers && isInlineArrayTyconRef m (mkLocalTyconRef tycon) then
+        errorR (Error(FSComp.SR.augInlineArrayNeedsNoStructuralAttributes (), m))
+
     match attribs with
 
     // LEGITIMATE CASES
